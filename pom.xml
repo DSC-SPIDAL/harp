@@ -12,7 +12,7 @@
         <module>harp-project</module>
         <module>harp-tutorial-app</module>
         <module>harp-app</module>
-        <!--<module>harp-daal-app</module>-->
+      <!--  <module>harp-daal-app</module>-->
     </modules>
 
     <dependencyManagement>
