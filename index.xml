@@ -1,0 +1,1437 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>harp</title>
+    <link>https://dsc-spidal.github.io/harp/index.xml</link>
+    <description>Recent content on harp</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <atom:link href="https://dsc-spidal.github.io/harp/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title></title>
+      <link>https://dsc-spidal.github.io/harp/docs/operators/deployment/configuration/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://dsc-spidal.github.io/harp/docs/operators/deployment/configuration/</guid>
+      <description>
+
+&lt;h1 id=&#34;configuring-a-cluster&#34;&gt;Configuring a Cluster&lt;/h1&gt;
+
+&lt;p&gt;To setup a Heron cluster, you need to configure a few files. Each file configures
+a component of the Heron streaming framework.&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;p&gt;&lt;strong&gt;scheduler.yaml&lt;/strong&gt; &amp;mdash; This file specifies the required classes for launcher,
+scheduler, and for managing the topology at runtime. Any other specific parameters
+for the scheduler go into this file.&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;strong&gt;statemgr.yaml&lt;/strong&gt; &amp;mdash; This file contains the classes and the configuration for state manager.
+The state manager maintains the running state of the topology as logical plan, physical plan,
+scheduler state, and execution state.&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;strong&gt;uploader.yaml&lt;/strong&gt; &amp;mdash; This file specifies the classes and configuration for the uploader,
+which uploads the topology jars to storage. Once the containers are scheduled, they will
+download these jars from the storage for running.&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;strong&gt;heron_internals.yaml&lt;/strong&gt; &amp;mdash; This file contains parameters that control
+how heron behaves. Tuning these parameters requires advanced knowledge of heron architecture and its
+components. For starters, the best option is just to copy the file provided with sample
+configuration. Once you are familiar with the system you can tune these parameters to achieve
+high throughput or low latency topologies.&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;strong&gt;metrics_sinks.yaml&lt;/strong&gt; &amp;mdash; This file specifies where the run-time system and topology metrics
+will be routed. By default, the &lt;code&gt;file sink&lt;/code&gt; and &lt;code&gt;tmaster sink&lt;/code&gt; need to be present. In addition,
+&lt;code&gt;scribe sink&lt;/code&gt; and &lt;code&gt;graphite sink&lt;/code&gt; are also supported.&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;strong&gt;packing.yaml&lt;/strong&gt; &amp;mdash; This file specifies the classes for &lt;code&gt;packing algorithm&lt;/code&gt;, which defaults
+to Round Robin, if not specified.&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;strong&gt;client.yaml&lt;/strong&gt; &amp;mdash; This file controls the behavior of the &lt;code&gt;heron&lt;/code&gt; client. This is optional.&lt;/p&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h1 id=&#34;assembling-the-configuration&#34;&gt;Assembling the Configuration&lt;/h1&gt;
+
+&lt;p&gt;All configuration files are assembled together to form the cluster configuration. For example,
+a cluster named &lt;code&gt;devcluster&lt;/code&gt; that uses the Aurora for scheduler, ZooKeeper for state manager and
+HDFS for uploader will have the following set of configurations.&lt;/p&gt;
+
+&lt;h2 id=&#34;scheduler-yaml-for-aurora&#34;&gt;scheduler.yaml (for Aurora)&lt;/h2&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #75715e&#34;&gt;# scheduler class for distributing the topology for execution&lt;/span&gt;
+&lt;span style=&#34;color: #ae81ff&#34;&gt;heron.class.scheduler&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;com.twitter.heron.scheduler.aurora.AuroraScheduler&lt;/span&gt;
+
+&lt;span style=&#34;color: #75715e&#34;&gt;# launcher class for submitting and launching the topology&lt;/span&gt;
+&lt;span style=&#34;color: #ae81ff&#34;&gt;heron.class.launcher&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;com.twitter.heron.scheduler.aurora.AuroraLauncher&lt;/span&gt;
+
+&lt;span style=&#34;color: #75715e&#34;&gt;# location of java &lt;/span&gt;
+&lt;span style=&#34;color: #ae81ff&#34;&gt;heron.directory.sandbox.java.home&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;/usr/lib/jvm/java-1.8.0-openjdk-amd64/&lt;/span&gt;
+
+&lt;span style=&#34;color: #75715e&#34;&gt;# Invoke the IScheduler as a library directly&lt;/span&gt;
+&lt;span style=&#34;color: #ae81ff&#34;&gt;heron.scheduler.is.service&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;False&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h2 id=&#34;statemgr-yaml-for-zookeeper&#34;&gt;statemgr.yaml (for ZooKeeper)&lt;/h2&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #75715e&#34;&gt;# zookeeper state manager class for managing state in a persistent fashion&lt;/span&gt;
+&lt;span style=&#34;color: #ae81ff&#34;&gt;heron.class.state.manager&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;com.twitter.heron.statemgr.zookeeper.curator.CuratorStateManager&lt;/span&gt;
+
+&lt;span style=&#34;color: #75715e&#34;&gt;# zookeeper state manager connection string&lt;/span&gt;
+&lt;span style=&#34;color: #ae81ff&#34;&gt;heron.statemgr.connection.string&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;:&lt;/span&gt;  &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;127.0.0.1:2181&amp;quot;&lt;/span&gt;
+
+&lt;span style=&#34;color: #75715e&#34;&gt;# path of the root address to store the state in zookeeper  &lt;/span&gt;
+&lt;span style=&#34;color: #ae81ff&#34;&gt;heron.statemgr.root.path&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;/heron&amp;quot;&lt;/span&gt;
+
+&lt;span style=&#34;color: #75715e&#34;&gt;# create the zookeeper nodes, if they do not exist&lt;/span&gt;
+&lt;span style=&#34;color: #ae81ff&#34;&gt;heron.statemgr.zookeeper.is.initialize.tree&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;True&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h2 id=&#34;uploader-yaml-for-hdfs&#34;&gt;uploader.yaml (for HDFS)&lt;/h2&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #75715e&#34;&gt;# Directory of config files for hadoop client to read from&lt;/span&gt;
+&lt;span style=&#34;color: #ae81ff&#34;&gt;heron.uploader.hdfs.config.directory&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;:&lt;/span&gt;              &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;/home/hadoop/hadoop/conf/&amp;quot;&lt;/span&gt;
+
+&lt;span style=&#34;color: #75715e&#34;&gt;# The URI of the directory for uploading topologies in the hdfs&lt;/span&gt;
+&lt;span style=&#34;color: #ae81ff&#34;&gt;heron.uploader.hdfs.topologies.directory.uri&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;:&lt;/span&gt;      &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;hdfs:///heron/topology/&amp;quot;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h2 id=&#34;packing-yaml-for-round-robin&#34;&gt;packing.yaml (for Round Robin)&lt;/h2&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #75715e&#34;&gt;# packing algorithm for packing instances into containers&lt;/span&gt;
+&lt;span style=&#34;color: #ae81ff&#34;&gt;heron.class.packing.algorithm&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;:&lt;/span&gt;    &lt;span style=&#34;color: #ae81ff&#34;&gt;com.twitter.heron.packing.roundrobin.RoundRobinPacking&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h2 id=&#34;client-yaml-for-heron-cli&#34;&gt;client.yaml (for heron cli)&lt;/h2&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #75715e&#34;&gt;# should the role parameter be required&lt;/span&gt;
+&lt;span style=&#34;color: #ae81ff&#34;&gt;heron.config.role.required&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;false&lt;/span&gt;
+
+&lt;span style=&#34;color: #75715e&#34;&gt;# should the environ parameter be required&lt;/span&gt;
+&lt;span style=&#34;color: #ae81ff&#34;&gt;heron.config.env.required&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;false&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Allgather</title>
+      <link>https://dsc-spidal.github.io/harp/docs/communications/allgather/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://dsc-spidal.github.io/harp/docs/communications/allgather/</guid>
+      <description>
+
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/4-3-1.png&#34; alt=&#34;allgather&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;allgather&lt;/code&gt; aims to first collect tables from other workers and then broadcast the collection. All workers should run it concurrently. The defination of the method is:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;boolean&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;allgather&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;final&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;String&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;contextName&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;final&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;String&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;operationName&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;final&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;P&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;final&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;DataMap&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;dataMap&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;final&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Workers&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;workers&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;contextName&lt;/code&gt; &amp;mdash; the name of the context&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;operationName&lt;/code&gt; &amp;mdash; the name of the operation&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;table&lt;/code&gt; &amp;mdash; the name of the data table&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;dataMap&lt;/code&gt; &amp;mdash; the data map&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;workers&lt;/code&gt; &amp;mdash; the workers&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&#34;example&#34;&gt;Example&lt;/h2&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;allgather&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;contextName&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;allgather&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;dataMap&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;workers&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Allreduce</title>
+      <link>https://dsc-spidal.github.io/harp/docs/communications/allreduce/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://dsc-spidal.github.io/harp/docs/communications/allreduce/</guid>
+      <description>
+
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/4-4-1.png&#34; alt=&#34;allreduce&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;allreduce&lt;/code&gt; aims to first combine tables from other workers and then broadcast the accumulated table. All workers should run it concurrently. The defination of the method is:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;boolean&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;allreduce&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;final&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;String&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;contextName&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;final&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;String&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;operationName&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;final&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;P&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;final&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;DataMap&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;dataMap&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;final&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Workers&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;workers&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;contextName&lt;/code&gt; &amp;mdash; the name of the context&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;operationName&lt;/code&gt; &amp;mdash; the name of the operation&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;table&lt;/code&gt; &amp;mdash; the name of the data table&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;dataMap&lt;/code&gt; &amp;mdash; the data map&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;workers&lt;/code&gt; &amp;mdash; the workers&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&#34;example&#34;&gt;Example&lt;/h2&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;allreduce&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;contextName&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;allreduce&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;dataMap&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;workers&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Apache Hadoop YARN Cluster (Experimental)</title>
+      <link>https://dsc-spidal.github.io/harp/docs/operators/deployment/schedulers/yarn/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://dsc-spidal.github.io/harp/docs/operators/deployment/schedulers/yarn/</guid>
+      <description>
+
+&lt;p&gt;In addition to out-of-the-box schedulers for &lt;a href=&#34;../aurora&#34;&gt;Aurora&lt;/a&gt;, Heron can also be deployed on a
+YARN cluster with the YARN scheduler. The YARN scheduler is implemented using the
+&lt;a href=&#34;https://reef.apache.org/&#34;&gt;Apache REEF&lt;/a&gt; framework.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Key features&lt;/strong&gt; of the YARN scheduler:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;p&gt;&lt;strong&gt;Heterogeneous container allocation:&lt;/strong&gt; The YARN scheduler will request heterogeneous containers
+from the YARN ResourceManager &lt;a href=&#34;http://hadoop.apache.org/docs/current/hadoop-yarn/hadoop-yarn-site/YARN.html&#34;&gt;RM&lt;/a&gt;. In other words the topology will not request more resources than what is really needed.&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;strong&gt;Container reuse:&lt;/strong&gt; The REEF framework allows the YARN scheduler to retain containers
+across events like topology restarts.&lt;/p&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&#34;topology-deployment-on-a-yarn-cluster&#34;&gt;Topology deployment on a YARN Cluster&lt;/h2&gt;
+
+&lt;p&gt;Using the YARN scheduler is similar to deploying Heron on other clusters, i.e. using the
+&lt;a href=&#34;https://dsc-spidal.github.io/harp/docs/operators/heron-cli/&#34;&gt;Heron CLI&lt;/a&gt;.
+This document assumes that the Hadoop yarn client is installed and configured.&lt;/p&gt;
+
+&lt;p&gt;Following steps are executed when a Heron topology is submitted:&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;The REEF client copies the &lt;code&gt;Heron Core package&lt;/code&gt; and the &lt;code&gt;topology package&lt;/code&gt; on the distributed file system.&lt;/li&gt;
+&lt;li&gt;It then starts the YARN Application Master (AM) for the topology.&lt;/li&gt;
+&lt;li&gt;The AM subsequently invokes the &lt;code&gt;Heron Scheduler&lt;/code&gt; in the same process.&lt;/li&gt;
+&lt;li&gt;This is followed by container allocation for the topology&amp;rsquo;s master and workers. As a result &lt;code&gt;N+2&lt;/code&gt;
+containers are allocated for each topology.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h3 id=&#34;configuring-the-heron-client-classpath&#34;&gt;Configuring the Heron client classpath&lt;/h3&gt;
+
+&lt;p&gt;&lt;strong&gt;Under 0.14.2 version (including 0.14.2)&lt;/strong&gt;&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;Command &lt;code&gt;hadoop classpath&lt;/code&gt; provides a list of jars needed to submit a hadoop job. Copy all jars to &lt;code&gt;HERON_INSTALL_DIR/lib/scheduler&lt;/code&gt;.
+
+&lt;ul&gt;
+&lt;li&gt;Do not copy commons-cli jar if it is older than version 1.3.1.&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+&lt;li&gt;Create a jar containing core-site.xml and yarn-site.xml. Add this jar to &lt;code&gt;HERON_INSTALL_DIR/lib/scheduler&lt;/code&gt; too.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;&lt;strong&gt;After 0.14.3 version released&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;It is unnecessary to copy hadoop-classpath-jars to &lt;code&gt;HERON_INSTALL_DIR/lib/scheduler&lt;/code&gt; like what 0.14.2 version requested. &lt;a href=&#34;https://github.com/twitter/heron/issues/1245&#34;&gt;#1245&lt;/a&gt; added &lt;code&gt;extra-launch-classpath&lt;/code&gt; arguments, which makes it easier and more convenient to submit a topology to YARN.&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;Tips&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;&lt;em&gt;No matter which version of Heron you are using, there is something user should pay attention to&lt;/em&gt;&lt;/strong&gt; if you want to submit a topology to YARN.&lt;/p&gt;
+
+&lt;p&gt;For &lt;code&gt;localfs-state-manager&lt;/code&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;The version of common-cli jar should be greater than or equal to 1.3.1.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;For &lt;code&gt;zookeeper-state-manager&lt;/code&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;The version of common-cli jar should be greater than or equal to 1.3.1.&lt;/li&gt;
+&lt;li&gt;The version of curator-framework jar should be greater than or equal to 2.10.0&lt;/li&gt;
+&lt;li&gt;The version of curator-client jar should be greater than or equal to 2.10.0&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/blockquote&gt;
+
+&lt;h3 id=&#34;configure-the-yarn-scheduler&#34;&gt;Configure the YARN scheduler&lt;/h3&gt;
+
+&lt;p&gt;A set of default configuration files are provided with Heron in the &lt;a href=&#34;https://github.com/twitter/heron/tree/master/heron/config/src/yaml/conf/yarn&#34;&gt;conf/yarn&lt;/a&gt; directory.
+The default configuration uses the local state manager. This will work with single-node local
+YARN installation only. A Zookeeper based state management will be needed for topology
+deployment on a multi-node YARN cluster.&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;Custom Heron Launcher for YARN: &lt;code&gt;YarnLauncher&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;Custom Heron Scheduler for YARN: &lt;code&gt;YarnScheduler&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;State manager for multi-node deployment:
+&lt;code&gt;com.twitter.heron.statemgr.zookeeper.curator.CuratorStateManager&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;YarnLauncher&lt;/code&gt; performs the job of uploader also. So &lt;code&gt;NullUploader&lt;/code&gt; is used.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h2 id=&#34;topology-management&#34;&gt;Topology management&lt;/h2&gt;
+
+&lt;h3 id=&#34;topology-submission&#34;&gt;Topology Submission&lt;/h3&gt;
+
+&lt;p&gt;&lt;strong&gt;Command&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Under 0.14.2 version (including 0.14.2)&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;$ heron submit yarn heron-examples.jar com.twitter.heron.examples.AckingTopology AckingTopology&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;After 0.14.3 version released&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;$ heron submit yarn heron-examples.jar com.twitter.heron.examples.AckingTopology AckingTopology --extra-launch-classpath &amp;lt;extra-classpath-value&amp;gt;&lt;/code&gt;&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;Tips&lt;/strong&gt;&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;More details for using the &lt;code&gt;--extra-launch-classpath&lt;/code&gt; argument in 0.14.3 version. It supports both a single directory which including all &lt;code&gt;hadoop-lib-jars&lt;/code&gt; and multiple directories separated by colon such as what &lt;code&gt;hadoop classpath&lt;/code&gt; gives. &lt;strong&gt;&lt;em&gt;The submit operation will fail if any path is invalid or if any file is missing.&lt;/em&gt;&lt;/strong&gt;&lt;/li&gt;
+&lt;li&gt;if you want to submit a topology to a specific YARN queue, you can set the &lt;code&gt;heron.scheduler.yarn.queue&lt;/code&gt; argument in &lt;code&gt;--config-property&lt;/code&gt;. For instance, &lt;code&gt;--config-property heron.scheduler.yarn.queue=test&lt;/code&gt;. This configuration could be found in the &lt;a href=&#34;https://github.com/twitter/heron/blob/master/heron/config/src/yaml/conf/yarn/scheduler.yaml&#34;&gt;conf/yarn/scheduler&lt;/a&gt; file too. &lt;code&gt;default&lt;/code&gt; would be the YARN default queue as YARN provided.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;&lt;strong&gt;Sample Output&lt;/strong&gt;&lt;/p&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;INFO: Launching topology &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;#39;AckingTopology&amp;#39;&lt;/span&gt;
+...
+...
+Powered by
+     ___________  ______  ______  _______
+    /  ______  / /  ___/ /  ___/ /  ____/
+   /     _____/ /  /__  /  /__  /  /___
+  /  /&lt;span style=&#34;color: #ae81ff&#34;&gt;\ &lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;\ &lt;/span&gt;    /  ___/ /  ___/ /  ____/
+ /  /  &lt;span style=&#34;color: #ae81ff&#34;&gt;\ &lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;\ &lt;/span&gt;  /  /__  /  /__  /  /
+/__/    &lt;span style=&#34;color: #ae81ff&#34;&gt;\_&lt;/span&gt;_&lt;span style=&#34;color: #ae81ff&#34;&gt;\ &lt;/span&gt;/_____/ /_____/ /__/
+
+...
+...
+com.twitter.heron.scheduler.yarn.ReefClientSideHandlers INFO:  Topology AckingTopology is running, jobId AckingTopology.
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;strong&gt;Verification&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;Visit the YARN http console or execute command &lt;code&gt;yarn application -list&lt;/code&gt; on a yarn client host.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;Total number of applications &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;application-types: &lt;span style=&#34;color: #f92672&#34;&gt;[]&lt;/span&gt; and states: &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;SUBMITTED, ACCEPTED, RUNNING&lt;span style=&#34;color: #f92672&#34;&gt;])&lt;/span&gt;:1
+                Application-Id	    Application-Name	    Application-Type	      User	     Queue	             State	       Final-State	       Progress	                       Tracking-URL
+application_1466548964728_0004	      AckingTopology	                YARN	     heron	   default	           RUNNING	         UNDEFINED	             0%	                                N/A
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h3 id=&#34;topology-termination&#34;&gt;Topology termination&lt;/h3&gt;
+
+&lt;p&gt;&lt;strong&gt;Command&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;$ heron kill yarn AckingTopology&lt;/code&gt;&lt;/p&gt;
+
+&lt;h3 id=&#34;log-file-location&#34;&gt;Log File location&lt;/h3&gt;
+
+&lt;p&gt;Assuming HDFS as the file system, Heron logs and REEF logs can be found in the following locations:&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;&lt;p&gt;Logs generated when the topologies AM starts:
+&lt;code&gt;&amp;lt;LOG_DIR&amp;gt;/userlogs/application_1466548964728_0004/container_1466548964728_0004_01_000001/driver.stderr&lt;/code&gt;&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;Ths scheduler&amp;rsquo;s logs are created on the first/AM container:
+&lt;code&gt;&amp;lt;NM_LOCAL_DIR&amp;gt;/usercache/heron/appcache/application_1466548964728_0004/container_1466548964728_0004_01_000001/log-files&lt;/code&gt;&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;Logs generated when the TMaster starts in its container:
+&lt;code&gt;&amp;lt;LOG_DIR&amp;gt;/userlogs/application_1466548964728_0004/container_1466548964728_0004_01_000002/evaluator.stderr&lt;/code&gt;&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;The TMaster&amp;rsquo;s logs are created on the second container owned by the topology app:
+&lt;code&gt;&amp;lt;NM_LOCAL_DIR&amp;gt;/usercache/heron/appcache/application_1466548964728_0004/container_1466548964728_0004_01_000002/log-files&lt;/code&gt;&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;Worker logs are created on the remaining containers in the YARN NodeManager&amp;rsquo;s local directory.&lt;/p&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h2 id=&#34;work-in-progress&#34;&gt;Work in Progress&lt;/h2&gt;
+
+&lt;ol&gt;
+&lt;li&gt;The YARN Scheduler will restart any failed workers and TMaster containers. However &lt;a href=&#34;https://hadoop.apache.org/docs/r2.7.1/hadoop-yarn/hadoop-yarn-site/ResourceManagerHA.html&#34;&gt;AM HA&lt;/a&gt;  is not
+supported yet. As a result AM failure will result in topology failure.
+Issue: &lt;a href=&#34;https://github.com/twitter/heron/issues/949&#34;&gt;#949&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;TMaster and Scheduler are started in separate containers. Increased network latency can result
+in warnings or failures. Issue: &lt;a href=&#34;https://github.com/twitter/heron/issues/951&#34;&gt;#951&lt;/a&gt;&lt;/li&gt;
+&lt;/ol&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Aurora Cluster</title>
+      <link>https://dsc-spidal.github.io/harp/docs/operators/deployment/schedulers/aurora/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://dsc-spidal.github.io/harp/docs/operators/deployment/schedulers/aurora/</guid>
+      <description>
+
+&lt;p&gt;Heron supports deployment on &lt;a href=&#34;http://aurora.apache.org/&#34;&gt;Apache Aurora&lt;/a&gt; out of
+the box. A step by step guide on how to setup Heron with Apache Aurora locally
+can be found in &lt;a href=&#34;../aurora-local-setup&#34;&gt;Setting up Heron with Aurora Cluster Locally on Linux&lt;/a&gt;. You can also run Heron on
+a &lt;a href=&#34;../local&#34;&gt;local scheduler&lt;/a&gt;.&lt;/p&gt;
+
+&lt;h2 id=&#34;how-heron-on-aurora-works&#34;&gt;How Heron on Aurora Works&lt;/h2&gt;
+
+&lt;p&gt;Aurora doesn&amp;rsquo;t have a Heron scheduler &lt;em&gt;per se&lt;/em&gt;. Instead, when a topology is
+submitted to Heron, &lt;code&gt;heron&lt;/code&gt; cli interacts with Aurora to automatically deploy
+all the &lt;a href=&#34;../../../../concepts/architecture&#34;&gt;components&lt;/a&gt; necessary to &lt;a href=&#34;../../../heron-cli&#34;&gt;manage
+topologies&lt;/a&gt;.&lt;/p&gt;
+
+&lt;h2 id=&#34;zookeeper&#34;&gt;ZooKeeper&lt;/h2&gt;
+
+&lt;p&gt;To run Heron on Aurora, you&amp;rsquo;ll need to set up a ZooKeeper cluster and configure
+Heron to communicate with it. Instructions can be found in &lt;a href=&#34;../../statemanagers/zookeeper&#34;&gt;Setting up
+ZooKeeper&lt;/a&gt;.&lt;/p&gt;
+
+&lt;h2 id=&#34;hosting-binaries&#34;&gt;Hosting Binaries&lt;/h2&gt;
+
+&lt;p&gt;To deploy Heron, the Aurora cluster needs access to the
+Heron core binary, which can be hosted wherever you&amp;rsquo;d like, so long as
+it&amp;rsquo;s accessible to Aurora (for example in &lt;a href=&#34;https://aws.amazon.com/s3/&#34;&gt;Amazon
+S3&lt;/a&gt; or using a local blob storage solution). You
+can download the core binary from github or build it using the instructions
+in &lt;a href=&#34;../../../../developers/compiling#building-a-full-release-package&#34;&gt;Creating a New Heron Release&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;Command for fetching the binary is in the &lt;code&gt;heron.aurora&lt;/code&gt; config file. By default it is
+using a &lt;code&gt;curl&lt;/code&gt; command to fetch the binary. For example, if the binary is hosted in
+HDFS, you need to change the fetch user package command in &lt;code&gt;heron.aurora&lt;/code&gt; to use the
+&lt;code&gt;hdfs&lt;/code&gt; command instead of &lt;code&gt;curl&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h3 id=&#34;heron-aurora-example-binary-fetch-using-hdfs&#34;&gt;&lt;code&gt;heron.aurora&lt;/code&gt; example binary fetch using HDFS&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;fetch_heron_system&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; Process&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;
+  &lt;span style=&#34;color: #f8f8f2&#34;&gt;name&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;#39;fetch_heron_system&amp;#39;&lt;/span&gt;,
+  &lt;span style=&#34;color: #f8f8f2&#34;&gt;cmdline&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;#39;hdfs dfs -get %s %s &amp;amp;&amp;amp; tar zxf %s&amp;#39;&lt;/span&gt; % &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;heron_core_release_uri, 
+        core_release_file, core_release_file&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt;
+&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;Once your Heron binaries are hosted somewhere that is accessible to Aurora, you
+should run tests to ensure that Aurora can successfully fetch them.&lt;/p&gt;
+
+&lt;h2 id=&#34;uploading-the-topologies&#34;&gt;Uploading the Topologies&lt;/h2&gt;
+
+&lt;p&gt;Heron uses an uploader to upload the topology to a shared location so that a worker can fetch
+the topology to its sandbox. The configuration for an uploader is in the &lt;code&gt;uploader.yaml&lt;/code&gt;
+config file. For distributed Aurora deployments, Heron can use &lt;code&gt;HdfsUploader&lt;/code&gt; or &lt;code&gt;S3Uploader&lt;/code&gt;.
+Details on configuring the uploaders can be found in the documentation for the
+&lt;a href=&#34;../../uploaders/hdfs&#34;&gt;HDFS&lt;/a&gt; and &lt;a href=&#34;../../uploaders/s3&#34;&gt;S3&lt;/a&gt; uploaders.&lt;/p&gt;
+
+&lt;p&gt;After configuring an uploader, the &lt;code&gt;heron.aurora&lt;/code&gt; config file needs to be modified accordingly to
+fetch the topology.&lt;/p&gt;
+
+&lt;h3 id=&#34;heron-aurora-example-topology-fetch-using-hdfs&#34;&gt;&lt;code&gt;heron.aurora&lt;/code&gt; example topology fetch using HDFS&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;fetch_user_package&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; Process&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;
+  &lt;span style=&#34;color: #f8f8f2&#34;&gt;name&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;#39;fetch_user_package&amp;#39;&lt;/span&gt;,
+  &lt;span style=&#34;color: #f8f8f2&#34;&gt;cmdline&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;#39;hdfs dfs -get %s %s &amp;amp;&amp;amp; tar zxf %s&amp;#39;&lt;/span&gt; % &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;heron_topology_jar_uri, 
+          topology_package_file, topology_package_file&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt;
+&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h2 id=&#34;aurora-scheduler-configuration&#34;&gt;Aurora Scheduler Configuration&lt;/h2&gt;
+
+&lt;p&gt;To configure Heron to use Aurora scheduler, modify the &lt;code&gt;scheduler.yaml&lt;/code&gt;
+config file specific for the Heron cluster. The following must be specified
+for each cluster:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;p&gt;&lt;code&gt;heron.class.scheduler&lt;/code&gt; &amp;mdash; Indicates the class to be loaded for Aurora scheduler.
+You should set this to &lt;code&gt;com.twitter.heron.scheduler.aurora.AuroraScheduler&lt;/code&gt;&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;code&gt;heron.class.launcher&lt;/code&gt; &amp;mdash; Specifies the class to be loaded for launching and
+submitting topologies. To configure the Aurora launcher, set this to
+&lt;code&gt;com.twitter.heron.scheduler.aurora.AuroraLauncher&lt;/code&gt;&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;code&gt;heron.package.core.uri&lt;/code&gt; &amp;mdash; Indicates the location of the heron core binary package.
+The local scheduler uses this URI to download the core package to the working directory.&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;code&gt;heron.directory.sandbox.java.home&lt;/code&gt; &amp;mdash; Specifies the java home to
+be used when running topologies in the containers.&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;code&gt;heron.scheduler.is.service&lt;/code&gt; &amp;mdash; This config indicates whether the scheduler
+is a service. In the case of Aurora, it should be set to &lt;code&gt;False&lt;/code&gt;.&lt;/p&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&#34;example-aurora-scheduler-configuration&#34;&gt;Example Aurora Scheduler Configuration&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #75715e&#34;&gt;# scheduler class for distributing the topology for execution&lt;/span&gt;
+&lt;span style=&#34;color: #ae81ff&#34;&gt;heron.class.scheduler&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;com.twitter.heron.scheduler.aurora.AuroraScheduler&lt;/span&gt;
+
+&lt;span style=&#34;color: #75715e&#34;&gt;# launcher class for submitting and launching the topology&lt;/span&gt;
+&lt;span style=&#34;color: #ae81ff&#34;&gt;heron.class.launcher&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;com.twitter.heron.scheduler.aurora.AuroraLauncher&lt;/span&gt;
+
+&lt;span style=&#34;color: #75715e&#34;&gt;# location of the core package&lt;/span&gt;
+&lt;span style=&#34;color: #ae81ff&#34;&gt;heron.package.core.uri&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;file:///vagrant/.herondata/dist/heron-core-release.tar.gz&lt;/span&gt;
+
+&lt;span style=&#34;color: #75715e&#34;&gt;# location of java - pick it up from shell environment&lt;/span&gt;
+&lt;span style=&#34;color: #ae81ff&#34;&gt;heron.directory.sandbox.java.home&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;/usr/lib/jvm/java-1.8.0-openjdk-amd64/&lt;/span&gt;
+
+&lt;span style=&#34;color: #75715e&#34;&gt;# Invoke the IScheduler as a library directly&lt;/span&gt;
+&lt;span style=&#34;color: #ae81ff&#34;&gt;heron.scheduler.is.service&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;False&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h2 id=&#34;working-with-topologies&#34;&gt;Working with Topologies&lt;/h2&gt;
+
+&lt;p&gt;After setting up ZooKeeper and generating an Aurora-accessible Heron core binary
+release, any machine that has the &lt;code&gt;heron&lt;/code&gt; cli tool can be used to manage Heron
+topologies (i.e. can submit topologies, activate and deactivate them, etc.).&lt;/p&gt;
+
+&lt;p&gt;The most important thing at this stage is to ensure that &lt;code&gt;heron&lt;/code&gt; cli is available
+across all machines. Once the cli is available, Aurora as a scheduler
+can be enabled by specifying the proper configuration when managing topologies.&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Broadcast</title>
+      <link>https://dsc-spidal.github.io/harp/docs/communications/broadcast/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://dsc-spidal.github.io/harp/docs/communications/broadcast/</guid>
+      <description>
+
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/4-1-1.png&#34; alt=&#34;broadcast&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;broadcast&lt;/code&gt; aims to share a table in one worker with others. All workers should run it concurrently. The defination of the method is:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;boolean&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;broadcast&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;String&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;contextName&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;String&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;operationName&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;P&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;bcastWorkerID&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;boolean&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;useMSTBcast&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;DataMap&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;dataMap&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Workers&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;workers&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;contextName&lt;/code&gt; &amp;mdash; the name of the context&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;operationName&lt;/code&gt; &amp;mdash; the name of the operation&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;table&lt;/code&gt; &amp;mdash; the name of the data table&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;bcastWorkerID&lt;/code&gt; &amp;mdash; the ID of the worker which broadcasts&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;useMSTBcast&lt;/code&gt; &amp;mdash; whether use MST method or not&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;dataMap&lt;/code&gt; &amp;mdash; the data map&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;workers&lt;/code&gt; &amp;mdash; the workers&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&#34;example&#34;&gt;Example&lt;/h2&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;broadcast&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;contextName&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;chain-array-table-bcast-&amp;quot;&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;arrTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;workers&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getMasterID&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(),&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;false&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;dataMap&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;workers&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Building on Linux Platforms</title>
+      <link>https://dsc-spidal.github.io/harp/docs/developers/compiling/linux/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://dsc-spidal.github.io/harp/docs/developers/compiling/linux/</guid>
+      <description>
+
+&lt;p&gt;Heron can currently be built on the following Linux platforms:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;#building-on-ubuntu-14.04&#34;&gt;Ubuntu 14.04&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#building-on-centos-7&#34;&gt;CentOS 7&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&#34;building-on-ubuntu-14-04&#34;&gt;Building on Ubuntu 14.04&lt;/h2&gt;
+
+&lt;p&gt;To build Heron on a fresh Ubuntu 14.04 installation:&lt;/p&gt;
+
+&lt;h3 id=&#34;step-1-update-ubuntu&#34;&gt;Step 1 &amp;mdash; Update Ubuntu&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;$ sudo apt-get update -y
+$ sudo apt-get upgrade -y
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h3 id=&#34;step-2-install-required-libraries&#34;&gt;Step 2 &amp;mdash; Install required libraries&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;$ sudo apt-get install git build-essential automake cmake libtool zip &lt;span style=&#34;color: #ae81ff&#34;&gt;\&lt;/span&gt;
+  libunwind-setjmp0-dev zlib1g-dev unzip pkg-config -y
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h4 id=&#34;step-3-set-the-following-environment-variables&#34;&gt;Step 3 &amp;mdash; Set the following environment variables&lt;/h4&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;export&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;CC&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt;/usr/bin/gcc-4.8
+&lt;span style=&#34;color: #f8f8f2&#34;&gt;export&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;CCX&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt;/usr/bin/g++-4.8
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h3 id=&#34;step-4-install-jdk-8-and-set-java-home&#34;&gt;Step 4 &amp;mdash; Install JDK 8 and set JAVA_HOME&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;$ sudo add-apt-repository ppa:webupd8team/java
+$ sudo apt-get update -y
+$ sudo apt-get install oracle-java8-installer -y
+$ &lt;span style=&#34;color: #f8f8f2&#34;&gt;export&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;JAVA_HOME&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;/usr/lib/jvm/java-8-oracle&amp;quot;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h4 id=&#34;step-5-install-bazel-hahahugoshortcode-3hbhb&#34;&gt;Step 5 - Install Bazel &lt;/h4&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;wget -O /tmp/bazel.sh https://github.com/bazelbuild/bazel/releases/download/0.3.1/bazel-0.3.1-installer-linux-x86_64.sh
+chmod +x /tmp/bazel.sh
+/tmp/bazel.sh --user
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;Make sure to download the appropriate version of Bazel (currently ).&lt;/p&gt;
+
+&lt;h3 id=&#34;step-6-install-python-development-tools&#34;&gt;Step 6 &amp;mdash; Install python development tools&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;$ sudo apt-get install  python-dev python-pip
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h3 id=&#34;step-7-make-sure-the-bazel-executable-is-in-your-path&#34;&gt;Step 7 &amp;mdash; Make sure the Bazel executable is in your &lt;code&gt;PATH&lt;/code&gt;&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;$ &lt;span style=&#34;color: #f8f8f2&#34;&gt;export&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;PATH&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;$PATH&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;$HOME&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;/bin&amp;quot;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h3 id=&#34;step-8-fetch-the-latest-version-of-heron-s-source-code&#34;&gt;Step 8 &amp;mdash; Fetch the latest version of Heron&amp;rsquo;s source code&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;$ git clone https://github.com/twitter/heron.git &lt;span style=&#34;color: #f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;cd&lt;/span&gt; heron
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h3 id=&#34;step-9-configure-heron-for-building-with-bazel&#34;&gt;Step 9 &amp;mdash; Configure Heron for building with Bazel&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;$ ./bazel_configure.py
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h3 id=&#34;step-10-build-the-project&#34;&gt;Step 10 &amp;mdash; Build the project&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;$ bazel build --config&lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt;ubuntu heron/...  
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h3 id=&#34;step-11-build-the-packages&#34;&gt;Step 11 &amp;mdash; Build the packages&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;$ bazel build --config&lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt;ubuntu scripts/packages:binpkgs  
+$ bazel build --config&lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt;ubuntu scripts/packages:tarpkgs
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;This will install Heron packages in the &lt;code&gt;bazel-bin/scripts/packages/&lt;/code&gt; directory.&lt;/p&gt;
+
+&lt;h2 id=&#34;manually-installing-libraries&#34;&gt;Manually Installing Libraries&lt;/h2&gt;
+
+&lt;p&gt;If you encounter errors with &lt;a href=&#34;http://www.nongnu.org/libunwind&#34;&gt;libunwind&lt;/a&gt;, &lt;a href=&#34;https://www.gnu.org/software/libtool&#34;&gt;libtool&lt;/a&gt;, or
+&lt;a href=&#34;https://github.com/gperftools/gperftools/releases&#34;&gt;gperftools&lt;/a&gt;, we recommend
+installing them manually.&lt;/p&gt;
+
+&lt;h3 id=&#34;compling-and-installing-libtool&#34;&gt;Compling and installing libtool&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;$ wget http://ftpmirror.gnu.org/libtool/libtool-2.4.6.tar.gz
+$ tar -xvf libtool-2.4.6.tar.gz
+$ &lt;span style=&#34;color: #f8f8f2&#34;&gt;cd&lt;/span&gt; libtool-2.4.6
+$ ./configure
+$ make
+$ sudo make install
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h3 id=&#34;compiling-and-installing-libunwind&#34;&gt;Compiling and installing libunwind&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;$ wget http://download.savannah.gnu.org/releases/libunwind/libunwind-1.1.tar.gz
+$ tar -xvf libunwind-1.1.tar.gz
+$ &lt;span style=&#34;color: #f8f8f2&#34;&gt;cd&lt;/span&gt; libunwind-1.1
+$ ./configure
+$ make
+$ sudo make install
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h3 id=&#34;compiling-and-installing-gperftools&#34;&gt;Compiling and installing gperftools&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;$ wget https://github.com/gperftools/gperftools/releases/download/gperftools-2.5/gperftools-2.5.tar.gz
+$ tar -xvf gperftools-2.5.tar.gz
+$ &lt;span style=&#34;color: #f8f8f2&#34;&gt;cd&lt;/span&gt; gperftools-2.5
+$ ./configure
+$ make
+$ sudo make install
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h2 id=&#34;building-on-centos-7&#34;&gt;Building on CentOS 7&lt;/h2&gt;
+
+&lt;p&gt;To build Heron on a fresh CentOS 7 installation:&lt;/p&gt;
+
+&lt;h3 id=&#34;step-1-install-the-required-dependencies&#34;&gt;Step 1 &amp;mdash; Install the required dependencies&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;$ sudo yum install gcc gcc-c++ kernel-devel wget unzip zlib-devel zip git automake cmake patch libtool -y
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h3 id=&#34;step-2-install-libunwind-from-source&#34;&gt;Step 2 &amp;mdash; Install libunwind from source&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;$ wget http://download.savannah.gnu.org/releases/libunwind/libunwind-1.1.tar.gz
+$ tar xvf libunwind-1.1.tar.gz
+$ &lt;span style=&#34;color: #f8f8f2&#34;&gt;cd&lt;/span&gt; libunwind-1.1
+$ ./configure
+$ make
+$ sudo make install
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h3 id=&#34;step-3-set-the-following-environment-variables-1&#34;&gt;Step 3 &amp;mdash; Set the following environment variables&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;$ &lt;span style=&#34;color: #f8f8f2&#34;&gt;export&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;CC&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt;/usr/bin/gcc
+$ &lt;span style=&#34;color: #f8f8f2&#34;&gt;export&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;CCX&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt;/usr/bin/g++
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h3 id=&#34;step-4-install-jdk-8&#34;&gt;Step 4 &amp;mdash; Install JDK 8&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;$ &lt;span style=&#34;color: #f8f8f2&#34;&gt;cd&lt;/span&gt; /opt/
+$ sudo wget --no-cookies --no-check-certificate &lt;span style=&#34;color: #ae81ff&#34;&gt;\&lt;/span&gt;
+  --header &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;Cookie: gpw_e24=http%3A%2F%2Fwww.oracle.com%2F; oraclelicense=accept-securebackup-cookie&amp;quot;&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;\&lt;/span&gt;
+  &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;http://download.oracle.com/otn-pub/java/jdk/8u91-b14/jdk-8u91-linux-x64.tar.gz&amp;quot;&lt;/span&gt;
+$ sudo tar xzf jdk-8u91-linux-x64.tar.gz
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;Use &lt;code&gt;alternatives&lt;/code&gt; to configure the Java version:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;$ sudo &lt;span style=&#34;color: #f8f8f2&#34;&gt;cd&lt;/span&gt; /opt/jdk1.8.0_91/
+$ sudo alternatives --install /usr/bin/java java /opt/jdk1.8.0_91/bin/java 2
+$ sudo alternatives --config java
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;Set the &lt;code&gt;javac&lt;/code&gt; and &lt;code&gt;jar&lt;/code&gt; commands:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;$ sudo alternatives --install /usr/bin/jar jar /opt/jdk1.8.0_91/bin/jar 2
+$ sudo alternatives --install /usr/bin/javac javac /opt/jdk1.8.0_91/bin/javac 2
+$ sudo alternatives --set jar /opt/jdk1.8.0_91/bin/jar
+$ sudo alternatives --set javac /opt/jdk1.8.0_91/bin/javac
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;Export Java-related environment variables:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;export&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;JAVA_HOME&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt;/opt/jdk1.8.0_91
+&lt;span style=&#34;color: #f8f8f2&#34;&gt;export&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;JRE_HOME&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt;/opt/jdk1.8.0_91/jre
+&lt;span style=&#34;color: #f8f8f2&#34;&gt;export&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;PATH&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;$PATH&lt;/span&gt;:/opt/jdk1.8.0_91/bin:/opt/jdk1.8.0_91/jre/bin
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h4 id=&#34;step-5-install-bazel-hahahugoshortcode-5hbhb&#34;&gt;Step 5 - Install Bazel &lt;/h4&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;wget -O /tmp/bazel.sh https://github.com/bazelbuild/bazel/releases/download/0.3.1/bazel-0.3.1-installer-linux-x86_64.sh
+chmod +x /tmp/bazel.sh
+/tmp/bazel.sh --user
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;Make sure to download the appropriate version of Bazel (currently ).&lt;/p&gt;
+
+&lt;h3 id=&#34;step-6-download-heron-and-compile-it&#34;&gt;Step 6 &amp;mdash; Download Heron and compile it&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;$ git clone https://github.com/twitter/heron.git &lt;span style=&#34;color: #f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;cd&lt;/span&gt; heron
+$ ./bazel_configure.py
+$ bazel build --config&lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt;centos heron/...
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h3 id=&#34;step-7-build-the-binary-packages&#34;&gt;Step 7 &amp;mdash; Build the binary packages&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;$ bazel build --config&lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt;centos scripts/packages:binpkgs
+$ bazel build --config&lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt;centos scripts/packages:tarpkgs
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;This will install Heron packages in the &lt;code&gt;bazel-bin/scripts/packages/&lt;/code&gt; directory.&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Building on Mac OS X</title>
+      <link>https://dsc-spidal.github.io/harp/docs/developers/compiling/mac/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://dsc-spidal.github.io/harp/docs/developers/compiling/mac/</guid>
+      <description>
+
+&lt;p&gt;This is a step-by-step guide to building Heron on Mac OS X (versions 10.10 and
+  10.11).&lt;/p&gt;
+
+&lt;h3 id=&#34;step-1-install-homebrew&#34;&gt;Step 1 &amp;mdash; Install Homebrew&lt;/h3&gt;
+
+&lt;p&gt;If &lt;a href=&#34;http://brew.sh/&#34;&gt;Homebrew&lt;/a&gt; isn&amp;rsquo;t yet installed on your system, you can
+install it using this one-liner:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;$ /usr/bin/ruby -e &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;$(&lt;/span&gt;curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install&lt;span style=&#34;color: #66d9ef&#34;&gt;)&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h3 id=&#34;step-2-install-other-required-libraries&#34;&gt;Step 2 &amp;mdash; Install other required libraries&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;brew install automake
+brew install cmake
+brew install libtool
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h3 id=&#34;step-3-set-the-following-environment-variables&#34;&gt;Step 3 &amp;mdash; Set the following environment variables&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;$ &lt;span style=&#34;color: #f8f8f2&#34;&gt;export&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;CC&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt;/usr/bin/clang
+$ &lt;span style=&#34;color: #f8f8f2&#34;&gt;export&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;CXX&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt;/usr/bin/clang++
+$ &lt;span style=&#34;color: #f8f8f2&#34;&gt;echo&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;$CC&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;$CXX&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h4 id=&#34;step-4-install-bazel-hahahugoshortcode-1hbhb&#34;&gt;Step 4 - Install Bazel &lt;/h4&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;wget -O /tmp/bazel.sh  https://github.com/bazelbuild/bazel/releases/download/0.3.1/bazel-0.3.1-installer-darwin-x86_64.sh
+chmod +x /tmp/bazel.sh
+/tmp/bazel.sh --user
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h3 id=&#34;step-5-make-sure-the-bazel-executable-is-on-your-path&#34;&gt;Step 5 &amp;mdash; Make sure the Bazel executable is on your &lt;code&gt;PATH&lt;/code&gt;&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;$ &lt;span style=&#34;color: #f8f8f2&#34;&gt;export&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;PATH&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;$PATH&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;$HOME&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;/bin&amp;quot;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h3 id=&#34;step-6-fetch-the-latest-version-of-heron-s-source-code&#34;&gt;Step 6 &amp;mdash; Fetch the latest version of Heron&amp;rsquo;s source code&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;$ git clone https://github.com/twitter/heron.git &lt;span style=&#34;color: #f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;cd&lt;/span&gt; heron
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h3 id=&#34;step-7-configure-heron-for-building-with-bazel&#34;&gt;Step 7 &amp;mdash; Configure Heron for building with Bazel&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;$ ./bazel_configure.py
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;If this configure script fails with missing dependencies, Homebrew can be used
+to install those dependencies.&lt;/p&gt;
+
+&lt;h3 id=&#34;step-8-build-the-project&#34;&gt;Step 8 &amp;mdash; Build the project&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;$ bazel build --config&lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt;darwin heron/...
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h3 id=&#34;step-9-build-the-packages&#34;&gt;Step 9 &amp;mdash; Build the packages&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;$ bazel build --config&lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt;darwin scripts/packages:binpkgs
+$ bazel build --config&lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt;darwin scripts/packages:tarpkgs
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;This will install Heron packages in the &lt;code&gt;bazel-bin/scripts/packages/&lt;/code&gt; directory.&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Community</title>
+      <link>https://dsc-spidal.github.io/harp/docs/contributors/community/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://dsc-spidal.github.io/harp/docs/contributors/community/</guid>
+      <description>
+
+&lt;h2 id=&#34;contributing-to-harp&#34;&gt;Contributing to Harp&lt;/h2&gt;
+
+&lt;p&gt;Discussion about Harp happens on GitHub and over mailing list.&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;GitHub: &lt;a href=&#34;https://github.com/DSC-SPIDAL/Harp.git&#34;&gt;DSC-SPIDAL/Harp&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;Harp User Google Group: &lt;a href=&#34;https://groups.google.com/forum/#!forum/harp-users&#34;&gt;harp-users@googlegroups.com&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Community is critical to Harp. Contributions are welcomed!&lt;/p&gt;
+
+&lt;h2 id=&#34;how-can-i-contribute-to-harp&#34;&gt;How Can I Contribute to Harp?&lt;/h2&gt;
+
+&lt;p&gt;You can first read the following pages to have a basic understanding
+of Heron:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;../../getting-started/&#34;&gt;Harp Installation&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;../../concepts/features&#34;&gt;Harp Features&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;../../concepts/computation-models/&#34;&gt;Computation Models&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;../../data-interface/&#34;&gt;Data Interfaces and Types&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;In general, contributions that fix bugs or add features (as opposed to stylistic, refactoring, or
+&amp;ldquo;cleanup&amp;rdquo; changes) are preferred. Please check with &lt;a href=&#34;https://groups.google.com/forum/#!forum/heron-users&#34;&gt;mailing list&lt;/a&gt;
+if your patch involves lots of changes.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;If you have any question or issues about troubleshooting,
+you should post on &lt;a href=&#34;https://groups.google.com/forum/#!forum/harp-users&#34;&gt;mailing list&lt;/a&gt; instead
+of opening GitHub issues.&lt;/strong&gt;&lt;/p&gt;
+
+&lt;h3 id=&#34;submitting-a-patch&#34;&gt;Submitting a Patch&lt;/h3&gt;
+
+&lt;ol&gt;
+&lt;li&gt;&lt;p&gt;Read and accept the
+&lt;a href=&#34;http://www.apache.org/licenses/LICENSE-2.0&#34;&gt;Apache License&lt;/a&gt;.&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;Discuss your plan and design, and get agreement on
+&lt;a href=&#34;https://groups.google.com/forum/#!forum/harp-users&#34;&gt;mailing list&lt;/a&gt;.&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;Implement proper unit tests along with your change. Verify that all tests can pass.&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;Submit a GitHub pull request that includes your change and test cases.
+Describe clearly your pull request the change.&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;Complete a code review by addressing reviewers&amp;rsquo;s comments.&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;A project committer will merge the patch to the master branch.&lt;/p&gt;&lt;/li&gt;
+&lt;/ol&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Compiling Heron</title>
+      <link>https://dsc-spidal.github.io/harp/docs/developers/compiling/compiling/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://dsc-spidal.github.io/harp/docs/developers/compiling/compiling/</guid>
+      <description>
+
+&lt;p&gt;Heron is currently available for &lt;a href=&#34;../../../developers/compiling/mac&#34;&gt;Mac OS X 10.10&lt;/a&gt;,
+&lt;a href=&#34;../../../developers/compiling/linux&#34;&gt;Ubuntu 14.04&lt;/a&gt;, and &lt;a href=&#34;../../../developers/compiling/linux&#34;&gt;CentOS
+7&lt;/a&gt;. This guide describes the basics of the
+Heron build system. For step-by-step build instructions for a specific platform,
+the following guides are available:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;../../../developers/compiling/linux&#34;&gt;Building on Linux Platforms&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;../../../developers/compiling/mac&#34;&gt;Building on Mac OS X&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Heron can be built either &lt;a href=&#34;#building-all-components&#34;&gt;in its entirety&lt;/a&gt;, as &lt;a href=&#34;#building-specific-components&#34;&gt;individual components&lt;/a&gt;,
+or as a &lt;a href=&#34;#building-a-full-release-package&#34;&gt;release package&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;Instructions on running unit tests for Heron can also be found in &lt;a href=&#34;../../../contributors/testing&#34;&gt;Testing Heron&lt;/a&gt;.&lt;/p&gt;
+
+&lt;h2 id=&#34;requirements&#34;&gt;Requirements&lt;/h2&gt;
+
+&lt;p&gt;You must have the following installed to compile Heron:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;http://bazel.io/docs/install.html&#34;&gt;Bazel&lt;/a&gt; = . Later
+versions might work but have not been tested. See &lt;a href=&#34;#installing-bazel&#34;&gt;Installing Bazel&lt;/a&gt; below.&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html&#34;&gt;Java
+8&lt;/a&gt;
+is required by Bazel but Heron does not use Java 8 features; Heron
+&lt;a href=&#34;../../../concepts/topologies&#34;&gt;topologies&lt;/a&gt; can be written in Java 7 or above
+and all Heron jars are compatible with Java 7.&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://www.gnu.org/software/autoconf/autoconf.html&#34;&gt;Autoconf&lt;/a&gt; &amp;gt;=
+2.6.3&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://www.gnu.org/software/automake/&#34;&gt;Automake&lt;/a&gt; &amp;gt;= 1.11.1&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://www.gnu.org/software/make/&#34;&gt;GNU Make&lt;/a&gt; &amp;gt;= 3.81&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://www.gnu.org/software/libtool/&#34;&gt;GNU Libtool&lt;/a&gt; &amp;gt;= 2.4.6&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://gcc.gnu.org/&#34;&gt;gcc/g++&lt;/a&gt; &amp;gt;= 4.8.1 (Linux platforms)&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://cmake.org/&#34;&gt;CMake&lt;/a&gt; &amp;gt;= 2.6.4&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://www.python.org/&#34;&gt;Python&lt;/a&gt; &amp;gt;= 2.7 (not including Python 3.x)&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://www.perl.org/&#34;&gt;Perl&lt;/a&gt; &amp;gt;= 5.8.8&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Export the &lt;code&gt;CC&lt;/code&gt; and &lt;code&gt;CXX&lt;/code&gt; environment variables with a path specific to your
+machine:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;$ &lt;span style=&#34;color: #f8f8f2&#34;&gt;export&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;CC&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt;/your-path-to/bin/c_compiler
+$ &lt;span style=&#34;color: #f8f8f2&#34;&gt;export&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;CXX&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt;/your-path-to/bin/c++_compiler
+$ &lt;span style=&#34;color: #f8f8f2&#34;&gt;echo&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;$CC&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;$CXX&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h2 id=&#34;installing-bazel&#34;&gt;Installing Bazel&lt;/h2&gt;
+
+&lt;p&gt;Heron uses the &lt;a href=&#34;http://bazel.io&#34;&gt;Bazel&lt;/a&gt; build tool. Bazel releases can be found
+&lt;a href=&#34;https://github.com/bazelbuild/bazel/releases/tag/&#34;&gt;here&lt;/a&gt;
+and installation instructions can be found &lt;a href=&#34;http://bazel.io/docs/install.html&#34;&gt;here&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;To ensure that Bazel has been installed, run &lt;code&gt;bazel version&lt;/code&gt; and check the
+version (listed next to &lt;code&gt;Build label&lt;/code&gt; in the script&amp;rsquo;s output) to ensure that you
+have Bazel .&lt;/p&gt;
+
+&lt;h2 id=&#34;configuring-bazel&#34;&gt;Configuring Bazel&lt;/h2&gt;
+
+&lt;p&gt;There is a Python script that you can run to configure Bazel on supported
+platforms:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;$ &lt;span style=&#34;color: #f8f8f2&#34;&gt;cd&lt;/span&gt; /path/to/heron
+$ ./bazel_configure.py
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h2 id=&#34;building&#34;&gt;Building&lt;/h2&gt;
+
+&lt;h3 id=&#34;bazel-os-environments&#34;&gt;Bazel OS Environments&lt;/h3&gt;
+
+&lt;p&gt;Bazel builds are specific to a given OS. When building you must specify an
+OS-specific configuration using the &lt;code&gt;--config&lt;/code&gt; flag. The following OS values
+are supported:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;darwin&lt;/code&gt; (Mac OS X)&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;ubuntu&lt;/code&gt; (Ubuntu 14.04)&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;centos5&lt;/code&gt; (CentOS 5)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;For example, on Mac OS X (&lt;code&gt;darwin&lt;/code&gt;), the following command will build all
+packages:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;$ bazel build --config&lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt;darwin heron/...
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;Production release packages include additional performance optimizations
+not enabled by default. Enabling these optimizations increases build time.
+To enable production optimizations, include the &lt;code&gt;opt&lt;/code&gt; flag:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;$ bazel build -c opt --config&lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt;PLATFORM heron/...
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h3 id=&#34;building-all-components&#34;&gt;Building All Components&lt;/h3&gt;
+
+&lt;p&gt;The Bazel build process can produce either executable install scripts or
+bundled tars. To build executables or tars for all Heron components at once,
+use the following &lt;code&gt;bazel build&lt;/code&gt; commands, respectively:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;$ bazel build --config&lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt;PLATFORM scripts/packages:binpkgs
+$ bazel build --config&lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt;PLATFORM scripts/packages:tarpkgs
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;Resulting artifacts can be found in subdirectories below the &lt;code&gt;bazel-bin&lt;/code&gt;
+directory. The &lt;code&gt;heron-tracker&lt;/code&gt; executable, for example, can be found at
+&lt;code&gt;bazel-bin/heron/tools/tracker/src/python/heron-tracker&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h3 id=&#34;building-specific-components&#34;&gt;Building Specific Components&lt;/h3&gt;
+
+&lt;p&gt;As an alternative to building a full release, you can build Heron executables
+for a single Heron component (such as the &lt;a href=&#34;../../../operators/heron-tracker&#34;&gt;Heron
+Tracker&lt;/a&gt;) by passing a target to the &lt;code&gt;bazel
+build&lt;/code&gt; command. For example, the following command would build the &lt;a href=&#34;../../../operators/heron-tracker&#34;&gt;Heron Tracker&lt;/a&gt;:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;$ bazel build --config&lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt;darwin heron/tools/tracker/src/python:heron-tracker
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h2 id=&#34;testing-heron&#34;&gt;Testing Heron&lt;/h2&gt;
+
+&lt;p&gt;Instructions for running Heron unit tests can be found at &lt;a href=&#34;../../../contributors/testing&#34;&gt;Testing
+Heron&lt;/a&gt;.&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Compiling With Docker</title>
+      <link>https://dsc-spidal.github.io/harp/docs/developers/compiling/docker/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://dsc-spidal.github.io/harp/docs/developers/compiling/docker/</guid>
+      <description>
+
+&lt;p&gt;For developing Heron, you will need to compile it for the environment that you
+want to use it in. If you&amp;rsquo;d like to use Docker to create that build environment,
+Heron provides a convenient script to make that process easier.&lt;/p&gt;
+
+&lt;p&gt;Currently, only Ubuntu 14.04, Ubuntu 15.10, and CentOS 7 are supported, but if you
+need another platform there are instructions for adding new ones
+&lt;a href=&#34;#contributing-new-environments&#34;&gt;below&lt;/a&gt;.&lt;/p&gt;
+
+&lt;h3 id=&#34;requirements&#34;&gt;Requirements&lt;/h3&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://docs.docker.com&#34;&gt;Docker&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&#34;running-docker-in-a-virtual-machine&#34;&gt;Running Docker in a Virtual Machine&lt;/h3&gt;
+
+&lt;p&gt;If you are running Docker in a virtual machine (VM), it is recommended that you
+adjust your settings to help speed up the build. To do this, open
+&lt;a href=&#34;https://www.virtualbox.org/wiki/Downloads&#34;&gt;VirtualBox&lt;/a&gt; and go to the container
+in which Docker is running (usually &amp;ldquo;default&amp;rdquo; or whatever name you used to
+create the VM), click on the VM, and then click on &lt;strong&gt;Settings&lt;/strong&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Note&lt;/strong&gt;: You will need to stop the VM before modifying these settings.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/virtual-box-processors.png&#34; alt=&#34;VirtualBox Processors&#34; /&gt;
+&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/virtual-box-memory.png&#34; alt=&#34;VirtualBox Memory&#34; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&#34;building-heron&#34;&gt;Building Heron&lt;/h2&gt;
+
+&lt;p&gt;Heron provides a &lt;code&gt;build-arfifacts.sh&lt;/code&gt; script for Docker located in the
+&lt;code&gt;docker&lt;/code&gt; folder. To run that script:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;$ &lt;span style=&#34;color: #f8f8f2&#34;&gt;cd&lt;/span&gt; /path/to/heron/repo
+$ docker/build-artifacts.sh
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;Running the script by itself will display usage information:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;Usage: docker/build-artifacts.sh &amp;lt;platform&amp;gt; &amp;lt;version_string&amp;gt; [source-tarball] &amp;lt;output-directory&amp;gt;
+
+Platforms Supported: darwin, ubuntu14.04, ubuntu15.10, centos7
+
+Example:
+  ./build-artifacts.sh ubuntu14.04 0.12.0 .
+
+NOTE: If running on OSX, the output directory will need to
+      be under /Users so virtualbox has access to.
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The following arguments are required:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;platform&lt;/code&gt; &amp;mdash; Currently, this can be one of: &lt;code&gt;ubuntu14.04&lt;/code&gt;, &lt;code&gt;centos7&lt;/code&gt;. You
+can add other platforms using the &lt;a href=&#34;#contributing-new-environments&#34;&gt;instructions
+below&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;version-string&lt;/code&gt; &amp;mdash; The Heron release for which you&amp;rsquo;d like to build
+artifacts.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;output-directory&lt;/code&gt; &amp;mdash; The directory in which you&amp;rsquo;d like the release to be
+built.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Here&amp;rsquo;s an example usage:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;$ docker/build-artifacts.sh ubuntu14.04 0.12.0 ~/heron-release
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;This will build a Docker container specific to Ubuntu 14.04, create a source
+tarball of the Heron repository, run a full release build of Heron, and then
+copy the artifacts into the &lt;code&gt;~/heron-release&lt;/code&gt; directory.&lt;/p&gt;
+
+&lt;p&gt;Optionally, you can also include a tarball of the Heron source if you have one.
+By default, the script will create a tarball of the current source in the Heron
+repo and use that to build the artifacts.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Note&lt;/strong&gt;: If you are running on Mac OS X, Docker must be run inside a VM.
+Therefore, you must make sure that both the source tarball and destination
+directory are somewhere under your home directory. For example, you cannot
+output the Heron artifacts to &lt;code&gt;/tmp&lt;/code&gt; because &lt;code&gt;/tmp&lt;/code&gt; refers to the directory
+inside the VM, not on the host machine. Your home directory, however, is
+automatically linked in to the VM and can be accessed normally.&lt;/p&gt;
+
+&lt;p&gt;After the build has completed, you can go to your output directory and see all
+of the generated artifacts:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;$ ls ~/heron-release
+heron-api-0.12.0-ubuntu14.04.tar.gz
+heron-client-0.12.0-ubuntu14.04.tar.gz
+heron-tools-0.12.0-ubuntu14.04.tar.gz
+heron-client-install-0.12.0-ubuntu.sh  
+heron-tools-install-0.12.0-ubuntu.sh
+heron-api-install-0.12.0-ubuntu.sh     
+heron-core-0.12.0-ubuntu.tar.gz
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h2 id=&#34;contributing-new-environments&#34;&gt;Contributing New Environments&lt;/h2&gt;
+
+&lt;p&gt;You&amp;rsquo;ll notice that there are multiple
+&lt;a href=&#34;https://docs.docker.com/engine/reference/builder/&#34;&gt;Dockerfiles&lt;/a&gt; in the &lt;code&gt;docker&lt;/code&gt;
+directory of Heron&amp;rsquo;s source code, one for each of the currently supported
+platforms.&lt;/p&gt;
+
+&lt;p&gt;To add support for a new platform, add a new &lt;code&gt;Dockerfile&lt;/code&gt; to that directory and
+append the name of the platform to the name of the file. If you&amp;rsquo;d like to add
+support for Debian 8, for example, add a file named &lt;code&gt;Dockerfile.debian8&lt;/code&gt;. Once
+you&amp;rsquo;ve done that, follow the instructions in the &lt;a href=&#34;https://docs.docker.com/engine/articles/dockerfile_best-practices/&#34;&gt;Docker
+documentation&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;You should make sure that your &lt;code&gt;Dockerfile&lt;/code&gt; specifies &lt;em&gt;at least&lt;/em&gt; all of the
+following:&lt;/p&gt;
+
+&lt;h3 id=&#34;step-1-the-os-being-used-in-a-from-https-docs-docker-com-engine-reference-builder-from-statement&#34;&gt;Step 1 &amp;mdash; The OS being used in a &lt;a href=&#34;https://docs.docker.com/engine/reference/builder/#from&#34;&gt;&lt;code&gt;FROM&lt;/code&gt;&lt;/a&gt; statement.&lt;/h3&gt;
+
+&lt;p&gt;Here&amp;rsquo;s an example:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;FROM&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt; centos:centos7&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h3 id=&#34;step-2-a-target-platform-environment-variable-using-the-env-https-docs-docker-com-engine-reference-builder-env-instruction&#34;&gt;Step 2 &amp;mdash; A &lt;code&gt;TARGET_PLATFORM&lt;/code&gt; environment variable using the &lt;a href=&#34;https://docs.docker.com/engine/reference/builder/#env&#34;&gt;&lt;code&gt;ENV&lt;/code&gt;&lt;/a&gt; instruction.&lt;/h3&gt;
+
+&lt;p&gt;Here&amp;rsquo;s an example:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;ENV&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt; TARGET_PLATFORM centos&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h3 id=&#34;step-3-a-general-dependency-installation-script-using-a-run-https-docs-docker-com-engine-reference-builder-run-instruction&#34;&gt;Step 3 &amp;mdash; A general dependency installation script using a &lt;a href=&#34;https://docs.docker.com/engine/reference/builder/#run&#34;&gt;&lt;code&gt;RUN&lt;/code&gt;&lt;/a&gt; instruction.&lt;/h3&gt;
+
+&lt;p&gt;Here&amp;rsquo;s an example:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;RUN&lt;/span&gt; apt-get update &lt;span style=&#34;color: #f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; apt-get -y install &lt;span style=&#34;color: #ae81ff&#34;&gt;\&lt;/span&gt;
+         automake &lt;span style=&#34;color: #ae81ff&#34;&gt;\&lt;/span&gt;
+         build-essential &lt;span style=&#34;color: #ae81ff&#34;&gt;\&lt;/span&gt;
+         cmake &lt;span style=&#34;color: #ae81ff&#34;&gt;\&lt;/span&gt;
+         curl &lt;span style=&#34;color: #ae81ff&#34;&gt;\&lt;/span&gt;
+         libssl-dev &lt;span style=&#34;color: #ae81ff&#34;&gt;\&lt;/span&gt;
+         git &lt;span style=&#34;color: #ae81ff&#34;&gt;\&lt;/span&gt;
+         libtool &lt;span style=&#34;color: #ae81ff&#34;&gt;\&lt;/span&gt;
+         libunwind8 &lt;span style=&#34;color: #ae81ff&#34;&gt;\&lt;/span&gt;
+         libunwind-setjmp0-dev &lt;span style=&#34;color: #ae81ff&#34;&gt;\&lt;/span&gt;
+         python &lt;span style=&#34;color: #ae81ff&#34;&gt;\&lt;/span&gt;
+         python2.7-dev &lt;span style=&#34;color: #ae81ff&#34;&gt;\&lt;/span&gt;
+         python-software-properties &lt;span style=&#34;color: #ae81ff&#34;&gt;\&lt;/span&gt;
+         software-properties-common &lt;span style=&#34;color: #ae81ff&#34;&gt;\&lt;/span&gt;
+         python-setuptools &lt;span style=&#34;color: #ae81ff&#34;&gt;\&lt;/span&gt;
+         unzip &lt;span style=&#34;color: #ae81ff&#34;&gt;\&lt;/span&gt;
+         wget
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h3 id=&#34;step-4-an-installation-script-for-java-8-and-a-java-home-environment-variable&#34;&gt;Step 4 &amp;mdash; An installation script for Java 8 and a &lt;code&gt;JAVA_HOME&lt;/code&gt; environment variable&lt;/h3&gt;
+
+&lt;p&gt;Here&amp;rsquo;s an example:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;RUN&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;\&lt;/span&gt;
+     &lt;span style=&#34;color: #f8f8f2&#34;&gt;echo&lt;/span&gt; oracle-java8-installer shared/accepted-oracle-license-v1-1 &lt;span style=&#34;color: #66d9ef&#34;&gt;select&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;true&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;|&lt;/span&gt; debconf-set-selections &lt;span style=&#34;color: #f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;\&lt;/span&gt;
+     add-apt-repository -y ppa:webupd8team/java &lt;span style=&#34;color: #f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;\&lt;/span&gt;
+     apt-get update &lt;span style=&#34;color: #f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;\&lt;/span&gt;
+     apt-get install -y oracle-java8-installer &lt;span style=&#34;color: #f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;\&lt;/span&gt;
+     rm -rf /var/lib/apt/lists/* &lt;span style=&#34;color: #f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;\&lt;/span&gt;
+     rm -rf /var/cache/oracle-jdk8-installer
+
+&lt;span style=&#34;color: #66d9ef&#34;&gt;ENV&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt; JAVA_HOME /usr/lib/jvm/java-8-oracle&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h4 id=&#34;step-5-an-installation-script-for-bazel-http-bazel-io-version-hahahugoshortcode-1hbhb-or-above&#34;&gt;Step 5 - An installation script for &lt;a href=&#34;http://bazel.io/&#34;&gt;Bazel&lt;/a&gt; version  or above.&lt;/h4&gt;
+
+&lt;p&gt;Here&amp;rsquo;s an example:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;RUN&lt;/span&gt; wget -O /tmp/bazel.sh https://github.com/bazelbuild/bazel/releases/download/0.3.1/bazel-0.3.1-installer-linux-x86_64.sh &lt;span style=&#34;color: #ae81ff&#34;&gt;\&lt;/span&gt;
+         &lt;span style=&#34;color: #f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; chmod +x /tmp/bazel.sh &lt;span style=&#34;color: #ae81ff&#34;&gt;\&lt;/span&gt;
+         &lt;span style=&#34;color: #f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; /tmp/bazel.sh
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h3 id=&#34;step-6-add-the-bazelrc-configuration-file-for-bazel-and-the-compile-sh-script-from-the-docker-folder-that-compiles-heron&#34;&gt;Step 6 &amp;mdash; Add the &lt;code&gt;bazelrc&lt;/code&gt; configuration file for Bazel and the &lt;code&gt;compile.sh&lt;/code&gt; script (from the &lt;code&gt;docker&lt;/code&gt; folder) that compiles Heron&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;ADD&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt; bazelrc /root/.bazelrc&lt;/span&gt;
+&lt;span style=&#34;color: #66d9ef&#34;&gt;ADD&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt; compile.sh /compile.sh&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Data Interfaces and Types</title>
+      <link>https://dsc-spidal.github.io/harp/docs/data-interface/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://dsc-spidal.github.io/harp/docs/data-interface/</guid>
+      <description>
+
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/3-1-1.png&#34; alt=&#34;data-abstraction&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Harp provides three levels of data structures: arrays and objects, partition, and table. Arrays and Serializable objects are the basic data structures, which includes:&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;&lt;p&gt;&lt;code&gt;ByteArray&lt;/code&gt;: an array with byte-type elements&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;code&gt;ShortArray&lt;/code&gt;: an array with short-type elements&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;code&gt;IntArray&lt;/code&gt;: an array with int-type elements&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;code&gt;FloatArray&lt;/code&gt;: an array with float-type elements&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;code&gt;LongArray&lt;/code&gt;: an array with long-type elements&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;code&gt;DoubleArray&lt;/code&gt;: an array with double-type elements&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;code&gt;Writable&lt;/code&gt;: serializable object&lt;/p&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;&lt;code&gt;Partition&lt;/code&gt; is a wraper of above data structures. Every partition has an ID. In collective communication, partitions from different processors with the same ID will be merged. The merge operation is defined by &lt;code&gt;PartitionCombiner&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;Table&lt;/code&gt; is a container for partitions. It is the highest-level data structure and the unit for collective communication.&lt;/p&gt;
+
+&lt;h1 id=&#34;table-and-partitions&#34;&gt;Table and Partitions&lt;/h1&gt;
+
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/3-1-2.png&#34; alt=&#34;table-partition&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;An example of how to construct a table is as follows.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;Table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;DoubleArray&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;table&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&amp;gt;(&lt;/span&gt;&lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;DoubleArrPlus&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;());&lt;/span&gt;
+&lt;span style=&#34;color: #66d9ef&#34;&gt;for&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;numPartitions&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;++)&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
+    &lt;span style=&#34;color: #f8f8f2&#34;&gt;DoubleArray&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;array&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;DoubleArray&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;create&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;size&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;false&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+    &lt;span style=&#34;color: #f8f8f2&#34;&gt;table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;addPartition&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Partition&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&amp;gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;array&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;));&lt;/span&gt;
+&lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;In this example, it initiliazes a table which carries &lt;code&gt;DoubleArray&lt;/code&gt; as the primitive data type. &lt;code&gt;DoubleArrPlus&lt;/code&gt; is a &lt;code&gt;PartitionCombiner&lt;/code&gt; used to define the merging operation of two partitions.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;DoubleArrPlus&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;extends&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;PartitionCombiner&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;DoubleArray&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
+    &lt;span style=&#34;color: #66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;PartitionStatus&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;combine&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;DoubleArray&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;curPar&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;DoubleArray&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;newPar&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
+        &lt;span style=&#34;color: #66d9ef&#34;&gt;double&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[]&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;doubles1&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;curPar&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;get&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;size1&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;curPar&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;size&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
+        &lt;span style=&#34;color: #66d9ef&#34;&gt;double&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[]&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;doubles2&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;newPar&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;get&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;size2&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;newPar&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;size&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
+        &lt;span style=&#34;color: #66d9ef&#34;&gt;if&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;size1&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;!=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;size2&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;            &lt;span style=&#34;color: #66d9ef&#34;&gt;return&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;PartitionStatus&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;COMBINE_FAILED&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
+        &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
+        &lt;span style=&#34;color: #66d9ef&#34;&gt;for&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;size2&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;++)&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
+            &lt;span style=&#34;color: #f8f8f2&#34;&gt;doubles1&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;doubles1&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;doubles2&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;];&lt;/span&gt;
+        &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
+        &lt;span style=&#34;color: #66d9ef&#34;&gt;return&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;PartitionStatus&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;COMBINED&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
+   &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
+&lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h1 id=&#34;data-abstraction&#34;&gt;Data Abstraction&lt;/h1&gt;
+
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/3-1-3.png&#34; alt=&#34;data-types&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;The data abstraction is shown above. &lt;code&gt;Transferable&lt;/code&gt; is the highest interface of all data structures and &lt;code&gt;Simple&lt;/code&gt; is the sub-interface for all primitive data structures. Here is an example of the primitive data strucutres.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #75715e&#34;&gt;/*&lt;/span&gt;
+&lt;span style=&#34;color: #75715e&#34;&gt; * Copyright 2013-2016 Indiana University&lt;/span&gt;
+&lt;span style=&#34;color: #75715e&#34;&gt; * &lt;/span&gt;
+&lt;span style=&#34;color: #75715e&#34;&gt; * Licensed under the Apache License, Version 2.0 (the &amp;quot;License&amp;quot;);&lt;/span&gt;
+&lt;span style=&#34;color: #75715e&#34;&gt; * you may not use this file except in compliance with the License.&lt;/span&gt;
+&lt;span style=&#34;color: #75715e&#34;&gt; * You may obtain a copy of the License at&lt;/span&gt;
+&lt;span style=&#34;color: #75715e&#34;&gt; *&lt;/span&gt;
+&lt;span style=&#34;color: #75715e&#34;&gt; *     http://www.apache.org/licenses/LICENSE-2.0&lt;/span&gt;
+&lt;span style=&#34;color: #75715e&#34;&gt; *&lt;/span&gt;
+&lt;span style=&#34;color: #75715e&#34;&gt; * Unless required by applicable law or agreed to in writing, software&lt;/span&gt;
+&lt;span style=&#34;color: #75715e&#34;&gt; * distributed under the License is distributed on an &amp;quot;AS IS&amp;quot; BASIS,&lt;/span&gt;
+&lt;span style=&#34;color: #75715e&#34;&gt; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.&lt;/span&gt;
+&lt;span style=&#34;color: #75715e&#34;&gt; * See the License for the specific language governing permissions and&lt;/span&gt;
+&lt;span style=&#34;color: #75715e&#34;&gt; * limitations under the License.&lt;/span&gt;
+&lt;span style=&#34;color: #75715e&#34;&gt; */&lt;/span&gt;
+
+&lt;span style=&#34;color: #f92672&#34;&gt;package&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;edu.iu.harp.resource&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
+
+&lt;span style=&#34;color: #f92672&#34;&gt;import&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;java.io.DataOutput&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
+&lt;span style=&#34;color: #f92672&#34;&gt;import&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;java.io.IOException&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
+
+&lt;span style=&#34;color: #f92672&#34;&gt;import&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;edu.iu.harp.io.DataType&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
+&lt;span style=&#34;color: #f92672&#34;&gt;import&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;edu.iu.harp.resource.Array&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
+
+&lt;span style=&#34;color: #75715e&#34;&gt;/*******************************************************&lt;/span&gt;
+&lt;span style=&#34;color: #75715e&#34;&gt; * IntArray class for managing int[] data.&lt;/span&gt;
+&lt;span style=&#34;color: #75715e&#34;&gt; ******************************************************/&lt;/span&gt;
+&lt;span style=&#34;color: #66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;final&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;IntArray&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;extends&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Array&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[]&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
+
+    &lt;span style=&#34;color: #66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;IntArray&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[]&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;arr&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;start&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;size&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
+	&lt;span style=&#34;color: #66d9ef&#34;&gt;super&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;arr&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;start&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;size&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+    &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
+
+    &lt;span style=&#34;color: #75715e&#34;&gt;/**&lt;/span&gt;
+&lt;span style=&#34;color: #75715e&#34;&gt;     * Get the number of Bytes of encoded data. One byte for storing DataType,&lt;/span&gt;
+&lt;span style=&#34;color: #75715e&#34;&gt;     * four bytes for storing the size, size*4 bytes for storing the data.&lt;/span&gt;
+&lt;span style=&#34;color: #75715e&#34;&gt;     */&lt;/span&gt;
+    &lt;span style=&#34;color: #a6e22e&#34;&gt;@Override&lt;/span&gt;
+    &lt;span style=&#34;color: #66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;getNumEnocdeBytes&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;()&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
+	&lt;span style=&#34;color: #66d9ef&#34;&gt;return&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;size&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;*&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;4&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;5&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
+    &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
+
+    &lt;span style=&#34;color: #75715e&#34;&gt;/**&lt;/span&gt;
+&lt;span style=&#34;color: #75715e&#34;&gt;     * Encode the array as DataOutput&lt;/span&gt;
+&lt;span style=&#34;color: #75715e&#34;&gt;     */&lt;/span&gt;
+    &lt;span style=&#34;color: #a6e22e&#34;&gt;@Override&lt;/span&gt;
+    &lt;span style=&#34;color: #66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;encode&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;DataOutput&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;out&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;throws&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;IOException&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
+	&lt;span style=&#34;color: #f8f8f2&#34;&gt;out&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;writeByte&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;DataType&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;INT_ARRAY&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+	&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;len&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;start&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;size&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
+	&lt;span style=&#34;color: #f8f8f2&#34;&gt;out&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;writeInt&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;size&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+	&lt;span style=&#34;color: #66d9ef&#34;&gt;for&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;start&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;len&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;++)&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
+	    &lt;span style=&#34;color: #f8f8f2&#34;&gt;out&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;writeInt&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;array&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;]);&lt;/span&gt;
+	&lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
+    &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
+
+    &lt;span style=&#34;color: #75715e&#34;&gt;/**&lt;/span&gt;
+&lt;span style=&#34;color: #75715e&#34;&gt;     * Create an array. Firstly try to get an array from ResourcePool; if&lt;/span&gt;
+&lt;span style=&#34;color: #75715e&#34;&gt;     * failed, new an array.&lt;/span&gt;
+&lt;span style=&#34;color: #75715e&#34;&gt;     * &lt;/span&gt;
+&lt;span style=&#34;color: #75715e&#34;&gt;     * @param len&lt;/span&gt;
+&lt;span style=&#34;color: #75715e&#34;&gt;     * @param approximate&lt;/span&gt;
+&lt;span style=&#34;color: #75715e&#34;&gt;     * @return&lt;/span&gt;
+&lt;span style=&#34;color: #75715e&#34;&gt;     */&lt;/span&gt;
+    &lt;span style=&#34;color: #66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;static&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;IntArray&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;create&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;len&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;boolean&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;approximate&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
+	&lt;span style=&#34;color: #66d9ef&#34;&gt;if&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;len&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
+	    &lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[]&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;ints&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;ResourcePool&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;get&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;().&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getIntsPool&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;().&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getArray&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;len&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;approximate&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+	    &lt;span style=&#34;color: #66d9ef&#34;&gt;if&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;ints&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;!=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;null&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
+		&lt;span style=&#34;color: #66d9ef&#34;&gt;return&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;IntArray&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;ints&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;len&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+	    &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;else&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
+		&lt;span style=&#34;color: #66d9ef&#34;&gt;return&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;null&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
+	    &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
+	&lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;else&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
+	    &lt;span style=&#34;color: #66d9ef&#34;&gt;return&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;null&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
+	&lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
+    &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
+
+    &lt;span style=&#34;color: #75715e&#34;&gt;/**&lt;/span&gt;
+&lt;span style=&#34;color: #75715e&#34;&gt;     * Release the array from the ResourcePool&lt;/span&gt;
+&lt;span style=&#34;color: #75715e&#34;&gt;     */&lt;/span&gt;
+    &lt;span style=&#34;color: #a6e22e&#34;&gt;@Override&lt;/span&gt;
+    &lt;span style=&#34;color: #66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;release&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;()&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
+	&lt;span style=&#34;color: #f8f8f2&#34;&gt;ResourcePool&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;get&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;().&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getIntsPool&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;().&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;releaseArray&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;array&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+	&lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;reset&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
+    &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
+
+    &lt;span style=&#34;color: #75715e&#34;&gt;/**&lt;/span&gt;
+&lt;span style=&#34;color: #75715e&#34;&gt;     * Free the array from the ResourcePool&lt;/span&gt;
+&lt;span style=&#34;color: #75715e&#34;&gt;     */&lt;/span&gt;
+    &lt;span style=&#34;color: #a6e22e&#34;&gt;@Override&lt;/span&gt;
+    &lt;span style=&#34;color: #66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;free&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;()&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
+	&lt;span style=&#34;color: #f8f8f2&#34;&gt;ResourcePool&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;get&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;().&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getIntsPool&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;().&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;freeArray&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;array&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+	&lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;reset&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
+
+    &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
+&lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Deploying Heron</title>
+      <link>https://dsc-spidal.github.io/harp/docs/operators/deployment/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://dsc-spidal.github.io/harp/docs/operators/deployment/</guid>
+      <description>&lt;p&gt;Heron is designed to be run in clustered, scheduler-driven environments. It can
+be run in a &lt;code&gt;multi-tenant&lt;/code&gt; or &lt;code&gt;dedicated&lt;/code&gt; clusters. Furthermore, Heron supports
+&lt;code&gt;multiple clusters&lt;/code&gt; and a user can submit topologies to any of these clusters. Each
+of the cluster can use &lt;code&gt;different scheduler&lt;/code&gt;. A typical Heron deployment is shown
+in the following figure.&lt;/p&gt;
+
+&lt;p&gt;&lt;br /&gt;
+&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/heron-deployment.png&#34; alt=&#34;Heron Deployment&#34; /&gt;
+&lt;br/&gt;&lt;/p&gt;
+
+&lt;p&gt;A Heron deployment requires several components working together. The following must
+be deployed to run Heron topologies in a cluster:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;p&gt;&lt;strong&gt;Scheduler&lt;/strong&gt; &amp;mdash; Heron requires a scheduler to run its topologies. It can
+be deployed on an existing cluster running alongside other big data frameworks.
+Alternatively, it can be deployed on a cluster of its own. Heron currently
+supports several scheduler options:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;schedulers/aurora&#34;&gt;Aurora&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;schedulers/local&#34;&gt;Local&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;schedulers/slurm&#34;&gt;Slurm&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;schedulers/yarn&#34;&gt;YARN&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;strong&gt;State Manager&lt;/strong&gt; &amp;mdash; Heron state manager tracks the state of all deployed
+topologies. The topology state includes its logical plan,
+physical plan, and execution state. Heron supports the following state managers:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;statemanagers/localfs&#34;&gt;Local File System&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;statemanagers/zookeeper&#34;&gt;Zookeeper&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;strong&gt;Uploader&lt;/strong&gt; &amp;mdash; The Heron uploader distributes the topology jars to the
+servers that run them. Heron supports several uploaders&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;uploaders/hdfs&#34;&gt;HDFS&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;uploaders/localfs&#34;&gt;Local File System&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;uploaders/s3&#34;&gt;Amazon S3&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;strong&gt;Metrics Sinks&lt;/strong&gt; &amp;mdash; Heron collects several metrics during topology execution.
+These metrics can be routed to a sink for storage and offline analysis.
+Currently, Heron supports the following sinks&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;File Sink&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;Graphite Sink&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;Scribe Sink&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;strong&gt;Heron Tracker&lt;/strong&gt; &amp;mdash; Tracker serves as the gateway to explore the topologies.
+It exposes a REST API for exploring logical plan, physical plan of the topologies and
+also for fetching metrics from them.&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;strong&gt;Heron UI&lt;/strong&gt; &amp;mdash; The UI provides the ability to find and explore topologies visually.
+UI displays the DAG of the topology and how the DAG is mapped to physical containers
+running in clusters. Furthermore, it allows the ability to view logs, take heap dump, memory
+histograms, show metrics, etc.&lt;/p&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Developers and Contributors</title>
+      <link>https://dsc-spidal.github.io/harp/docs/contributors/contributors/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://dsc-spidal.github.io/harp/docs/contributors/contributors/</guid>
+      <description>&lt;p&gt;Judy Qiu&lt;/p&gt;
+
+&lt;p&gt;Bingjing Zhang&lt;/p&gt;
+
+&lt;p&gt;Bo Peng&lt;/p&gt;
+
+&lt;p&gt;Langshi Chen&lt;/p&gt;
+
+&lt;p&gt;Ethan Li&lt;/p&gt;
+
+&lt;p&gt;Yiming Zou&lt;/p&gt;
+
+&lt;p&gt;Abby Kaufman&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Dynamic Scheduler</title>
+      <link>https://dsc-spidal.github.io/harp/docs/scheduler/dynamic-scheduler/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://dsc-spidal.github.io/harp/docs/scheduler/dynamic-scheduler/</guid>
+      <description>
+
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/5-8-1.png&#34; alt=&#34;dynamic-scheduler&#34; /&gt;&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;&lt;p&gt;All computation models can use this scheduler.&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;All the inputs are submitted to one queue.&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;Threads dynamically fetch inputs from the queue.&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;The main thread can retrieve the outputs from the output queue&lt;/p&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h2 id=&#34;example&#34;&gt;Example&lt;/h2&gt;
+
+&lt;p&gt;Given three int[] data, find the maximum element in each array.
+First of all, we need to define the &lt;code&gt;task&lt;/code&gt;.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;FindMaxTask&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;implements&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Task&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[],&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Integer&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
+
+    &lt;span style=&#34;color: #a6e22e&#34;&gt;@Override&lt;/span&gt;
+    &lt;span style=&#34;color: #66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Integer&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;run&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[]&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;input&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;throws&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Exception&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
+	&lt;span style=&#34;color: #75715e&#34;&gt;// TODO Auto-generated method stub&lt;/span&gt;
+	&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;max&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Integer&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;MIN_VALUE&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
+	&lt;span style=&#34;color: #66d9ef&#34;&gt;for&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;input&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;length&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;++){&lt;/span&gt;
+	    &lt;span style=&#34;color: #66d9ef&#34;&gt;if&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;max&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;input&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;]){&lt;/span&gt;
+		&lt;span style=&#34;color: #f8f8f2&#34;&gt;max&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;input&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;];&lt;/span&gt;
+	    &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
+	&lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
+	&lt;span style=&#34;color: #66d9ef&#34;&gt;return&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;max&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
+    &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
+&lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;The &lt;code&gt;findMaxs&lt;/code&gt; funtion shows how to use dynamic scheduler to run similar tasks in parallel.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;findMaxs&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(){&lt;/span&gt;
+    &lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;numThreads&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;3&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
+    &lt;span style=&#34;color: #75715e&#34;&gt;/* initialize tasks. numThreads is the number of threads.&lt;/span&gt;
+&lt;span style=&#34;color: #75715e&#34;&gt;     Here the number of tasks we lanunched equals to numThreads&lt;/span&gt;
+&lt;span style=&#34;color: #75715e&#34;&gt;    */&lt;/span&gt;
+    &lt;span style=&#34;color: #f8f8f2&#34;&gt;List&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;FindMaxTask&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;maxTasks&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;LinkedList&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&amp;gt;();&lt;/span&gt;
+    &lt;span style=&#34;color: #66d9ef&#34;&gt;for&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;numThreads&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;++)&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
+        &lt;span style=&#34;color: #f8f8f2&#34;&gt;maxTasks&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;add&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;FindMaxTask&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;());&lt;/span&gt;
+    &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
+    &lt;span style=&#34;color: #75715e&#34;&gt;/*initialize the dynamic scheduler;&lt;/span&gt;
+&lt;span style=&#34;color: #75715e&#34;&gt;    The data type of input is CenPair, the data type of output is Object;&lt;/span&gt;
+&lt;span style=&#34;color: #75715e&#34;&gt;    The task is MaxTask*/&lt;/span&gt;
+    &lt;span style=&#34;color: #f8f8f2&#34;&gt;DynamicScheduler&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[],&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Integer&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;FindMaxTask&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;maxCompute&lt;/span&gt; 
+	&lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;DynamicScheduler&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&amp;gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;maxTasks&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+    &lt;span style=&#34;color: #75715e&#34;&gt;/*Start the Dynamic Scheduler*/&lt;/span&gt;
+    &lt;span style=&#34;color: #f8f8f2&#34;&gt;maxCompute&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;start&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
+	
+    &lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[]&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;list1&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[]{&lt;/span&gt;&lt;span style=&#34;color: #ae81ff&#34;&gt;1&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt;&lt;span style=&#34;color: #ae81ff&#34;&gt;2&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt;&lt;span style=&#34;color: #ae81ff&#34;&gt;3&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt;&lt;span style=&#34;color: #ae81ff&#34;&gt;4&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt;&lt;span style=&#34;color: #ae81ff&#34;&gt;5&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;};&lt;/span&gt;
+    &lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[]&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;list2&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[]{&lt;/span&gt;&lt;span style=&#34;color: #ae81ff&#34;&gt;14&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt;&lt;span style=&#34;color: #ae81ff&#34;&gt;5&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt;&lt;span style=&#34;color: #ae81ff&#34;&gt;6&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt;&lt;span style=&#34;color: #ae81ff&#34;&gt;7&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt;&lt;span style=&#34;color: #ae81ff&#34;&gt;8&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt;&lt;span style=&#34;color: #ae81ff&#34;&gt;1&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;};&lt;/span&gt;
+    &lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[]&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;list3&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[]{&lt;/span&gt;&lt;span style=&#34;color: #ae81ff&#34;&gt;53&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt;&lt;span style=&#34;color: #ae81ff&#34;&gt;43&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,-&lt;/span&gt;&lt;span style=&#34;color: #ae81ff&#34;&gt;1&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt;&lt;span style=&#34;color: #ae81ff&#34;&gt;43&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt;&lt;span style=&#34;color: #ae81ff&#34;&gt;63&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;};&lt;/span&gt;
+    &lt;span style=&#34;color: #75715e&#34;&gt;/*Take inputs*/&lt;/span&gt;
+    &lt;span style=&#34;color: #f8f8f2&#34;&gt;maxCompute&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;submit&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;list1&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+    &lt;span style=&#34;color: #f8f8f2&#34;&gt;maxCompute&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;submit&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;list2&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+    &lt;span style=&#34;color: #f8f8f2&#34;&gt;maxCompute&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;submit&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;list3&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+    &lt;span style=&#34;color: #75715e&#34;&gt;/*Get results*/&lt;/span&gt;
+    &lt;span style=&#34;color: #66d9ef&#34;&gt;while&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;maxCompute&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;hasOutput&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;())&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
+       &lt;span style=&#34;color: #f8f8f2&#34;&gt;Integer&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;out&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;maxCompute&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;waitForOutput&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
+       &lt;span style=&#34;color: #f8f8f2&#34;&gt;System&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;out&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;println&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;out&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+    &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
+&lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>

@@ -1,0 +1,188 @@
+<!DOCTYPE html><html lang="en-us"><head><link rel="shortcut icon" type="image/png" sizes="16x16" href="https://dsc-spidal.github.io/harp/img/favicon-16x9.png"><link rel="shortcut icon" type="image/png" sizes="32x32" href="https://dsc-spidal.github.io/harp/img/favicon-32x18.png"><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="generator" content="Hugo 0.18" /><meta property="og:locale" content="en_US"><meta property="og:type" content="article"><meta property="og:title" content="harp"><meta property="og:image" content="/img/logo54x54.png"><meta property="og:url" content="https://dsc-spidal.github.io/harp/"><meta name="twitter:card" content="summary"><meta name="twitter:site" content="@heronstreaming"><meta name="twitter:title" content="harp"><meta name="twitter:image" content="/img/0-1-1.png"><meta property="og:site_name" content="Writing and Launching a Topology in Python"><meta property="og:url" content="/docs/developers/python/topologies/"><meta property="og:description" content=""><meta name="twitter:description" content=""><title>harp Documentation - Writing and Launching a Topology in Python</title><link rel="stylesheet" href="https://dsc-spidal.github.io/harp/css/style.min.css"><link rel="stylesheet" href="https://dsc-spidal.github.io/harp/css/font-awesome.min.css"><link rel="stylesheet" href="https://dsc-spidal.github.io/harp/css/pygments.css"></head><body><nav class="hn-top-navbar navbar navbar-inverse navbar-fixed-top" role="navigation"><div class="hn-navbar-container container-fluid"><div class="navbar-header"><button class="navbar-toggle collapsed" type="button" data-toggle="collapse" data-target="#hn-navbar" aria-controls="hn-navbar" aria-expanded="false"><span class="sr-only"><Toggle>navigation</Toggle></span><i class="hn-toggle-button fa fa-bars"></i></button><a class="hn-navbar-logo navbar-brand" href="https://dsc-spidal.github.io/harp/"><img class="pull-left" src="https://dsc-spidal.github.io/harp/img/0-1-2.png"></a></div><div id="hn-navbar" class="navbar-collapse collapse"><ul class="nav navbar-nav navbar-right"><li><a href="https://dsc-spidal.github.io/harp/docs/getting-started">Docs</a></li><li><a href="https://dsc-spidal.github.io/harp/api">API</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/resources">Resources</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/contributors/community">Community</a></li><li><a href="https://dsc-spidal.github.io/harp/">GitHub</a></li><li><a href="https://groups.google.com/forum/#!forum/harp-users">Mailing List</a></li></ul></div></div></nav><div class="hn-main"><div class="container"><div class="row"><aside class="hn-sidebar hidden-xs col-sm-4 col-md-3 col-lg-2 collapse"><nav class="hn-sidebar-nav"><div id="hn-accordion" class="panel-group" role="tablist" aria-multiselectable="true"><div class="panel panel-default"><section id="getting-started" class="panel-heading" role="tab"><h4 class="panel-title"><a role="button" data-toggle="collapse" data-parent="#hn-accordion" href="#collapse-getting-started" aria-labelledby="getting-started"><i class="fa fa-caret-right"></i>Getting Started</a></h4></section><div id="collapse-getting-started" class="panel-collapse collapse" aria-labelledby="getting-started"><div class="panel-body"><ul><li><a href="https://dsc-spidal.github.io/harp/docs/getting-started">Harp Installation</a></li></ul></div></div></div><div class="panel panel-default"><section id="harp-concepts" class="panel-heading" role="tab"><h4 class="panel-title"><a role="button" data-toggle="collapse" data-parent="#hn-accordion" href="#collapse-harp-concepts" aria-labelledby="harp-concepts"><i class="fa fa-caret-right"></i>Harp Concepts</a></h4></section><div id="collapse-harp-concepts" class="panel-collapse collapse" aria-labelledby="harp-concepts"><div class="panel-body"><ul><li><a href="https://dsc-spidal.github.io/harp/docs/concepts/features">Features</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/concepts/computation-models">Computation Models</a></li></ul></div></div></div><div class="panel panel-default"><section id="data-interfaces-and-types" class="panel-heading" role="tab"><h4 class="panel-title"><a role="button" data-toggle="collapse" data-parent="#hn-accordion" href="#collapse-data-interfaces-and-types" aria-labelledby="data-interfaces-and-types"><i class="fa fa-caret-right"></i>Data Interfaces and Types</a></h4></section><div id="collapse-data-interfaces-and-types" class="panel-collapse collapse" aria-labelledby="data-interfaces-and-types"><div class="panel-body"><ul><li><a href="https://dsc-spidal.github.io/harp/docs/data-interface">Data Interfaces and Types</a></li></ul></div></div></div><div class="panel panel-default"><section id="collective-communication" class="panel-heading" role="tab"><h4 class="panel-title"><a role="button" data-toggle="collapse" data-parent="#hn-accordion" href="#collapse-collective-communication" aria-labelledby="collective-communication"><i class="fa fa-caret-right"></i>Collective Communication</a></h4></section><div id="collapse-collective-communication" class="panel-collapse collapse" aria-labelledby="collective-communication"><div class="panel-body"><ul><li><a href="https://dsc-spidal.github.io/harp/docs/communications/broadcast">broadcast</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/communications/reduce">reduce</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/communications/allgather">allgather</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/communications/allreduce">allreduce</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/communications/regroup">regroup</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/communications/pushandpull">push &amp; pull</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/communications/rotate">rotate</a></li></ul></div></div></div><div class="panel panel-default"><section id="schedulers" class="panel-heading" role="tab"><h4 class="panel-title"><a role="button" data-toggle="collapse" data-parent="#hn-accordion" href="#collapse-schedulers" aria-labelledby="schedulers"><i class="fa fa-caret-right"></i>Schedulers</a></h4></section><div id="collapse-schedulers" class="panel-collapse collapse" aria-labelledby="schedulers"><div class="panel-body"><ul><li><a href="https://dsc-spidal.github.io/harp/docs/scheduler/static-scheduler">Static Scheduler</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/scheduler/dynamic-scheduler">Dynamic Scheduler</a></li></ul></div></div></div><div class="panel panel-default"><section id="examples" class="panel-heading" role="tab"><h4 class="panel-title"><a role="button" data-toggle="collapse" data-parent="#hn-accordion" href="#collapse-examples" aria-labelledby="examples"><i class="fa fa-caret-right"></i>Examples</a></h4></section><div id="collapse-examples" class="panel-collapse collapse" aria-labelledby="examples"><div class="panel-body"><ul><li><a href="https://dsc-spidal.github.io/harp/docs/examples/kmeans">k-means</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/examples/allreducekmeans">allreduce k-means</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/examples/bcastreducekmeans">broadcast &amp; reduce k-means</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/examples/pushpullkmeans">push &amp; pull k-means</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/examples/regroupallgatherkmeans">regroup &amp; allgather k-means</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/examples/latentdirichletallocation">latent dirichlet allocation</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/examples/mlrsgd">Multiclass Logistic Regression</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/examples/lda">LDA</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/examples/svm">SVM</a></li></ul></div></div></div><div class="panel panel-default"><section id="harp-daal" class="panel-heading" role="tab"><h4 class="panel-title"><a role="button" data-toggle="collapse" data-parent="#hn-accordion" href="#collapse-harp-daal" aria-labelledby="harp-daal"><i class="fa fa-caret-right"></i>Harp-DAAL</a></h4></section><div id="collapse-harp-daal" class="panel-collapse collapse" aria-labelledby="harp-daal"><div class="panel-body"><ul><li><a href="https://dsc-spidal.github.io/harp/docs/harpdaal/harpdaal">Harp-DAAL</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/harpdaal/Example">Example</a></li></ul></div></div></div><div class="panel panel-default"><section id="harp-resources" class="panel-heading" role="tab"><h4 class="panel-title"><a role="button" data-toggle="collapse" data-parent="#hn-accordion" href="#collapse-harp-resources" aria-labelledby="harp-resources"><i class="fa fa-caret-right"></i>Harp Resources</a></h4></section><div id="collapse-harp-resources" class="panel-collapse collapse" aria-labelledby="harp-resources"><div class="panel-body"><ul><li><a href="https://dsc-spidal.github.io/harp/docs/resources">Harp Resources</a></li></ul></div></div></div><div class="panel panel-default"><section id="contributors" class="panel-heading" role="tab"><h4 class="panel-title"><a role="button" data-toggle="collapse" data-parent="#hn-accordion" href="#collapse-contributors" aria-labelledby="contributors"><i class="fa fa-caret-right"></i>Contributors</a></h4></section><div id="collapse-contributors" class="panel-collapse collapse" aria-labelledby="contributors"><div class="panel-body"><ul><li><a href="https://dsc-spidal.github.io/harp/docs/contributors/community">Community</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/contributors/contributors">Contributors</a></li></ul></div></div></div></div></nav></aside><section class="hn-docs-main col-sm-8 col-md-9 col-lg-10 col-sm-offset-4 col-md-offset-3 col-lg-offset-2"><header class="hn-docs-header page-header"><h1>Writing and Launching a Topology in Python</h1><div class="hn-docs-description"></div></header><article class="hn-docs-content">
+
+<p>Currently, support for developing a Heron topology in Python is still experimental.
+It is compatible with the Streamparse API, so Python topologies written
+for the Streamparse can be deployed on Heron with ease.
+This page describes how to write and launch a topology in Python, as well as
+how to convert a Streamparse topology to a PyHeron topology.</p>
+
+<p>Note that a Python topology is known to be approximately 20-40 times slower
+than a topology written in Java. This performance issue will be resolved in later releases.</p>
+
+<p>You need to first download <code>PyHeron</code> library and include it in your project.</p>
+
+<h1 id="writing-your-own-topology-in-python">Writing your own topology in Python</h1>
+
+<p><a href="../spouts">Spouts</a> and <a href="../bolts">Bolts</a> discuss how to implement spouts and
+bolts in Python, respectively.</p>
+
+<p>After defining the spouts and bolts, a topology can be composed by two ways:</p>
+
+<ul>
+<li>Using <code>TopologyBuilder</code> (not compatible with the Streamparse API)</li>
+<li>Subclassing <code>Topology</code> class (compatible with the Streamparse API)</li>
+</ul>
+
+<h2 id="defining-a-topology-using-a-topologybuilder">Defining a topology using a TopologyBuilder</h2>
+
+<p>This way of defining a topology is similar to defining a topology in Java,
+and is not compatible with the Streamparse API.</p>
+
+<p>The <code>TopologyBuilder</code> has two major methods to specify the components:</p>
+
+<ul>
+<li><p><code>add_spout(self, name, spout_cls, par, config=None)</code></p>
+
+<ul>
+<li><code>name</code> is <code>str</code> specifying the unique identifier that is assigned to this spout.</li>
+<li><code>spout_cls</code> is a subclass of <code>Spout</code> that defines this spout.</li>
+<li><code>par</code> is <code>int</code> specifying the number of instances of this spout.</li>
+<li><code>config</code> is <code>dict</code> specifying this spout-specific configuration.</li>
+</ul></li>
+
+<li><p><code>add_bolt(self, name, bolt_cls, par, inputs, config=None)</code></p>
+
+<ul>
+<li><code>name</code> is <code>str</code> specifying the unique identifier that is assigned to this bolt.</li>
+<li><code>bolt_cls</code> is a subclass of <code>Bolt</code> that defines this bolt.</li>
+<li><code>par</code> is <code>int</code> specifying the number of instances of this bolt.</li>
+<li><code>inputs</code> is either <code>dict</code> mapping from <code>HeronComponentSpec</code> to <code>Grouping</code>;
+or <code>list</code> of <code>HeronComponentSpec</code>, in which case the shuffle grouping is used.</li>
+<li><code>config</code> is <code>dict</code> specifying this bolt-specific configuration.</li>
+</ul></li>
+</ul>
+
+<p>Each method returns the corresponding <code>HeronComponentSpec</code> object.</p>
+
+<p>The following is an example implementation of WordCountTopology in Python.</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f92672">from</span> <span style="color: #f8f8f2">pyheron</span> <span style="color: #f92672">import</span> <span style="color: #f8f8f2">TopologyBuilder</span>
+<span style="color: #f92672">from</span> <span style="color: #f8f8f2">your_spout</span> <span style="color: #f92672">import</span> <span style="color: #f8f8f2">WordSpout</span>
+<span style="color: #f92672">from</span> <span style="color: #f8f8f2">your_bolt</span> <span style="color: #f92672">import</span> <span style="color: #f8f8f2">CountBolt</span>
+
+<span style="color: #66d9ef">if</span> <span style="color: #f8f8f2">__name__</span> <span style="color: #f92672">==</span> <span style="color: #e6db74">&quot;__main__&quot;</span><span style="color: #f8f8f2">:</span>
+  <span style="color: #f8f8f2">builder</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">TopologyBuilder(</span><span style="color: #e6db74">&quot;WordCountTopology&quot;</span><span style="color: #f8f8f2">)</span>
+  <span style="color: #f8f8f2">word_spout</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">builder</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">add_spout(</span><span style="color: #e6db74">&quot;word_spout&quot;</span><span style="color: #f8f8f2">,</span> <span style="color: #f8f8f2">WordSpout,</span> <span style="color: #f8f8f2">par</span><span style="color: #f92672">=</span><span style="color: #ae81ff">2</span><span style="color: #f8f8f2">)</span>
+  <span style="color: #f8f8f2">count_bolt</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">builder</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">add_bolt(</span><span style="color: #e6db74">&quot;count_bolt&quot;</span><span style="color: #f8f8f2">,</span> <span style="color: #f8f8f2">CountBolt,</span> <span style="color: #f8f8f2">par</span><span style="color: #f92672">=</span><span style="color: #ae81ff">2</span><span style="color: #f8f8f2">,</span>
+                                <span style="color: #f8f8f2">inputs</span><span style="color: #f92672">=</span><span style="color: #f8f8f2">{word_spout:</span> <span style="color: #f8f8f2">Grouping</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">fields(</span><span style="color: #e6db74">&#39;word&#39;</span><span style="color: #f8f8f2">)})</span>
+  <span style="color: #f8f8f2">builder</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">build_and_submit()</span>
+</pre></div>
+
+<p>Note that arguments to the main method can be passed by providing them in the
+<code>heron submit</code> command.</p>
+
+<h2 id="defining-a-topology-by-subclassing-topology-class">Defining a topology by subclassing Topology class</h2>
+
+<p>This way of defining a topology is compatible with the Streamparse API.
+All you need to do is to place <code>HeronComponentSpec</code> as the class attributes
+of your topology class, which are returned by the <code>spec()</code> method of
+your spout or bolt class.</p>
+
+<ul>
+<li><p><code>Spout.spec(cls, name=None, par=1, config=None)</code></p>
+
+<ul>
+<li><code>name</code> is either <code>str</code> specifying the unique identifier that is assigned to this spout, or
+<code>None</code> if you want to use the variable name of the returned <code>HeronComponentSpec</code> as
+the unique identifier for this spout.</li>
+<li><code>par</code> is <code>int</code> specifying the number of instances of this spout.</li>
+<li><code>config</code> is <code>dict</code> specifying this spout-specific configuration.</li>
+</ul></li>
+
+<li><p><code>Bolt.spec(cls, name=None, inputs=None, par=1, config=None)</code></p>
+
+<ul>
+<li><code>name</code> is either <code>str</code> specifying the unique identifier that is assigned to this bolt; or
+<code>None</code> if you want to use the variable name of the returned <code>HeronComponentSpec</code> as
+the unique identifier for this bolt.</li>
+<li><code>inputs</code> is either <code>dict</code> mapping from <code>HeronComponentSpec</code> to <code>Grouping</code>;
+or <code>list</code> of <code>HeronComponentSpec</code>, in which case the shuffle grouping is used.</li>
+<li><code>par</code> is <code>int</code> specifying the number of instances of this bolt.</li>
+<li><code>config</code> is <code>dict</code> specifying this bolt-specific configuration.</li>
+</ul></li>
+</ul>
+
+<p>The same WordCountTopology is defined in the following manner.</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f92672">from</span> <span style="color: #f8f8f2">pyheron</span> <span style="color: #f92672">import</span> <span style="color: #f8f8f2">Topology</span>
+<span style="color: #f92672">from</span> <span style="color: #f8f8f2">your_spout</span> <span style="color: #f92672">import</span> <span style="color: #f8f8f2">WordSpout</span>
+<span style="color: #f92672">from</span> <span style="color: #f8f8f2">your_bolt</span> <span style="color: #f92672">import</span> <span style="color: #f8f8f2">CountBolt</span>
+
+<span style="color: #66d9ef">class</span> <span style="color: #a6e22e">WordCount</span><span style="color: #f8f8f2">(Topology):</span>
+  <span style="color: #f8f8f2">word_spout</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">WordSpout</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">spec(par</span><span style="color: #f92672">=</span><span style="color: #ae81ff">2</span><span style="color: #f8f8f2">)</span>
+  <span style="color: #f8f8f2">count_bolt</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">CountBolt</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">spec(par</span><span style="color: #f92672">=</span><span style="color: #ae81ff">2</span><span style="color: #f8f8f2">,</span> <span style="color: #f8f8f2">inputs</span><span style="color: #f92672">=</span><span style="color: #f8f8f2">{word_spout:</span> <span style="color: #f8f8f2">Grouping</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">fields(</span><span style="color: #e6db74">&#39;word&#39;</span><span style="color: #f8f8f2">)})</span>
+</pre></div>
+
+<h2 id="topology-wide-configuration">Topology-wide configuration</h2>
+
+<p>Topology-wide configuration can be specified by using <code>set_config()</code> method if
+you are using <code>TopologyBuilder</code>, or by placing <code>config</code> containing <code>dict</code>
+as the class attribute of your topology. Note that these configuration will be
+overriden by component-specific configuration at runtime</p>
+
+<h2 id="multiple-streams">Multiple streams</h2>
+
+<p>To specify that a component has multiple output streams, instead of using a list of
+strings for <code>outputs</code>, you can specify a list of <code>Stream</code> objects, in the following manner.</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #66d9ef">class</span> <span style="color: #a6e22e">MultiStreamSpout</span><span style="color: #f8f8f2">(Spout):</span>
+  <span style="color: #f8f8f2">outputs</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">[Stream(fields</span><span style="color: #f92672">=</span><span style="color: #f8f8f2">[</span><span style="color: #e6db74">&#39;normal&#39;</span><span style="color: #f8f8f2">,</span> <span style="color: #e6db74">&#39;fields&#39;</span><span style="color: #f8f8f2">],</span> <span style="color: #f8f8f2">name</span><span style="color: #f92672">=</span><span style="color: #e6db74">&#39;default&#39;</span><span style="color: #f8f8f2">),</span>
+             <span style="color: #f8f8f2">Stream(fields</span><span style="color: #f92672">=</span><span style="color: #f8f8f2">[</span><span style="color: #e6db74">&#39;error_message&#39;</span><span style="color: #f8f8f2">],</span> <span style="color: #f8f8f2">name</span><span style="color: #f92672">=</span><span style="color: #e6db74">&#39;error_stream&#39;</span><span style="color: #f8f8f2">)]</span>
+</pre></div>
+
+<p>To select one of these streams as the input for your bolt, you can simply
+use <code>[]</code> to specify the stream you want. Without any stream specified, the <code>default</code>
+stream will be used.</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #66d9ef">class</span> <span style="color: #a6e22e">MultiStreamTopology</span><span style="color: #f8f8f2">(Topology):</span>
+  <span style="color: #f8f8f2">spout</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">MultiStreamSpout</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">spec()</span>
+  <span style="color: #f8f8f2">error_bolt</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">ErrorBolt</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">spec(inputs</span><span style="color: #f92672">=</span><span style="color: #f8f8f2">{spout[</span><span style="color: #e6db74">&#39;error_stream&#39;</span><span style="color: #f8f8f2">]:</span> <span style="color: #f8f8f2">Grouping</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">LOWEST})</span>
+  <span style="color: #f8f8f2">consume_bolt</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">ConsumeBolt</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">spec(inputs</span><span style="color: #f92672">=</span><span style="color: #f8f8f2">{spout:</span> <span style="color: #f8f8f2">Grouping</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">SHUFFLE})</span>
+</pre></div>
+
+<p>For further information about the API, refer to the Streamparse API documentation,
+although there are some methods and functionalities that are not supported or
+are invalid in Heron.</p>
+
+<h2 id="declaring-output-fields-from-the-spec-method">Declaring output fields from the spec() method</h2>
+
+<p>In Python topologies, the <code>declareOutputFields()</code> method doesn&rsquo;t exist, so
+the output fields of your spout and bolt need to be declared by placing
+<code>outputs</code> class attributes. This is compatible with the Streamparse API, but
+dynamically declaring output fields is more complicated in this way.
+So, PyHeron provides a way to dynamically declare output fields via the
+<code>optional_outputs</code> argument in the <code>spec()</code> method.</p>
+
+<p>This is useful in a situation like below.</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #66d9ef">class</span> <span style="color: #a6e22e">IdentityBolt</span><span style="color: #f8f8f2">(Bolt):</span>
+  <span style="color: #75715e"># can&#39;t statically declare output fields</span>
+  <span style="color: #66d9ef">class</span> <span style="color: #a6e22e">process</span><span style="color: #f8f8f2">(self,</span> <span style="color: #f8f8f2">tup):</span>
+    <span style="color: #f8f8f2">emit([tup</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">values])</span>
+</pre></div>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #66d9ef">class</span> <span style="color: #a6e22e">DynamicOutputField</span><span style="color: #f8f8f2">(Topology):</span>
+  <span style="color: #f8f8f2">spout</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">WordSpout</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">spec()</span>
+  <span style="color: #f8f8f2">bolt</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">IdentityBolt</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">spec(inputs</span><span style="color: #f92672">=</span><span style="color: #f8f8f2">{spout:</span> <span style="color: #f8f8f2">Grouping</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">ALL},</span>
+                           <span style="color: #f8f8f2">optional_outputs</span><span style="color: #f92672">=</span><span style="color: #f8f8f2">[</span><span style="color: #e6db74">&#39;word&#39;</span><span style="color: #f8f8f2">])</span>
+</pre></div>
+
+<p>You can also declare outputs in the <code>add_spout()</code> and the <code>add_bolt()</code>
+method for the <code>TopologyBuilder</code> in the same way.</p>
+
+<h1 id="launching-your-python-topology">Launching your python topology</h1>
+
+<p>You need to first package your Python topology project to a PEX file.</p>
+
+<p>If you defined your topology using <code>TopologyBuilder</code>, your topology
+definition python file should have <code>if __name__ = &quot;__main__&quot;</code> method.
+The following shows the submission command of an example WordCountTopology, where its
+pex file is located in <code>~/project/word_count.pex</code>.</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>$ heron submit <span style="color: #f8f8f2">local</span> ~/project/word_count.pex - WordCountTopology
+</pre></div>
+
+<p>If you defined your topology by subclassing <code>Topology</code>, your topology
+definition python file should not contain main method.
+The following shows the submission command of an example WordCountTopology, where
+its pex file is located in <code>~/project/word_count.pex</code>, inside which your <code>WordCount</code>
+class resides under <code>topology.word_count_topology.WordCount</code>.</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>$ heron submit <span style="color: #f8f8f2">local</span> <span style="color: #ae81ff">\</span>
+~/project/word_count.pex <span style="color: #ae81ff">\</span>
+topology.word_count_topology.WordCount <span style="color: #ae81ff">\</span>
+WordCountTopology
+</pre></div>
+</article></section></div></div></div><script src="https://code.jquery.com/jquery-2.2.1.min.js"></script><script src="https://dsc-spidal.github.io/harp/js/app.min.js"></script></body></html>

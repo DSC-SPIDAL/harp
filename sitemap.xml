@@ -1,0 +1,350 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/operators/deployment/configuration/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/communications/allgather/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/communications/allreduce/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/operators/deployment/schedulers/yarn/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/operators/deployment/schedulers/aurora/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/communications/broadcast/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/developers/compiling/linux/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/developers/compiling/mac/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/contributors/community/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/developers/compiling/compiling/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/developers/compiling/docker/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/data-interface/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/operators/deployment/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/contributors/contributors/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/</loc>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/scheduler/dynamic-scheduler/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/contributors/roadmap/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/contributors/governance/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/concepts/computation-models/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/concepts/features/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/examples/allreducekmeans/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/examples/cvblda/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/examples/mlrsgd/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/resources/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/examples/bcastreducekmeans/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/examples/pushpullkmeans/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/examples/regroupallgatherkmeans/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/harpdaal/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/examples/harpdaal/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/Example/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/contributors/codebase/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/developers/data-model/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/concepts/architecture/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/operators/configuration/instance/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/operators/heron-shell/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/concepts/topologies/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/operators/heron-tracker/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/operators/heron-tracker-api/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/operators/heron-ui/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/developers/ui-guide/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/developers/java/bolts/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/contributors/custom-metrics-sink/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/contributors/custom-scheduler/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/developers/python/bolts/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/developers/python/spouts/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/developers/java/spouts/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/operators/configuration/config-intro/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/examples/latentdirichletallocation/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/examples/lda/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/operators/deployment/schedulers/local/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/operators/heron-cli/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/operators/deployment/schedulers/mesos/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/operators/configuration/metrics-manager/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/operators/observability/graphite/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/communications/pushandpull/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/getting-started/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/getting-started-troubleshooting/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/communications/reduce/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/communications/regroup/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/communications/rotate/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/operators/deployment/uploaders/hdfs/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/operators/deployment/statemanagers/localfs/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/operators/deployment/uploaders/localfs/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/operators/deployment/uploaders/s3/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/operators/deployment/uploaders/scp/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/operators/deployment/statemanagers/zookeeper/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/operators/deployment/schedulers/aurora-local-setup/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/operators/deployment/schedulers/mesos-local-mac/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/developers/simulator-mode/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/operators/deployment/schedulers/slurm/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/scheduler/static-scheduler/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/operators/configuration/stmgr/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/contributors/support/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/examples/svm/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/operators/configuration/system/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/contributors/testing/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/developers/packing/ffdpacking/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/operators/configuration/tmaster/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/developers/troubleshooting/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/developers/tuning/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/developers/serialization/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/contributors/license/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/developers/java/topologies/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/developers/python/topologies/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/</loc>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/examples/kmeans/</loc>
+  </url>
+  
+</urlset>
