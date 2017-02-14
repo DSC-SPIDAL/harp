@@ -1,6 +1,6 @@
 HARP PROJECT
 
-Copyright 2013-2016 Inidana University
+Copyright 2013-2017 Inidana University
 Apache License 2.0
 
 Author: Bingjing Zhang

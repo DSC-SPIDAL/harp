@@ -121,8 +121,8 @@ protected void mapCollective(KeyValReader reader, Context context) throws IOExce
 
 After using `ant` to compile the code, you need to provide several parameters to Harp.
 ```bash
-$ hadoop jar build/harp3-app-hadoop-2.6.0.jar edu.iu.MLR.MLRMapCollective [alpha] [number of iteration] [number of features] [number of workers] [number of threads] [topic file path] [qrel file path] [input path in HDFS] [output path in HDFS]
-#e.g. hadoop jar build/harp3-app-hadoop-2.6.0.jar edu.iu.MLR.MLRMapCollective 1.0 100 47236 2 16 /rcv1v2/rcv1.topics.txt /rcv1v2/rcv1-v2.topics.qrels /input /output
+$ hadoop jar build/harp3-app-hadoop-2.6.0.jar edu.iu.mlr.MLRMapCollective [alpha] [number of iteration] [number of features] [number of workers] [number of threads] [topic file path] [qrel file path] [input path in HDFS] [output path in HDFS]
+#e.g. hadoop jar build/harp3-app-hadoop-2.6.0.jar edu.iu.mlr.MLRMapCollective 1.0 100 47236 2 16 /rcv1v2/rcv1.topics.txt /rcv1v2/rcv1-v2.topics.qrels /input /output
 ```
 
 The output should be the weight matrix `W`.
