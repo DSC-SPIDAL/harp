@@ -1,0 +1,52 @@
+= doctype html
+html lang={{.Site.LanguageCode}}
+  head
+    {{partial "meta.html" .}}
+    {{partial "index/index-meta.html" .}}
+    title {{.Site.Title}}
+    {{partial "css.includes.html" .}}
+  body
+    .hn-main
+      {{partial "navbar.html" .}}
+      .container-fluid
+        .row
+          .hn-jumbotron.jumbotron.text-center
+            .row
+              img.hn-jumbotron-logo.center-block src={{.Site.Params.assets.textlogo}}
+            .row
+              p.hn-tagline {{.Site.Params.tagline}}
+            .hn-button-row.row
+              a.btn.btn-default href=docs/getting-started Get Started
+        .row
+          .col-xs-12.col-sm-9.col-md-9.col-lg-12
+            .landing-feature-2.text-left
+              h2 Why Harp?
+              br
+              .row
+                .col-sm-6
+                  .panel.panel-primary
+                    .panel-heading Speed and Performance
+                    .panel-body Harp is built with a wide array of architectural improvements that contribute to high efficiency gains.
+                .col-sm-6
+                  .panel.panel-primary
+                    .panel-heading Compatibility with Hadoop
+                    .panel-body Harp is a plugin built into <a href="http://hadoop.apache.org">Apache Hadoop</a> and hence no code change of Hadoop is required for migration.
+              .row
+                .col-sm-6
+                  .panel.panel-primary
+                    .panel-heading Ease of Development and Troubleshooting
+                    .panel-body Easily debug and identify the issues, allowing faster iteration during development.
+                .col-sm-6
+                  .panel.panel-primary
+                    .panel-heading Scalability and Reliability
+                    .panel-body Harp is highly scalable both in the ability to run on large amount of data and the ability to run on large clusters.
+
+          .hn-twitter-feed.hidden-xs.col-sm-3.col-md-3.col-lg-3
+            {{partial "index/feed.html" .}}
+
+      {{partial "footer.html" .}}
+   
+      {{partial "index/google-analytics.html" .}}
+
+      script src=https://code.jquery.com/jquery-2.2.1.min.js
+      script src=/js/app.min.js
