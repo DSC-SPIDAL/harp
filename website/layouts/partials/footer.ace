@@ -1,0 +1,5 @@
+footer.footer.hn-footer role=contentinfo
+  .container
+    .row
+      .col-lg-12
+        p {{.Now.Year}} Indiana University

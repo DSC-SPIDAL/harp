@@ -1,0 +1,57 @@
+languageCode: en-us
+title: Harp
+author: Bingjing Zhang
+canonifyurls: true
+baseurl: "https://dsc-spidal.github.io/Harp/"
+
+# Site-level config
+metadataformat: yaml
+newcontenteditor: atom
+taxonomies:
+  tag: tags
+
+# Pygments syntax highlighting
+pygmentsstyle: monokai
+pygmentsuseclasses: false
+pygmentscodefences: true
+
+# Site-level parameters available through .Site.Params.{key}
+params:
+  author: Indiana University
+  description: Harp is a collective communication library plugined into Hadoop from Indiana University.
+  versions:
+    harp: 3
+  assets:
+    favicon:
+      small: /img/favicon-16x9.png
+      large: /img/favicon-32x18.png
+    logo: /img/logo54x54.png #logo.png
+    textlogo: /img/0-1-1.png #logo.png
+    textLogoSmall: /img/0-1-2.png #logo.png
+    css:
+      - /css/style.min.css
+      - /css/font-awesome.min.css
+      - /css/pygments.css
+    js:
+      - https://code.jquery.com/jquery-2.2.1.min.js
+      - /js/app.min.js
+  tagline: A collective communication library plugined into Hadoop from Indiana University
+  github:
+    home: https://dsc-spidal.github.io/Harp/
+    master: https://dsc-spidal.github.io/Harp/tree/master
+    issues: https://dsc-spidal.github.io/Harp/issues
+  social:
+    twitter: https://twitter.com/heronstreaming 
+    slack: https://heronusers.slack.com
+    googleGroup: https://groups.google.com/forum/#!forum/harp-users
+  seo:
+    opengraph:
+      - property: locale
+        content: en_US
+      - property: type
+        content: article
+    twittercards:
+      - name: card
+        content: summary
+      - name: site
+        content: "@heronstreaming"
