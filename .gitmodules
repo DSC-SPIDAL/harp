@@ -1,0 +1,3 @@
+[submodule "website/public"]
+	path = website/public
+	url = git@github.com:Ethanlm/harp.git
