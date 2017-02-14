@@ -1,18 +1,14 @@
 sections:
-  - name: Getting Started
+  - name: Quick Start
     sublinks:
       - name: Harp Installation
         url: /docs/getting-started
-  - name: Harp Concepts
-    sublinks: 
-      - name: Features
-        url: /docs/concepts/features
-      - name: Computation Models
-        url: /docs/concepts/computation-models
-  - name: Data Interfaces and Types
+  - name: Programming Guides
     sublinks:
       - name: Data Interfaces and Types
         url: /docs/data-interface
+      - name: Computation Models
+        url: /docs/concepts/computation-models
   - name: Collective Communication
     sublinks:
       - name: broadcast

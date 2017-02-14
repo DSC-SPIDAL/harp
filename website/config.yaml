@@ -41,8 +41,6 @@ params:
     master: https://github.com/DSC-SPIDAL/harp/tree/master
     issues: https://github.com/DSC-SPIDAL/harp/issues
   social:
-    twitter: https://twitter.com/heronstreaming 
-    slack: https://heronusers.slack.com
     googleGroup: https://groups.google.com/forum/#!forum/harp-users
   seo:
     opengraph:
@@ -50,8 +48,3 @@ params:
         content: en_US
       - property: type
         content: article
-    twittercards:
-      - name: card
-        content: summary
-      - name: site
-        content: "@heronstreaming"
