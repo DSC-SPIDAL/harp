@@ -1,8 +1,8 @@
 languageCode: en-us
-title: Harp
+title: harp
 author: Bingjing Zhang
 canonifyurls: true
-baseurl: "https://dsc-spidal.github.io/Harp/"
+baseurl: "https://dsc-spidal.github.io/harp/"
 
 # Site-level config
 metadataformat: yaml
@@ -20,7 +20,7 @@ params:
   author: Indiana University
   description: Harp is a collective communication library plugined into Hadoop from Indiana University.
   versions:
-    harp: 3
+    harp: 1.0.0
   assets:
     favicon:
       small: /img/favicon-16x9.png
@@ -37,9 +37,9 @@ params:
       - /js/app.min.js
   tagline: A collective communication library plugined into Hadoop from Indiana University
   github:
-    home: https://dsc-spidal.github.io/Harp/
-    master: https://dsc-spidal.github.io/Harp/tree/master
-    issues: https://dsc-spidal.github.io/Harp/issues
+    home: https://dsc-spidal.github.io/harp/
+    master: https://github.com/DSC-SPIDAL/harp/tree/master
+    issues: https://github.com/DSC-SPIDAL/harp/issues
   social:
     twitter: https://twitter.com/heronstreaming 
     slack: https://heronusers.slack.com
