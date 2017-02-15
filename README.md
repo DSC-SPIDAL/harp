@@ -1,29 +1,36 @@
-HARP PROJECT
+# HARP PROJECT
 
 Copyright 2013-2017 Inidana University
 Apache License 2.0
 
-Author: Bingjing Zhang
+@Author: Bingjing Zhang
 
-WHAT IS HARP?
+## WHAT IS HARP?
 Harp is a framework for machine learning applications.
 
-FEATURES
-1. Hadoop 2.6.0 plugin
-2. Hierarchal data abstraction (arrays/objects, partitions/tables)
+## FEATURES
+1. A Hadoop plugin. It currently supports hadoop 2.6.0 ~ 2.7.3 version.
+2. Hierarchical data abstraction (arrays/objects, partitions/tables)
 3. Pool based memory management
 4. Collective + event-driven programming model (distributed computing)
 5. Dynamic Scheduler + Static Scheduler (multi-threading)
 
-APPLICATIONS
-K-means Clustering
+## COMPILATION & INSTALLATION
 
-COMPILATION & INSTALLATION
-hadoop-2.6.0
-1. Enter "harp" home directory and execute "ant"
-2. Copy harp-0.3.0-hadoop-2.6.0.jar and fastutil-7.0.13.jar from lib/ into hadoop-2.6.0/share/hadoop/mapreduce
-3. Configure Hadoop environment for settings required to run Hadoop
-4. Edit mapred-site.xml in hadoop-2.6.0/etc/hadoop, add java opts settings for map-collective tasks
+###1. Install Maven by following the [maven official instruction](http://maven.apache.org/install.html)
+###2. Enter "harp" home directory
+###3. Install third party jar file. This javaml jar is required by randomforest application. It's not required by harp project itself.
+    mvn install:install-file -Dfile=third_party/javaml-0.1.7.jar -DgroupId=net.sf -DartifactId=javaml -Dversion=0.1.7 -Dpackaging=jar
+###4. Compile harp
+    mvn clean package
+
+###5. Install harp plugin to hadoop
+    cp harp-project/target/harp-project-1.0-SNAPSHOP.jar $HADOOP_HOME/share/hadoop/mapreduce/
+    cp third_party/fastutil-7.0.13.jar $HADOOP_HOME/share/hadoop/mapreduce/
+
+###6. Configure Hadoop environment for settings required to run Hadoop
+
+###7. Edit mapred-site.xml in $HADOOP_HOME/etc/hadoop, add java opts settings for map-collective tasks
    (The following is an example)
    <property>
      <name>mapreduce.map.collective.memory.mb</name>
@@ -33,11 +40,17 @@ hadoop-2.6.0
      <name>mapreduce.map.collective.java.opts</name>
      <value>-Xmx256m -Xms256m</value>
    </property>
-5. To develop Harp applications, remember to add the following property in job configuration:
-   jobConf.set("mapreduce.framework.name", "map-collective");
-6. Enter "harp-app" home directory and execute "ant" 
-7. Copy build/harp-app-hadoop-2.6.0.jar to hadoop-2.6.0/
-8. Start Hadoop environment
-9. Run Kmeans job 
-   hadoop jar harp3-app-hadoop-2.6.0.jar edu.iu.kmeans.regroupallgather.KMeansLauncher <num of points> <num of centroids> <vector size> <num of point files per worker> <number of map tasks> <num threads> <number of iteration> <work dir> <local points dir>
-   e.g. bin/hadoop jar harp3-app-hadoop-2.6.0.jar edu.iu.kmeans.regroupallgather.KMeansLauncher 1000 10 100 5 2 2 10 /kmeans /tmp/kmeans
+
+###8. To develop Harp applications, remember to add the following property in job configuration:
+    jobConf.set("mapreduce.framework.name", "map-collective");
+
+## EXAMPLE
+
+###1. copy harp examples to $HADOOP_HOME
+    cp harp-app/target/harp-app-1.0-SNAPSHOT.jar $HADOOP_HOME
+
+###2. Start Hadoop
+
+###3. Run Kmeans Map-collective job
+   hadoop jar harp-app-1.0-SNAPSHOT.jar edu.iu.kmeans.regroupallgather.KMeansLauncher <num of points> <num of centroids> <vector size> <num of point files per worker> <number of map tasks> <num threads> <number of iteration> <work dir> <local points dir>
+   e.g. bin/hadoop jar harp-app-1.0-SNAPSHOT.jar edu.iu.kmeans.regroupallgather.KMeansLauncher 1000 10 100 5 2 2 10 /kmeans /tmp/kmeans
