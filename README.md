@@ -1,4 +1,4 @@
-# HARP PROJECT
+# HARP
 
 @Copyright 2013-2017 Inidana University
 Apache License 2.0
