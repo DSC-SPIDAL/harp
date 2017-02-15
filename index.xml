@@ -107,7 +107,7 @@
 &lt;p&gt;Discussion about Harp happens on GitHub and over mailing list.&lt;/p&gt;
 
 &lt;ul&gt;
-&lt;li&gt;GitHub: &lt;a href=&#34;https://github.com/DSC-SPIDAL/Harp.git&#34;&gt;DSC-SPIDAL/Harp&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;GitHub: &lt;a href=&#34;https://github.com/DSC-SPIDAL/harp.git&#34;&gt;DSC-SPIDAL/Harp&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;Harp User Google Group: &lt;a href=&#34;https://groups.google.com/forum/#!forum/harp-users&#34;&gt;harp-users@googlegroups.com&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 
@@ -120,9 +120,8 @@ of Heron:&lt;/p&gt;
 
 &lt;ul&gt;
 &lt;li&gt;&lt;a href=&#34;../../getting-started/&#34;&gt;Harp Installation&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;../../concepts/features&#34;&gt;Harp Features&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;../../concepts/computation-models/&#34;&gt;Computation Models&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;../../data-interface/&#34;&gt;Data Interfaces and Types&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;../../programming/data-interface/&#34;&gt;Data Interfaces and Types&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;../../programming/computation-models/&#34;&gt;Computation Models&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;p&gt;In general, contributions that fix bugs or add features (as opposed to stylistic, refactoring, or
