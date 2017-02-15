@@ -20,7 +20,7 @@ params:
   author: Indiana University
   description: Harp is a collective communication library plugined into Hadoop from Indiana University.
   versions:
-    harp: 3
+    harp: 1.0.0
   assets:
     favicon:
       small: /img/favicon-16x9.png
