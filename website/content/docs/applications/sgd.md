@@ -1,3 +1,0 @@
----
-title: Stochastic Gradient Descent
----

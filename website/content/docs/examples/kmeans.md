@@ -4,6 +4,7 @@ title: K-Means
 
 This section describes how to implement the K-means algorithm using Harp.
 
+<img src="/img/kmeans.png" width="80%" >
 
 # Understanding K-Means
 
@@ -40,26 +41,25 @@ for iterations{
 This is the definition of map-collective task. It reads data from context and then call runKmeans function to actually run kmeans Mapper task.
 ```java
 protected void mapCollective( KeyValReader reader, Context context) throws IOException, InterruptedException {
-		LOG.info("Start collective mapper.");
-	    long startTime = System.currentTimeMillis();
-	    List<String> pointFiles = new ArrayList<String>();
-	    while (reader.nextKeyValue()) {
-	    	String key = reader.getCurrentKey();
-	    	String value = reader.getCurrentValue();
-	    	LOG.info("Key: " + key + ", Value: " + value);
-	    	pointFiles.add(value);
-	    }
-	    Configuration conf = context.getConfiguration();
-	    runKmeans(pointFiles, conf, context);
-	    LOG.info("Total iterations in master view: " + (System.currentTimeMillis() - startTime));
-	  }
+    LOG.info("Start collective mapper.");
+    long startTime = System.currentTimeMillis();
+    List<String> pointFiles = new ArrayList<String>();
+    while (reader.nextKeyValue()) {
+	   	String key = reader.getCurrentKey();
+	   	String value = reader.getCurrentValue();
+    	LOG.info("Key: " + key + ", Value: " + value);
+	    pointFiles.add(value);
+	}
+	Configuration conf = context.getConfiguration();
+	runKmeans(pointFiles, conf, context);
+    LOG.info("Total iterations in master view: " + (System.currentTimeMillis() - startTime));
+}
 ```
 
 
-## Step 3 --- Map Collective
+## The runKmeans function
 
 Harp provides several collective communication operations. Here are some examples provided to show how to apply these collective communication methods to K-Means.
-
 
   <ul class="nav nav-pills">
     <li class="active"><a data-toggle="pill" href="#allreduce">Allreduce</a></li>
@@ -86,4 +86,7 @@ Harp provides several collective communication operations. Here are some example
       <p>Eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.</p>
     </div>
   </div>
+
+
+
 

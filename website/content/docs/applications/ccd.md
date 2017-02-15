@@ -1,3 +1,0 @@
----
-title: Cyclic Coordinate Descent
----
