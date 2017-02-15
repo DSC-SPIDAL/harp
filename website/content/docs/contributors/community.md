@@ -7,7 +7,7 @@ title: Community
 
 Discussion about Harp happens on GitHub and over mailing list.
 
-* GitHub: [DSC-SPIDAL/Harp](https://github.com/DSC-SPIDAL/Harp.git)
+* GitHub: [DSC-SPIDAL/Harp](https://github.com/DSC-SPIDAL/harp.git)
 * Harp User Google Group: [harp-users@googlegroups.com](https://groups.google.com/forum/#!forum/harp-users)
 
 Community is critical to Harp. Contributions are welcomed!
@@ -19,9 +19,9 @@ You can first read the following pages to have a basic understanding
 of Heron:
 
 * [Harp Installation](../../getting-started/)
-* [Harp Features](../../concepts/features)
-* [Computation Models](../../concepts/computation-models/)
-* [Data Interfaces and Types](../../data-interface/)
+* [Data Interfaces and Types](../../programming/data-interface/)
+* [Computation Models](../../programming/computation-models/)
+
 
 
 In general, contributions that fix bugs or add features (as opposed to stylistic, refactoring, or
