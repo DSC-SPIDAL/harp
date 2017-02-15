@@ -1,4 +1,4 @@
-#COMPILE
+####COMPILE
 
 ```
 cd $HARP_ROOT_DIR
@@ -7,7 +7,7 @@ cd $HARP_ROOT_DIR/harp-tutorial-app
 cp target/harp-tutorial-app.1.0.SNAPSHOT.jar $HADOOP_HOME
 ```
 
-#RUN
+####RUN
 ```bash
 cd $HADOOP_HOME
    
@@ -28,12 +28,12 @@ hadoop jar harp-tutorial-app.1.0.SNAPSHOT.jar edu.iu.kmeans.common.KmeansMapColl
 		[push-pull]: use push and pull operation to synchronize centroids
 ```
 
-#EXAMPLE
+####EXAMPLE
 ```
 hadoop jar harp-tutorial-app.jar edu.iu.kmeans.common.KmeansMapCollective 1000 10 10 2 10 /kmeans /tmp/kmeans allreduce
 ```
 
-#FETCH RESULTS
+####FETCH RESULTS
 ```
 hdfs dfs -ls /
 hdfs dfs -cat /kmeans/centroids/*
