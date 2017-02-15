@@ -19,7 +19,7 @@ We use gulp and hugo to build the harp website. You can refer to [Using Gulp wit
 
 
 ## Set gh-pages branch as a submodule
-    We set website/public as a submodule pointing to gh-pages branch. It's one time setup.
+####We set website/public as a submodule pointing to gh-pages branch. It's one time setup.
 
     ```
     rm -rf public
