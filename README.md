@@ -51,6 +51,9 @@ Harp is a framework for machine learning applications.
     cp harp-app/target/harp-app-1.0-SNAPSHOT.jar $HADOOP_HOME
 
 ####2. Start Hadoop
+    cd $HADOOP_HOME
+    sbin/start-dfs.sh
+    sbin/start-yarn.sh
 
 ####3. Run Kmeans Map-collective job
 ##### The usage is
@@ -59,5 +62,5 @@ Harp is a framework for machine learning applications.
    ```
 ##### For example:
    ```bash
-   bin/hadoop jar harp-app-1.0-SNAPSHOT.jar edu.iu.kmeans.regroupallgather.KMeansLauncher 1000 10 100 5 2 2 10 /kmeans /tmp/kmeans
+   hadoop jar harp-app-1.0-SNAPSHOT.jar edu.iu.kmeans.regroupallgather.KMeansLauncher 1000 10 100 5 2 2 10 /kmeans /tmp/kmeans
    ```
