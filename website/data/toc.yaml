@@ -27,12 +27,6 @@ sections:
         url: /docs/communications/pushandpull
       - name: rotate
         url: /docs/communications/rotate
-  - name: Schedulers
-    sublinks:
-      - name: Static Scheduler
-        url: /docs/scheduler/static-scheduler
-      - name: Dynamic Scheduler
-        url: /docs/scheduler/dynamic-scheduler
   - name: Examples
     sublinks:
       - name: k-means
