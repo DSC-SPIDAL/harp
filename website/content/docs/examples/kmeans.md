@@ -2,115 +2,59 @@
 title: K-Means
 ---
 
-K-Means clustering is a method of vector quantization, originally from signal processing, that is popular for cluster analysis in data mining. K-Means clustering aims to partition `N` observations into `K` clusters in which each observation belongs to the cluster with the nearest mean, serving as a prototype of the cluster.
+This section describes how to implement the K-means algorithm using Harp.
 
-The problem is an NP-hard question. However, there are efficient heuristic algorithms that are commonly employed and converge quickly to a local optimum. These are usually similar to the expectation-maximization algorithm for mixtures of Gaussian distributions via an iterative refinement approach employed by both algorithms. Additionally, they both use cluster centers to model the data; however, k-means clustering tends to find clusters of comparable spatial extent, while the expectation-maximization mechanism allows clusters to have different shapes.
 
-The K-Means algorithm simply repeats the following set of steps until the maximum number of iterations, or the changes on centroids are less than a threshold:
+# Understanding K-Means
+
+K-Means is a very powerful and easily understood clustering algorithm. The aim of the algorithm is to divide a given set of points into “K” partitions. “K” needs to be specified by the user. In order to understand K-Means, first you need to understand the proceeding concepts and their meaning.
+
+1. `Centroids`:
+    Centroids can be defined as the center of each cluster. If we are performing clustering with k=3, we will have 3 centroids. To perform K-Means clustering, the users needs to provide the initial set of centroids.
+
+2. `Distance`:
+    In order to group data points as close together or as far-apart we need to define a distance between two given data points. In K-Means clustering distance is normally calculated as the Euclidean Distance between two data points.
+
+The K-Means algorithm simply repeats the following set of steps until there is no change in the partition assignments, in that it has clarified which data point is assigned to which partition.
 ```java
-1. Choose K points as the initial set of centroids.
-
-2. Assign each data point in the data set to the closest centroid (this is done by calculating the distance between the data point and each centroid).
-
-3. Calculate the new centroids based on the clusters that were generated in step 2. Normally this is done by calculating the mean of each cluster.
-
-4. Repeat steps 2 and 3 until the maximum number of iterations, or the changes on centroids are less than a threshold.
+Choose K points as the initial set of centroids.
+Assign each data point in the data set to the closest centroid (this is done by calculating the distance between the data point and each centroid).
+Calculate the new centroids based on the clusters that were generated in step 2. Normally this is done by calculating the mean of each cluster.
+Repeat steps 2 and 3 until data points do not change cluster assignments, meaning their centroids are set.
 ```
 
-Definitions:
+# Pseduo Code and Java Code
 
-* `N` is the number of data points
-* `M` is the number of centroids
-* `D` is the dimension of centroids
-* `Vi` refers to the `i`th data point (vector)
-* `Cj` refers to the `j`th centroid
-
-## Step 1 --- Generate data points
-
-The actual method is in `Utils.java`. This method generates a set of data points and writes them into the specified folder. The method also takes in parameters to specify the number of files and number of data points that need to be generated. The data points are divided among the data files. You will generate `numMapTasks` data files, with each data file containing a part of the data points. Then you can generate data to `localDirStr` and use `fs` to copy the data to `dataDir`.
-
+## The Main Method
+The tasks of the main class is to configure and run the job iteratively.
 ```java
-static void generateData(int numOfDataPoints, int vectorSize, int numMapTasks, FileSystem fs, String localDirStr, Path dataDir) throws IOException, InterruptedException, ExecutionException {
-    int pointsPerFile = numOfDataPoints / numMapTasks;
-    int pointsRemainder = numOfDataPoints % numMapTasks;
-    if (fs.exists(dataDir))
-        fs.delete(dataDir, true);
-    File localDir = new File(localDirStr);
-    if (localDir.exists() && localDir.isDirectory()) {
-        for (File file : localDir.listFiles())
-            file.delete();
-        localDir.delete();
-    }
-    localDir.mkdir();
-    if (pointsPerFile == 0)
-        throw new IOException("No point to write.");
-    double point;
-    int hasRemainder = 0;
-    Random random = new Random();
-    for (int k = 0;k < numMapTasks;k++) {
-        try {
-            String filename = Integer.toString(k);
-            File file = new File(localDirStr + File.separator + "data_" + filename);
-            FileWriter fw = new FileWriter(file.getAbsoluteFile());
-            BufferedWriter bw = new BufferedWriter(fw);
-            if (pointsRemainder > 0) {
-                hasRemainder = 1;
-                pointsRemainder--;
-            }
-            else
-                hasRemainder = 0;
-            int pointsForThisFile = pointsPerFile + hasRemainder;
-            for (int i = 0; i < pointsForThisFile; i++)
-                for (int j = 0; j < vectorSize; j++) {
-                    point = random.nextDouble() * DATA_RANGE;
-                    if (j == vectorSize - 1) {
-                        bw.write(point + "");
-                        bw.newLine();
-                    }
-                    else
-                        bw.write(point + " ");
-                }
-            bw.close();
-        }
-        catch (FileNotFoundException e)
-            e.printStackTrace();
-        catch (IOException e)
-            e.printStackTrace();
-    }
-    Path localPath = new Path(localDirStr);
-    fs.copyFromLocalFile(localPath, dataDir);
+generate N data points (D dimensions), write to HDFS
+generate M centroids, write to HDFS
+for iterations{
+    configure a job
+    launch the job
 }
 ```
 
-## Step 2 --- Generate initial centroids
-
-K-Means needs a set of initial centroids. The `generateInitialCentroids` method in `Utils.java` will generate a set of random centroids. You can generate one file contains centroids and use `fs` to write it to `cDir`. `JobID` indicates the current job. It is optional.
-
+## The mapCollective function
+This is the definition of map-collective task. It reads data from context and then call runKmeans function to actually run kmeans Mapper task.
 ```java
-static void generateInitialCentroids(int numCentroids, int vectorSize, Configuration configuration, Path cDir, FileSystem fs, int JobID) throws IOException {
-    Random random = new Random();
-    double[] data = null;
-    if (fs.exists(cDir))
-        fs.delete(cDir, true);
-    if (!fs.mkdirs(cDir))
-        throw new IOException(cDir.toString() + "fails to be created.");
-    data = new double[numCentroids * vectorSize];
-    for (int i = 0;i < data.length;i++)
-        data[i] = random.nextDouble() * DATA_RANGE;
-    Path initClustersFile = new Path(cDir, KMeansConstants.CENTROID_FILE_NAME);
-    FSDataOutputStream out = fs.create(initClustersFile, true);
-    BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(out));
-    for (int i = 0;i < data.length;i++)
-        if ((i % vectorSize) == (vectorSize - 1)) {
-            bw.write(data[i] + "");
-            bw.newLine();
-        }
-        else
-            bw.write(data[i] + " ");
-    bw.flush();
-    bw.close();
-}
+protected void mapCollective( KeyValReader reader, Context context) throws IOException, InterruptedException {
+		LOG.info("Start collective mapper.");
+	    long startTime = System.currentTimeMillis();
+	    List<String> pointFiles = new ArrayList<String>();
+	    while (reader.nextKeyValue()) {
+	    	String key = reader.getCurrentKey();
+	    	String value = reader.getCurrentValue();
+	    	LOG.info("Key: " + key + ", Value: " + value);
+	    	pointFiles.add(value);
+	    }
+	    Configuration conf = context.getConfiguration();
+	    runKmeans(pointFiles, conf, context);
+	    LOG.info("Total iterations in master view: " + (System.currentTimeMillis() - startTime));
+	  }
 ```
+
 
 ## Step 3 --- Map Collective
 
