@@ -18,10 +18,10 @@ K-Means is a very powerful and easily understood clustering algorithm. The aim o
 
 The K-Means algorithm simply repeats the following set of steps until there is no change in the partition assignments, in that it has clarified which data point is assigned to which partition.
 ```java
-Choose K points as the initial set of centroids.
-Assign each data point in the data set to the closest centroid (this is done by calculating the distance between the data point and each centroid).
-Calculate the new centroids based on the clusters that were generated in step 2. Normally this is done by calculating the mean of each cluster.
-Repeat steps 2 and 3 until data points do not change cluster assignments, meaning their centroids are set.
+1. Choose K points as the initial set of centroids.
+2. Assign each data point in the data set to the closest centroid (this is done by calculating the distance between the data point and each centroid).
+3. Calculate the new centroids based on the clusters that were generated in step 2. Normally this is done by calculating the mean of each cluster.
+4. Repeat steps 2 and 3 until data points do not change cluster assignments, meaning their centroids are set.
 ```
 
 # Pseduo Code and Java Code
