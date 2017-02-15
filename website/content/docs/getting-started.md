@@ -5,7 +5,7 @@ aliases:
   - /docs/install.html
 ---
 
-This instruction is only available for:
+This instruction is only tested on:
 
 * Mac OS X
 * Ubuntu
@@ -14,12 +14,11 @@ If you are using windows, we suggest you to install an Ubuntu system on a virtua
 
 ## Step 1 --- Install Hadoop 2.6.0
 
-First of all, make sure your computer can use `ssh` to access `localhost` and install `Java` as well.
+1. First of all, make sure your computer can use `ssh` to access `localhost` and install `Java` as well.
 
-Download and extract the hadoop-2.6.0 binary into your machine. These are available at [hadoop-2.6.0.tar.gz](https://dist.apache.org/repos/dist/release/hadoop/common/hadoop-2.6.0/hadoop-2.6.0.tar.gz).
+2. Download and extract the hadoop-2.6.0 binary into your machine. It's available at [hadoop-2.6.0.tar.gz](https://dist.apache.org/repos/dist/release/hadoop/common/hadoop-2.6.0/hadoop-2.6.0.tar.gz).
 
-Then set the environment variables in `~/.bashrc`.
-
+3. Then set the environment variables in `~/.bashrc`.
 ```bash
 export JAVA_HOME=<where Java locates>
 #e.g. ~/jdk1.8.0_91
@@ -29,15 +28,11 @@ export YARN_HOME=$HADOOP_HOME
 export HADOOP_CONF_DIR=$HADOOP_HOME/etc/hadoop
 export PATH=$HADOOP_HOME/bin:$JAVA_HOME/bin:$PATH
 ```
-Now run
-
+4. Now run to make sure the changes are applied.
 ```bash
 $ source ~/.bashrc
 ```
-in order to make sure the changes are applied.
-
-Check if you can successfully run Hadoop command and get the following output.
-
+5. Check if environment variabls are set correctly
 ```bash
 $ hadoop
 Usage: hadoop [--config confdir] COMMAND
@@ -55,14 +50,12 @@ Usage: hadoop [--config confdir] COMMAND
   trace                view and modify Hadoop tracing settings
  or
   CLASSNAME            run the class named CLASSNAME
-
 Most commands print help when invoked w/o parameters.
 ```
 
-Modify the following files in Apache Hadoop distribution.
+6. Modify the following files in Apache Hadoop distribution.
 
-`$HADOOP_HOME/etc/hadoop/core-site.xml`:
-
+    (1).`$HADOOP_HOME/etc/hadoop/core-site.xml`:
 ```html
 <configuration>
   <property>
@@ -77,26 +70,17 @@ Modify the following files in Apache Hadoop distribution.
 </configuration>
 ```
 
-`$HADOOP_HOME/etc/hadoop/hdfs-site.xml`:
+    (2).`$HADOOP_HOME/etc/hadoop/hdfs-site.xml`:
 ```html
 <configuration>
   <property>
     <name>dfs.replication</name>
     <value>1</value>
   </property>
-  <property>
-    <name>dfs.namenode.http-address</name>
-    <value>localhost:50070</value>
-  </property>
-  <property>
-    <name>dfs.namenode.secondary.http-address</name>
-    <value>localhost:50190</value>
-  </property>
 </configuration>
 ```
 
-`$HADOOP_HOME/etc/hadoop/mapred-site.xml`:
-
+    (3).`$HADOOP_HOME/etc/hadoop/mapred-site.xml`:
 You will be creating this file. It doesn’t exist in the original package.
 ```html
 <configuration>
@@ -115,33 +99,9 @@ You will be creating this file. It doesn’t exist in the original package.
 </configuration>
 ```
 
-`$HADOOP_HOME/etc/hadoop/yarn-site.xml`:
+    (4).`$HADOOP_HOME/etc/hadoop/yarn-site.xml`:
 ```html
 <configuration>
-  <property>
-    <name>yarn.resourcemanager.hostname</name>
-    <value>localhost</value>
-  </property>
-  <property>
-    <name>yarn.resourcemanager.address</name>
-    <value>localhost:8132</value>
-  </property>
-  <property>
-    <name>yarn.resourcemanager.scheduler.address</name>
-    <value>localhost:8130</value>
-  </property>
-  <property>
-    <name>yarn.resourcemanager.resource-tracker.address</name>
-    <value>localhost:8131</value>
-  </property>
-  <property>
-    <name>yarn.resourcemanager.admin.address</name>
-    <value>localhost:8133</value>
-  </property>
-  <property>
-    <name>yarn.resourcemanager.webapp.address</name>
-    <value>localhost:8080</value>
-  </property>
   <property>
     <name>yarn.nodemanager.aux-services</name>
     <value>mapreduce_shuffle</value>
@@ -166,7 +126,7 @@ You will be creating this file. It doesn’t exist in the original package.
 </configuration>
 ```
 
-Next we format the file system and you should be able to see it exits with status 0.
+7. Next we format the file system and you should be able to see it exits with status 0.
 ```bash
 $ hdfs namenode -format
 ...
@@ -176,14 +136,13 @@ xx/xx/xx xx:xx:xx INFO namenode.NameNode: SHUTDOWN_MSG:
 SHUTDOWN_MSG: Shutting down NameNode at xxx.xxx.xxx.xxx
 ```
 
-Launch NameNode daemon, DataNode daemon, ResourceManager daemon and NodeManager Daemon.
-
+8. Launch NameNode daemon, DataNode daemon, ResourceManager daemon and NodeManager Daemon.
 ```bash
 $ $HADOOP_HOME/sbin/start-dfs.sh
 $ $HADOOP_HOME/sbin/start-yarn.sh
 ```
 
-Check if the daemons started successfully with the following output.
+9. Check if the daemons started successfully with the following output.
 ```bash
 $ jps
 xxxxx NameNode
@@ -194,94 +153,107 @@ xxxxx Jps
 xxxxx ResourceManager
 ```
 
-You can browse the web interface for the NameNode at [http://localhost:50070](http://localhost:50070) and for the ResourceManager at [http://localhost:8080](http://localhost:8080).
+10. You can browse the web interface for the NameNode at [http://localhost:50070](http://localhost:50070) and for the ResourceManager at [http://localhost:8080](http://localhost:8080).
 
 ## Step 2 --- Install Harp
 
-Download Harp3-Project. It is available at [DSC-SPIDAL/Harp](https://github.com/DSC-SPIDAL/Harp.git).
-
-We will use `ant` with Harp. Make sure you can run ant in your machine.
-
-Then add environment variables in `~/.bashrc`.
+1. Clone Harp repository. It is available at [DSC-SPIDAL/harp](https://github.com/DSC-SPIDAL/harp.git).
 ```bash
-export HARP3_PROJECT_HOME=<where Harp locates>
-#e.g. ~/Harp3-Project
-export HARP3_HOME=$HARP3_PROJECT_HOME/harp3
-export ANT_HOME=<where ant locates>
-#e.g. ~/apache-ant-1.9.7
-export PATH=$ANT_HOME/bin:$PATH
+git clone git@github.com:DSC-SPIDAL/harp.git
 ```
 
-If hadoop is still running, stop it first.
+2. Follow the [maven official instruction](http://maven.apache.org/install.html) to install maven.
+
+3. Then add environment variables in `~/.bashrc`.
+```bash
+export HARP_ROOD_DIR=<where Harp locates>
+#e.g. harp/harp-project
+export HARP_HOME=$HARP_ROOD_DIR/harp-project
+```
+4. Run source command to set the envrionment variables.
+```bash
+source ~/.bashrc
+```
+
+5. If hadoop is still running, stop it first.
 ```bash
 $ $HADOOP_PREFIX/sbin/stop-dfs.sh
 $ $HADOOP_PREFIX/sbin/stop-yarn.sh
 ```
 
-Next, we need to compile Harp.
+6. Enter "harp" home directory
 ```bash
-$ cd $HARP3_HOME
-$ ant
+cd $HARP_ROOT_DIR
 ```
 
-Copy `harp-0.3.0-hadoop-2.6.0.jar` and `fastutil-7.0.13.jar` from `$HARP3_HOME/lib/` into `$HADOOP_HOME/share/hadoop/mapreduce`.
-
+7. Install third party jar file. This javaml jar is required by randomforest application. It's not required by harp project itself.
 ```bash
-$ cp $HARP3_HOME/lib/harp-0.3.0-hadoop-2.6.0.jar $HADOOP_HOME/share/hadoop/mapreduce
-$ cp $HARP3_HOME/lib/fastutil-7.0.13.jar $HADOOP_HOME/share/hadoop/mapreduce
+mvn install:install-file -Dfile=third_party/javaml-0.1.7.jar -DgroupId=net.sf -DartifactId=javaml -Dversion=0.1.7 -Dpackaging=jar
 ```
 
-Edit `$HADOOP_HOME/etc/hadoop/mapred-site.xml`, add java opts settings for map-collective tasks.
-```html
-<property>
-  <name>mapreduce.map.collective.memory.mb</name>
-  <value>512</value>
-</property>
-<property>
-  <name>mapreduce.map.collective.java.opts</name>
-  <value>-Xmx256m -Xms256m</value>
-</property>
-```
-
-## Step 3 --- Harp installation test
-
-We have kmeans compiled for you. Copy `harp3-app-hadoop-2.6.0-kmeans.jar` to `$HADOOP_HOME`.
+8. Compile harp
 ```bash
-$ cp $HARP3_PROJECT_HOME/harp3-app/example/harp3-app-hadoop-2.6.0-kmeans.jar $HADOOP_HOME
+mvn clean package
 ```
 
-Then start Hadoop.
+9. Install harp plugin to hadoop
 ```bash
-$ $HADOOP_HOME/sbin/start-dfs.sh
-$ $HADOOP_HOME/sbin/start-yarn.sh
+cp harp-project/target/harp-project-1.0-SNAPSHOT.jar $HADOOP_HOME/share/hadoop/mapreduce/
+cp third_party/fastutil-7.0.13.jar $HADOOP_HOME/share/hadoop/mapreduce/
 ```
 
-Next use the following command to run harp kmeans.
+10. Edit mapred-site.xml in $HADOOP_HOME/etc/hadoop, add java opts settings for map-collective tasks. For example:
+  ```xml
+   <property>
+     <name>mapreduce.map.collective.memory.mb</name>
+     <value>512</value>
+   </property>
+   <property>
+     <name>mapreduce.map.collective.java.opts</name>
+     <value>-Xmx256m -Xms256m</value>
+   </property>
+   ```
+
+11. To develop Harp applications, remember to add the following property in job configuration:
 ```bash
-$ cd $HADOOP_HOME
-$ hadoop jar harp3-app-hadoop-2.6.0-kmeans.jar edu.iu.kmeans.KMeansLauncher <num of points> <num of centroids> <vector size> <num of point files per worker> <number of map tasks> <num threads> <number of iteration> <work dir> <local points dir>
-#e.g. hadoop jar harp3-app-hadoop-2.6.0-kmeans.jar edu.iu.kmeans.KMeansLauncher 1000 10 100 5 2 2 10 /kmeans /tmp/kmeans
+jobConf.set("mapreduce.framework.name", "map-collective");
 ```
 
-* `<num of points>` --- the number of data points you want to generate randomly
+## Step 3 Run harp kmeans example
 
-* `<num of centriods>` --- the number of centroids you want to clustering the data to
+1. copy harp examples to $HADOOP_HOME
+```bash
+cp harp-app/target/harp-app-1.0-SNAPSHOT.jar $HADOOP_HOME
+```
 
-* `<vector size>` --- the number of dimension of the data
+2. Start Hadoop
+```bash
+    cd $HADOOP_HOME
+    sbin/start-dfs.sh
+    sbin/start-yarn.sh
+```
 
-* `<num of point files per worker>` --- how many files which contain data points in each worker
+3. Run Kmeans Map-collective job.
+The usage is
+   ```bash
+   hadoop jar harp-app-1.0-SNAPSHOT.jar edu.iu.kmeans.regroupallgather.KMeansLauncher <num of points> <num of centroids> <vector size> <num of point files per worker> <number of map tasks> <num threads> <number of iteration> <work dir> <local points dir>
+   ```
+   * `<num of points>` --- the number of data points you want to generate randomly
+   * `<num of centriods>` --- the number of centroids you want to clustering the data to
+   * `<vector size>` --- the number of dimension of the data
+   * `<num of point files per worker>` --- how many files which contain data points in each worker
+   * `<number of map tasks>` --- number of map tasks
+   * `<num threads>` --- how many threads to launch in each worker
+   * `<number of iteration>` --- the number of iterations to run
+   * `<work dir>` --- the root directory for this running in HDFS
+   * `<local points dir>` --- the harp kmeans will firstly generate files which contain data points to local directory. Set this argument to determine the local directory.
 
-* `<number of map tasks>` --- number of map tasks
+    For example:
+   ```bash
+   hadoop jar harp-app-1.0-SNAPSHOT.jar edu.iu.kmeans.regroupallgather.KMeansLauncher 1000 10 100 5 2 2 10 /kmeans /tmp/kmeans
+   ```
 
-* `<num threads>` --- how many threads to launch in each worker
-
-* `<number of iteration>` --- the number of iterations to run
-
-* `<work dir>` --- the root directory for this running in HDFS
-
-* `<local points dir>` --- the harp kmeans will firstly generate files which contain data points to local directory. Set this argument to determine the local directory.
-
-To fetch the results, use the following command.
+4. To fetch the results, use the following command.
 ```bash
 $ hdfs dfs –get <work dir> <local dir>
 #e.g. hdfs dfs -get /kmeans ~/Document
