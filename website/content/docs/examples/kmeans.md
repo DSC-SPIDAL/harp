@@ -70,8 +70,7 @@ Harp provides several collective communication operations. Here are some example
 
   <div class="tab-content">
     <div id="allreduce" class="tab-pane fade in active">
-      <h3>HOME</h3>
-      <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+      <h3>AllReduce collective communication</h3>
     </div>
     <div id="broadcast-reduce" class="tab-pane fade">
       <h3>Menu 1</h3>
@@ -86,6 +85,110 @@ Harp provides several collective communication operations. Here are some example
       <p>Eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.</p>
     </div>
   </div>
+
+
+
+## Compute local centroids
+
+```java
+private void computation(Table<DoubleArray> cenTable, Table<DoubleArray> previousCenTable,ArrayList<DoubleArray> dataPoints){
+    double err=0;
+    for(DoubleArray aPoint: dataPoints){
+    //for each data point, find the nearest centroid
+        double minDist = -1;
+        double tempDist = 0;
+        int nearestPartitionID = -1;
+        for(Partition ap: previousCenTable.getPartitions()){
+            DoubleArray aCentroid = (DoubleArray) ap.get();
+            tempDist = calcEucDistSquare(aPoint, aCentroid, vectorSize);
+            if(minDist == -1 || tempDist < minDist){
+                minDist = tempDist;
+                nearestPartitionID = ap.id();
+            }
+        }
+        err+=minDist;
+
+        //for the certain data point, found the nearest centroid.
+        // add the data to a new cenTable.
+        double[] partial = new double[vectorSize+1];
+        for(int j=0; j < vectorSize; j++){
+            partial[j] = aPoint.get()[j];
+        }
+        partial[vectorSize]=1;
+
+        if(cenTable.getPartition(nearestPartitionID) == null){
+            Partition<DoubleArray> tmpAp = new Partition<DoubleArray>(nearestPartitionID, new DoubleArray(partial, 0, vectorSize+1));
+            cenTable.addPartition(tmpAp);
+        }else{
+             Partition<DoubleArray> apInCenTable = cenTable.getPartition(nearestPartitionID);
+             for(int i=0; i < vectorSize +1; i++){
+             apInCenTable.get().get()[i] += partial[i];
+             }
+        }
+    }
+    System.out.println("Errors: "+err);
+}
+```
+
+## Calculate new centroids
+
+```java
+private void calculateCentroids( Table<DoubleArray> cenTable){
+    for( Partition<DoubleArray> partialCenTable: cenTable.getPartitions()){
+        double[] doubles = partialCenTable.get().get();
+        for(int h = 0; h < vectorSize; h++){
+            doubles[h] /= doubles[vectorSize];
+        }
+        doubles[vectorSize] = 0;
+	}
+	System.out.println("after calculate new centroids");
+    printTable(cenTable);
+}
+```
+
+
+# Run K-Means
+
+## COMPILE
+```bash
+cd $HARP_ROOT_DIR
+mvn clean package
+cd $HARP_ROOT_DIR/harp-tutorial-app
+cp target/harp-tutorial-app.1.0.SNAPSHOT.jar $HADOOP_HOME
+cd $HADOOP_HOME
+```
+## Run the kmeans examples
+Usage:
+```bash
+hadoop jar harp-tutorial-app.1.0.SNAPSHOT.jar edu.iu.kmeans.common.KmeansMapCollective <numOfDataPoints> <num of Centroids> <size of vector> <number of map tasks> <number of iteration> <workDir> <localDir> <communication operation>
+
+   <numOfDataPoints>: the number of data points you want to generate randomly
+   <num of centriods>: the number of centroids you want to clustering the data to
+   <size of vector>: the number of dimension of the data
+   <number of map tasks>: number of map tasks
+   <number of iteration>: the number of iterations to run
+   <work dir>: the root directory for this running in HDFS
+   <local dir>: the harp kmeans will firstly generate files which contain data points to local directory. Set this argument to determine the local directory.
+   <communication operation> includes:
+		[allreduce]: use allreduce operation to synchronize centroids
+		[regroup-allgather]: use regroup and allgather operation to synchronize centroids
+		[broadcast-reduce]: use broadcast and reduce operation to synchronize centroids
+		[push-pull]: use push and pull operation to synchronize centroids
+```
+
+For example:
+
+```bash
+hadoop jar harp-tutorial-app.jar edu.iu.kmeans.common.KmeansMapCollective 1000 10 10 2 10 /kmeans /tmp/kmeans allreduce
+```
+
+## FETCH RESULTS
+```bash
+hdfs dfs -ls /
+hdfs dfs -cat /kmeans/centroids/*
+```
+
+
 
 
 
