@@ -35,10 +35,6 @@
   </url>
   
   <url>
-    <loc>https://dsc-spidal.github.io/harp/docs/examples/allreducekmeans/</loc>
-  </url>
-  
-  <url>
     <loc>https://dsc-spidal.github.io/harp/docs/examples/cvblda/</loc>
   </url>
   
@@ -48,18 +44,6 @@
   
   <url>
     <loc>https://dsc-spidal.github.io/harp/docs/resources/</loc>
-  </url>
-  
-  <url>
-    <loc>https://dsc-spidal.github.io/harp/docs/examples/bcastreducekmeans/</loc>
-  </url>
-  
-  <url>
-    <loc>https://dsc-spidal.github.io/harp/docs/examples/pushpullkmeans/</loc>
-  </url>
-  
-  <url>
-    <loc>https://dsc-spidal.github.io/harp/docs/examples/regroupallgatherkmeans/</loc>
   </url>
   
   <url>
