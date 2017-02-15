@@ -37,7 +37,7 @@ params:
       - /js/app.min.js
   tagline: A collective communication library plugined into Hadoop from Indiana University
   github:
-    home: https://dsc-spidal.github.io/harp/
+    home: https://github.com/DSC-SPIDAL/harp/
     master: https://github.com/DSC-SPIDAL/harp/tree/master
     issues: https://github.com/DSC-SPIDAL/harp/issues
   social:
