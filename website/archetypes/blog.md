@@ -1,6 +1,0 @@
----
-categories:
-- blog
-tags:
-title:
----
