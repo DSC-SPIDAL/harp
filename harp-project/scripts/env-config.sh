@@ -14,14 +14,21 @@
 # limitations under the License.
 #
 
-#!/bin/bash
+#!/bin/bash/env bash
+set -e
+
+#set environment variables
+export HARP_ROOT_DIR=$(git rev-parse --show-toplevel)
+export HARP_HOME=$HARP_ROOT_DIR/harp-project
+
 
 #Setting local classpath.
-cp=$HARP_HOME/scripts
-for i in ${HARP_HOME}/lib/*.jar;
-  do cp=$i:${cp}
+HARP_CLASSPATH=$HARP_HOME/scripts
+for i in ${HARP_ROOT_DIR}/third_party/*.jar;
+  do HARP_CLASSPATH=$i:${HARP_CLASSPATH}
 done
 
-#echo $cp
-java -Xmx512m -Xms512m -classpath $cp edu.iu.harp.depl.Depl
+for i in $HARP_HOME/target/*.jar;
+  do HARP_CLASSPATH=$i:${HARP_CLASSPATH}
+done
 

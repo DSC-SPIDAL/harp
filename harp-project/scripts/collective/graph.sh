@@ -20,11 +20,8 @@
 
 #!/bin/bash
 
-#Setting local classpath.
-cp=$HARP_HOME/scripts
-for i in ${HARP_HOME}/lib/*.jar;
-  do cp=$i:${cp}
-done
 
-#echo $cp
-java -Xmx256m -Xms256m -classpath $cp edu.iu.harp.collective.GraphCollective $1 $2 $3 $4
+source env-config.sh
+
+#echo $HARP_CLASSPATH
+java -Xmx256m -Xms256m -classpath $HARP_CLASSPATH edu.iu.harp.collective.GraphCollective $1 $2 $3 $4

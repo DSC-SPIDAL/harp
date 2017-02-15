@@ -26,6 +26,8 @@ if [ $# -ne 1 ]; then
   exit -1
 fi
 
+source env-config.sh
+
 # Kill processes from nodes
 for line in `cat $HARP_HOME/scripts/nodes`;do
   if [[ $line =~ ^\# ]]; then

@@ -14,14 +14,10 @@
 # limitations under the License.
 #
 
-#!/bin/bash
+#!/bin/bash/
 
-#Setting local classpath.
-cp=$HARP_HOME/scripts
-for i in ${HARP_HOME}/lib/*.jar;
-  do cp=$i:${cp}
-done
+source env-config.sh
 
-#echo $cp
-java -Xmx512m -Xms512m -classpath $cp edu.iu.harp.depl.Depl
+#echo $HARP_CLASSPATH
+java -Xmx512m -Xms512m -classpath $HARP_CLASSPATH edu.iu.harp.depl.Depl
 
