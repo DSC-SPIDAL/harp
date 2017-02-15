@@ -6,9 +6,11 @@ sections:
   - name: Programming Guides
     sublinks:
       - name: Data Interfaces and Types
-        url: /docs/data-interface
+        url: /docs/programming/data-interface
+      - name: Schedulers
+        url: /docs/programming/scheduler
       - name: Computation Models
-        url: /docs/concepts/computation-models
+        url: /docs/programming/computation-models
   - name: Collective Communication
     sublinks:
       - name: broadcast
