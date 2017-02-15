@@ -21,11 +21,10 @@ We use gulp and hugo to build the harp website. You can refer to [Using Gulp wit
 ## Set gh-pages branch as a submodule
 ####We set website/public as a submodule pointing to gh-pages branch. It's one time setup.
 
-    ```
     rm -rf public
     git submodule add https://github.com/DSC-SPIDAL/harp.git public
     git submodule update --init
     cd public
     git checkout gh-pages
     git remote rename origin upstream
-    ```
+
