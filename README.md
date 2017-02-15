@@ -25,7 +25,7 @@ Harp is a framework for machine learning applications.
     mvn clean package
 
 ####5. Install harp plugin to hadoop
-    cp harp-project/target/harp-project-1.0-SNAPSHOP.jar $HADOOP_HOME/share/hadoop/mapreduce/
+    cp harp-project/target/harp-project-1.0-SNAPSHOT.jar $HADOOP_HOME/share/hadoop/mapreduce/
     cp third_party/fastutil-7.0.13.jar $HADOOP_HOME/share/hadoop/mapreduce/
 
 ####6. Configure Hadoop environment for settings required to run Hadoop
