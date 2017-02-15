@@ -30,8 +30,8 @@ Harp is a framework for machine learning applications.
 
 ####6. Configure Hadoop environment for settings required to run Hadoop
 
-####7. Edit mapred-site.xml in $HADOOP_HOME/etc/hadoop, add java opts settings for map-collective tasks
-   (The following is an example)
+####7. Edit mapred-site.xml in $HADOOP_HOME/etc/hadoop, add java opts settings for map-collective tasks. For example:
+  
    <property>
      <name>mapreduce.map.collective.memory.mb</name>
      <value>512</value>
