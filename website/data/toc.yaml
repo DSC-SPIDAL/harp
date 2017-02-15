@@ -41,10 +41,8 @@ sections:
     sublinks:
       - name: Latent Dirichlet Allocation (CGS)
         url: /docs/applications/lda-cgs
-      - name: Stochastic Gradient Descent
-        url: /docs/applications/sgd
-      - name: Cyclic Coordinate Descent
-        url: /docs/applications/ccd
+      - name: Matrix Factorization
+        url: /docs/applications/mf
   - name: Harp-DAAL
     sublinks:
       - name: Harp-DAAL
