@@ -68,8 +68,7 @@ In order to group data points as close together or as far-apart we need to defin
 
 <p><div class="tab-content">
     <div id="allreduce" class="tab-pane fade in active">
-      <h3>HOME</h3>
-      <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+      <h3>AllReduce collective communication</h3>
     </div>
     <div id="broadcast-reduce" class="tab-pane fade">
       <h3>Menu 1</h3>
@@ -84,4 +83,96 @@ In order to group data points as close together or as far-apart we need to defin
       <p>Eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.</p>
     </div>
   </div></p>
+
+<h2 id="compute-local-centroids">Compute local centroids</h2>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #66d9ef">private</span> <span style="color: #66d9ef">void</span> <span style="color: #a6e22e">computation</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">Table</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">DoubleArray</span><span style="color: #f92672">&gt;</span> <span style="color: #f8f8f2">cenTable</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">Table</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">DoubleArray</span><span style="color: #f92672">&gt;</span> <span style="color: #f8f8f2">previousCenTable</span><span style="color: #f92672">,</span><span style="color: #f8f8f2">ArrayList</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">DoubleArray</span><span style="color: #f92672">&gt;</span> <span style="color: #f8f8f2">dataPoints</span><span style="color: #f92672">){</span>
+    <span style="color: #66d9ef">double</span> <span style="color: #f8f8f2">err</span><span style="color: #f92672">=</span><span style="color: #ae81ff">0</span><span style="color: #f92672">;</span>
+    <span style="color: #66d9ef">for</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">DoubleArray</span> <span style="color: #f8f8f2">aPoint</span><span style="color: #f92672">:</span> <span style="color: #f8f8f2">dataPoints</span><span style="color: #f92672">){</span>
+    <span style="color: #75715e">//for each data point, find the nearest centroid</span>
+        <span style="color: #66d9ef">double</span> <span style="color: #f8f8f2">minDist</span> <span style="color: #f92672">=</span> <span style="color: #f92672">-</span><span style="color: #ae81ff">1</span><span style="color: #f92672">;</span>
+        <span style="color: #66d9ef">double</span> <span style="color: #f8f8f2">tempDist</span> <span style="color: #f92672">=</span> <span style="color: #ae81ff">0</span><span style="color: #f92672">;</span>
+        <span style="color: #66d9ef">int</span> <span style="color: #f8f8f2">nearestPartitionID</span> <span style="color: #f92672">=</span> <span style="color: #f92672">-</span><span style="color: #ae81ff">1</span><span style="color: #f92672">;</span>
+        <span style="color: #66d9ef">for</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">Partition</span> <span style="color: #f8f8f2">ap</span><span style="color: #f92672">:</span> <span style="color: #f8f8f2">previousCenTable</span><span style="color: #f92672">.</span><span style="color: #a6e22e">getPartitions</span><span style="color: #f92672">()){</span>
+            <span style="color: #f8f8f2">DoubleArray</span> <span style="color: #f8f8f2">aCentroid</span> <span style="color: #f92672">=</span> <span style="color: #f92672">(</span><span style="color: #f8f8f2">DoubleArray</span><span style="color: #f92672">)</span> <span style="color: #f8f8f2">ap</span><span style="color: #f92672">.</span><span style="color: #a6e22e">get</span><span style="color: #f92672">();</span>
+            <span style="color: #f8f8f2">tempDist</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">calcEucDistSquare</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">aPoint</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">aCentroid</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">vectorSize</span><span style="color: #f92672">);</span>
+            <span style="color: #66d9ef">if</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">minDist</span> <span style="color: #f92672">==</span> <span style="color: #f92672">-</span><span style="color: #ae81ff">1</span> <span style="color: #f92672">||</span> <span style="color: #f8f8f2">tempDist</span> <span style="color: #f92672">&lt;</span> <span style="color: #f8f8f2">minDist</span><span style="color: #f92672">){</span>
+                <span style="color: #f8f8f2">minDist</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">tempDist</span><span style="color: #f92672">;</span>
+                <span style="color: #f8f8f2">nearestPartitionID</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">ap</span><span style="color: #f92672">.</span><span style="color: #a6e22e">id</span><span style="color: #f92672">();</span>
+            <span style="color: #f92672">}</span>
+        <span style="color: #f92672">}</span>
+        <span style="color: #f8f8f2">err</span><span style="color: #f92672">+=</span><span style="color: #f8f8f2">minDist</span><span style="color: #f92672">;</span>
+
+        <span style="color: #75715e">//for the certain data point, found the nearest centroid.</span>
+        <span style="color: #75715e">// add the data to a new cenTable.</span>
+        <span style="color: #66d9ef">double</span><span style="color: #f92672">[]</span> <span style="color: #f8f8f2">partial</span> <span style="color: #f92672">=</span> <span style="color: #66d9ef">new</span> <span style="color: #66d9ef">double</span><span style="color: #f92672">[</span><span style="color: #f8f8f2">vectorSize</span><span style="color: #f92672">+</span><span style="color: #ae81ff">1</span><span style="color: #f92672">];</span>
+        <span style="color: #66d9ef">for</span><span style="color: #f92672">(</span><span style="color: #66d9ef">int</span> <span style="color: #f8f8f2">j</span><span style="color: #f92672">=</span><span style="color: #ae81ff">0</span><span style="color: #f92672">;</span> <span style="color: #f8f8f2">j</span> <span style="color: #f92672">&lt;</span> <span style="color: #f8f8f2">vectorSize</span><span style="color: #f92672">;</span> <span style="color: #f8f8f2">j</span><span style="color: #f92672">++){</span>
+            <span style="color: #f8f8f2">partial</span><span style="color: #f92672">[</span><span style="color: #f8f8f2">j</span><span style="color: #f92672">]</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">aPoint</span><span style="color: #f92672">.</span><span style="color: #a6e22e">get</span><span style="color: #f92672">()[</span><span style="color: #f8f8f2">j</span><span style="color: #f92672">];</span>
+        <span style="color: #f92672">}</span>
+        <span style="color: #f8f8f2">partial</span><span style="color: #f92672">[</span><span style="color: #f8f8f2">vectorSize</span><span style="color: #f92672">]=</span><span style="color: #ae81ff">1</span><span style="color: #f92672">;</span>
+
+        <span style="color: #66d9ef">if</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">cenTable</span><span style="color: #f92672">.</span><span style="color: #a6e22e">getPartition</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">nearestPartitionID</span><span style="color: #f92672">)</span> <span style="color: #f92672">==</span> <span style="color: #66d9ef">null</span><span style="color: #f92672">){</span>
+            <span style="color: #f8f8f2">Partition</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">DoubleArray</span><span style="color: #f92672">&gt;</span> <span style="color: #f8f8f2">tmpAp</span> <span style="color: #f92672">=</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">Partition</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">DoubleArray</span><span style="color: #f92672">&gt;(</span><span style="color: #f8f8f2">nearestPartitionID</span><span style="color: #f92672">,</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">DoubleArray</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">partial</span><span style="color: #f92672">,</span> <span style="color: #ae81ff">0</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">vectorSize</span><span style="color: #f92672">+</span><span style="color: #ae81ff">1</span><span style="color: #f92672">));</span>
+            <span style="color: #f8f8f2">cenTable</span><span style="color: #f92672">.</span><span style="color: #a6e22e">addPartition</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">tmpAp</span><span style="color: #f92672">);</span>
+        <span style="color: #f92672">}</span><span style="color: #66d9ef">else</span><span style="color: #f92672">{</span>
+             <span style="color: #f8f8f2">Partition</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">DoubleArray</span><span style="color: #f92672">&gt;</span> <span style="color: #f8f8f2">apInCenTable</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">cenTable</span><span style="color: #f92672">.</span><span style="color: #a6e22e">getPartition</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">nearestPartitionID</span><span style="color: #f92672">);</span>
+             <span style="color: #66d9ef">for</span><span style="color: #f92672">(</span><span style="color: #66d9ef">int</span> <span style="color: #f8f8f2">i</span><span style="color: #f92672">=</span><span style="color: #ae81ff">0</span><span style="color: #f92672">;</span> <span style="color: #f8f8f2">i</span> <span style="color: #f92672">&lt;</span> <span style="color: #f8f8f2">vectorSize</span> <span style="color: #f92672">+</span><span style="color: #ae81ff">1</span><span style="color: #f92672">;</span> <span style="color: #f8f8f2">i</span><span style="color: #f92672">++){</span>
+             <span style="color: #f8f8f2">apInCenTable</span><span style="color: #f92672">.</span><span style="color: #a6e22e">get</span><span style="color: #f92672">().</span><span style="color: #a6e22e">get</span><span style="color: #f92672">()[</span><span style="color: #f8f8f2">i</span><span style="color: #f92672">]</span> <span style="color: #f92672">+=</span> <span style="color: #f8f8f2">partial</span><span style="color: #f92672">[</span><span style="color: #f8f8f2">i</span><span style="color: #f92672">];</span>
+             <span style="color: #f92672">}</span>
+        <span style="color: #f92672">}</span>
+    <span style="color: #f92672">}</span>
+    <span style="color: #f8f8f2">System</span><span style="color: #f92672">.</span><span style="color: #a6e22e">out</span><span style="color: #f92672">.</span><span style="color: #a6e22e">println</span><span style="color: #f92672">(</span><span style="color: #e6db74">&quot;Errors: &quot;</span><span style="color: #f92672">+</span><span style="color: #f8f8f2">err</span><span style="color: #f92672">);</span>
+<span style="color: #f92672">}</span>
+</pre></div>
+
+<h2 id="calculate-new-centroids">Calculate new centroids</h2>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #66d9ef">private</span> <span style="color: #66d9ef">void</span> <span style="color: #a6e22e">calculateCentroids</span><span style="color: #f92672">(</span> <span style="color: #f8f8f2">Table</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">DoubleArray</span><span style="color: #f92672">&gt;</span> <span style="color: #f8f8f2">cenTable</span><span style="color: #f92672">){</span>
+    <span style="color: #66d9ef">for</span><span style="color: #f92672">(</span> <span style="color: #f8f8f2">Partition</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">DoubleArray</span><span style="color: #f92672">&gt;</span> <span style="color: #f8f8f2">partialCenTable</span><span style="color: #f92672">:</span> <span style="color: #f8f8f2">cenTable</span><span style="color: #f92672">.</span><span style="color: #a6e22e">getPartitions</span><span style="color: #f92672">()){</span>
+        <span style="color: #66d9ef">double</span><span style="color: #f92672">[]</span> <span style="color: #f8f8f2">doubles</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">partialCenTable</span><span style="color: #f92672">.</span><span style="color: #a6e22e">get</span><span style="color: #f92672">().</span><span style="color: #a6e22e">get</span><span style="color: #f92672">();</span>
+        <span style="color: #66d9ef">for</span><span style="color: #f92672">(</span><span style="color: #66d9ef">int</span> <span style="color: #f8f8f2">h</span> <span style="color: #f92672">=</span> <span style="color: #ae81ff">0</span><span style="color: #f92672">;</span> <span style="color: #f8f8f2">h</span> <span style="color: #f92672">&lt;</span> <span style="color: #f8f8f2">vectorSize</span><span style="color: #f92672">;</span> <span style="color: #f8f8f2">h</span><span style="color: #f92672">++){</span>
+            <span style="color: #f8f8f2">doubles</span><span style="color: #f92672">[</span><span style="color: #f8f8f2">h</span><span style="color: #f92672">]</span> <span style="color: #f92672">/=</span> <span style="color: #f8f8f2">doubles</span><span style="color: #f92672">[</span><span style="color: #f8f8f2">vectorSize</span><span style="color: #f92672">];</span>
+        <span style="color: #f92672">}</span>
+        <span style="color: #f8f8f2">doubles</span><span style="color: #f92672">[</span><span style="color: #f8f8f2">vectorSize</span><span style="color: #f92672">]</span> <span style="color: #f92672">=</span> <span style="color: #ae81ff">0</span><span style="color: #f92672">;</span>
+	<span style="color: #f92672">}</span>
+	<span style="color: #f8f8f2">System</span><span style="color: #f92672">.</span><span style="color: #a6e22e">out</span><span style="color: #f92672">.</span><span style="color: #a6e22e">println</span><span style="color: #f92672">(</span><span style="color: #e6db74">&quot;after calculate new centroids&quot;</span><span style="color: #f92672">);</span>
+    <span style="color: #f8f8f2">printTable</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">cenTable</span><span style="color: #f92672">);</span>
+<span style="color: #f92672">}</span>
+</pre></div>
+
+<h1 id="run-k-means">Run K-Means</h1>
+
+<h2 id="compile">COMPILE</h2>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">cd</span> <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>
+mvn clean package
+<span style="color: #f8f8f2">cd</span> <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/harp-tutorial-app
+cp target/harp-tutorial-app.1.0.SNAPSHOT.jar <span style="color: #f8f8f2">$HADOOP_HOME</span>
+<span style="color: #f8f8f2">cd</span> <span style="color: #f8f8f2">$HADOOP_HOME</span>
+</pre></div>
+
+<h2 id="run-the-kmeans-examples">Run the kmeans examples</h2>
+
+<p>Usage:</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>hadoop jar harp-tutorial-app.1.0.SNAPSHOT.jar edu.iu.kmeans.common.KmeansMapCollective &lt;numOfDataPoints&gt; &lt;num of Centroids&gt; &lt;size of vector&gt; &lt;number of map tasks&gt; &lt;number of iteration&gt; &lt;workDir&gt; &lt;localDir&gt; &lt;communication operation&gt;
+
+   &lt;numOfDataPoints&gt;: the number of data points you want to generate randomly
+   &lt;num of centriods&gt;: the number of centroids you want to clustering the data to
+   &lt;size of vector&gt;: the number of dimension of the data
+   &lt;number of map tasks&gt;: number of map tasks
+   &lt;number of iteration&gt;: the number of iterations to run
+   &lt;work dir&gt;: the root directory <span style="color: #66d9ef">for</span> this running in HDFS
+   &lt;<span style="color: #f8f8f2">local</span> dir&gt;: the harp kmeans will firstly generate files which contain data points to <span style="color: #f8f8f2">local</span> directory. Set this argument to determine the <span style="color: #f8f8f2">local</span> directory.
+   &lt;communication operation&gt; includes:
+		<span style="color: #f92672">[</span>allreduce<span style="color: #f92672">]</span>: use allreduce operation to synchronize centroids
+		<span style="color: #f92672">[</span>regroup-allgather<span style="color: #f92672">]</span>: use regroup and allgather operation to synchronize centroids
+		<span style="color: #f92672">[</span>broadcast-reduce<span style="color: #f92672">]</span>: use broadcast and reduce operation to synchronize centroids
+		<span style="color: #f92672">[</span>push-pull<span style="color: #f92672">]</span>: use push and pull operation to synchronize centroids
+</pre></div>
+
+<p>For example:</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>hadoop jar harp-tutorial-app.jar edu.iu.kmeans.common.KmeansMapCollective <span style="color: #ae81ff">1000</span> <span style="color: #ae81ff">10</span> <span style="color: #ae81ff">10</span> <span style="color: #ae81ff">2</span> <span style="color: #ae81ff">10</span> /kmeans /tmp/kmeans allreduce
+</pre></div>
+
+<h2 id="fetch-results">FETCH RESULTS</h2>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>hdfs dfs -ls /
+hdfs dfs -cat /kmeans/centroids/*
+</pre></div>
 </article></section></div></div></div><script src="https://code.jquery.com/jquery-2.2.1.min.js"></script><script src="https://dsc-spidal.github.io/harp/js/app.min.js"></script></body></html>
