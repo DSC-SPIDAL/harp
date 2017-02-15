@@ -1,34 +1,29 @@
+# WEBSITE
 
-# Build website
+We use gulp and hugo to build the harp website. You can refer to [Using Gulp with Hugo](https://devotter.com/blog/using-gulp-with-hugo) for learning about how to use gulp and hugo to build a website.
 
-under 'website' directory:
+### Install required packages. You only need to do it for the first time.
+    cd website
+    npm install
 
-npm install
+### Build website
+    gulp clean
+    gulp build
+    ./scripts/javadocs.sh
+    hugo
 
-gulp clean
+### View the website locally
+    hugo server --watch --ignoreCache
 
-gulp build
 
-./scripts/javadocs.sh 
+## Set gh-pages branch as a submodule
+    We set website/public as a submodule pointing to gh-pages branch. It's one time setup.
 
-hugo
-
-hugo server --watch --ignoreCache
-
-Note: please refer to https://devotter.com/blog/using-gulp-with-hugo for learning about how to use gulp and hugo to build a website.
-
-# use gh-pages branch as a submodule
-
-website/public is a submodule pointing to gh-pages branch.
-one time setup: 
-rm -rf public
-
-git submodule add https://github.com/DSC-SPIDAL/harp.git public
-
-git submodule update --init
-
-cd public
-
-git checkout gh-pages
-
-git remote rename origin upstream
+    ```
+    rm -rf public
+    git submodule add https://github.com/DSC-SPIDAL/harp.git public
+    git submodule update --init
+    cd public
+    git checkout gh-pages
+    git remote rename origin upstream
+    ```
