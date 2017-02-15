@@ -18,7 +18,11 @@
   </url>
   
   <url>
-    <loc>https://dsc-spidal.github.io/harp/docs/data-interface/</loc>
+    <loc>https://dsc-spidal.github.io/harp/docs/applications/ccd/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/programming/data-interface/</loc>
   </url>
   
   <url>
@@ -31,11 +35,7 @@
   </url>
   
   <url>
-    <loc>https://dsc-spidal.github.io/harp/docs/scheduler/dynamic-scheduler/</loc>
-  </url>
-  
-  <url>
-    <loc>https://dsc-spidal.github.io/harp/docs/concepts/computation-models/</loc>
+    <loc>https://dsc-spidal.github.io/harp/docs/programming/computation-models/</loc>
   </url>
   
   <url>
@@ -79,11 +79,19 @@
   </url>
   
   <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/examples/kmeans/</loc>
+  </url>
+  
+  <url>
     <loc>https://dsc-spidal.github.io/harp/docs/examples/latentdirichletallocation/</loc>
   </url>
   
   <url>
     <loc>https://dsc-spidal.github.io/harp/docs/examples/lda/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/applications/lda-cgs/</loc>
   </url>
   
   <url>
@@ -107,7 +115,11 @@
   </url>
   
   <url>
-    <loc>https://dsc-spidal.github.io/harp/docs/scheduler/static-scheduler/</loc>
+    <loc>https://dsc-spidal.github.io/harp/docs/programming/scheduler/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/applications/sgd/</loc>
   </url>
   
   <url>
@@ -117,10 +129,6 @@
   <url>
     <loc>https://dsc-spidal.github.io/harp/</loc>
     <priority>0</priority>
-  </url>
-  
-  <url>
-    <loc>https://dsc-spidal.github.io/harp/docs/examples/kmeans/</loc>
   </url>
   
 </urlset>
