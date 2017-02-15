@@ -29,7 +29,7 @@ sections:
         url: /docs/communications/rotate
   - name: Examples
     sublinks:
-      - name: k-means
+      - name: K-Means
         url: /docs/examples/kmeans
       - name: allreduce k-means
         url: /docs/examples/allreducekmeans
