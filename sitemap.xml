@@ -75,11 +75,23 @@
   </url>
   
   <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/examples/kmeans/</loc>
+  </url>
+  
+  <url>
     <loc>https://dsc-spidal.github.io/harp/docs/examples/latentdirichletallocation/</loc>
   </url>
   
   <url>
     <loc>https://dsc-spidal.github.io/harp/docs/examples/lda/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/applications/lda-cgs/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/applications/mf/</loc>
   </url>
   
   <url>
@@ -113,10 +125,6 @@
   <url>
     <loc>https://dsc-spidal.github.io/harp/</loc>
     <priority>0</priority>
-  </url>
-  
-  <url>
-    <loc>https://dsc-spidal.github.io/harp/docs/examples/kmeans/</loc>
   </url>
   
 </urlset>
