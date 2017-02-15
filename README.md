@@ -31,7 +31,7 @@ Harp is a framework for machine learning applications.
 ####6. Configure Hadoop environment for settings required to run Hadoop
 
 ####7. Edit mapred-site.xml in $HADOOP_HOME/etc/hadoop, add java opts settings for map-collective tasks. For example:
-  
+  ```xml
    <property>
      <name>mapreduce.map.collective.memory.mb</name>
      <value>512</value>
@@ -40,6 +40,7 @@ Harp is a framework for machine learning applications.
      <name>mapreduce.map.collective.java.opts</name>
      <value>-Xmx256m -Xms256m</value>
    </property>
+   ```
 
 ####8. To develop Harp applications, remember to add the following property in job configuration:
     jobConf.set("mapreduce.framework.name", "map-collective");
@@ -52,6 +53,9 @@ Harp is a framework for machine learning applications.
 ####2. Start Hadoop
 
 ####3. Run Kmeans Map-collective job
+   ```bash
    hadoop jar harp-app-1.0-SNAPSHOT.jar edu.iu.kmeans.regroupallgather.KMeansLauncher <num of points> <num of centroids> <vector size> <num of point files per worker> <number of map tasks> <num threads> <number of iteration> <work dir> <local points dir>
-   
+   ```
+   ```bash
    bin/hadoop jar harp-app-1.0-SNAPSHOT.jar edu.iu.kmeans.regroupallgather.KMeansLauncher 1000 10 100 5 2 2 10 /kmeans /tmp/kmeans
+   ```
