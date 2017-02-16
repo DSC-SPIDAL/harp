@@ -1,4 +1,4 @@
-## Project: Distributed LDA on Harp    
+# Distributed LDA on Harp
 
 ### Background
 

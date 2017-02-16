@@ -1,3 +1,7 @@
+## The sample data for harp-tutorial-app lda to use.
+
+
+
 -----------------------------------------------
 1000 Document file
 
