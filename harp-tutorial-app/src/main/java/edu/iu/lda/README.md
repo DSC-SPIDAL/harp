@@ -9,32 +9,29 @@ The dataset is used is sampled from [wikipedia](https://dumps.wikimedia.org/enwi
 ### Usage
 
 Put data on hdfs
-```
-hdfs dfs -put input_data/sample-sparse-data/sample-sparse-metadata .
+```bash
+hdfs dfs -put $HARP_ROOT_DIR/data/tutorial/lda-cvb/sample-sparse-data/sample-sparse-metadata .
 hdfs dfs -mkdir sample-sparse-data
-hdfs dfs -put input_data/sample-sparse-data/sample-sparse-data-part-1.txt sample-sparse-data
-hdfs dfs -put input_data/sample-sparse-data/sample-sparse-data-part-0.txt sample-sparse-data
+hdfs dfs -put $HARP_ROOT_DIR/data/tutorial/lda-cvb/sample-sparse-data/sample-sparse-data-part-1.txt sample-sparse-data
+hdfs dfs -put $HARP_ROOT_DIR/data/tutorial/lda-cvb/sample-sparse-data/sample-sparse-data-part-0.txt sample-sparse-data
 ```
 
-Compile HarpLDA
-```
-copy source_code/src/edu/iu/lda to $HARP3_HOME/harp3_app/src/edu/iu
-copy source_code/lib/cloud9-1.4.17.jar to $HARP3_HOME/harp3_app/lib
-copy source_code/lib/cloud9-1.4.17.jar to $HADOOP_HOME/share/hadoop/mapreduce
-modify $HARP3_HOME/harp3_app/build.xml to add <include name="edu/iu/lda/**"/> in compile session.
-run 'ant' under $HARP3_HOME/harp3_app directory
-copy build/harp3-app-hadoop-2.6.0.jar to $HADOOP_HOME
+Compile
+```bash
+cd $HARP_ROOT_DIR
+mvn clean package
+cp $HARP_ROOT_DIR/harp-tutorial-app/target/harp-tutorial-app-1.0.SNAPSHOT.jar $HADOOP_HOME
+cp $HARP_ROOT_DIR/third_parity/cloud9-1.4.17.jar $HADOOP_HOME/share/hadoop/mapreduce
 ```
 
-
-Run HarpLDA
-```
-hadoop jar harp3-app-hadoop-2.6.0.jar  edu.iu.lda.LdaMapCollective <input dir>  <metafile>  <output dir> <number of terms> <number of topics> <number of docs> <number of MapTasks> <number of iterations> <number of threads> <mode, 1=multithreading>
+Run
+```bash
+hadoop jar harp-tutorial-app-1.0.SNAPSHOT.jar  edu.iu.lda.LdaMapCollective <input dir>  <metafile>  <output dir> <number of terms> <number of topics> <number of docs> <number of MapTasks> <number of iterations> <number of threads> <mode, 1=multithreading>
 ```
 
 Example
 ```
-hadoop jar harp3-app-hadoop-2.6.0.jar  edu.iu.lda.LdaMapCollective sample-sparse-data sample-sparse-metadata  sample-sparse-output 11 2 12 2 5 4 1
+hadoop jar harp-tutorial-app-1.0.SNAPSHOT.jar  edu.iu.lda.LdaMapCollective sample-sparse-data sample-sparse-metadata  sample-sparse-output 11 2 12 2 5 4 1
 ```
 
 
