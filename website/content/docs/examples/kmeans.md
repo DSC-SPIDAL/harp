@@ -314,13 +314,13 @@ private void calculateCentroids( Table<DoubleArray> cenTable){
 cd $HARP_ROOT_DIR
 mvn clean package
 cd $HARP_ROOT_DIR/harp-tutorial-app
-cp target/harp-tutorial-app.1.0.SNAPSHOT.jar $HADOOP_HOME
+cp target/harp-tutorial-app-1.0-SNAPSHOT.jar $HADOOP_HOME
 cd $HADOOP_HOME
 ```
 ## Run the kmeans examples
 Usage:
 ```bash
-hadoop jar harp-tutorial-app.1.0.SNAPSHOT.jar edu.iu.kmeans.common.KmeansMapCollective <numOfDataPoints> <num of Centroids> <size of vector> <number of map tasks> <number of iteration> <workDir> <localDir> <communication operation>
+hadoop jar harp-tutorial-app-1.0-SNAPSHOT.jar edu.iu.kmeans.common.KmeansMapCollective <numOfDataPoints> <num of Centroids> <size of vector> <number of map tasks> <number of iteration> <workDir> <localDir> <communication operation>
 
    <numOfDataPoints>: the number of data points you want to generate randomly
    <num of centriods>: the number of centroids you want to clustering the data to
@@ -339,7 +339,7 @@ hadoop jar harp-tutorial-app.1.0.SNAPSHOT.jar edu.iu.kmeans.common.KmeansMapColl
 For example:
 
 ```bash
-hadoop jar harp-tutorial-app.jar edu.iu.kmeans.common.KmeansMapCollective 1000 10 10 2 10 /kmeans /tmp/kmeans allreduce
+hadoop jar harp-tutorial-app-1.0-SNAPSHOT.jar edu.iu.kmeans.common.KmeansMapCollective 1000 10 10 2 10 /kmeans /tmp/kmeans allreduce
 ```
 
 ## Fetch Results
