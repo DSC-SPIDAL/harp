@@ -1330,14 +1330,14 @@ In order to group data points as close together or as far-apart we need to defin
 &lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;cd&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;$HARP_ROOT_DIR&lt;/span&gt;
 mvn clean package
 &lt;span style=&#34;color: #f8f8f2&#34;&gt;cd&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;$HARP_ROOT_DIR&lt;/span&gt;/harp-tutorial-app
-cp target/harp-tutorial-app.1.0.SNAPSHOT.jar &lt;span style=&#34;color: #f8f8f2&#34;&gt;$HADOOP_HOME&lt;/span&gt;
+cp target/harp-tutorial-app-1.0-SNAPSHOT.jar &lt;span style=&#34;color: #f8f8f2&#34;&gt;$HADOOP_HOME&lt;/span&gt;
 &lt;span style=&#34;color: #f8f8f2&#34;&gt;cd&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;$HADOOP_HOME&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
 &lt;h2 id=&#34;run-the-kmeans-examples&#34;&gt;Run the kmeans examples&lt;/h2&gt;
 
 &lt;p&gt;Usage:&lt;/p&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;hadoop jar harp-tutorial-app.1.0.SNAPSHOT.jar edu.iu.kmeans.common.KmeansMapCollective &amp;lt;numOfDataPoints&amp;gt; &amp;lt;num of Centroids&amp;gt; &amp;lt;size of vector&amp;gt; &amp;lt;number of map tasks&amp;gt; &amp;lt;number of iteration&amp;gt; &amp;lt;workDir&amp;gt; &amp;lt;localDir&amp;gt; &amp;lt;communication operation&amp;gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;hadoop jar harp-tutorial-app-1.0-SNAPSHOT.jar edu.iu.kmeans.common.KmeansMapCollective &amp;lt;numOfDataPoints&amp;gt; &amp;lt;num of Centroids&amp;gt; &amp;lt;size of vector&amp;gt; &amp;lt;number of map tasks&amp;gt; &amp;lt;number of iteration&amp;gt; &amp;lt;workDir&amp;gt; &amp;lt;localDir&amp;gt; &amp;lt;communication operation&amp;gt;
 
    &amp;lt;numOfDataPoints&amp;gt;: the number of data points you want to generate randomly
    &amp;lt;num of centriods&amp;gt;: the number of centroids you want to clustering the data to
@@ -1354,7 +1354,7 @@ cp target/harp-tutorial-app.1.0.SNAPSHOT.jar &lt;span style=&#34;color: #f8f8f2&
 &lt;/pre&gt;&lt;/div&gt;
 
 &lt;p&gt;For example:&lt;/p&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;hadoop jar harp-tutorial-app.jar edu.iu.kmeans.common.KmeansMapCollective &lt;span style=&#34;color: #ae81ff&#34;&gt;1000&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;10&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;10&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;2&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;10&lt;/span&gt; /kmeans /tmp/kmeans allreduce
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;hadoop jar harp-tutorial-app-1.0-SNAPSHOT.jar edu.iu.kmeans.common.KmeansMapCollective &lt;span style=&#34;color: #ae81ff&#34;&gt;1000&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;10&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;10&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;2&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;10&lt;/span&gt; /kmeans /tmp/kmeans allreduce
 &lt;/pre&gt;&lt;/div&gt;
 
 &lt;h2 id=&#34;fetch-results&#34;&gt;Fetch Results&lt;/h2&gt;

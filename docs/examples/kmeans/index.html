@@ -305,14 +305,14 @@ In order to group data points as close together or as far-apart we need to defin
 <div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">cd</span> <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>
 mvn clean package
 <span style="color: #f8f8f2">cd</span> <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/harp-tutorial-app
-cp target/harp-tutorial-app.1.0.SNAPSHOT.jar <span style="color: #f8f8f2">$HADOOP_HOME</span>
+cp target/harp-tutorial-app-1.0-SNAPSHOT.jar <span style="color: #f8f8f2">$HADOOP_HOME</span>
 <span style="color: #f8f8f2">cd</span> <span style="color: #f8f8f2">$HADOOP_HOME</span>
 </pre></div>
 
 <h2 id="run-the-kmeans-examples">Run the kmeans examples</h2>
 
 <p>Usage:</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>hadoop jar harp-tutorial-app.1.0.SNAPSHOT.jar edu.iu.kmeans.common.KmeansMapCollective &lt;numOfDataPoints&gt; &lt;num of Centroids&gt; &lt;size of vector&gt; &lt;number of map tasks&gt; &lt;number of iteration&gt; &lt;workDir&gt; &lt;localDir&gt; &lt;communication operation&gt;
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>hadoop jar harp-tutorial-app-1.0-SNAPSHOT.jar edu.iu.kmeans.common.KmeansMapCollective &lt;numOfDataPoints&gt; &lt;num of Centroids&gt; &lt;size of vector&gt; &lt;number of map tasks&gt; &lt;number of iteration&gt; &lt;workDir&gt; &lt;localDir&gt; &lt;communication operation&gt;
 
    &lt;numOfDataPoints&gt;: the number of data points you want to generate randomly
    &lt;num of centriods&gt;: the number of centroids you want to clustering the data to
@@ -329,7 +329,7 @@ cp target/harp-tutorial-app.1.0.SNAPSHOT.jar <span style="color: #f8f8f2">$HADOO
 </pre></div>
 
 <p>For example:</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>hadoop jar harp-tutorial-app.jar edu.iu.kmeans.common.KmeansMapCollective <span style="color: #ae81ff">1000</span> <span style="color: #ae81ff">10</span> <span style="color: #ae81ff">10</span> <span style="color: #ae81ff">2</span> <span style="color: #ae81ff">10</span> /kmeans /tmp/kmeans allreduce
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>hadoop jar harp-tutorial-app-1.0-SNAPSHOT.jar edu.iu.kmeans.common.KmeansMapCollective <span style="color: #ae81ff">1000</span> <span style="color: #ae81ff">10</span> <span style="color: #ae81ff">10</span> <span style="color: #ae81ff">2</span> <span style="color: #ae81ff">10</span> /kmeans /tmp/kmeans allreduce
 </pre></div>
 
 <h2 id="fetch-results">Fetch Results</h2>
