@@ -2,50 +2,53 @@
 title: Latent Dirichlet Allocation 
 ---
 
-[Harp LDA](https://github.iu.edu/IU-Big-Data-Lab/Harp/tree/master/harp3-tutorial-app/LDA) is a distributed variational bayes inference (VB) algorithm for LDA model which would be able to model a large and continuously expanding dataset using Harp collective communication library. We demonstrate how variational bayes inference converges within Map-Collective jobs provided by Harp. We provide results of the experiments conducted on a corpus of Wikipedia Dataset.
+[Harp LDA](https://github.com/DSC-SPIDAL/harp/tree/master/harp-tutorial-app/src/main/java/edu/iu/lda) is a distributed variational bayes inference (VB) algorithm for LDA model which would be able to model a large and continuously expanding dataset using Harp collective communication library. We demonstrate how variational bayes inference converges within Map-Collective jobs provided by Harp. We provide results of the experiments conducted on a corpus of Wikipedia Dataset.
 
-Harp[2] is a collective communication library plugged in Hadoop plug-in to accelerate machine learning algorithms.
+LDA is a popular topic modeling algorithm. We follow the [Mr.LDA](https://github.com/lintool/Mr.LDA) to implement distributed variational inference LDA on Harp with it’s dynamic schedueler, allreduce and push-pull communication models.
 
-LDA[3] is a popular topic modeling algorithm. We follow the Mr.LDA[4] to implement distributed variational inference LDA on Harp with it’s dynamic schedueler, allreduce and push-pull communication models.
-
-# ALGORITHM
+# The CVB LDA algorithm and workflow
 
 
- 
-<img src="/img/lda/algorithm.png" width="60%" height="60%">
- 
+ <img src="/img/lda/algorithm.png" style="float: left; width: 40%; margin-right: 1%; margin-bottom: 0.5em;">
+ <img src="/img/lda/workflow.png" style="float: left; width: 40%; margin-right: 1%; margin-bottom: 0.5em;" >
 
-# WORKFLOW
- 
-<img src="/img/lda/workflow.png" width="60%" height="60%">
- 
-
-# DATASET
-
- 
-<img src="/img/lda/datasets.png" width="60%" height="60%">
- 
-
-# EXPERIMENTS
-
- 
-<img src="/img/lda/data1-iterations.png" width="60%" height="60%>
-<img src="/img/lda/data1-time.png" width="60%" height="60%">
-<img src="/img/lda/data2-iterations.png" width="60%" height="60%">
-<img src="/img/lda/data2-time.png" width="60%" height="60%">
-<img src="/img/lda/Speedup.png" width="60%" height="60%">
- 
-
-Harp-LDA is proposed to provide high scalability achieve better performance with shorter time and memory requirements. A clear evidence of convergence of likelihood after a certain number of iterations is depicted. The results from the speed up chart illustrate high scalability.
+ <p style="clear: both;">
 
 
-# REFERENCE
+# Data
+The dataset used is sampled from [wikipedia](https://dumps.wikimedia.org/enwiki/latest/enwiki-latest-pages-articles.xml.bz2) dataset.
 
 
-[1] B. Zhang, Y. Ruan, J. Qiu, Harp: Collective Communication on Hadoop, in the proceedings of IEEE International Conference on Cloud Engineering (IC2E2015), March 9-13, 2015. 
+# Run example
 
-[2] Harp project https://github.iu.edu/IU-Big-Data-Lab/Harp
+### Put data on hdfs
+```bash
+hdfs dfs -put $HARP_ROOT_DIR/data/tutorial/lda-cvb/sample-sparse-data/sample-sparse-metadata .
+hdfs dfs -mkdir sample-sparse-data
+hdfs dfs -put $HARP_ROOT_DIR/data/tutorial/lda-cvb/sample-sparse-data/sample-sparse-data-part-1.txt sample-sparse-data
+hdfs dfs -put $HARP_ROOT_DIR/data/tutorial/lda-cvb/sample-sparse-data/sample-sparse-data-part-0.txt sample-sparse-data
+```
 
-[3] Blei, David M., Andrew Y. Ng, and Michael I. Jordan. "Latent dirichlet allocation." Journal of machine Learning research 3.Jan (2003): 993-1022.
+### Compile
+```bash
+cd $HARP_ROOT_DIR
+mvn clean package
+cp $HARP_ROOT_DIR/harp-tutorial-app/target/harp-tutorial-app-1.0.SNAPSHOT.jar $HADOOP_HOME
+cp $HARP_ROOT_DIR/third_parity/cloud9-1.4.17.jar $HADOOP_HOME/share/hadoop/mapreduce
+```
 
-[4] Zhai, Ke, et al. "Mr. LDA: A flexible large scale topic modeling package using variational inference in mapreduce." Proceedings of the 21st international conference on World Wide Web. ACM, 2012.
+### Run
+```bash
+hadoop jar harp-tutorial-app-1.0.SNAPSHOT.jar  edu.iu.lda.LdaMapCollective <input dir>  <metafile>  <output dir> <number of terms> <number of topics> <number of docs> <number of MapTasks> <number of iterations> <number of threads> <mode, 1=multithreading>
+```
+
+### Example
+```bash
+hadoop jar harp-tutorial-app-1.0.SNAPSHOT.jar  edu.iu.lda.LdaMapCollective sample-sparse-data sample-sparse-metadata  sample-sparse-output 11 2 12 2 5 4 1
+```
+
+Please be noted:
+
+1. if you are running with mode=0 (sequential version), you need data with dense format, and the parameter "number of threads" will not be used. If you are running with mode=1, you will need data with sparse format.
+
+2. metadata is used for indicating the beginning index of documents in partitions.
