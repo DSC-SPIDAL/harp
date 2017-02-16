@@ -6,7 +6,7 @@ title: Matrix Factorization
 # Understanding Matrix Factorization
 
 
- <img src="/img/sgd-ccd.png" width="100%" >
+ <img src="/img/sgd-ccd-description.png" width="100%" >
 
 ### Pseudo code for SGD and CCD algorithm:
   <ul class="nav nav-pills">
@@ -55,11 +55,11 @@ The format for the data should be a list of ``<number of row, number of column, 
 ## Usage
 ### SGD
 ```bash
-hadoop jar harp-app-1.0-SNAPSHOT edu.iu.sgd.SGDLauncher <input dir> <r> <lambda> <epsilon> <num of iterations> <num of map tasks> <num of threads per worker> <timer> <num of model slices> <timer tuning> <work dir> <test dir>
+hadoop jar harp-app-1.0-SNAPSHOT.jar edu.iu.sgd.SGDLauncher <input dir> <r> <lambda> <epsilon> <num of iterations> <num of map tasks> <num of threads per worker> <timer> <num of model slices> <timer tuning> <work dir> <test dir>
 ```
 
 
 ### CCD
 ```bash
-hadoop jar harp-app-1.0-SNAPSHOT edu.iu.lda.LDALauncher <doc dir> <num of topics> <alpha> <beta> <num of iterations> <num of map tasks> <num of threads per worker> <timer> <num of model slices> <enable timer tuning> <work dir> <print model>
+hadoop jar harp-app-1.0-SNAPSHOT.jar edu.iu.ccd.CCDLauncher <input dir> <r> <lambda> <num of iterations> <num of map tasks> <num of threads per worker> <num of model slices> <work dir> <test dir>
 ```
