@@ -7,10 +7,10 @@ title: Harp-DAAL Framework
 ## What is Harp-DAAL? 
 
 Harp-DAAL is a new framework that aims to run data analytics algorithms on distributed HPC architectures. The framework consists of two layers. A communication layer is handled by Harp, 
-a communication library plugined into Hadoop ecosystem. A computation layer is handled by Intel's Data Analytics Acceleration Library (DAAL), which is a library that provides 
+a communication library plug-in into Hadoop ecosystem. A computation layer is handled by Intel's Data Analytics Acceleration Library (DAAL), which is a library that provides 
 the users of highly optimized building blocks for data analytics and machine learning applications on Intel's architectures. 
 
-![Figure 1. Combination of Harp and DAAL](/img/harpdaal/7-1-1.png)
+![Figure 1. Harp-DAAL Framework for Iterative Applications](/img/harpdaal/Harp-DAAL-Framework.png)
 
 Compared to contemporary communication libraries, such as Hadoop and Spark, Harp has the advantages as follows:
 
@@ -20,11 +20,11 @@ Compared to contemporary communication libraries, such as Hadoop and Spark, Harp
 However, the original Harp framework only supports development of Java applications, which is a common choice within the Hadoop ecosystem. 
 The downside of the pure Java implementation is the lack of support for emerging new hardware architectures such as Intel's Xeon Phi. 
 By invoking DAAL's native kernels, applications can leverage the huge number of threads on many-core platforms, which is a tremendous 
-advantages for computation-intensive data analytics algorithms. This is also the tendancy of merging HPC and Big Data domain. 
+advantages for computation-intensive data analytics algorithms. This is also the tendency of merging HPC and Big Data domain. 
 
 ![Harp-DAAL within HPC-BigData Stack](/img/harpdaal/7-1-2.png)
 
-Figure 2. shows the position of Harp-DAAL within the whole HPC-Big Data software stack. 
+Figure 2 shows the position of Harp-DAAL within the whole HPC-Big Data software stack. 
 
 ## How to build a Harp-DAAL Application ?
 
@@ -68,13 +68,13 @@ DAAL's Java API is usually contains the following objects:
 * Parameter: the parameters provided by users during the running of algorithms
 * Result: the feedback of Algorithm after running, retrieved by users
 
-Before invoking your DAAL kernels, you shall well choose the data strucutre that is most suitable to your problem. For many NumericTable types, 
+Before invoking your DAAL kernels, you shall well choose the data structure that is most suitable to your problem. For many NumericTable types, 
 the Java API provides two ways of storing data. The first way is to store data on the JVM heap side, and whenever the native computation kernels require 
 the dataset, it will automatically copy the data from JVM heap to the off-heap memory space. The second way is to store data on Java's direct byte buffer, and 
 native computation kernels can access them directly without any data copy. Therefore, you should evaluate the overhead of loading and writing data from memory 
 in your application. For many data-intensive applications, it is wise to store the data on the direct byte buffer. 
 
-If you build your Harp-DAAL application from scratch, you should also well choose the data strucutre on the Harp side. The thumb rule is to allocate data in 
+If you build your Harp-DAAL application from scratch, you should also well choose the data structure on the Harp side. The thumb rule is to allocate data in 
 contiguous primitive Java array, because most of DAAL's Java API only accepts primitive array as input arguments. If you use Harp's own Table structure, the 
 contained data is distributed into different partitions, then you may use the Harp-DAAL data conversion API to transfer the data between a Harp table and a DAAL
 table. 
@@ -123,7 +123,7 @@ After installation, you can run the bin/daalvars.sh script to set up all the DAA
 source /path-to-daal/bin/daalvars.sh intel64
 
 ```
-The most important environment variable is the *DAALROOT*, which points to the path of daal's source code. You can run the examples of each algorithm within DAAL to test 
+The most important environment variable is the *DAALROOT*, which points to the path of DAAL's source code. You can run the examples of each algorithm within DAAL to test 
 the installation of your DAAL library. 
 
 ```bash
