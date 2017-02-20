@@ -1,15 +1,30 @@
 ---
-title: Support Vector Machine
+title: Harp Support Vector Machine
 ---
 
+In machine learning, support vector machines (SVM) are supervised learning models with associated learning algorithms that analyze data used for classification and regression analysis. Given a set of training examples, each marked as belonging to one or the other of two categories, an SVM training algorithm builds a model that assigns new examples to one category or the other, making it a non-probabilistic binary linear classifier. An SVM model is a representation of the examples as points in space, mapped so that the examples of the separate categories are divided by a clear gap that is as wide as possible. New examples are then mapped into that same space and predicted to belong to a category based on which side of the gap they fall.
 
-Support vector machines(SVM)[1] are supervised learning models with associated learning algorithms that analyze data used for classification and regression analysis. Harp[2] is good for SVM implementation but it needs to overcome synchronizing the global support vectors. What we are following is the Iterative SVM version[3] implemented on Hadoop. In each iteration, each machine computes the support vectors and does an all-reduce to collective the whole global support vector set and treat it as the extra training data.
+In addition to performing linear classification, SVMs can efficiently perform a non-linear classification using what is called the kernel trick, implicitly mapping their inputs into high-dimensional feature spaces.
 
+![SVM-1](/img/4-4-1.png)
 
-# METHOD
-The Harp based binary class support vector machine algorithm works as follows. The training set of the algorithm is split into subsets. Each node within a distributed system classifies sub dataset locally via SVM algorithm and gets α values (i.e. support vectors (SVs)), and then passes the calculated SVs to global SVs to merge them. In Map stage of MapReduce job, the subset of training set is combined with global support vectors. In Collect step, we do a all reduce operation to broadcast the local support vectors and combine to get the global support vectors. 
+In this project, Harp won't touch the core code base of computing SVM. It will use LibSVM which is an open source library and do parallel around LibSVM. LibSVM is a popular open source machine learning library, which is developed at the National Taiwan University and written in C++ though with other programming languages' APIs. LibSVM implements the SMO algorithm for kernelized support vector machines (SVMs), supporting classification and regression.
 
-![procedure](/img/svm/procedure.png)
+## METHOD
+
+The Harp based SVM algorithm works as follows:
+
+1. The training set of the algorithm is split into subsets.
+
+2. Each node trains sub dataset locally via LibSVM's API.
+
+3. Allgather support vectors to global.
+
+4. Each node combines its training data and the global support vectors.
+
+5. Repeat Step 2 to 4 until support vectors don't change any more.
+
+![SVM-2](/img/4-4-2.png)
 
 
 # RESULT
