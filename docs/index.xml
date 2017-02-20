@@ -868,7 +868,7 @@ update their own rows from model matrices W and H without mutual locks. Figure 2
 
 &lt;p&gt;For the intra-mapper parallel computing, we adopt a hybrid usage of TBB concurrent containers and OpenMP directives.&lt;/p&gt;
 
-&lt;h2 id=&#34;a-code-walkthrough-of-harp-daal-sgd&#34;&gt;A Code Walkthrough of Harp-DAAL-SGD&lt;/h2&gt;
+&lt;h2 id=&#34;a-code-walk-through-of-harp-daal-sgd&#34;&gt;A Code Walk through of Harp-DAAL-SGD&lt;/h2&gt;
 
 &lt;p&gt;The main body of Harp-DAAL-SGD is the &lt;em&gt;mapCollective&lt;/em&gt; function of class &lt;em&gt;SGDDaalCollectiveMapper&lt;/em&gt;.&lt;/p&gt;
 &lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;protected&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;mapCollective&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;KeyValReader&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;reader&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; 
