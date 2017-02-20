@@ -26,6 +26,30 @@ the difference
 
 ## Implementation of SGD within Harp-DAAL Framework
 
+Harp-DAAL-SGD inherits the model-rotation computation model from Harp-SGD. It owns two layers: 1) An inter-mapper layer decompose the original MF-SGD problem into different
+Harp Mappers. 2) An intra-mapper layer carries out the computation work on local training data in a multi-threading paradigm. 
+
+### Inter-Mapper Layout
+
+The training dataset is partitioned by row identities, and each mapper is assigned data points from a group of rows. 
+The model matrix W is also row-partitioned, and each mapper keeps its own local portion of W. The model H is, however, sliced and rotated among all the mappers. Figure 1 shows the
+inter-mapper layout of Harp-DAAL-SGD. 
+
+![Figure 1. The layout of inter-mapper layer](/img/harpdaal/Harp-Model-Rotation-Dia.png) 
+
+### Intra-Mapper Layout
+
+In each iteration, a mapper receives a slice of model H, i.e., a group of columns from matrix H. A procedure will pick out the training data points with column identities from these columns and 
+execute an updating task according to the SGD algorithm. Rather than the model-rotation model, the intra-mapper layer chooses the asynchronous computation model, where each training data point 
+update their own rows from model matrices W and H without mutual locks. Figure 2 demonstrates the intra-mapper working style. 
+
+![Figure 2. The intra-mapper computation and update of Model Data](/img/harpdaal/Intra-node MF-SGD.png) 
+
+For the intra-mapper parallel computing, we adopt a hybrid usage of TBB concurrent containers and OpenMP directives. 
+
+
+## A Code Walkthrough of Harp-DAAL-SGD
+
 The main body of Harp-DAAL-SGD is the *mapCollective* function of class *SGDDaalCollectiveMapper*. 
 
 ```java
@@ -43,7 +67,7 @@ protected void mapCollective(KeyValReader reader,
 
 ```
 It first uses the function *getVFiles* to read in HDFS files, then it runs the *runSGD* to finish the iterative training process. Besides the *vFiles*, *runSGD* will also 
-take in the configurations of all the parameters needed by the training and testing process. The following list includes some of the important parameters.
+take in the configurations of all the parameters required by the training and testing process. The following list includes some of the important parameters.
 
 * r: the feature dimension of model data 
 * lambda: the lambda parameter in the formula of updating model W and H 
@@ -54,63 +78,117 @@ take in the configurations of all the parameters needed by the training and test
 
 The function *runSGD* contains several steps as follows:
 
-### Loading Training and Testing Datasets
+### Loading Training and Testing Datasets from HDFS
 
-First invokes class *SGDUtil* to load datasets
+First it invokes class *SGDUtil* to load datasets
 
 ```java
 
-//load the train dataset
+//----------------------- load the train dataset-----------------------
 Int2ObjectOpenHashMap<VRowCol> vRowMap = SGDUtil.loadVWMap(vFilePaths, numThreads, configuration);
 
-//load the test dataset
-Int2ObjectOpenHashMap<VRowCol> testVRowMap = SGDUtil.loadTestVWMap(testFilePath, numThreads, configuration);
+//-----------------------load the test dataset-----------------------
+Int2ObjectOpenHashMap<VRowCol> testVColMap = SGDUtil.loadTestVHMap(testFilePath, configuration, numThreads);
 
 ```
 
-### Regrouping Datasets and Creating W matrix 
+### Regrouping Training Dataset and Load Data into DAAL  
+
+The second step is to re-organize the training dataset among mappers, thus, each mapper will get a portion of data points on a group of rows.
+Harp provides the following interface for regrouping data. 
 
 ```java
 
-//wMap is the W matrix shared by both of training and testing dataset
-final Int2ObjectOpenHashMap<double[]> wMap = new Int2ObjectOpenHashMap<>();
-
-//vWHMap contains the training points
-Int2ObjectOpenHashMap<VRowCol>[] vWHMap = new Int2ObjectOpenHashMap[numRowSplits];
-
-//testWHMap contains the testing points
-Int2ObjectOpenHashMap<VRowCol>[] testWHMap = new Int2ObjectOpenHashMap[numRowSplits];
-
-final long workerNumV = createVWHMapAndWModel(vWHMap, wMap, vRowMap, r, oneOverSqrtR, numThreads, random);
-long totalNumTestV = createTestWHMap(testWHMap, wMap, testVRowMap, r, oneOverSqrtR, numThreads, random);
-
-```
-Both of training data points and testing data points are first regrouped by rows through Harp's function
-between all the collectiveMappers.
-
-```java
 regroup("sgd", "regroup-vw", vSetTable, new Partitioner(this.getNumWorkers()));
+
 ```
-and then they are divided into *numRowSplits* slices, and within *createVWHMapAndWModel*, 
-*numThreads* of Java threads will process the data points and generate the W matrix in parallel.
+*vSetTable* is a harp container that consists of different partitions, and here each partition is an array of training data points with the same row identity. 
+After each mapper gets its proper quote of training data, it starts to load the training data into DAAL's data container. We use the *NumericTable* container of 
+DAAL, and its interface receives Java data in a primitive array type. The conversion takes two steps of data copy. 
 
-### Loading Data into DAAL's Data Structure
+* Copy each partition of vSetTable into a single primitive array of data.
+* Copy the primitive array from JVM heap memory into Off-JVM heap memory. 
 
-Firstly, we load W matrix from Harp's data structure to DAAL's data structure
+The data copy in the first step is done in parallel by using Java thread package. 
+
 ```java
 
-//an index hashmap for W model data in DAAL
-final Int2ObjectOpenHashMap<Integer> wMap_index = new Int2ObjectOpenHashMap<>();
-//create W Model data in DAAL as a homogenNumericTable
-NumericTable wMap_daal = new HomogenNumericTable(daal_Context, Double.class, r, wMap_size, NumericTable.AllocationFlag.DoAllocate);
-//create the converter between Harp and DAAL
-HomogenTableHarpMap<double[]> convert_wTable = new HomogenTableHarpMap<double[]>(wMap, wMap_index, wMap_daal, wMap_size, r, numThreads);
-//convert wMap from Harp side to DAAL side 
-convert_wTable.HarpToDaalDouble();
+ train_wPos_daal = new HomogenBMNumericTable(daal_Context, Integer.class, 1, workerNumV, NumericTable.AllocationFlag.DoAllocate);
+ train_hPos_daal = new HomogenBMNumericTable(daal_Context, Integer.class, 1, workerNumV, NumericTable.AllocationFlag.DoAllocate);
+ train_val_daal = new HomogenBMNumericTable(daal_Context, Double.class, 1, workerNumV, NumericTable.AllocationFlag.DoAllocate);
+ 
+ Thread[] threads = new Thread[numThreads];
+ 
+ LinkedList<int[]> train_wPos_daal_sets = new LinkedList<>();
+ LinkedList<int[]> train_hPos_daal_sets = new LinkedList<>();
+ LinkedList<double[]> train_val_daal_sets = new LinkedList<>();
+ 
+ for(int i=0;i<numThreads;i++)
+ {
+     train_wPos_daal_sets.add(new int[reg_tasks.get(i).getNumPoint()]);
+     train_hPos_daal_sets.add(new int[reg_tasks.get(i).getNumPoint()]);
+     train_val_daal_sets.add(new double[reg_tasks.get(i).getNumPoint()]);
+ }
+ 
+ for (int q = 0; q<numThreads; q++)
+ {
+     threads[q] = new Thread(new TaskLoadPoints(q, numThreads, reg_tasks.get(q).getSetList(),
+                 train_wPos_daal_sets.get(q),train_hPos_daal_sets.get(q), train_val_daal_sets.get(q)));
+ 
+     threads[q].start();
+ }
+ 
+ for (int q=0; q< numThreads; q++) {
+ 
+     try
+     {
+         threads[q].join();
+     }catch(InterruptedException e)
+     {
+         System.out.println("Thread interrupted.");
+     }
+ 
+ }
 
 ```
-Secondly, we create the H matrix and the rotator used in the model-rotation communication paradigm.
-The H matrix is divided into *numModelSlices* slices, each slice serves as a pipeline for computation and communication. 
+
+The second step is done inside DAAL codes by using the *releaseBlockOfColumnValues* function from DAAL's Java API. This 
+function internally create a direct byte buffer to transfer the data. 
+
+```java
+
+int itr_pos = 0;
+for (int i=0;i<numThreads; i++)
+{
+
+    train_wPos_daal.releaseBlockOfColumnValues(0, itr_pos, reg_tasks.get(i).getNumPoint(), train_wPos_daal_sets.get(i));
+    train_hPos_daal.releaseBlockOfColumnValues(0, itr_pos, reg_tasks.get(i).getNumPoint(), train_hPos_daal_sets.get(i));
+    train_val_daal.releaseBlockOfColumnValues(0, itr_pos, reg_tasks.get(i).getNumPoint(), train_val_daal_sets.get(i));
+    itr_pos += reg_tasks.get(i).getNumPoint();
+
+}
+
+```
+
+### Create Model Matrices and Model Rotator 
+
+Model matrices, the W matrix and H matrix, are both the input data and output data. We initialize them with random values, and use them 
+after training to predict new data. Each mapper owns its portion of the whole W matrix, which is local to this mapper. This local W matrix is 
+thus stored at the Off-JVM heap memory space, which is accessible to the DAAL native kernels. We only transfer an array of row identities from
+Java side into DAAL side, and the initialization is done within DAAL's kernel before the first iteration. 
+
+```java
+
+//----------------- create the daal table for local row ids -----------------
+wMat_size = idArray.size();
+wMat_rowid_daal = new HomogenNumericTable(daal_Context, Integer.class, 1, wMat_size, NumericTable.AllocationFlag.DoAllocate);
+wMat_rowid_daal.releaseBlockOfColumnValues(0, 0, wMat_size, ids);
+
+```
+
+Unlike the W matrix, the H matrix is rotated among all the mappers multiple times in each iteration. Therefore, we keep one copy at the JVM heap memory and 
+the other copy at the native off-JVM heap memory. The conversion of data between the harp table of H model and that of a DAAL container is handled by the 
+rotator class.  
 
 ```java
 
@@ -122,40 +200,50 @@ RotatorDaal<double[], DoubleArray> rotator = new RotatorDaal<>(hTableMap, r, 20,
 rotator.start();
 
 ```
-Thirdly, we create an instance of computing mf_sgd within DAAL and set up the parameters
+
+As Harp-DAAL-SGD uses two pipelines to overlap the computation and communication work, the data conversion brought by the H model matrix is also likely to be 
+offset by the heavy computation work. 
+
+### Local Computation by DAAL Kernels
+
+We implemented the local DAAL codes in the MF-SGD-Distri algorithm of DAAL's repository. It is highly abstracted as the other DAAL's algorithms, and the users only 
+need a few lines of codes to invoke it. 
 
 ```java
-//create DAAL algorithm object, using distributed version of DAAL-MF-SGD  
+
+//create DAAL algorithm object, using distributed version of DAAL-MF-SGD
 Distri sgdAlgorithm = new Distri(daal_Context, Double.class, Method.defaultSGD);
-//first set up W Model, for all the iterations
+
+sgdAlgorithm.input.set(InputId.dataWPos, train_wPos_daal);
+sgdAlgorithm.input.set(InputId.dataHPos, train_hPos_daal);
+sgdAlgorithm.input.set(InputId.dataVal, train_val_daal);
+
+sgdAlgorithm.input.set(InputId.testWPos, test_wPos_daal);
+sgdAlgorithm.input.set(InputId.testHPos, test_hPos_daal);
+sgdAlgorithm.input.set(InputId.testVal, test_val_daal);
+
 PartialResult model_data = new PartialResult(daal_Context);
 sgdAlgorithm.setPartialResult(model_data);
-model_data.set(PartialResultId.presWMat, wMap_daal);
 
-```
-Finally, we pre-loading the training and testing datasets from Harp/Java side into DAAL/C++ side
-
-```java
-
-totalNumTestV = loadDataDaal(numWorkers, numRowSplits, rotator, vWHMap, testWHMap, hTableMap, wMap_index, taskMap_daal,train_data_wPos, train_data_hPos, train_data_val, 
-                test_data_wPos, test_data_hPos, test_data_val);
+model_data.set(PartialResultId.presWMat, wMat_rowid_daal);
 
 ```
 
-### Starting the Iterative Training Process and the Testing Process
+The training and test dataset are imported to *sgdAlgorithm* as input arguments while the W matrix and H matrix are imported as result arguments. The kernel class is configurable with respect to the 
+precision, the internal algorithm, and so forth. The same *sgdAlgorithm* could be used in both of the training and test process. 
 
 First, we compute the RMSE value before the training process.
 
 ```java
 
-//computeRMSE before iteration
-printRMSEbyDAAL(sgdAlgorithm, model_data,test_data_wPos,test_data_hPos,test_data_val, rotator, numWorkers, totalNumTestV, wMap_size, 0, configuration);
+printRMSEbyDAAL(sgdAlgorithm, model_data, rotator, numWorkers, totalNumTestV, wMat_size, 0, configuration);
 
 ```
 
-The iterative process loops over all the iterations, rotated workers, and the pipelines. 
+Second, we start the iterative training process loops.  
 
 ```java
+
 for (int i = 1; i <= numIterations; i++) {
 
     for (int j = 0; j < numWorkers; j++) {
@@ -165,16 +253,6 @@ for (int i = 1; i <= numIterations; i++) {
             //get the h matrix from the rotator
             NumericTable hTableMap_daal = rotator.getDaal_Table(k);
             model_data.set(PartialResultId.presHMat, hTableMap_daal);
-
-            //get the pre-loaded training dataset
-            NumericTable daal_task_wPos = train_data_wPos.get(slice_index); 
-            NumericTable daal_task_hPos = train_data_hPos.get(slice_index); 
-            NumericTable daal_task_val = train_data_val.get(slice_index); 
-
-            //set up the datasets within the DAAL's instance
-            sgdAlgorithm.input.set(InputId.dataWPos, daal_task_wPos);
-            sgdAlgorithm.input.set(InputId.dataHPos, daal_task_hPos);
-            sgdAlgorithm.input.set(InputId.dataVal, daal_task_val);
 
             //set up the parameters for MF-DAAL-SGD
             sgdAlgorithm.parameter.set(epsilon,lambda, r, wMap_size, hPartitionMapSize, 1, numThreads, 0, 1);
@@ -191,39 +269,9 @@ for (int i = 1; i <= numIterations; i++) {
 
 ```
 
-## Task Parallel Programming
+After each iteration, we can choose to evaluate the training result immediately, or we may evaluate the result after every certain times of training iterations. 
 
-We chose a taskflow based programming model in Harp-DAAL-SGD application. Within this model, a model matrix W is initially 
-released into the DAAL's data structures, which is a *HomogenNumericTable*, and stay within DAAL till the end of program's life cycle. 
-The other model data, matrix H, is loaded into DAAL's data structure after every occurrence of the model rotation. 
-The training model data, V, is stored in Harp's side. 
-Each training point is represented by a Task object. Each $Task$ object consists of three fields:
 
-* Position of the associated row in matrix W
-* Position of the associated column in matrix H
-* The value of the training data V
-
-The taskflow is organized on the Harp side, which then delivers the tasks into DAAL's computation kernels. The DAAL sgd kernel will get the corresponding row and column from the W and H matrices stored in its 
-data structure, and complete the computation and updating work. 
-
-## TBB versus Java Multithreading
-
-In the original Bingjing's SGD implementation, It uses raw Java threads to accomplish the tasks in parallel. 
-Accordingly, it implements its own scheduler and the policy, the timer and the pipeline. In contrast, our Harp-DAAL-SGD uses Intel's Threading Building Block
-(TBB) to compute the SGD tasks in parallel. TBB provides the users of many parallel algorithm templates, and we use the *parallel_for* template to achieve the computation within SGD. 
-
-Compared to the raw Java threads based parallel computing, the use of TBB has the following benefits:
-
-* The users only take care of the parallel tasks instead of the raw threads.
-* For each TBB thread, the C++ codes have more parallelism from the optimization of compilers. 
-* TBB's scheduler will probably enjoy a better load balance than that of user's own scheduler. 
-
-Although DAAL with TBB could give us faster computation of operations such as vector inner product and matrix-vector multiplication, 
-it still has some additional overhead within the Harp environment. DAAL has a different
-Data structure than Harp, so we need to convert data from Harp to DAAL, from Java side to C++ side. 
-If the computation time is not dominant in the total execution time, which is related to the dimension of W and H, then the 
-additional overhead of using DAAL will make the codes less competitive than the original pure Java based implementation. 
-Once the dimension rises, the computation becomes more intensive, and the advantages of DAAL and TBB will
-appear and outperform the original implementation on Java threads. 
+ 
 
 
