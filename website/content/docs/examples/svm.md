@@ -26,27 +26,140 @@ The Harp based SVM algorithm works as follows:
 
 ![SVM-2](/img/4-4-2.png)
 
+## Step 0 --- Data preprocessing
 
-# RESULT
-We can see from the figure that with larger number of mappers, the number of support vectors has greater  gradient decent. Less iterations are needed to reach the final result which however remains the same.
+Harp SVM will follow LibSVM's data format. Each data point in a file represented by a line of the format `<label> [<fid>:<feature>]`:
 
-![result](/img/svm/result.png)
+* `<label>` which is 1 or -1
+* `<fid>` is a positive feature id
+* `<feature>` is the feature value
 
+After preprocessing, push the data set into HDFS by the following commands.
+```bash
+hdfs dfs -mkdir /input
+hdfs dfs -put input_data/* /input
+```
 
-# COMPARISON
-The speed up time both has an linear acceleration along with the number of mappers. Harp performance is better than Hadoop since it reduces I/Os of communication.
+## Step 1 --- Initialize and load data
+```Java
+Vector<Double> vy = new Vector<Double>();
+Vector<svm_node[]> vx = new Vector<svm_node[]>();
+Vector<Double> svy = new Vector<Double>();
+Vector<svm_node[]> svx = new Vector<svm_node[]>();
+int maxIndex = 0;
 
-![comparison](/img/svm/comparison.png)
+//read data from HDFS
+for (String dataFile : dataFiles) {
+    FileSystem fs = FileSystem.get(configuration);
+    Path dataPath = new Path(dataFile);
+    FSDataInputStream in = fs.open(dataPath);
+    BufferedReader br = new BufferedReader(new InputStreamReader(in));
+    String line = "";
+    while ((line = br.readLine()) != null) {
+        StringTokenizer st = new StringTokenizer(line," \t\n\r\f:");
+        vy.addElement(Double.valueOf(st.nextToken()).doubleValue());
+        int m = st.countTokens() / 2;
+        svm_node[] x = new svm_node[m];
+        for (int i = 0;i < m;i++) {
+            x[i] = new svm_node(); 
+            x[i].index = Integer.parseInt(st.nextToken());
+            x[i].value = Double.valueOf(st.nextToken()).doubleValue();
+        }
+        if (m > 0) maxIndex = Math.max(maxIndex,x[m - 1].index);
+        vx.addElement(x);
+    }
+    br.close();
+}
 
+HashSet<String> originTrainingData = new HashSet<String>();
+for (int i = 0;i < vy.size();i++) {
+    String line = "";
+    line += vy.get(i) + " ";
+    for (int j = 0;j < vx.get(i).length - 1;j++) {
+        line += vx.get(i)[j].index + ":" + vx.get(i)[j].value + " ";
+    }
+    line += vx.get(i)[vx.get(i).length - 1].index + ":" + vx.get(i)[vx.get(i).length - 1].value;
+    originTrainingData.add(line);
+}
 
-# REFERENCE
-[1] Suykens, Johan AK, and Joos Vandewalle. “Least squares support vector machine classifiers.” Neural processing letters 9.3 (1999): 293-300.
+//initial svm paramter
+svmParameter = new svm_parameter();
+svmParameter.svm_type = svm_parameter.C_SVC;
+svmParameter.kernel_type = svm_parameter.RBF;
+svmParameter.degree = 3;
+svmParameter.gamma = 0;
+svmParameter.coef0 = 0;
+svmParameter.nu = 0.5;
+svmParameter.cache_size = 100;
+svmParameter.C = 1;
+svmParameter.eps = 1e-3;
+svmParameter.p = 0.1;
+svmParameter.shrinking = 1;
+svmParameter.probability = 0;
+svmParameter.nr_weight = 0;
+svmParameter.weight_label = new int[0];
+svmParameter.weight = new double[0];
+```
 
-[2] Zhang, Bingjing, Yang Ruan, and Judy Qiu. “Harp: Collective communication on hadoop.” Cloud Engineering (IC2E), 2015 IEEE International Conference on. IEEE, 2015.
+## Step 2 ---Train via LibSVM's API
+```Java
+//initial svm problem
+svmProblem = new svm_problem();
+svmProblem.l = currentTrainingData.size();
+svmProblem.x = new svm_node[svmProblem.l][];
+svmProblem.y = new double[svmProblem.l];
+int id = 0;
+for (String line : currentTrainingData) {
+    StringTokenizer st = new StringTokenizer(line," \t\n\r\f:");
+    svmProblem.y[id] = Double.valueOf(st.nextToken()).doubleValue();
+    int m = st.countTokens() / 2;
+    svm_node[] x = new svm_node[m];
+    for (int i = 0;i < m;i++) {
+        x[i] = new svm_node(); 
+        x[i].index = Integer.parseInt(st.nextToken());
+        x[i].value = Double.valueOf(st.nextToken()).doubleValue();
+    }
+    svmProblem.x[id] = x;
+    id++;
+}
 
-[3] Çatak, Ferhat Özgür, and Mehmet Erdal Balaban. “A MapReduce-based distributed SVM algorithm for binary classification.” Turkish Journal of Electrical Engineering & Computer Sciences 24.3 (2016): 863-873.
+//compute model
+svmModel = svm.svm_train(svmProblem, svmParameter);
+```
 
-[4] LeCun, Yann, Corinna Cortes, and Christopher JC Burges. “The MNIST database of handwritten digits.” (1998).
+## Step 3 --- Communication among nodes
+```Java
+Table<HarpString> svTable = new Table(0, new HarpStringPlus());
 
-[5] docs.opencv.org/doc/tutorials/ml/introduction_to_svm/introduction_to_svm.html
+HarpString harpString = new HarpString();
+harpString.s = "";
+for (int i = 0;i < svmModel.l;i++) {
+    harpString.s += svmProblem.y[svmModel.sv_indices[i] - 1] + " ";
+    for (int j = 0;j < svmModel.SV[i].length - 1;j++) {
+        harpString.s += svmModel.SV[i][j].index + ":" + svmModel.SV[i][j].value + " ";
+    }
+    harpString.s += svmModel.SV[i][svmModel.SV[i].length - 1].index + ":" + svmModel.SV[i][svmModel.SV[i].length - 1].value + "\n";
+}
+Partition<HarpString> pa = new Partition<HarpString>(0, harpString);
+svTable.addPartition(pa);
 
+allreduce("main", "allreduce_" + iter, svTable);
+
+supportVectors = new HashSet<String>();
+String[] svString = svTable.getPartition(0).get().get().split("\n");
+for (String line : svString) {
+    if (!supportVectors.contains(line)) {
+        supportVectors.add(line);
+    }
+}
+```
+
+## USAGE
+Run Harp SVM:
+```bash
+$ hadoop jar build/harp3-app-hadoop-2.6.0.jar edu.iu.svm.IterativeSVM <number of mappers> <number of iteration> <output path in HDFS> <data set path>
+```
+Fetch the result:
+```bash
+$ hdfs dfs -get <output path in HDFS> <path you want to store the output>
+```
