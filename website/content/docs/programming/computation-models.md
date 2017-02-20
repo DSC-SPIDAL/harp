@@ -2,7 +2,7 @@
 title: Harp Computation Models
 ---
 
-![Inter-node Computation Model](/img/2-2-1.png)
+![Inter-node Computation Model](/img/2-4-1.png)
 
 
 ## Computation Model A
