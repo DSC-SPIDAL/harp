@@ -11,7 +11,7 @@ This instruction is only tested on:
 
 ## Step 1 --- Install Hadoop 2.6.0
 
-1. First of all, make sure your computer can use `ssh` to access `localhost` and install `Java` as well.
+1. First of all, make sure your computer can use `ssh` to access each node in the cluster and install `Java` as well.
 
 2. Download and extract the hadoop-2.6.0 binary into your machine. It's available at [hadoop-2.6.0.tar.gz](https://dist.apache.org/repos/dist/release/hadoop/common/hadoop-2.6.0/hadoop-2.6.0.tar.gz).
 
@@ -22,13 +22,21 @@ export JAVA_HOME=<where Java locates>
 export HADOOP_HOME=<where hadoop-2.6.0 locates>
 #e.g. ~/hadoop-2.6.0
 export YARN_HOME=$HADOOP_HOME
-export HADOOP_CONF_DIR=$HADOOP_HOME/etc/hadoop
 export PATH=$HADOOP_HOME/bin:$JAVA_HOME/bin:$PATH
+source $HADOOP_HOME/etc/hadoop/hadoop-env.sh
+export HADOOP_CONF_DIR=$HADOOP_HOME/etc/hadoop
+export HADOOP_MAPRED_HOME=$HADOOP_HOME
+export HADOOP_COMMON_HOME=$HADOOP_HOME
+export HADOOP_HDFS_HOME=$HADOOP_HOME
+export HADOOP_YARN_HOME=$HADOOP_HOME
+export HADOOP_COMMON_LIB_NATIVE_DIR=$HADOOP_HOME/lib/native
 ```
+
 4. Now run to make sure the changes are applied.
 ```bash
 $ source ~/.bashrc
 ```
+
 5. Check if environment variabls are set correctly
 ```bash
 $ hadoop
@@ -53,74 +61,105 @@ Most commands print help when invoked w/o parameters.
 6. Modify the following files in Apache Hadoop distribution.
 
     (1).`$HADOOP_HOME/etc/hadoop/core-site.xml`:
-```html
+```xml
 <configuration>
   <property>
     <name>fs.default.name</name>
-    <value>hdfs://localhost:9010</value>
+    <value>hdfs://${namenode}:9010</value>
   </property>
   <property>
     <name>hadoop.tmp.dir</name>
-    <value>/tmp/hadoop-${user.name}</value>
+    <value>/tmp/hadoop-${user name}</value>
     <description>A base for other temporary directories.</description>
   </property>
 </configuration>
 ```
 
     (2).`$HADOOP_HOME/etc/hadoop/hdfs-site.xml`:
-```html
+```xml
 <configuration>
+  <property>
+    <name>dfs.hosts</name>
+    <value>${HADOOP_HOME}/etc/hadoop/slaves</value>
+  </property>
   <property>
     <name>dfs.replication</name>
     <value>1</value>
+  </property>
+  <property>
+    <name>dfs.namenode.http-address</name>
+    <value>${namenode}:50271</value>
+  </property>
+  <property>
+    <name>dfs.namenode.secondary.http-address</name>
+    <value>${namenode}:50291</value>
   </property>
 </configuration>
 ```
 
     (3).`$HADOOP_HOME/etc/hadoop/mapred-site.xml`:
 You will be creating this file. It doesn’t exist in the original package.
-```html
+```xml
 <configuration>
   <property>
     <name>mapreduce.framework.name</name>
     <value>yarn</value>
   </property>
   <property>
-    <name>yarn.app.mapreduce.am.resource.mb</name>
-    <value>512</value>
+    <name>mapreduce.map.collective.memory.mb</name>
+    <value>100000</value>
   </property>
   <property>
-    <name>yarn.app.mapreduce.am.command-opts</name>
-    <value>-Xmx256m -Xms256m</value>
+    <name>mapreduce.map.collective.java.opts</name>
+    <value>-Xmx90000m -Xms90000m</value>
   </property>
 </configuration>
 ```
 
     (4).`$HADOOP_HOME/etc/hadoop/yarn-site.xml`:
-```html
+```xml
 <configuration>
+  <property>
+    <name>yarn.resourcemanager.hostname</name>
+    <value>${namenode}</value>
+  </property>
+  <property>
+    <name>yarn.resourcemanager.address</name>
+    <value>${namenode}:8132</value>
+  </property>
+  <property>
+    <name>yarn.resourcemanager.scheduler.address</name>
+    <value>${namenode}:8230</value>
+  </property>
   <property>
     <name>yarn.nodemanager.aux-services</name>
     <value>mapreduce_shuffle</value>
   </property>
   <property>
-    <name>yarn.nodemanager.resource.memory-mb</name>
-    <value>4096</value>
-  </property>
-  <property>
-    <description>Whether virtual memory limits will be enforced for containers.</description>
-    <name>yarn.nodemanager.vmem-check-enabled</name>
-    <value>false</value>
-  </property>
-  <property>
-    <name>yarn.scheduler.minimum-allocation-mb</name>
-    <value>512</value>
+    <name>yarn.nodemanager.log-dirs</name>
+    <value>/tmp/hadoop-${user name}</value>
   </property>
   <property>
     <name>yarn.scheduler.maximum-allocation-mb</name>
-    <value>2048</value>
+    <value>128000</value>
+  </property>
+  <property>
+    <name>yarn.nodemanager.resource.memory-mb</name>
+    <value>120000</value>
+  </property>
+  <property>
+    <name>yarn.nodemanager.delete.debug-delay-sec</name>
+    <value>10000000</value>
   </property>
 </configuration>
+```
+
+    (5).`$HADOOP_HOME/etc/hadoop/slaves`:
+```bash
+${namenode}
+${other node 1}
+${other node 2}
+...
 ```
 
 7. Next we format the file system and you should be able to see it exits with status 0.
@@ -150,13 +189,11 @@ xxxxx Jps
 xxxxx ResourceManager
 ```
 
-10. You can browse the web interface for the NameNode at [http://localhost:50070](http://localhost:50070) and for the ResourceManager at [http://localhost:8080](http://localhost:8080).
-
 ## Step 2 --- Install Harp
 
 1. Clone Harp repository. It is available at [DSC-SPIDAL/harp](https://github.com/DSC-SPIDAL/harp.git).
 ```bash
-git clone git@github.com:DSC-SPIDAL/harp.git
+$ git clone git@github.com:DSC-SPIDAL/harp.git
 ```
 
 2. Follow the [maven official instruction](http://maven.apache.org/install.html) to install maven.
@@ -169,47 +206,47 @@ export HARP_HOME=$HARP_ROOD_DIR/harp-project
 ```
 4. Run source command to set the envrionment variables.
 ```bash
-source ~/.bashrc
+$ source ~/.bashrc
 ```
 
 5. If hadoop is still running, stop it first.
 ```bash
-$ $HADOOP_PREFIX/sbin/stop-dfs.sh
-$ $HADOOP_PREFIX/sbin/stop-yarn.sh
+$ $HADOOP_HOME/sbin/stop-dfs.sh
+$ $HADOOP_HOME/sbin/stop-yarn.sh
 ```
 
-6. Enter "harp" home directory
+6. Enter "harp" home directory.
 ```bash
-cd $HARP_ROOT_DIR
+$ cd $HARP_ROOT_DIR
 ```
 
 7. Install third party jar file. This javaml jar is required by randomforest application. It's not required by harp project itself.
 ```bash
-mvn install:install-file -Dfile=third_party/javaml-0.1.7.jar -DgroupId=net.sf -DartifactId=javaml -Dversion=0.1.7 -Dpackaging=jar
+$ mvn install:install-file -Dfile=third_party/javaml-0.1.7.jar -DgroupId=net.sf -DartifactId=javaml -Dversion=0.1.7 -Dpackaging=jar
 ```
 
-8. Compile harp
+8. Compile harp.
 ```bash
-mvn clean package
+$ mvn clean package
 ```
 
-9. Install harp plugin to hadoop
+9. Install harp plugin to hadoop.
 ```bash
-cp harp-project/target/harp-project-1.0-SNAPSHOT.jar $HADOOP_HOME/share/hadoop/mapreduce/
-cp third_party/fastutil-7.0.13.jar $HADOOP_HOME/share/hadoop/mapreduce/
+$ cp harp-project/target/harp-project-1.0-SNAPSHOT.jar $HADOOP_HOME/share/hadoop/mapreduce/
+$ cp third_party/fastutil-7.0.13.jar $HADOOP_HOME/share/hadoop/mapreduce/
 ```
 
 10. Edit mapred-site.xml in $HADOOP_HOME/etc/hadoop, add java opts settings for map-collective tasks. For example:
-  ```xml
-   <property>
-     <name>mapreduce.map.collective.memory.mb</name>
-     <value>512</value>
-   </property>
-   <property>
-     <name>mapreduce.map.collective.java.opts</name>
-     <value>-Xmx256m -Xms256m</value>
-   </property>
-   ```
+```xml
+<property>
+  <name>mapreduce.map.collective.memory.mb</name>
+  <value>512</value>
+</property>
+<property>
+  <name>mapreduce.map.collective.java.opts</name>
+  <value>-Xmx256m -Xms256m</value>
+</property>
+```
 
 11. To develop Harp applications, remember to add the following property in job configuration:
 ```bash
@@ -217,40 +254,58 @@ jobConf.set("mapreduce.framework.name", "map-collective");
 ```
 
 ## Step 3 Run harp kmeans example
-
-1. copy harp examples to $HADOOP_HOME
+1. Format datanode in other nodes.
 ```bash
-cp harp-app/target/harp-app-1.0-SNAPSHOT.jar $HADOOP_HOME
+$ ssh ${other nodes}
+$ hadoop datanode -format
+```
+You have to do this step in every node except the namenode.
+
+2. Copy harp examples to `$HADOOP_HOME`.
+```bash
+$ cp harp-app/target/harp-app-1.0-SNAPSHOT.jar $HADOOP_HOME
 ```
 
-2. Start Hadoop
+3. Start Hadoop.
 ```bash
-    cd $HADOOP_HOME
-    sbin/start-dfs.sh
-    sbin/start-yarn.sh
+$ cd $HADOOP_HOME
+$ sbin/start-dfs.sh
+$ sbin/start-yarn.sh
+```
+4. Check whether other nodes work well. This output will only appear in datanode.
+```bash
+$ jps
+xxxxx DataNode
+xxxxx NodeManager
+xxxxx Jps
 ```
 
-3. Run Kmeans Map-collective job.
-The usage is
-   ```bash
-   hadoop jar harp-app-1.0-SNAPSHOT.jar edu.iu.kmeans.regroupallgather.KMeansLauncher <num of points> <num of centroids> <vector size> <num of point files per worker> <number of map tasks> <num threads> <number of iteration> <work dir> <local points dir>
-   ```
-   * `<num of points>` --- the number of data points you want to generate randomly
-   * `<num of centriods>` --- the number of centroids you want to clustering the data to
-   * `<vector size>` --- the number of dimension of the data
-   * `<num of point files per worker>` --- how many files which contain data points in each worker
-   * `<number of map tasks>` --- number of map tasks
-   * `<num threads>` --- how many threads to launch in each worker
-   * `<number of iteration>` --- the number of iterations to run
-   * `<work dir>` --- the root directory for this running in HDFS
-   * `<local points dir>` --- the harp kmeans will firstly generate files which contain data points to local directory. Set this argument to determine the local directory.
+5. To view your running applications in terminal, use:
+```bash
+$ yarn application -list
+```
 
-    For example:
-   ```bash
-   hadoop jar harp-app-1.0-SNAPSHOT.jar edu.iu.kmeans.regroupallgather.KMeansLauncher 1000 10 100 5 2 2 10 /kmeans /tmp/kmeans
-   ```
+6. To shutdown a running application, use:
+```bash
+$ yarn application -kill application-id
+```
 
-4. To fetch the results, use the following command.
+7. Run Kmeans Map-collective job. The usage is
+```bash
+$ hadoop jar harp-app-1.0-SNAPSHOT.jar edu.iu.kmeans.regroupallgather.KMeansLauncher <num of points> <num of centroids> <vector size> <num of point files per worker> <number of map tasks> <num threads> <number of iteration> <work dir> <local points dir>
+#e.g. hadoop jar harp-app-1.0-SNAPSHOT.jar edu.iu.kmeans.regroupallgather.KMeansLauncher 1000 10 100 5 2 2 10 /kmeans /tmp/kmeans
+```
+  * `<num of points>` --- the number of data points you want to generate randomly
+  * `<num of centriods>` --- the number of centroids you want to clustering the data to
+  * `<vector size>` --- the number of dimension of the data
+  * `<num of point files per worker>` --- how many files which contain data points in each worker
+  * `<number of map tasks>` --- number of map tasks
+  * `<num threads>` --- how many threads to launch in each worker
+  * `<number of iteration>` --- the number of iterations to run
+  * `<work dir>` --- the root directory for this running in HDFS
+  * `<local points dir>` --- the harp kmeans will firstly generate files which contain data points to local directory. Set this argument to determine the local directory.
+
+8. To fetch the results, use the following command.
 ```bash
 $ hdfs dfs –get <work dir> <local dir>
 #e.g. hdfs dfs -get /kmeans ~/Document
