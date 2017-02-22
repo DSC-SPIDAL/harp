@@ -651,6 +651,8 @@ hdfs dfs -put input_data/* /input
 
 &lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/4-4-2.png&#34; alt=&#34;SVM-2&#34; /&gt;&lt;/p&gt;
 
+&lt;p&gt;The source code can be found in Harp GitHub repository by click &lt;a href=&#34;https://github.com/DSC-SPIDAL/harp/tree/master/harp-tutorial-app/src/main/java/edu/iu/svm&#34;&gt;Harp SVM&lt;/a&gt;.&lt;/p&gt;
+
 &lt;h2 id=&#34;step-0-data-preprocessing&#34;&gt;Step 0 &amp;mdash; Data preprocessing&lt;/h2&gt;
 
 &lt;p&gt;Harp SVM will follow LibSVM&amp;rsquo;s data format. Each data point in a file represented by a line of the format &lt;code&gt;&amp;lt;label&amp;gt; [&amp;lt;fid&amp;gt;:&amp;lt;feature&amp;gt;]&lt;/code&gt;:&lt;/p&gt;
