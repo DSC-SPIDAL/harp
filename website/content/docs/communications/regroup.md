@@ -2,7 +2,7 @@
 title: Regroup
 ---
 
-![regroup](/img/4-5-1.png)
+![regroup](/img/3-5-1.png)
 
 `regroup` aims to combine tables among a group of workers. All workers should run it concurrently. The defination of the method is:
 ```java

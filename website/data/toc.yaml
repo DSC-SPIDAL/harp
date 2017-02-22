@@ -39,6 +39,8 @@ sections:
         url: /docs/examples/lda
       - name: Support Vector Machine
         url: /docs/examples/svm
+      - name: Random Forests
+        url: /docs/examples/rf
   - name: Applications
     sublinks:
       - name: Latent Dirichlet Allocation (CGS)
