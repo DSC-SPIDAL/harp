@@ -26,6 +26,8 @@ The Harp based SVM algorithm works as follows:
 
 ![SVM-2](/img/4-4-2.png)
 
+The source code can be found in Harp GitHub repository by click [Harp SVM](https://github.com/DSC-SPIDAL/harp/tree/master/harp-tutorial-app/src/main/java/edu/iu/svm).
+
 ## Step 0 --- Data preprocessing
 
 Harp SVM will follow LibSVM's data format. Each data point in a file represented by a line of the format `<label> [<fid>:<feature>]`:
