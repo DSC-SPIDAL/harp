@@ -10,7 +10,7 @@ Harp-DAAL is a new framework that aims to run data analytics algorithms on distr
 a communication library plug-in into Hadoop ecosystem. A computation layer is handled by Intel's Data Analytics Acceleration Library (DAAL), which is a library that provides 
 the users of highly optimized building blocks for data analytics and machine learning applications on Intel's architectures. 
 
-![Figure 1. Harp-DAAL Framework for Iterative Applications](/img/harpdaal/Harp-DAAL-Framework.png)
+![Figure 1. Harp-DAAL Framework for Iterative Applications](/img/6-1-1.png)
 
 Compared to contemporary communication libraries, such as Hadoop and Spark, Harp has the advantages as follows:
 
@@ -22,7 +22,7 @@ The downside of the pure Java implementation is the lack of support for emerging
 By invoking DAAL's native kernels, applications can leverage the huge number of threads on many-core platforms, which is a tremendous 
 advantages for computation-intensive data analytics algorithms. This is also the tendency of merging HPC and Big Data domain. 
 
-![Harp-DAAL within HPC-BigData Stack](/img/harpdaal/7-1-2.png)
+![Harp-DAAL within HPC-BigData Stack](/img/6-1-2.png)
 
 Figure 2 shows the position of Harp-DAAL within the whole HPC-Big Data software stack. 
 
