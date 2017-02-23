@@ -17,20 +17,18 @@ public class RFMapper extends CollectiveMapper<String, String, Object, Object> {
     private int numTrees;
     private int numMapTasks;
     private int numThreads;
-    private String trainPath;
-    private String testPath;
+    private String inputPath;
     private String outputPath;
     private Configuration configuration;
 
     @Override
     protected void setup(Context context) throws IOException, InterruptedException {
         configuration = context.getConfiguration();
-        numTrees = conf.getInt("numTrees", 100);
-        numMapTasks = conf.getInt("numMapTasks", 4);
-        numThreads = conf.getInt("numThreads", 5);
-        trainPath = conf.get("trainPath");
-        testPath = conf.get("testPath");
-        outputPath = conf.get("outputPath");
+        numTrees = configuration.getInt("numTrees", 100);
+        numMapTasks = configuration.getInt("numMapTasks", 4);
+        numThreads = configuration.getInt("numThreads", 5);
+        inputPath = configuration.get("inputPath");
+        outputPath = configuration.get("outputPath");
 
         System.out.println("just for test.");
     }
