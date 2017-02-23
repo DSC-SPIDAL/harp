@@ -26,10 +26,10 @@ public class RFMapCollective extends Configured implements Tool {
         System.exit(res);
     }
 
-    @override
+    @Override
     public int run(String[] args) throws Exception {
-        if (args.length < 6) {
-            System.err.println("Usage: edu.iu.rf.RFMapCollective <numTrees> <numMapTasks> <numThreads> <trainPath> <testPath> <outputPath>");
+        if (args.length < 5) {
+            System.err.println("Usage: edu.iu.rf.RFMapCollective <numTrees> <numMapTasks> <numThreads> <inputPath> <outputPath>");
             ToolRunner.printGenericCommandUsage(System.err);
             return -1;
         }
@@ -37,9 +37,8 @@ public class RFMapCollective extends Configured implements Tool {
         int numTrees = Integer.parseInt(args[0]);
         int numMapTasks = Integer.parseInt(args[1]);
         int numThreads = Integer.parseInt(args[2]);
-        String trainPath = args[3];
-        String testPath = args[4];
-        String outputPath = args[5];
+        String inputPath = args[3];
+        String outputPath = args[4];
 
         Configuration configuration = this.getConf();
         FileSystem fs = FileSystem.get((Configuration)configuration);
@@ -49,7 +48,7 @@ public class RFMapCollective extends Configured implements Tool {
             fs.delete(outDirPath, true);
         }
 
-        Job job = configureRFJob(numTrees, numMapTasks, numThreads, trainPath, testPath, outputPath, configuration);
+        Job job = configureRFJob(numTrees, numMapTasks, numThreads, inputPath, outputPath, configuration);
         boolean jobSuccess = job.waitForCompletion(true);
         if (!jobSuccess) {
             System.out.println("Random Forests job fails.");
@@ -57,13 +56,13 @@ public class RFMapCollective extends Configured implements Tool {
         return 0;
     }
 
-    private Job configureRFJob(int numTrees, int numMapTasks, int numThreads, String trainPath, String testPath, String outputPath, Configuration configuration)
+    private Job configureRFJob(int numTrees, int numMapTasks, int numThreads, String inputPath, String outputPath, Configuration configuration)
         throws IOException, URISyntaxException {
         Job job = Job.getInstance(configuration, "RF_job");
         JobConf jobConf = (JobConf)job.getConfiguration();
-        Configuration jobConfiguration - job.getConfiguration();
+        Configuration jobConfiguration = job.getConfiguration();
 
-        FileInputFormat.setInputPaths(job, new Path(dataPath));
+        FileInputFormat.setInputPaths(job, new Path(inputPath));
         FileOutputFormat.setOutputPath(job, new Path(outputPath));
         job.setInputFormatClass(MultiFileInputFormat.class);
         job.setJarByClass(RFMapCollective.class);
@@ -77,8 +76,7 @@ public class RFMapCollective extends Configured implements Tool {
         jobConfiguration.setInt("numTrees", numTrees);
         jobConfiguration.setInt("numMapTasks", numMapTasks);
         jobConfiguration.setInt("numThreads", numThreads);
-        jobConfiguration.set("trainPath", trainPath);
-        jobConfiguration.set("testPath", testPath);
+        jobConfiguration.set("inputPath", inputPath);
         jobConfiguration.set("outputPath", outputPath);
 
         return job;
