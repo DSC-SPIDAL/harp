@@ -12,3 +12,13 @@ import edu.iu.harp.resource.DoubleArray;
 import edu.iu.harp.partition.Partitioner;
 import edu.iu.harp.schdynamic.DynamicScheduler;
 
+public class RFMapper extends CollectiveMapper<String, String, Object, Object> {
+
+    private int numTrees;
+    private int numMapTasks;
+    private int numThreads;
+    private String trainPath;
+    private String testPath;
+    private String outputPath;
+    private Configuration configuration;
+}
