@@ -21,4 +21,26 @@ public class RFMapper extends CollectiveMapper<String, String, Object, Object> {
     private String testPath;
     private String outputPath;
     private Configuration configuration;
+
+    @Override
+    protected void setup(Context context) throws IOException, InterruptedException {
+        configuration = context.getConfiguration();
+        numTrees = conf.getInt("numTrees", 100);
+        numMapTasks = conf.getInt("numMapTasks", 4);
+        numThreads = conf.getInt("numThreads", 5);
+        trainPath = conf.get("trainPath");
+        testPath = conf.get("testPath");
+        outputPath = conf.get("outputPath");
+
+        System.out.println("just for test.");
+    }
+
+    protected void mapCollective(KeyValReader reader, Context context) throws IOException, InterruptedException {
+    	//loadData
+
+    	initialThreads();
+    }
+
+    private void initialThreads() {
+    }
 }
