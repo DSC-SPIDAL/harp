@@ -913,7 +913,7 @@ hdfs dfs -put input_data/* /input
       <guid>https://dsc-spidal.github.io/harp/docs/harpdaal/harpdaal/</guid>
       <description>
 
-&lt;p&gt;&lt;a href=&#34;https://github.iu.edu/IU-Big-Data-Lab/Harp/tree/master/harp3-daal-app&#34;&gt;harp3-daal-app&lt;/a&gt; includes the application implemented within the Harp-DAAL framework.&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://github.iu.edu/IU-Big-Data-Lab/Harp/tree/master/harp-daal-app&#34;&gt;harp-daal-app&lt;/a&gt; includes the application implemented within the Harp-DAAL framework.&lt;/p&gt;
 
 &lt;h2 id=&#34;what-is-harp-daal&#34;&gt;What is Harp-DAAL?&lt;/h2&gt;
 
@@ -994,7 +994,7 @@ table.&lt;/p&gt;
 
 &lt;h3 id=&#34;harp-daal-data-conversion-api&#34;&gt;Harp-DAAL Data Conversion API&lt;/h3&gt;
 
-&lt;p&gt;Harp-DAAL now provides a group of classes under the path &lt;em&gt;Harp/harp3-daal-app/src/edu/iu/daal&lt;/em&gt;, which manipulates the data transfer
+&lt;p&gt;Harp-DAAL now provides a group of classes under the path &lt;em&gt;Harp/harp-daal-app/src/edu/iu/daal&lt;/em&gt;, which manipulates the data transfer
 between Harp&amp;rsquo;s data structure and that of DAAL.&lt;/p&gt;
 
 &lt;ul&gt;
