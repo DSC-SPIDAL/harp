@@ -2,7 +2,7 @@
 @author: Langshi Chen
 
 
-harp3-daal-app includes the application implemented within the Harp-DAAL framework. 
+harp-daal-app includes the application implemented within the Harp-DAAL framework. 
 
 ## Introduction of Harp-DAAL 
 
@@ -36,10 +36,10 @@ After installation, please follow the procedure as below:
 ```bash
 export DAALROOT=/path-to-daal-src/
 ```
-2.Enter the harp3-daal-app directory, and build the apps
+2.Enter the harp-daal-app directory, and build the apps
 ```bash
-cd harp3-daal-app
+cd harp-daal-app
 ant
 ```
-3.Create scripts to run the examples within harp3-daal-app
+3.Create scripts to run the examples within harp-daal-app
 

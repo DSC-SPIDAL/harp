@@ -2,7 +2,7 @@
 title: Harp-DAAL Framework
 ---
 
-[harp3-daal-app](https://github.iu.edu/IU-Big-Data-Lab/Harp/tree/master/harp3-daal-app) includes the application implemented within the Harp-DAAL framework. 
+[harp-daal-app](https://github.iu.edu/IU-Big-Data-Lab/Harp/tree/master/harp-daal-app) includes the application implemented within the Harp-DAAL framework. 
 
 ## What is Harp-DAAL? 
 
@@ -81,7 +81,7 @@ table.
 
 ### Harp-DAAL Data Conversion API
 
-Harp-DAAL now provides a group of classes under the path *Harp/harp3-daal-app/src/edu/iu/daal*, which manipulates the data transfer
+Harp-DAAL now provides a group of classes under the path *Harp/harp-daal-app/src/edu/iu/daal*, which manipulates the data transfer
 between Harp's data structure and that of DAAL.
 
 * RotatorDaal: a rotator which internally converts the H matrix from Harp table to DAAL's NumericTable
