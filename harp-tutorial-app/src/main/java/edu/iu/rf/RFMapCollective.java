@@ -53,6 +53,7 @@ public class RFMapCollective extends Configured implements Tool {
         if (!jobSuccess) {
             System.out.println("Random Forests job fails.");
         }
+        System.out.println("Random Forests job suceeds!");
         return 0;
     }
 
