@@ -30,7 +30,6 @@ public class RFMapper extends CollectiveMapper<String, String, Object, Object> {
         inputPath = configuration.get("inputPath");
         outputPath = configuration.get("outputPath");
 
-        System.out.println("just for test.");
     }
 
     protected void mapCollective(KeyValReader reader, Context context) throws IOException, InterruptedException {
