@@ -367,60 +367,14 @@ Describe clearly your pull request the change.&lt;/p&gt;&lt;/li&gt;
     </item>
     
     <item>
-      <title>Harp Latent Dirichlet Allocation</title>
-      <link>https://dsc-spidal.github.io/harp/docs/examples/cvblda/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>https://dsc-spidal.github.io/harp/docs/examples/cvblda/</guid>
-      <description>
-
-&lt;p&gt;&lt;a href=&#34;https://github.iu.edu/IU-Big-Data-Lab/Harp/tree/master/harp3-tutorial-app/LDA&#34;&gt;Harp LDA&lt;/a&gt; is a distributed variational bayes inference (VB) algorithm for LDA model which would be able to model a large and continuously expanding dataset using Harp collective communication library. We demonstrate how variational bayes inference converges within Map-Collective jobs provided by Harp. We provide results of the experiments conducted on a corpus of Wikipedia Dataset.&lt;/p&gt;
-
-&lt;p&gt;Harp[2] is a collective communication library plugged in Hadoop plug-in to accelerate machine learning algorithms.&lt;/p&gt;
-
-&lt;p&gt;LDA[3] is a popular topic modeling algorithm. We follow the Mr.LDA[4] to implement distributed variational inference LDA on Harp with it’s dynamic schedueler, allreduce and push-pull communication models.&lt;/p&gt;
-
-&lt;h1 id=&#34;algorithm&#34;&gt;ALGORITHM&lt;/h1&gt;
-
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/lda/algorithm.png&#34; width=&#34;60%&#34; height=&#34;60%&#34;&gt;&lt;/p&gt;
-
-&lt;h1 id=&#34;workflow&#34;&gt;WORKFLOW&lt;/h1&gt;
-
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/lda/workflow.png&#34; width=&#34;60%&#34; height=&#34;60%&#34;&gt;&lt;/p&gt;
-
-&lt;h1 id=&#34;dataset&#34;&gt;DATASET&lt;/h1&gt;
-
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/lda/datasets.png&#34; width=&#34;60%&#34; height=&#34;60%&#34;&gt;&lt;/p&gt;
-
-&lt;h1 id=&#34;experiments&#34;&gt;EXPERIMENTS&lt;/h1&gt;
-
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/lda/data1-iterations.png&#34; width=&#34;60%&#34; height=&#34;60%&gt;
-&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/lda/data1-time.png&#34; width=&#34;60%&#34; height=&#34;60%&#34;&gt;
-&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/lda/data2-iterations.png&#34; width=&#34;60%&#34; height=&#34;60%&#34;&gt;
-&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/lda/data2-time.png&#34; width=&#34;60%&#34; height=&#34;60%&#34;&gt;
-&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/lda/Speedup.png&#34; width=&#34;60%&#34; height=&#34;60%&#34;&gt;&lt;/p&gt;
-
-&lt;p&gt;Harp-LDA is proposed to provide high scalability achieve better performance with shorter time and memory requirements. A clear evidence of convergence of likelihood after a certain number of iterations is depicted. The results from the speed up chart illustrate high scalability.&lt;/p&gt;
-
-&lt;h1 id=&#34;reference&#34;&gt;REFERENCE&lt;/h1&gt;
-
-&lt;p&gt;[1] B. Zhang, Y. Ruan, J. Qiu, Harp: Collective Communication on Hadoop, in the proceedings of IEEE International Conference on Cloud Engineering (IC2E2015), March 9-13, 2015.&lt;/p&gt;
-
-&lt;p&gt;[2] Harp project &lt;a href=&#34;https://github.iu.edu/IU-Big-Data-Lab/Harp&#34;&gt;https://github.iu.edu/IU-Big-Data-Lab/Harp&lt;/a&gt;&lt;/p&gt;
-
-&lt;p&gt;[3] Blei, David M., Andrew Y. Ng, and Michael I. Jordan. &amp;ldquo;Latent dirichlet allocation.&amp;rdquo; Journal of machine Learning research 3.Jan (2003): 993-1022.&lt;/p&gt;
-
-&lt;p&gt;[4] Zhai, Ke, et al. &amp;ldquo;Mr. LDA: A flexible large scale topic modeling package using variational inference in mapreduce.&amp;rdquo; Proceedings of the 21st international conference on World Wide Web. ACM, 2012.&lt;/p&gt;
-</description>
-    </item>
-    
-    <item>
       <title>Harp Multiclass Logistic Regression with Stochastic Gradient Descent</title>
       <link>https://dsc-spidal.github.io/harp/docs/examples/mlrsgd/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://dsc-spidal.github.io/harp/docs/examples/mlrsgd/</guid>
       <description>
+
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/mlr-illustration.png&#34; width=&#34;40%&#34;  &gt;&lt;/p&gt;
 
 &lt;p&gt;Multiclass logistic regression (MLR) is a classification method that generalizes logistic regression to multiclass problems, i.e. with more than two possible discrete outcomes. That is, it is a model that is used to predict the probabilities of the different possible outcomes of a categorically distributed dependent variable, given a set of independent variables.&lt;/p&gt;
 
@@ -593,11 +547,11 @@ hdfs dfs -put input_data/* /input
       <guid>https://dsc-spidal.github.io/harp/docs/examples/rf/</guid>
       <description>
 
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/4-5-1.png&#34; width=&#34;60%&#34;  &gt;&lt;/p&gt;
+
 &lt;p&gt;Random forests are an ensemble learning method for classification, regression and other tasks, that operate by constructing a multitude of decision trees at training time and outputting the class that is the mode of the classes (classification) or mean prediction (regression) of the individual trees. Random decision forests correct for decision trees&amp;rsquo; habit of overfitting to their training set.&lt;/p&gt;
 
 &lt;p&gt;The training algorithm for random forests applies the general technique of bootstrap aggregating, or bagging, to tree learners. Given a training set &lt;code&gt;X&lt;/code&gt; with responses &lt;code&gt;Y&lt;/code&gt;, bagging repeatedly selects a random sample with replacement of the training set. After training, predictions for unseen samples can be made by averaging the predictions from all the individual regression trees or by taking the majority vote in the case of decision trees. Random forests also do another bagging &amp;ndash; feature bagging, which is a random subset of the features. The reason for doing this is the correlation of the trees in an ordinary bootstrap sample: if one or a few features are very strong predictors for the response variable (target output), these features will be selected in many of the B trees, causing them to become correlated.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/4-5-1.png&#34; alt=&#34;RF-1&#34; /&gt;&lt;/p&gt;
 
 &lt;h2 id=&#34;definition&#34;&gt;DEFINITION&lt;/h2&gt;
 
@@ -739,11 +693,11 @@ hdfs dfs -put input_data/* /input
       <guid>https://dsc-spidal.github.io/harp/docs/examples/svm/</guid>
       <description>
 
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/4-4-1.png&#34; width=&#34;50%&#34;  &gt;&lt;/p&gt;
+
 &lt;p&gt;In machine learning, support vector machines (SVM) are supervised learning models with associated learning algorithms that analyze data used for classification and regression analysis. Given a set of training examples, each marked as belonging to one or the other of two categories, an SVM training algorithm builds a model that assigns new examples to one category or the other, making it a non-probabilistic binary linear classifier. An SVM model is a representation of the examples as points in space, mapped so that the examples of the separate categories are divided by a clear gap that is as wide as possible. New examples are then mapped into that same space and predicted to belong to a category based on which side of the gap they fall.&lt;/p&gt;
 
 &lt;p&gt;In addition to performing linear classification, SVMs can efficiently perform a non-linear classification using what is called the kernel trick, implicitly mapping their inputs into high-dimensional feature spaces.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/4-4-1.png&#34; alt=&#34;SVM-1&#34; /&gt;&lt;/p&gt;
 
 &lt;p&gt;In this project, Harp won&amp;rsquo;t touch the core code base of computing SVM. It will use LibSVM which is an open source library and do parallel around LibSVM. LibSVM is a popular open source machine learning library, which is developed at the National Taiwan University and written in C++ though with other programming languages&amp;rsquo; APIs. LibSVM implements the SMO algorithm for kernelized support vector machines (SVMs), supporting classification and regression.&lt;/p&gt;
 
@@ -913,7 +867,7 @@ hdfs dfs -put input_data/* /input
       <guid>https://dsc-spidal.github.io/harp/docs/harpdaal/harpdaal/</guid>
       <description>
 
-&lt;p&gt;&lt;a href=&#34;https://github.iu.edu/IU-Big-Data-Lab/Harp/tree/master/harp3-daal-app&#34;&gt;harp3-daal-app&lt;/a&gt; includes the application implemented within the Harp-DAAL framework.&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://github.iu.edu/IU-Big-Data-Lab/Harp/tree/master/harp-daal-app&#34;&gt;harp-daal-app&lt;/a&gt; includes the application implemented within the Harp-DAAL framework.&lt;/p&gt;
 
 &lt;h2 id=&#34;what-is-harp-daal&#34;&gt;What is Harp-DAAL?&lt;/h2&gt;
 
@@ -994,7 +948,7 @@ table.&lt;/p&gt;
 
 &lt;h3 id=&#34;harp-daal-data-conversion-api&#34;&gt;Harp-DAAL Data Conversion API&lt;/h3&gt;
 
-&lt;p&gt;Harp-DAAL now provides a group of classes under the path &lt;em&gt;Harp/harp3-daal-app/src/edu/iu/daal&lt;/em&gt;, which manipulates the data transfer
+&lt;p&gt;Harp-DAAL now provides a group of classes under the path &lt;em&gt;Harp/harp-daal-app/src/edu/iu/daal&lt;/em&gt;, which manipulates the data transfer
 between Harp&amp;rsquo;s data structure and that of DAAL.&lt;/p&gt;
 
 &lt;ul&gt;
@@ -1124,6 +1078,251 @@ ant
 &lt;/pre&gt;&lt;/div&gt;
 
 &lt;p&gt;3.Create scripts to run the examples within harp3-daal-app&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Harp-DAAL-SGD</title>
+      <link>https://dsc-spidal.github.io/harp/docs/harpdaal/Example/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://dsc-spidal.github.io/harp/docs/harpdaal/Example/</guid>
+      <description>
+
+&lt;h2 id=&#34;matrix-factorization-based-on-stochastic-gradient-descent-mf-sgd&#34;&gt;Matrix Factorization based on Stochastic Gradient Descent (MF-SGD)&lt;/h2&gt;
+
+&lt;p&gt;Matrix Factorization based on Stochastic Gradient Descent (MF-SGD for short) is an algorithm widely used in recommender systems.
+It aims to factorize a sparse matrix into two low-rank matrices named mode W and model H as follows.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/6-2-1.png&#34; width=&#34;10%&#34; height=&#34;10%&#34;&gt;&lt;br&gt;&lt;/p&gt;
+
+&lt;p&gt;The rating Matrix V includes both training data and test data. A learning algorithm uses the training data to update matrices W and H.
+For instance, a standard SGD procedure will update the model W and H
+while iterating over each training data point, i.e., an entry in matrix V in the following formula.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/6-2-2.png&#34; width=&#34;25%&#34; height=&#34;25%&#34;&gt;&lt;br&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/6-2-3.png&#34; width=&#34;40%&#34; height=&#34;40%&#34;&gt;&lt;br&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/6-2-4.png&#34; width=&#34;40%&#34; height=&#34;40%&#34;&gt;&lt;br&gt;&lt;/p&gt;
+
+&lt;p&gt;After the training process, the test data points in matrix V could be used to verify the effectiveness of the training matrix by computing the RMSE values of
+the difference&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/6-2-2.png&#34; width=&#34;25%&#34; height=&#34;25%&#34;&gt;&lt;br&gt;&lt;/p&gt;
+
+&lt;h2 id=&#34;implementation-of-sgd-within-harp-daal-framework&#34;&gt;Implementation of SGD within Harp-DAAL Framework&lt;/h2&gt;
+
+&lt;p&gt;Harp-DAAL-SGD inherits the model-rotation computation model from Harp-SGD. It owns two layers: 1) An inter-mapper layer decompose the original MF-SGD problem into different
+Harp Mappers. 2) An intra-mapper layer carries out the computation work on local training data in a multi-threading paradigm.&lt;/p&gt;
+
+&lt;h3 id=&#34;inter-mapper-layout&#34;&gt;Inter-Mapper Layout&lt;/h3&gt;
+
+&lt;p&gt;The training dataset is partitioned by row identities, and each mapper is assigned data points from a group of rows.
+The model matrix W is also row-partitioned, and each mapper keeps its own local portion of W. The model H is, however, sliced and rotated among all the mappers. Figure 1 shows the
+inter-mapper layout of Harp-DAAL-SGD.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/6-2-5.png&#34; alt=&#34;Figure 1. The layout of inter-mapper layer&#34; /&gt;&lt;/p&gt;
+
+&lt;h3 id=&#34;intra-mapper-layout&#34;&gt;Intra-Mapper Layout&lt;/h3&gt;
+
+&lt;p&gt;In each iteration, a mapper receives a slice of model H, i.e., a group of columns from matrix H. A procedure will pick out the training data points with column identities from these columns and
+execute an updating task according to the SGD algorithm. Rather than the model-rotation model, the intra-mapper layer chooses the asynchronous computation model, where each training data point
+update their own rows from model matrices W and H without mutual locks. Figure 2 demonstrates the intra-mapper working style.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/6-2-6.png&#34; alt=&#34;Figure 2. The intra-mapper computation and update of Model Data&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;For the intra-mapper parallel computing, we adopt a hybrid usage of TBB concurrent containers and OpenMP directives.&lt;/p&gt;
+
+&lt;h2 id=&#34;a-code-walk-through-of-harp-daal-sgd&#34;&gt;A Code Walk through of Harp-DAAL-SGD&lt;/h2&gt;
+
+&lt;p&gt;The main body of Harp-DAAL-SGD is the &lt;em&gt;mapCollective&lt;/em&gt; function of class &lt;em&gt;SGDDaalCollectiveMapper&lt;/em&gt;.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;protected&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;mapCollective&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;KeyValReader&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;reader&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; 
+            &lt;span style=&#34;color: #f8f8f2&#34;&gt;Context&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;context&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;throws&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;IOException&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;InterruptedException&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
+
+            &lt;span style=&#34;color: #f8f8f2&#34;&gt;LinkedList&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;String&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;vFiles&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;getVFiles&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;reader&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+
+            &lt;span style=&#34;color: #66d9ef&#34;&gt;try&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
+                &lt;span style=&#34;color: #f8f8f2&#34;&gt;runSGD&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;vFiles&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;context&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getConfiguration&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(),&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;context&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+            &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;catch&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;Exception&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;e&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
+                &lt;span style=&#34;color: #f8f8f2&#34;&gt;LOG&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;error&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;Fail to run SGD.&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;e&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+            &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
+&lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;It first uses the function &lt;em&gt;getVFiles&lt;/em&gt; to read in HDFS files, then it runs the &lt;em&gt;runSGD&lt;/em&gt; to finish the iterative training process. Besides the &lt;em&gt;vFiles&lt;/em&gt;, &lt;em&gt;runSGD&lt;/em&gt; will also
+take in the configurations of all the parameters required by the training and testing process. The following list includes some of the important parameters.&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;r: the feature dimension of model data&lt;/li&gt;
+&lt;li&gt;lambda: the lambda parameter in the formula of updating model W and H&lt;/li&gt;
+&lt;li&gt;epsilon: the learning rate in the formula of updating model W and H&lt;/li&gt;
+&lt;li&gt;numIterations: the number of iterations in the training process&lt;/li&gt;
+&lt;li&gt;numThreads: the number of threads used in Java multi-threading programming and TBB&lt;/li&gt;
+&lt;li&gt;numModelSlices: the number of pipelines in model rotation&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;The function &lt;em&gt;runSGD&lt;/em&gt; contains several steps as follows:&lt;/p&gt;
+
+&lt;h3 id=&#34;loading-training-and-testing-datasets-from-hdfs&#34;&gt;Loading Training and Testing Datasets from HDFS&lt;/h3&gt;
+
+&lt;p&gt;First it invokes class &lt;em&gt;SGDUtil&lt;/em&gt; to load datasets&lt;/p&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #75715e&#34;&gt;//----------------------- load the train dataset-----------------------&lt;/span&gt;
+&lt;span style=&#34;color: #f8f8f2&#34;&gt;Int2ObjectOpenHashMap&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;VRowCol&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;vRowMap&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;SGDUtil&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;loadVWMap&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;vFilePaths&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;numThreads&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;configuration&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+
+&lt;span style=&#34;color: #75715e&#34;&gt;//-----------------------load the test dataset-----------------------&lt;/span&gt;
+&lt;span style=&#34;color: #f8f8f2&#34;&gt;Int2ObjectOpenHashMap&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;VRowCol&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;testVColMap&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;SGDUtil&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;loadTestVHMap&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;testFilePath&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;configuration&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;numThreads&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h3 id=&#34;regrouping-training-dataset-and-load-data-into-daal&#34;&gt;Regrouping Training Dataset and Load Data into DAAL&lt;/h3&gt;
+
+&lt;p&gt;The second step is to re-organize the training dataset among mappers, thus, each mapper will get a portion of data points on a group of rows.
+Harp provides the following interface for regrouping data.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;regroup&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;sgd&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;regroup-vw&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;vSetTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Partitioner&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getNumWorkers&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;()));&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;em&gt;vSetTable&lt;/em&gt; is a harp container that consists of different partitions, and here each partition is an array of training data points with the same row identity.
+After each mapper gets its proper quote of training data, it starts to load the training data into DAAL&amp;rsquo;s data container. We use the &lt;em&gt;NumericTable&lt;/em&gt; container of
+DAAL, and its interface receives Java data in a primitive array type. The conversion takes two steps of data copy.&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Copy each partition of vSetTable into a single primitive array of data.&lt;/li&gt;
+&lt;li&gt;Copy the primitive array from JVM heap memory into Off-JVM heap memory.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;The data copy in the first step is done in parallel by using Java thread package.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;train_wPos_daal&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;HomogenBMNumericTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;daal_Context&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Integer&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;class&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;1&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;workerNumV&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;NumericTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;AllocationFlag&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;DoAllocate&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+ &lt;span style=&#34;color: #f8f8f2&#34;&gt;train_hPos_daal&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;HomogenBMNumericTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;daal_Context&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Integer&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;class&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;1&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;workerNumV&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;NumericTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;AllocationFlag&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;DoAllocate&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+ &lt;span style=&#34;color: #f8f8f2&#34;&gt;train_val_daal&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;HomogenBMNumericTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;daal_Context&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Double&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;class&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;1&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;workerNumV&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;NumericTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;AllocationFlag&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;DoAllocate&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+ 
+ &lt;span style=&#34;color: #f8f8f2&#34;&gt;Thread&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[]&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;threads&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Thread&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;numThreads&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;];&lt;/span&gt;
+ 
+ &lt;span style=&#34;color: #f8f8f2&#34;&gt;LinkedList&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[]&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;train_wPos_daal_sets&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;LinkedList&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&amp;gt;();&lt;/span&gt;
+ &lt;span style=&#34;color: #f8f8f2&#34;&gt;LinkedList&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[]&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;train_hPos_daal_sets&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;LinkedList&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&amp;gt;();&lt;/span&gt;
+ &lt;span style=&#34;color: #f8f8f2&#34;&gt;LinkedList&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;double&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[]&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;train_val_daal_sets&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;LinkedList&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&amp;gt;();&lt;/span&gt;
+ 
+ &lt;span style=&#34;color: #66d9ef&#34;&gt;for&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;numThreads&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;++)&lt;/span&gt;
+ &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
+     &lt;span style=&#34;color: #f8f8f2&#34;&gt;train_wPos_daal_sets&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;add&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;reg_tasks&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;get&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;).&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getNumPoint&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;()]);&lt;/span&gt;
+     &lt;span style=&#34;color: #f8f8f2&#34;&gt;train_hPos_daal_sets&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;add&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;reg_tasks&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;get&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;).&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getNumPoint&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;()]);&lt;/span&gt;
+     &lt;span style=&#34;color: #f8f8f2&#34;&gt;train_val_daal_sets&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;add&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;double&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;reg_tasks&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;get&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;).&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getNumPoint&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;()]);&lt;/span&gt;
+ &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
+ 
+ &lt;span style=&#34;color: #66d9ef&#34;&gt;for&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;q&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;q&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;numThreads&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;q&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;++)&lt;/span&gt;
+ &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
+     &lt;span style=&#34;color: #f8f8f2&#34;&gt;threads&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;q&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Thread&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;TaskLoadPoints&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;q&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;numThreads&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;reg_tasks&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;get&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;q&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;).&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getSetList&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(),&lt;/span&gt;
+                 &lt;span style=&#34;color: #f8f8f2&#34;&gt;train_wPos_daal_sets&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;get&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;q&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;),&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;train_hPos_daal_sets&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;get&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;q&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;),&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;train_val_daal_sets&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;get&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;q&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)));&lt;/span&gt;
+ 
+     &lt;span style=&#34;color: #f8f8f2&#34;&gt;threads&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;q&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;].&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;start&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
+ &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
+ 
+ &lt;span style=&#34;color: #66d9ef&#34;&gt;for&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;q&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;q&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;numThreads&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;q&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;++)&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
+ 
+     &lt;span style=&#34;color: #66d9ef&#34;&gt;try&lt;/span&gt;
+     &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
+         &lt;span style=&#34;color: #f8f8f2&#34;&gt;threads&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;q&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;].&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;join&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
+     &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;catch&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;InterruptedException&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;e&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt;
+     &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
+         &lt;span style=&#34;color: #f8f8f2&#34;&gt;System&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;out&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;println&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;Thread interrupted.&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+     &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
+ 
+ &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;The second step is done inside DAAL codes by using the &lt;em&gt;releaseBlockOfColumnValues&lt;/em&gt; function from DAAL&amp;rsquo;s Java API. This
+function internally create a direct byte buffer to transfer the data.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;itr_pos&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
+&lt;span style=&#34;color: #66d9ef&#34;&gt;for&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;numThreads&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;++)&lt;/span&gt;
+&lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
+
+    &lt;span style=&#34;color: #f8f8f2&#34;&gt;train_wPos_daal&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;releaseBlockOfColumnValues&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;itr_pos&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;reg_tasks&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;get&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;).&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getNumPoint&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(),&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;train_wPos_daal_sets&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;get&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;));&lt;/span&gt;
+    &lt;span style=&#34;color: #f8f8f2&#34;&gt;train_hPos_daal&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;releaseBlockOfColumnValues&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;itr_pos&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;reg_tasks&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;get&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;).&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getNumPoint&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(),&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;train_hPos_daal_sets&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;get&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;));&lt;/span&gt;
+    &lt;span style=&#34;color: #f8f8f2&#34;&gt;train_val_daal&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;releaseBlockOfColumnValues&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;itr_pos&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;reg_tasks&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;get&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;).&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getNumPoint&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(),&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;train_val_daal_sets&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;get&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;));&lt;/span&gt;
+    &lt;span style=&#34;color: #f8f8f2&#34;&gt;itr_pos&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;reg_tasks&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;get&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;).&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getNumPoint&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
+
+&lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h3 id=&#34;create-model-matrices-and-model-rotator&#34;&gt;Create Model Matrices and Model Rotator&lt;/h3&gt;
+
+&lt;p&gt;Model matrices, the W matrix and H matrix, are both the input data and output data. We initialize them with random values, and use them
+after training to predict new data. Each mapper owns its portion of the whole W matrix, which is local to this mapper. This local W matrix is
+thus stored at the Off-JVM heap memory space, which is accessible to the DAAL native kernels. We only transfer an array of row identities from
+Java side into DAAL side, and the initialization is done within DAAL&amp;rsquo;s kernel before the first iteration.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #75715e&#34;&gt;//----------------- create the daal table for local row ids -----------------&lt;/span&gt;
+&lt;span style=&#34;color: #f8f8f2&#34;&gt;wMat_size&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;idArray&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;size&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
+&lt;span style=&#34;color: #f8f8f2&#34;&gt;wMat_rowid_daal&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;HomogenNumericTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;daal_Context&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Integer&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;class&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;1&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;wMat_size&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;NumericTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;AllocationFlag&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;DoAllocate&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+&lt;span style=&#34;color: #f8f8f2&#34;&gt;wMat_rowid_daal&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;releaseBlockOfColumnValues&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;wMat_size&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;ids&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;Unlike the W matrix, the H matrix is rotated among all the mappers multiple times in each iteration. Therefore, we keep one copy at the JVM heap memory and
+the other copy at the native off-JVM heap memory. The conversion of data between the harp table of H model and that of a DAAL container is handled by the
+rotator class.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #75715e&#34;&gt;// Create H model&lt;/span&gt;
+&lt;span style=&#34;color: #f8f8f2&#34;&gt;Table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;DoubleArray&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;[]&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;hTableMap&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;numModelSlices&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;];&lt;/span&gt;
+&lt;span style=&#34;color: #f8f8f2&#34;&gt;createHModel&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;hTableMap&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;numModelSlices&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;vWHMap&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;oneOverSqrtR&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;random&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+&lt;span style=&#34;color: #75715e&#34;&gt;//create the rotator&lt;/span&gt;
+&lt;span style=&#34;color: #f8f8f2&#34;&gt;RotatorDaal&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;double&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[],&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;DoubleArray&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;rotator&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;RotatorDaal&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&amp;gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;hTableMap&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;r&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;20&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;null&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;sgd&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+&lt;span style=&#34;color: #f8f8f2&#34;&gt;rotator&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;start&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;As Harp-DAAL-SGD uses two pipelines to overlap the computation and communication work, the data conversion brought by the H model matrix is also likely to be
+offset by the heavy computation work.&lt;/p&gt;
+
+&lt;h3 id=&#34;local-computation-by-daal-kernels&#34;&gt;Local Computation by DAAL Kernels&lt;/h3&gt;
+
+&lt;p&gt;We implemented the local DAAL codes in the MF-SGD-Distri algorithm of DAAL&amp;rsquo;s repository. It is highly abstracted as the other DAAL&amp;rsquo;s algorithms, and the users only
+need a few lines of codes to invoke it.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #75715e&#34;&gt;//create DAAL algorithm object, using distributed version of DAAL-MF-SGD&lt;/span&gt;
+&lt;span style=&#34;color: #f8f8f2&#34;&gt;Distri&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;sgdAlgorithm&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Distri&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;daal_Context&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Double&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;class&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Method&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;defaultSGD&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+
+&lt;span style=&#34;color: #f8f8f2&#34;&gt;sgdAlgorithm&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;input&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;set&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;InputId&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;dataWPos&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;train_wPos_daal&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+&lt;span style=&#34;color: #f8f8f2&#34;&gt;sgdAlgorithm&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;input&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;set&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;InputId&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;dataHPos&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;train_hPos_daal&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+&lt;span style=&#34;color: #f8f8f2&#34;&gt;sgdAlgorithm&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;input&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;set&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;InputId&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;dataVal&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;train_val_daal&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+
+&lt;span style=&#34;color: #f8f8f2&#34;&gt;sgdAlgorithm&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;input&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;set&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;InputId&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;testWPos&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;test_wPos_daal&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+&lt;span style=&#34;color: #f8f8f2&#34;&gt;sgdAlgorithm&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;input&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;set&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;InputId&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;testHPos&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;test_hPos_daal&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+&lt;span style=&#34;color: #f8f8f2&#34;&gt;sgdAlgorithm&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;input&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;set&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;InputId&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;testVal&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;test_val_daal&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+
+&lt;span style=&#34;color: #f8f8f2&#34;&gt;PartialResult&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;model_data&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;PartialResult&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;daal_Context&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+&lt;span style=&#34;color: #f8f8f2&#34;&gt;sgdAlgorithm&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;setPartialResult&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;model_data&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+
+&lt;span style=&#34;color: #f8f8f2&#34;&gt;model_data&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;set&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;PartialResultId&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;presWMat&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;wMat_rowid_daal&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;The training and test dataset are imported to &lt;em&gt;sgdAlgorithm&lt;/em&gt; as input arguments while the W matrix and H matrix are imported as result arguments. The kernel class is configurable with respect to the
+precision, the internal algorithm, and so forth. The same &lt;em&gt;sgdAlgorithm&lt;/em&gt; could be used in both of the training and test process.&lt;/p&gt;
+
+&lt;p&gt;First, we compute the RMSE value before the training process.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;printRMSEbyDAAL&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;sgdAlgorithm&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;model_data&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;rotator&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;numWorkers&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;totalNumTestV&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;wMat_size&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;configuration&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;Second, we start the iterative training process loops.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;for&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;1&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;numIterations&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;++)&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
+
+    &lt;span style=&#34;color: #66d9ef&#34;&gt;for&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;j&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;j&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;numWorkers&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;j&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;++)&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
+
+        &lt;span style=&#34;color: #66d9ef&#34;&gt;for&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;k&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;k&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;numModelSlices&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;k&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;++)&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
+
+            &lt;span style=&#34;color: #75715e&#34;&gt;//get the h matrix from the rotator&lt;/span&gt;
+            &lt;span style=&#34;color: #f8f8f2&#34;&gt;NumericTable&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;hTableMap_daal&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;rotator&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getDaal_Table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;k&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+            &lt;span style=&#34;color: #f8f8f2&#34;&gt;model_data&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;set&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;PartialResultId&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;presHMat&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;hTableMap_daal&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+
+            &lt;span style=&#34;color: #75715e&#34;&gt;//set up the parameters for MF-DAAL-SGD&lt;/span&gt;
+            &lt;span style=&#34;color: #f8f8f2&#34;&gt;sgdAlgorithm&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;parameter&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;set&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;epsilon&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;lambda&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;r&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;wMap_size&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;hPartitionMapSize&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;1&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;numThreads&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;1&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+
+            &lt;span style=&#34;color: #75715e&#34;&gt;//computation &lt;/span&gt;
+            &lt;span style=&#34;color: #f8f8f2&#34;&gt;sgdAlgorithm&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;compute&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
+
+            &lt;span style=&#34;color: #75715e&#34;&gt;//trigger the rotator after one time of computation&lt;/span&gt;
+            &lt;span style=&#34;color: #f8f8f2&#34;&gt;rotator&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;rotate&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;k&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+
+        &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
+    &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
+&lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;After each iteration, we can choose to evaluate the training result immediately, or we may evaluate the result after every certain times of training iterations.&lt;/p&gt;
 </description>
     </item>
     
