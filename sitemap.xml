@@ -2,124 +2,124 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
-    <loc>https://dsc-spidal.github.io/harp-test/docs/communications/allgather/</loc>
+    <loc>https://dsc-spidal.github.io/harp/docs/communications/allgather/</loc>
   </url>
   
   <url>
-    <loc>https://dsc-spidal.github.io/harp-test/docs/communications/allreduce/</loc>
+    <loc>https://dsc-spidal.github.io/harp/docs/communications/allreduce/</loc>
   </url>
   
   <url>
-    <loc>https://dsc-spidal.github.io/harp-test/docs/communications/broadcast/</loc>
+    <loc>https://dsc-spidal.github.io/harp/docs/communications/broadcast/</loc>
   </url>
   
   <url>
-    <loc>https://dsc-spidal.github.io/harp-test/docs/contributors/community/</loc>
+    <loc>https://dsc-spidal.github.io/harp/docs/contributors/community/</loc>
   </url>
   
   <url>
-    <loc>https://dsc-spidal.github.io/harp-test/docs/programming/data-interface/</loc>
+    <loc>https://dsc-spidal.github.io/harp/docs/programming/data-interface/</loc>
   </url>
   
   <url>
-    <loc>https://dsc-spidal.github.io/harp-test/docs/contributors/contributors/</loc>
+    <loc>https://dsc-spidal.github.io/harp/docs/contributors/contributors/</loc>
   </url>
   
   <url>
-    <loc>https://dsc-spidal.github.io/harp-test/docs/</loc>
+    <loc>https://dsc-spidal.github.io/harp/docs/</loc>
     <priority>0</priority>
   </url>
   
   <url>
-    <loc>https://dsc-spidal.github.io/harp-test/docs/programming/computation-models/</loc>
+    <loc>https://dsc-spidal.github.io/harp/docs/programming/computation-models/</loc>
   </url>
   
   <url>
-    <loc>https://dsc-spidal.github.io/harp-test/docs/examples/cvblda/</loc>
+    <loc>https://dsc-spidal.github.io/harp/docs/examples/cvblda/</loc>
   </url>
   
   <url>
-    <loc>https://dsc-spidal.github.io/harp-test/docs/examples/mlrsgd/</loc>
+    <loc>https://dsc-spidal.github.io/harp/docs/examples/mlrsgd/</loc>
   </url>
   
   <url>
-    <loc>https://dsc-spidal.github.io/harp-test/docs/programming/overview/</loc>
+    <loc>https://dsc-spidal.github.io/harp/docs/programming/overview/</loc>
   </url>
   
   <url>
-    <loc>https://dsc-spidal.github.io/harp-test/docs/examples/rf/</loc>
+    <loc>https://dsc-spidal.github.io/harp/docs/examples/rf/</loc>
   </url>
   
   <url>
-    <loc>https://dsc-spidal.github.io/harp-test/docs/resources/</loc>
+    <loc>https://dsc-spidal.github.io/harp/docs/resources/</loc>
   </url>
   
   <url>
-    <loc>https://dsc-spidal.github.io/harp-test/docs/examples/svm/</loc>
+    <loc>https://dsc-spidal.github.io/harp/docs/examples/svm/</loc>
   </url>
   
   <url>
-    <loc>https://dsc-spidal.github.io/harp-test/docs/harpdaal/harpdaal/</loc>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/harpdaal/</loc>
   </url>
   
   <url>
-    <loc>https://dsc-spidal.github.io/harp-test/docs/examples/harpdaal/</loc>
+    <loc>https://dsc-spidal.github.io/harp/docs/examples/harpdaal/</loc>
   </url>
   
   <url>
-    <loc>https://dsc-spidal.github.io/harp-test/docs/harpdaal/Example/</loc>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/Example/</loc>
   </url>
   
   <url>
-    <loc>https://dsc-spidal.github.io/harp-test/docs/examples/kmeans/</loc>
+    <loc>https://dsc-spidal.github.io/harp/docs/examples/kmeans/</loc>
   </url>
   
   <url>
-    <loc>https://dsc-spidal.github.io/harp-test/docs/examples/latentdirichletallocation/</loc>
+    <loc>https://dsc-spidal.github.io/harp/docs/examples/latentdirichletallocation/</loc>
   </url>
   
   <url>
-    <loc>https://dsc-spidal.github.io/harp-test/docs/examples/lda/</loc>
+    <loc>https://dsc-spidal.github.io/harp/docs/examples/lda/</loc>
   </url>
   
   <url>
-    <loc>https://dsc-spidal.github.io/harp-test/docs/applications/lda-cgs/</loc>
+    <loc>https://dsc-spidal.github.io/harp/docs/applications/lda-cgs/</loc>
   </url>
   
   <url>
-    <loc>https://dsc-spidal.github.io/harp-test/docs/applications/mf/</loc>
+    <loc>https://dsc-spidal.github.io/harp/docs/applications/mf/</loc>
   </url>
   
   <url>
-    <loc>https://dsc-spidal.github.io/harp-test/docs/communications/pushandpull/</loc>
+    <loc>https://dsc-spidal.github.io/harp/docs/communications/pushandpull/</loc>
   </url>
   
   <url>
-    <loc>https://dsc-spidal.github.io/harp-test/docs/getting-started-cluster/</loc>
+    <loc>https://dsc-spidal.github.io/harp/docs/getting-started-cluster/</loc>
   </url>
   
   <url>
-    <loc>https://dsc-spidal.github.io/harp-test/docs/getting-started/</loc>
+    <loc>https://dsc-spidal.github.io/harp/docs/getting-started/</loc>
   </url>
   
   <url>
-    <loc>https://dsc-spidal.github.io/harp-test/docs/communications/reduce/</loc>
+    <loc>https://dsc-spidal.github.io/harp/docs/communications/reduce/</loc>
   </url>
   
   <url>
-    <loc>https://dsc-spidal.github.io/harp-test/docs/communications/regroup/</loc>
+    <loc>https://dsc-spidal.github.io/harp/docs/communications/regroup/</loc>
   </url>
   
   <url>
-    <loc>https://dsc-spidal.github.io/harp-test/docs/communications/rotate/</loc>
+    <loc>https://dsc-spidal.github.io/harp/docs/communications/rotate/</loc>
   </url>
   
   <url>
-    <loc>https://dsc-spidal.github.io/harp-test/docs/programming/scheduler/</loc>
+    <loc>https://dsc-spidal.github.io/harp/docs/programming/scheduler/</loc>
   </url>
   
   <url>
-    <loc>https://dsc-spidal.github.io/harp-test/</loc>
+    <loc>https://dsc-spidal.github.io/harp/</loc>
     <priority>0</priority>
   </url>
   

@@ -2,21 +2,21 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Docs on harp</title>
-    <link>https://dsc-spidal.github.io/harp-test/docs/index.xml</link>
+    <link>https://dsc-spidal.github.io/harp/docs/index.xml</link>
     <description>Recent content in Docs on harp</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <atom:link href="https://dsc-spidal.github.io/harp-test/docs/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://dsc-spidal.github.io/harp/docs/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
       <title>Allgather</title>
-      <link>https://dsc-spidal.github.io/harp-test/docs/communications/allgather/</link>
+      <link>https://dsc-spidal.github.io/harp/docs/communications/allgather/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://dsc-spidal.github.io/harp-test/docs/communications/allgather/</guid>
+      <guid>https://dsc-spidal.github.io/harp/docs/communications/allgather/</guid>
       <description>
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp-test/img/4-3-1.png&#34; alt=&#34;allgather&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/4-3-1.png&#34; alt=&#34;allgather&#34; /&gt;&lt;/p&gt;
 
 &lt;p&gt;&lt;code&gt;allgather&lt;/code&gt; aims to first collect tables from other workers and then broadcast the collection. All workers should run it concurrently. The defination of the method is:&lt;/p&gt;
 &lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;boolean&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;allgather&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;final&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;String&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;contextName&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;final&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;String&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;operationName&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;final&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;P&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;final&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;DataMap&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;dataMap&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;final&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Workers&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;workers&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt;
@@ -38,13 +38,13 @@
     
     <item>
       <title>Allreduce</title>
-      <link>https://dsc-spidal.github.io/harp-test/docs/communications/allreduce/</link>
+      <link>https://dsc-spidal.github.io/harp/docs/communications/allreduce/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://dsc-spidal.github.io/harp-test/docs/communications/allreduce/</guid>
+      <guid>https://dsc-spidal.github.io/harp/docs/communications/allreduce/</guid>
       <description>
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp-test/img/3-4-1.png&#34; alt=&#34;allreduce&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/3-4-1.png&#34; alt=&#34;allreduce&#34; /&gt;&lt;/p&gt;
 
 &lt;p&gt;&lt;code&gt;allreduce&lt;/code&gt; aims to first combine tables from other workers and then broadcast the accumulated table. All workers should run it concurrently. The defination of the method is:&lt;/p&gt;
 &lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;boolean&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;allreduce&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;final&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;String&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;contextName&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;final&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;String&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;operationName&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;final&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;P&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;final&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;DataMap&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;dataMap&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;final&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Workers&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;workers&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt;
@@ -66,13 +66,13 @@
     
     <item>
       <title>Broadcast</title>
-      <link>https://dsc-spidal.github.io/harp-test/docs/communications/broadcast/</link>
+      <link>https://dsc-spidal.github.io/harp/docs/communications/broadcast/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://dsc-spidal.github.io/harp-test/docs/communications/broadcast/</guid>
+      <guid>https://dsc-spidal.github.io/harp/docs/communications/broadcast/</guid>
       <description>
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp-test/img/4-1-1.png&#34; alt=&#34;broadcast&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/4-1-1.png&#34; alt=&#34;broadcast&#34; /&gt;&lt;/p&gt;
 
 &lt;p&gt;&lt;code&gt;broadcast&lt;/code&gt; aims to share a table in one worker with others. All workers should run it concurrently. The defination of the method is:&lt;/p&gt;
 &lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;boolean&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;broadcast&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;String&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;contextName&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;String&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;operationName&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;P&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;bcastWorkerID&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;boolean&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;useMSTBcast&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;DataMap&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;dataMap&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Workers&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;workers&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt;
@@ -96,10 +96,10 @@
     
     <item>
       <title>Community</title>
-      <link>https://dsc-spidal.github.io/harp-test/docs/contributors/community/</link>
+      <link>https://dsc-spidal.github.io/harp/docs/contributors/community/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://dsc-spidal.github.io/harp-test/docs/contributors/community/</guid>
+      <guid>https://dsc-spidal.github.io/harp/docs/contributors/community/</guid>
       <description>
 
 &lt;h2 id=&#34;contributing-to-harp&#34;&gt;Contributing to Harp&lt;/h2&gt;
@@ -155,13 +155,13 @@ Describe clearly your pull request the change.&lt;/p&gt;&lt;/li&gt;
     
     <item>
       <title>Data Interfaces and Types</title>
-      <link>https://dsc-spidal.github.io/harp-test/docs/programming/data-interface/</link>
+      <link>https://dsc-spidal.github.io/harp/docs/programming/data-interface/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://dsc-spidal.github.io/harp-test/docs/programming/data-interface/</guid>
+      <guid>https://dsc-spidal.github.io/harp/docs/programming/data-interface/</guid>
       <description>
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp-test/img/3-1-1.png&#34; alt=&#34;data-abstraction&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/3-1-1.png&#34; alt=&#34;data-abstraction&#34; /&gt;&lt;/p&gt;
 
 &lt;p&gt;Harp provides three levels of data structures: arrays and objects, partition, and table. Arrays and Serializable objects are the basic data structures, which includes:&lt;/p&gt;
 
@@ -187,7 +187,7 @@ Describe clearly your pull request the change.&lt;/p&gt;&lt;/li&gt;
 
 &lt;h1 id=&#34;table-and-partitions&#34;&gt;Table and Partitions&lt;/h1&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp-test/img/3-1-2.png&#34; alt=&#34;table-partition&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/3-1-2.png&#34; alt=&#34;table-partition&#34; /&gt;&lt;/p&gt;
 
 &lt;p&gt;An example of how to construct a table is as follows.&lt;/p&gt;
 &lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;Table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;DoubleArray&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;table&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&amp;gt;(&lt;/span&gt;&lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;DoubleArrPlus&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;());&lt;/span&gt;
@@ -214,7 +214,7 @@ Describe clearly your pull request the change.&lt;/p&gt;&lt;/li&gt;
 
 &lt;h1 id=&#34;data-abstraction&#34;&gt;Data Abstraction&lt;/h1&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp-test/img/3-1-3.png&#34; alt=&#34;data-types&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/3-1-3.png&#34; alt=&#34;data-types&#34; /&gt;&lt;/p&gt;
 
 &lt;p&gt;The data abstraction is shown above. &lt;code&gt;Transferable&lt;/code&gt; is the highest interface of all data structures and &lt;code&gt;Simple&lt;/code&gt; is the sub-interface for all primitive data structures. Here is an example of the primitive data strucutres.&lt;/p&gt;
 &lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #75715e&#34;&gt;/*&lt;/span&gt;
@@ -318,10 +318,10 @@ Describe clearly your pull request the change.&lt;/p&gt;&lt;/li&gt;
     
     <item>
       <title>Developers and Contributors</title>
-      <link>https://dsc-spidal.github.io/harp-test/docs/contributors/contributors/</link>
+      <link>https://dsc-spidal.github.io/harp/docs/contributors/contributors/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://dsc-spidal.github.io/harp-test/docs/contributors/contributors/</guid>
+      <guid>https://dsc-spidal.github.io/harp/docs/contributors/contributors/</guid>
       <description>&lt;p&gt;Judy Qiu&lt;/p&gt;
 
 &lt;p&gt;Bingjing Zhang&lt;/p&gt;
@@ -340,13 +340,13 @@ Describe clearly your pull request the change.&lt;/p&gt;&lt;/li&gt;
     
     <item>
       <title>Harp Computation Models</title>
-      <link>https://dsc-spidal.github.io/harp-test/docs/programming/computation-models/</link>
+      <link>https://dsc-spidal.github.io/harp/docs/programming/computation-models/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://dsc-spidal.github.io/harp-test/docs/programming/computation-models/</guid>
+      <guid>https://dsc-spidal.github.io/harp/docs/programming/computation-models/</guid>
       <description>
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp-test/img/2-4-1.png&#34; alt=&#34;Inter-node Computation Model&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/2-4-1.png&#34; alt=&#34;Inter-node Computation Model&#34; /&gt;&lt;/p&gt;
 
 &lt;h2 id=&#34;computation-model-a&#34;&gt;Computation Model A&lt;/h2&gt;
 
@@ -368,13 +368,11 @@ Describe clearly your pull request the change.&lt;/p&gt;&lt;/li&gt;
     
     <item>
       <title>Harp Latent Dirichlet Allocation</title>
-      <link>https://dsc-spidal.github.io/harp-test/docs/examples/cvblda/</link>
+      <link>https://dsc-spidal.github.io/harp/docs/examples/cvblda/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://dsc-spidal.github.io/harp-test/docs/examples/cvblda/</guid>
+      <guid>https://dsc-spidal.github.io/harp/docs/examples/cvblda/</guid>
       <description>
-
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp-test/img/lda-cvb-illustration.png&#34; width=&#34;60%&#34; height=&#34;60%&#34;&gt;&lt;/p&gt;
 
 &lt;p&gt;&lt;a href=&#34;https://github.iu.edu/IU-Big-Data-Lab/Harp/tree/master/harp3-tutorial-app/LDA&#34;&gt;Harp LDA&lt;/a&gt; is a distributed variational bayes inference (VB) algorithm for LDA model which would be able to model a large and continuously expanding dataset using Harp collective communication library. We demonstrate how variational bayes inference converges within Map-Collective jobs provided by Harp. We provide results of the experiments conducted on a corpus of Wikipedia Dataset.&lt;/p&gt;
 
@@ -384,23 +382,23 @@ Describe clearly your pull request the change.&lt;/p&gt;&lt;/li&gt;
 
 &lt;h1 id=&#34;algorithm&#34;&gt;ALGORITHM&lt;/h1&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp-test/img/lda/algorithm.png&#34; width=&#34;60%&#34; height=&#34;60%&#34;&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/lda/algorithm.png&#34; width=&#34;60%&#34; height=&#34;60%&#34;&gt;&lt;/p&gt;
 
 &lt;h1 id=&#34;workflow&#34;&gt;WORKFLOW&lt;/h1&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp-test/img/lda/workflow.png&#34; width=&#34;60%&#34; height=&#34;60%&#34;&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/lda/workflow.png&#34; width=&#34;60%&#34; height=&#34;60%&#34;&gt;&lt;/p&gt;
 
 &lt;h1 id=&#34;dataset&#34;&gt;DATASET&lt;/h1&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp-test/img/lda/datasets.png&#34; width=&#34;60%&#34; height=&#34;60%&#34;&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/lda/datasets.png&#34; width=&#34;60%&#34; height=&#34;60%&#34;&gt;&lt;/p&gt;
 
 &lt;h1 id=&#34;experiments&#34;&gt;EXPERIMENTS&lt;/h1&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp-test/img/lda/data1-iterations.png&#34; width=&#34;60%&#34; height=&#34;60%&gt;
-&lt;img src=&#34;https://dsc-spidal.github.io/harp-test/img/lda/data1-time.png&#34; width=&#34;60%&#34; height=&#34;60%&#34;&gt;
-&lt;img src=&#34;https://dsc-spidal.github.io/harp-test/img/lda/data2-iterations.png&#34; width=&#34;60%&#34; height=&#34;60%&#34;&gt;
-&lt;img src=&#34;https://dsc-spidal.github.io/harp-test/img/lda/data2-time.png&#34; width=&#34;60%&#34; height=&#34;60%&#34;&gt;
-&lt;img src=&#34;https://dsc-spidal.github.io/harp-test/img/lda/Speedup.png&#34; width=&#34;60%&#34; height=&#34;60%&#34;&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/lda/data1-iterations.png&#34; width=&#34;60%&#34; height=&#34;60%&gt;
+&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/lda/data1-time.png&#34; width=&#34;60%&#34; height=&#34;60%&#34;&gt;
+&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/lda/data2-iterations.png&#34; width=&#34;60%&#34; height=&#34;60%&#34;&gt;
+&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/lda/data2-time.png&#34; width=&#34;60%&#34; height=&#34;60%&#34;&gt;
+&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/lda/Speedup.png&#34; width=&#34;60%&#34; height=&#34;60%&#34;&gt;&lt;/p&gt;
 
 &lt;p&gt;Harp-LDA is proposed to provide high scalability achieve better performance with shorter time and memory requirements. A clear evidence of convergence of likelihood after a certain number of iterations is depicted. The results from the speed up chart illustrate high scalability.&lt;/p&gt;
 
@@ -418,13 +416,11 @@ Describe clearly your pull request the change.&lt;/p&gt;&lt;/li&gt;
     
     <item>
       <title>Harp Multiclass Logistic Regression with Stochastic Gradient Descent</title>
-      <link>https://dsc-spidal.github.io/harp-test/docs/examples/mlrsgd/</link>
+      <link>https://dsc-spidal.github.io/harp/docs/examples/mlrsgd/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://dsc-spidal.github.io/harp-test/docs/examples/mlrsgd/</guid>
+      <guid>https://dsc-spidal.github.io/harp/docs/examples/mlrsgd/</guid>
       <description>
-
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp-test/img/mlr-illustration.png&#34; width=&#34;40%&#34;  &gt;&lt;/p&gt;
 
 &lt;p&gt;Multiclass logistic regression (MLR) is a classification method that generalizes logistic regression to multiclass problems, i.e. with more than two possible discrete outcomes. That is, it is a model that is used to predict the probabilities of the different possible outcomes of a categorically distributed dependent variable, given a set of independent variables.&lt;/p&gt;
 
@@ -557,10 +553,10 @@ hdfs dfs -put input_data/* /input
     
     <item>
       <title>Harp Overview</title>
-      <link>https://dsc-spidal.github.io/harp-test/docs/programming/overview/</link>
+      <link>https://dsc-spidal.github.io/harp/docs/programming/overview/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://dsc-spidal.github.io/harp-test/docs/programming/overview/</guid>
+      <guid>https://dsc-spidal.github.io/harp/docs/programming/overview/</guid>
       <description>&lt;p&gt;Data analytics is undergoing a revolution in many scientific domains. Machine learning becomes a popular method for analytics for which it allow computers to learn from the existing data and make predictions based off it. They have been widely used in computer vision, text mining, advertising, recommender systems, network analysis and genetics. Unfortunately, analyzing such huge data usually exceeds the capability of a single or even a few machines owing to the incredible volume of data available, and thus requires algorithm parallelization at an unprecedented scale. Scaling up these algorithms is challenging because of their prohibitive computation cost, not only the need to process enormous training data in iterations, but also the requirement to synchronize big model in rounds for algorithm convergence. The problem is simply referred as &amp;ldquo;big model problem of big data machine learning&amp;rdquo;.&lt;/p&gt;
 
 &lt;p&gt;Many machine learning algorithms were implemented in MapReduce. However, these implementations suffer from repeated input data loading from the distributed file systems and slow disk-based intermediate data synchronization in the shuffling phase. This motivates the design of iterative MapReduce tools which utilize memory for data caching and communication and thus drastically improve the performance of large-scale data processing. Later big data tools have expanded rapidly and form an open-source software stack. Their programming models are not limited to MapReduce and iterative MapReduce. In graph processing tools, input data are abstracted as a graph and processed in iterations, while intermediate data per iteration are expressed as messages transmitted between vertices. In parameter servers, model parameters are stored in a set of server machines and they can be retrieved asynchronously in parallel processing.&lt;/p&gt;
@@ -569,39 +565,39 @@ hdfs dfs -put input_data/* /input
 
 &lt;p&gt;To solve these problems in developing parallel machine learning applications, the approach in Harp to use collective communication techniques to improve the performance of model synchronization. Therefore a MapCollective programming model is extended from the original MapReduce programming model. Similar to the MapReduce model, the MapCollective model still read key-value pairs as inputs. However, instead of using the shuffling phase, Harp uses optimized collective communication operations for data movement and provide high-level interfaces with partitioned distributed dataset abstractions for various synchronization patterns in iterative machine learning computation. These enhancements are designed as plug-ins to Hadoop so Harp can enrich the whole big data software stack.&lt;/p&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp-test/img/2-1-1.png&#34; alt=&#34;Overview-1&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/2-1-1.png&#34; alt=&#34;Overview-1&#34; /&gt;&lt;/p&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp-test/img/2-1-2.png&#34; alt=&#34;Overview-2&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/2-1-2.png&#34; alt=&#34;Overview-2&#34; /&gt;&lt;/p&gt;
 
 &lt;p&gt;With the Harp framework, the project focuses on building a machine learning library with the programming interfaces provided. Our research shows parallel machine learning applications can be categorized to four types of computation models. The classification of the computation models is based on the synchronization patterns and the effectiveness of the model parameter update. These computation models are mapped to the Harp programming interfaces to simplify the programming of machine learning applications.&lt;/p&gt;
 
 &lt;p&gt;Now several machine learning algorithms are implemented, including K-means Clustering, Multiclass Logistic Regression (MLR), Support Vector Machine (SVM), Latent Dirichlet Allocation (LDA) and Matrix Factorization (MF).  The experiment results of LDA implementations reveal that the computation models using global model rotation is faster than the one using local-global model synchronization. Since model rotation based approach is general enough to parallelize many big data machine learning applications, a further abstraction for model rotation is provided in Harp. Now three algorithms are built on top of model rotation: CGS for LDA, Stochastic Gradient Descent (SGD) and Cyclic Coordinate Descent (CCD) for MF. The performance results on an Intel Haswell cluster show that our solution achieves fast model convergence speed and higher scalability compared with other contemporary work on an Intel Haswell cluster.&lt;/p&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp-test/img/2-1-3.png&#34; alt=&#34;Overview-3&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/2-1-3.png&#34; alt=&#34;Overview-3&#34; /&gt;&lt;/p&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp-test/img/2-1-4.png&#34; alt=&#34;Overview-4&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/2-1-4.png&#34; alt=&#34;Overview-4&#34; /&gt;&lt;/p&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp-test/img/2-1-5.png&#34; alt=&#34;Overview-5&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/2-1-5.png&#34; alt=&#34;Overview-5&#34; /&gt;&lt;/p&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp-test/img/2-1-6.png&#34; alt=&#34;Overview-6&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/2-1-6.png&#34; alt=&#34;Overview-6&#34; /&gt;&lt;/p&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp-test/img/2-1-7.png&#34; alt=&#34;Overview-7&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/2-1-7.png&#34; alt=&#34;Overview-7&#34; /&gt;&lt;/p&gt;
 </description>
     </item>
     
     <item>
       <title>Harp Random Forests</title>
-      <link>https://dsc-spidal.github.io/harp-test/docs/examples/rf/</link>
+      <link>https://dsc-spidal.github.io/harp/docs/examples/rf/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://dsc-spidal.github.io/harp-test/docs/examples/rf/</guid>
+      <guid>https://dsc-spidal.github.io/harp/docs/examples/rf/</guid>
       <description>
-
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp-test/img/4-5-1.png&#34; width=&#34;60%&#34;  &gt;&lt;/p&gt;
 
 &lt;p&gt;Random forests are an ensemble learning method for classification, regression and other tasks, that operate by constructing a multitude of decision trees at training time and outputting the class that is the mode of the classes (classification) or mean prediction (regression) of the individual trees. Random decision forests correct for decision trees&amp;rsquo; habit of overfitting to their training set.&lt;/p&gt;
 
 &lt;p&gt;The training algorithm for random forests applies the general technique of bootstrap aggregating, or bagging, to tree learners. Given a training set &lt;code&gt;X&lt;/code&gt; with responses &lt;code&gt;Y&lt;/code&gt;, bagging repeatedly selects a random sample with replacement of the training set. After training, predictions for unseen samples can be made by averaging the predictions from all the individual regression trees or by taking the majority vote in the case of decision trees. Random forests also do another bagging &amp;ndash; feature bagging, which is a random subset of the features. The reason for doing this is the correlation of the trees in an ordinary bootstrap sample: if one or a few features are very strong predictors for the response variable (target output), these features will be selected in many of the B trees, causing them to become correlated.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/4-5-1.png&#34; alt=&#34;RF-1&#34; /&gt;&lt;/p&gt;
 
 &lt;h2 id=&#34;definition&#34;&gt;DEFINITION&lt;/h2&gt;
 
@@ -705,10 +701,10 @@ hdfs dfs -put input_data/* /input
     
     <item>
       <title>Harp Resources</title>
-      <link>https://dsc-spidal.github.io/harp-test/docs/resources/</link>
+      <link>https://dsc-spidal.github.io/harp/docs/resources/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://dsc-spidal.github.io/harp-test/docs/resources/</guid>
+      <guid>https://dsc-spidal.github.io/harp/docs/resources/</guid>
       <description>
 
 &lt;p&gt;Harp Resources outside this documentation:&lt;/p&gt;
@@ -737,17 +733,17 @@ hdfs dfs -put input_data/* /input
     
     <item>
       <title>Harp Support Vector Machine</title>
-      <link>https://dsc-spidal.github.io/harp-test/docs/examples/svm/</link>
+      <link>https://dsc-spidal.github.io/harp/docs/examples/svm/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://dsc-spidal.github.io/harp-test/docs/examples/svm/</guid>
+      <guid>https://dsc-spidal.github.io/harp/docs/examples/svm/</guid>
       <description>
-
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp-test/img/4-4-1.png&#34; width=&#34;50%&#34;  &gt;&lt;/p&gt;
 
 &lt;p&gt;In machine learning, support vector machines (SVM) are supervised learning models with associated learning algorithms that analyze data used for classification and regression analysis. Given a set of training examples, each marked as belonging to one or the other of two categories, an SVM training algorithm builds a model that assigns new examples to one category or the other, making it a non-probabilistic binary linear classifier. An SVM model is a representation of the examples as points in space, mapped so that the examples of the separate categories are divided by a clear gap that is as wide as possible. New examples are then mapped into that same space and predicted to belong to a category based on which side of the gap they fall.&lt;/p&gt;
 
 &lt;p&gt;In addition to performing linear classification, SVMs can efficiently perform a non-linear classification using what is called the kernel trick, implicitly mapping their inputs into high-dimensional feature spaces.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/4-4-1.png&#34; alt=&#34;SVM-1&#34; /&gt;&lt;/p&gt;
 
 &lt;p&gt;In this project, Harp won&amp;rsquo;t touch the core code base of computing SVM. It will use LibSVM which is an open source library and do parallel around LibSVM. LibSVM is a popular open source machine learning library, which is developed at the National Taiwan University and written in C++ though with other programming languages&amp;rsquo; APIs. LibSVM implements the SMO algorithm for kernelized support vector machines (SVMs), supporting classification and regression.&lt;/p&gt;
 
@@ -767,7 +763,7 @@ hdfs dfs -put input_data/* /input
 &lt;li&gt;&lt;p&gt;Repeat Step 2 to 4 until support vectors don&amp;rsquo;t change any more.&lt;/p&gt;&lt;/li&gt;
 &lt;/ol&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp-test/img/4-4-2.png&#34; alt=&#34;SVM-2&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/4-4-2.png&#34; alt=&#34;SVM-2&#34; /&gt;&lt;/p&gt;
 
 &lt;p&gt;The source code can be found in Harp GitHub repository by click &lt;a href=&#34;https://github.com/DSC-SPIDAL/harp/tree/master/harp-tutorial-app/src/main/java/edu/iu/svm&#34;&gt;Harp SVM&lt;/a&gt;.&lt;/p&gt;
 
@@ -911,10 +907,10 @@ hdfs dfs -put input_data/* /input
     
     <item>
       <title>Harp-DAAL Framework</title>
-      <link>https://dsc-spidal.github.io/harp-test/docs/harpdaal/harpdaal/</link>
+      <link>https://dsc-spidal.github.io/harp/docs/harpdaal/harpdaal/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://dsc-spidal.github.io/harp-test/docs/harpdaal/harpdaal/</guid>
+      <guid>https://dsc-spidal.github.io/harp/docs/harpdaal/harpdaal/</guid>
       <description>
 
 &lt;p&gt;&lt;a href=&#34;https://github.iu.edu/IU-Big-Data-Lab/Harp/tree/master/harp3-daal-app&#34;&gt;harp3-daal-app&lt;/a&gt; includes the application implemented within the Harp-DAAL framework.&lt;/p&gt;
@@ -925,7 +921,7 @@ hdfs dfs -put input_data/* /input
 a communication library plug-in into Hadoop ecosystem. A computation layer is handled by Intel&amp;rsquo;s Data Analytics Acceleration Library (DAAL), which is a library that provides
 the users of highly optimized building blocks for data analytics and machine learning applications on Intel&amp;rsquo;s architectures.&lt;/p&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp-test/img/6-1-1.png&#34; alt=&#34;Figure 1. Harp-DAAL Framework for Iterative Applications&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/6-1-1.png&#34; alt=&#34;Figure 1. Harp-DAAL Framework for Iterative Applications&#34; /&gt;&lt;/p&gt;
 
 &lt;p&gt;Compared to contemporary communication libraries, such as Hadoop and Spark, Harp has the advantages as follows:&lt;/p&gt;
 
@@ -939,7 +935,7 @@ The downside of the pure Java implementation is the lack of support for emerging
 By invoking DAAL&amp;rsquo;s native kernels, applications can leverage the huge number of threads on many-core platforms, which is a tremendous
 advantages for computation-intensive data analytics algorithms. This is also the tendency of merging HPC and Big Data domain.&lt;/p&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp-test/img/6-1-2.png&#34; alt=&#34;Harp-DAAL within HPC-BigData Stack&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/6-1-2.png&#34; alt=&#34;Harp-DAAL within HPC-BigData Stack&#34; /&gt;&lt;/p&gt;
 
 &lt;p&gt;Figure 2 shows the position of Harp-DAAL within the whole HPC-Big Data software stack.&lt;/p&gt;
 
@@ -1078,10 +1074,10 @@ hdfs dfs -put &lt;span style=&#34;color: #e6db74&#34;&gt;${&lt;/span&gt;&lt;span
     
     <item>
       <title>Harp-DAAL-APP</title>
-      <link>https://dsc-spidal.github.io/harp-test/docs/examples/harpdaal/</link>
+      <link>https://dsc-spidal.github.io/harp/docs/examples/harpdaal/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://dsc-spidal.github.io/harp-test/docs/examples/harpdaal/</guid>
+      <guid>https://dsc-spidal.github.io/harp/docs/examples/harpdaal/</guid>
       <description>
 
 &lt;p&gt;&lt;a href=&#34;https://github.iu.edu/IU-Big-Data-Lab/Harp/tree/master/harp3-daal-app&#34;&gt;harp3-daal-app&lt;/a&gt; includes the application implemented within the Harp-DAAL framework.&lt;/p&gt;
