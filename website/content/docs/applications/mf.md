@@ -3,6 +3,8 @@ title: Matrix Factorization
 ---
 
 
+<img src="/img/mf-illustration.png" width="50%"  >
+
 # Understanding Matrix Factorization
 
 

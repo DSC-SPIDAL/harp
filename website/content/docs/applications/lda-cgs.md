@@ -2,6 +2,8 @@
 title: Latent Dirichlet Allocation (CGS)
 ---
 
+<img src="/img/lda-cgs-illustration.png" width="30%"  >
+
 # Understanding CGS LDA algorithm
 
 <img src="/img/lda-description.png" width="100%" >
