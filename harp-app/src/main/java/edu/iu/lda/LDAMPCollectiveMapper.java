@@ -36,14 +36,19 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.CollectiveMapper;
 
+import cc.mallet.types.Dirichlet;
+
 import edu.iu.dymoro.Rotator;
 import edu.iu.dymoro.Scheduler;
 import edu.iu.harp.example.IntArrPlus;
 import edu.iu.harp.example.LongArrPlus;
+import edu.iu.harp.example.DoubleArrPlus;
 import edu.iu.harp.partition.Partition;
 import edu.iu.harp.partition.Table;
 import edu.iu.harp.resource.IntArray;
 import edu.iu.harp.resource.LongArray;
+import edu.iu.harp.resource.DoubleArray;
+import edu.iu.harp.schdynamic.DynamicScheduler;
 
 public class LDAMPCollectiveMapper
   extends
@@ -231,6 +236,20 @@ public class LDAMPCollectiveMapper
     Scheduler<DocWord, TopicCount, LDAMPTask> scheduler =
       new Scheduler<>(numRowSplits, numColSplits,
         vDWMap, time, ldaTasks);
+      
+      // ADD: pb
+      // Initialize RMSE compute
+      LinkedList<CalcLikelihoodTask> calcLHTasks=
+        new LinkedList<>();
+      for (int i = 0; i < numThreads; i++) {
+    	  calcLHTasks.add(new CalcLikelihoodTask(numTopics, alpha, beta));
+      }
+      DynamicScheduler<List<Partition<TopicCount>>, Object, CalcLikelihoodTask> calcLHCompute =
+        new DynamicScheduler<>(calcLHTasks);
+        calcLHCompute.start();
+      printLikelihood(rotator, calcLHCompute,numWorkers, 0, topicSums, vocabularySize);
+      LOG.info("Iteration Starts.");
+      
     // -----------------------------------------
     // For iteration
     for (int i = 1; i <= numIterations; i++) {
@@ -266,6 +285,12 @@ public class LDAMPCollectiveMapper
         printNumTokens(topicSums);
         printModelSize(wordTableMap);
         if (printModel) {
+        	
+        	
+        	// ADD: pb
+            // Initialize RMSE compute
+        	printLikelihood(rotator, calcLHCompute,numWorkers, i, topicSums,vocabularySize);
+        	
           try {
             printWordTableMap(wordTableMap,
               modelDirPath + "/tmp_model/" + i
@@ -506,4 +531,67 @@ public class LDAMPCollectiveMapper
     }
     return newMinibatch;
   }
+  
+  // ADD: pb
+  // Likelihood compute
+  private void printLikelihood(
+		  Rotator<TopicCount> rotator,
+		  DynamicScheduler<List<Partition<TopicCount>>, Object, CalcLikelihoodTask> calcLHCompute,
+		  int numWorkers,int iteration,int[] topicSums,
+		  int vocabularySize){
+	  
+	  double likelihood = 0.;
+	  long t1 = System.currentTimeMillis();
+
+	  // compute local partial likelihood 
+        for (int k = 0; k < numModelSlices; k++) {
+	        List<Partition<TopicCount>>[] hMap =
+	          rotator.getSplitMap(k);
+	        calcLHCompute.submitAll(hMap);
+	        while (calcLHCompute.hasOutput()) {
+	        	calcLHCompute.waitForOutput();
+	        }
+	      }
+	    for (CalcLikelihoodTask calcTask : calcLHCompute
+	      .getTasks()) {
+	      likelihood += calcTask.getLikelihood();
+	    }
+	    
+	    
+	  // all reduce to get the sum
+	    DoubleArray array =
+	      DoubleArray.create(1, false);
+	    array.get()[0] = likelihood;
+	    
+	    Table<DoubleArray> lhTable =
+	      new Table<>(0, new DoubleArrPlus());
+	    lhTable
+	      .addPartition(new Partition<DoubleArray>(0,
+	        array));
+	    this.allreduce("lda", "allreduce-likelihood-"
+	      + iteration, lhTable);
+	    likelihood =
+	  	      lhTable.getPartition(0).get().get()[0];
+	    
+	    // the remain parts 
+	    for (int topic=0; topic < numTopics; topic++) {
+	    	likelihood -= 
+					Dirichlet.logGammaStirling( (beta * vocabularySize) +
+							topicSums[ topic ] );
+		}
+		
+		// logGamma(|V|*beta) for every topic
+	    likelihood += 
+				Dirichlet.logGammaStirling(beta * vocabularySize) * numTopics;
+
+	      long t2 = System.currentTimeMillis();
+	      waitTime += (t2 - t1);
+	    
+	    // output
+	    LOG.info("Iteration " + iteration + ": " + waitTime + ", logLikelihood: " + likelihood );
+	    lhTable.release();
+	}
+  
 }
+  
+  
