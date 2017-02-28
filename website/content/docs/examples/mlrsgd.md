@@ -2,6 +2,8 @@
 title: Harp Multiclass Logistic Regression with Stochastic Gradient Descent
 ---
 
+<img src="/img/mlr-illustration.png" width="40%"  >
+
 Multiclass logistic regression (MLR) is a classification method that generalizes logistic regression to multiclass problems, i.e. with more than two possible discrete outcomes. That is, it is a model that is used to predict the probabilities of the different possible outcomes of a categorically distributed dependent variable, given a set of independent variables.
 
 The process of the MLR algorithm is:
