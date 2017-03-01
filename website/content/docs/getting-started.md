@@ -166,9 +166,9 @@ git clone git@github.com:DSC-SPIDAL/harp.git
 
 3. Then add environment variables in `~/.bashrc`.
 ```bash
-export HARP_ROOD_DIR=<where Harp locates>
+export HARP_ROOT_DIR=<where Harp locates>
 #e.g. harp/harp-project
-export HARP_HOME=$HARP_ROOD_DIR/harp-project
+export HARP_HOME=$HARP_ROOT_DIR/harp-project
 ```
 4. Run source command to set the envrionment variables.
 ```bash
@@ -177,8 +177,8 @@ source ~/.bashrc
 
 5. If hadoop is still running, stop it first.
 ```bash
-$ $HADOOP_PREFIX/sbin/stop-dfs.sh
-$ $HADOOP_PREFIX/sbin/stop-yarn.sh
+$ $HADOOP_HOME/sbin/stop-dfs.sh
+$ $HADOOP_HOME/sbin/stop-yarn.sh
 ```
 
 6. Enter "harp" home directory
