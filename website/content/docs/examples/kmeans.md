@@ -4,6 +4,14 @@ title: K-Means
 
 This section describes how to implement the K-means algorithm using Harp.
 
+Clustering basically means creating groups of objects which share some similarity. This technique is used in various fields to create a better user experience, to simplify a technique, to simplify a module. 
+There can be various scenarios which implements clustering such as:
+<ul> <li>When a telephone company needs to establish its network, by adding its tower to different locations. Finding appropriate location for adding towers, makes use of clustering algorithm.</li>
+<li>Suppose one needs to open an emergency care centre in the proximity of the area where maximum accidents occur, we use clustering algorithm.</li></ul>
+
+In K-means clustering, we divide the objects in a K different groups, such that the objects of one group are dissimilar to the objects present in the other group, but share some similarity to the objects present in same group.
+
+
 <img src="/img/kmeans.png" width="80%" >
 
 # Understanding K-Means
