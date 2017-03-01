@@ -4,6 +4,14 @@ title: K-Means
 
 This section describes how to implement the K-means algorithm using Harp.
 
+Clustering basically means creating groups of objects which share some similarity. This technique is used in various fields to create a better user experience, to simplify a technique, to simplify a module. 
+There can be various scenarios which implements clustering such as:
+<ul> <li>When a telephone company needs to establish its network, by adding its tower to different locations. Finding appropriate location for adding towers, makes use of clustering algorithm.</li>
+<li>Suppose one needs to open an emergency care centre in the proximity of the area where maximum accidents occur, we use clustering algorithm.</li></ul>
+
+In K-means clustering, we divide the objects in a K different groups, such that the objects of one group are dissimilar to the objects present in the other group, but share some similarity to the objects present in same group.
+
+
 <img src="/img/kmeans.png" width="80%" >
 
 # Understanding K-Means
@@ -114,7 +122,12 @@ Harp provides several collective communication operations. Here are some example
     </div>
     <div id="broadcast-reduce" class="tab-pane fade">
       <h4>Use broadcast and reduce collective communication to do synchronization</h4>
-     <div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #66d9ef">private</span> <span style="color: #66d9ef">void</span> <span style="color: #a6e22e">runKmeans</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">List</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">String</span><span style="color: #f92672">&gt;</span> <span style="color: #f8f8f2">fileNames</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">Configuration</span> <span style="color: #f8f8f2">conf</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">Context</span> <span style="color: #f8f8f2">context</span><span style="color: #f92672">)</span> <span style="color: #66d9ef">throws</span> <span style="color: #f8f8f2">IOException</span> <span style="color: #f92672">{</span>
+     
+<p>The video below is the step by step guide on how this collective communication works for K-means. The data is partitions into K different partitions with K centroids. Data is then broadcasted to all the different partitions. And the centroids for each of the partition is grouped together and sent to the master node.</p>
+
+<p>Once all the local centroids from the partition is collected in the global centroid table, the updated table is transferred to the root node and then broadcasted again. This step keeps repeating itself till the convergence is reached.
+</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #66d9ef">private</span> <span style="color: #66d9ef">void</span> <span style="color: #a6e22e">runKmeans</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">List</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">String</span><span style="color: #f92672">&gt;</span> <span style="color: #f8f8f2">fileNames</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">Configuration</span> <span style="color: #f8f8f2">conf</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">Context</span> <span style="color: #f8f8f2">context</span><span style="color: #f92672">)</span> <span style="color: #66d9ef">throws</span> <span style="color: #f8f8f2">IOException</span> <span style="color: #f92672">{</span>
      <span style="color: #75715e">// -----------------------------------------------------</span>
      <span style="color: #75715e">// Load centroids</span>
      <span style="color: #75715e">//for every partition in the centoid table, we will use the last element to store the number of points </span>
