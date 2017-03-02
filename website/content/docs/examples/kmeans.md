@@ -2,39 +2,28 @@
 title: K-Means
 ---
 
-This section describes how to implement the K-means algorithm using Harp.
-
-Clustering basically means creating groups of objects which share some similarity. This technique is used in various fields to create a better user experience, to simplify a technique, to simplify a module. 
-There can be various scenarios which implements clustering such as:
-<ul> <li>When a telephone company needs to establish its network, by adding its tower to different locations. Finding appropriate location for adding towers, makes use of clustering algorithm.</li>
-<li>Suppose one needs to open an emergency care centre in the proximity of the area where maximum accidents occur, we use clustering algorithm.</li></ul>
-
-In K-means clustering, we divide the objects in a K different groups, such that the objects of one group are dissimilar to the objects present in the other group, but share some similarity to the objects present in same group.
-
-
 <img src="/img/kmeans.png" width="80%" >
 
-# Understanding K-Means
+K-Means is a very powerful and easily understood clustering algorithm. The aim of the algorithm is to divide a given set of points into `K` partitions. `K` needs to be specified by the user. In order to understand K-Means, first you need to understand the proceeding concepts and their meaning.
 
-K-Means is a very powerful and easily understood clustering algorithm. The aim of the algorithm is to divide a given set of points into “K” partitions. “K” needs to be specified by the user. In order to understand K-Means, first you need to understand the proceeding concepts and their meaning.
-
-1. `Centroids`:
+* `Centroids`:
     Centroids can be defined as the center of each cluster. If we are performing clustering with k=3, we will have 3 centroids. To perform K-Means clustering, the users needs to provide the initial set of centroids.
 
-2. `Distance`:
+* `Distance`:
     In order to group data points as close together or as far-apart we need to define a distance between two given data points. In K-Means clustering distance is normally calculated as the Euclidean Distance between two data points.
 
 The K-Means algorithm simply repeats the following set of steps until there is no change in the partition assignments, in that it has clarified which data point is assigned to which partition.
-```java
+
 1. Choose K points as the initial set of centroids.
+
 2. Assign each data point in the data set to the closest centroid (this is done by calculating the distance between the data point and each centroid).
+
 3. Calculate the new centroids based on the clusters that were generated in step 2. Normally this is done by calculating the mean of each cluster.
+
 4. Repeat steps 2 and 3 until data points do not change cluster assignments, meaning their centroids are set.
-```
 
-# Pseduo Code and Java Code
 
-## The Main Method
+## Step 1 --- The Main Method
 The tasks of the main class is to configure and run the job iteratively.
 ```java
 generate N data points (D dimensions), write to HDFS
@@ -45,7 +34,7 @@ for iterations{
 }
 ```
 
-## The mapCollective function
+## Step 2 --- The mapCollective function
 This is the definition of map-collective task. It reads data from context and then call runKmeans function to actually run kmeans Mapper task.
 ```java
 protected void mapCollective( KeyValReader reader, Context context) throws IOException, InterruptedException {
@@ -65,7 +54,7 @@ protected void mapCollective( KeyValReader reader, Context context) throws IOExc
 ```
 
 
-## The runKmeans function
+## Step 3 --- The runKmeans function
 
 Harp provides several collective communication operations. Here are some examples provided to show how to apply these collective communication methods to K-Means.
 
@@ -261,7 +250,7 @@ Harp provides several collective communication operations. Here are some example
   </div>
 
 
-## Compute local centroids
+## Step 4 --- Compute local centroids
 
 ```java
 private void computation(Table<DoubleArray> cenTable, Table<DoubleArray> previousCenTable,ArrayList<DoubleArray> dataPoints){
@@ -303,7 +292,7 @@ private void computation(Table<DoubleArray> cenTable, Table<DoubleArray> previou
 }
 ```
 
-## Calculate new centroids
+## Step 5 --- Calculate new centroids
 
 ```java
 private void calculateCentroids( Table<DoubleArray> cenTable){
@@ -319,9 +308,6 @@ private void calculateCentroids( Table<DoubleArray> cenTable){
 }
 ```
 
-
-# Run K-Means
-
 ## COMPILE
 ```bash
 cd $HARP_ROOT_DIR
@@ -330,8 +316,9 @@ cd $HARP_ROOT_DIR/harp-tutorial-app
 cp target/harp-tutorial-app-1.0-SNAPSHOT.jar $HADOOP_HOME
 cd $HADOOP_HOME
 ```
-## Run the kmeans examples
-Usage:
+
+## USAGE
+Run Harp K-Means:
 ```bash
 hadoop jar harp-tutorial-app-1.0-SNAPSHOT.jar edu.iu.kmeans.common.KmeansMapCollective <numOfDataPoints> <num of Centroids> <size of vector> <number of map tasks> <number of iteration> <workDir> <localDir> <communication operation>
 
@@ -355,7 +342,7 @@ For example:
 hadoop jar harp-tutorial-app-1.0-SNAPSHOT.jar edu.iu.kmeans.common.KmeansMapCollective 1000 10 10 2 10 /kmeans /tmp/kmeans allreduce
 ```
 
-## Fetch Results
+Fetch the results:
 ```bash
 hdfs dfs -ls /
 hdfs dfs -cat /kmeans/centroids/*
