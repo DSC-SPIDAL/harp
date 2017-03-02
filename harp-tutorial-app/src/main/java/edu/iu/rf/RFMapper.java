@@ -38,7 +38,7 @@ public class RFMapper extends CollectiveMapper<String, String, Object, Object> {
     	ArrayList<Sample> data = new ArrayList<Sample>();
         while (reader.nextKeyValue()) {
             String value = reader.getCurrentValue();
-            Util.loadData(value, configuration, data);
+            Util.loadData(value, data, configuration);
         }
 
 

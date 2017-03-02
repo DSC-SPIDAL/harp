@@ -20,7 +20,7 @@ public class Util {
 		try {
 			String line;
 			while ((line = reader.readLine()) != null) {
-				String[] numbers = line.split(",");
+				String[] numbers = line.split(" ");
 				int label = Integer.parseInt(numbers[numbers.length - 1]);
 				ArrayList<Float> features = new ArrayList<Float>();
 				for (int i = 0;i < numbers.length - 2;i++) {
