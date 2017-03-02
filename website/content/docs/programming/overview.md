@@ -22,11 +22,19 @@ Now several machine learning algorithms are implemented, including K-means Clust
 
 ![Overview-4](/img/2-1-4.png)
 
-![Overview-5](/img/2-1-5.png)
-
-![Overview-6](/img/2-1-6.png)
-
-![Overview-7](/img/2-1-7.png)
+<table>
+	<tr>
+		<td>
+			<img src=/harp/img/2-1-5.png border=0>
+		</td>
+		<td>
+			<img src=/harp/img/2-1-6.png border=0>
+		</td>
+		<td>
+			<img src=/harp/img/2-1-7.png border=0>
+		</td>
+	</tr>
+</table>
 
 
 
