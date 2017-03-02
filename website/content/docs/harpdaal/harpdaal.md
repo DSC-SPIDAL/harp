@@ -2,7 +2,7 @@
 title: Harp-DAAL Framework
 ---
 
-[harp-daal-app](https://github.iu.edu/IU-Big-Data-Lab/Harp/tree/master/harp-daal-app) includes the application implemented within the Harp-DAAL framework. 
+[harp-daal-app](https://github.com/DSC-SPIDAL/harp/tree/master/harp-daal-app) includes the application implemented within the Harp-DAAL framework. 
 
 ## What is Harp-DAAL? 
 
