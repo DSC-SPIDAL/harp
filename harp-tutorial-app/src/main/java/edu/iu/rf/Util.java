@@ -11,8 +11,7 @@ import edu.iu.harp.partition.Table;
 import edu.iu.harp.resource.DoubleArray;
 
 public class Util {
-	public static ArrayList<Sample> loadData(String inputPath, Configuration configuration) throws IOException {
-		ArrayList<Sample> data = new ArrayList<Sample>();
+	public static void loadData(String inputPath, ArrayList<Sample> data, Configuration configuration) throws IOException {
 		Path path = new Path(inputPath);
 		FileSystem fs = path.getFileSystem(configuration);
 		FSDataInputStream in = fs.open(path);
@@ -33,6 +32,5 @@ public class Util {
 		finally {
 			in.close();
 		}
-		return data;
 	}
 }
