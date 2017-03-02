@@ -535,11 +535,19 @@ hdfs dfs -put input_data/* /input
 
 &lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/2-1-4.png&#34; alt=&#34;Overview-4&#34; /&gt;&lt;/p&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/2-1-5.png&#34; alt=&#34;Overview-5&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/2-1-6.png&#34; alt=&#34;Overview-6&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/2-1-7.png&#34; alt=&#34;Overview-7&#34; /&gt;&lt;/p&gt;
+&lt;table&gt;
+    &lt;tr&gt;
+        &lt;td&gt;
+            &lt;img src=/harp/img/2-1-5.png border=0&gt;
+        &lt;/td&gt;
+        &lt;td&gt;
+            &lt;img src=/harp/img/2-1-6.png border=0&gt;
+        &lt;/td&gt;
+        &lt;td&gt;
+            &lt;img src=/harp/img/2-1-7.png border=0&gt;
+        &lt;/td&gt;
+    &lt;/tr&gt;
+&lt;/table&gt;
 </description>
     </item>
     
