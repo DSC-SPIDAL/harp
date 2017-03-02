@@ -21,6 +21,8 @@ public class RFMapper extends CollectiveMapper<String, String, Object, Object> {
     private String outputPath;
     private Configuration configuration;
 
+    private ArrayList<Sample> data;
+
     @Override
     protected void setup(Context context) throws IOException, InterruptedException {
         configuration = context.getConfiguration();
@@ -34,7 +36,11 @@ public class RFMapper extends CollectiveMapper<String, String, Object, Object> {
 
     protected void mapCollective(KeyValReader reader, Context context) throws IOException, InterruptedException {
     	ArrayList<Sample> data = new ArrayList<Sample>();
-        data = Util.loadData(inputPath, configuration);
+        while (reader.nextKeyValue()) {
+            String value = reader.getCurrentValue();
+            Util.loadData(value, configuration, data);
+        }
+
 
     	initialThreads();
     }
