@@ -33,7 +33,8 @@ public class RFMapper extends CollectiveMapper<String, String, Object, Object> {
     }
 
     protected void mapCollective(KeyValReader reader, Context context) throws IOException, InterruptedException {
-    	//loadData
+    	ArrayList<Sample> data = new ArrayList<Sample>();
+        data = Util.loadData(inputPath, configuration);
 
     	initialThreads();
     }
