@@ -50,14 +50,14 @@ public class RFMapper extends CollectiveMapper<String, String, Object, Object> {
             output += (Float.toString(f) + " ");
         }
         output += Integer.toString(test.label);
-        context.write(output);
+        System.out.println(output);
         test = testData.get(0);
         output = "";
         for (Float f : test.features) {
             output += (Float.toString(f) + " ");
         }
         output += Integer.toString(test.label);
-        context.write(output);
+        System.out.println(output);
 
     	initialThreads();
     }

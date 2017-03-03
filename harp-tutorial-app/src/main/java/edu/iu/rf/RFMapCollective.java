@@ -66,7 +66,7 @@ public class RFMapCollective extends Configured implements Tool {
         JobConf jobConf = (JobConf)job.getConfiguration();
         Configuration jobConfiguration = job.getConfiguration();
 
-        FileInputFormat.setInputPaths(job, new Path(inputPath));
+        FileInputFormat.setInputPaths(job, new Path(trainPath));
         FileOutputFormat.setOutputPath(job, new Path(outputPath));
         job.setInputFormatClass(MultiFileInputFormat.class);
         job.setJarByClass(RFMapCollective.class);
