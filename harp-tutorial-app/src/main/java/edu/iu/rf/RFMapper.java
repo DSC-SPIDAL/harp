@@ -19,6 +19,7 @@ import net.sf.javaml.core.Instance;
 
 import net.sf.javaml.classification.Classifier;
 import net.sf.javaml.classification.tree.RandomForest;
+import net.sf.javaml.classification.tree.RandomTree;
 
 public class RFMapper extends CollectiveMapper<String, String, Object, Object> {
 
@@ -55,13 +56,15 @@ public class RFMapper extends CollectiveMapper<String, String, Object, Object> {
     	initialThreads();
 
         numFeatures = trainDataset.noAttributes();
-        System.out.println(numFeatures);
 
-        Classifier rf = new RandomForest(numTrees, false, numFeatures, new Random());
+        Classifier rf = new RandomForest(1, false, numFeatures, new Random());
         rf.buildClassifier(trainDataset);
 
-
-
+	//Classifier testTree = new RandomTree(numFeatures, new Random());
+	//testTree.buildClassifier(trainDataset);
+	for (Instance inst : testDataset) {
+	    System.out.println(rf.classify(inst));
+	}
     }
 
     private void initialThreads() {
