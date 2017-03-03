@@ -17,11 +17,15 @@ import net.sf.javaml.core.DefaultDataset;
 import net.sf.javaml.core.DenseInstance;
 import net.sf.javaml.core.Instance;
 
+import net.sf.javaml.classification.Classifier;
+import net.sf.javaml.classification.tree.RandomForest;
+
 public class RFMapper extends CollectiveMapper<String, String, Object, Object> {
 
     private int numTrees;
     private int numMapTasks;
     private int numThreads;
+    private int numFeatures;
     private String trainPath;
     private String testPath;
     private String outputPath;
@@ -48,13 +52,16 @@ public class RFMapper extends CollectiveMapper<String, String, Object, Object> {
         }
         Util.loadDataset(testPath, testDataset, configuration);
 
-        Instance test = trainDataset.get(0);
-        System.out.println(test);
-        test = testDataset.get(0);
-        System.out.println(test);
-        
-
     	initialThreads();
+
+        numFeatures = trainDataset.noAttributes();
+        System.out.println(numFeatures);
+
+        Classifier rf = new RandomForest(numTrees, false, numFeatures, new Random());
+        rf.buildClassifier(trainDataset);
+
+
+
     }
 
     private void initialThreads() {
