@@ -11,8 +11,8 @@ import edu.iu.harp.partition.Table;
 import edu.iu.harp.resource.DoubleArray;
 
 public class Util {
-	public static void loadData(String inputPath, ArrayList<Sample> data, Configuration configuration) throws IOException {
-		Path path = new Path(inputPath);
+	public static void loadData(String pathString, ArrayList<Sample> data, Configuration configuration) throws IOException {
+		Path path = new Path(pathString);
 		FileSystem fs = path.getFileSystem(configuration);
 		FSDataInputStream in = fs.open(path);
 		BufferedReader reader = new BufferedReader(new InputStreamReader(in));

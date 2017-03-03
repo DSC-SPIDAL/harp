@@ -17,7 +17,8 @@ public class RFMapper extends CollectiveMapper<String, String, Object, Object> {
     private int numTrees;
     private int numMapTasks;
     private int numThreads;
-    private String inputPath;
+    private String trainPath;
+    private String testPath;
     private String outputPath;
     private Configuration configuration;
 
@@ -29,18 +30,34 @@ public class RFMapper extends CollectiveMapper<String, String, Object, Object> {
         numTrees = configuration.getInt("numTrees", 100);
         numMapTasks = configuration.getInt("numMapTasks", 4);
         numThreads = configuration.getInt("numThreads", 5);
-        inputPath = configuration.get("inputPath");
+        trainPath = configuration.get("trainPath");
+        testPath = configuration.get("testPath");
         outputPath = configuration.get("outputPath");
 
     }
 
     protected void mapCollective(KeyValReader reader, Context context) throws IOException, InterruptedException {
-    	ArrayList<Sample> data = new ArrayList<Sample>();
+    	ArrayList<Sample> trainData = new ArrayList<Sample>();
+        ArrayList<Sample> testData = new ArrayList<Sample>();
         while (reader.nextKeyValue()) {
             String value = reader.getCurrentValue();
-            Util.loadData(value, data, configuration);
+            Util.loadData(value, trainData, configuration);
         }
-
+        Util.loadData(testPath, testData, configuration);
+        Sample test = trainData.get(0);
+        String output = "";
+        for (Float f : test.features) {
+            output += (Float.toString(f) + " ");
+        }
+        output += Integer.toString(test.label);
+        context.write(output);
+        test = testData.get(0);
+        output = "";
+        for (Float f : test.features) {
+            output += (Float.toString(f) + " ");
+        }
+        output += Integer.toString(test.label);
+        context.write(output);
 
     	initialThreads();
     }
