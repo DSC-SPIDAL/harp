@@ -12,6 +12,11 @@ import edu.iu.harp.resource.DoubleArray;
 import edu.iu.harp.partition.Partitioner;
 import edu.iu.harp.schdynamic.DynamicScheduler;
 
+import net.sf.javaml.core.Dataset;
+import net.sf.javaml.core.DefaultDataset;
+import net.sf.javaml.core.DenseInstance;
+import net.sf.javaml.core.Instance;
+
 public class RFMapper extends CollectiveMapper<String, String, Object, Object> {
 
     private int numTrees;
@@ -39,25 +44,22 @@ public class RFMapper extends CollectiveMapper<String, String, Object, Object> {
     protected void mapCollective(KeyValReader reader, Context context) throws IOException, InterruptedException {
     	ArrayList<Sample> trainData = new ArrayList<Sample>();
         ArrayList<Sample> testData = new ArrayList<Sample>();
+
+        Dataset trainDataset = new DefaultDataset();
+        Dataset testDataset = new DefaultDataset();
         while (reader.nextKeyValue()) {
             String value = reader.getCurrentValue();
             Util.loadData(value, trainData, configuration);
+            Util.loadDataset(value, trainDataset, configuration);
         }
         Util.loadData(testPath, testData, configuration);
-        Sample test = trainData.get(0);
-        String output = "";
-        for (Float f : test.features) {
-            output += (Float.toString(f) + " ");
-        }
-        output += Integer.toString(test.label);
-        System.out.println(output);
-        test = testData.get(0);
-        output = "";
-        for (Float f : test.features) {
-            output += (Float.toString(f) + " ");
-        }
-        output += Integer.toString(test.label);
-        System.out.println(output);
+        Util.loadDataset(testPath, testDataset, configuration);
+
+        DenseInstance test = trainDataset.get(0);
+        System.out.println(test);
+        test = testDataset.get(0);
+        System.out.println(test);
+        
 
     	initialThreads();
     }
