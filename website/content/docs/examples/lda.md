@@ -2,6 +2,9 @@
 title: Latent Dirichlet Allocation 
 ---
 
+<img src="/img/lda-cvb-illustration.png" width="30%"  >
+
+
 [Harp LDA](https://github.com/DSC-SPIDAL/harp/tree/master/harp-tutorial-app/src/main/java/edu/iu/lda) is a distributed variational bayes inference (VB) algorithm for LDA model which would be able to model a large and continuously expanding dataset using Harp collective communication library. We demonstrate how variational bayes inference converges within Map-Collective jobs provided by Harp. We provide results of the experiments conducted on a corpus of Wikipedia Dataset.
 
 LDA is a popular topic modeling algorithm. We follow the [Mr.LDA](https://github.com/lintool/Mr.LDA) to implement distributed variational inference LDA on Harp with it’s dynamic schedueler, allreduce and push-pull communication models.
