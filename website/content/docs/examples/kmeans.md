@@ -342,7 +342,7 @@ For example:
 hadoop jar harp-tutorial-app-1.0-SNAPSHOT.jar edu.iu.kmeans.common.KmeansMapCollective 1000 10 10 2 10 /kmeans /tmp/kmeans allreduce
 ```
 
-Fetch the results:
+Retrieve the results:
 ```bash
 hdfs dfs -ls /
 hdfs dfs -cat /kmeans/centroids/*
