@@ -68,7 +68,20 @@ protected void mapCollective( KeyValReader reader, Context context) throws IOExc
 ## The runKmeans function
 
 Harp provides several collective communication operations. Here are some examples provided to show how to apply these collective communication methods to K-Means.
-
+<div class="video-section">
+<div class="bcast_reduce">
+<h4>Broadcast-Reduce</h4>
+<div class="video">
+<a href="https://www.youtube.com/watch?v=TceXBaDYzT0" target="_blank"> <img src="/bcast_reduce.png" width="40%"> </a>
+</div>
+</div>
+<div class="bcast_reduce">
+<h4>Regroup-Allgather</h4>
+<div class="video">
+<a href="https://www.youtube.com/watch?v=tjBz1qecvT0" target="_blank"> <img src="/regroup_allgather.png" width="40%"> </a>
+</div>
+</div>
+</div>
   <ul class="nav nav-pills">
     <li class="active"><a data-toggle="pill" href="#allreduce">Allreduce</a></li>
     <li><a data-toggle="pill" href="#broadcast-reduce">Broadcast-Reduce</a></li>
@@ -123,7 +136,7 @@ Harp provides several collective communication operations. Here are some example
     <div id="broadcast-reduce" class="tab-pane fade">
       <h4>Use broadcast and reduce collective communication to do synchronization</h4>
      
-<p>The video below is the step by step guide on how this collective communication works for K-means. The data is partitions into K different partitions with K centroids. Data is then broadcasted to all the different partitions. And the centroids for each of the partition is grouped together and sent to the master node.</p>
+     <p>The <a href="https://www.youtube.com/watch?v=TceXBaDYzT0" target="_blank"> video </a> is the step by step guide on how this collective communication works for K-means. The data is partitions into K different partitions with K centroids. Data is then broadcasted to all the different partitions. And the centroids for each of the partition is grouped together and sent to the master node.</p>
 
 <p>Once all the local centroids from the partition is collected in the global centroid table, the updated table is transferred to the root node and then broadcasted again. This step keeps repeating itself till the convergence is reached.
 </p>
@@ -216,6 +229,7 @@ Harp provides several collective communication operations. Here are some example
     </div>
     <div id="regroup-allgather" class="tab-pane fade">
       <h3>Use Regroup and allgather collective communication to do synchronization</h3>
+      <p>The <a href="https://www.youtube.com/watch?v=tjBz1qecvT0" target="_blank">video</a> is the step-by-step description of regroup and allgather.</p>
 	<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #66d9ef">private</span> <span style="color: #66d9ef">void</span> <span style="color: #a6e22e">runKmeans</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">List</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">String</span><span style="color: #f92672">&gt;</span> <span style="color: #f8f8f2">fileNames</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">Configuration</span> <span style="color: #f8f8f2">conf</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">Context</span> <span style="color: #f8f8f2">context</span><span style="color: #f92672">)</span> <span style="color: #66d9ef">throws</span> <span style="color: #f8f8f2">IOException</span> <span style="color: #f92672">{</span>
 		  <span style="color: #75715e">// -----------------------------------------------------</span>
 		  <span style="color: #75715e">// Load centroids</span>
