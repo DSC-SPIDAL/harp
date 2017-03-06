@@ -373,11 +373,11 @@ Training: Machine learning algorithms are normally iterative computation, proces
 
 &lt;p&gt;The tutorial follows a similar structure, with 4 main sections:&lt;/p&gt;
 
-&lt;h4 id=&#34;1-understanding-algorithm&#34;&gt;1. Understanding Algorithm.&lt;/h4&gt;
+&lt;h2 id=&#34;1-understanding-algorithm&#34;&gt;1. Understanding Algorithm.&lt;/h2&gt;
 
 &lt;p&gt;This part gives simple background information on the target machine learning algorithm itself. The original algorithm does not need to have parallelism in consideration.&lt;/p&gt;
 
-&lt;h4 id=&#34;2-parallel-design&#34;&gt;2. Parallel Design&lt;/h4&gt;
+&lt;h2 id=&#34;2-parallel-design&#34;&gt;2. Parallel Design&lt;/h2&gt;
 
 &lt;p&gt;This part illustrates the process of how to analysis the original sequential algorithm and to utilize the intrinsic parallelisms to design a parallel algorithm.&lt;/p&gt;
 
@@ -403,11 +403,11 @@ Training: Machine learning algorithms are normally iterative computation, proces
 &lt;li&gt;&lt;p&gt;Which collective communication operation is optimal to synchronize the model?&lt;/p&gt;&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;h4 id=&#34;3-code-and-comments&#34;&gt;3. Code and Comments&lt;/h4&gt;
+&lt;h2 id=&#34;3-code-and-comments&#34;&gt;3. Code and Comments&lt;/h2&gt;
 
 &lt;p&gt;The code snippets and comments illustrate the details of parallel implementations.&lt;/p&gt;
 
-&lt;h4 id=&#34;4-run-demo&#34;&gt;4. Run Demo&lt;/h4&gt;
+&lt;h2 id=&#34;4-run-demo&#34;&gt;4. Run Demo&lt;/h2&gt;
 
 &lt;p&gt;Following the command or scripts, user can try the tutorial examples on a dataset by themselves.&lt;/p&gt;
 </description>
