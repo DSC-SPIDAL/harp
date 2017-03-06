@@ -84,7 +84,7 @@ public class RFMapper extends CollectiveMapper<String, String, Object, Object> {
             for (int i = 0; i < 10; i++) {
                 System.out.print(test.classify(testDataset.get(i)));
             }
-            System.out.println;
+            System.out.println();
         }
 
     }
