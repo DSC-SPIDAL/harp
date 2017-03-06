@@ -56,7 +56,7 @@ public class RFMapper extends CollectiveMapper<String, String, Object, Object> {
         }
         Util.loadDataset(testPath, testDataset, configuration);
 
-    	initialThreads();
+    	initialThreads(context);
 
         numFeatures = trainDataset.noAttributes();
 
@@ -82,10 +82,10 @@ public class RFMapper extends CollectiveMapper<String, String, Object, Object> {
         }
     }
 
-    private void initialThreads() {
+    private void initialThreads(Context context) {
         rfThreads = new LinkedList<>();
         for (int i = 0; i < numThreads; i++) {
-            rfThreads.add(new RFTask(numFeatures));
+            rfThreads.add(new RFTask(numFeatures, context));
         }
         rfScheduler = new DynamicScheduler<>(rfThreads);
     }
