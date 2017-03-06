@@ -31,6 +31,8 @@ public class RFMapper extends CollectiveMapper<String, String, Object, Object> {
     private String testPath;
     private String outputPath;
     private Configuration configuration;
+    private List<RFTask> rfThreads;
+    private DynamicScheduler<Dataset, Classifier, RFTask> rfScheduler;
 
     @Override
     protected void setup(Context context) throws IOException, InterruptedException {
@@ -47,6 +49,7 @@ public class RFMapper extends CollectiveMapper<String, String, Object, Object> {
     protected void mapCollective(KeyValReader reader, Context context) throws IOException, InterruptedException {
         Dataset trainDataset = new DefaultDataset();
         Dataset testDataset = new DefaultDataset();
+        ArrayList<Classifier> rfClassifier = new ArrayList<Classifier>();
         while (reader.nextKeyValue()) {
             String value = reader.getCurrentValue();
             Util.loadDataset(value, trainDataset, configuration);
@@ -57,16 +60,40 @@ public class RFMapper extends CollectiveMapper<String, String, Object, Object> {
 
         numFeatures = trainDataset.noAttributes();
 
-        Classifier rf = new RandomForest(1, false, numFeatures, new Random());
-        rf.buildClassifier(trainDataset);
+        //Classifier rf = new RandomForest(1, false, numFeatures, new Random());
+        //rf.buildClassifier(trainDataset);
+        //Classifier testTree = new RandomTree(numFeatures, new Random());
+        //testTree.buildClassifier(trainDataset);
+        //for (Instance inst : testDataset) {
+        //    System.out.println(rf.classify(inst));
+        //}
+        rfScheduler.start();
 
-	//Classifier testTree = new RandomTree(numFeatures, new Random());
-	//testTree.buildClassifier(trainDataset);
-	for (Instance inst : testDataset) {
-	    System.out.println(rf.classify(inst));
-	}
+        for (int i = 0; i < numTrees; i++) {
+            rfScheduler.submit(trainDataset);
+        }
+        
+        while (rfScheduler.hasOutput()) {
+            rfClassifier.add(rfScheduler.waitForOutput());
+        }
+        context.progress();
+
+        rfScheduler.stop();
+
+        for (Classifier test : rfClassifier) {
+            for (int i = 0; i < 10; i++) {
+                System.out.print(test.classify(testDataset.get(i)));
+            }
+            System.out.println;
+        }
+
     }
 
     private void initialThreads() {
+        rfThreads = new LinkedList<>();
+        for (int i = 0; i < numThreads; i++) {
+            rfThreads.add(new RFTask(numFeatures));
+        }
+        rfScheduler = new DynamicScheduler<>(rfThreads);
     }
 }
