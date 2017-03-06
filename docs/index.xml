@@ -373,7 +373,7 @@ Training: Machine learning algorithms are normally iterative computation, proces
 
 &lt;p&gt;The tutorial follows a similar structure, with 4 main sections:&lt;/p&gt;
 
-&lt;h2 id=&#34;1-understanding-algorithm&#34;&gt;1. Understanding Algorithm.&lt;/h2&gt;
+&lt;h2 id=&#34;1-understanding-algorithm&#34;&gt;1. Understanding Algorithm&lt;/h2&gt;
 
 &lt;p&gt;This part gives simple background information on the target machine learning algorithm itself. The original algorithm does not need to have parallelism in consideration.&lt;/p&gt;
 
