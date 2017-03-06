@@ -60,16 +60,10 @@ public class RFMapper extends CollectiveMapper<String, String, Object, Object> {
 
         numFeatures = trainDataset.noAttributes();
 
-        //Classifier rf = new RandomForest(1, false, numFeatures, new Random());
-        //rf.buildClassifier(trainDataset);
-        //Classifier testTree = new RandomTree(numFeatures, new Random());
-        //testTree.buildClassifier(trainDataset);
-        //for (Instance inst : testDataset) {
-        //    System.out.println(rf.classify(inst));
-        //}
         rfScheduler.start();
 
         for (int i = 0; i < numTrees; i++) {
+            Dataset baggingDataset = Util.doBagging(trainDataset);
             rfScheduler.submit(trainDataset);
         }
         
@@ -86,7 +80,6 @@ public class RFMapper extends CollectiveMapper<String, String, Object, Object> {
             }
             System.out.println();
         }
-
     }
 
     private void initialThreads() {
