@@ -37,4 +37,13 @@ public class Util {
 			in.close();
 		}
 	}
+
+	public static Dataset doBagging(Dataset dataset) throws IOException {
+		Dataset baggingDataset = new DefaultDataset();
+		Random rand = new Random();
+		for (int i = 0; i < dataset.size(); i++) {
+			baggingDataset.add(dataset.get(rand.nextInt(dataset.size())));
+		}
+		return baggingDataset;
+	}
 }
