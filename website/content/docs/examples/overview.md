@@ -23,11 +23,11 @@ Training: Machine learning algorithms are normally iterative computation, proces
 
 The tutorial follows a similar structure, with 4 main sections:
 
-#### 1. Understanding Algorithm.
+## 1. Understanding Algorithm.
 
 This part gives simple background information on the target machine learning algorithm itself. The original algorithm does not need to have parallelism in consideration.
 
-#### 2. Parallel Design
+## 2. Parallel Design
 
 This part illustrates the process of how to analysis the original sequential algorithm and to utilize the intrinsic parallelisms to design a parallel algorithm.
 
@@ -51,11 +51,11 @@ The standard steps aim to answer four questions about the model design for a dis
 
 * Which collective communication operation is optimal to synchronize the model?
 
-#### 3. Code and Comments
+## 3. Code and Comments
 
 The code snippets and comments illustrate the details of parallel implementations.
 
-#### 4. Run Demo
+## 4. Run Demo
 
 Following the command or scripts, user can try the tutorial examples on a dataset by themselves. 
 
