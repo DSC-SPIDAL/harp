@@ -950,15 +950,13 @@ hdfs dfs -put input_data/* /input
       <guid>https://dsc-spidal.github.io/harp/docs/harpdaal/harpdaal/</guid>
       <description>
 
-&lt;p&gt;&lt;a href=&#34;https://github.com/DSC-SPIDAL/harp/tree/master/harp-daal-app&#34;&gt;harp-daal-app&lt;/a&gt; includes the application implemented within the Harp-DAAL framework.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/6-1-1.png&#34; alt=&#34;Harp-DAAL Framework for Iterative Applications&#34; /&gt;&lt;/p&gt;
 
 &lt;h2 id=&#34;what-is-harp-daal&#34;&gt;What is Harp-DAAL?&lt;/h2&gt;
 
 &lt;p&gt;Harp-DAAL is a new framework that aims to run data analytics algorithms on distributed HPC architectures. The framework consists of two layers. A communication layer is handled by Harp,
 a communication library plug-in into Hadoop ecosystem. A computation layer is handled by Intel&amp;rsquo;s Data Analytics Acceleration Library (DAAL), which is a library that provides
 the users of highly optimized building blocks for data analytics and machine learning applications on Intel&amp;rsquo;s architectures.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/6-1-1.png&#34; alt=&#34;Figure 1. Harp-DAAL Framework for Iterative Applications&#34; /&gt;&lt;/p&gt;
 
 &lt;p&gt;Compared to contemporary communication libraries, such as Hadoop and Spark, Harp has the advantages as follows:&lt;/p&gt;
 
@@ -972,9 +970,9 @@ The downside of the pure Java implementation is the lack of support for emerging
 By invoking DAAL&amp;rsquo;s native kernels, applications can leverage the huge number of threads on many-core platforms, which is a tremendous
 advantages for computation-intensive data analytics algorithms. This is also the tendency of merging HPC and Big Data domain.&lt;/p&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/6-1-2.png&#34; alt=&#34;Harp-DAAL within HPC-BigData Stack&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/6-1-2.png&#34; alt=&#34;Figure 1 Harp-DAAL within HPC-BigData Stack&#34; /&gt;&lt;/p&gt;
 
-&lt;p&gt;Figure 2 shows the position of Harp-DAAL within the whole HPC-Big Data software stack.&lt;/p&gt;
+&lt;p&gt;Figure 1 shows the position of Harp-DAAL within the whole HPC-Big Data software stack.&lt;/p&gt;
 
 &lt;h2 id=&#34;how-to-build-a-harp-daal-application&#34;&gt;How to build a Harp-DAAL Application ?&lt;/h2&gt;
 
