@@ -2,6 +2,8 @@
 title: Harp-DAAL-SGD
 ---
 
+![The intra-mapper computation and update of Model Data](/img/6-2-6.png) 
+
 ## Matrix Factorization based on Stochastic Gradient Descent (MF-SGD)
 
 Matrix Factorization based on Stochastic Gradient Descent (MF-SGD for short) is an algorithm widely used in recommender systems. 
@@ -41,12 +43,9 @@ inter-mapper layout of Harp-DAAL-SGD.
 
 In each iteration, a mapper receives a slice of model H, i.e., a group of columns from matrix H. A procedure will pick out the training data points with column identities from these columns and 
 execute an updating task according to the SGD algorithm. Rather than the model-rotation model, the intra-mapper layer chooses the asynchronous computation model, where each training data point 
-update their own rows from model matrices W and H without mutual locks. Figure 2 demonstrates the intra-mapper working style. 
-
-![Figure 2. The intra-mapper computation and update of Model Data](/img/6-2-6.png) 
+update their own rows from model matrices W and H without mutual locks. 
 
 For the intra-mapper parallel computing, we adopt a hybrid usage of TBB concurrent containers and OpenMP directives. 
-
 
 ## A Code Walk through of Harp-DAAL-SGD
 
