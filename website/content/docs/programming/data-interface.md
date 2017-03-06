@@ -2,7 +2,7 @@
 title: Data Interfaces and Types
 ---   
 
-![data-abstraction](/img/3-1-1.png)
+![data-abstraction](/img/2-2-1.png)
 
 Harp provides three levels of data structures: arrays and objects, partition, and table. Arrays and Serializable objects are the basic data structures, which includes:
 
