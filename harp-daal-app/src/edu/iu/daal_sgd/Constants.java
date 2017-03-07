@@ -38,4 +38,6 @@ public class Constants {
     10.0;
   public static final double MAX_RATIO = 0.9;
   public static final double MIN_RATIO = 0.618;
+  public static final double GOLDEN_RATIO = (Math.sqrt(5.0) - 1.0) / 2.0;
+
 }

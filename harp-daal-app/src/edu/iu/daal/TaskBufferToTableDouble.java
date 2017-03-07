@@ -52,7 +52,6 @@ public class TaskBufferToTableDouble implements Runnable {
         while(th_id < task_num)
         {
             CopyObjDouble obj = queue[th_id];
-            // System.arraycopy(obj.data(), 0, buffer_array, obj.index()*vecsize, vecsize); 
             System.arraycopy(buffer_array, obj.index()*vecsize, obj.data(), 0, vecsize); 
             th_id += th_num;
         }

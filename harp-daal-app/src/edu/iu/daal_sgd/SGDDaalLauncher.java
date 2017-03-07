@@ -231,8 +231,10 @@ public class SGDDaalLauncher extends Configured
     jobConf.set("mapreduce.framework.name",
       "map-collective");
 
+    jobConf.setInt("mapreduce.map.collective.memory.mb", 110000);
+
     jobConf.set("mapreduce.map.collective.java.opts",
-      "-Xmx80000m -Xms80000m");
+      "-Xmx40000m -Xms40000m");
 
     jobConf.setNumMapTasks(numMapTasks);
     jobConf.setInt(

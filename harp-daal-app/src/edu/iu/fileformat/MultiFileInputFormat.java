@@ -56,7 +56,7 @@ public class MultiFileInputFormat extends
     int numMaps = jobConf.getNumMapTasks();
     LOG.info("NUMBER OF FILES: " + files.size());
     LOG.info("NUMBER OF MAPS: " + numMaps);
-    // randomizeFileListOrder(files);
+    randomizeFileListOrder(files);
     int avg = files.size() / numMaps;
     int rest = files.size() % numMaps;
     int tmp = 0;
