@@ -23,7 +23,7 @@ public class RFTask implements Task<Dataset, Classifier> {
     private int numFeatures;
     private Context context;
 
-    public RFTask(int numFeatures) {
+    public RFTask(int numFeatures, Context context) {
         this.numFeatures = numFeatures;
         this.context = context;
     }
