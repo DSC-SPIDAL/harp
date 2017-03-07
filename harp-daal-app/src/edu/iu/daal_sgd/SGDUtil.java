@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+
 package edu.iu.daal_sgd;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
@@ -50,8 +51,8 @@ public class SGDUtil {
 
   public static
     Int2ObjectOpenHashMap<VRowCol>
-    loadTestVWMap(String testFilePath,
-     int numThreads, Configuration configuration) {
+    loadTestVHMap(String testFilePath,
+      Configuration configuration, int numThreads) {
     List<String> testFilePaths =
       new LinkedList<>();
     Path path = new Path(testFilePath);
@@ -72,8 +73,8 @@ public class SGDUtil {
     VStore testVStore =
       new VStore(testFilePaths, numThreads,
         configuration);
-    testVStore.load(false, true);
-    return testVStore.getVWMap();
+    testVStore.load(true, false);
+    return testVStore.getVHMap();
   }
 
   static void trimTestVHMap(

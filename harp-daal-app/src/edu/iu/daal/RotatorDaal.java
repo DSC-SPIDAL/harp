@@ -31,6 +31,7 @@ import edu.iu.harp.schstatic.StaticScheduler;
 import edu.iu.dymoro.*;
 
 import com.intel.daal.data_management.data.HomogenNumericTable;
+import com.intel.daal.data_management.data.HomogenBMNumericTable;
 import com.intel.daal.data_management.data.NumericTable;
 
 /**
@@ -62,17 +63,22 @@ public class RotatorDaal<I, P extends Array<I> > {
 
   }
 
+  /**
+   * @brief Accessor of daal_table
+   *
+   * @return 
+   */
   public NumericTable daal_table() {
       return this.daal_table;
   }
 
-  public void enable_converter() {
-
-      for (int i=0; i<rotateTasks.size(); i++) {
-          this.rotateTasks.get(i).enable_converter();
-      }
-  }
-
+  /**
+   * @brief get a daal table from rotator
+   *
+   * @param taskID
+   *
+   * @return 
+   */
   public NumericTable getDaal_Table(
     int taskID) {
 
@@ -82,12 +88,18 @@ public class RotatorDaal<I, P extends Array<I> > {
     } else {
       LOG.info("No task rotation output !!!");
       daal_table = rotation.getTask(taskID).daal_table();
-      // daal_table = rotation.waitForOutput(taskID);
     }
 
     return daal_table;
   }
 
+  /**
+   * @brief submit a rotation task
+   *
+   * @param taskID
+   *
+   * @return 
+   */
   public void rotate(int taskID) {
     rotation.submit(taskID, 1);
   }

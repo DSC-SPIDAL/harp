@@ -41,10 +41,7 @@ public class RotateTask<P extends Simple> extends
 
   private final CollectiveMapper<?, ?, ?, ?> mapper;
   private final Table<P> table;
-  private final int numColSplits;
   private final List<Partition<P>>[] splitMap;
-  private final boolean randomSplit;
-  private final Random random;
   private final String contextName;
   private int operationID;
 
@@ -58,23 +55,15 @@ public class RotateTask<P extends Simple> extends
   private long commTime;
 
   public RotateTask(Table<P> table,
-    int numColSplits, boolean randomSplit,
     CollectiveMapper<?, ?, ?, ?> mapper,
     int[] orders, String contextName) {
     this.table = table;
-    this.numColSplits = numColSplits;
-    this.randomSplit = randomSplit;
-    random =
-      new Random(System.currentTimeMillis());
-    this.splitMap = new List[numColSplits];
-    for (int i = 0; i < numColSplits; i++) {
-      splitMap[i] = new ObjectArrayList<>();
-    }
-    if (randomSplit) {
-      randomSplitTable();
-    } else {
-      splitTable();
-    }
+    // this.numColSplits = numColSplits;
+    // this.randomSplit = randomSplit;
+    // random =
+      // new Random(System.currentTimeMillis());
+
+    this.splitMap = null;
     this.mapper = mapper;
     this.contextName = contextName;
     operationID = 0;
@@ -101,56 +90,20 @@ public class RotateTask<P extends Simple> extends
     commTime = 0L;
   }
 
-  public List<Partition<P>>[] getSplitMap() {
-    return splitMap;
-  }
-
   @Override
   public List<Partition<P>>[] run(Integer cmd)
     throws Exception {
     long t1 = System.currentTimeMillis();
-    cleanSplitMap();
+
     updateRotationMap();
     mapper.rotate(contextName,
       "rotate-" + table.getTableID() + "-"
         + operationID, table, rotationMap);
-    if (randomSplit) {
-      randomSplitTable();
-    } else {
-      splitTable();
-    }
+    
     operationID++;
     long t2 = System.currentTimeMillis();
     commTime += (t2 - t1);
-    return splitMap;
-  }
-
-  private void splitTable() {
-    int size = table.getNumPartitions();
-    IntArray array = IntArray.create(size, true);
-    int[] ids = array.get();
-    table.getPartitionIDs().toArray(ids);
-    IntArrays.quickSort(ids, 0, size);
-    for (int i = 0; i < size; i++) {
-      int splitID = i % numColSplits;
-      splitMap[splitID].add(table
-        .getPartition(ids[i]));
-    }
-    array.release();
-  }
-
-  private void randomSplitTable() {
-    for (Partition<P> partition : table
-      .getPartitions()) {
-      splitMap[random.nextInt(numColSplits)]
-        .add(partition);
-    }
-  }
-
-  private void cleanSplitMap() {
-    for (int i = 0; i < numColSplits; i++) {
-      splitMap[i].clear();
-    }
+    return null;
   }
 
   private void updateRotationMap() {

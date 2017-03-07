@@ -43,22 +43,18 @@ public class Rotator<P extends Simple> {
       new LinkedList<>();
     for (int i = 0; i < tableMap.length; i++) {
       rotateTasks.add(new RotateTask<>(
-        tableMap[i], numSplits, randomSplit,
-        mapper, orders, contextName));
+        tableMap[i], mapper, orders, contextName));
     }
     rotation = new StaticScheduler<>(rotateTasks);
   }
 
-  public List<Partition<P>>[] getSplitMap(
+  public void getRotation(
     int taskID) {
-    List<Partition<P>>[] splitMap = null;
     if (rotation.hasOutput(taskID)) {
-      splitMap = rotation.waitForOutput(taskID);
+      rotation.waitForOutput(taskID);
     } else {
-      splitMap =
-        rotation.getTask(taskID).getSplitMap();
+      LOG.info("Wait no rotated mode, using local model");
     }
-    return splitMap;
   }
 
   public void rotate(int taskID) {

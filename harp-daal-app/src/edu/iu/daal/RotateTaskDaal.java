@@ -38,6 +38,8 @@ import edu.iu.harp.resource.Array;
 
 import edu.iu.dymoro.*;
 import com.intel.daal.data_management.data.HomogenNumericTable;
+import com.intel.daal.data_management.data.SOANumericTable;
+import com.intel.daal.data_management.data.HomogenBMNumericTable;
 import com.intel.daal.data_management.data.NumericTable;
 import com.intel.daal.services.DaalContext;
 
@@ -48,6 +50,7 @@ public class RotateTaskDaal<I, P extends Array<I> > extends
     .getLog(RotateTaskDaal.class);
 
   private final CollectiveMapper<?, ?, ?, ?> mapper;
+  //harp's table 
   private final Table<P> table;
 
   private final Random random;
@@ -62,11 +65,13 @@ public class RotateTaskDaal<I, P extends Array<I> > extends
   private Int2IntOpenHashMap rotationMap;
   private long commTime;
 
+  //daal's table
   private NumericTable daal_table;
-  // private HomogenTableHarpTable<double[], DoubleArray, Table<DoubleArray> > converter;
+  //converter between harp and daal
   private HomogenTableHarpTable<I, P, Table<P> > converter;
+  //feature dimension of table
   private int rdim;
-  private boolean use_converter;
+  //threads used in concurrent data conversion
   private int numThreads;
 
   //daal Context
@@ -108,30 +113,18 @@ public class RotateTaskDaal<I, P extends Array<I> > extends
     this.rdim = rdim;
     this.numThreads = numThreads;
 
-    // this.daal_table = null;
-    // this.converter = null;
-    this.daal_table = new HomogenNumericTable(daal_Context, Double.class, this.rdim, table.getNumPartitions(), NumericTable.AllocationFlag.DoAllocate);
+    //use standard HomogenNumericTable or optimized HomogenBMNumericTable in DAAL
+    // this.daal_table = new HomogenNumericTable(daal_Context, Double.class, this.rdim, table.getNumPartitions(), NumericTable.AllocationFlag.DoAllocate);
+    this.daal_table = new HomogenBMNumericTable(daal_Context, Double.class, this.rdim, table.getNumPartitions(), NumericTable.AllocationFlag.DoAllocate);
+
+    //create the converter
     this.converter = new HomogenTableHarpTable<I, P, Table<P> >(table, this.daal_table, table.getNumPartitions(), this.rdim, this.numThreads);
+   
     this.converter.HarpToDaalDouble();
 
-    this.use_converter = true;
-
-  }
-
-  public void enable_converter() {
-      this.use_converter = true;
   }
 
   public NumericTable daal_table() {
-
-    // if (this.use_converter == true && this.daal_table == null && this.converter == null)
-    // {
-    //     int table_size = table.getNumPartitions();
-    //     this.daal_table = new HomogenNumericTable(daal_Context, Double.class, this.rdim, table_size, NumericTable.AllocationFlag.DoAllocate);
-    //     this.converter = new HomogenTableHarpTable<I, P, Table<P> >(table, this.daal_table, table_size, this.rdim, this.numThreads);
-    //     this.converter.HarpToDaalDouble();
-    // }
-    
     return this.daal_table;
   }
 
@@ -140,15 +133,6 @@ public class RotateTaskDaal<I, P extends Array<I> > extends
     throws Exception {
     long t1 = System.currentTimeMillis();
 
-    //check if a daal to harp conversion needed
-    // if (this.use_converter == true && this.daal_table != null && this.converter != null)
-    // {
-    //     this.converter.DaalToHarpDouble();
-    //     //this.daal_table.freeDataMemory();
-    //     this.daal_table = null;
-    //     this.converter = null;
-    // }
-    // if (this.use_converter == true)
     this.converter.DaalToHarpDouble();
 
     //rotate table 
@@ -157,24 +141,14 @@ public class RotateTaskDaal<I, P extends Array<I> > extends
       "rotate-" + table.getTableID() + "-"
         + operationID, table, rotationMap);
 
-    //check if a harp to daal conversion needed
-    // if (this.use_converter == true && this.daal_table == null && this.converter == null)
-    // {
-    //     int table_size = table.getNumPartitions();
-    //     this.daal_table = new HomogenNumericTable(daal_Context, Double.class, this.rdim, table_size, NumericTable.AllocationFlag.DoAllocate);
-    //     // this.converter = new HomogenTableHarpTable<double[], DoubleArray, Table<DoubleArray> >(table, this.daal_table, table_size, this.rdim, this.numThreads);
-    //     this.converter = new HomogenTableHarpTable<I, P, Table<P> >(table, this.daal_table, table_size, this.rdim, this.numThreads);
-    //     this.converter.HarpToDaalDouble();
-    // }
+    int table_size = table.getNumPartitions();
+    this.daal_table.freeDataMemory(); 
 
-    // if (this.use_converter == true )
-    // {
-        int table_size = table.getNumPartitions();
-        this.daal_table.freeDataMemory();
-        this.daal_table = new HomogenNumericTable(daal_Context, Double.class, this.rdim, table_size, NumericTable.AllocationFlag.DoAllocate);
-        this.converter = new HomogenTableHarpTable<I, P, Table<P> >(table, this.daal_table, table_size, this.rdim, this.numThreads);
-        this.converter.HarpToDaalDouble();
-    // }
+    // this.daal_table = new HomogenNumericTable(daal_Context, Double.class, this.rdim, table_size, NumericTable.AllocationFlag.DoAllocate);
+    this.daal_table = new HomogenBMNumericTable(daal_Context, Double.class, this.rdim, table_size, NumericTable.AllocationFlag.DoAllocate);
+
+    this.converter = new HomogenTableHarpTable<I, P, Table<P> >(table, this.daal_table, table_size, this.rdim, this.numThreads);
+    this.converter.HarpToDaalDouble();
 
     operationID++;
     long t2 = System.currentTimeMillis();
