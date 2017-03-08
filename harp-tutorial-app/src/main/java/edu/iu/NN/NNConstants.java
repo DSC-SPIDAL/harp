@@ -1,4 +1,4 @@
-package edu.iu.neuralnetworks;
+package edu.iu.NN;
 
 /*
  * Define some constants you might use
@@ -11,6 +11,12 @@ public class NNConstants {
 	public static final String OUTPUT_VEC_SIZE = "output_vec_size";
 	public static final String NUM_TASKS = "num_tasks";
 	public static final String EPOCHS = "epochs";
-	public static final String NUM_OF_UNITS = "num_of_units";
+    //do model average every ITER_PERSYNC iterations
+	public static final String SYNC_ITERNUM = "sync_iternum";
+    //define the hidden layers neuron numbers, 
+    //in string like 100,32
+	public static final String HIDDEN_LAYERS = "hidden_layers";
+	public static final String MINIBATCH_SIZE= "minibatch_size";
+	public static final String LAMBDA = "lambda";
 	
 }

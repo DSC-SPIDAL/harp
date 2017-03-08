@@ -1,7 +1,9 @@
-package edu.iu.neuralnetworks;
+package edu.iu.NN;
 
 import java.io.*;
 import java.net.URISyntaxException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.concurrent.ExecutionException;
 
 import org.jblas.DoubleMatrix;
@@ -20,6 +22,14 @@ import org.apache.hadoop.util.ToolRunner;
 import edu.iu.fileformat.MultiFileInputFormat;
 
 public class NNMapCollective extends Configured implements Tool {
+    //configurations
+	int numMapTasks;
+	int epochs;
+	int syncIterNum;
+    int miniBatchSize;
+    double lambda;
+	String hiddenLayers;
+	String workDir;
 
 	public static void main(String[] argv) throws Exception {
 		int res = ToolRunner.run(new Configuration(), new NNMapCollective(), argv);
@@ -29,30 +39,32 @@ public class NNMapCollective extends Configured implements Tool {
 	@Override
 	public int run(String[] args) throws Exception {
 		//keep this unchanged.
-		if (args.length < 6) {
-			System.err.println("Usage: NNMapCollective <num of layers> "
-					+ "<size of layers> <number of map tasks> <epochs> <workDir> <localDir>");			
+		if (args.length < 7) {
+			System.err.println("Usage: NNMapCollective "
+					+ "<number of map tasks> <epochs> <syncIterNum> <minibatchsize> <lambda> <hiddenLayers> <workDir>");
 			ToolRunner.printGenericCommandUsage(System.err);
 				return -1;
 		}
 
-		int numOfLayers = Integer.parseInt(args[0]);
-		int sizeOfLayer = Integer.parseInt(args[1]);
-		int numMapTasks = Integer.parseInt(args[2]);
-		int epochs = Integer.parseInt(args[3]);
-		String workDir = args[4];
-		String localDir = args[5];
+        //set the class global variables
+		numMapTasks = Integer.parseInt(args[0]);
+		epochs = Integer.parseInt(args[1]);
+		syncIterNum = Integer.parseInt(args[2]);
+		hiddenLayers = args[3];
+		miniBatchSize= Integer.parseInt(args[4]);
+		lambda = Double.parseDouble(args[5]);
+		workDir = args[6];
 
 		for(String arg: args){
 			System.out.print(arg+";");
 		}
 		System.out.println();
 		
-		launch(numOfLayers, sizeOfLayer, epochs, numMapTasks, workDir, localDir);
+		launch();
 		System.out.println("NN Completed"); 
 		return 0;
 	}
-	void launch(int numOfLayers, int sizeOfLayer, int epochs, int numMapTasks, String workDir, String localDirStr)
+	void launch()
 			throws IOException, URISyntaxException, InterruptedException, ExecutionException, ClassNotFoundException {
 		
 		Configuration configuration = getConf();
@@ -65,31 +77,21 @@ public class NNMapCollective extends Configured implements Tool {
 			fs.delete(outDir, true);
 		}
 		fs.mkdirs(outDir);
-		
-		System.out.println("Generate data and weights.");
 
-		File lDir= Utils.readData(numMapTasks, fs, localDirStr, dataDir, configuration);
+		//prepare the training dataset before hand
+		//System.out.println("Generate data and weights.");
+		//File lDir= Utils.readData(numMapTasks, fs, localDirStr, dataDir, configuration);
 		
 		long startTime = System.currentTimeMillis();
 
-		int weightVectorLength = (Utils.inputVecSize*sizeOfLayer) + sizeOfLayer;
-
-		for(int i = 0; i <numOfLayers-1; ++i)
-		{
-			weightVectorLength += (sizeOfLayer*sizeOfLayer) + sizeOfLayer;
-		}
-
-		weightVectorLength += (sizeOfLayer*Utils.outputVecSize) + Utils.outputVecSize;
-		
-		runNNAllReduce(Utils.inputVecSize, Utils.outputVecSize, weightVectorLength, epochs, sizeOfLayer, numMapTasks, configuration, workDirPath,
+		runNNAllReduce(configuration, workDirPath,
 				dataDir, outDir, wDir);
 		long endTime = System.currentTimeMillis();
 		System.out.println("Total NN Execution Time: "+ (endTime - startTime));
 	}
 	
 	
-	private void runNNAllReduce(int inputVecSize, int outputVecSize, int weightVectorLength, int epochs, int sizeOfLayer,
-				int numMapTasks, Configuration configuration, Path workDirPath, Path dataDir, Path outDir, Path wDir) throws IOException,URISyntaxException, InterruptedException,ClassNotFoundException 
+	private void runNNAllReduce(Configuration configuration, Path workDirPath, Path dataDir, Path outDir, Path wDir) throws IOException,URISyntaxException, InterruptedException,ClassNotFoundException 
 	{
 			
 		System.out.println("Starting Job");
@@ -98,8 +100,7 @@ public class NNMapCollective extends Configured implements Tool {
 		
 		do 
 		{
-			Job nnJob = configureNNJob(inputVecSize, outputVecSize, weightVectorLength, epochs, sizeOfLayer, numMapTasks,
-					configuration, workDirPath, dataDir, outDir, wDir);
+			Job nnJob = configureNNJob(configuration, workDirPath, dataDir, outDir, wDir);
 			
 			jobSuccess = nnJob.waitForCompletion(true);
 			
@@ -119,8 +120,7 @@ public class NNMapCollective extends Configured implements Tool {
 		} while (true);
 	}
 	
-	private Job configureNNJob(int inputVecSize, int outputVecSize, int weightVectorLength, int epochs, int sizeOfLayer, 
-			int numMapTasks, Configuration configuration,Path workDirPath, Path dataDir, Path outDir, Path wDir) throws IOException, URISyntaxException 
+	private Job configureNNJob(Configuration configuration,Path workDirPath, Path dataDir, Path outDir, Path wDir) throws IOException, URISyntaxException 
 	{
 		
 		Job job = Job.getInstance(configuration, "NN_job");
@@ -144,7 +144,7 @@ public class NNMapCollective extends Configured implements Tool {
 		job.setJarByClass(NNMapCollective.class);
 		job.setMapperClass(NNMapper.class);
 
-		JobConf jobConf = (JobConf) job.getConfiguration();
+		org.apache.hadoop.mapred.JobConf jobConf = (JobConf) job.getConfiguration();
 		jobConf.set("mapreduce.framework.name", "map-collective");
 
 		long milliSeconds = 1000*60*60;
@@ -154,13 +154,17 @@ public class NNMapCollective extends Configured implements Tool {
 		job.setNumReduceTasks(0);
 
 		jobConfig.set(NNConstants.WEIGHTS_FILE, weightsPath.toString());
-		jobConfig.setInt(NNConstants.WEIGHTS_VEC_SIZE, weightVectorLength);
-		jobConfig.setInt(NNConstants.INPUT_VEC_SIZE, inputVecSize);
-		jobConfig.setInt(NNConstants.OUTPUT_VEC_SIZE, outputVecSize);
 		jobConfig.setInt(NNConstants.NUM_TASKS, numMapTasks);
 		jobConfig.setInt(NNConstants.EPOCHS, epochs);
-		jobConfig.setInt(NNConstants.NUM_OF_UNITS, sizeOfLayer);
-		// jobConfig.setInt(NNConstants.NUM_OF_LAYERS sizeOfLayer);
+		jobConfig.setInt(NNConstants.SYNC_ITERNUM, syncIterNum);
+		jobConfig.set(NNConstants.HIDDEN_LAYERS, hiddenLayers);
+        if (miniBatchSize > 0){
+		    jobConfig.setInt(NNConstants.MINIBATCH_SIZE, miniBatchSize);
+        }
+
+        if (lambda > 0){
+		    jobConfig.setDouble(NNConstants.LAMBDA, lambda);
+        }
 
 		return job;
 	}
