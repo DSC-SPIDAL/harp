@@ -1,10 +1,13 @@
-package edu.iu.neuralnetworks;
+package edu.iu.NN;
 
+import org.apache.hadoop.mapred.*;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapred.CollectiveMapper;
 
 import org.jblas.DoubleMatrix;
 import org.jblas.MatrixFunctions;
+//import org.dvincent1337.neuralNet.NeuralNetwork;
+
 
 import java.io.*;
 import java.util.*;
@@ -24,12 +27,12 @@ import org.apache.commons.logging.LogFactory;
 public class NNMapper extends CollectiveMapper<String, String, Object, Object> 
 {	
 	private String weightsFileName;
-	private int weightVectorLength;
-	private int inputVecSize;
-	private int outputVecSize;
 	private int epochs;
+	private int syncIterNum;
 	private int numMapTasks;
-	private int sizeOfLayer;
+	private String hiddenLayers;
+	private int miniBatchSize;
+    private double lambda;
 	private Log log;
 
 	@Override
@@ -39,12 +42,13 @@ public class NNMapper extends CollectiveMapper<String, String, Object, Object>
 
 		// Parameter initilization 
 		weightsFileName = configuration.get(NNConstants.WEIGHTS_FILE);
-		weightVectorLength = configuration.getInt(NNConstants.WEIGHTS_VEC_SIZE, 20);
-		inputVecSize = configuration.getInt(NNConstants.INPUT_VEC_SIZE, 20);
-		outputVecSize = configuration.getInt(NNConstants.OUTPUT_VEC_SIZE, 20);
 		epochs = configuration.getInt(NNConstants.EPOCHS, 20);
+		syncIterNum = configuration.getInt(NNConstants.SYNC_ITERNUM, 1);
 		numMapTasks = configuration.getInt(NNConstants.NUM_TASKS, 20);
-		sizeOfLayer = configuration.getInt(NNConstants.NUM_OF_UNITS, 20);
+		hiddenLayers = configuration.get(NNConstants.HIDDEN_LAYERS);
+
+		miniBatchSize = configuration.getInt(NNConstants.MINIBATCH_SIZE, 1000);
+		lambda = configuration.getDouble(NNConstants.LAMBDA, 0.6987);
 
 		log = LogFactory.getLog(CollectiveMapper.class);  	
 	}
@@ -74,12 +78,33 @@ public class NNMapper extends CollectiveMapper<String, String, Object, Object>
 		DoubleMatrix dataX = loadMatrixFromFile(fileNames.get(0), conf);
 		DoubleMatrix dataY = loadMatrixFromFile(fileNames.get(1), conf);
 
-		Table<DoubleArray> weightTable = new Table<>(0, new DoubleArrPlus());
-
 		// Construct A NN  
-		NeuralNetwork localNN = constructLocalNN(sizeOfLayer);
+		//int[] topology = {784,100,32,10};
+        // build the topology from X.shape and hiddenLayers setting
+        int inputLayerSize = dataX.columns;
+        int outputLayerSize = dataY.columns;
+        String[] tokens = hiddenLayers.split("[,]");
+        int[] topology = new int[2 + tokens.length];
+        {
+            int i;
+            topology[0] = inputLayerSize;
+            for (i = 0; i < tokens.length; i++){
+                topology[i+1] = Integer.parseInt(tokens[i]);
+            }
+            topology[i+1] = outputLayerSize;
+        }
+        //log
+        String msg = "Topology: ";
+        for (int i = 0; i < tokens.length +2 ; i++){
+            msg += topology[i] + ",";
+        }
+        log.info(msg);
 
-		int n = 5;
+        
+		HarpNeuralNetwork localNN = new HarpNeuralNetwork(topology, true);
+        Table<DoubleArray> weightTable = localNN.reshapeListToTable(localNN.getTheta());
+
+		int n = syncIterNum;
 		int itr = epochs/n;
 
 		Vector shuffledSeq = new Vector();
@@ -89,82 +114,77 @@ public class NNMapper extends CollectiveMapper<String, String, Object, Object>
 
 		Random random = new Random();
 
-		int trainSize = (int) (dataX.rows * 0.7);
-		int miniBatchSize = (int) (trainSize * 0.9);
+		//int trainSize = (int) (dataX.rows * 0.7);
+		//int miniBatchSize = (int) (trainSize * 0.9);
+		int trainSize = (int) (dataX.rows * 1);
+		//int miniBatchSize = (int) (trainSize * 1);
+		//miniBatchSize = 1000;
 
-		for(int s = 0; s < 10 ; s++)
+		//for(int s = 0; s < 10 ; s++)
+		for(int s = 0; s < 1 ; s++)
 		{
 			// initialize weights
-			weightTable = generateInitialWeights(1, sizeOfLayer, s);
-			random.setSeed(s);
+			//weightTable = generateInitialWeights(1, sizeOfLayer, s);
+			random.setSeed(System.currentTimeMillis());
 			Collections.shuffle(shuffledSeq, random);
 
 			// Split to train and test
 			List trainSeq = shuffledSeq.subList(0, trainSize);
-			List testSeq = shuffledSeq.subList(trainSize, dataX.rows);
-			
+			//List testSeq = shuffledSeq.subList(trainSize, dataX.rows);
+
+			//get the initial WeightTable
+
+
 			// reduce and broadcast
-			allreduce("main", "allreduce" , weightTable);
+			//allreduce("main", "allreduce" , weightTable);
 
 			for(int i = 0; i < itr; ++i)
 			{
+
+                long t0 = System.currentTimeMillis();
+
 				Collections.shuffle(trainSeq, random);
 				List shuffledList = trainSeq.subList(0, miniBatchSize);
 
 				DoubleMatrix X = getMiniBatch(dataX, shuffledList);
 				DoubleMatrix Y = getMiniBatch(dataY, shuffledList);
 
+
+                long t1 = System.currentTimeMillis();
+
 				// Calculate the new weights 
-				weightTable = localNN.train(X, Y, weightTable, weightVectorLength, n, numMapTasks);
+				//weightTable = localNN.train(X, Y, weightTable, weightVectorLength, n, numMapTasks);
+				weightTable = localNN.train(X, Y, weightTable, n, numMapTasks, lambda);
+
+                long t2 = System.currentTimeMillis();
 
 				// reduce and broadcast
 				allreduce("main", "allreduce" + i, weightTable);
+                // Average the weight table by the numMapTasks
+                weightTable = localNN.modelAveraging(weightTable, numMapTasks);
+    
+                long t3 = System.currentTimeMillis();
+
+                log.info("Iteration " + i + ": traintime " + (t2-t1) + ", commtime: " + (t3-t2) + ", misc: " + (t1-t0));
+
 			}
 
 			if(this.isMaster())
 			{
-				DoubleMatrix testX = getMiniBatch(dataX, testSeq);
-				DoubleMatrix testY = getMiniBatch(dataY, testSeq);
+				DoubleMatrix testX = getMiniBatch(dataX, trainSeq);
+				DoubleMatrix testY = getMiniBatch(dataY, trainSeq);
 
-				DoubleMatrix predictions = localNN.predictFP(testX, weightTable, weightVectorLength, numMapTasks);
+				DoubleMatrix predictions = localNN.predictFP(testX, weightTable, numMapTasks);
 	 
 				double accuracy = localNN.computeAccuracy(predictions,testY);
 
-				System.out.println("- Accuracy: " + accuracy);
+				log.info("Accuracy: " + accuracy);
 
 				outputResults(accuracy, conf, context);
 			}
 
 		}
 	}
-
- 	private Table<DoubleArray> generateInitialWeights(int numOfLayers, int sizeOfLayer, int s) throws IOException
-	{		
-		Random random = new Random(s);
-
-		int weightVectorLength = (inputVecSize*sizeOfLayer) + sizeOfLayer;
-
-		for(int i = 0; i <numOfLayers-1; ++i)
-		{
-			weightVectorLength += (sizeOfLayer*sizeOfLayer) + sizeOfLayer;
-		}
-
-		weightVectorLength += (sizeOfLayer*outputVecSize) + outputVecSize;
-
-		Table<DoubleArray> weightMeanTable = new Table<>(0, new DoubleArrPlus());
-
-		DoubleArray array = DoubleArray.create(weightVectorLength, false);
-		double[] weightsFlatArr = array.get();
-		
-		for(int i=0; i<weightVectorLength; i++)
-		{
-			weightsFlatArr[i] = random.nextDouble();
-		}
-		
-		Partition<DoubleArray> ap = new Partition<DoubleArray>(0, array);
-		weightMeanTable.addPartition(ap);
-		return weightMeanTable;
-	} // generateInitialWeights
 
 	private DoubleMatrix getMiniBatch(DoubleMatrix dataMat, List shuffledList) throws IOException
 	{
@@ -183,7 +203,8 @@ public class NNMapper extends CollectiveMapper<String, String, Object, Object>
 		Path dPath = new Path(fileName);
 		FSDataInputStream in = fs.open(dPath);
 		BufferedReader reader = new BufferedReader( new InputStreamReader(in));
-		
+
+		// code from NeuralNetwork:getMatrixFromTextFile()
 		Vector<Double> example = new Vector<Double>();
 		Vector<double[]> examples = new Vector<double[]>();
 
@@ -229,22 +250,6 @@ public class NNMapper extends CollectiveMapper<String, String, Object, Object>
 		}
 		return result;
 
-	}
-
-	private NeuralNetwork constructLocalNN(int sizeOfLayer) throws IOException
-	{
-		
-		//-Train the neural network with backprop
-		double lambda = 0.6987; 	//used for regularization 
-		int iters = 10;		//number of iterations to run fmincg
-		boolean verbose = true;  //monitor the iterations and cost of each update
-
-		//-Create the neural network and initialize the weights randomly
-		int [] topology = {inputVecSize, sizeOfLayer, outputVecSize};
-
-		NeuralNetwork localNetwork = new NeuralNetwork(topology, false);
- 		
- 		return localNetwork;
 	}
 
 	private void outputResults(double accuracy, Configuration conf, Context context)

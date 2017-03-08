@@ -2,14 +2,16 @@
  * generate data and initial centroids
  */
 
-package edu.iu.neuralnetworks;
+package edu.iu.NN;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.InputStreamReader;
+import java.util.Random;
 import java.util.concurrent.ExecutionException;
 
 
@@ -17,6 +19,9 @@ import org.jblas.DoubleMatrix;
 import org.jblas.MatrixFunctions;
 
 import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.Serializable;
+import java.util.Iterator;
 import java.util.Vector;
 
 import org.apache.hadoop.conf.Configuration;
