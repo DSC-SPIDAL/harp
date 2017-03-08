@@ -86,9 +86,9 @@ public void findMaxs(){
 
 1. All computation models can use this scheduler.
 
-2. Each thread has its own input queue and output queue.
+2. Each thread has its own input and output queue.
 
-3. Each thread can submit inputs to another thread .
+3. Inputs can be submitted to another thread by each thread.
 
 4. The main thread can retrieve outputs from each task’s output queue.
 
