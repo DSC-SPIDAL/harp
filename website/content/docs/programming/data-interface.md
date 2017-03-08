@@ -4,7 +4,7 @@ title: Data Interfaces and Types
 
 ![data-abstraction](/img/2-2-1.png)
 
-Harp provides three levels of data structures: arrays and objects, partition, and table. Arrays and Serializable objects are the basic data structures, which includes:
+Harp provides three levels of data structures: arrays and objects, partition, and table. Arrays and Serializable objects are the basic data structures, which include:
 
 1. `ByteArray`: an array with byte-type elements
 
@@ -20,15 +20,15 @@ Harp provides three levels of data structures: arrays and objects, partition, an
 
 7. `Writable`: serializable object
 
-`Partition` is a wraper of above data structures. Every partition has an ID. In collective communication, partitions from different processors with the same ID will be merged. The merge operation is defined by `PartitionCombiner`.
+`Partition` is a wraper of the data structures shown above. Every partition has an ID. In collective communication, partitions from different processors with the same ID will be merged. The merge operation is defined by `PartitionCombiner`.
 
-`Table` is a container for partitions. It is the highest-level data structure and the unit for collective communication.
+`Table` is a container for partitions. It is a high-level data structure and the unit for collective communication.
 
 
 # Table and Partitions
 ![table-partition](/img/3-1-2.png)
 
-An example of how to construct a table is as follows.
+An example of how to construct a table is:
 
 ```java
 Table<DoubleArray> table = new Table<>(0, new DoubleArrPlus());
@@ -59,7 +59,7 @@ public class DoubleArrPlus extends PartitionCombiner<DoubleArray> {
 
 ![data-types](/img/3-1-3.png)
 
-The data abstraction is shown above. `Transferable` is the highest interface of all data structures and `Simple` is the sub-interface for all primitive data structures. Here is an example of the primitive data strucutres.
+The data abstraction is shown above. `Transferable` is ae higher interface compare to other data structures and `Simple` is the sub-interface for all primitive data structures. Here is an example of the primitive data strucutres.
 ```java
 /*
  * Copyright 2013-2016 Indiana University
