@@ -11,6 +11,8 @@ import edu.iu.harp.partition.Table;
 import edu.iu.harp.resource.DoubleArray;
 import edu.iu.harp.partition.Partitioner;
 import edu.iu.harp.schdynamic.DynamicScheduler;
+import edu.iu.harp.resource.IntArray;
+import edu.iu.harp.example.IntArrPlus;
 
 import net.sf.javaml.core.Dataset;
 import net.sf.javaml.core.DefaultDataset;
@@ -62,7 +64,7 @@ public class RFMapper extends CollectiveMapper<String, String, Object, Object> {
 
         rfScheduler.start();
 
-        for (int i = 0; i < numTrees; i++) {
+        for (int i = 0; i < numTrees / numMapTasks; i++) {
             Dataset baggingDataset = Util.doBagging(trainDataset);
             rfScheduler.submit(trainDataset);
         }
@@ -74,12 +76,32 @@ public class RFMapper extends CollectiveMapper<String, String, Object, Object> {
 
         rfScheduler.stop();
 
-        for (Classifier test : rfClassifier) {
-            for (int i = 0; i < 10; i++) {
-                System.out.print(test.classify(testDataset.get(i)));
+        Table<IntArray> predictTable = new Table<>(0, new IntArrPlus);
+        int partitionId = 0;
+
+        for (Instance testData : testDataset) {
+            IntArray votes = IntArray.create(2, false);
+            for (Classifier rf : rfClassifier) {
+                Object classValue = rf.classify(testData);
+                if (classValue.toString().equals("0")) {
+                    votes.get()[0] += 1;
+                }
+                else {
+                    votes.get()[1] += 1;
+                }
             }
-            System.out.println();
+            Partition<IntArray> partition = new Partition<IntArray>(partitionId, votes);
+            predictTable.addPartition(partition);
+            partitionId += 1;
         }
+
+        reduce("main", "reduce", predictTable, 0);
+
+        if (this.isMaster()) {
+            printResults(predictTable, testDataset);
+        }
+
+        predictTable.release();
     }
 
     private void initialThreads(Context context) {
@@ -88,5 +110,45 @@ public class RFMapper extends CollectiveMapper<String, String, Object, Object> {
             rfThreads.add(new RFTask(numFeatures, context));
         }
         rfScheduler = new DynamicScheduler<>(rfThreads);
+    }
+
+    private void printResults(Table<IntArray> predictTable, Dataset testDataset) {
+        int correct = 0;
+        int total = 0;
+        for (Partition<IntArray> partition : predictTable.getPartitions()) {
+            Object label = testDataset.get(partition.id()).classValue();
+            int predictLabel;
+            IntArray votes = partition.get();
+            int label0 = votes.get()[0];
+            int label1 = votes.get()[1];
+            if (label0 > label1) {
+                predictLabel = 0;
+            }
+            else if (label0 < label1) {
+                predictLabel = 1;
+            }
+            else {
+                Random random = new Random();
+                if (random.nextDouble() < 0.5) {
+                    predictLabel = 0;
+                }
+                else {
+                    predictLabel = 1;
+                }
+            }
+            if (label.toString().equals(Integer.toString(predictLabel))) {
+                correct += 1;
+            }
+            total += 1;
+        }
+
+        Path path = new Path(outputPath);
+        FileSystem fs = path.getFileSystem(configuration);
+        FSDataOutputStream out = fs.create(path, true);
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(out));
+
+        writer.write(Double.toString(correct * 1.0 / total));
+
+        writer.close();
     }
 }
