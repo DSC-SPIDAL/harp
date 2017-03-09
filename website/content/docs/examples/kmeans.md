@@ -4,15 +4,15 @@ title: K-Means
 
 <img src="/img/kmeans.png" width="80%" >
 
-K-Means is a very powerful and easily understood clustering algorithm. The aim of the algorithm is to divide a given set of points into `K` partitions. `K` needs to be specified by the user. In order to understand K-Means, first you need to understand the proceeding concepts and their meaning.
+K-Means is a powerful and easily understood clustering algorithm. The aim of the algorithm is to divide a given set of points into `K` partitions. `K` needs to be specified by the user. In order to understand K-Means, first you need to understand the proceeding concepts and their meanings.
 
 * `Centroids`:
-    Centroids can be defined as the center of each cluster. If we are performing clustering with k=3, we will have 3 centroids. To perform K-Means clustering, the users needs to provide the initial set of centroids.
+    Centroids can be defined as the center of each cluster. If we are performing clustering with k=3, we will have 3 centroids. To perform K-Means clustering, the users needs to provide an initial set of centroids.
 
 * `Distance`:
-    In order to group data points as close together or as far-apart we need to define a distance between two given data points. In K-Means clustering distance is normally calculated as the Euclidean Distance between two data points.
+    In order to group data points as close together or as far-apart, we need to define a distance between two given data points. In K-Means, clustering distance is normally calculated as the Euclidean Distance between two data points.
 
-The K-Means algorithm simply repeats the following set of steps until there is no change in the partition assignments, in that it has clarified which data point is assigned to which partition.
+The K-Means algorithm simply repeats the following set of steps until there is no change in the partition assignments. In that, it has clarified which data point is assigned to which partition.
 
 1. Choose K points as the initial set of centroids.
 
@@ -20,7 +20,7 @@ The K-Means algorithm simply repeats the following set of steps until there is n
 
 3. Calculate the new centroids based on the clusters that were generated in step 2. Normally this is done by calculating the mean of each cluster.
 
-4. Repeat steps 2 and 3 until data points do not change cluster assignments, meaning their centroids are set.
+4. Repeat step 2 and 3 until data points do not change cluster assignments, which means that their centroids are set.
 
 
 ## Step 1 --- The Main Method
