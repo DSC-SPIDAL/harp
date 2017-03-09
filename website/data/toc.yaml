@@ -45,6 +45,8 @@ sections:
         url: /docs/examples/svm
       - name: Random Forests
         url: /docs/examples/rf
+      - name: Neural Network
+        url: /docs/examples/nn
   - name: Applications
     sublinks:
       - name: Latent Dirichlet Allocation (CGS)
