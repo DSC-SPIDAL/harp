@@ -5,9 +5,9 @@ title: Harp Random Forests
 
 <img src="/img/4-5-1.png" width="60%"  >
 
-Random forests are an ensemble learning method for classification, regression and other tasks, that operate by constructing a multitude of decision trees at training time and outputting the class that is the mode of the classes (classification) or mean prediction (regression) of the individual trees. Random decision forests correct for decision trees' habit of overfitting to their training set.
+Random forests are an ensemble learning method for classification, regression and other tasks that operate by constructing a multitude of decision trees at training time and outputting the class that is the mode of the classes (classification) or mean prediction (regression) of the individual trees. Random decision forests correct for decision trees' habit of overfitting to their training set.
 
-The training algorithm for random forests applies the general technique of bootstrap aggregating, or bagging, to tree learners. Given a training set `X` with responses `Y`, bagging repeatedly selects a random sample with replacement of the training set. After training, predictions for unseen samples can be made by averaging the predictions from all the individual regression trees or by taking the majority vote in the case of decision trees. Random forests also do another bagging -- feature bagging, which is a random subset of the features. The reason for doing this is the correlation of the trees in an ordinary bootstrap sample: if one or a few features are very strong predictors for the response variable (target output), these features will be selected in many of the B trees, causing them to become correlated.
+The training algorithm for random forests applies the general technique of bootstrap aggregating, or bagging, to tree learners. Given a training set `X` with responses `Y`, bagging repeatedly selects a random sample with replacement of the training set. After training, predictions for unseen samples can be made by averaging the predictions from all the individual regression trees or by taking the majority vote in the case of decision trees. Random forests can also do another bagging -- feature bagging, which is a random subset of the features. The reason for doing this is the correlation of the trees in an ordinary bootstrap sample: if one or a few features are very strong predictors for the response variable (target output), these features will be selected in many of the B trees, causing them to become correlated.
  
 
 ## DEFINITION
@@ -28,7 +28,7 @@ The following is the procedure of Harp Random Forests training:
 
 4. Repeat Step 2 and 3 `K` times.
 
-Predicting part will use these decision trees to predict `K` results. For regression, the result is the average of each tree's result and for classification, the majority vote will be the output.
+The predicting part will use these decision trees to predict `K` results. For regression, the result is the average of each tree's result and for classification, the majority vote will be the output.
 
 ## Step 0 --- Data preprocessing
 
