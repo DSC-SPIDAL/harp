@@ -104,9 +104,6 @@ public class NNMapper extends CollectiveMapper<String, String, Object, Object>
 		HarpNeuralNetwork localNN = new HarpNeuralNetwork(topology, true);
         Table<DoubleArray> weightTable = localNN.reshapeListToTable(localNN.getTheta());
 
-		int n = syncIterNum;
-		int itr = epochs/n;
-
 		Vector shuffledSeq = new Vector();
 
 		for (int i = 0; i < dataX.rows; ++i)
@@ -114,76 +111,69 @@ public class NNMapper extends CollectiveMapper<String, String, Object, Object>
 
 		Random random = new Random();
 
-		//int trainSize = (int) (dataX.rows * 0.7);
-		//int miniBatchSize = (int) (trainSize * 0.9);
 		int trainSize = (int) (dataX.rows * 1);
-		//int miniBatchSize = (int) (trainSize * 1);
-		//miniBatchSize = 1000;
 
-		//for(int s = 0; s < 10 ; s++)
-		for(int s = 0; s < 1 ; s++)
+		// initialize weights
+		random.setSeed(System.currentTimeMillis());
+		Collections.shuffle(shuffledSeq, random);
+
+		// Split to train and test
+		List trainSeq = shuffledSeq.subList(0, trainSize);
+
+		//get the initial WeightTable
+		// reduce and broadcast
+		allreduce("main", "allreduce", weightTable);
+        // Average the weight table by the numMapTasks
+        weightTable = localNN.modelAveraging(weightTable, numMapTasks);
+
+        //start iteration
+		int itr = epochs*trainSize/miniBatchSize/syncIterNum;
+        log.info("Total Iteration number: " + itr + ", trainSize: " + trainSize);
+
+		for(int i = 0; i < itr; ++i)
 		{
-			// initialize weights
-			//weightTable = generateInitialWeights(1, sizeOfLayer, s);
-			random.setSeed(System.currentTimeMillis());
-			Collections.shuffle(shuffledSeq, random);
 
-			// Split to train and test
-			List trainSeq = shuffledSeq.subList(0, trainSize);
-			//List testSeq = shuffledSeq.subList(trainSize, dataX.rows);
+            long t0 = System.currentTimeMillis();
 
-			//get the initial WeightTable
+			Collections.shuffle(trainSeq, random);
+			List shuffledList = trainSeq.subList(0, miniBatchSize);
 
+			DoubleMatrix X = getMiniBatch(dataX, shuffledList);
+			DoubleMatrix Y = getMiniBatch(dataY, shuffledList);
+
+
+            long t1 = System.currentTimeMillis();
+
+			// Calculate the new weights 
+			weightTable = localNN.train(X, Y, weightTable, syncIterNum, numMapTasks, lambda);
+
+            long t2 = System.currentTimeMillis();
 
 			// reduce and broadcast
-			//allreduce("main", "allreduce" , weightTable);
-
-			for(int i = 0; i < itr; ++i)
-			{
-
-                long t0 = System.currentTimeMillis();
-
-				Collections.shuffle(trainSeq, random);
-				List shuffledList = trainSeq.subList(0, miniBatchSize);
-
-				DoubleMatrix X = getMiniBatch(dataX, shuffledList);
-				DoubleMatrix Y = getMiniBatch(dataY, shuffledList);
-
-
-                long t1 = System.currentTimeMillis();
-
-				// Calculate the new weights 
-				//weightTable = localNN.train(X, Y, weightTable, weightVectorLength, n, numMapTasks);
-				weightTable = localNN.train(X, Y, weightTable, n, numMapTasks, lambda);
-
-                long t2 = System.currentTimeMillis();
-
-				// reduce and broadcast
-				allreduce("main", "allreduce" + i, weightTable);
-                // Average the weight table by the numMapTasks
-                weightTable = localNN.modelAveraging(weightTable, numMapTasks);
+			allreduce("main", "allreduce" + i, weightTable);
+            // Average the weight table by the numMapTasks
+            weightTable = localNN.modelAveraging(weightTable, numMapTasks);
     
-                long t3 = System.currentTimeMillis();
+            long t3 = System.currentTimeMillis();
 
-                log.info("Iteration " + i + ": traintime " + (t2-t1) + ", commtime: " + (t3-t2) + ", misc: " + (t1-t0));
+            log.info("Iteration " + i + ": traintime " + (t2-t1) + ", commtime: " + (t3-t2) + ", misc: " + (t1-t0));
 
-			}
+        }
 
-			if(this.isMaster())
-			{
-				DoubleMatrix testX = getMiniBatch(dataX, trainSeq);
-				DoubleMatrix testY = getMiniBatch(dataY, trainSeq);
+		//if(this.isMaster())
+		{
+			DoubleMatrix testX = getMiniBatch(dataX, trainSeq);
+			DoubleMatrix testY = getMiniBatch(dataY, trainSeq);
 
-				DoubleMatrix predictions = localNN.predictFP(testX, weightTable, numMapTasks);
+			DoubleMatrix predictions = localNN.predictFP(testX, weightTable, numMapTasks);
 	 
-				double accuracy = localNN.computeAccuracy(predictions,testY);
+			double accuracy = localNN.computeAccuracy(predictions,testY);
 
-				log.info("Accuracy: " + accuracy);
+			log.info("Accuracy: " + accuracy);
 
-				outputResults(accuracy, conf, context);
-			}
-
+			outputResults(accuracy, conf, context);
 		}
+
 	}
 
 	private DoubleMatrix getMiniBatch(DoubleMatrix dataMat, List shuffledList) throws IOException

@@ -41,7 +41,7 @@ public class NNMapCollective extends Configured implements Tool {
 		//keep this unchanged.
 		if (args.length < 7) {
 			System.err.println("Usage: NNMapCollective "
-					+ "<number of map tasks> <epochs> <syncIterNum> <minibatchsize> <lambda> <hiddenLayers> <workDir>");
+					+ "<number of map tasks> <epochs> <syncIterNum> <hiddenLayers> <minibatchsize> <lambda> <workDir>");
 			ToolRunner.printGenericCommandUsage(System.err);
 				return -1;
 		}
