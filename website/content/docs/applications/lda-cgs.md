@@ -19,8 +19,8 @@ title: Latent Dirichlet Allocation (CGS)
 Model rotation is expressed as a collective communication. The operation takes the model part owned by a process and performs the rotation.
 By default, the operation sends the model partitions to the next neighbor and receives the model partitions from the last neighbor in a predefined ring
 topology of workers. An advanced option is that the ring topology can be dynamically defined before performing the model rotation. Thus programming model rotation requires just one API.
-For local computation inside each worker, they are simply programmed through an interface of “schedule-update”. A scheduler employs a user-defined function to maintain a dynamic order of
-model parameter updates and avoid the update conflict. Since the local computation only needs to process the model obtained during the rotation without considering the parallel model updates from
+For local computations inside each worker, they are simply programmed through an interface of “schedule-update”. A scheduler employs a user-defined function to maintain a dynamic order of
+model parameter updates and to avoid the update conflict. Since the local computation only needs to process the model obtained during the rotation without considering the parallel model updates from
 other workers, the code of a parallel machine learning algorithm can be modularized as a process of performing computation and rotating model partitions.
 
 We adopt `Model Rotation` to parallel CGS LDA algorithm. The data flow and algorithm are show as follows:
