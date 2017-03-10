@@ -3,7 +3,7 @@ title: Broadcast
 ---
  
 
-![broadcast](/img/4-1-1.png)
+![broadcast](/img/3-1-1.png)
 
 `broadcast` aims to share a table in one worker with others. All workers should run it concurrently. The defination of the method is:
 ```java

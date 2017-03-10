@@ -5,7 +5,7 @@ aliases:
   - /docs/install.html
 ---
 
-This instruction is only tested on:
+These instructions have only been tested on:
 
 * Mac OS X
 * Ubuntu
@@ -14,11 +14,11 @@ If you are using windows, we suggest you to install an Ubuntu system on a virtua
 
 ## Step 1 --- Install Hadoop 2.6.0
 
-1. First of all, make sure your computer can use `ssh` to access `localhost` and install `Java` as well.
+1. Make sure your computer can use `ssh` to access `localhost` and can install `Java` as well.
 
 2. Download and extract the hadoop-2.6.0 binary into your machine. It's available at [hadoop-2.6.0.tar.gz](https://dist.apache.org/repos/dist/release/hadoop/common/hadoop-2.6.0/hadoop-2.6.0.tar.gz).
 
-3. Then set the environment variables in `~/.bashrc`.
+3. Set the environment variables in `~/.bashrc`.
 ```bash
 export JAVA_HOME=<where Java locates>
 #e.g. ~/jdk1.8.0_91
@@ -28,7 +28,7 @@ export YARN_HOME=$HADOOP_HOME
 export HADOOP_CONF_DIR=$HADOOP_HOME/etc/hadoop
 export PATH=$HADOOP_HOME/bin:$JAVA_HOME/bin:$PATH
 ```
-4. Now run to make sure the changes are applied.
+4. Run to make sure the changes are applied.
 ```bash
 $ source ~/.bashrc
 ```
@@ -126,7 +126,7 @@ You will be creating this file. It doesn’t exist in the original package.
 </configuration>
 ```
 
-7. Next we format the file system and you should be able to see it exits with status 0.
+7. Format the file system and you should be able to see it exits with status 0.
 ```bash
 $ hdfs namenode -format
 ...
@@ -164,11 +164,11 @@ git clone git@github.com:DSC-SPIDAL/harp.git
 
 2. Follow the [maven official instruction](http://maven.apache.org/install.html) to install maven.
 
-3. Then add environment variables in `~/.bashrc`.
+3. Add environment variables in `~/.bashrc`.
 ```bash
-export HARP_ROOD_DIR=<where Harp locates>
+export HARP_ROOT_DIR=<where Harp locates>
 #e.g. harp/harp-project
-export HARP_HOME=$HARP_ROOD_DIR/harp-project
+export HARP_HOME=$HARP_ROOT_DIR/harp-project
 ```
 4. Run source command to set the envrionment variables.
 ```bash
@@ -177,8 +177,8 @@ source ~/.bashrc
 
 5. If hadoop is still running, stop it first.
 ```bash
-$ $HADOOP_PREFIX/sbin/stop-dfs.sh
-$ $HADOOP_PREFIX/sbin/stop-yarn.sh
+$ $HADOOP_HOME/sbin/stop-dfs.sh
+$ $HADOOP_HOME/sbin/stop-yarn.sh
 ```
 
 6. Enter "harp" home directory
@@ -186,7 +186,7 @@ $ $HADOOP_PREFIX/sbin/stop-yarn.sh
 cd $HARP_ROOT_DIR
 ```
 
-7. Install third party jar file. This javaml jar is required by randomforest application. It's not required by harp project itself.
+7. Install third party jar file. This javaml jar is required by randomforest application, not required by harp project itself.
 ```bash
 mvn install:install-file -Dfile=third_party/javaml-0.1.7.jar -DgroupId=net.sf -DartifactId=javaml -Dversion=0.1.7 -Dpackaging=jar
 ```
@@ -221,7 +221,7 @@ jobConf.set("mapreduce.framework.name", "map-collective");
 
 ## Step 3 Run harp kmeans example
 
-1. copy harp examples to $HADOOP_HOME
+1. Copy harp examples to $HADOOP_HOME
 ```bash
 cp harp-app/target/harp-app-1.0-SNAPSHOT.jar $HADOOP_HOME
 ```
@@ -253,7 +253,7 @@ The usage is
    hadoop jar harp-app-1.0-SNAPSHOT.jar edu.iu.kmeans.regroupallgather.KMeansLauncher 1000 10 100 5 2 2 10 /kmeans /tmp/kmeans
    ```
 
-4. To fetch the results, use the following command.
+4. To fetch the results, use the following command:
 ```bash
 $ hdfs dfs –get <work dir> <local dir>
 #e.g. hdfs dfs -get /kmeans ~/Document

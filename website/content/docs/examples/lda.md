@@ -2,7 +2,10 @@
 title: Latent Dirichlet Allocation 
 ---
 
-[Harp LDA](https://github.com/DSC-SPIDAL/harp/tree/master/harp-tutorial-app/src/main/java/edu/iu/lda) is a distributed variational bayes inference (VB) algorithm for LDA model which would be able to model a large and continuously expanding dataset using Harp collective communication library. We demonstrate how variational bayes inference converges within Map-Collective jobs provided by Harp. We provide results of the experiments conducted on a corpus of Wikipedia Dataset.
+<img src="/img/lda-cvb-illustration.png" width="30%"  >
+
+
+[Harp LDA](https://github.com/DSC-SPIDAL/harp/tree/master/harp-tutorial-app/src/main/java/edu/iu/lda) is a distributed variational bayes inference (VB) algorithm for LDA model which is able to model a large and continuously expanding dataset using Harp collective communication library. We demonstrate how variational bayes inference converges within Map-Collective jobs provided by Harp. We provide results of the experiments conducted on a corpus of Wikipedia Dataset.
 
 LDA is a popular topic modeling algorithm. We follow the [Mr.LDA](https://github.com/lintool/Mr.LDA) to implement distributed variational inference LDA on Harp with it’s dynamic schedueler, allreduce and push-pull communication models.
 
@@ -49,6 +52,6 @@ hadoop jar harp-tutorial-app-1.0.SNAPSHOT.jar  edu.iu.lda.LdaMapCollective sampl
 
 Please be noted:
 
-1. if you are running with mode=0 (sequential version), you need data with dense format, and the parameter "number of threads" will not be used. If you are running with mode=1, you will need data with sparse format.
+1. If you are running with mode=0 (sequential version), you will need data with dense format, and the parameter "number of threads" will not be used. If you are running with mode=1, you will need data with sparse format.
 
-2. metadata is used for indicating the beginning index of documents in partitions.
+2. Metadata is used for indicating the beginning index of documents in partitions.

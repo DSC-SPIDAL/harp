@@ -2,6 +2,8 @@
 title: Harp-DAAL-SGD
 ---
 
+![The intra-mapper computation and update of Model Data](/img/6-2-6.png) 
+
 ## Matrix Factorization based on Stochastic Gradient Descent (MF-SGD)
 
 Matrix Factorization based on Stochastic Gradient Descent (MF-SGD for short) is an algorithm widely used in recommender systems. 
@@ -26,8 +28,8 @@ the difference
 
 ## Implementation of SGD within Harp-DAAL Framework
 
-Harp-DAAL-SGD inherits the model-rotation computation model from Harp-SGD. It owns two layers: 1) An inter-mapper layer decompose the original MF-SGD problem into different
-Harp Mappers. 2) An intra-mapper layer carries out the computation work on local training data in a multi-threading paradigm. 
+Harp-DAAL-SGD inherits the model-rotation computation model from Harp-SGD. It owns two layers: 1) an inter-mapper layer that decomposes the original MF-SGD problem into different
+Harp Mappers. 2) an intra-mapper layer that carries out the computation work on local training data in a multi-threading paradigm. 
 
 ### Inter-Mapper Layout
 
@@ -40,13 +42,10 @@ inter-mapper layout of Harp-DAAL-SGD.
 ### Intra-Mapper Layout
 
 In each iteration, a mapper receives a slice of model H, i.e., a group of columns from matrix H. A procedure will pick out the training data points with column identities from these columns and 
-execute an updating task according to the SGD algorithm. Rather than the model-rotation model, the intra-mapper layer chooses the asynchronous computation model, where each training data point 
-update their own rows from model matrices W and H without mutual locks. Figure 2 demonstrates the intra-mapper working style. 
-
-![Figure 2. The intra-mapper computation and update of Model Data](/img/6-2-6.png) 
+execute an updating task according to the SGD algorithm. Unlike the model-rotation model, the intra-mapper layer chooses the asynchronous computation model, where each training data point 
+updates its own rows from model matrices W and H without mutual locks. 
 
 For the intra-mapper parallel computing, we adopt a hybrid usage of TBB concurrent containers and OpenMP directives. 
-
 
 ## A Code Walk through of Harp-DAAL-SGD
 
@@ -67,8 +66,8 @@ protected void mapCollective(KeyValReader reader,
 }
 
 ```
-It first uses the function *getVFiles* to read in HDFS files, then it runs the *runSGD* to finish the iterative training process. Besides the *vFiles*, *runSGD* will also 
-take in the configurations of all the parameters required by the training and testing process. The following list includes some of the important parameters.
+It first uses the function *getVFiles* to read in HDFS files. Then, it runs the *runSGD* to finish the iterative training process. Besides the *vFiles*, *runSGD* will also 
+take in the configurations of all the parameters that are required by the training and testing process. The following list includes some of the important parameters.
 
 * r: the feature dimension of model data 
 * lambda: the lambda parameter in the formula of updating model W and H 
@@ -96,14 +95,14 @@ Int2ObjectOpenHashMap<VRowCol> testVColMap = SGDUtil.loadTestVHMap(testFilePath,
 ### Regrouping Training Dataset and Load Data into DAAL  
 
 The second step is to re-organize the training dataset among mappers, thus, each mapper will get a portion of data points on a group of rows.
-Harp provides the following interface for regrouping data. 
+Harp provides the following interface for regrouping data:
 
 ```java
 
 regroup("sgd", "regroup-vw", vSetTable, new Partitioner(this.getNumWorkers()));
 
 ```
-*vSetTable* is a harp container that consists of different partitions, and here each partition is an array of training data points with the same row identity. 
+*vSetTable* is a harp container that consists of different partitions. Here, each partition is an array of training data points with the same row identity. 
 After each mapper gets its proper quote of training data, it starts to load the training data into DAAL's data container. We use the *NumericTable* container of 
 DAAL, and its interface receives Java data in a primitive array type. The conversion takes two steps of data copy. 
 
@@ -173,7 +172,7 @@ for (int i=0;i<numThreads; i++)
 
 ### Create Model Matrices and Model Rotator 
 
-Model matrices, the W matrix and H matrix, are both the input data and output data. We initialize them with random values, and use them 
+Two model matrices, W matrix and H matrix, are both the input data and output data. We initialize them with random values, and use them 
 after training to predict new data. Each mapper owns its portion of the whole W matrix, which is local to this mapper. This local W matrix is 
 thus stored at the Off-JVM heap memory space, which is accessible to the DAAL native kernels. We only transfer an array of row identities from
 Java side into DAAL side, and the initialization is done within DAAL's kernel before the first iteration. 
@@ -188,7 +187,7 @@ wMat_rowid_daal.releaseBlockOfColumnValues(0, 0, wMat_size, ids);
 ```
 
 Unlike the W matrix, the H matrix is rotated among all the mappers multiple times in each iteration. Therefore, we keep one copy at the JVM heap memory and 
-the other copy at the native off-JVM heap memory. The conversion of data between the harp table of H model and that of a DAAL container is handled by the 
+another copy at the native off-JVM heap memory. The conversion of data between the harp table of H model and that of a DAAL container is handled by the 
 rotator class.  
 
 ```java
