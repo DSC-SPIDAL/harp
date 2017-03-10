@@ -66,14 +66,14 @@ a few lines of codes to finish the invocation of kernels. For instance, the main
 <li>Result: the feedback of Algorithm after running, retrieved by users</li>
 </ul>
 
-<p>Before invoking your DAAL kernels, you should choose the data structure that is most suitable to your problem. For many NumericTable types,
+<p>Before invoking your DAAL kernels,the most suitable data structure for the problem should be chosen. For many NumericTable types,
 the Java API provides two ways of storing data. One is to store data on the JVM heap side, and whenever the native computation kernels require
 the dataset, it will automatically copy the data from JVM heap to the off-heap memory space. The other way is to store data on Java&rsquo;s direct byte buffer, and
 native computation kernels can access them directly without any data copy. Therefore, you should evaluate the overhead of loading and writing data from memory
 in your application. For many data-intensive applications, it is wise to store the data on the direct byte buffer.</p>
 
-<p>If you build your Harp-DAAL application from scratch, you should also carefully choose the data structure on the Harp side. The thumb rule is to allocate data in
-contiguous primitive Java array, because most of DAAL&rsquo;s Java API only accepts primitive array as input arguments. If you use Harp&rsquo;s own Table structure, the
+<p>If you build the Harp-DAAL application from scratch, you should also carefully choose the data structure on the Harp side. The thumb rule is to allocate data in
+contiguous primitive Java array, because most of DAAL&rsquo;s Java API only accepts primitive array as input arguments. If Harp&rsquo;s own Table structure is used and the
 contained data is distributed into different partitions, then you may use the Harp-DAAL data conversion API to transfer the data between a Harp table and a DAAL
 table.</p>
 

@@ -479,7 +479,7 @@ Training: Machine learning algorithms are normally iterative computation, proces
 &lt;li&gt;&lt;p&gt;Repeat step 2 and 3 &lt;code&gt;K&lt;/code&gt; times.&lt;/p&gt;&lt;/li&gt;
 &lt;/ol&gt;
 
-&lt;p&gt;We use Harp to accelerate this sequential algorithm with regroup, rotate, allgather, and dynamic scheduling. Like Harp K-Means, you need to add your file path in &lt;code&gt;$HARP3_PROJECT_HOME/harp3-app/build.xml&lt;/code&gt; and use &lt;code&gt;ant&lt;/code&gt; to compile.&lt;/p&gt;
+&lt;p&gt;We use Harp to accelerate this sequential algorithm with regroup, rotate, allgather, and dynamic scheduling. Like Harp K-Means, file path needs to be added in &lt;code&gt;$HARP3_PROJECT_HOME/harp3-app/build.xml&lt;/code&gt; and use &lt;code&gt;ant&lt;/code&gt; to compile.&lt;/p&gt;
 &lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;...
 &lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;src&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;path=&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;src&amp;quot;&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;/&amp;gt;&lt;/span&gt;
     &lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;include&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;name=&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;edu/iu/fileformat/**&amp;quot;&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;/&amp;gt;&lt;/span&gt;
@@ -1113,14 +1113,14 @@ a few lines of codes to finish the invocation of kernels. For instance, the main
 &lt;li&gt;Result: the feedback of Algorithm after running, retrieved by users&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;p&gt;Before invoking your DAAL kernels, you should choose the data structure that is most suitable to your problem. For many NumericTable types,
+&lt;p&gt;Before invoking your DAAL kernels,the most suitable data structure for the problem should be chosen. For many NumericTable types,
 the Java API provides two ways of storing data. One is to store data on the JVM heap side, and whenever the native computation kernels require
 the dataset, it will automatically copy the data from JVM heap to the off-heap memory space. The other way is to store data on Java&amp;rsquo;s direct byte buffer, and
 native computation kernels can access them directly without any data copy. Therefore, you should evaluate the overhead of loading and writing data from memory
 in your application. For many data-intensive applications, it is wise to store the data on the direct byte buffer.&lt;/p&gt;
 
-&lt;p&gt;If you build your Harp-DAAL application from scratch, you should also carefully choose the data structure on the Harp side. The thumb rule is to allocate data in
-contiguous primitive Java array, because most of DAAL&amp;rsquo;s Java API only accepts primitive array as input arguments. If you use Harp&amp;rsquo;s own Table structure, the
+&lt;p&gt;If you build the Harp-DAAL application from scratch, you should also carefully choose the data structure on the Harp side. The thumb rule is to allocate data in
+contiguous primitive Java array, because most of DAAL&amp;rsquo;s Java API only accepts primitive array as input arguments. If Harp&amp;rsquo;s own Table structure is used and the
 contained data is distributed into different partitions, then you may use the Harp-DAAL data conversion API to transfer the data between a Harp table and a DAAL
 table.&lt;/p&gt;
 

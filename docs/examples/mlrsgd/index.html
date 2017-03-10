@@ -30,7 +30,7 @@
 <li><p>Repeat step 2 and 3 <code>K</code> times.</p></li>
 </ol>
 
-<p>We use Harp to accelerate this sequential algorithm with regroup, rotate, allgather, and dynamic scheduling. Like Harp K-Means, you need to add your file path in <code>$HARP3_PROJECT_HOME/harp3-app/build.xml</code> and use <code>ant</code> to compile.</p>
+<p>We use Harp to accelerate this sequential algorithm with regroup, rotate, allgather, and dynamic scheduling. Like Harp K-Means, file path needs to be added in <code>$HARP3_PROJECT_HOME/harp3-app/build.xml</code> and use <code>ant</code> to compile.</p>
 <div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>...
 <span style="color: #f92672">&lt;src</span> <span style="color: #a6e22e">path=</span><span style="color: #e6db74">&quot;src&quot;</span> <span style="color: #f92672">/&gt;</span>
     <span style="color: #f92672">&lt;include</span> <span style="color: #a6e22e">name=</span><span style="color: #e6db74">&quot;edu/iu/fileformat/**&quot;</span> <span style="color: #f92672">/&gt;</span>
