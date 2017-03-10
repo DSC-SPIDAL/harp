@@ -19,6 +19,22 @@ div[class^="landing-feature"] {
   }
 }
 
+div[class^="landing-narrow"] {
+  margin-bottom: 50px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 80%;
+
+  .panel {
+    min-height: 150px;
+    max-height: 200px;
+
+    .panel-heading {
+      font-size: 16px;
+    }
+  }
+}
+
 // Set global attributes
 html, body {
   font-family: "Open Sans", sans-serif;
@@ -240,9 +256,9 @@ section.hn-docs-main {
 .hn-footer {
   padding-top: 20px;
   padding-bottom: 20px;
-  margin-top: 40px;
+  margin-top: 0px;
   color: $light-gray;
-  background-color: $heron-blue-gray;
+  background-color: $harp-dark-blue;
 
   .hn-footer-links {
     padding-left: 0;
