@@ -67,11 +67,11 @@ DAAL's Java API is usually contains the following objects:
 * Parameter: the parameters provided by users during the running of algorithms
 * Result: the feedback of Algorithm after running, retrieved by users
 
-Before invoking your DAAL kernels, you should choose the data structure that is most suitable to your problem. For many NumericTable types, 
+Before invoking the DAAL kernels, the most suitable data structure for the problem shoule be chosen. For many NumericTable types, 
 the Java API provides two ways of storing data. One is to store data on the JVM heap side, and whenever the native computation kernels require 
 the dataset, it will automatically copy the data from JVM heap to the off-heap memory space. The other way is to store data on Java's direct byte buffer, and 
 native computation kernels can access them directly without any data copy. Therefore, you should evaluate the overhead of loading and writing data from memory 
-in your application. For many data-intensive applications, it is wise to store the data on the direct byte buffer. 
+in the application. For many data-intensive applications, it is wise to store the data on the direct byte buffer. 
 
 If you build your Harp-DAAL application from scratch, you should also carefully choose the data structure on the Harp side. The thumb rule is to allocate data in 
 contiguous primitive Java array, because most of DAAL's Java API only accepts primitive array as input arguments. If you use Harp's own Table structure, the 
