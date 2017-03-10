@@ -28,7 +28,7 @@ The SGD algorithm can be described as following:
 
 4. Repeat step 2 and 3 `K` times.
 
-We use Harp to accelerate this sequential algorithm with regroup, rotate, allgather, and dynamic scheduling. Like Harp K-Means, you need to add your file path in `$HARP3_PROJECT_HOME/harp3-app/build.xml` and use `ant` to compile.
+We use Harp to accelerate this sequential algorithm with regroup, rotate, allgather, and dynamic scheduling. Like Harp K-Means, file path needs to be added in `$HARP3_PROJECT_HOME/harp3-app/build.xml` and use `ant` to compile.
 ```xml
 ...
 <src path="src" />
