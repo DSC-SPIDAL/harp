@@ -10,7 +10,7 @@
 *.exe
 *.o
 *.so
-*.jar
+#*.jar
 *.fyc
 *.rbc
 *.pyc

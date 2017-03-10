@@ -5,17 +5,17 @@ aliases:
   - /docs/install.html
 ---
 
-This instruction is only tested on:
+These instructions have only been tested on:
 
 * Red Hat Enterprise Linux Server release 6.8
 
 ## Step 1 --- Install Hadoop 2.6.0
 
-1. First of all, make sure your computer can use `ssh` to access each node in the cluster and install `Java` as well.
+1. Make sure your computer can use `ssh` to access each node in the cluster and can install `Java` as well.
 
 2. Download and extract the hadoop-2.6.0 binary into your machine. It's available at [hadoop-2.6.0.tar.gz](https://dist.apache.org/repos/dist/release/hadoop/common/hadoop-2.6.0/hadoop-2.6.0.tar.gz).
 
-3. Then set the environment variables in `~/.bashrc`.
+3. Set the environment variables in `~/.bashrc`.
 ```bash
 export JAVA_HOME=<where Java locates>
 #e.g. ~/jdk1.8.0_91
@@ -32,12 +32,12 @@ export HADOOP_YARN_HOME=$HADOOP_HOME
 export HADOOP_COMMON_LIB_NATIVE_DIR=$HADOOP_HOME/lib/native
 ```
 
-4. Now run to make sure the changes are applied.
+4. Run to test if the changes are applied.
 ```bash
 $ source ~/.bashrc
 ```
 
-5. Check if environment variabls are set correctly
+5. Check if environment variabls are set correctly.
 ```bash
 $ hadoop
 Usage: hadoop [--config confdir] COMMAND
@@ -58,7 +58,7 @@ Usage: hadoop [--config confdir] COMMAND
 Most commands print help when invoked w/o parameters.
 ```
 
-6. Modify the following files in Apache Hadoop distribution.
+6. Modify the following files in Apache Hadoop distribution:
 
     (1).`$HADOOP_HOME/etc/hadoop/core-site.xml`:
 ```xml
@@ -162,7 +162,7 @@ ${other node 2}
 ...
 ```
 
-7. Next we format the file system and you should be able to see it exits with status 0.
+7. Format the file system and you should be able to see it exits with status 0.
 ```bash
 $ hdfs namenode -format
 ...
@@ -178,7 +178,7 @@ $ $HADOOP_HOME/sbin/start-dfs.sh
 $ $HADOOP_HOME/sbin/start-yarn.sh
 ```
 
-9. Check if the daemons started successfully with the following output.
+9. Check if the daemons started successfully with the following output:
 ```bash
 $ jps
 xxxxx NameNode
@@ -198,7 +198,7 @@ $ git clone git@github.com:DSC-SPIDAL/harp.git
 
 2. Follow the [maven official instruction](http://maven.apache.org/install.html) to install maven.
 
-3. Then add environment variables in `~/.bashrc`.
+3. Add environment variables in `~/.bashrc`.
 ```bash
 export HARP_ROOD_DIR=<where Harp locates>
 #e.g. harp/harp-project
@@ -209,7 +209,7 @@ export HARP_HOME=$HARP_ROOD_DIR/harp-project
 $ source ~/.bashrc
 ```
 
-5. If hadoop is still running, stop it first.
+5. Stop hadoop first if it is still running. 
 ```bash
 $ $HADOOP_HOME/sbin/stop-dfs.sh
 $ $HADOOP_HOME/sbin/stop-yarn.sh
@@ -272,7 +272,7 @@ $ cd $HADOOP_HOME
 $ sbin/start-dfs.sh
 $ sbin/start-yarn.sh
 ```
-4. Check whether other nodes work well. This output will only appear in datanode.
+4. Check and see if other nodes work as well. This output will only appear in datanode.
 ```bash
 $ jps
 xxxxx DataNode
@@ -290,7 +290,7 @@ $ yarn application -list
 $ yarn application -kill application-id
 ```
 
-7. Run Kmeans Map-collective job. The usage is
+7. Run Kmeans Map-collective job. The usage is:
 ```bash
 $ hadoop jar harp-app-1.0-SNAPSHOT.jar edu.iu.kmeans.regroupallgather.KMeansLauncher <num of points> <num of centroids> <vector size> <num of point files per worker> <number of map tasks> <num threads> <number of iteration> <work dir> <local points dir>
 #e.g. hadoop jar harp-app-1.0-SNAPSHOT.jar edu.iu.kmeans.regroupallgather.KMeansLauncher 1000 10 100 5 2 2 10 /kmeans /tmp/kmeans
@@ -305,7 +305,7 @@ $ hadoop jar harp-app-1.0-SNAPSHOT.jar edu.iu.kmeans.regroupallgather.KMeansLaun
   * `<work dir>` --- the root directory for this running in HDFS
   * `<local points dir>` --- the harp kmeans will firstly generate files which contain data points to local directory. Set this argument to determine the local directory.
 
-8. To fetch the results, use the following command.
+8. To fetch the results, use the following command:
 ```bash
 $ hdfs dfs –get <work dir> <local dir>
 #e.g. hdfs dfs -get /kmeans ~/Document
