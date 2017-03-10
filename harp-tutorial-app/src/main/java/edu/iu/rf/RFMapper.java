@@ -4,6 +4,7 @@ import java.util.*;
 import java.io.*;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapred.CollectiveMapper;
+import org.apache.hadoop.fs.*;
 
 import edu.iu.harp.example.DoubleArrPlus;
 import edu.iu.harp.partition.Partition;
@@ -76,7 +77,7 @@ public class RFMapper extends CollectiveMapper<String, String, Object, Object> {
 
         rfScheduler.stop();
 
-        Table<IntArray> predictTable = new Table<>(0, new IntArrPlus);
+        Table<IntArray> predictTable = new Table<>(0, new IntArrPlus());
         int partitionId = 0;
 
         for (Instance testData : testDataset) {
@@ -112,7 +113,7 @@ public class RFMapper extends CollectiveMapper<String, String, Object, Object> {
         rfScheduler = new DynamicScheduler<>(rfThreads);
     }
 
-    private void printResults(Table<IntArray> predictTable, Dataset testDataset) {
+    private void printResults(Table<IntArray> predictTable, Dataset testDataset) throws IOException {
         int correct = 0;
         int total = 0;
         for (Partition<IntArray> partition : predictTable.getPartitions()) {

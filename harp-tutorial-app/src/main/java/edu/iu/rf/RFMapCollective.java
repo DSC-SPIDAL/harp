@@ -1,6 +1,6 @@
 package edu.iu.rf;
 
-import java.io.IOException;
+import java.io.*;
 import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -82,7 +82,7 @@ public class RFMapCollective extends Configured implements Tool {
         jobConfiguration.setInt("numThreads", numThreads);
         jobConfiguration.set("trainPath", trainPath);
         jobConfiguration.set("testPath", testPath);
-        jobConfiguration.set("outputPath", outputPath);
+        jobConfiguration.set("outputPath", outputPath + File.separator + "output");
 
         return job;
     }
