@@ -94,6 +94,24 @@ a:hover {
   }
 }
 
+.hp-examples {
+  border-radius: 0 !important;
+  background-color: $harp-middle-grey;
+
+  img.hn-jumbotron-logo {
+    margin-bottom: 20px;
+  }
+
+  p.hn-tagline {
+    font-size: 20px;
+    color: $light-gray;
+  }
+
+  .hn-button-row .btn {
+    margin: 5px;
+  }
+}
+
 // Sidebar for navigating the docs
 aside.hn-sidebar {
   .hn-sidebar-nav {

@@ -18,9 +18,9 @@ html lang={{.Site.LanguageCode}}
             .hn-button-row.row
               a.btn.btn-default href=docs/getting-started Get Started
         .row
-          .col-xs-12.col-sm-9.col-md-9.col-lg-12
-            .landing-feature-2.text-left
-              h2 Why Harp?
+          .col-xs-12.col-sm-12.col-md-12.col-lg-12
+            .landing-feature-2.text-center
+              h1 Why Harp?
               br
               .row
                 .col-sm-6
@@ -43,6 +43,47 @@ html lang={{.Site.LanguageCode}}
 
           .hn-twitter-feed.hidden-xs.col-sm-3.col-md-3.col-lg-3
             {{partial "index/feed.html" .}}
+
+        .row.hp-examples
+          .col-xs-12.col-sm-12.col-md-12.col-lg-12
+            .landing-narrow.center-block.text-center
+              p &nbsp
+              br
+              h1 Examples
+              br
+              .col-sm-4
+                a href=docs/examples/lda/
+                  img src={{.Site.Params.assets.tilelda}} width="85%"
+                br
+                p &nbsp
+                br
+                a href=docs/examples/rf/
+                  img src={{.Site.Params.assets.tilerf}} width="85%"
+                br
+                p &nbsp
+                br
+              .col-sm-4
+                a href=docs/examples/kmeans/
+                  img src={{.Site.Params.assets.tilekm}} width="85%"
+                br
+                p &nbsp
+                br
+                a href=docs/examples/svm/
+                  img src={{.Site.Params.assets.tilesvm}} width="85%"
+                br
+                p &nbsp
+                br
+              .col-sm-4
+                a href=docs/examples/mlrsgd/
+                  img src={{.Site.Params.assets.tilemlr}} width="85%"
+                br
+                p &nbsp
+                br
+                a href=docs/examples/nn/
+                  img src={{.Site.Params.assets.tilenn}} width="85%"
+                br
+                p &nbsp
+                br
 
     .hn-footer
       .container-fluid

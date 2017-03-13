@@ -28,6 +28,12 @@ params:
     logo: /img/logo54x54.png #logo.png
     textlogo: /img/0-1-1.png #logo.png
     textLogoSmall: /img/0-1-2.png #logo.png
+    tilekm: /img/tile_km.png
+    tilesvm: /img/tile_svm.png
+    tilelda: /img/tile_lda.png
+    tilemlr: /img/tile_mlr.png
+    tilerf: /img/tile_rf.png
+    tilenn: /img/tile_nn.png
     css:
       - /css/style.min.css
       - /css/font-awesome.min.css
