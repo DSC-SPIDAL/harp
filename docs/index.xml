@@ -675,6 +675,8 @@ Usage: NNMapCollective &amp;lt;number of map tasks&amp;gt; &amp;lt;epochs&amp;gt
       <guid>https://dsc-spidal.github.io/harp/docs/programming/overview/</guid>
       <description>
 
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/harp-overview.png&#34; alt=&#34;Overview-0&#34; /&gt;&lt;/p&gt;
+
 &lt;h2 id=&#34;big-model-problems-and-the-limitation-of-existing-tools&#34;&gt;Big Model Problems and The Limitation of Existing Tools:&lt;/h2&gt;
 
 &lt;p&gt;Data analytics is undergoing a revolution in many scientific domains. Machine learning becomes a popular method for analytics for which it allows computers to learn from the existing data and make predictions based off it. They have been widely used in computer vision, text mining, advertising, recommender systems, network analysis and genetics. Unfortunately, analyzing such huge data usually exceeds the capability of a single or even a few machines owing to the incredible volume of data available, and thus requires algorithm parallelization at an unprecedented scale. Scaling up these algorithms is challenging because of their prohibitive computation cost, not only the need to process enormous training data in iterations, but also the requirement to synchronize big model in rounds for algorithm convergence. The problem is simply referred as &amp;ldquo;the big model problem of big data machine learning&amp;rdquo;.&lt;/p&gt;
@@ -697,23 +699,19 @@ Usage: NNMapCollective &amp;lt;number of map tasks&amp;gt; &amp;lt;epochs&amp;gt
 
 &lt;p&gt;Now several machine learning algorithms are implemented, including K-means Clustering, Multiclass Logistic Regression (MLR), Support Vector Machine (SVM), Latent Dirichlet Allocation (LDA) and Matrix Factorization (MF).  Our experiment results of LDA implementations reveal that the &amp;ldquo;Rotation&amp;rdquo; based computation model is faster than the “Allreduce” type computation model. Now three algorithms are built on top of model rotation: Collapsed Gibbs Sampling (CGS) for LDA, Stochastic Gradient Descent (SGD) and Cyclic Coordinate Descent (CCD) for MF. The performance results on an Intel Haswell cluster show that our solution achieves faster model convergence speed and higher scalability compared with other contemporary work.&lt;/p&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/2-1-1.png&#34; alt=&#34;Overview-1&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/2-1-2.png&#34; alt=&#34;Overview-2&#34; /&gt;&lt;/p&gt;
-
 &lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/2-1-3.png&#34; alt=&#34;Overview-3&#34; /&gt;&lt;/p&gt;
 
 &lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/2-1-4.png&#34; alt=&#34;Overview-4&#34; /&gt;&lt;/p&gt;
 
 &lt;table&gt;
     &lt;tr&gt;
-        &lt;td&gt;
+        &lt;td width=&#34;33%&#34;&gt;
             &lt;img src=/harp/img/2-1-5.png border=0&gt;
         &lt;/td&gt;
-        &lt;td&gt;
+        &lt;td width=&#34;33%&#34;&gt;
             &lt;img src=/harp/img/2-1-6.png border=0&gt;
         &lt;/td&gt;
-        &lt;td&gt;
+        &lt;td width=&#34;33%&#34;&gt;
             &lt;img src=/harp/img/2-1-7.png border=0&gt;
         &lt;/td&gt;
     &lt;/tr&gt;
