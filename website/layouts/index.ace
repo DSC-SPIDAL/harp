@@ -38,8 +38,8 @@ html lang={{.Site.LanguageCode}}
                     .panel-body.panel-home Easily debug and identify the issues, allowing faster iteration during development.
                 .col-sm-6
                   .panel.panel-primary
-                    .panel-heading Scalability and Reliability
-                    .panel-body.panel-home Harp is highly scalable both in the ability to run on large amount of data and the ability to run on large clusters.
+                    .panel-heading Scalability and Portability
+                    .panel-body.panel-home Harp is highly scalable in the ability to run on large amount of training data and model parameters. It can run on both cloud and HPC platforms.
 
           .hn-twitter-feed.hidden-xs.col-sm-3.col-md-3.col-lg-3
             {{partial "index/feed.html" .}}
