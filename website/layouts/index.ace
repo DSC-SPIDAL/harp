@@ -26,20 +26,20 @@ html lang={{.Site.LanguageCode}}
                 .col-sm-6
                   .panel.panel-primary
                     .panel-heading Speed and Performance
-                    .panel-body Harp is built with a wide array of architectural improvements that contribute to high efficiency gains.
+                    .panel-body.panel-home Harp is built with a wide array of architectural improvements that contribute to high efficiency gains.
                 .col-sm-6
                   .panel.panel-primary
                     .panel-heading Compatibility with Hadoop
-                    .panel-body Harp is a plugin built into <a href="http://hadoop.apache.org">Apache Hadoop</a> and hence no code change of Hadoop is required for migration.
+                    .panel-body.panel-home Harp is a plugin built into <a href="http://hadoop.apache.org">Apache Hadoop</a> and hence no code change of Hadoop is required for migration.
               .row
                 .col-sm-6
                   .panel.panel-primary
                     .panel-heading Ease of Development and Troubleshooting
-                    .panel-body Easily debug and identify the issues, allowing faster iteration during development.
+                    .panel-body.panel-home Easily debug and identify the issues, allowing faster iteration during development.
                 .col-sm-6
                   .panel.panel-primary
                     .panel-heading Scalability and Reliability
-                    .panel-body Harp is highly scalable both in the ability to run on large amount of data and the ability to run on large clusters.
+                    .panel-body.panel-home Harp is highly scalable both in the ability to run on large amount of data and the ability to run on large clusters.
 
           .hn-twitter-feed.hidden-xs.col-sm-3.col-md-3.col-lg-3
             {{partial "index/feed.html" .}}
