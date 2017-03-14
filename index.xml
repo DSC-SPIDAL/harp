@@ -16,7 +16,7 @@
       <guid>https://dsc-spidal.github.io/harp/docs/communications/allgather/</guid>
       <description>
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/4-3-1.png&#34; alt=&#34;allgather&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/3-3-1.png&#34; alt=&#34;allgather&#34; /&gt;&lt;/p&gt;
 
 &lt;p&gt;&lt;code&gt;allgather&lt;/code&gt; aims to first collect tables from other workers and then broadcast the collection. All workers should run it concurrently. The defination of the method is:&lt;/p&gt;
 &lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;boolean&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;allgather&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;final&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;String&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;contextName&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;final&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;String&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;operationName&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;final&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;P&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;final&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;DataMap&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;dataMap&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;final&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Workers&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;workers&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt;
@@ -451,7 +451,7 @@ Training: Machine learning algorithms are normally iterative computation, proces
       <guid>https://dsc-spidal.github.io/harp/docs/examples/mlrsgd/</guid>
       <description>
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/mlr-illustration.png&#34; width=&#34;40%&#34;  &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/4-3-1.png&#34; width=&#34;40%&#34;  &gt;&lt;/p&gt;
 
 &lt;p&gt;Multiclass logistic regression (MLR) is a classification method that generalizes logistic regression to multiclass problems, i.e. with more than two possible discrete outcomes. That is, it is a model that is used to predict the probabilities of the different possible outcomes of a categorically distributed dependent variable, given a set of independent variables.&lt;/p&gt;
 
@@ -481,21 +481,6 @@ Training: Machine learning algorithms are normally iterative computation, proces
 &lt;li&gt;&lt;p&gt;Repeat step 2 and 3 &lt;code&gt;K&lt;/code&gt; times.&lt;/p&gt;&lt;/li&gt;
 &lt;/ol&gt;
 
-&lt;p&gt;We use Harp to accelerate this sequential algorithm with regroup, rotate, allgather, and dynamic scheduling. Like Harp K-Means, file path needs to be added in &lt;code&gt;$HARP3_PROJECT_HOME/harp3-app/build.xml&lt;/code&gt; and use &lt;code&gt;ant&lt;/code&gt; to compile.&lt;/p&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;...
-&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;src&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;path=&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;src&amp;quot;&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;/&amp;gt;&lt;/span&gt;
-    &lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;include&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;name=&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;edu/iu/fileformat/**&amp;quot;&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;/&amp;gt;&lt;/span&gt;
-    &lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;include&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;name=&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;edu/iu/benchmark/**&amp;quot;&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;/&amp;gt;&lt;/span&gt;
-    &lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;include&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;name=&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;edu/iu/dymoro/**&amp;quot;&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;/&amp;gt;&lt;/span&gt;
-    &lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;include&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;name=&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;edu/iu/kmeans/**&amp;quot;&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;/&amp;gt;&lt;/span&gt;
-    &lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;include&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;name=&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;edu/iu/lda/**&amp;quot;&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;/&amp;gt;&lt;/span&gt;
-    &lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;include&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;name=&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;edu/iu/sgd/**&amp;quot;&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;/&amp;gt;&lt;/span&gt;
-    &lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;include&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;name=&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;edu/iu/ccd/**&amp;quot;&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;/&amp;gt;&lt;/span&gt;
-    &lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;include&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;name=&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;edu/iu/wdamds/**&amp;quot;&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;/&amp;gt;&lt;/span&gt;
-    &lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;include&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;name=&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;&amp;lt;your file path&amp;gt;&amp;quot;&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;/&amp;gt;&lt;/span&gt;
-    ...
-&lt;/pre&gt;&lt;/div&gt;
-
 &lt;p&gt;Definitions:&lt;/p&gt;
 
 &lt;ul&gt;
@@ -505,6 +490,32 @@ Training: Machine learning algorithms are normally iterative computation, proces
 &lt;li&gt;&lt;code&gt;W&lt;/code&gt; is the &lt;code&gt;T*M&lt;/code&gt; weight matrix&lt;/li&gt;
 &lt;li&gt;&lt;code&gt;K&lt;/code&gt; is the number of iteration&lt;/li&gt;
 &lt;/ul&gt;
+
+&lt;h2 id=&#34;parallel-design&#34;&gt;PARALLEL DESIGN&lt;/h2&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;p&gt;What are the model? What kind of data structure?&lt;/p&gt;
+
+&lt;p&gt;The weight vectors for classes are model. Because an ovr(one-versus-rest) approach is adopted, each weight vector are independent. It has a matrix structure.&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;What are the characteristics of the data dependency in model update computation, can updates run concurrently?&lt;/p&gt;
+
+&lt;p&gt;Model update computation here is the SGD update, in which for each data point it should update the model directly. Because of the ovr strategy, each row in the model matrix are independent, and can be updated in parallel.&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;which kind of parallelism scheme is suitable, data parallelism or model parallelism?&lt;/p&gt;
+
+&lt;p&gt;Data parallelism can be used, i.e., calculating different data points in parallel.&lt;/p&gt;
+
+&lt;p&gt;Because the updates can run concurrently, model parallelism is a nature solution.  Each node get one partition of the model, which updates in parallel. And furthermore, thread level parallelism can also follows this model parallelism pattern, that each thread take a subset of partition and update in parallel independently.&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;which collective communication operations is suitable to synchronize model?&lt;/p&gt;
+
+&lt;p&gt;DynamicScheduler can be used for thread-level parallelism, and Rotate can be used in the inter-node model synchronization.&lt;/p&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&#34;dataflow&#34;&gt;DATAFLOW&lt;/h2&gt;
+
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/4-3-2.png&#34; alt=&#34;dataflow&#34; /&gt;&lt;/p&gt;
 
 &lt;h2 id=&#34;step-0-data-preprocessing&#34;&gt;Step 0 &amp;mdash; Data preprocessing&lt;/h2&gt;
 
@@ -571,11 +582,9 @@ hdfs dfs -put input_data/* /input
 &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
-&lt;h2 id=&#34;usage&#34;&gt;Usage:&lt;/h2&gt;
-
-&lt;p&gt;After using &lt;code&gt;ant&lt;/code&gt; to compile the code, you need to provide several parameters to Harp.&lt;/p&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;$ hadoop jar build/harp3-app-hadoop-2.6.0.jar edu.iu.mlr.MLRMapCollective &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;alpha&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;number of iteration&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;number of features&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;number of workers&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;number of threads&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;topic file path&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;qrel file path&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;input path in HDFS&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;output path in HDFS&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt;#e.g. hadoop jar build/harp3-app-hadoop-2.6.0.jar edu.iu.mlr.MLRMapCollective 1.0 100 47236 2 16 /rcv1v2/rcv1.topics.txt /rcv1v2/rcv1-v2.topics.qrels /input /output&lt;/span&gt;
+&lt;h2 id=&#34;usage&#34;&gt;USAGE&lt;/h2&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;$ hadoop jar harp-tutorial-app-1.0-SNAPSHOT.jar edu.iu.mlr.MLRMapCollective &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;alpha&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;number of iteration&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;number of features&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;number of workers&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;number of threads&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;topic file path&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;qrel file path&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;input path in HDFS&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;output path in HDFS&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt;
+&lt;span style=&#34;color: #75715e&#34;&gt;#e.g. hadoop jar harp-tutorial-app-1.0-SNAPSHOT.jar edu.iu.mlr.MLRMapCollective 1.0 100 47236 2 16 /rcv1v2/rcv1.topics.txt /rcv1v2/rcv1-v2.topics.qrels /input /output&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
 &lt;p&gt;The output should be the weight matrix &lt;code&gt;W&lt;/code&gt;.&lt;/p&gt;
