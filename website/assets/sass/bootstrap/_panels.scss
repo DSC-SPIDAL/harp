@@ -18,6 +18,10 @@
   @include clearfix;
 }
 
+.panel-home {
+  font-size: 20px;
+}
+
 // Optional heading
 .panel-heading {
   padding: $panel-heading-padding;
