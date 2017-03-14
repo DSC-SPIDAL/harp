@@ -22,6 +22,35 @@ The K-Means algorithm simply repeats the following set of steps until there is n
 
 4. Repeat step 2 and 3 until data points do not change cluster assignments, which means that their centroids are set.
 
+## PARALLEL DESIGN
+
+* What are the model? What kind of data structure?
+
+    Centroids of the clusters are model in vanilla kmeans. It has a vector structure as a double array.
+
+* What are the characteristics of the data dependency in model update computation, can updates run concurrently?
+
+    In the core model update computation, each data point should access all the model, compute distance with each centroid, find the nearest one and partially update model. The true update only occurs when all data points finish their search.
+
+* which kind of parallelism scheme is suitable, data parallelism or model parallelism?
+
+    Data parallelism can be used, i.e., calculating different data points in parallel.
+
+    For model parallelism, there are two different solutions.
+
+    1). Without model parallelism, each node get one replica of the whole model, which updates locally in parallel, and then synchronizes when local computation all finish
+
+    2). With model parallelism, each node get one partition of the model, which updates in parallel, and then rotates to the neighbor node when local computation for all local data points finish. Repeat until each partition returns back to the original node, then do the final model update.
+
+* which collective communication operations is suitable to synchronize model?
+
+    For solution without model parallelism, Synchronize replicas of the model by allreduce, then calculate the new centroids and go to the next iteration. For vanilla kmeans, the combination of reduce/broadcast, push/pull, regroup/allgather are similar to allreduce.
+
+    For solution with model parallelism, there is no replica exists, but the movement of the model partitions are a kind of synchronized collective operation, supported in Harp by an abstraction of rotate.
+
+## DATAFLOW
+
+![dataflow](/img/4-2-2.png)
 
 ## Step 1 --- The Main Method
 The tasks of the main class is to configure and run the job iteratively.

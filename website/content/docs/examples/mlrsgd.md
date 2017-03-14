@@ -2,7 +2,7 @@
 title: Harp Multiclass Logistic Regression with Stochastic Gradient Descent
 ---
 
-<img src="/img/mlr-illustration.png" width="40%"  >
+<img src="/img/4-3-1.png" width="40%"  >
 
 Multiclass logistic regression (MLR) is a classification method that generalizes logistic regression to multiclass problems, i.e. with more than two possible discrete outcomes. That is, it is a model that is used to predict the probabilities of the different possible outcomes of a categorically distributed dependent variable, given a set of independent variables.
 
@@ -28,22 +28,6 @@ The SGD algorithm can be described as following:
 
 4. Repeat step 2 and 3 `K` times.
 
-We use Harp to accelerate this sequential algorithm with regroup, rotate, allgather, and dynamic scheduling. Like Harp K-Means, file path needs to be added in `$HARP3_PROJECT_HOME/harp3-app/build.xml` and use `ant` to compile.
-```xml
-...
-<src path="src" />
-    <include name="edu/iu/fileformat/**" />
-    <include name="edu/iu/benchmark/**" />
-    <include name="edu/iu/dymoro/**" />
-    <include name="edu/iu/kmeans/**" />
-    <include name="edu/iu/lda/**" />
-    <include name="edu/iu/sgd/**" />
-    <include name="edu/iu/ccd/**" />
-    <include name="edu/iu/wdamds/**" />
-    <include name="<your file path>" />
-    ...
-```
-
 Definitions:
 
 * `N` is the number of data points
@@ -51,6 +35,30 @@ Definitions:
 * `M` is the number of features
 * `W` is the `T*M` weight matrix
 * `K` is the number of iteration
+
+## PARALLEL DESIGN
+
+* What are the model? What kind of data structure?
+
+    The weight vectors for classes are model. Because an ovr(one-versus-rest) approach is adopted, each weight vector are independent. It has a matrix structure.
+
+* What are the characteristics of the data dependency in model update computation, can updates run concurrently?
+
+    Model update computation here is the SGD update, in which for each data point it should update the model directly. Because of the ovr strategy, each row in the model matrix are independent, and can be updated in parallel.
+
+* which kind of parallelism scheme is suitable, data parallelism or model parallelism?
+
+    Data parallelism can be used, i.e., calculating different data points in parallel.
+
+    Because the updates can run concurrently, model parallelism is a nature solution.  Each node get one partition of the model, which updates in parallel. And furthermore, thread level parallelism can also follows this model parallelism pattern, that each thread take a subset of partition and update in parallel independently.
+
+* which collective communication operations is suitable to synchronize model?
+
+    DynamicScheduler can be used for thread-level parallelism, and Rotate can be used in the inter-node model synchronization.
+
+## DATAFLOW
+
+![dataflow](/img/4-3-2.png)
 
 ## Step 0 --- Data preprocessing
 
@@ -119,12 +127,11 @@ protected void mapCollective(KeyValReader reader, Context context) throws IOExce
 }
 ```
 
-## Usage:
+## USAGE
 
-After using `ant` to compile the code, you need to provide several parameters to Harp.
 ```bash
-$ hadoop jar build/harp3-app-hadoop-2.6.0.jar edu.iu.mlr.MLRMapCollective [alpha] [number of iteration] [number of features] [number of workers] [number of threads] [topic file path] [qrel file path] [input path in HDFS] [output path in HDFS]
-#e.g. hadoop jar build/harp3-app-hadoop-2.6.0.jar edu.iu.mlr.MLRMapCollective 1.0 100 47236 2 16 /rcv1v2/rcv1.topics.txt /rcv1v2/rcv1-v2.topics.qrels /input /output
+$ hadoop jar harp-tutorial-app-1.0-SNAPSHOT.jar edu.iu.mlr.MLRMapCollective [alpha] [number of iteration] [number of features] [number of workers] [number of threads] [topic file path] [qrel file path] [input path in HDFS] [output path in HDFS]
+#e.g. hadoop jar harp-tutorial-app-1.0-SNAPSHOT.jar edu.iu.mlr.MLRMapCollective 1.0 100 47236 2 16 /rcv1v2/rcv1.topics.txt /rcv1v2/rcv1-v2.topics.qrels /input /output
 ```
 
 The output should be the weight matrix `W`.
