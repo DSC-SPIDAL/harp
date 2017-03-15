@@ -2,7 +2,7 @@
 title: Harp-DAAL-SGD
 ---
 
-![The intra-mapper computation and update of Model Data](/img/6-2-6.png) 
+<img src="/img/6-2-6.png" width="66%"  >
 
 ## Matrix Factorization based on Stochastic Gradient Descent (MF-SGD)
 
@@ -37,7 +37,7 @@ The training dataset is partitioned by row identities, and each mapper is assign
 The model matrix W is also row-partitioned, and each mapper keeps its own local portion of W. The model H is, however, sliced and rotated among all the mappers. Figure 1 shows the
 inter-mapper layout of Harp-DAAL-SGD. 
 
-![Figure 1. The layout of inter-mapper layer](/img/6-2-5.png) 
+<img src="/img/6-2-5.png" width="66%"  >
 
 ### Intra-Mapper Layout
 
