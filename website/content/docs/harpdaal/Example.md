@@ -2,7 +2,7 @@
 title: Harp-DAAL-SGD
 ---
 
-<img src="/img/6-2-6.png" width="66%"  >
+<img src="/img/6-2-6.png" width="85%"  >
 
 ## Matrix Factorization based on Stochastic Gradient Descent (MF-SGD)
 
