@@ -2,11 +2,15 @@
 title: Harp-DAAL Framework
 ---
 
-<img src="/img/6-1-2-1.png" width="66%">
+<img src="/img/6-1-2/6-1-2-1-1.png" width="7.1775%"><img src="/img/6-1-2/6-1-2-1-2.png" width="51.3975%"><img src="/img/6-1-2/6-1-2-1-3.png" width="7.425%">
 <br />
-<img src="/img/6-1-2-2-1.png" width="7.1775%"><a href="/docs/programming/computation-models/"><img src="/img/6-1-2-2-2.png" width="51.3975%"></a><img src="/img/6-1-2-2-3.png" width="7.425%">
+<img src="/img/6-1-2/6-1-2-2-1.png" width="7.1775%"><a href="/docs/programming/computation-models/"><img src="/img/6-1-2/6-1-2-2-2.png" width="51.3975%"></a><img src="/img/6-1-2/6-1-2-2-3.png" width="7.425%">
 <br />
-<img src="/img/6-1-2-3.png" width="66%">
+<img src="/img/6-1-2/6-1-2-3-1.png" width="7.1775%"><img src="/img/6-1-2/6-1-2-3-2.png" width="51.3975%"><img src="/img/6-1-2/6-1-2-3-3.png" width="7.425%">
+<br />
+<img src="/img/6-1-2/6-1-2-4-1.png" width="7.1775%"><a href="https://software.intel.com/en-us/intel-daal"><img src="/img/6-1-2/6-1-2-4-2.png" width="51.3975%"></a><img src="/img/6-1-2/6-1-2-4-3.png" width="7.425%">
+<br />
+<img src="/img/6-1-2/6-1-2-5-1.png" width="7.1775%"><img src="/img/6-1-2/6-1-2-5-2.png" width="51.3975%"><img src="/img/6-1-2/6-1-2-5-3.png" width="7.425%">
 
 Figure 1 shows the position of Harp-DAAL within the whole HPC-Big Data software stack. 
 
