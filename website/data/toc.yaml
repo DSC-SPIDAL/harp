@@ -57,8 +57,8 @@ sections:
     sublinks:
       - name: Harp-DAAL
         url: /docs/harpdaal/harpdaal
-      - name: Example
-        url: /docs/harpdaal/Example
+      - name: Matrix Factorization (SGD)
+        url: /docs/harpdaal/mfsgd
   - name: Harp Resources
     sublinks:
       - name: Harp Resources
