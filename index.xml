@@ -451,7 +451,7 @@ Training: Machine learning algorithms are normally iterative computation, proces
       <guid>https://dsc-spidal.github.io/harp/docs/examples/mlrsgd/</guid>
       <description>
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/4-3-1.png&#34; width=&#34;40%&#34;  &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/4-3-1.png&#34; width=&#34;60%&#34;  &gt;&lt;/p&gt;
 
 &lt;p&gt;Multiclass logistic regression (MLR) is a classification method that generalizes logistic regression to multiclass problems, i.e. with more than two possible discrete outcomes. That is, it is a model that is used to predict the probabilities of the different possible outcomes of a categorically distributed dependent variable, given a set of independent variables.&lt;/p&gt;
 
