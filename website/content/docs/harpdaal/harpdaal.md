@@ -2,7 +2,9 @@
 title: Harp-DAAL Framework
 ---
 
-![Harp-DAAL Framework for Iterative Applications](/img/6-1-1.png)
+<img src="/img/6-1-2.png" width="66%"  >
+
+Figure 1 shows the position of Harp-DAAL within the whole HPC-Big Data software stack. 
 
 ## What is Harp-DAAL? 
 
@@ -20,10 +22,6 @@ However, the original Harp framework only supports development of Java applicati
 The downside of the pure Java implementation is the lack of support for emerging new hardware architectures such as Intel's Xeon Phi. 
 By invoking DAAL's native kernels, applications can leverage the huge number of threads on many-core platforms, which is a great 
 advantage for computation-intensive data analytics algorithms. This is also the tendency of merging HPC and Big Data domain. 
-
-![Figure 1 Harp-DAAL within HPC-BigData Stack](/img/6-1-2.png)
-
-Figure 1 shows the position of Harp-DAAL within the whole HPC-Big Data software stack. 
 
 ## How to build a Harp-DAAL Application ?
 
