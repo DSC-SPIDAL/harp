@@ -1056,7 +1056,11 @@ hdfs dfs -put input_data/* /input
       <guid>https://dsc-spidal.github.io/harp/docs/harpdaal/harpdaal/</guid>
       <description>
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/6-1-2.png&#34; width=&#34;66%&#34;  &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/6-1-2-1.png&#34; width=&#34;66%&#34;&gt;
+&lt;br /&gt;
+&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/6-1-2-2-1.png&#34; width=&#34;7.1775%&#34;&gt;&lt;a href=&#34;https://dsc-spidal.github.io/harp/docs/programming/computation-models/&#34;&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/6-1-2-2-2.png&#34; width=&#34;51.3975%&#34;&gt;&lt;/a&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/6-1-2-2-3.png&#34; width=&#34;7.425%&#34;&gt;
+&lt;br /&gt;
+&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/6-1-2-3.png&#34; width=&#34;66%&#34;&gt;&lt;/p&gt;
 
 &lt;p&gt;Figure 1 shows the position of Harp-DAAL within the whole HPC-Big Data software stack.&lt;/p&gt;
 
