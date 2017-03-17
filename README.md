@@ -19,18 +19,16 @@ Harp is a framework for machine learning applications.
 
 #### 1. Install Maven by following the [maven official instruction](http://maven.apache.org/install.html)
 #### 2. Enter "harp" home directory
-#### 3. Install third party jar file. This javaml jar is required by randomforest application. It's not required by harp project itself.
-    mvn install:install-file -Dfile=third_party/javaml-0.1.7.jar -DgroupId=net.sf -DartifactId=javaml -Dversion=0.1.7 -Dpackaging=jar
-#### 4. Compile harp
+#### 3. Compile harp
     mvn clean package
 
-#### 5. Install harp plugin to hadoop
+#### 4. Install harp plugin to hadoop
     cp harp-project/target/harp-project-1.0-SNAPSHOT.jar $HADOOP_HOME/share/hadoop/mapreduce/
     cp third_party/fastutil-7.0.13.jar $HADOOP_HOME/share/hadoop/mapreduce/
 
-#### 6. Configure Hadoop environment for settings required to run Hadoop
+#### 5. Configure Hadoop environment for settings required to run Hadoop
 
-#### 7. Edit mapred-site.xml in $HADOOP_HOME/etc/hadoop, add java opts settings for map-collective tasks. For example:
+#### 6. Edit mapred-site.xml in $HADOOP_HOME/etc/hadoop, add java opts settings for map-collective tasks. For example:
   ```xml
    <property>
      <name>mapreduce.map.collective.memory.mb</name>
@@ -42,7 +40,7 @@ Harp is a framework for machine learning applications.
    </property>
    ```
 
-#### 8. To develop Harp applications, remember to add the following property in job configuration:
+#### 7. To develop Harp applications, remember to add the following property in job configuration:
     jobConf.set("mapreduce.framework.name", "map-collective");
 
 ## EXAMPLE
