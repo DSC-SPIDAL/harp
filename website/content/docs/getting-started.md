@@ -186,23 +186,18 @@ $ $HADOOP_HOME/sbin/stop-yarn.sh
 cd $HARP_ROOT_DIR
 ```
 
-7. Install third party jar file. This javaml jar is required by randomforest application, not required by harp project itself.
-```bash
-mvn install:install-file -Dfile=third_party/javaml-0.1.7.jar -DgroupId=net.sf -DartifactId=javaml -Dversion=0.1.7 -Dpackaging=jar
-```
-
-8. Compile harp
+7. Compile harp
 ```bash
 mvn clean package
 ```
 
-9. Install harp plugin to hadoop
+8. Install harp plugin to hadoop
 ```bash
 cp harp-project/target/harp-project-1.0-SNAPSHOT.jar $HADOOP_HOME/share/hadoop/mapreduce/
 cp third_party/fastutil-7.0.13.jar $HADOOP_HOME/share/hadoop/mapreduce/
 ```
 
-10. Edit mapred-site.xml in $HADOOP_HOME/etc/hadoop, add java opts settings for map-collective tasks. For example:
+9. Edit mapred-site.xml in $HADOOP_HOME/etc/hadoop, add java opts settings for map-collective tasks. For example:
   ```xml
    <property>
      <name>mapreduce.map.collective.memory.mb</name>
@@ -214,7 +209,7 @@ cp third_party/fastutil-7.0.13.jar $HADOOP_HOME/share/hadoop/mapreduce/
    </property>
    ```
 
-11. To develop Harp applications, remember to add the following property in job configuration:
+10. To develop Harp applications, remember to add the following property in job configuration:
 ```bash
 jobConf.set("mapreduce.framework.name", "map-collective");
 ```
