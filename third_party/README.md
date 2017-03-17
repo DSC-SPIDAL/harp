@@ -1,11 +1,7 @@
 # THIRD_PARTY
 
-These are some third party libraries required by harp or harp application examples.
+These are some third party libraries required by harp or harp application examples. You need to copy all/part of the jar files to $HADOOP_HOME/share/hadoop/mapreduce/ directory.
 
-fastutil jar is required by harp. Users need to copy this jar file with harp jar file to $HADOOP_HOME/share/hadoop/mapreduce/ directory
+fastutil jar is required by harp. It should be copied to $HADOOP_HOME/share/hadoop/mapreduce/ directory.
 
-log4j jar is required by harp non-hadoop mode.
-
-cloud9 jar is required by harp tutorial lda-cvb program. It needs to be copied to $HADOOP_HOME/share/hadoop/mapreduce/ directory
-
-javaml jar is required by harp-tutorial-app randomforest example. We didn't find maven repository for it from online. So we need to manually add this third party jar to maven repository. It needs to be copied to $HADOOP_HOME/share/hadoop/mapreduce/ directory
+Other jar files are required by harp-app or harp-tutorial-app. You can choose what it's needed to put to $HADOOP_HOME/share/hadoop/mapreduce/ directory.
