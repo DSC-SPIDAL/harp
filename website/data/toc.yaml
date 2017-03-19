@@ -55,7 +55,7 @@ sections:
         url: /docs/applications/mf
   - name: Harp-DAAL
     sublinks:
-      - name: Harp-DAAL
+      - name: Overview
         url: /docs/harpdaal/harpdaal
       - name: Matrix Factorization (SGD)
         url: /docs/harpdaal/mfsgd
