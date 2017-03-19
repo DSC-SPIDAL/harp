@@ -137,9 +137,9 @@ html lang={{.Site.LanguageCode}}
                   a href=docs/applications/mf/ Matrix Factorization
                 .col-sm-2
                   h4 Harp-DAAL
-                  a href=docs/harpdaal/harpdaal/ Harp-DAAL
+                  a href=docs/harpdaal/harpdaal/ Overview
                   br
-                  a href=docs/harpdaal/Example/ example
+                  a href=docs/harpdaal/Example/ Matrix Factorization (SGD) 
                 .col-sm-2
                   h4 Contributors
                   a href=docs/contributors/community/ Community
