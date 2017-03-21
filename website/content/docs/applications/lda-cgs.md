@@ -27,6 +27,25 @@ We adopt `Model Rotation` to parallel CGS LDA algorithm. The data flow and algor
 
   <img src="/img/model-rotation.png" width="100%" >
 
+# Performance
+
+<table>
+	<tr>
+		<td width="33%">
+			<img src=/harp-test/img/2-1-5.png border=0>
+		</td>
+		<td width="33%">
+			<img src=/harp-test/img/2-1-6.png border=0>
+		</td>
+		<td width="33%">
+			<img src=/harp-test/img/2-1-7.png border=0>
+		</td>
+	</tr>
+</table>
+
+![Overview-3](/img/2-1-3.png)
+
+![Overview-4](/img/2-1-4.png)
 
 # Run LDA example
 
