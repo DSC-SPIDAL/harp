@@ -706,25 +706,7 @@ Usage: NNMapCollective &amp;lt;number of map tasks&amp;gt; &amp;lt;epochs&amp;gt
 &lt;li&gt;&lt;p&gt;Four parallel computation models are categorized to characterize the parallelization of machine learning applications. “Allreduce” and “Rotation” based Computation models can be mapped to the Harp collective communication interfaces in order to simplify the implementation of parallel machine learning applications.&lt;/p&gt;&lt;/li&gt;
 &lt;/ol&gt;
 
-&lt;p&gt;Now several machine learning algorithms are implemented, including K-means Clustering, Multiclass Logistic Regression (MLR), Support Vector Machine (SVM), Latent Dirichlet Allocation (LDA) and Matrix Factorization (MF).  Our experiment results of LDA implementations reveal that the &amp;ldquo;Rotation&amp;rdquo; based computation model is faster than the “Allreduce” type computation model. Now three algorithms are built on top of model rotation: Collapsed Gibbs Sampling (CGS) for LDA, Stochastic Gradient Descent (SGD) and Cyclic Coordinate Descent (CCD) for MF. The performance results on an Intel Haswell cluster show that our solution achieves faster model convergence speed and higher scalability compared with other contemporary work.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/2-1-3.png&#34; alt=&#34;Overview-3&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/2-1-4.png&#34; alt=&#34;Overview-4&#34; /&gt;&lt;/p&gt;
-
-&lt;table&gt;
-    &lt;tr&gt;
-        &lt;td width=&#34;33%&#34;&gt;
-            &lt;img src=/harp/img/2-1-5.png border=0&gt;
-        &lt;/td&gt;
-        &lt;td width=&#34;33%&#34;&gt;
-            &lt;img src=/harp/img/2-1-6.png border=0&gt;
-        &lt;/td&gt;
-        &lt;td width=&#34;33%&#34;&gt;
-            &lt;img src=/harp/img/2-1-7.png border=0&gt;
-        &lt;/td&gt;
-    &lt;/tr&gt;
-&lt;/table&gt;
+&lt;p&gt;A collection of machine learning algorithms are implemented, including K-means Clustering, Multiclass Logistic Regression (MLR), Support Vector Machine (SVM), Latent Dirichlet Allocation (LDA) and Matrix Factorization (MF).  Our experiment results of LDA implementations reveal that the &amp;ldquo;Rotation&amp;rdquo; based computation model is faster than the “Allreduce” type computation model. Now three algorithms are built on top of model rotation: Collapsed Gibbs Sampling (CGS) for LDA, Stochastic Gradient Descent (SGD) and Cyclic Coordinate Descent (CCD) for MF. The performance results on an Intel Haswell cluster show that our solution achieves faster model convergence speed and higher scalability compared with other related work.&lt;/p&gt;
 </description>
     </item>
     
