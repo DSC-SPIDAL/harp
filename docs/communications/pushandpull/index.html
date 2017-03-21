@@ -3,7 +3,8 @@
 <p><img src="https://dsc-spidal.github.io/harp/img/4-6-1.png" alt="push" /></p>
 
 <p><code>push</code> aims to collect all workers&rsquo; partitions and store them in global. All workers should run it concurrently. The defination of the method is:</p>
-boolean push(final String contextName, final String operationName, Table<P> localTable, Table<P> globalTable, PT partitioner, DataMap dataMap, Workers workers)
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #66d9ef">boolean</span> <span style="color: #a6e22e">push</span><span style="color: #f92672">(</span><span style="color: #66d9ef">final</span> <span style="color: #f8f8f2">String</span> <span style="color: #f8f8f2">contextName</span><span style="color: #f92672">,</span> <span style="color: #66d9ef">final</span> <span style="color: #f8f8f2">String</span> <span style="color: #f8f8f2">operationName</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">Table</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">P</span><span style="color: #f92672">&gt;</span> <span style="color: #f8f8f2">localTable</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">Table</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">P</span><span style="color: #f92672">&gt;</span> <span style="color: #f8f8f2">globalTable</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">PT</span> <span style="color: #f8f8f2">partitioner</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">DataMap</span> <span style="color: #f8f8f2">dataMap</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">Workers</span> <span style="color: #f8f8f2">workers</span><span style="color: #f92672">)</span>
+</pre></div>
 
 <ul>
 <li><code>contextName</code> &mdash; the name of the context</li>
@@ -16,12 +17,14 @@ boolean push(final String contextName, final String operationName, Table<P> loca
 </ul>
 
 <h2 id="example">Example</h2>
-push(contextName, "local-global", localTable, globalTable, new Partitioner(workers.getNumWorkers()), dataMap, workers);
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">push</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">contextName</span><span style="color: #f92672">,</span> <span style="color: #e6db74">&quot;local-global&quot;</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">localTable</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">globalTable</span><span style="color: #f92672">,</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">Partitioner</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">workers</span><span style="color: #f92672">.</span><span style="color: #a6e22e">getNumWorkers</span><span style="color: #f92672">()),</span> <span style="color: #f8f8f2">dataMap</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">workers</span><span style="color: #f92672">);</span>
+</pre></div>
 
 <p><img src="https://dsc-spidal.github.io/harp/img/4-6-2.png" alt="pull" /></p>
 
 <p><code>pull</code> aims to distribute the partitions stored in global to all workers. All workers should run it concurrently. The defination of the method is:</p>
-boolean pull(final String contextName, final String operationName, Table<P> localTable, Table<P> globalTable, boolean useBcast, DataMap dataMap, Workers workers)
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #66d9ef">boolean</span> <span style="color: #a6e22e">pull</span><span style="color: #f92672">(</span><span style="color: #66d9ef">final</span> <span style="color: #f8f8f2">String</span> <span style="color: #f8f8f2">contextName</span><span style="color: #f92672">,</span> <span style="color: #66d9ef">final</span> <span style="color: #f8f8f2">String</span> <span style="color: #f8f8f2">operationName</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">Table</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">P</span><span style="color: #f92672">&gt;</span> <span style="color: #f8f8f2">localTable</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">Table</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">P</span><span style="color: #f92672">&gt;</span> <span style="color: #f8f8f2">globalTable</span><span style="color: #f92672">,</span> <span style="color: #66d9ef">boolean</span> <span style="color: #f8f8f2">useBcast</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">DataMap</span> <span style="color: #f8f8f2">dataMap</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">Workers</span> <span style="color: #f8f8f2">workers</span><span style="color: #f92672">)</span>
+</pre></div>
 
 <ul>
 <li><code>contextName</code> &mdash; the name of the context</li>
@@ -34,5 +37,6 @@ boolean pull(final String contextName, final String operationName, Table<P> loca
 </ul>
 
 <h2 id="example-1">Example</h2>
-pull(contextName, "global-local", localTable, globalTable, true, dataMap, workers);
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">pull</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">contextName</span><span style="color: #f92672">,</span> <span style="color: #e6db74">&quot;global-local&quot;</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">localTable</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">globalTable</span><span style="color: #f92672">,</span> <span style="color: #66d9ef">true</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">dataMap</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">workers</span><span style="color: #f92672">);</span>
+</pre></div>
 </article></section></div></div></div><script src="https://code.jquery.com/jquery-2.2.1.min.js"></script><script src="https://dsc-spidal.github.io/harp/js/app.min.js"></script></body></html>

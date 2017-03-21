@@ -77,59 +77,64 @@
 </ul>
 
 <p>After preprocessing, push the data set into HDFS by the following commands.</p>
-hdfs dfs -mkdir /input
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>hdfs dfs -mkdir /input
 hdfs dfs -put input_data/* /input
+</pre></div>
 
 <h2 id="step-1-initialize">Step 1 &mdash; Initialize</h2>
 
 <p>For Harp MLR, we will use dynamic scheduling as mentioned above. Before we set up the dynamic scheduler, we need to initialize the weight matrix <code>W</code>, which will be partitioned into <code>T</code> parts representing to <code>T</code> labels which means that each label belongs to one partition and is treated as an independent task.</p>
-private void initTable() {
-    wTable = new Table(0, new DoubleArrPlus());
-    for (int i = 0; i < topics.size(); i++)
-        wTable.addPartition(new Partition(i, DoubleArray.create(TERM + 1, false)));
-}
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #66d9ef">private</span> <span style="color: #66d9ef">void</span> <span style="color: #a6e22e">initTable</span><span style="color: #f92672">()</span> <span style="color: #f92672">{</span>
+    <span style="color: #f8f8f2">wTable</span> <span style="color: #f92672">=</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">Table</span><span style="color: #f92672">(</span><span style="color: #ae81ff">0</span><span style="color: #f92672">,</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">DoubleArrPlus</span><span style="color: #f92672">());</span>
+    <span style="color: #66d9ef">for</span> <span style="color: #f92672">(</span><span style="color: #66d9ef">int</span> <span style="color: #f8f8f2">i</span> <span style="color: #f92672">=</span> <span style="color: #ae81ff">0</span><span style="color: #f92672">;</span> <span style="color: #f8f8f2">i</span> <span style="color: #f92672">&lt;</span> <span style="color: #f8f8f2">topics</span><span style="color: #f92672">.</span><span style="color: #a6e22e">size</span><span style="color: #f92672">();</span> <span style="color: #f8f8f2">i</span><span style="color: #f92672">++)</span>
+        <span style="color: #f8f8f2">wTable</span><span style="color: #f92672">.</span><span style="color: #a6e22e">addPartition</span><span style="color: #f92672">(</span><span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">Partition</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">i</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">DoubleArray</span><span style="color: #f92672">.</span><span style="color: #a6e22e">create</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">TERM</span> <span style="color: #f92672">+</span> <span style="color: #ae81ff">1</span><span style="color: #f92672">,</span> <span style="color: #66d9ef">false</span><span style="color: #f92672">)));</span>
+<span style="color: #f92672">}</span>
+</pre></div>
 
 <p>After that we can initialize the dynamic scheduler. Each thread will be treated as a worker and be added into the scheduler. The only thing that needs to be done is that tasks has to be submitted during the computation.</p>
-private void initThread() {
-    GDthread = new LinkedList<>();
-    for (int i = 0; i < numThread; i++)
-        GDthread.add(new GDtask(alpha, data, topics, qrels));
-    GDsch = new DynamicScheduler<>(GDthread);
-}
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #66d9ef">private</span> <span style="color: #66d9ef">void</span> <span style="color: #a6e22e">initThread</span><span style="color: #f92672">()</span> <span style="color: #f92672">{</span>
+    <span style="color: #f8f8f2">GDthread</span> <span style="color: #f92672">=</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">LinkedList</span><span style="color: #f92672">&lt;&gt;();</span>
+    <span style="color: #66d9ef">for</span> <span style="color: #f92672">(</span><span style="color: #66d9ef">int</span> <span style="color: #f8f8f2">i</span> <span style="color: #f92672">=</span> <span style="color: #ae81ff">0</span><span style="color: #f92672">;</span> <span style="color: #f8f8f2">i</span> <span style="color: #f92672">&lt;</span> <span style="color: #f8f8f2">numThread</span><span style="color: #f92672">;</span> <span style="color: #f8f8f2">i</span><span style="color: #f92672">++)</span>
+        <span style="color: #f8f8f2">GDthread</span><span style="color: #f92672">.</span><span style="color: #a6e22e">add</span><span style="color: #f92672">(</span><span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">GDtask</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">alpha</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">data</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">topics</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">qrels</span><span style="color: #f92672">));</span>
+    <span style="color: #f8f8f2">GDsch</span> <span style="color: #f92672">=</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">DynamicScheduler</span><span style="color: #f92672">&lt;&gt;(</span><span style="color: #f8f8f2">GDthread</span><span style="color: #f92672">);</span>
+<span style="color: #f92672">}</span>
+</pre></div>
 
 <h2 id="step-2-mapper-communication">Step 2 &mdash; Mapper communication</h2>
 
 <p>In this main process, we use <code>regroup</code> to distribute the partitions to the workers first. The workers will get almost the same number of partitions. Then we start the scheduler. For each time we submit one partition to each thread in the scheduler and the threads will all use SGD to approximate <code>W</code> with each label. After the workers finish once with their own partitions, we will use <code>rotate</code> operation to swap the partitions among the workers. When finishing the all process, each worker should use its own data training the whole partition <code>K</code> times, of which <code>K</code> is the number of iteration. <code>allgather</code> operation collects all partitions in each worker, combines the partitions, and shares the outcome with all workers. Finally, the Master worker outputs the weight matrix <code>W</code>.</p>
-protected void mapCollective(KeyValReader reader, Context context) throws IOException, InterruptedException {
-    LoadAll(reader);
-    initTable();
-    initThread();
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #66d9ef">protected</span> <span style="color: #66d9ef">void</span> <span style="color: #a6e22e">mapCollective</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">KeyValReader</span> <span style="color: #f8f8f2">reader</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">Context</span> <span style="color: #f8f8f2">context</span><span style="color: #f92672">)</span> <span style="color: #66d9ef">throws</span> <span style="color: #f8f8f2">IOException</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">InterruptedException</span> <span style="color: #f92672">{</span>
+    <span style="color: #f8f8f2">LoadAll</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">reader</span><span style="color: #f92672">);</span>
+    <span style="color: #f8f8f2">initTable</span><span style="color: #f92672">();</span>
+    <span style="color: #f8f8f2">initThread</span><span style="color: #f92672">();</span>
 
-    regroup("MLR", "regroup_wTable", wTable, new Partitioner(getNumWorkers()));
+    <span style="color: #f8f8f2">regroup</span><span style="color: #f92672">(</span><span style="color: #e6db74">&quot;MLR&quot;</span><span style="color: #f92672">,</span> <span style="color: #e6db74">&quot;regroup_wTable&quot;</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">wTable</span><span style="color: #f92672">,</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">Partitioner</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">getNumWorkers</span><span style="color: #f92672">()));</span>
 
-    GDsch.start();        
-    for (int iter = 0; iter < ITER * numMapTask; iter++) {
-        for (Partition par : wTable.getPartitions())
-            GDsch.submit(par);
-        while (GDsch.hasOutput())
-            GDsch.waitForOutput();
+    <span style="color: #f8f8f2">GDsch</span><span style="color: #f92672">.</span><span style="color: #a6e22e">start</span><span style="color: #f92672">();</span>        
+    <span style="color: #66d9ef">for</span> <span style="color: #f92672">(</span><span style="color: #66d9ef">int</span> <span style="color: #f8f8f2">iter</span> <span style="color: #f92672">=</span> <span style="color: #ae81ff">0</span><span style="color: #f92672">;</span> <span style="color: #f8f8f2">iter</span> <span style="color: #f92672">&lt;</span> <span style="color: #f8f8f2">ITER</span> <span style="color: #f92672">*</span> <span style="color: #f8f8f2">numMapTask</span><span style="color: #f92672">;</span> <span style="color: #f8f8f2">iter</span><span style="color: #f92672">++)</span> <span style="color: #f92672">{</span>
+        <span style="color: #66d9ef">for</span> <span style="color: #f92672">(</span><span style="color: #f8f8f2">Partition</span> <span style="color: #f8f8f2">par</span> <span style="color: #f92672">:</span> <span style="color: #f8f8f2">wTable</span><span style="color: #f92672">.</span><span style="color: #a6e22e">getPartitions</span><span style="color: #f92672">())</span>
+            <span style="color: #f8f8f2">GDsch</span><span style="color: #f92672">.</span><span style="color: #a6e22e">submit</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">par</span><span style="color: #f92672">);</span>
+        <span style="color: #66d9ef">while</span> <span style="color: #f92672">(</span><span style="color: #f8f8f2">GDsch</span><span style="color: #f92672">.</span><span style="color: #a6e22e">hasOutput</span><span style="color: #f92672">())</span>
+            <span style="color: #f8f8f2">GDsch</span><span style="color: #f92672">.</span><span style="color: #a6e22e">waitForOutput</span><span style="color: #f92672">();</span>
             
-        rotate("MLR", "rotate_" + iter, wTable, null);
+        <span style="color: #f8f8f2">rotate</span><span style="color: #f92672">(</span><span style="color: #e6db74">&quot;MLR&quot;</span><span style="color: #f92672">,</span> <span style="color: #e6db74">&quot;rotate_&quot;</span> <span style="color: #f92672">+</span> <span style="color: #f8f8f2">iter</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">wTable</span><span style="color: #f92672">,</span> <span style="color: #66d9ef">null</span><span style="color: #f92672">);</span>
 
-        context.progress();
-    }
-    GDsch.stop();
+        <span style="color: #f8f8f2">context</span><span style="color: #f92672">.</span><span style="color: #a6e22e">progress</span><span style="color: #f92672">();</span>
+    <span style="color: #f92672">}</span>
+    <span style="color: #f8f8f2">GDsch</span><span style="color: #f92672">.</span><span style="color: #a6e22e">stop</span><span style="color: #f92672">();</span>
         
-    allgather("MLR", "allgather_wTable", wTable);
+    <span style="color: #f8f8f2">allgather</span><span style="color: #f92672">(</span><span style="color: #e6db74">&quot;MLR&quot;</span><span style="color: #f92672">,</span> <span style="color: #e6db74">&quot;allgather_wTable&quot;</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">wTable</span><span style="color: #f92672">);</span>
 
-    if (isMaster())
-        Util.outputData(outputPath, topics, wTable, conf);
-    wTable.release();
-}
+    <span style="color: #66d9ef">if</span> <span style="color: #f92672">(</span><span style="color: #f8f8f2">isMaster</span><span style="color: #f92672">())</span>
+        <span style="color: #f8f8f2">Util</span><span style="color: #f92672">.</span><span style="color: #a6e22e">outputData</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">outputPath</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">topics</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">wTable</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">conf</span><span style="color: #f92672">);</span>
+    <span style="color: #f8f8f2">wTable</span><span style="color: #f92672">.</span><span style="color: #a6e22e">release</span><span style="color: #f92672">();</span>
+<span style="color: #f92672">}</span>
+</pre></div>
 
 <h2 id="usage">USAGE</h2>
-$ hadoop jar harp-tutorial-app-1.0-SNAPSHOT.jar edu.iu.mlr.MLRMapCollective [alpha] [number of iteration] [number of features] [number of workers] [number of threads] [topic file path] [qrel file path] [input path in HDFS] [output path in HDFS]
-#e.g. hadoop jar harp-tutorial-app-1.0-SNAPSHOT.jar edu.iu.mlr.MLRMapCollective 1.0 100 47236 2 16 /rcv1v2/rcv1.topics.txt /rcv1v2/rcv1-v2.topics.qrels /input /output
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>$ hadoop jar harp-tutorial-app-1.0-SNAPSHOT.jar edu.iu.mlr.MLRMapCollective <span style="color: #f92672">[</span>alpha<span style="color: #f92672">]</span> <span style="color: #f92672">[</span>number of iteration<span style="color: #f92672">]</span> <span style="color: #f92672">[</span>number of features<span style="color: #f92672">]</span> <span style="color: #f92672">[</span>number of workers<span style="color: #f92672">]</span> <span style="color: #f92672">[</span>number of threads<span style="color: #f92672">]</span> <span style="color: #f92672">[</span>topic file path<span style="color: #f92672">]</span> <span style="color: #f92672">[</span>qrel file path<span style="color: #f92672">]</span> <span style="color: #f92672">[</span>input path in HDFS<span style="color: #f92672">]</span> <span style="color: #f92672">[</span>output path in HDFS<span style="color: #f92672">]</span>
+<span style="color: #75715e">#e.g. hadoop jar harp-tutorial-app-1.0-SNAPSHOT.jar edu.iu.mlr.MLRMapCollective 1.0 100 47236 2 16 /rcv1v2/rcv1.topics.txt /rcv1v2/rcv1-v2.topics.qrels /input /output</span>
+</pre></div>
 
 <p>The output should be the weight matrix <code>W</code>.</p>
 </article></section></div></div></div><script src="https://code.jquery.com/jquery-2.2.1.min.js"></script><script src="https://dsc-spidal.github.io/harp/js/app.min.js"></script></body></html>

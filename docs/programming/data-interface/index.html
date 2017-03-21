@@ -29,126 +29,127 @@
 <p><img src="https://dsc-spidal.github.io/harp/img/3-1-2.png" alt="table-partition" /></p>
 
 <p>An example of how to construct a table is:</p>
-Table<DoubleArray> table = new Table<>(0, new DoubleArrPlus());
-for (int i = 0; i < numPartitions; i++) {
-    DoubleArray array = DoubleArray.create(size, false);
-    table.addPartition(new Partition<>(i, array));
-}
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">Table</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">DoubleArray</span><span style="color: #f92672">&gt;</span> <span style="color: #f8f8f2">table</span> <span style="color: #f92672">=</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">Table</span><span style="color: #f92672">&lt;&gt;(</span><span style="color: #ae81ff">0</span><span style="color: #f92672">,</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">DoubleArrPlus</span><span style="color: #f92672">());</span>
+<span style="color: #66d9ef">for</span> <span style="color: #f92672">(</span><span style="color: #66d9ef">int</span> <span style="color: #f8f8f2">i</span> <span style="color: #f92672">=</span> <span style="color: #ae81ff">0</span><span style="color: #f92672">;</span> <span style="color: #f8f8f2">i</span> <span style="color: #f92672">&lt;</span> <span style="color: #f8f8f2">numPartitions</span><span style="color: #f92672">;</span> <span style="color: #f8f8f2">i</span><span style="color: #f92672">++)</span> <span style="color: #f92672">{</span>
+    <span style="color: #f8f8f2">DoubleArray</span> <span style="color: #f8f8f2">array</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">DoubleArray</span><span style="color: #f92672">.</span><span style="color: #a6e22e">create</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">size</span><span style="color: #f92672">,</span> <span style="color: #66d9ef">false</span><span style="color: #f92672">);</span>
+    <span style="color: #f8f8f2">table</span><span style="color: #f92672">.</span><span style="color: #a6e22e">addPartition</span><span style="color: #f92672">(</span><span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">Partition</span><span style="color: #f92672">&lt;&gt;(</span><span style="color: #f8f8f2">i</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">array</span><span style="color: #f92672">));</span>
+<span style="color: #f92672">}</span>
+</pre></div>
 
 <p>In this example, it initiliazes a table which carries <code>DoubleArray</code> as the primitive data type. <code>DoubleArrPlus</code> is a <code>PartitionCombiner</code> used to define the merging operation of two partitions.</p>
-public class DoubleArrPlus extends PartitionCombiner<DoubleArray> {
-    public PartitionStatus combine(DoubleArray curPar, DoubleArray newPar) {
-        double[] doubles1 = curPar.get(); int size1 = curPar.size();
-        double[] doubles2 = newPar.get(); int size2 = newPar.size();
-        if (size1 != size2) {            return PartitionStatus.COMBINE_FAILED;
-        }
-        for (int i = 0; i < size2; i++) {
-            doubles1[i] = doubles1[i] + doubles2[i];
-        }
-        return PartitionStatus.COMBINED;
-   }
-}
-
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #66d9ef">public</span> <span style="color: #66d9ef">class</span> <span style="color: #a6e22e">DoubleArrPlus</span> <span style="color: #66d9ef">extends</span> <span style="color: #f8f8f2">PartitionCombiner</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">DoubleArray</span><span style="color: #f92672">&gt;</span> <span style="color: #f92672">{</span>
+    <span style="color: #66d9ef">public</span> <span style="color: #f8f8f2">PartitionStatus</span> <span style="color: #a6e22e">combine</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">DoubleArray</span> <span style="color: #f8f8f2">curPar</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">DoubleArray</span> <span style="color: #f8f8f2">newPar</span><span style="color: #f92672">)</span> <span style="color: #f92672">{</span>
+        <span style="color: #66d9ef">double</span><span style="color: #f92672">[]</span> <span style="color: #f8f8f2">doubles1</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">curPar</span><span style="color: #f92672">.</span><span style="color: #a6e22e">get</span><span style="color: #f92672">();</span> <span style="color: #66d9ef">int</span> <span style="color: #f8f8f2">size1</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">curPar</span><span style="color: #f92672">.</span><span style="color: #a6e22e">size</span><span style="color: #f92672">();</span>
+        <span style="color: #66d9ef">double</span><span style="color: #f92672">[]</span> <span style="color: #f8f8f2">doubles2</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">newPar</span><span style="color: #f92672">.</span><span style="color: #a6e22e">get</span><span style="color: #f92672">();</span> <span style="color: #66d9ef">int</span> <span style="color: #f8f8f2">size2</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">newPar</span><span style="color: #f92672">.</span><span style="color: #a6e22e">size</span><span style="color: #f92672">();</span>
+        <span style="color: #66d9ef">if</span> <span style="color: #f92672">(</span><span style="color: #f8f8f2">size1</span> <span style="color: #f92672">!=</span> <span style="color: #f8f8f2">size2</span><span style="color: #f92672">)</span> <span style="color: #f92672">{</span>            <span style="color: #66d9ef">return</span> <span style="color: #f8f8f2">PartitionStatus</span><span style="color: #f92672">.</span><span style="color: #a6e22e">COMBINE_FAILED</span><span style="color: #f92672">;</span>
+        <span style="color: #f92672">}</span>
+        <span style="color: #66d9ef">for</span> <span style="color: #f92672">(</span><span style="color: #66d9ef">int</span> <span style="color: #f8f8f2">i</span> <span style="color: #f92672">=</span> <span style="color: #ae81ff">0</span><span style="color: #f92672">;</span> <span style="color: #f8f8f2">i</span> <span style="color: #f92672">&lt;</span> <span style="color: #f8f8f2">size2</span><span style="color: #f92672">;</span> <span style="color: #f8f8f2">i</span><span style="color: #f92672">++)</span> <span style="color: #f92672">{</span>
+            <span style="color: #f8f8f2">doubles1</span><span style="color: #f92672">[</span><span style="color: #f8f8f2">i</span><span style="color: #f92672">]</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">doubles1</span><span style="color: #f92672">[</span><span style="color: #f8f8f2">i</span><span style="color: #f92672">]</span> <span style="color: #f92672">+</span> <span style="color: #f8f8f2">doubles2</span><span style="color: #f92672">[</span><span style="color: #f8f8f2">i</span><span style="color: #f92672">];</span>
+        <span style="color: #f92672">}</span>
+        <span style="color: #66d9ef">return</span> <span style="color: #f8f8f2">PartitionStatus</span><span style="color: #f92672">.</span><span style="color: #a6e22e">COMBINED</span><span style="color: #f92672">;</span>
+   <span style="color: #f92672">}</span>
+<span style="color: #f92672">}</span>
+</pre></div>
 
 <h1 id="data-abstraction">Data Abstraction</h1>
 
 <p><img src="https://dsc-spidal.github.io/harp/img/3-1-3.png" alt="data-types" /></p>
 
 <p>The data abstraction is shown above. <code>Transferable</code> is ae higher interface compare to other data structures and <code>Simple</code> is the sub-interface for all primitive data structures. Here is an example of the primitive data strucutres.</p>
-/*
- * Copyright 2013-2016 Indiana University
- * 
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #75715e">/*</span>
+<span style="color: #75715e"> * Copyright 2013-2016 Indiana University</span>
+<span style="color: #75715e"> * </span>
+<span style="color: #75715e"> * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span style="color: #75715e"> * you may not use this file except in compliance with the License.</span>
+<span style="color: #75715e"> * You may obtain a copy of the License at</span>
+<span style="color: #75715e"> *</span>
+<span style="color: #75715e"> *     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span style="color: #75715e"> *</span>
+<span style="color: #75715e"> * Unless required by applicable law or agreed to in writing, software</span>
+<span style="color: #75715e"> * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span style="color: #75715e"> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span style="color: #75715e"> * See the License for the specific language governing permissions and</span>
+<span style="color: #75715e"> * limitations under the License.</span>
+<span style="color: #75715e"> */</span>
 
-package edu.iu.harp.resource;
+<span style="color: #f92672">package</span> <span style="color: #f8f8f2">edu.iu.harp.resource</span><span style="color: #f92672">;</span>
 
-import java.io.DataOutput;
-import java.io.IOException;
+<span style="color: #f92672">import</span> <span style="color: #f8f8f2">java.io.DataOutput</span><span style="color: #f92672">;</span>
+<span style="color: #f92672">import</span> <span style="color: #f8f8f2">java.io.IOException</span><span style="color: #f92672">;</span>
 
-import edu.iu.harp.io.DataType;
-import edu.iu.harp.resource.Array;
+<span style="color: #f92672">import</span> <span style="color: #f8f8f2">edu.iu.harp.io.DataType</span><span style="color: #f92672">;</span>
+<span style="color: #f92672">import</span> <span style="color: #f8f8f2">edu.iu.harp.resource.Array</span><span style="color: #f92672">;</span>
 
-/*******************************************************
- * IntArray class for managing int[] data.
- ******************************************************/
-public final class IntArray extends Array<int[]> {
+<span style="color: #75715e">/*******************************************************</span>
+<span style="color: #75715e"> * IntArray class for managing int[] data.</span>
+<span style="color: #75715e"> ******************************************************/</span>
+<span style="color: #66d9ef">public</span> <span style="color: #66d9ef">final</span> <span style="color: #66d9ef">class</span> <span style="color: #a6e22e">IntArray</span> <span style="color: #66d9ef">extends</span> <span style="color: #f8f8f2">Array</span><span style="color: #f92672">&lt;</span><span style="color: #66d9ef">int</span><span style="color: #f92672">[]&gt;</span> <span style="color: #f92672">{</span>
 
-    public IntArray(int[] arr, int start, int size) {
-	super(arr, start, size);
-    }
+    <span style="color: #66d9ef">public</span> <span style="color: #a6e22e">IntArray</span><span style="color: #f92672">(</span><span style="color: #66d9ef">int</span><span style="color: #f92672">[]</span> <span style="color: #f8f8f2">arr</span><span style="color: #f92672">,</span> <span style="color: #66d9ef">int</span> <span style="color: #f8f8f2">start</span><span style="color: #f92672">,</span> <span style="color: #66d9ef">int</span> <span style="color: #f8f8f2">size</span><span style="color: #f92672">)</span> <span style="color: #f92672">{</span>
+	<span style="color: #66d9ef">super</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">arr</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">start</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">size</span><span style="color: #f92672">);</span>
+    <span style="color: #f92672">}</span>
 
-    /**
-     * Get the number of Bytes of encoded data. One byte for storing DataType,
-     * four bytes for storing the size, size*4 bytes for storing the data.
-     */
-    @Override
-    public int getNumEnocdeBytes() {
-	return this.size * 4 + 5;
-    }
+    <span style="color: #75715e">/**</span>
+<span style="color: #75715e">     * Get the number of Bytes of encoded data. One byte for storing DataType,</span>
+<span style="color: #75715e">     * four bytes for storing the size, size*4 bytes for storing the data.</span>
+<span style="color: #75715e">     */</span>
+    <span style="color: #a6e22e">@Override</span>
+    <span style="color: #66d9ef">public</span> <span style="color: #66d9ef">int</span> <span style="color: #a6e22e">getNumEnocdeBytes</span><span style="color: #f92672">()</span> <span style="color: #f92672">{</span>
+	<span style="color: #66d9ef">return</span> <span style="color: #66d9ef">this</span><span style="color: #f92672">.</span><span style="color: #a6e22e">size</span> <span style="color: #f92672">*</span> <span style="color: #ae81ff">4</span> <span style="color: #f92672">+</span> <span style="color: #ae81ff">5</span><span style="color: #f92672">;</span>
+    <span style="color: #f92672">}</span>
 
-    /**
-     * Encode the array as DataOutput
-     */
-    @Override
-    public void encode(DataOutput out) throws IOException {
-	out.writeByte(DataType.INT_ARRAY);
-	int len = start + size;
-	out.writeInt(size);
-	for (int i = start; i < len; i++) {
-	    out.writeInt(array[i]);
-	}
-    }
+    <span style="color: #75715e">/**</span>
+<span style="color: #75715e">     * Encode the array as DataOutput</span>
+<span style="color: #75715e">     */</span>
+    <span style="color: #a6e22e">@Override</span>
+    <span style="color: #66d9ef">public</span> <span style="color: #66d9ef">void</span> <span style="color: #a6e22e">encode</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">DataOutput</span> <span style="color: #f8f8f2">out</span><span style="color: #f92672">)</span> <span style="color: #66d9ef">throws</span> <span style="color: #f8f8f2">IOException</span> <span style="color: #f92672">{</span>
+	<span style="color: #f8f8f2">out</span><span style="color: #f92672">.</span><span style="color: #a6e22e">writeByte</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">DataType</span><span style="color: #f92672">.</span><span style="color: #a6e22e">INT_ARRAY</span><span style="color: #f92672">);</span>
+	<span style="color: #66d9ef">int</span> <span style="color: #f8f8f2">len</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">start</span> <span style="color: #f92672">+</span> <span style="color: #f8f8f2">size</span><span style="color: #f92672">;</span>
+	<span style="color: #f8f8f2">out</span><span style="color: #f92672">.</span><span style="color: #a6e22e">writeInt</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">size</span><span style="color: #f92672">);</span>
+	<span style="color: #66d9ef">for</span> <span style="color: #f92672">(</span><span style="color: #66d9ef">int</span> <span style="color: #f8f8f2">i</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">start</span><span style="color: #f92672">;</span> <span style="color: #f8f8f2">i</span> <span style="color: #f92672">&lt;</span> <span style="color: #f8f8f2">len</span><span style="color: #f92672">;</span> <span style="color: #f8f8f2">i</span><span style="color: #f92672">++)</span> <span style="color: #f92672">{</span>
+	    <span style="color: #f8f8f2">out</span><span style="color: #f92672">.</span><span style="color: #a6e22e">writeInt</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">array</span><span style="color: #f92672">[</span><span style="color: #f8f8f2">i</span><span style="color: #f92672">]);</span>
+	<span style="color: #f92672">}</span>
+    <span style="color: #f92672">}</span>
 
-    /**
-     * Create an array. Firstly try to get an array from ResourcePool; if
-     * failed, new an array.
-     * 
-     * @param len
-     * @param approximate
-     * @return
-     */
-    public static IntArray create(int len, boolean approximate) {
-	if (len > 0) {
-	    int[] ints = ResourcePool.get().getIntsPool().getArray(len, approximate);
-	    if (ints != null) {
-		return new IntArray(ints, 0, len);
-	    } else {
-		return null;
-	    }
-	} else {
-	    return null;
-	}
-    }
+    <span style="color: #75715e">/**</span>
+<span style="color: #75715e">     * Create an array. Firstly try to get an array from ResourcePool; if</span>
+<span style="color: #75715e">     * failed, new an array.</span>
+<span style="color: #75715e">     * </span>
+<span style="color: #75715e">     * @param len</span>
+<span style="color: #75715e">     * @param approximate</span>
+<span style="color: #75715e">     * @return</span>
+<span style="color: #75715e">     */</span>
+    <span style="color: #66d9ef">public</span> <span style="color: #66d9ef">static</span> <span style="color: #f8f8f2">IntArray</span> <span style="color: #a6e22e">create</span><span style="color: #f92672">(</span><span style="color: #66d9ef">int</span> <span style="color: #f8f8f2">len</span><span style="color: #f92672">,</span> <span style="color: #66d9ef">boolean</span> <span style="color: #f8f8f2">approximate</span><span style="color: #f92672">)</span> <span style="color: #f92672">{</span>
+	<span style="color: #66d9ef">if</span> <span style="color: #f92672">(</span><span style="color: #f8f8f2">len</span> <span style="color: #f92672">&gt;</span> <span style="color: #ae81ff">0</span><span style="color: #f92672">)</span> <span style="color: #f92672">{</span>
+	    <span style="color: #66d9ef">int</span><span style="color: #f92672">[]</span> <span style="color: #f8f8f2">ints</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">ResourcePool</span><span style="color: #f92672">.</span><span style="color: #a6e22e">get</span><span style="color: #f92672">().</span><span style="color: #a6e22e">getIntsPool</span><span style="color: #f92672">().</span><span style="color: #a6e22e">getArray</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">len</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">approximate</span><span style="color: #f92672">);</span>
+	    <span style="color: #66d9ef">if</span> <span style="color: #f92672">(</span><span style="color: #f8f8f2">ints</span> <span style="color: #f92672">!=</span> <span style="color: #66d9ef">null</span><span style="color: #f92672">)</span> <span style="color: #f92672">{</span>
+		<span style="color: #66d9ef">return</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">IntArray</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">ints</span><span style="color: #f92672">,</span> <span style="color: #ae81ff">0</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">len</span><span style="color: #f92672">);</span>
+	    <span style="color: #f92672">}</span> <span style="color: #66d9ef">else</span> <span style="color: #f92672">{</span>
+		<span style="color: #66d9ef">return</span> <span style="color: #66d9ef">null</span><span style="color: #f92672">;</span>
+	    <span style="color: #f92672">}</span>
+	<span style="color: #f92672">}</span> <span style="color: #66d9ef">else</span> <span style="color: #f92672">{</span>
+	    <span style="color: #66d9ef">return</span> <span style="color: #66d9ef">null</span><span style="color: #f92672">;</span>
+	<span style="color: #f92672">}</span>
+    <span style="color: #f92672">}</span>
 
-    /**
-     * Release the array from the ResourcePool
-     */
-    @Override
-    public void release() {
-	ResourcePool.get().getIntsPool().releaseArray(array);
-	this.reset();
-    }
+    <span style="color: #75715e">/**</span>
+<span style="color: #75715e">     * Release the array from the ResourcePool</span>
+<span style="color: #75715e">     */</span>
+    <span style="color: #a6e22e">@Override</span>
+    <span style="color: #66d9ef">public</span> <span style="color: #66d9ef">void</span> <span style="color: #a6e22e">release</span><span style="color: #f92672">()</span> <span style="color: #f92672">{</span>
+	<span style="color: #f8f8f2">ResourcePool</span><span style="color: #f92672">.</span><span style="color: #a6e22e">get</span><span style="color: #f92672">().</span><span style="color: #a6e22e">getIntsPool</span><span style="color: #f92672">().</span><span style="color: #a6e22e">releaseArray</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">array</span><span style="color: #f92672">);</span>
+	<span style="color: #66d9ef">this</span><span style="color: #f92672">.</span><span style="color: #a6e22e">reset</span><span style="color: #f92672">();</span>
+    <span style="color: #f92672">}</span>
 
-    /**
-     * Free the array from the ResourcePool
-     */
-    @Override
-    public void free() {
-	ResourcePool.get().getIntsPool().freeArray(array);
-	this.reset();
+    <span style="color: #75715e">/**</span>
+<span style="color: #75715e">     * Free the array from the ResourcePool</span>
+<span style="color: #75715e">     */</span>
+    <span style="color: #a6e22e">@Override</span>
+    <span style="color: #66d9ef">public</span> <span style="color: #66d9ef">void</span> <span style="color: #a6e22e">free</span><span style="color: #f92672">()</span> <span style="color: #f92672">{</span>
+	<span style="color: #f8f8f2">ResourcePool</span><span style="color: #f92672">.</span><span style="color: #a6e22e">get</span><span style="color: #f92672">().</span><span style="color: #a6e22e">getIntsPool</span><span style="color: #f92672">().</span><span style="color: #a6e22e">freeArray</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">array</span><span style="color: #f92672">);</span>
+	<span style="color: #66d9ef">this</span><span style="color: #f92672">.</span><span style="color: #a6e22e">reset</span><span style="color: #f92672">();</span>
 
-    }
-}
-
+    <span style="color: #f92672">}</span>
+<span style="color: #f92672">}</span>
+</pre></div>
 </article></section></div></div></div><script src="https://code.jquery.com/jquery-2.2.1.min.js"></script><script src="https://dsc-spidal.github.io/harp/js/app.min.js"></script></body></html>

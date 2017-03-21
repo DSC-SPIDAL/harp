@@ -52,10 +52,12 @@ other workers, the code of a parallel machine learning algorithm can be modulari
 <h3 id="data-format">Data Format</h3>
 
 <p>The format for the data should be a list of <code>doc-name  wordid1 wordid2 ...&gt;</code>. For example,</p>
-doc1   63 264 374 4695 5441  1200 1200 25529  1707
-doc2   545 1939 206863 773279 773279
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>doc1   <span style="color: #ae81ff">63</span> <span style="color: #ae81ff">264</span> <span style="color: #ae81ff">374</span> <span style="color: #ae81ff">4695</span> <span style="color: #ae81ff">5441</span>  <span style="color: #ae81ff">1200</span> <span style="color: #ae81ff">1200</span> <span style="color: #ae81ff">25529</span>  <span style="color: #ae81ff">1707</span>
+doc2   <span style="color: #ae81ff">545</span> <span style="color: #ae81ff">1939</span> <span style="color: #ae81ff">206863</span> <span style="color: #ae81ff">773279</span> <span style="color: #ae81ff">773279</span>
 ...
+</pre></div>
 
 <h2 id="usage">Usage</h2>
-hadoop jar harp-app-1.0-SNAPSHOT.jar  edu.iu.lda.LDALauncher <doc dir> <num of topics> <alpha> <beta> <num of iterations> <num of map tasks> <num of threads per worker> <timer> <num of model slices> <enable timer tuning> <work dir> <print model>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>hadoop jar harp-app-1.0-SNAPSHOT.jar  edu.iu.lda.LDALauncher &lt;doc dir&gt; &lt;num of topics&gt; &lt;alpha&gt; &lt;beta&gt; &lt;num of iterations&gt; &lt;num of map tasks&gt; &lt;num of threads per worker&gt; &lt;timer&gt; &lt;num of model slices&gt; &lt;<span style="color: #f8f8f2">enable</span> timer tuning&gt; &lt;work dir&gt; &lt;print model&gt;
+</pre></div>
 </article></section></div></div></div><script src="https://code.jquery.com/jquery-2.2.1.min.js"></script><script src="https://dsc-spidal.github.io/harp/js/app.min.js"></script></body></html>

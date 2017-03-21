@@ -35,31 +35,32 @@ advantage for computation-intensive data analytics algorithms. This is also the 
 <p>If you already have a legacy Harp application codes, you need only identify the local computation module, and replace it by invoking correspondent
 DAAL kernels. Although DAAL&rsquo;s kernels are written in C/C++, it does provide users of a Java API. The API is highly packaged, and the users only need
 a few lines of codes to finish the invocation of kernels. For instance, the main function of a PCA application in DAAL is shown as below:</p>
-public static void main(String[] args) throws java.io.FileNotFoundException, java.io.IOException {
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #66d9ef">public</span> <span style="color: #66d9ef">static</span> <span style="color: #66d9ef">void</span> <span style="color: #a6e22e">main</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">String</span><span style="color: #f92672">[]</span> <span style="color: #f8f8f2">args</span><span style="color: #f92672">)</span> <span style="color: #66d9ef">throws</span> <span style="color: #f8f8f2">java</span><span style="color: #f92672">.</span><span style="color: #a6e22e">io</span><span style="color: #f92672">.</span><span style="color: #a6e22e">FileNotFoundException</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">java</span><span style="color: #f92672">.</span><span style="color: #a6e22e">io</span><span style="color: #f92672">.</span><span style="color: #a6e22e">IOException</span> <span style="color: #f92672">{</span>
 
-     /* Read a data set from a file and create a numeric table for storing the input data */
-     CSRNumericTable data = Service.createSparseTable(context, datasetFileName);
+     <span style="color: #75715e">/* Read a data set from a file and create a numeric table for storing the input data */</span>
+     <span style="color: #f8f8f2">CSRNumericTable</span> <span style="color: #f8f8f2">data</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">Service</span><span style="color: #f92672">.</span><span style="color: #a6e22e">createSparseTable</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">context</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">datasetFileName</span><span style="color: #f92672">);</span>
 
-     /* Create an algorithm to compute PCA decomposition using the correlation method */
-     Batch pcaAlgorithm = new Batch(context, Double.class, Method.correlationDense);
+     <span style="color: #75715e">/* Create an algorithm to compute PCA decomposition using the correlation method */</span>
+     <span style="color: #f8f8f2">Batch</span> <span style="color: #f8f8f2">pcaAlgorithm</span> <span style="color: #f92672">=</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">Batch</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">context</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">Double</span><span style="color: #f92672">.</span><span style="color: #a6e22e">class</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">Method</span><span style="color: #f92672">.</span><span style="color: #a6e22e">correlationDense</span><span style="color: #f92672">);</span>
 
-     com.intel.daal.algorithms.covariance.Batch covarianceSparse
-         = new com.intel.daal.algorithms.covariance.Batch(context, Double.class, com.intel.daal.algorithms.covariance.Method.fastCSR);
-     pcaAlgorithm.parameter.setCovariance(covarianceSparse);
+     <span style="color: #f8f8f2">com</span><span style="color: #f92672">.</span><span style="color: #a6e22e">intel</span><span style="color: #f92672">.</span><span style="color: #a6e22e">daal</span><span style="color: #f92672">.</span><span style="color: #a6e22e">algorithms</span><span style="color: #f92672">.</span><span style="color: #a6e22e">covariance</span><span style="color: #f92672">.</span><span style="color: #a6e22e">Batch</span> <span style="color: #f8f8f2">covarianceSparse</span>
+         <span style="color: #f92672">=</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">com</span><span style="color: #f92672">.</span><span style="color: #a6e22e">intel</span><span style="color: #f92672">.</span><span style="color: #a6e22e">daal</span><span style="color: #f92672">.</span><span style="color: #a6e22e">algorithms</span><span style="color: #f92672">.</span><span style="color: #a6e22e">covariance</span><span style="color: #f92672">.</span><span style="color: #a6e22e">Batch</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">context</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">Double</span><span style="color: #f92672">.</span><span style="color: #a6e22e">class</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">com</span><span style="color: #f92672">.</span><span style="color: #a6e22e">intel</span><span style="color: #f92672">.</span><span style="color: #a6e22e">daal</span><span style="color: #f92672">.</span><span style="color: #a6e22e">algorithms</span><span style="color: #f92672">.</span><span style="color: #a6e22e">covariance</span><span style="color: #f92672">.</span><span style="color: #a6e22e">Method</span><span style="color: #f92672">.</span><span style="color: #a6e22e">fastCSR</span><span style="color: #f92672">);</span>
+     <span style="color: #f8f8f2">pcaAlgorithm</span><span style="color: #f92672">.</span><span style="color: #a6e22e">parameter</span><span style="color: #f92672">.</span><span style="color: #a6e22e">setCovariance</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">covarianceSparse</span><span style="color: #f92672">);</span>
 
-     /* Set the input data */
-     pcaAlgorithm.input.set(InputId.data, data);
+     <span style="color: #75715e">/* Set the input data */</span>
+     <span style="color: #f8f8f2">pcaAlgorithm</span><span style="color: #f92672">.</span><span style="color: #a6e22e">input</span><span style="color: #f92672">.</span><span style="color: #a6e22e">set</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">InputId</span><span style="color: #f92672">.</span><span style="color: #a6e22e">data</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">data</span><span style="color: #f92672">);</span>
 
-     /* Compute PCA decomposition */
-     Result res = pcaAlgorithm.compute();
+     <span style="color: #75715e">/* Compute PCA decomposition */</span>
+     <span style="color: #f8f8f2">Result</span> <span style="color: #f8f8f2">res</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">pcaAlgorithm</span><span style="color: #f92672">.</span><span style="color: #a6e22e">compute</span><span style="color: #f92672">();</span>
 
-     NumericTable eigenValues = res.get(ResultId.eigenValues);
-     NumericTable eigenVectors = res.get(ResultId.eigenVectors);
-     Service.printNumericTable("Eigenvalues:", eigenValues);
-     Service.printNumericTable("Eigenvectors:", eigenVectors);
+     <span style="color: #f8f8f2">NumericTable</span> <span style="color: #f8f8f2">eigenValues</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">res</span><span style="color: #f92672">.</span><span style="color: #a6e22e">get</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">ResultId</span><span style="color: #f92672">.</span><span style="color: #a6e22e">eigenValues</span><span style="color: #f92672">);</span>
+     <span style="color: #f8f8f2">NumericTable</span> <span style="color: #f8f8f2">eigenVectors</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">res</span><span style="color: #f92672">.</span><span style="color: #a6e22e">get</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">ResultId</span><span style="color: #f92672">.</span><span style="color: #a6e22e">eigenVectors</span><span style="color: #f92672">);</span>
+     <span style="color: #f8f8f2">Service</span><span style="color: #f92672">.</span><span style="color: #a6e22e">printNumericTable</span><span style="color: #f92672">(</span><span style="color: #e6db74">&quot;Eigenvalues:&quot;</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">eigenValues</span><span style="color: #f92672">);</span>
+     <span style="color: #f8f8f2">Service</span><span style="color: #f92672">.</span><span style="color: #a6e22e">printNumericTable</span><span style="color: #f92672">(</span><span style="color: #e6db74">&quot;Eigenvectors:&quot;</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">eigenVectors</span><span style="color: #f92672">);</span>
 
-     context.dispose();
-}
+     <span style="color: #f8f8f2">context</span><span style="color: #f92672">.</span><span style="color: #a6e22e">dispose</span><span style="color: #f92672">();</span>
+<span style="color: #f92672">}</span>
+</pre></div>
 
 <p>DAAL&rsquo;s Java API is usually contains the following objects:</p>
 
@@ -96,15 +97,14 @@ between Harp&rsquo;s data structure and that of DAAL.</p>
 
 <p>Within the <em>RotatorDaal</em>, the data transfers between Harp and DAAL is also overlapped by the computation work in another pipeline. Thus, if there is enough computation workload, the
 overhead of data conversion could be significantly reduced. It is also very straightforward to invoke these conversion tools.</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #75715e">//create a conversion class between harp map and daal&#39;s table</span>
+<span style="color: #f8f8f2">HomogenTableHarpMap</span><span style="color: #f92672">&lt;</span><span style="color: #66d9ef">double</span><span style="color: #f92672">[]&gt;</span> <span style="color: #f8f8f2">converter</span> <span style="color: #f92672">=</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">HomogenTableHarpMap</span><span style="color: #f92672">&lt;</span><span style="color: #66d9ef">double</span><span style="color: #f92672">[]&gt;(</span><span style="color: #f8f8f2">wMap</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">wMap_index</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">wMap_daal</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">wMap_size</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">r</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">numThreads</span><span style="color: #f92672">);</span>
+<span style="color: #f8f8f2">convert_wTable</span><span style="color: #f92672">.</span><span style="color: #a6e22e">HarpToDaalDouble</span><span style="color: #f92672">();</span>
 
-//create a conversion class between harp map and daal's table
-HomogenTableHarpMap<double[]> converter = new HomogenTableHarpMap<double[]>(wMap, wMap_index, wMap_daal, wMap_size, r, numThreads);
-convert_wTable.HarpToDaalDouble();
-
-//create a conversion class between a harp table and a daal table
-converter = new HomogenTableHarpTable<I, P, Table<P> >(table, this.daal_table, table.getNumPartitions(), this.rdim, this.numThreads);
-converter.HarpToDaalDouble();
-
+<span style="color: #75715e">//create a conversion class between a harp table and a daal table</span>
+<span style="color: #f8f8f2">converter</span> <span style="color: #f92672">=</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">HomogenTableHarpTable</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">I</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">P</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">Table</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">P</span><span style="color: #f92672">&gt;</span> <span style="color: #f92672">&gt;(</span><span style="color: #f8f8f2">table</span><span style="color: #f92672">,</span> <span style="color: #66d9ef">this</span><span style="color: #f92672">.</span><span style="color: #a6e22e">daal_table</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">table</span><span style="color: #f92672">.</span><span style="color: #a6e22e">getNumPartitions</span><span style="color: #f92672">(),</span> <span style="color: #66d9ef">this</span><span style="color: #f92672">.</span><span style="color: #a6e22e">rdim</span><span style="color: #f92672">,</span> <span style="color: #66d9ef">this</span><span style="color: #f92672">.</span><span style="color: #a6e22e">numThreads</span><span style="color: #f92672">);</span>
+<span style="color: #f8f8f2">converter</span><span style="color: #f92672">.</span><span style="color: #a6e22e">HarpToDaalDouble</span><span style="color: #f92672">();</span>
+</pre></div>
 
 <h2 id="how-to-compile-and-run-harp-daal-application">How to Compile and Run Harp-DAAL Application ?</h2>
 
@@ -112,59 +112,52 @@ converter.HarpToDaalDouble();
 
 <p>You can either download Intel&rsquo;s DAAL product with licence from their website <a href="https://software.intel.com/en-us/blogs/daal">https://software.intel.com/en-us/blogs/daal</a>, or build it from source code. DAAL&rsquo;s source code
 is open-sourced and available on the GitHub.</p>
-
-git clone https://github.com/01org/daal.git
-
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>git clone https://github.com/01org/daal.git
+</pre></div>
 
 <p>After installation, you can run the bin/daalvars.sh script to set up all the DAAL related environment variables.</p>
-
-source /path-to-daal/bin/daalvars.sh intel64
-
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">source</span> /path-to-daal/bin/daalvars.sh intel64
+</pre></div>
 
 <p>The important environment variable is the <em>DAALROOT</em>, which points to the path of DAAL&rsquo;s source code. You can run the examples of each algorithm within DAAL to test
 the installation of your DAAL library.</p>
-
-cd $DAALROOT/../__release_lnx/daal/examples/cpp
-make {libia32|soia32|libintel64|sointel64|help} [example=name] [compiler=compiler_name] [mode=mode_name] [threading=threading_name]
-
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">cd</span> <span style="color: #f8f8f2">$DAALROOT</span>/../__release_lnx/daal/examples/cpp
+make <span style="color: #f92672">{</span>libia32<span style="color: #f8f8f2">|</span>soia32<span style="color: #f8f8f2">|</span>libintel64<span style="color: #f8f8f2">|</span>sointel64<span style="color: #f8f8f2">|</span>help<span style="color: #f92672">}</span> <span style="color: #f92672">[</span><span style="color: #f8f8f2">example</span><span style="color: #f92672">=</span>name<span style="color: #f92672">]</span> <span style="color: #f92672">[</span><span style="color: #f8f8f2">compiler</span><span style="color: #f92672">=</span>compiler_name<span style="color: #f92672">]</span> <span style="color: #f92672">[</span><span style="color: #f8f8f2">mode</span><span style="color: #f92672">=</span>mode_name<span style="color: #f92672">]</span> <span style="color: #f92672">[</span><span style="color: #f8f8f2">threading</span><span style="color: #f92672">=</span>threading_name<span style="color: #f92672">]</span>
+</pre></div>
 
 <h3 id="setup-daal-within-harp">Setup DAAL within Harp</h3>
 
 <p>To use DAAL within Harp, you need first add DAAL Java API to your Java source code</p>
-
-// packages from Daal
-import com.intel.daal.services.DaalContext;
-import com.intel.daal.algorithms.*;
-import com.intel.daal.data_management.data.NumericTable;
-
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #75715e">// packages from Daal</span>
+<span style="color: #f92672">import</span> <span style="color: #f8f8f2">com.intel.daal.services.DaalContext</span><span style="color: #f92672">;</span>
+<span style="color: #f92672">import</span> <span style="color: #f8f8f2">com.intel.daal.algorithms.*</span><span style="color: #f92672">;</span>
+<span style="color: #f92672">import</span> <span style="color: #f8f8f2">com.intel.daal.data_management.data.NumericTable</span><span style="color: #f92672">;</span>
+</pre></div>
 
 <p>To compile your Harp-DAAL codes by ant, add the following lines to your <em>build.xml</em></p>
-
-<fileset dir="${env.DAALROOT}">
-<include name="**/*.jar" />
-<include name="**/lib/*.jar" />
-</fileset>
-
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f92672">&lt;fileset</span> <span style="color: #a6e22e">dir=</span><span style="color: #e6db74">&quot;${env.DAALROOT}&quot;</span><span style="color: #f92672">&gt;</span>
+<span style="color: #f92672">&lt;include</span> <span style="color: #a6e22e">name=</span><span style="color: #e6db74">&quot;**/*.jar&quot;</span> <span style="color: #f92672">/&gt;</span>
+<span style="color: #f92672">&lt;include</span> <span style="color: #a6e22e">name=</span><span style="color: #e6db74">&quot;**/lib/*.jar&quot;</span> <span style="color: #f92672">/&gt;</span>
+<span style="color: #f92672">&lt;/fileset&gt;</span>
+</pre></div>
 
 <p>Since DAAL&rsquo;s Java API will invoke the native DAAL kernels, we need to load the native lib files into Harp&rsquo;s environment in two steps</p>
 
 <p>1.Load these required native libraries in HDFS</p>
-
-hdfs dfs -put ${DAALROOT}/lib/intel64_lin/libJavaAPI.so /Hadoop/Libraries/
-hdfs dfs -put ${DAALROOT}/../tbb/lib/intel64_lin/gcc4.4/libtbb* /Hadoop/Libraries/
-hdfs dfs -put ${DAALROOT}/../../daal-misc/lib/libiomp5.so /Hadoop/Libraries/
-
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>hdfs dfs -put <span style="color: #e6db74">${</span><span style="color: #f8f8f2">DAALROOT</span><span style="color: #e6db74">}</span>/lib/intel64_lin/libJavaAPI.so /Hadoop/Libraries/
+hdfs dfs -put <span style="color: #e6db74">${</span><span style="color: #f8f8f2">DAALROOT</span><span style="color: #e6db74">}</span>/../tbb/lib/intel64_lin/gcc4.4/libtbb* /Hadoop/Libraries/
+hdfs dfs -put <span style="color: #e6db74">${</span><span style="color: #f8f8f2">DAALROOT</span><span style="color: #e6db74">}</span>/../../daal-misc/lib/libiomp5.so /Hadoop/Libraries/
+</pre></div>
 
 <p>2.Load native libraries from HDFS to distributed cache of Harp&rsquo;s program.</p>
-
-/* Put shared libraries into the distributed cache */
-Configuration conf = this.getConf();
-DistributedCache.createSymlink(conf);
-DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libJavaAPI.so#libJavaAPI.so"), conf);
-DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbb.so.2#libtbb.so.2"), conf);
-DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbb.so#libtbb.so"), conf);
-DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbbmalloc.so.2#libtbbmalloc.so.2"), conf);
-DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbbmalloc.so#libtbbmalloc.so"), conf);
-DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libiomp5.so#libiomp5.so"), conf);
-
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #75715e">/* Put shared libraries into the distributed cache */</span>
+<span style="color: #f8f8f2">Configuration</span> <span style="color: #f8f8f2">conf</span> <span style="color: #f92672">=</span> <span style="color: #66d9ef">this</span><span style="color: #f92672">.</span><span style="color: #a6e22e">getConf</span><span style="color: #f92672">();</span>
+<span style="color: #f8f8f2">DistributedCache</span><span style="color: #f92672">.</span><span style="color: #a6e22e">createSymlink</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">conf</span><span style="color: #f92672">);</span>
+<span style="color: #f8f8f2">DistributedCache</span><span style="color: #f92672">.</span><span style="color: #a6e22e">addCacheFile</span><span style="color: #f92672">(</span><span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">URI</span><span style="color: #f92672">(</span><span style="color: #e6db74">&quot;/Hadoop/Libraries/libJavaAPI.so#libJavaAPI.so&quot;</span><span style="color: #f92672">),</span> <span style="color: #f8f8f2">conf</span><span style="color: #f92672">);</span>
+<span style="color: #f8f8f2">DistributedCache</span><span style="color: #f92672">.</span><span style="color: #a6e22e">addCacheFile</span><span style="color: #f92672">(</span><span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">URI</span><span style="color: #f92672">(</span><span style="color: #e6db74">&quot;/Hadoop/Libraries/libtbb.so.2#libtbb.so.2&quot;</span><span style="color: #f92672">),</span> <span style="color: #f8f8f2">conf</span><span style="color: #f92672">);</span>
+<span style="color: #f8f8f2">DistributedCache</span><span style="color: #f92672">.</span><span style="color: #a6e22e">addCacheFile</span><span style="color: #f92672">(</span><span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">URI</span><span style="color: #f92672">(</span><span style="color: #e6db74">&quot;/Hadoop/Libraries/libtbb.so#libtbb.so&quot;</span><span style="color: #f92672">),</span> <span style="color: #f8f8f2">conf</span><span style="color: #f92672">);</span>
+<span style="color: #f8f8f2">DistributedCache</span><span style="color: #f92672">.</span><span style="color: #a6e22e">addCacheFile</span><span style="color: #f92672">(</span><span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">URI</span><span style="color: #f92672">(</span><span style="color: #e6db74">&quot;/Hadoop/Libraries/libtbbmalloc.so.2#libtbbmalloc.so.2&quot;</span><span style="color: #f92672">),</span> <span style="color: #f8f8f2">conf</span><span style="color: #f92672">);</span>
+<span style="color: #f8f8f2">DistributedCache</span><span style="color: #f92672">.</span><span style="color: #a6e22e">addCacheFile</span><span style="color: #f92672">(</span><span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">URI</span><span style="color: #f92672">(</span><span style="color: #e6db74">&quot;/Hadoop/Libraries/libtbbmalloc.so#libtbbmalloc.so&quot;</span><span style="color: #f92672">),</span> <span style="color: #f8f8f2">conf</span><span style="color: #f92672">);</span>
+<span style="color: #f8f8f2">DistributedCache</span><span style="color: #f92672">.</span><span style="color: #a6e22e">addCacheFile</span><span style="color: #f92672">(</span><span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">URI</span><span style="color: #f92672">(</span><span style="color: #e6db74">&quot;/Hadoop/Libraries/libiomp5.so#libiomp5.so&quot;</span><span style="color: #f92672">),</span> <span style="color: #f8f8f2">conf</span><span style="color: #f92672">);</span>
+</pre></div>
 </article></section></div></div></div><script src="https://code.jquery.com/jquery-2.2.1.min.js"></script><script src="https://dsc-spidal.github.io/harp/js/app.min.js"></script></body></html>

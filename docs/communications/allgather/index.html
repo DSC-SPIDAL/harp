@@ -3,7 +3,8 @@
 <p><img src="https://dsc-spidal.github.io/harp/img/3-3-1.png" alt="allgather" /></p>
 
 <p><code>allgather</code> aims to first collect tables from other workers and then broadcast the collection. All workers should run it concurrently. The defination of the method is:</p>
-boolean allgather(final String contextName, final String operationName, final Table<P> table, final DataMap dataMap, final Workers workers)
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #66d9ef">boolean</span> <span style="color: #a6e22e">allgather</span><span style="color: #f92672">(</span><span style="color: #66d9ef">final</span> <span style="color: #f8f8f2">String</span> <span style="color: #f8f8f2">contextName</span><span style="color: #f92672">,</span> <span style="color: #66d9ef">final</span> <span style="color: #f8f8f2">String</span> <span style="color: #f8f8f2">operationName</span><span style="color: #f92672">,</span> <span style="color: #66d9ef">final</span> <span style="color: #f8f8f2">Table</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">P</span><span style="color: #f92672">&gt;</span> <span style="color: #f8f8f2">table</span><span style="color: #f92672">,</span> <span style="color: #66d9ef">final</span> <span style="color: #f8f8f2">DataMap</span> <span style="color: #f8f8f2">dataMap</span><span style="color: #f92672">,</span> <span style="color: #66d9ef">final</span> <span style="color: #f8f8f2">Workers</span> <span style="color: #f8f8f2">workers</span><span style="color: #f92672">)</span>
+</pre></div>
 
 <ul>
 <li><code>contextName</code> &mdash; the name of the context</li>
@@ -14,5 +15,6 @@ boolean allgather(final String contextName, final String operationName, final Ta
 </ul>
 
 <h2 id="example">Example</h2>
-allgather(contextName, "allgather", table, dataMap, workers);
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">allgather</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">contextName</span><span style="color: #f92672">,</span> <span style="color: #e6db74">&quot;allgather&quot;</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">table</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">dataMap</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">workers</span><span style="color: #f92672">);</span>
+</pre></div>
 </article></section></div></div></div><script src="https://code.jquery.com/jquery-2.2.1.min.js"></script><script src="https://dsc-spidal.github.io/harp/js/app.min.js"></script></body></html>
