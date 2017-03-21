@@ -59,32 +59,30 @@ In order to group data points as close together or as far-apart, we need to defi
 <h2 id="step-1-the-main-method">Step 1 &mdash; The Main Method</h2>
 
 <p>The tasks of the main class is to configure and run the job iteratively.</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">generate</span> <span style="color: #f8f8f2">N</span> <span style="color: #f8f8f2">data</span> <span style="color: #a6e22e">points</span> <span style="color: #f92672">(</span><span style="color: #f8f8f2">D</span> <span style="color: #f8f8f2">dimensions</span><span style="color: #f92672">),</span> <span style="color: #f8f8f2">write</span> <span style="color: #f8f8f2">to</span> <span style="color: #f8f8f2">HDFS</span>
-<span style="color: #f8f8f2">generate</span> <span style="color: #f8f8f2">M</span> <span style="color: #f8f8f2">centroids</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">write</span> <span style="color: #f8f8f2">to</span> <span style="color: #f8f8f2">HDFS</span>
-<span style="color: #66d9ef">for</span> <span style="color: #f8f8f2">iterations</span><span style="color: #f92672">{</span>
-    <span style="color: #f8f8f2">configure</span> <span style="color: #f8f8f2">a</span> <span style="color: #f8f8f2">job</span>
-    <span style="color: #f8f8f2">launch</span> <span style="color: #f8f8f2">the</span> <span style="color: #f8f8f2">job</span>
-<span style="color: #f92672">}</span>
-</pre></div>
+generate N data points (D dimensions), write to HDFS
+generate M centroids, write to HDFS
+for iterations{
+    configure a job
+    launch the job
+}
 
 <h2 id="step-2-the-mapcollective-function">Step 2 &mdash; The mapCollective function</h2>
 
 <p>This is the definition of map-collective task. It reads data from context and then call runKmeans function to actually run kmeans Mapper task.</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #66d9ef">protected</span> <span style="color: #66d9ef">void</span> <span style="color: #a6e22e">mapCollective</span><span style="color: #f92672">(</span> <span style="color: #f8f8f2">KeyValReader</span> <span style="color: #f8f8f2">reader</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">Context</span> <span style="color: #f8f8f2">context</span><span style="color: #f92672">)</span> <span style="color: #66d9ef">throws</span> <span style="color: #f8f8f2">IOException</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">InterruptedException</span> <span style="color: #f92672">{</span>
-    <span style="color: #f8f8f2">LOG</span><span style="color: #f92672">.</span><span style="color: #a6e22e">info</span><span style="color: #f92672">(</span><span style="color: #e6db74">&quot;Start collective mapper.&quot;</span><span style="color: #f92672">);</span>
-    <span style="color: #66d9ef">long</span> <span style="color: #f8f8f2">startTime</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">System</span><span style="color: #f92672">.</span><span style="color: #a6e22e">currentTimeMillis</span><span style="color: #f92672">();</span>
-    <span style="color: #f8f8f2">List</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">String</span><span style="color: #f92672">&gt;</span> <span style="color: #f8f8f2">pointFiles</span> <span style="color: #f92672">=</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">ArrayList</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">String</span><span style="color: #f92672">&gt;();</span>
-    <span style="color: #66d9ef">while</span> <span style="color: #f92672">(</span><span style="color: #f8f8f2">reader</span><span style="color: #f92672">.</span><span style="color: #a6e22e">nextKeyValue</span><span style="color: #f92672">())</span> <span style="color: #f92672">{</span>
-	   	<span style="color: #f8f8f2">String</span> <span style="color: #f8f8f2">key</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">reader</span><span style="color: #f92672">.</span><span style="color: #a6e22e">getCurrentKey</span><span style="color: #f92672">();</span>
-	   	<span style="color: #f8f8f2">String</span> <span style="color: #f8f8f2">value</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">reader</span><span style="color: #f92672">.</span><span style="color: #a6e22e">getCurrentValue</span><span style="color: #f92672">();</span>
-    	<span style="color: #f8f8f2">LOG</span><span style="color: #f92672">.</span><span style="color: #a6e22e">info</span><span style="color: #f92672">(</span><span style="color: #e6db74">&quot;Key: &quot;</span> <span style="color: #f92672">+</span> <span style="color: #f8f8f2">key</span> <span style="color: #f92672">+</span> <span style="color: #e6db74">&quot;, Value: &quot;</span> <span style="color: #f92672">+</span> <span style="color: #f8f8f2">value</span><span style="color: #f92672">);</span>
-	    <span style="color: #f8f8f2">pointFiles</span><span style="color: #f92672">.</span><span style="color: #a6e22e">add</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">value</span><span style="color: #f92672">);</span>
-	<span style="color: #f92672">}</span>
-	<span style="color: #f8f8f2">Configuration</span> <span style="color: #f8f8f2">conf</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">context</span><span style="color: #f92672">.</span><span style="color: #a6e22e">getConfiguration</span><span style="color: #f92672">();</span>
-	<span style="color: #f8f8f2">runKmeans</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">pointFiles</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">conf</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">context</span><span style="color: #f92672">);</span>
-    <span style="color: #f8f8f2">LOG</span><span style="color: #f92672">.</span><span style="color: #a6e22e">info</span><span style="color: #f92672">(</span><span style="color: #e6db74">&quot;Total iterations in master view: &quot;</span> <span style="color: #f92672">+</span> <span style="color: #f92672">(</span><span style="color: #f8f8f2">System</span><span style="color: #f92672">.</span><span style="color: #a6e22e">currentTimeMillis</span><span style="color: #f92672">()</span> <span style="color: #f92672">-</span> <span style="color: #f8f8f2">startTime</span><span style="color: #f92672">));</span>
-<span style="color: #f92672">}</span>
-</pre></div>
+protected void mapCollective( KeyValReader reader, Context context) throws IOException, InterruptedException {
+    LOG.info("Start collective mapper.");
+    long startTime = System.currentTimeMillis();
+    List<String> pointFiles = new ArrayList<String>();
+    while (reader.nextKeyValue()) {
+	   	String key = reader.getCurrentKey();
+	   	String value = reader.getCurrentValue();
+    	LOG.info("Key: " + key + ", Value: " + value);
+	    pointFiles.add(value);
+	}
+	Configuration conf = context.getConfiguration();
+	runKmeans(pointFiles, conf, context);
+    LOG.info("Total iterations in master view: " + (System.currentTimeMillis() - startTime));
+}
 
 <h2 id="step-3-the-runkmeans-function">Step 3 &mdash; The runKmeans function</h2>
 
@@ -282,92 +280,86 @@ In order to group data points as close together or as far-apart, we need to defi
   </div></p>
 
 <h2 id="step-4-compute-local-centroids">Step 4 &mdash; Compute local centroids</h2>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #66d9ef">private</span> <span style="color: #66d9ef">void</span> <span style="color: #a6e22e">computation</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">Table</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">DoubleArray</span><span style="color: #f92672">&gt;</span> <span style="color: #f8f8f2">cenTable</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">Table</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">DoubleArray</span><span style="color: #f92672">&gt;</span> <span style="color: #f8f8f2">previousCenTable</span><span style="color: #f92672">,</span><span style="color: #f8f8f2">ArrayList</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">DoubleArray</span><span style="color: #f92672">&gt;</span> <span style="color: #f8f8f2">dataPoints</span><span style="color: #f92672">){</span>
-    <span style="color: #66d9ef">double</span> <span style="color: #f8f8f2">err</span><span style="color: #f92672">=</span><span style="color: #ae81ff">0</span><span style="color: #f92672">;</span>
-    <span style="color: #66d9ef">for</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">DoubleArray</span> <span style="color: #f8f8f2">aPoint</span><span style="color: #f92672">:</span> <span style="color: #f8f8f2">dataPoints</span><span style="color: #f92672">){</span>
-    <span style="color: #75715e">//for each data point, find the nearest centroid</span>
-        <span style="color: #66d9ef">double</span> <span style="color: #f8f8f2">minDist</span> <span style="color: #f92672">=</span> <span style="color: #f92672">-</span><span style="color: #ae81ff">1</span><span style="color: #f92672">;</span>
-        <span style="color: #66d9ef">double</span> <span style="color: #f8f8f2">tempDist</span> <span style="color: #f92672">=</span> <span style="color: #ae81ff">0</span><span style="color: #f92672">;</span>
-        <span style="color: #66d9ef">int</span> <span style="color: #f8f8f2">nearestPartitionID</span> <span style="color: #f92672">=</span> <span style="color: #f92672">-</span><span style="color: #ae81ff">1</span><span style="color: #f92672">;</span>
-        <span style="color: #66d9ef">for</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">Partition</span> <span style="color: #f8f8f2">ap</span><span style="color: #f92672">:</span> <span style="color: #f8f8f2">previousCenTable</span><span style="color: #f92672">.</span><span style="color: #a6e22e">getPartitions</span><span style="color: #f92672">()){</span>
-            <span style="color: #f8f8f2">DoubleArray</span> <span style="color: #f8f8f2">aCentroid</span> <span style="color: #f92672">=</span> <span style="color: #f92672">(</span><span style="color: #f8f8f2">DoubleArray</span><span style="color: #f92672">)</span> <span style="color: #f8f8f2">ap</span><span style="color: #f92672">.</span><span style="color: #a6e22e">get</span><span style="color: #f92672">();</span>
-            <span style="color: #f8f8f2">tempDist</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">calcEucDistSquare</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">aPoint</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">aCentroid</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">vectorSize</span><span style="color: #f92672">);</span>
-            <span style="color: #66d9ef">if</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">minDist</span> <span style="color: #f92672">==</span> <span style="color: #f92672">-</span><span style="color: #ae81ff">1</span> <span style="color: #f92672">||</span> <span style="color: #f8f8f2">tempDist</span> <span style="color: #f92672">&lt;</span> <span style="color: #f8f8f2">minDist</span><span style="color: #f92672">){</span>
-                <span style="color: #f8f8f2">minDist</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">tempDist</span><span style="color: #f92672">;</span>
-                <span style="color: #f8f8f2">nearestPartitionID</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">ap</span><span style="color: #f92672">.</span><span style="color: #a6e22e">id</span><span style="color: #f92672">();</span>
-            <span style="color: #f92672">}</span>
-        <span style="color: #f92672">}</span>
-        <span style="color: #f8f8f2">err</span><span style="color: #f92672">+=</span><span style="color: #f8f8f2">minDist</span><span style="color: #f92672">;</span>
+private void computation(Table<DoubleArray> cenTable, Table<DoubleArray> previousCenTable,ArrayList<DoubleArray> dataPoints){
+    double err=0;
+    for(DoubleArray aPoint: dataPoints){
+    //for each data point, find the nearest centroid
+        double minDist = -1;
+        double tempDist = 0;
+        int nearestPartitionID = -1;
+        for(Partition ap: previousCenTable.getPartitions()){
+            DoubleArray aCentroid = (DoubleArray) ap.get();
+            tempDist = calcEucDistSquare(aPoint, aCentroid, vectorSize);
+            if(minDist == -1 || tempDist < minDist){
+                minDist = tempDist;
+                nearestPartitionID = ap.id();
+            }
+        }
+        err+=minDist;
 
-        <span style="color: #75715e">//for the certain data point, found the nearest centroid.</span>
-        <span style="color: #75715e">// add the data to a new cenTable.</span>
-        <span style="color: #66d9ef">double</span><span style="color: #f92672">[]</span> <span style="color: #f8f8f2">partial</span> <span style="color: #f92672">=</span> <span style="color: #66d9ef">new</span> <span style="color: #66d9ef">double</span><span style="color: #f92672">[</span><span style="color: #f8f8f2">vectorSize</span><span style="color: #f92672">+</span><span style="color: #ae81ff">1</span><span style="color: #f92672">];</span>
-        <span style="color: #66d9ef">for</span><span style="color: #f92672">(</span><span style="color: #66d9ef">int</span> <span style="color: #f8f8f2">j</span><span style="color: #f92672">=</span><span style="color: #ae81ff">0</span><span style="color: #f92672">;</span> <span style="color: #f8f8f2">j</span> <span style="color: #f92672">&lt;</span> <span style="color: #f8f8f2">vectorSize</span><span style="color: #f92672">;</span> <span style="color: #f8f8f2">j</span><span style="color: #f92672">++){</span>
-            <span style="color: #f8f8f2">partial</span><span style="color: #f92672">[</span><span style="color: #f8f8f2">j</span><span style="color: #f92672">]</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">aPoint</span><span style="color: #f92672">.</span><span style="color: #a6e22e">get</span><span style="color: #f92672">()[</span><span style="color: #f8f8f2">j</span><span style="color: #f92672">];</span>
-        <span style="color: #f92672">}</span>
-        <span style="color: #f8f8f2">partial</span><span style="color: #f92672">[</span><span style="color: #f8f8f2">vectorSize</span><span style="color: #f92672">]=</span><span style="color: #ae81ff">1</span><span style="color: #f92672">;</span>
+        //for the certain data point, found the nearest centroid.
+        // add the data to a new cenTable.
+        double[] partial = new double[vectorSize+1];
+        for(int j=0; j < vectorSize; j++){
+            partial[j] = aPoint.get()[j];
+        }
+        partial[vectorSize]=1;
 
-        <span style="color: #66d9ef">if</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">cenTable</span><span style="color: #f92672">.</span><span style="color: #a6e22e">getPartition</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">nearestPartitionID</span><span style="color: #f92672">)</span> <span style="color: #f92672">==</span> <span style="color: #66d9ef">null</span><span style="color: #f92672">){</span>
-            <span style="color: #f8f8f2">Partition</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">DoubleArray</span><span style="color: #f92672">&gt;</span> <span style="color: #f8f8f2">tmpAp</span> <span style="color: #f92672">=</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">Partition</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">DoubleArray</span><span style="color: #f92672">&gt;(</span><span style="color: #f8f8f2">nearestPartitionID</span><span style="color: #f92672">,</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">DoubleArray</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">partial</span><span style="color: #f92672">,</span> <span style="color: #ae81ff">0</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">vectorSize</span><span style="color: #f92672">+</span><span style="color: #ae81ff">1</span><span style="color: #f92672">));</span>
-            <span style="color: #f8f8f2">cenTable</span><span style="color: #f92672">.</span><span style="color: #a6e22e">addPartition</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">tmpAp</span><span style="color: #f92672">);</span>
-        <span style="color: #f92672">}</span><span style="color: #66d9ef">else</span><span style="color: #f92672">{</span>
-             <span style="color: #f8f8f2">Partition</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">DoubleArray</span><span style="color: #f92672">&gt;</span> <span style="color: #f8f8f2">apInCenTable</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">cenTable</span><span style="color: #f92672">.</span><span style="color: #a6e22e">getPartition</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">nearestPartitionID</span><span style="color: #f92672">);</span>
-             <span style="color: #66d9ef">for</span><span style="color: #f92672">(</span><span style="color: #66d9ef">int</span> <span style="color: #f8f8f2">i</span><span style="color: #f92672">=</span><span style="color: #ae81ff">0</span><span style="color: #f92672">;</span> <span style="color: #f8f8f2">i</span> <span style="color: #f92672">&lt;</span> <span style="color: #f8f8f2">vectorSize</span> <span style="color: #f92672">+</span><span style="color: #ae81ff">1</span><span style="color: #f92672">;</span> <span style="color: #f8f8f2">i</span><span style="color: #f92672">++){</span>
-             <span style="color: #f8f8f2">apInCenTable</span><span style="color: #f92672">.</span><span style="color: #a6e22e">get</span><span style="color: #f92672">().</span><span style="color: #a6e22e">get</span><span style="color: #f92672">()[</span><span style="color: #f8f8f2">i</span><span style="color: #f92672">]</span> <span style="color: #f92672">+=</span> <span style="color: #f8f8f2">partial</span><span style="color: #f92672">[</span><span style="color: #f8f8f2">i</span><span style="color: #f92672">];</span>
-             <span style="color: #f92672">}</span>
-        <span style="color: #f92672">}</span>
-    <span style="color: #f92672">}</span>
-    <span style="color: #f8f8f2">System</span><span style="color: #f92672">.</span><span style="color: #a6e22e">out</span><span style="color: #f92672">.</span><span style="color: #a6e22e">println</span><span style="color: #f92672">(</span><span style="color: #e6db74">&quot;Errors: &quot;</span><span style="color: #f92672">+</span><span style="color: #f8f8f2">err</span><span style="color: #f92672">);</span>
-<span style="color: #f92672">}</span>
-</pre></div>
+        if(cenTable.getPartition(nearestPartitionID) == null){
+            Partition<DoubleArray> tmpAp = new Partition<DoubleArray>(nearestPartitionID, new DoubleArray(partial, 0, vectorSize+1));
+            cenTable.addPartition(tmpAp);
+        }else{
+             Partition<DoubleArray> apInCenTable = cenTable.getPartition(nearestPartitionID);
+             for(int i=0; i < vectorSize +1; i++){
+             apInCenTable.get().get()[i] += partial[i];
+             }
+        }
+    }
+    System.out.println("Errors: "+err);
+}
 
 <h2 id="step-5-calculate-new-centroids">Step 5 &mdash; Calculate new centroids</h2>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #66d9ef">private</span> <span style="color: #66d9ef">void</span> <span style="color: #a6e22e">calculateCentroids</span><span style="color: #f92672">(</span> <span style="color: #f8f8f2">Table</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">DoubleArray</span><span style="color: #f92672">&gt;</span> <span style="color: #f8f8f2">cenTable</span><span style="color: #f92672">){</span>
-    <span style="color: #66d9ef">for</span><span style="color: #f92672">(</span> <span style="color: #f8f8f2">Partition</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">DoubleArray</span><span style="color: #f92672">&gt;</span> <span style="color: #f8f8f2">partialCenTable</span><span style="color: #f92672">:</span> <span style="color: #f8f8f2">cenTable</span><span style="color: #f92672">.</span><span style="color: #a6e22e">getPartitions</span><span style="color: #f92672">()){</span>
-        <span style="color: #66d9ef">double</span><span style="color: #f92672">[]</span> <span style="color: #f8f8f2">doubles</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">partialCenTable</span><span style="color: #f92672">.</span><span style="color: #a6e22e">get</span><span style="color: #f92672">().</span><span style="color: #a6e22e">get</span><span style="color: #f92672">();</span>
-        <span style="color: #66d9ef">for</span><span style="color: #f92672">(</span><span style="color: #66d9ef">int</span> <span style="color: #f8f8f2">h</span> <span style="color: #f92672">=</span> <span style="color: #ae81ff">0</span><span style="color: #f92672">;</span> <span style="color: #f8f8f2">h</span> <span style="color: #f92672">&lt;</span> <span style="color: #f8f8f2">vectorSize</span><span style="color: #f92672">;</span> <span style="color: #f8f8f2">h</span><span style="color: #f92672">++){</span>
-            <span style="color: #f8f8f2">doubles</span><span style="color: #f92672">[</span><span style="color: #f8f8f2">h</span><span style="color: #f92672">]</span> <span style="color: #f92672">/=</span> <span style="color: #f8f8f2">doubles</span><span style="color: #f92672">[</span><span style="color: #f8f8f2">vectorSize</span><span style="color: #f92672">];</span>
-        <span style="color: #f92672">}</span>
-        <span style="color: #f8f8f2">doubles</span><span style="color: #f92672">[</span><span style="color: #f8f8f2">vectorSize</span><span style="color: #f92672">]</span> <span style="color: #f92672">=</span> <span style="color: #ae81ff">0</span><span style="color: #f92672">;</span>
-	<span style="color: #f92672">}</span>
-	<span style="color: #f8f8f2">System</span><span style="color: #f92672">.</span><span style="color: #a6e22e">out</span><span style="color: #f92672">.</span><span style="color: #a6e22e">println</span><span style="color: #f92672">(</span><span style="color: #e6db74">&quot;after calculate new centroids&quot;</span><span style="color: #f92672">);</span>
-    <span style="color: #f8f8f2">printTable</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">cenTable</span><span style="color: #f92672">);</span>
-<span style="color: #f92672">}</span>
-</pre></div>
+private void calculateCentroids( Table<DoubleArray> cenTable){
+    for( Partition<DoubleArray> partialCenTable: cenTable.getPartitions()){
+        double[] doubles = partialCenTable.get().get();
+        for(int h = 0; h < vectorSize; h++){
+            doubles[h] /= doubles[vectorSize];
+        }
+        doubles[vectorSize] = 0;
+	}
+	System.out.println("after calculate new centroids");
+    printTable(cenTable);
+}
 
 <h2 id="compile">COMPILE</h2>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">cd</span> <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>
+cd $HARP_ROOT_DIR
 mvn clean package
-<span style="color: #f8f8f2">cd</span> <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/harp-tutorial-app
-cp target/harp-tutorial-app-1.0-SNAPSHOT.jar <span style="color: #f8f8f2">$HADOOP_HOME</span>
-<span style="color: #f8f8f2">cd</span> <span style="color: #f8f8f2">$HADOOP_HOME</span>
-</pre></div>
+cd $HARP_ROOT_DIR/harp-tutorial-app
+cp target/harp-tutorial-app-1.0-SNAPSHOT.jar $HADOOP_HOME
+cd $HADOOP_HOME
 
 <h2 id="usage">USAGE</h2>
 
 <p>Run Harp K-Means:</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>hadoop jar harp-tutorial-app-1.0-SNAPSHOT.jar edu.iu.kmeans.common.KmeansMapCollective &lt;numOfDataPoints&gt; &lt;num of Centroids&gt; &lt;size of vector&gt; &lt;number of map tasks&gt; &lt;number of iteration&gt; &lt;workDir&gt; &lt;localDir&gt; &lt;communication operation&gt;
+hadoop jar harp-tutorial-app-1.0-SNAPSHOT.jar edu.iu.kmeans.common.KmeansMapCollective <numOfDataPoints> <num of Centroids> <size of vector> <number of map tasks> <number of iteration> <workDir> <localDir> <communication operation>
 
-   &lt;numOfDataPoints&gt;: the number of data points you want to generate randomly
-   &lt;num of centriods&gt;: the number of centroids you want to clustering the data to
-   &lt;size of vector&gt;: the number of dimension of the data
-   &lt;number of map tasks&gt;: number of map tasks
-   &lt;number of iteration&gt;: the number of iterations to run
-   &lt;work dir&gt;: the root directory <span style="color: #66d9ef">for</span> this running in HDFS
-   &lt;<span style="color: #f8f8f2">local</span> dir&gt;: the harp kmeans will firstly generate files which contain data points to <span style="color: #f8f8f2">local</span> directory. Set this argument to determine the <span style="color: #f8f8f2">local</span> directory.
-   &lt;communication operation&gt; includes:
-		<span style="color: #f92672">[</span>allreduce<span style="color: #f92672">]</span>: use allreduce operation to synchronize centroids
-		<span style="color: #f92672">[</span>regroup-allgather<span style="color: #f92672">]</span>: use regroup and allgather operation to synchronize centroids
-		<span style="color: #f92672">[</span>broadcast-reduce<span style="color: #f92672">]</span>: use broadcast and reduce operation to synchronize centroids
-		<span style="color: #f92672">[</span>push-pull<span style="color: #f92672">]</span>: use push and pull operation to synchronize centroids
-</pre></div>
+   <numOfDataPoints>: the number of data points you want to generate randomly
+   <num of centriods>: the number of centroids you want to clustering the data to
+   <size of vector>: the number of dimension of the data
+   <number of map tasks>: number of map tasks
+   <number of iteration>: the number of iterations to run
+   <work dir>: the root directory for this running in HDFS
+   <local dir>: the harp kmeans will firstly generate files which contain data points to local directory. Set this argument to determine the local directory.
+   <communication operation> includes:
+		[allreduce]: use allreduce operation to synchronize centroids
+		[regroup-allgather]: use regroup and allgather operation to synchronize centroids
+		[broadcast-reduce]: use broadcast and reduce operation to synchronize centroids
+		[push-pull]: use push and pull operation to synchronize centroids
 
 <p>For example:</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>hadoop jar harp-tutorial-app-1.0-SNAPSHOT.jar edu.iu.kmeans.common.KmeansMapCollective <span style="color: #ae81ff">1000</span> <span style="color: #ae81ff">10</span> <span style="color: #ae81ff">10</span> <span style="color: #ae81ff">2</span> <span style="color: #ae81ff">10</span> /kmeans /tmp/kmeans allreduce
-</pre></div>
+hadoop jar harp-tutorial-app-1.0-SNAPSHOT.jar edu.iu.kmeans.common.KmeansMapCollective 1000 10 10 2 10 /kmeans /tmp/kmeans allreduce
 
 <p>Fetch the results:</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>hdfs dfs -ls /
+hdfs dfs -ls /
 hdfs dfs -cat /kmeans/centroids/*
-</pre></div>
 </article></section></div></div></div><script src="https://code.jquery.com/jquery-2.2.1.min.js"></script><script src="https://dsc-spidal.github.io/harp/js/app.min.js"></script></body></html>

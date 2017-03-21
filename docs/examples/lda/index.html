@@ -20,26 +20,22 @@
 <h1 id="run-example">Run example</h1>
 
 <h3 id="put-data-on-hdfs">Put data on hdfs</h3>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>hdfs dfs -put <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/data/tutorial/lda-cvb/sample-sparse-data/sample-sparse-metadata .
+hdfs dfs -put $HARP_ROOT_DIR/data/tutorial/lda-cvb/sample-sparse-data/sample-sparse-metadata .
 hdfs dfs -mkdir sample-sparse-data
-hdfs dfs -put <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/data/tutorial/lda-cvb/sample-sparse-data/sample-sparse-data-part-1.txt sample-sparse-data
-hdfs dfs -put <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/data/tutorial/lda-cvb/sample-sparse-data/sample-sparse-data-part-0.txt sample-sparse-data
-</pre></div>
+hdfs dfs -put $HARP_ROOT_DIR/data/tutorial/lda-cvb/sample-sparse-data/sample-sparse-data-part-1.txt sample-sparse-data
+hdfs dfs -put $HARP_ROOT_DIR/data/tutorial/lda-cvb/sample-sparse-data/sample-sparse-data-part-0.txt sample-sparse-data
 
 <h3 id="compile">Compile</h3>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">cd</span> <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>
+cd $HARP_ROOT_DIR
 mvn clean package
-cp <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/harp-tutorial-app/target/harp-tutorial-app-1.0.SNAPSHOT.jar <span style="color: #f8f8f2">$HADOOP_HOME</span>
-cp <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/third_parity/cloud9-1.4.17.jar <span style="color: #f8f8f2">$HADOOP_HOME</span>/share/hadoop/mapreduce
-</pre></div>
+cp $HARP_ROOT_DIR/harp-tutorial-app/target/harp-tutorial-app-1.0.SNAPSHOT.jar $HADOOP_HOME
+cp $HARP_ROOT_DIR/third_parity/cloud9-1.4.17.jar $HADOOP_HOME/share/hadoop/mapreduce
 
 <h3 id="run">Run</h3>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>hadoop jar harp-tutorial-app-1.0.SNAPSHOT.jar  edu.iu.lda.LdaMapCollective &lt;input dir&gt;  &lt;metafile&gt;  &lt;output dir&gt; &lt;number of terms&gt; &lt;number of topics&gt; &lt;number of docs&gt; &lt;number of MapTasks&gt; &lt;number of iterations&gt; &lt;number of threads&gt; &lt;mode, <span style="color: #f8f8f2">1</span><span style="color: #f92672">=</span>multithreading&gt;
-</pre></div>
+hadoop jar harp-tutorial-app-1.0.SNAPSHOT.jar  edu.iu.lda.LdaMapCollective <input dir>  <metafile>  <output dir> <number of terms> <number of topics> <number of docs> <number of MapTasks> <number of iterations> <number of threads> <mode, 1=multithreading>
 
 <h3 id="example">Example</h3>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>hadoop jar harp-tutorial-app-1.0.SNAPSHOT.jar  edu.iu.lda.LdaMapCollective sample-sparse-data sample-sparse-metadata  sample-sparse-output <span style="color: #ae81ff">11</span> <span style="color: #ae81ff">2</span> <span style="color: #ae81ff">12</span> <span style="color: #ae81ff">2</span> <span style="color: #ae81ff">5</span> <span style="color: #ae81ff">4</span> <span style="color: #ae81ff">1</span>
-</pre></div>
+hadoop jar harp-tutorial-app-1.0.SNAPSHOT.jar  edu.iu.lda.LdaMapCollective sample-sparse-data sample-sparse-metadata  sample-sparse-output 11 2 12 2 5 4 1
 
 <p>Please be noted:</p>
 

@@ -19,8 +19,7 @@
 &lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/3-3-1.png&#34; alt=&#34;allgather&#34; /&gt;&lt;/p&gt;
 
 &lt;p&gt;&lt;code&gt;allgather&lt;/code&gt; aims to first collect tables from other workers and then broadcast the collection. All workers should run it concurrently. The defination of the method is:&lt;/p&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;boolean&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;allgather&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;final&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;String&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;contextName&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;final&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;String&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;operationName&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;final&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;P&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;final&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;DataMap&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;dataMap&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;final&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Workers&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;workers&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
+boolean allgather(final String contextName, final String operationName, final Table&lt;P&gt; table, final DataMap dataMap, final Workers workers)
 
 &lt;ul&gt;
 &lt;li&gt;&lt;code&gt;contextName&lt;/code&gt; &amp;mdash; the name of the context&lt;/li&gt;
@@ -31,8 +30,7 @@
 &lt;/ul&gt;
 
 &lt;h2 id=&#34;example&#34;&gt;Example&lt;/h2&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;allgather&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;contextName&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;allgather&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;dataMap&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;workers&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
+allgather(contextName, &#34;allgather&#34;, table, dataMap, workers);
 </description>
     </item>
     
@@ -47,8 +45,7 @@
 &lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/3-4-1.png&#34; alt=&#34;allreduce&#34; /&gt;&lt;/p&gt;
 
 &lt;p&gt;&lt;code&gt;allreduce&lt;/code&gt; aims to first combine tables from other workers and then broadcast the accumulated table. All workers should run it concurrently. The defination of the method is:&lt;/p&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;boolean&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;allreduce&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;final&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;String&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;contextName&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;final&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;String&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;operationName&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;final&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;P&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;final&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;DataMap&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;dataMap&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;final&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Workers&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;workers&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
+boolean allreduce(final String contextName, final String operationName, final Table&lt;P&gt; table, final DataMap dataMap, final Workers workers)
 
 &lt;ul&gt;
 &lt;li&gt;&lt;code&gt;contextName&lt;/code&gt; &amp;mdash; the name of the context&lt;/li&gt;
@@ -59,8 +56,7 @@
 &lt;/ul&gt;
 
 &lt;h2 id=&#34;example&#34;&gt;Example&lt;/h2&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;allreduce&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;contextName&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;allreduce&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;dataMap&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;workers&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
+allreduce(contextName, &#34;allreduce&#34;, table, dataMap, workers);
 </description>
     </item>
     
@@ -75,8 +71,7 @@
 &lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/3-1-1.png&#34; alt=&#34;broadcast&#34; /&gt;&lt;/p&gt;
 
 &lt;p&gt;&lt;code&gt;broadcast&lt;/code&gt; aims to share a table in one worker with others. All workers should run it concurrently. The defination of the method is:&lt;/p&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;boolean&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;broadcast&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;String&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;contextName&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;String&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;operationName&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;P&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;bcastWorkerID&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;boolean&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;useMSTBcast&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;DataMap&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;dataMap&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Workers&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;workers&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
+boolean broadcast(String contextName, String operationName, Table&lt;P&gt; table, int bcastWorkerID, boolean useMSTBcast, DataMap dataMap, Workers workers)
 
 &lt;ul&gt;
 &lt;li&gt;&lt;code&gt;contextName&lt;/code&gt; &amp;mdash; the name of the context&lt;/li&gt;
@@ -89,8 +84,7 @@
 &lt;/ul&gt;
 
 &lt;h2 id=&#34;example&#34;&gt;Example&lt;/h2&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;broadcast&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;contextName&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;chain-array-table-bcast-&amp;quot;&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;arrTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;workers&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getMasterID&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(),&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;false&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;dataMap&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;workers&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
+broadcast(contextName, &#34;chain-array-table-bcast-&#34; + i, arrTable, workers.getMasterID(), false, dataMap, workers);
 </description>
     </item>
     
@@ -190,129 +184,128 @@ Describe clearly your pull request the change.&lt;/p&gt;&lt;/li&gt;
 &lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/3-1-2.png&#34; alt=&#34;table-partition&#34; /&gt;&lt;/p&gt;
 
 &lt;p&gt;An example of how to construct a table is:&lt;/p&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;Table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;DoubleArray&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;table&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&amp;gt;(&lt;/span&gt;&lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;DoubleArrPlus&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;());&lt;/span&gt;
-&lt;span style=&#34;color: #66d9ef&#34;&gt;for&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;numPartitions&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;++)&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-    &lt;span style=&#34;color: #f8f8f2&#34;&gt;DoubleArray&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;array&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;DoubleArray&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;create&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;size&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;false&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-    &lt;span style=&#34;color: #f8f8f2&#34;&gt;table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;addPartition&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Partition&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&amp;gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;array&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;));&lt;/span&gt;
-&lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
+Table&lt;DoubleArray&gt; table = new Table&lt;&gt;(0, new DoubleArrPlus());
+for (int i = 0; i &lt; numPartitions; i++) {
+    DoubleArray array = DoubleArray.create(size, false);
+    table.addPartition(new Partition&lt;&gt;(i, array));
+}
 
 &lt;p&gt;In this example, it initiliazes a table which carries &lt;code&gt;DoubleArray&lt;/code&gt; as the primitive data type. &lt;code&gt;DoubleArrPlus&lt;/code&gt; is a &lt;code&gt;PartitionCombiner&lt;/code&gt; used to define the merging operation of two partitions.&lt;/p&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;DoubleArrPlus&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;extends&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;PartitionCombiner&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;DoubleArray&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-    &lt;span style=&#34;color: #66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;PartitionStatus&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;combine&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;DoubleArray&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;curPar&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;DoubleArray&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;newPar&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-        &lt;span style=&#34;color: #66d9ef&#34;&gt;double&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[]&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;doubles1&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;curPar&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;get&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;size1&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;curPar&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;size&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
-        &lt;span style=&#34;color: #66d9ef&#34;&gt;double&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[]&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;doubles2&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;newPar&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;get&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;size2&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;newPar&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;size&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
-        &lt;span style=&#34;color: #66d9ef&#34;&gt;if&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;size1&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;!=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;size2&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;            &lt;span style=&#34;color: #66d9ef&#34;&gt;return&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;PartitionStatus&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;COMBINE_FAILED&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-        &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
-        &lt;span style=&#34;color: #66d9ef&#34;&gt;for&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;size2&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;++)&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-            &lt;span style=&#34;color: #f8f8f2&#34;&gt;doubles1&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;doubles1&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;doubles2&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;];&lt;/span&gt;
-        &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
-        &lt;span style=&#34;color: #66d9ef&#34;&gt;return&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;PartitionStatus&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;COMBINED&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-   &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
-&lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
+public class DoubleArrPlus extends PartitionCombiner&lt;DoubleArray&gt; {
+    public PartitionStatus combine(DoubleArray curPar, DoubleArray newPar) {
+        double[] doubles1 = curPar.get(); int size1 = curPar.size();
+        double[] doubles2 = newPar.get(); int size2 = newPar.size();
+        if (size1 != size2) {            return PartitionStatus.COMBINE_FAILED;
+        }
+        for (int i = 0; i &lt; size2; i++) {
+            doubles1[i] = doubles1[i] + doubles2[i];
+        }
+        return PartitionStatus.COMBINED;
+   }
+}
+
 
 &lt;h1 id=&#34;data-abstraction&#34;&gt;Data Abstraction&lt;/h1&gt;
 
 &lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/3-1-3.png&#34; alt=&#34;data-types&#34; /&gt;&lt;/p&gt;
 
 &lt;p&gt;The data abstraction is shown above. &lt;code&gt;Transferable&lt;/code&gt; is ae higher interface compare to other data structures and &lt;code&gt;Simple&lt;/code&gt; is the sub-interface for all primitive data structures. Here is an example of the primitive data strucutres.&lt;/p&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #75715e&#34;&gt;/*&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt; * Copyright 2013-2016 Indiana University&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt; * &lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt; * Licensed under the Apache License, Version 2.0 (the &amp;quot;License&amp;quot;);&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt; * you may not use this file except in compliance with the License.&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt; * You may obtain a copy of the License at&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt; *&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt; *     http://www.apache.org/licenses/LICENSE-2.0&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt; *&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt; * Unless required by applicable law or agreed to in writing, software&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt; * distributed under the License is distributed on an &amp;quot;AS IS&amp;quot; BASIS,&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt; * See the License for the specific language governing permissions and&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt; * limitations under the License.&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt; */&lt;/span&gt;
+/*
+ * Copyright 2013-2016 Indiana University
+ * 
+ * Licensed under the Apache License, Version 2.0 (the &#34;License&#34;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &#34;AS IS&#34; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-&lt;span style=&#34;color: #f92672&#34;&gt;package&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;edu.iu.harp.resource&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
+package edu.iu.harp.resource;
 
-&lt;span style=&#34;color: #f92672&#34;&gt;import&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;java.io.DataOutput&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-&lt;span style=&#34;color: #f92672&#34;&gt;import&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;java.io.IOException&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
+import java.io.DataOutput;
+import java.io.IOException;
 
-&lt;span style=&#34;color: #f92672&#34;&gt;import&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;edu.iu.harp.io.DataType&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-&lt;span style=&#34;color: #f92672&#34;&gt;import&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;edu.iu.harp.resource.Array&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
+import edu.iu.harp.io.DataType;
+import edu.iu.harp.resource.Array;
 
-&lt;span style=&#34;color: #75715e&#34;&gt;/*******************************************************&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt; * IntArray class for managing int[] data.&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt; ******************************************************/&lt;/span&gt;
-&lt;span style=&#34;color: #66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;final&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;IntArray&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;extends&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Array&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[]&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
+/*******************************************************
+ * IntArray class for managing int[] data.
+ ******************************************************/
+public final class IntArray extends Array&lt;int[]&gt; {
 
-    &lt;span style=&#34;color: #66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;IntArray&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[]&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;arr&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;start&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;size&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-	&lt;span style=&#34;color: #66d9ef&#34;&gt;super&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;arr&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;start&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;size&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-    &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
+    public IntArray(int[] arr, int start, int size) {
+	super(arr, start, size);
+    }
 
-    &lt;span style=&#34;color: #75715e&#34;&gt;/**&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt;     * Get the number of Bytes of encoded data. One byte for storing DataType,&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt;     * four bytes for storing the size, size*4 bytes for storing the data.&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt;     */&lt;/span&gt;
-    &lt;span style=&#34;color: #a6e22e&#34;&gt;@Override&lt;/span&gt;
-    &lt;span style=&#34;color: #66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;getNumEnocdeBytes&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;()&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-	&lt;span style=&#34;color: #66d9ef&#34;&gt;return&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;size&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;*&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;4&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;5&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-    &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
+    /**
+     * Get the number of Bytes of encoded data. One byte for storing DataType,
+     * four bytes for storing the size, size*4 bytes for storing the data.
+     */
+    @Override
+    public int getNumEnocdeBytes() {
+	return this.size * 4 + 5;
+    }
 
-    &lt;span style=&#34;color: #75715e&#34;&gt;/**&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt;     * Encode the array as DataOutput&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt;     */&lt;/span&gt;
-    &lt;span style=&#34;color: #a6e22e&#34;&gt;@Override&lt;/span&gt;
-    &lt;span style=&#34;color: #66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;encode&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;DataOutput&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;out&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;throws&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;IOException&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-	&lt;span style=&#34;color: #f8f8f2&#34;&gt;out&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;writeByte&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;DataType&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;INT_ARRAY&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-	&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;len&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;start&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;size&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-	&lt;span style=&#34;color: #f8f8f2&#34;&gt;out&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;writeInt&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;size&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-	&lt;span style=&#34;color: #66d9ef&#34;&gt;for&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;start&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;len&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;++)&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-	    &lt;span style=&#34;color: #f8f8f2&#34;&gt;out&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;writeInt&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;array&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;]);&lt;/span&gt;
-	&lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
-    &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
+    /**
+     * Encode the array as DataOutput
+     */
+    @Override
+    public void encode(DataOutput out) throws IOException {
+	out.writeByte(DataType.INT_ARRAY);
+	int len = start + size;
+	out.writeInt(size);
+	for (int i = start; i &lt; len; i++) {
+	    out.writeInt(array[i]);
+	}
+    }
 
-    &lt;span style=&#34;color: #75715e&#34;&gt;/**&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt;     * Create an array. Firstly try to get an array from ResourcePool; if&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt;     * failed, new an array.&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt;     * &lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt;     * @param len&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt;     * @param approximate&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt;     * @return&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt;     */&lt;/span&gt;
-    &lt;span style=&#34;color: #66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;static&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;IntArray&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;create&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;len&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;boolean&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;approximate&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-	&lt;span style=&#34;color: #66d9ef&#34;&gt;if&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;len&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-	    &lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[]&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;ints&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;ResourcePool&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;get&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;().&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getIntsPool&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;().&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getArray&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;len&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;approximate&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-	    &lt;span style=&#34;color: #66d9ef&#34;&gt;if&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;ints&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;!=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;null&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-		&lt;span style=&#34;color: #66d9ef&#34;&gt;return&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;IntArray&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;ints&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;len&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-	    &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;else&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-		&lt;span style=&#34;color: #66d9ef&#34;&gt;return&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;null&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-	    &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
-	&lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;else&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-	    &lt;span style=&#34;color: #66d9ef&#34;&gt;return&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;null&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-	&lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
-    &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
+    /**
+     * Create an array. Firstly try to get an array from ResourcePool; if
+     * failed, new an array.
+     * 
+     * @param len
+     * @param approximate
+     * @return
+     */
+    public static IntArray create(int len, boolean approximate) {
+	if (len &gt; 0) {
+	    int[] ints = ResourcePool.get().getIntsPool().getArray(len, approximate);
+	    if (ints != null) {
+		return new IntArray(ints, 0, len);
+	    } else {
+		return null;
+	    }
+	} else {
+	    return null;
+	}
+    }
 
-    &lt;span style=&#34;color: #75715e&#34;&gt;/**&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt;     * Release the array from the ResourcePool&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt;     */&lt;/span&gt;
-    &lt;span style=&#34;color: #a6e22e&#34;&gt;@Override&lt;/span&gt;
-    &lt;span style=&#34;color: #66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;release&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;()&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-	&lt;span style=&#34;color: #f8f8f2&#34;&gt;ResourcePool&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;get&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;().&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getIntsPool&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;().&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;releaseArray&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;array&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-	&lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;reset&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
-    &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
+    /**
+     * Release the array from the ResourcePool
+     */
+    @Override
+    public void release() {
+	ResourcePool.get().getIntsPool().releaseArray(array);
+	this.reset();
+    }
 
-    &lt;span style=&#34;color: #75715e&#34;&gt;/**&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt;     * Free the array from the ResourcePool&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt;     */&lt;/span&gt;
-    &lt;span style=&#34;color: #a6e22e&#34;&gt;@Override&lt;/span&gt;
-    &lt;span style=&#34;color: #66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;free&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;()&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-	&lt;span style=&#34;color: #f8f8f2&#34;&gt;ResourcePool&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;get&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;().&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getIntsPool&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;().&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;freeArray&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;array&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-	&lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;reset&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
+    /**
+     * Free the array from the ResourcePool
+     */
+    @Override
+    public void free() {
+	ResourcePool.get().getIntsPool().freeArray(array);
+	this.reset();
 
-    &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
-&lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
+    }
+}
+
 </description>
     </item>
     
@@ -528,64 +521,59 @@ Training: Machine learning algorithms are normally iterative computation, proces
 &lt;/ul&gt;
 
 &lt;p&gt;After preprocessing, push the data set into HDFS by the following commands.&lt;/p&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;hdfs dfs -mkdir /input
+hdfs dfs -mkdir /input
 hdfs dfs -put input_data/* /input
-&lt;/pre&gt;&lt;/div&gt;
 
 &lt;h2 id=&#34;step-1-initialize&#34;&gt;Step 1 &amp;mdash; Initialize&lt;/h2&gt;
 
 &lt;p&gt;For Harp MLR, we will use dynamic scheduling as mentioned above. Before we set up the dynamic scheduler, we need to initialize the weight matrix &lt;code&gt;W&lt;/code&gt;, which will be partitioned into &lt;code&gt;T&lt;/code&gt; parts representing to &lt;code&gt;T&lt;/code&gt; labels which means that each label belongs to one partition and is treated as an independent task.&lt;/p&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;initTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;()&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-    &lt;span style=&#34;color: #f8f8f2&#34;&gt;wTable&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;DoubleArrPlus&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;());&lt;/span&gt;
-    &lt;span style=&#34;color: #66d9ef&#34;&gt;for&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;topics&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;size&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;++)&lt;/span&gt;
-        &lt;span style=&#34;color: #f8f8f2&#34;&gt;wTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;addPartition&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Partition&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;DoubleArray&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;create&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;TERM&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;1&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;false&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)));&lt;/span&gt;
-&lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
+private void initTable() {
+    wTable = new Table(0, new DoubleArrPlus());
+    for (int i = 0; i &lt; topics.size(); i++)
+        wTable.addPartition(new Partition(i, DoubleArray.create(TERM + 1, false)));
+}
 
 &lt;p&gt;After that we can initialize the dynamic scheduler. Each thread will be treated as a worker and be added into the scheduler. The only thing that needs to be done is that tasks has to be submitted during the computation.&lt;/p&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;initThread&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;()&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-    &lt;span style=&#34;color: #f8f8f2&#34;&gt;GDthread&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;LinkedList&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&amp;gt;();&lt;/span&gt;
-    &lt;span style=&#34;color: #66d9ef&#34;&gt;for&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;numThread&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;++)&lt;/span&gt;
-        &lt;span style=&#34;color: #f8f8f2&#34;&gt;GDthread&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;add&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;GDtask&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;alpha&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;data&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;topics&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;qrels&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;));&lt;/span&gt;
-    &lt;span style=&#34;color: #f8f8f2&#34;&gt;GDsch&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;DynamicScheduler&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&amp;gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;GDthread&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-&lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
+private void initThread() {
+    GDthread = new LinkedList&lt;&gt;();
+    for (int i = 0; i &lt; numThread; i++)
+        GDthread.add(new GDtask(alpha, data, topics, qrels));
+    GDsch = new DynamicScheduler&lt;&gt;(GDthread);
+}
 
 &lt;h2 id=&#34;step-2-mapper-communication&#34;&gt;Step 2 &amp;mdash; Mapper communication&lt;/h2&gt;
 
 &lt;p&gt;In this main process, we use &lt;code&gt;regroup&lt;/code&gt; to distribute the partitions to the workers first. The workers will get almost the same number of partitions. Then we start the scheduler. For each time we submit one partition to each thread in the scheduler and the threads will all use SGD to approximate &lt;code&gt;W&lt;/code&gt; with each label. After the workers finish once with their own partitions, we will use &lt;code&gt;rotate&lt;/code&gt; operation to swap the partitions among the workers. When finishing the all process, each worker should use its own data training the whole partition &lt;code&gt;K&lt;/code&gt; times, of which &lt;code&gt;K&lt;/code&gt; is the number of iteration. &lt;code&gt;allgather&lt;/code&gt; operation collects all partitions in each worker, combines the partitions, and shares the outcome with all workers. Finally, the Master worker outputs the weight matrix &lt;code&gt;W&lt;/code&gt;.&lt;/p&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;protected&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;mapCollective&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;KeyValReader&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;reader&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Context&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;context&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;throws&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;IOException&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;InterruptedException&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-    &lt;span style=&#34;color: #f8f8f2&#34;&gt;LoadAll&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;reader&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-    &lt;span style=&#34;color: #f8f8f2&#34;&gt;initTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
-    &lt;span style=&#34;color: #f8f8f2&#34;&gt;initThread&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
+protected void mapCollective(KeyValReader reader, Context context) throws IOException, InterruptedException {
+    LoadAll(reader);
+    initTable();
+    initThread();
 
-    &lt;span style=&#34;color: #f8f8f2&#34;&gt;regroup&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;MLR&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;regroup_wTable&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;wTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Partitioner&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;getNumWorkers&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;()));&lt;/span&gt;
+    regroup(&#34;MLR&#34;, &#34;regroup_wTable&#34;, wTable, new Partitioner(getNumWorkers()));
 
-    &lt;span style=&#34;color: #f8f8f2&#34;&gt;GDsch&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;start&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;        
-    &lt;span style=&#34;color: #66d9ef&#34;&gt;for&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;iter&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;iter&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;ITER&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;*&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;numMapTask&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;iter&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;++)&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-        &lt;span style=&#34;color: #66d9ef&#34;&gt;for&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;Partition&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;par&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;wTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getPartitions&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;())&lt;/span&gt;
-            &lt;span style=&#34;color: #f8f8f2&#34;&gt;GDsch&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;submit&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;par&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-        &lt;span style=&#34;color: #66d9ef&#34;&gt;while&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;GDsch&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;hasOutput&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;())&lt;/span&gt;
-            &lt;span style=&#34;color: #f8f8f2&#34;&gt;GDsch&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;waitForOutput&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
+    GDsch.start();        
+    for (int iter = 0; iter &lt; ITER * numMapTask; iter++) {
+        for (Partition par : wTable.getPartitions())
+            GDsch.submit(par);
+        while (GDsch.hasOutput())
+            GDsch.waitForOutput();
             
-        &lt;span style=&#34;color: #f8f8f2&#34;&gt;rotate&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;MLR&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;rotate_&amp;quot;&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;iter&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;wTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;null&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+        rotate(&#34;MLR&#34;, &#34;rotate_&#34; + iter, wTable, null);
 
-        &lt;span style=&#34;color: #f8f8f2&#34;&gt;context&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;progress&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
-    &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
-    &lt;span style=&#34;color: #f8f8f2&#34;&gt;GDsch&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;stop&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
+        context.progress();
+    }
+    GDsch.stop();
         
-    &lt;span style=&#34;color: #f8f8f2&#34;&gt;allgather&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;MLR&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;allgather_wTable&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;wTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+    allgather(&#34;MLR&#34;, &#34;allgather_wTable&#34;, wTable);
 
-    &lt;span style=&#34;color: #66d9ef&#34;&gt;if&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;isMaster&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;())&lt;/span&gt;
-        &lt;span style=&#34;color: #f8f8f2&#34;&gt;Util&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;outputData&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;outputPath&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;topics&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;wTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;conf&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-    &lt;span style=&#34;color: #f8f8f2&#34;&gt;wTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;release&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
-&lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
+    if (isMaster())
+        Util.outputData(outputPath, topics, wTable, conf);
+    wTable.release();
+}
 
 &lt;h2 id=&#34;usage&#34;&gt;USAGE&lt;/h2&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;$ hadoop jar harp-tutorial-app-1.0-SNAPSHOT.jar edu.iu.mlr.MLRMapCollective &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;alpha&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;number of iteration&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;number of features&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;number of workers&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;number of threads&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;topic file path&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;qrel file path&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;input path in HDFS&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;output path in HDFS&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt;#e.g. hadoop jar harp-tutorial-app-1.0-SNAPSHOT.jar edu.iu.mlr.MLRMapCollective 1.0 100 47236 2 16 /rcv1v2/rcv1.topics.txt /rcv1v2/rcv1-v2.topics.qrels /input /output&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
+$ hadoop jar harp-tutorial-app-1.0-SNAPSHOT.jar edu.iu.mlr.MLRMapCollective [alpha] [number of iteration] [number of features] [number of workers] [number of threads] [topic file path] [qrel file path] [input path in HDFS] [output path in HDFS]
+#e.g. hadoop jar harp-tutorial-app-1.0-SNAPSHOT.jar edu.iu.mlr.MLRMapCollective 1.0 100 47236 2 16 /rcv1v2/rcv1.topics.txt /rcv1v2/rcv1-v2.topics.qrels /input /output
 
 &lt;p&gt;The output should be the weight matrix &lt;code&gt;W&lt;/code&gt;.&lt;/p&gt;
 </description>
@@ -636,41 +624,38 @@ hdfs dfs -put input_data/* /input
 &lt;h2 id=&#34;step-1-set-table&#34;&gt;Step 1 &amp;mdash; Set Table&lt;/h2&gt;
 
 &lt;p&gt;The data format wrapper code is in charge of the conversion between the native DoubleMatrix and Harp Table.&lt;/p&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;DoubleArray&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;train&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;DoubleMatrix&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;X&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;DoubleMatrix&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Y&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;DoubleArray&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;localWeightTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;mini_epochs&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;numMapTasks&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;double&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;lambda&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;throws&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;IOException&lt;/span&gt;
-&lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-    &lt;span style=&#34;color: #f8f8f2&#34;&gt;Vector&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;DoubleMatrix&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;weightMatrix&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;reshapeTableToList&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;localWeightTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-    &lt;span style=&#34;color: #f8f8f2&#34;&gt;setTheta&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;weightMatrix&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+public Table&lt;DoubleArray&gt; train(DoubleMatrix X, DoubleMatrix Y, Table&lt;DoubleArray&gt; localWeightTable, int mini_epochs, int numMapTasks, double lambda) throws IOException
+{
+    Vector&lt;DoubleMatrix&gt; weightMatrix = reshapeTableToList(localWeightTable);
+    setTheta(weightMatrix);
 
-    &lt;span style=&#34;color: #f8f8f2&#34;&gt;trainBP&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;X&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Y&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;lambda&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;mini_epochs&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;true&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+    trainBP(X, Y, lambda, mini_epochs, true);
 
-    &lt;span style=&#34;color: #f8f8f2&#34;&gt;Table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;DoubleArray&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;newWeightTable&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;reshapeListToTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getTheta&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;());&lt;/span&gt;
-    &lt;span style=&#34;color: #66d9ef&#34;&gt;return&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;newWeightTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-&lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
+    Table&lt;DoubleArray&gt; newWeightTable = reshapeListToTable(this.getTheta());
+    return newWeightTable;
+}
 
 &lt;h2 id=&#34;step-2-communication&#34;&gt;Step 2 &amp;mdash;Communication&lt;/h2&gt;
 
 &lt;p&gt;The code snippet for the core part of computation in the iterative training. There  are only a few lines of differences between the harp distributed version and the original sequential version.&lt;/p&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #75715e&#34;&gt;// Calculate the new weights &lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt;// argument data type conversion and call the train() in the underlie library&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;weightTable&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;localNN&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;train&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;X&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Y&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;weightTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;n&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;numMapTasks&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;lambda&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+// Calculate the new weights 
+// argument data type conversion and call the train() in the underlie library
+weightTable = localNN.train(X, Y, weightTable, n, numMapTasks, lambda);
 
-&lt;span style=&#34;color: #75715e&#34;&gt;// reduce and broadcast&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;allreduce&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;main&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;allreduce&amp;quot;&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;weightTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+// reduce and broadcast
+allreduce(&#34;main&#34;, &#34;allreduce&#34; + i, weightTable);
 
-&lt;span style=&#34;color: #75715e&#34;&gt;// Average the weight table by the numMapTasks&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;weightTable&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;localNN&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;modelAveraging&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;weightTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;numMapTasks&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
+// Average the weight table by the numMapTasks
+weightTable = localNN.modelAveraging(weightTable, numMapTasks);
 
 &lt;h2 id=&#34;data&#34;&gt;DATA&lt;/h2&gt;
 
 &lt;p&gt;The MNIST dataset is used in this tutorial. Refer the &lt;a href=&#34;https://github.com/DSC-SPIDAL/harp/tree/master/data/tutorial/mnist&#34;&gt;dataset script&lt;/a&gt; for more details.&lt;/p&gt;
 
 &lt;h2 id=&#34;usage&#34;&gt;USAGE&lt;/h2&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;$ hadoop jar harp-tutorial-app-1.0-SNAPSHOT.jar edu.iu.NN.NNMapCollective
-Usage: NNMapCollective &amp;lt;number of map tasks&amp;gt; &amp;lt;epochs&amp;gt; &amp;lt;syncIterNum&amp;gt; &amp;lt;hiddenLayers&amp;gt; &amp;lt;minibatchsize&amp;gt; &amp;lt;lambda&amp;gt; &amp;lt;workDir&amp;gt;
-&lt;span style=&#34;color: #75715e&#34;&gt;# hadoop jar harp-tutorial-app-1.0-SNAPSHOT.jar edu.iu.NN.NNMapCollective 2 20 5 100,32 2000 0 /nn&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
+$ hadoop jar harp-tutorial-app-1.0-SNAPSHOT.jar edu.iu.NN.NNMapCollective
+Usage: NNMapCollective &lt;number of map tasks&gt; &lt;epochs&gt; &lt;syncIterNum&gt; &lt;hiddenLayers&gt; &lt;minibatchsize&gt; &lt;lambda&gt; &lt;workDir&gt;
+# hadoop jar harp-tutorial-app-1.0-SNAPSHOT.jar edu.iu.NN.NNMapCollective 2 20 5 100,32 2000 0 /nn
 
 &lt;p&gt;This command run harp neuralnetwork training on the input dataset under /nn, with 2 mappers. Training process goes through 20 times of the training dataset, averages the model every 5 iteration for each minibatch. The minibatch size is 2000, lambda is default value 0.689. There are 2 hidden layers, with 100 and 32 nodes each. Finally, it outputs the accuracy on the training set into the hadoop log.&lt;/p&gt;
 </description>
@@ -749,78 +734,75 @@ Usage: NNMapCollective &amp;lt;number of map tasks&amp;gt; &amp;lt;epochs&amp;gt
 &lt;p&gt;The predicting part will use these decision trees to predict &lt;code&gt;K&lt;/code&gt; results. For regression, the result is the average of each tree&amp;rsquo;s result and for classification, the majority vote will be the output.&lt;/p&gt;
 
 &lt;h2 id=&#34;step-0-data-preprocessing&#34;&gt;Step 0 &amp;mdash; Data preprocessing&lt;/h2&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #75715e&#34;&gt;// In the case of merging the data from different location, main process needs to create bootstrap samples.&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt;// So here, the main process loads all the data and creates the bootstrap samples.&lt;/span&gt;
-&lt;span style=&#34;color: #66d9ef&#34;&gt;if&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;doBootstrapSampling&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;                                     
-    &lt;span style=&#34;color: #75715e&#34;&gt;//Load each of the training files under train folder                &lt;/span&gt;
-    &lt;span style=&#34;color: #66d9ef&#34;&gt;for&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;RandomForestConstants&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;NUM_GLOBAL&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;++)&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-        &lt;span style=&#34;color: #f8f8f2&#34;&gt;files&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;add&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;trainFileFolder&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;File&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;separator&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;trainNameFormat&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;.csv&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-    &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
-    &lt;span style=&#34;color: #f8f8f2&#34;&gt;System&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;out&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;println&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;Loading the training data...&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-    &lt;span style=&#34;color: #f8f8f2&#34;&gt;loadData&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;trainData&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;files&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-    &lt;span style=&#34;color: #f8f8f2&#34;&gt;System&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;out&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;println&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;Data size: &amp;quot;&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;trainData&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;size&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;());&lt;/span&gt;
-    &lt;span style=&#34;color: #f8f8f2&#34;&gt;files&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;clear&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
-    &lt;span style=&#34;color: #f8f8f2&#34;&gt;ArrayList&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;Integer&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;positions&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-    &lt;span style=&#34;color: #75715e&#34;&gt;//Create the bootstrapped samples and write to local disk&lt;/span&gt;
-    &lt;span style=&#34;color: #66d9ef&#34;&gt;for&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;RandomForestConstants&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;NUM_MAPPERS&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;++)&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-        &lt;span style=&#34;color: #f8f8f2&#34;&gt;positions&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;DoBootStrapSampling&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;trainData&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;size&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;());&lt;/span&gt;
-        &lt;span style=&#34;color: #f8f8f2&#34;&gt;System&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;out&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;println&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;Sampled data for: &amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;; size: &amp;quot;&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;positions&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;size&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;());&lt;/span&gt;
-        &lt;span style=&#34;color: #f8f8f2&#34;&gt;createMapperFiles&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;trainData&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;testData&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;fs&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;localDirStr&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;positions&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-        &lt;span style=&#34;color: #f8f8f2&#34;&gt;positions&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;null&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-    &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
-&lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;else&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-    &lt;span style=&#34;color: #75715e&#34;&gt;//Load each of the training files under train folder                &lt;/span&gt;
-    &lt;span style=&#34;color: #66d9ef&#34;&gt;for&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;RandomForestConstants&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;NUM_MAPPERS&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;++){&lt;/span&gt;
-        &lt;span style=&#34;color: #f8f8f2&#34;&gt;System&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;out&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;println&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;Loading the training data for &amp;quot;&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;...&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-        &lt;span style=&#34;color: #f8f8f2&#34;&gt;files&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;add&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;trainFileFolder&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;File&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;separator&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;trainNameFormat&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;.csv&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-        &lt;span style=&#34;color: #f8f8f2&#34;&gt;loadData&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;trainData&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;files&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-        &lt;span style=&#34;color: #f8f8f2&#34;&gt;System&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;out&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;println&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;Unsampled data for: &amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;; size: &amp;quot;&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;trainData&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;size&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;());&lt;/span&gt;
-        &lt;span style=&#34;color: #f8f8f2&#34;&gt;createMapperFiles&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;trainData&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;testData&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;fs&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;localDirStr&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;null&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-        &lt;span style=&#34;color: #f8f8f2&#34;&gt;files&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;clear&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
-        &lt;span style=&#34;color: #f8f8f2&#34;&gt;trainData&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;clear&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
-    &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
-&lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt; 
-&lt;/pre&gt;&lt;/div&gt;
+// In the case of merging the data from different location, main process needs to create bootstrap samples.
+// So here, the main process loads all the data and creates the bootstrap samples.
+if(doBootstrapSampling) {                                     
+    //Load each of the training files under train folder                
+    for(i = 0; i &lt; RandomForestConstants.NUM_GLOBAL; i++) {
+        files.add(trainFileFolder + File.separator + trainNameFormat + i + &#34;.csv&#34;);
+    }
+    System.out.println(&#34;Loading the training data...&#34;);
+    loadData(trainData,files);
+    System.out.println(&#34;Data size: &#34; + trainData.size());
+    files.clear();
+    ArrayList&lt;Integer&gt; positions;
+    //Create the bootstrapped samples and write to local disk
+    for(i = 0; i &lt; RandomForestConstants.NUM_MAPPERS; i ++) {
+        positions = DoBootStrapSampling(trainData.size());
+        System.out.println(&#34;Sampled data for: &#34;+ i +&#34;; size: &#34; + positions.size());
+        createMapperFiles(trainData,testData,fs,localDirStr,i,positions);
+        positions = null;
+    }
+} else {
+    //Load each of the training files under train folder                
+    for(i = 0; i &lt; RandomForestConstants.NUM_MAPPERS; i ++){
+        System.out.println(&#34;Loading the training data for &#34; + i + &#34;...&#34;);
+        files.add(trainFileFolder+File.separator+trainNameFormat+i+&#34;.csv&#34;);
+        loadData(trainData,files);
+        System.out.println(&#34;Unsampled data for: &#34;+ i +&#34;; size: &#34; + trainData.size());
+        createMapperFiles(trainData,testData,fs,localDirStr,i,null);
+        files.clear();
+        trainData.clear();
+    }
+} 
 
 &lt;h2 id=&#34;step-1-train-forests&#34;&gt;Step 1 &amp;mdash;Train forests&lt;/h2&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #75715e&#34;&gt;// Create the Random Forest classifier that uses 5 neighbors to make decisions&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;Classifier&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;rf&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;RandomForest&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;numTrees&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;false&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;numAttributes&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Random&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;());&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt;// Learn the forest&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;rf&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;buildClassifier&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;trainDataPoints&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
+// Create the Random Forest classifier that uses 5 neighbors to make decisions
+Classifier rf = new RandomForest(numTrees, false, numAttributes, new Random());
+// Learn the forest
+rf.buildClassifier(trainDataPoints);
 
 &lt;h2 id=&#34;step-2-synchronize-majority-vote&#34;&gt;Step 2 &amp;mdash; Synchronize majority vote&lt;/h2&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;for&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;Instance&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;inst&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;testDataPoints&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-    &lt;span style=&#34;color: #75715e&#34;&gt;// This will hold this random forest&amp;#39;s class vote for this data point&lt;/span&gt;
-    &lt;span style=&#34;color: #75715e&#34;&gt;//IntArray votes = IntArray.create(C, false);&lt;/span&gt;
-    &lt;span style=&#34;color: #f8f8f2&#34;&gt;IntArray&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;votes&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;IntArray&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;create&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;RandomForestConstants&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;NUM_CLASSES&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;false&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-    &lt;span style=&#34;color: #75715e&#34;&gt;// Get the prediction class from this Random Forest&lt;/span&gt;
-    &lt;span style=&#34;color: #f8f8f2&#34;&gt;Object&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;predictedClassValue&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;rf&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;classify&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;inst&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-    &lt;span style=&#34;color: #75715e&#34;&gt;// Get the true value&lt;/span&gt;
-    &lt;span style=&#34;color: #f8f8f2&#34;&gt;Object&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;realClassValue&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;inst&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;classValue&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
-    &lt;span style=&#34;color: #75715e&#34;&gt;//int predIndex = Integer.parseInt(preds.get(dp));&lt;/span&gt;
-    &lt;span style=&#34;color: #75715e&#34;&gt;// Check which class was predicted&lt;/span&gt;
-    &lt;span style=&#34;color: #66d9ef&#34;&gt;for&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;RandomForestConstants&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;NUM_CLASSES&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;++)&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-        &lt;span style=&#34;color: #75715e&#34;&gt;// Check to see if this index matches the class that was predicted&lt;/span&gt;
-        &lt;span style=&#34;color: #66d9ef&#34;&gt;if&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;predictedClassValue&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;equals&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;Integer&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;toString&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)))&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-            &lt;span style=&#34;color: #75715e&#34;&gt;// log.info(&amp;quot;i: &amp;quot; + i + &amp;quot;; predictedClassValue: &amp;quot; + predictedClassValue + &amp;quot;; condition: &amp;quot; + predictedClassValue.equals(Integer.toString(i)));&lt;/span&gt;
-            &lt;span style=&#34;color: #f8f8f2&#34;&gt;votes&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;get&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;()[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;1&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-        &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;else&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-            &lt;span style=&#34;color: #f8f8f2&#34;&gt;votes&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;get&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;()[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-        &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
-    &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
-    &lt;span style=&#34;color: #75715e&#34;&gt;// Add the voting results to the partition&lt;/span&gt;
-    &lt;span style=&#34;color: #f8f8f2&#34;&gt;Partition&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;IntArray&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;dpP&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Partition&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;IntArray&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;dp&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;votes&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-    &lt;span style=&#34;color: #f8f8f2&#34;&gt;predTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;addPartition&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;dpP&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-    &lt;span style=&#34;color: #75715e&#34;&gt;// Move onto the next data point&lt;/span&gt;
-    &lt;span style=&#34;color: #f8f8f2&#34;&gt;dp&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;++;&lt;/span&gt;
-&lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;log&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;info&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;Done populating predTable\n&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt;// All Reduce from all Mappers&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;log&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;info&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;Before allreduce!!!!&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;allreduce&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;main&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;allreduce&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;predTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;log&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;info&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;After allreduce!!!!&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
+for (Instance inst : testDataPoints) {
+    // This will hold this random forest&#39;s class vote for this data point
+    //IntArray votes = IntArray.create(C, false);
+    IntArray votes = IntArray.create(RandomForestConstants.NUM_CLASSES, false);
+    // Get the prediction class from this Random Forest
+    Object predictedClassValue = rf.classify(inst);
+    // Get the true value
+    Object realClassValue = inst.classValue();
+    //int predIndex = Integer.parseInt(preds.get(dp));
+    // Check which class was predicted
+    for (int i = 0; i &lt; RandomForestConstants.NUM_CLASSES; i++) {
+        // Check to see if this index matches the class that was predicted
+        if (predictedClassValue.equals(Integer.toString(i))) {
+            // log.info(&#34;i: &#34; + i + &#34;; predictedClassValue: &#34; + predictedClassValue + &#34;; condition: &#34; + predictedClassValue.equals(Integer.toString(i)));
+            votes.get()[i] = 1;
+        } else {
+            votes.get()[i] = 0;
+        }
+    }
+    // Add the voting results to the partition
+    Partition&lt;IntArray&gt; dpP = new Partition&lt;IntArray&gt;(dp, votes);
+    predTable.addPartition(dpP);
+    // Move onto the next data point
+    dp++;
+}
+log.info(&#34;Done populating predTable\n&#34;);
+// All Reduce from all Mappers
+log.info(&#34;Before allreduce!!!!&#34;);
+allreduce(&#34;main&#34;, &#34;allreduce&#34;, predTable);
+log.info(&#34;After allreduce!!!!&#34;);
 </description>
     </item>
     
@@ -903,130 +885,124 @@ Usage: NNMapCollective &amp;lt;number of map tasks&amp;gt; &amp;lt;epochs&amp;gt
 &lt;/ul&gt;
 
 &lt;p&gt;After preprocessing, push the data set into HDFS by the following commands.&lt;/p&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;hdfs dfs -mkdir /input
+hdfs dfs -mkdir /input
 hdfs dfs -put input_data/* /input
-&lt;/pre&gt;&lt;/div&gt;
 
 &lt;h2 id=&#34;step-1-initialize-and-load-data&#34;&gt;Step 1 &amp;mdash; Initialize and load data&lt;/h2&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;Vector&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;Double&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;vy&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Vector&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;Double&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;();&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;Vector&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;svm_node&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[]&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;vx&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Vector&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;svm_node&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[]&amp;gt;();&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;Vector&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;Double&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;svy&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Vector&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;Double&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;();&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;Vector&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;svm_node&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[]&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;svx&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Vector&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;svm_node&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[]&amp;gt;();&lt;/span&gt;
-&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;maxIndex&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
+Vector&lt;Double&gt; vy = new Vector&lt;Double&gt;();
+Vector&lt;svm_node[]&gt; vx = new Vector&lt;svm_node[]&gt;();
+Vector&lt;Double&gt; svy = new Vector&lt;Double&gt;();
+Vector&lt;svm_node[]&gt; svx = new Vector&lt;svm_node[]&gt;();
+int maxIndex = 0;
 
-&lt;span style=&#34;color: #75715e&#34;&gt;//read data from HDFS&lt;/span&gt;
-&lt;span style=&#34;color: #66d9ef&#34;&gt;for&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;String&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;dataFile&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;dataFiles&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-    &lt;span style=&#34;color: #f8f8f2&#34;&gt;FileSystem&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;fs&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;FileSystem&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;get&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;configuration&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-    &lt;span style=&#34;color: #f8f8f2&#34;&gt;Path&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;dataPath&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Path&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;dataFile&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-    &lt;span style=&#34;color: #f8f8f2&#34;&gt;FSDataInputStream&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;in&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;fs&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;open&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;dataPath&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-    &lt;span style=&#34;color: #f8f8f2&#34;&gt;BufferedReader&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;br&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;BufferedReader&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;InputStreamReader&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;in&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;));&lt;/span&gt;
-    &lt;span style=&#34;color: #f8f8f2&#34;&gt;String&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;line&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-    &lt;span style=&#34;color: #66d9ef&#34;&gt;while&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;((&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;line&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;br&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;readLine&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;())&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;!=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;null&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-        &lt;span style=&#34;color: #f8f8f2&#34;&gt;StringTokenizer&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;st&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;StringTokenizer&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;line&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot; \t\n\r\f:&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-        &lt;span style=&#34;color: #f8f8f2&#34;&gt;vy&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;addElement&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;Double&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;valueOf&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;st&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;nextToken&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;()).&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;doubleValue&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;());&lt;/span&gt;
-        &lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;m&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;st&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;countTokens&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;()&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;/&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;2&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-        &lt;span style=&#34;color: #f8f8f2&#34;&gt;svm_node&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[]&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;x&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;svm_node&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;m&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;];&lt;/span&gt;
-        &lt;span style=&#34;color: #66d9ef&#34;&gt;for&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;m&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;++)&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-            &lt;span style=&#34;color: #f8f8f2&#34;&gt;x&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;svm_node&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt; 
-            &lt;span style=&#34;color: #f8f8f2&#34;&gt;x&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;].&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;index&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Integer&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;parseInt&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;st&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;nextToken&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;());&lt;/span&gt;
-            &lt;span style=&#34;color: #f8f8f2&#34;&gt;x&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;].&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;value&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Double&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;valueOf&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;st&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;nextToken&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;()).&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;doubleValue&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
-        &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
-        &lt;span style=&#34;color: #66d9ef&#34;&gt;if&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;m&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;maxIndex&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Math&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;max&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;maxIndex&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;x&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;m&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;-&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;1&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;].&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;index&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-        &lt;span style=&#34;color: #f8f8f2&#34;&gt;vx&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;addElement&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;x&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-    &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
-    &lt;span style=&#34;color: #f8f8f2&#34;&gt;br&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;close&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
-&lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
+//read data from HDFS
+for (String dataFile : dataFiles) {
+    FileSystem fs = FileSystem.get(configuration);
+    Path dataPath = new Path(dataFile);
+    FSDataInputStream in = fs.open(dataPath);
+    BufferedReader br = new BufferedReader(new InputStreamReader(in));
+    String line = &#34;&#34;;
+    while ((line = br.readLine()) != null) {
+        StringTokenizer st = new StringTokenizer(line,&#34; \t\n\r\f:&#34;);
+        vy.addElement(Double.valueOf(st.nextToken()).doubleValue());
+        int m = st.countTokens() / 2;
+        svm_node[] x = new svm_node[m];
+        for (int i = 0;i &lt; m;i++) {
+            x[i] = new svm_node(); 
+            x[i].index = Integer.parseInt(st.nextToken());
+            x[i].value = Double.valueOf(st.nextToken()).doubleValue();
+        }
+        if (m &gt; 0) maxIndex = Math.max(maxIndex,x[m - 1].index);
+        vx.addElement(x);
+    }
+    br.close();
+}
 
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;HashSet&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;String&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;originTrainingData&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;HashSet&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;String&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;();&lt;/span&gt;
-&lt;span style=&#34;color: #66d9ef&#34;&gt;for&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;vy&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;size&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;++)&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-    &lt;span style=&#34;color: #f8f8f2&#34;&gt;String&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;line&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-    &lt;span style=&#34;color: #f8f8f2&#34;&gt;line&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;vy&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;get&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot; &amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-    &lt;span style=&#34;color: #66d9ef&#34;&gt;for&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;j&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;j&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;vx&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;get&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;).&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;length&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;-&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;1&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;j&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;++)&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-        &lt;span style=&#34;color: #f8f8f2&#34;&gt;line&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;vx&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;get&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;j&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;].&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;index&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;:&amp;quot;&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;vx&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;get&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;j&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;].&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;value&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot; &amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-    &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
-    &lt;span style=&#34;color: #f8f8f2&#34;&gt;line&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;vx&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;get&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;vx&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;get&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;).&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;length&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;-&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;1&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;].&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;index&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;:&amp;quot;&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;vx&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;get&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;vx&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;get&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;).&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;length&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;-&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;1&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;].&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;value&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-    &lt;span style=&#34;color: #f8f8f2&#34;&gt;originTrainingData&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;add&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;line&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-&lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
+HashSet&lt;String&gt; originTrainingData = new HashSet&lt;String&gt;();
+for (int i = 0;i &lt; vy.size();i++) {
+    String line = &#34;&#34;;
+    line += vy.get(i) + &#34; &#34;;
+    for (int j = 0;j &lt; vx.get(i).length - 1;j++) {
+        line += vx.get(i)[j].index + &#34;:&#34; + vx.get(i)[j].value + &#34; &#34;;
+    }
+    line += vx.get(i)[vx.get(i).length - 1].index + &#34;:&#34; + vx.get(i)[vx.get(i).length - 1].value;
+    originTrainingData.add(line);
+}
 
-&lt;span style=&#34;color: #75715e&#34;&gt;//initial svm paramter&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;svmParameter&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;svm_parameter&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;svmParameter&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;svm_type&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;svm_parameter&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;C_SVC&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;svmParameter&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;kernel_type&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;svm_parameter&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;RBF&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;svmParameter&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;degree&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;3&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;svmParameter&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;gamma&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;svmParameter&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;coef0&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;svmParameter&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;nu&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0.5&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;svmParameter&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;cache_size&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;100&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;svmParameter&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;C&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;1&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;svmParameter&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;eps&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;1e-3&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;svmParameter&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;p&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0.1&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;svmParameter&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;shrinking&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;1&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;svmParameter&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;probability&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;svmParameter&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;nr_weight&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;svmParameter&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;weight_label&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;];&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;svmParameter&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;weight&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;double&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;];&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
+//initial svm paramter
+svmParameter = new svm_parameter();
+svmParameter.svm_type = svm_parameter.C_SVC;
+svmParameter.kernel_type = svm_parameter.RBF;
+svmParameter.degree = 3;
+svmParameter.gamma = 0;
+svmParameter.coef0 = 0;
+svmParameter.nu = 0.5;
+svmParameter.cache_size = 100;
+svmParameter.C = 1;
+svmParameter.eps = 1e-3;
+svmParameter.p = 0.1;
+svmParameter.shrinking = 1;
+svmParameter.probability = 0;
+svmParameter.nr_weight = 0;
+svmParameter.weight_label = new int[0];
+svmParameter.weight = new double[0];
 
 &lt;h2 id=&#34;step-2-train-via-libsvm-s-api&#34;&gt;Step 2 &amp;mdash;Train via LibSVM&amp;rsquo;s API&lt;/h2&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #75715e&#34;&gt;//initial svm problem&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;svmProblem&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;svm_problem&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;svmProblem&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;l&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;currentTrainingData&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;size&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;svmProblem&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;x&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;svm_node&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;svmProblem&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;l&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;][];&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;svmProblem&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;y&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;double&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;svmProblem&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;l&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;];&lt;/span&gt;
-&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;id&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-&lt;span style=&#34;color: #66d9ef&#34;&gt;for&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;String&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;line&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;currentTrainingData&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-    &lt;span style=&#34;color: #f8f8f2&#34;&gt;StringTokenizer&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;st&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;StringTokenizer&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;line&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot; \t\n\r\f:&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-    &lt;span style=&#34;color: #f8f8f2&#34;&gt;svmProblem&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;y&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;id&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Double&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;valueOf&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;st&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;nextToken&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;()).&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;doubleValue&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
-    &lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;m&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;st&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;countTokens&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;()&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;/&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;2&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-    &lt;span style=&#34;color: #f8f8f2&#34;&gt;svm_node&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[]&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;x&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;svm_node&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;m&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;];&lt;/span&gt;
-    &lt;span style=&#34;color: #66d9ef&#34;&gt;for&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;m&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;++)&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-        &lt;span style=&#34;color: #f8f8f2&#34;&gt;x&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;svm_node&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt; 
-        &lt;span style=&#34;color: #f8f8f2&#34;&gt;x&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;].&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;index&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Integer&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;parseInt&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;st&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;nextToken&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;());&lt;/span&gt;
-        &lt;span style=&#34;color: #f8f8f2&#34;&gt;x&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;].&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;value&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Double&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;valueOf&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;st&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;nextToken&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;()).&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;doubleValue&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
-    &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
-    &lt;span style=&#34;color: #f8f8f2&#34;&gt;svmProblem&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;x&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;id&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;x&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-    &lt;span style=&#34;color: #f8f8f2&#34;&gt;id&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;++;&lt;/span&gt;
-&lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
+//initial svm problem
+svmProblem = new svm_problem();
+svmProblem.l = currentTrainingData.size();
+svmProblem.x = new svm_node[svmProblem.l][];
+svmProblem.y = new double[svmProblem.l];
+int id = 0;
+for (String line : currentTrainingData) {
+    StringTokenizer st = new StringTokenizer(line,&#34; \t\n\r\f:&#34;);
+    svmProblem.y[id] = Double.valueOf(st.nextToken()).doubleValue();
+    int m = st.countTokens() / 2;
+    svm_node[] x = new svm_node[m];
+    for (int i = 0;i &lt; m;i++) {
+        x[i] = new svm_node(); 
+        x[i].index = Integer.parseInt(st.nextToken());
+        x[i].value = Double.valueOf(st.nextToken()).doubleValue();
+    }
+    svmProblem.x[id] = x;
+    id++;
+}
 
-&lt;span style=&#34;color: #75715e&#34;&gt;//compute model&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;svmModel&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;svm&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;svm_train&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;svmProblem&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;svmParameter&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
+//compute model
+svmModel = svm.svm_train(svmProblem, svmParameter);
 
 &lt;h2 id=&#34;step-3-communication-among-nodes&#34;&gt;Step 3 &amp;mdash; Communication among nodes&lt;/h2&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;Table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;HarpString&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;svTable&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;HarpStringPlus&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;());&lt;/span&gt;
+Table&lt;HarpString&gt; svTable = new Table(0, new HarpStringPlus());
 
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;HarpString&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;harpString&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;HarpString&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;harpString&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;s&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-&lt;span style=&#34;color: #66d9ef&#34;&gt;for&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;svmModel&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;l&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;++)&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-    &lt;span style=&#34;color: #f8f8f2&#34;&gt;harpString&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;s&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;svmProblem&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;y&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;svmModel&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;sv_indices&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;-&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;1&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot; &amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-    &lt;span style=&#34;color: #66d9ef&#34;&gt;for&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;j&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;j&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;svmModel&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;SV&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;].&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;length&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;-&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;1&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;j&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;++)&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-        &lt;span style=&#34;color: #f8f8f2&#34;&gt;harpString&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;s&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;svmModel&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;SV&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;][&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;j&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;].&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;index&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;:&amp;quot;&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;svmModel&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;SV&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;][&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;j&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;].&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;value&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot; &amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-    &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
-    &lt;span style=&#34;color: #f8f8f2&#34;&gt;harpString&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;s&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;svmModel&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;SV&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;][&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;svmModel&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;SV&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;].&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;length&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;-&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;1&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;].&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;index&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;:&amp;quot;&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;svmModel&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;SV&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;][&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;svmModel&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;SV&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;].&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;length&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;-&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;1&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;].&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;value&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;\n&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-&lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;Partition&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;HarpString&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;pa&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Partition&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;HarpString&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;(&lt;/span&gt;&lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;harpString&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;svTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;addPartition&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;pa&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+HarpString harpString = new HarpString();
+harpString.s = &#34;&#34;;
+for (int i = 0;i &lt; svmModel.l;i++) {
+    harpString.s += svmProblem.y[svmModel.sv_indices[i] - 1] + &#34; &#34;;
+    for (int j = 0;j &lt; svmModel.SV[i].length - 1;j++) {
+        harpString.s += svmModel.SV[i][j].index + &#34;:&#34; + svmModel.SV[i][j].value + &#34; &#34;;
+    }
+    harpString.s += svmModel.SV[i][svmModel.SV[i].length - 1].index + &#34;:&#34; + svmModel.SV[i][svmModel.SV[i].length - 1].value + &#34;\n&#34;;
+}
+Partition&lt;HarpString&gt; pa = new Partition&lt;HarpString&gt;(0, harpString);
+svTable.addPartition(pa);
 
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;allreduce&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;main&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;allreduce_&amp;quot;&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;iter&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;svTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+allreduce(&#34;main&#34;, &#34;allreduce_&#34; + iter, svTable);
 
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;supportVectors&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;HashSet&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;String&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;();&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;String&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[]&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;svString&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;svTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getPartition&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;).&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;get&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;().&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;get&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;().&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;split&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;\n&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-&lt;span style=&#34;color: #66d9ef&#34;&gt;for&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;String&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;line&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;svString&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-    &lt;span style=&#34;color: #66d9ef&#34;&gt;if&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;(!&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;supportVectors&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;contains&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;line&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;))&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-        &lt;span style=&#34;color: #f8f8f2&#34;&gt;supportVectors&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;add&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;line&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-    &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
-&lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
+supportVectors = new HashSet&lt;String&gt;();
+String[] svString = svTable.getPartition(0).get().get().split(&#34;\n&#34;);
+for (String line : svString) {
+    if (!supportVectors.contains(line)) {
+        supportVectors.add(line);
+    }
+}
 
 &lt;h2 id=&#34;usage&#34;&gt;USAGE&lt;/h2&gt;
 
 &lt;p&gt;Run Harp SVM:&lt;/p&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;$ hadoop jar build/harp3-app-hadoop-2.6.0.jar edu.iu.svm.IterativeSVM &amp;lt;number of mappers&amp;gt; &amp;lt;number of iteration&amp;gt; &amp;lt;output path in HDFS&amp;gt; &amp;lt;data &lt;span style=&#34;color: #f8f8f2&#34;&gt;set&lt;/span&gt; path&amp;gt;
-&lt;/pre&gt;&lt;/div&gt;
+$ hadoop jar build/harp3-app-hadoop-2.6.0.jar edu.iu.svm.IterativeSVM &lt;number of mappers&gt; &lt;number of iteration&gt; &lt;output path in HDFS&gt; &lt;data set path&gt;
 
 &lt;p&gt;Fetch the result:&lt;/p&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;$ hdfs dfs -get &amp;lt;output path in HDFS&amp;gt; &amp;lt;path you want to store the output&amp;gt;
-&lt;/pre&gt;&lt;/div&gt;
+$ hdfs dfs -get &lt;output path in HDFS&gt; &lt;path you want to store the output&gt;
 </description>
     </item>
     
@@ -1073,32 +1049,31 @@ advantage for computation-intensive data analytics algorithms. This is also the 
 &lt;p&gt;If you already have a legacy Harp application codes, you need only identify the local computation module, and replace it by invoking correspondent
 DAAL kernels. Although DAAL&amp;rsquo;s kernels are written in C/C++, it does provide users of a Java API. The API is highly packaged, and the users only need
 a few lines of codes to finish the invocation of kernels. For instance, the main function of a PCA application in DAAL is shown as below:&lt;/p&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;static&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;main&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;String&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[]&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;args&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;throws&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;java&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;io&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;FileNotFoundException&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;java&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;io&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;IOException&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
+public static void main(String[] args) throws java.io.FileNotFoundException, java.io.IOException {
 
-     &lt;span style=&#34;color: #75715e&#34;&gt;/* Read a data set from a file and create a numeric table for storing the input data */&lt;/span&gt;
-     &lt;span style=&#34;color: #f8f8f2&#34;&gt;CSRNumericTable&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;data&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Service&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;createSparseTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;context&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;datasetFileName&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+     /* Read a data set from a file and create a numeric table for storing the input data */
+     CSRNumericTable data = Service.createSparseTable(context, datasetFileName);
 
-     &lt;span style=&#34;color: #75715e&#34;&gt;/* Create an algorithm to compute PCA decomposition using the correlation method */&lt;/span&gt;
-     &lt;span style=&#34;color: #f8f8f2&#34;&gt;Batch&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;pcaAlgorithm&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Batch&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;context&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Double&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;class&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Method&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;correlationDense&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+     /* Create an algorithm to compute PCA decomposition using the correlation method */
+     Batch pcaAlgorithm = new Batch(context, Double.class, Method.correlationDense);
 
-     &lt;span style=&#34;color: #f8f8f2&#34;&gt;com&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;intel&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;daal&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;algorithms&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;covariance&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;Batch&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;covarianceSparse&lt;/span&gt;
-         &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;com&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;intel&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;daal&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;algorithms&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;covariance&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;Batch&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;context&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Double&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;class&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;com&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;intel&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;daal&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;algorithms&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;covariance&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;Method&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;fastCSR&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-     &lt;span style=&#34;color: #f8f8f2&#34;&gt;pcaAlgorithm&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;parameter&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;setCovariance&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;covarianceSparse&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+     com.intel.daal.algorithms.covariance.Batch covarianceSparse
+         = new com.intel.daal.algorithms.covariance.Batch(context, Double.class, com.intel.daal.algorithms.covariance.Method.fastCSR);
+     pcaAlgorithm.parameter.setCovariance(covarianceSparse);
 
-     &lt;span style=&#34;color: #75715e&#34;&gt;/* Set the input data */&lt;/span&gt;
-     &lt;span style=&#34;color: #f8f8f2&#34;&gt;pcaAlgorithm&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;input&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;set&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;InputId&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;data&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;data&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+     /* Set the input data */
+     pcaAlgorithm.input.set(InputId.data, data);
 
-     &lt;span style=&#34;color: #75715e&#34;&gt;/* Compute PCA decomposition */&lt;/span&gt;
-     &lt;span style=&#34;color: #f8f8f2&#34;&gt;Result&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;res&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;pcaAlgorithm&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;compute&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
+     /* Compute PCA decomposition */
+     Result res = pcaAlgorithm.compute();
 
-     &lt;span style=&#34;color: #f8f8f2&#34;&gt;NumericTable&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;eigenValues&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;res&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;get&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;ResultId&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;eigenValues&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-     &lt;span style=&#34;color: #f8f8f2&#34;&gt;NumericTable&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;eigenVectors&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;res&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;get&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;ResultId&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;eigenVectors&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-     &lt;span style=&#34;color: #f8f8f2&#34;&gt;Service&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;printNumericTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;Eigenvalues:&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;eigenValues&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-     &lt;span style=&#34;color: #f8f8f2&#34;&gt;Service&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;printNumericTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;Eigenvectors:&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;eigenVectors&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+     NumericTable eigenValues = res.get(ResultId.eigenValues);
+     NumericTable eigenVectors = res.get(ResultId.eigenVectors);
+     Service.printNumericTable(&#34;Eigenvalues:&#34;, eigenValues);
+     Service.printNumericTable(&#34;Eigenvectors:&#34;, eigenVectors);
 
-     &lt;span style=&#34;color: #f8f8f2&#34;&gt;context&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;dispose&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
-&lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
+     context.dispose();
+}
 
 &lt;p&gt;DAAL&amp;rsquo;s Java API is usually contains the following objects:&lt;/p&gt;
 
@@ -1135,14 +1110,15 @@ between Harp&amp;rsquo;s data structure and that of DAAL.&lt;/p&gt;
 
 &lt;p&gt;Within the &lt;em&gt;RotatorDaal&lt;/em&gt;, the data transfers between Harp and DAAL is also overlapped by the computation work in another pipeline. Thus, if there is enough computation workload, the
 overhead of data conversion could be significantly reduced. It is also very straightforward to invoke these conversion tools.&lt;/p&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #75715e&#34;&gt;//create a conversion class between harp map and daal&amp;#39;s table&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;HomogenTableHarpMap&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;double&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[]&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;converter&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;HomogenTableHarpMap&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;double&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[]&amp;gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;wMap&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;wMap_index&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;wMap_daal&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;wMap_size&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;r&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;numThreads&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;convert_wTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;HarpToDaalDouble&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
 
-&lt;span style=&#34;color: #75715e&#34;&gt;//create a conversion class between a harp table and a daal table&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;converter&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;HomogenTableHarpTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;I&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;P&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;P&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;daal_table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getNumPartitions&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(),&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;rdim&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;numThreads&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;converter&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;HarpToDaalDouble&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
+//create a conversion class between harp map and daal&#39;s table
+HomogenTableHarpMap&lt;double[]&gt; converter = new HomogenTableHarpMap&lt;double[]&gt;(wMap, wMap_index, wMap_daal, wMap_size, r, numThreads);
+convert_wTable.HarpToDaalDouble();
+
+//create a conversion class between a harp table and a daal table
+converter = new HomogenTableHarpTable&lt;I, P, Table&lt;P&gt; &gt;(table, this.daal_table, table.getNumPartitions(), this.rdim, this.numThreads);
+converter.HarpToDaalDouble();
+
 
 &lt;h2 id=&#34;how-to-compile-and-run-harp-daal-application&#34;&gt;How to Compile and Run Harp-DAAL Application ?&lt;/h2&gt;
 
@@ -1150,54 +1126,61 @@ overhead of data conversion could be significantly reduced. It is also very stra
 
 &lt;p&gt;You can either download Intel&amp;rsquo;s DAAL product with licence from their website &lt;a href=&#34;https://software.intel.com/en-us/blogs/daal&#34;&gt;https://software.intel.com/en-us/blogs/daal&lt;/a&gt;, or build it from source code. DAAL&amp;rsquo;s source code
 is open-sourced and available on the GitHub.&lt;/p&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;git clone https://github.com/01org/daal.git
-&lt;/pre&gt;&lt;/div&gt;
+
+git clone https://github.com/01org/daal.git
+
 
 &lt;p&gt;After installation, you can run the bin/daalvars.sh script to set up all the DAAL related environment variables.&lt;/p&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;source&lt;/span&gt; /path-to-daal/bin/daalvars.sh intel64
-&lt;/pre&gt;&lt;/div&gt;
+
+source /path-to-daal/bin/daalvars.sh intel64
+
 
 &lt;p&gt;The important environment variable is the &lt;em&gt;DAALROOT&lt;/em&gt;, which points to the path of DAAL&amp;rsquo;s source code. You can run the examples of each algorithm within DAAL to test
 the installation of your DAAL library.&lt;/p&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;cd&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;$DAALROOT&lt;/span&gt;/../__release_lnx/daal/examples/cpp
-make &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;libia32&lt;span style=&#34;color: #f8f8f2&#34;&gt;|&lt;/span&gt;soia32&lt;span style=&#34;color: #f8f8f2&#34;&gt;|&lt;/span&gt;libintel64&lt;span style=&#34;color: #f8f8f2&#34;&gt;|&lt;/span&gt;sointel64&lt;span style=&#34;color: #f8f8f2&#34;&gt;|&lt;/span&gt;help&lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;example&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt;name&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;compiler&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt;compiler_name&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;mode&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt;mode_name&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;threading&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt;threading_name&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
+
+cd $DAALROOT/../__release_lnx/daal/examples/cpp
+make {libia32|soia32|libintel64|sointel64|help} [example=name] [compiler=compiler_name] [mode=mode_name] [threading=threading_name]
+
 
 &lt;h3 id=&#34;setup-daal-within-harp&#34;&gt;Setup DAAL within Harp&lt;/h3&gt;
 
 &lt;p&gt;To use DAAL within Harp, you need first add DAAL Java API to your Java source code&lt;/p&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #75715e&#34;&gt;// packages from Daal&lt;/span&gt;
-&lt;span style=&#34;color: #f92672&#34;&gt;import&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;com.intel.daal.services.DaalContext&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-&lt;span style=&#34;color: #f92672&#34;&gt;import&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;com.intel.daal.algorithms.*&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-&lt;span style=&#34;color: #f92672&#34;&gt;import&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;com.intel.daal.data_management.data.NumericTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
+
+// packages from Daal
+import com.intel.daal.services.DaalContext;
+import com.intel.daal.algorithms.*;
+import com.intel.daal.data_management.data.NumericTable;
+
 
 &lt;p&gt;To compile your Harp-DAAL codes by ant, add the following lines to your &lt;em&gt;build.xml&lt;/em&gt;&lt;/p&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;fileset&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;dir=&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;${env.DAALROOT}&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt;
-&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;include&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;name=&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;**/*.jar&amp;quot;&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;/&amp;gt;&lt;/span&gt;
-&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;include&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;name=&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;**/lib/*.jar&amp;quot;&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;/&amp;gt;&lt;/span&gt;
-&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;/fileset&amp;gt;&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
+
+&lt;fileset dir=&#34;${env.DAALROOT}&#34;&gt;
+&lt;include name=&#34;**/*.jar&#34; /&gt;
+&lt;include name=&#34;**/lib/*.jar&#34; /&gt;
+&lt;/fileset&gt;
+
 
 &lt;p&gt;Since DAAL&amp;rsquo;s Java API will invoke the native DAAL kernels, we need to load the native lib files into Harp&amp;rsquo;s environment in two steps&lt;/p&gt;
 
 &lt;p&gt;1.Load these required native libraries in HDFS&lt;/p&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;hdfs dfs -put &lt;span style=&#34;color: #e6db74&#34;&gt;${&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;DAALROOT&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;}&lt;/span&gt;/lib/intel64_lin/libJavaAPI.so /Hadoop/Libraries/
-hdfs dfs -put &lt;span style=&#34;color: #e6db74&#34;&gt;${&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;DAALROOT&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;}&lt;/span&gt;/../tbb/lib/intel64_lin/gcc4.4/libtbb* /Hadoop/Libraries/
-hdfs dfs -put &lt;span style=&#34;color: #e6db74&#34;&gt;${&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;DAALROOT&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;}&lt;/span&gt;/../../daal-misc/lib/libiomp5.so /Hadoop/Libraries/
-&lt;/pre&gt;&lt;/div&gt;
+
+hdfs dfs -put ${DAALROOT}/lib/intel64_lin/libJavaAPI.so /Hadoop/Libraries/
+hdfs dfs -put ${DAALROOT}/../tbb/lib/intel64_lin/gcc4.4/libtbb* /Hadoop/Libraries/
+hdfs dfs -put ${DAALROOT}/../../daal-misc/lib/libiomp5.so /Hadoop/Libraries/
+
 
 &lt;p&gt;2.Load native libraries from HDFS to distributed cache of Harp&amp;rsquo;s program.&lt;/p&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #75715e&#34;&gt;/* Put shared libraries into the distributed cache */&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;Configuration&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;conf&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getConf&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;DistributedCache&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;createSymlink&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;conf&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;DistributedCache&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;addCacheFile&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;URI&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;/Hadoop/Libraries/libJavaAPI.so#libJavaAPI.so&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;),&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;conf&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;DistributedCache&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;addCacheFile&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;URI&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;/Hadoop/Libraries/libtbb.so.2#libtbb.so.2&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;),&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;conf&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;DistributedCache&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;addCacheFile&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;URI&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;/Hadoop/Libraries/libtbb.so#libtbb.so&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;),&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;conf&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;DistributedCache&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;addCacheFile&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;URI&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;/Hadoop/Libraries/libtbbmalloc.so.2#libtbbmalloc.so.2&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;),&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;conf&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;DistributedCache&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;addCacheFile&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;URI&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;/Hadoop/Libraries/libtbbmalloc.so#libtbbmalloc.so&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;),&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;conf&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;DistributedCache&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;addCacheFile&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;URI&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;/Hadoop/Libraries/libiomp5.so#libiomp5.so&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;),&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;conf&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
+
+/* Put shared libraries into the distributed cache */
+Configuration conf = this.getConf();
+DistributedCache.createSymlink(conf);
+DistributedCache.addCacheFile(new URI(&#34;/Hadoop/Libraries/libJavaAPI.so#libJavaAPI.so&#34;), conf);
+DistributedCache.addCacheFile(new URI(&#34;/Hadoop/Libraries/libtbb.so.2#libtbb.so.2&#34;), conf);
+DistributedCache.addCacheFile(new URI(&#34;/Hadoop/Libraries/libtbb.so#libtbb.so&#34;), conf);
+DistributedCache.addCacheFile(new URI(&#34;/Hadoop/Libraries/libtbbmalloc.so.2#libtbbmalloc.so.2&#34;), conf);
+DistributedCache.addCacheFile(new URI(&#34;/Hadoop/Libraries/libtbbmalloc.so#libtbbmalloc.so&#34;), conf);
+DistributedCache.addCacheFile(new URI(&#34;/Hadoop/Libraries/libiomp5.so#libiomp5.so&#34;), conf);
+
 </description>
     </item>
     

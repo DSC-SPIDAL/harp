@@ -37,41 +37,38 @@
 <h2 id="step-1-set-table">Step 1 &mdash; Set Table</h2>
 
 <p>The data format wrapper code is in charge of the conversion between the native DoubleMatrix and Harp Table.</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #66d9ef">public</span> <span style="color: #f8f8f2">Table</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">DoubleArray</span><span style="color: #f92672">&gt;</span> <span style="color: #a6e22e">train</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">DoubleMatrix</span> <span style="color: #f8f8f2">X</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">DoubleMatrix</span> <span style="color: #f8f8f2">Y</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">Table</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">DoubleArray</span><span style="color: #f92672">&gt;</span> <span style="color: #f8f8f2">localWeightTable</span><span style="color: #f92672">,</span> <span style="color: #66d9ef">int</span> <span style="color: #f8f8f2">mini_epochs</span><span style="color: #f92672">,</span> <span style="color: #66d9ef">int</span> <span style="color: #f8f8f2">numMapTasks</span><span style="color: #f92672">,</span> <span style="color: #66d9ef">double</span> <span style="color: #f8f8f2">lambda</span><span style="color: #f92672">)</span> <span style="color: #66d9ef">throws</span> <span style="color: #f8f8f2">IOException</span>
-<span style="color: #f92672">{</span>
-    <span style="color: #f8f8f2">Vector</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">DoubleMatrix</span><span style="color: #f92672">&gt;</span> <span style="color: #f8f8f2">weightMatrix</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">reshapeTableToList</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">localWeightTable</span><span style="color: #f92672">);</span>
-    <span style="color: #f8f8f2">setTheta</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">weightMatrix</span><span style="color: #f92672">);</span>
+public Table<DoubleArray> train(DoubleMatrix X, DoubleMatrix Y, Table<DoubleArray> localWeightTable, int mini_epochs, int numMapTasks, double lambda) throws IOException
+{
+    Vector<DoubleMatrix> weightMatrix = reshapeTableToList(localWeightTable);
+    setTheta(weightMatrix);
 
-    <span style="color: #f8f8f2">trainBP</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">X</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">Y</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">lambda</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">mini_epochs</span><span style="color: #f92672">,</span> <span style="color: #66d9ef">true</span><span style="color: #f92672">);</span>
+    trainBP(X, Y, lambda, mini_epochs, true);
 
-    <span style="color: #f8f8f2">Table</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">DoubleArray</span><span style="color: #f92672">&gt;</span> <span style="color: #f8f8f2">newWeightTable</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">reshapeListToTable</span><span style="color: #f92672">(</span><span style="color: #66d9ef">this</span><span style="color: #f92672">.</span><span style="color: #a6e22e">getTheta</span><span style="color: #f92672">());</span>
-    <span style="color: #66d9ef">return</span> <span style="color: #f8f8f2">newWeightTable</span><span style="color: #f92672">;</span>
-<span style="color: #f92672">}</span>
-</pre></div>
+    Table<DoubleArray> newWeightTable = reshapeListToTable(this.getTheta());
+    return newWeightTable;
+}
 
 <h2 id="step-2-communication">Step 2 &mdash;Communication</h2>
 
 <p>The code snippet for the core part of computation in the iterative training. There  are only a few lines of differences between the harp distributed version and the original sequential version.</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #75715e">// Calculate the new weights </span>
-<span style="color: #75715e">// argument data type conversion and call the train() in the underlie library</span>
-<span style="color: #f8f8f2">weightTable</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">localNN</span><span style="color: #f92672">.</span><span style="color: #a6e22e">train</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">X</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">Y</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">weightTable</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">n</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">numMapTasks</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">lambda</span><span style="color: #f92672">);</span>
+// Calculate the new weights 
+// argument data type conversion and call the train() in the underlie library
+weightTable = localNN.train(X, Y, weightTable, n, numMapTasks, lambda);
 
-<span style="color: #75715e">// reduce and broadcast</span>
-<span style="color: #f8f8f2">allreduce</span><span style="color: #f92672">(</span><span style="color: #e6db74">&quot;main&quot;</span><span style="color: #f92672">,</span> <span style="color: #e6db74">&quot;allreduce&quot;</span> <span style="color: #f92672">+</span> <span style="color: #f8f8f2">i</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">weightTable</span><span style="color: #f92672">);</span>
+// reduce and broadcast
+allreduce("main", "allreduce" + i, weightTable);
 
-<span style="color: #75715e">// Average the weight table by the numMapTasks</span>
-<span style="color: #f8f8f2">weightTable</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">localNN</span><span style="color: #f92672">.</span><span style="color: #a6e22e">modelAveraging</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">weightTable</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">numMapTasks</span><span style="color: #f92672">);</span>
-</pre></div>
+// Average the weight table by the numMapTasks
+weightTable = localNN.modelAveraging(weightTable, numMapTasks);
 
 <h2 id="data">DATA</h2>
 
 <p>The MNIST dataset is used in this tutorial. Refer the <a href="https://github.com/DSC-SPIDAL/harp/tree/master/data/tutorial/mnist">dataset script</a> for more details.</p>
 
 <h2 id="usage">USAGE</h2>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>$ hadoop jar harp-tutorial-app-1.0-SNAPSHOT.jar edu.iu.NN.NNMapCollective
-Usage: NNMapCollective &lt;number of map tasks&gt; &lt;epochs&gt; &lt;syncIterNum&gt; &lt;hiddenLayers&gt; &lt;minibatchsize&gt; &lt;lambda&gt; &lt;workDir&gt;
-<span style="color: #75715e"># hadoop jar harp-tutorial-app-1.0-SNAPSHOT.jar edu.iu.NN.NNMapCollective 2 20 5 100,32 2000 0 /nn</span>
-</pre></div>
+$ hadoop jar harp-tutorial-app-1.0-SNAPSHOT.jar edu.iu.NN.NNMapCollective
+Usage: NNMapCollective <number of map tasks> <epochs> <syncIterNum> <hiddenLayers> <minibatchsize> <lambda> <workDir>
+# hadoop jar harp-tutorial-app-1.0-SNAPSHOT.jar edu.iu.NN.NNMapCollective 2 20 5 100,32 2000 0 /nn
 
 <p>This command run harp neuralnetwork training on the input dataset under /nn, with 2 mappers. Training process goes through 20 times of the training dataset, averages the model every 5 iteration for each minibatch. The minibatch size is 2000, lambda is default value 0.689. There are 2 hidden layers, with 100 and 32 nodes each. Finally, it outputs the accuracy on the training set into the hadoop log.</p>
 </article></section></div></div></div><script src="https://code.jquery.com/jquery-2.2.1.min.js"></script><script src="https://dsc-spidal.github.io/harp/js/app.min.js"></script></body></html>

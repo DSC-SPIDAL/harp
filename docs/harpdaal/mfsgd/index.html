@@ -48,18 +48,19 @@ updates its own rows from model matrices W and H without mutual locks.</p>
 <h2 id="a-code-walk-through-of-harp-daal-sgd">A Code Walk through of Harp-DAAL-SGD</h2>
 
 <p>The main body of Harp-DAAL-SGD is the <em>mapCollective</em> function of class <em>SGDDaalCollectiveMapper</em>.</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #66d9ef">protected</span> <span style="color: #66d9ef">void</span> <span style="color: #a6e22e">mapCollective</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">KeyValReader</span> <span style="color: #f8f8f2">reader</span><span style="color: #f92672">,</span> 
-            <span style="color: #f8f8f2">Context</span> <span style="color: #f8f8f2">context</span><span style="color: #f92672">)</span> <span style="color: #66d9ef">throws</span> <span style="color: #f8f8f2">IOException</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">InterruptedException</span> <span style="color: #f92672">{</span>
 
-            <span style="color: #f8f8f2">LinkedList</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">String</span><span style="color: #f92672">&gt;</span> <span style="color: #f8f8f2">vFiles</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">getVFiles</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">reader</span><span style="color: #f92672">);</span>
+protected void mapCollective(KeyValReader reader, 
+            Context context) throws IOException, InterruptedException {
 
-            <span style="color: #66d9ef">try</span> <span style="color: #f92672">{</span>
-                <span style="color: #f8f8f2">runSGD</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">vFiles</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">context</span><span style="color: #f92672">.</span><span style="color: #a6e22e">getConfiguration</span><span style="color: #f92672">(),</span> <span style="color: #f8f8f2">context</span><span style="color: #f92672">);</span>
-            <span style="color: #f92672">}</span> <span style="color: #66d9ef">catch</span> <span style="color: #f92672">(</span><span style="color: #f8f8f2">Exception</span> <span style="color: #f8f8f2">e</span><span style="color: #f92672">)</span> <span style="color: #f92672">{</span>
-                <span style="color: #f8f8f2">LOG</span><span style="color: #f92672">.</span><span style="color: #a6e22e">error</span><span style="color: #f92672">(</span><span style="color: #e6db74">&quot;Fail to run SGD.&quot;</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">e</span><span style="color: #f92672">);</span>
-            <span style="color: #f92672">}</span>
-<span style="color: #f92672">}</span>
-</pre></div>
+            LinkedList<String> vFiles = getVFiles(reader);
+
+            try {
+                runSGD(vFiles, context.getConfiguration(), context);
+            } catch (Exception e) {
+                LOG.error("Fail to run SGD.", e);
+            }
+}
+
 
 <p>It first uses the function <em>getVFiles</em> to read in HDFS files. Then, it runs the <em>runSGD</em> to finish the iterative training process. Besides the <em>vFiles</em>, <em>runSGD</em> will also
 take in the configurations of all the parameters that are required by the training and testing process. The following list includes some of the important parameters.</p>
@@ -78,19 +79,21 @@ take in the configurations of all the parameters that are required by the traini
 <h3 id="loading-training-and-testing-datasets-from-hdfs">Loading Training and Testing Datasets from HDFS</h3>
 
 <p>First it invokes class <em>SGDUtil</em> to load datasets</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #75715e">//----------------------- load the train dataset-----------------------</span>
-<span style="color: #f8f8f2">Int2ObjectOpenHashMap</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">VRowCol</span><span style="color: #f92672">&gt;</span> <span style="color: #f8f8f2">vRowMap</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">SGDUtil</span><span style="color: #f92672">.</span><span style="color: #a6e22e">loadVWMap</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">vFilePaths</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">numThreads</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">configuration</span><span style="color: #f92672">);</span>
 
-<span style="color: #75715e">//-----------------------load the test dataset-----------------------</span>
-<span style="color: #f8f8f2">Int2ObjectOpenHashMap</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">VRowCol</span><span style="color: #f92672">&gt;</span> <span style="color: #f8f8f2">testVColMap</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">SGDUtil</span><span style="color: #f92672">.</span><span style="color: #a6e22e">loadTestVHMap</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">testFilePath</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">configuration</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">numThreads</span><span style="color: #f92672">);</span>
-</pre></div>
+//----------------------- load the train dataset-----------------------
+Int2ObjectOpenHashMap<VRowCol> vRowMap = SGDUtil.loadVWMap(vFilePaths, numThreads, configuration);
+
+//-----------------------load the test dataset-----------------------
+Int2ObjectOpenHashMap<VRowCol> testVColMap = SGDUtil.loadTestVHMap(testFilePath, configuration, numThreads);
+
 
 <h3 id="regrouping-training-dataset-and-load-data-into-daal">Regrouping Training Dataset and Load Data into DAAL</h3>
 
 <p>The second step is to re-organize the training dataset among mappers, thus, each mapper will get a portion of data points on a group of rows.
 Harp provides the following interface for regrouping data:</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">regroup</span><span style="color: #f92672">(</span><span style="color: #e6db74">&quot;sgd&quot;</span><span style="color: #f92672">,</span> <span style="color: #e6db74">&quot;regroup-vw&quot;</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">vSetTable</span><span style="color: #f92672">,</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">Partitioner</span><span style="color: #f92672">(</span><span style="color: #66d9ef">this</span><span style="color: #f92672">.</span><span style="color: #a6e22e">getNumWorkers</span><span style="color: #f92672">()));</span>
-</pre></div>
+
+regroup("sgd", "regroup-vw", vSetTable, new Partitioner(this.getNumWorkers()));
+
 
 <p><em>vSetTable</em> is a harp container that consists of different partitions. Here, each partition is an array of training data points with the same row identity.
 After each mapper gets its proper quote of training data, it starts to load the training data into DAAL&rsquo;s data container. We use the <em>NumericTable</em> container of
@@ -102,57 +105,59 @@ DAAL, and its interface receives Java data in a primitive array type. The conver
 </ul>
 
 <p>The data copy in the first step is done in parallel by using Java thread package.</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span> <span style="color: #f8f8f2">train_wPos_daal</span> <span style="color: #f92672">=</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">HomogenBMNumericTable</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">daal_Context</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">Integer</span><span style="color: #f92672">.</span><span style="color: #a6e22e">class</span><span style="color: #f92672">,</span> <span style="color: #ae81ff">1</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">workerNumV</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">NumericTable</span><span style="color: #f92672">.</span><span style="color: #a6e22e">AllocationFlag</span><span style="color: #f92672">.</span><span style="color: #a6e22e">DoAllocate</span><span style="color: #f92672">);</span>
- <span style="color: #f8f8f2">train_hPos_daal</span> <span style="color: #f92672">=</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">HomogenBMNumericTable</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">daal_Context</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">Integer</span><span style="color: #f92672">.</span><span style="color: #a6e22e">class</span><span style="color: #f92672">,</span> <span style="color: #ae81ff">1</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">workerNumV</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">NumericTable</span><span style="color: #f92672">.</span><span style="color: #a6e22e">AllocationFlag</span><span style="color: #f92672">.</span><span style="color: #a6e22e">DoAllocate</span><span style="color: #f92672">);</span>
- <span style="color: #f8f8f2">train_val_daal</span> <span style="color: #f92672">=</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">HomogenBMNumericTable</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">daal_Context</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">Double</span><span style="color: #f92672">.</span><span style="color: #a6e22e">class</span><span style="color: #f92672">,</span> <span style="color: #ae81ff">1</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">workerNumV</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">NumericTable</span><span style="color: #f92672">.</span><span style="color: #a6e22e">AllocationFlag</span><span style="color: #f92672">.</span><span style="color: #a6e22e">DoAllocate</span><span style="color: #f92672">);</span>
+
+ train_wPos_daal = new HomogenBMNumericTable(daal_Context, Integer.class, 1, workerNumV, NumericTable.AllocationFlag.DoAllocate);
+ train_hPos_daal = new HomogenBMNumericTable(daal_Context, Integer.class, 1, workerNumV, NumericTable.AllocationFlag.DoAllocate);
+ train_val_daal = new HomogenBMNumericTable(daal_Context, Double.class, 1, workerNumV, NumericTable.AllocationFlag.DoAllocate);
  
- <span style="color: #f8f8f2">Thread</span><span style="color: #f92672">[]</span> <span style="color: #f8f8f2">threads</span> <span style="color: #f92672">=</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">Thread</span><span style="color: #f92672">[</span><span style="color: #f8f8f2">numThreads</span><span style="color: #f92672">];</span>
+ Thread[] threads = new Thread[numThreads];
  
- <span style="color: #f8f8f2">LinkedList</span><span style="color: #f92672">&lt;</span><span style="color: #66d9ef">int</span><span style="color: #f92672">[]&gt;</span> <span style="color: #f8f8f2">train_wPos_daal_sets</span> <span style="color: #f92672">=</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">LinkedList</span><span style="color: #f92672">&lt;&gt;();</span>
- <span style="color: #f8f8f2">LinkedList</span><span style="color: #f92672">&lt;</span><span style="color: #66d9ef">int</span><span style="color: #f92672">[]&gt;</span> <span style="color: #f8f8f2">train_hPos_daal_sets</span> <span style="color: #f92672">=</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">LinkedList</span><span style="color: #f92672">&lt;&gt;();</span>
- <span style="color: #f8f8f2">LinkedList</span><span style="color: #f92672">&lt;</span><span style="color: #66d9ef">double</span><span style="color: #f92672">[]&gt;</span> <span style="color: #f8f8f2">train_val_daal_sets</span> <span style="color: #f92672">=</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">LinkedList</span><span style="color: #f92672">&lt;&gt;();</span>
+ LinkedList<int[]> train_wPos_daal_sets = new LinkedList<>();
+ LinkedList<int[]> train_hPos_daal_sets = new LinkedList<>();
+ LinkedList<double[]> train_val_daal_sets = new LinkedList<>();
  
- <span style="color: #66d9ef">for</span><span style="color: #f92672">(</span><span style="color: #66d9ef">int</span> <span style="color: #f8f8f2">i</span><span style="color: #f92672">=</span><span style="color: #ae81ff">0</span><span style="color: #f92672">;</span><span style="color: #f8f8f2">i</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">numThreads</span><span style="color: #f92672">;</span><span style="color: #f8f8f2">i</span><span style="color: #f92672">++)</span>
- <span style="color: #f92672">{</span>
-     <span style="color: #f8f8f2">train_wPos_daal_sets</span><span style="color: #f92672">.</span><span style="color: #a6e22e">add</span><span style="color: #f92672">(</span><span style="color: #66d9ef">new</span> <span style="color: #66d9ef">int</span><span style="color: #f92672">[</span><span style="color: #f8f8f2">reg_tasks</span><span style="color: #f92672">.</span><span style="color: #a6e22e">get</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">i</span><span style="color: #f92672">).</span><span style="color: #a6e22e">getNumPoint</span><span style="color: #f92672">()]);</span>
-     <span style="color: #f8f8f2">train_hPos_daal_sets</span><span style="color: #f92672">.</span><span style="color: #a6e22e">add</span><span style="color: #f92672">(</span><span style="color: #66d9ef">new</span> <span style="color: #66d9ef">int</span><span style="color: #f92672">[</span><span style="color: #f8f8f2">reg_tasks</span><span style="color: #f92672">.</span><span style="color: #a6e22e">get</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">i</span><span style="color: #f92672">).</span><span style="color: #a6e22e">getNumPoint</span><span style="color: #f92672">()]);</span>
-     <span style="color: #f8f8f2">train_val_daal_sets</span><span style="color: #f92672">.</span><span style="color: #a6e22e">add</span><span style="color: #f92672">(</span><span style="color: #66d9ef">new</span> <span style="color: #66d9ef">double</span><span style="color: #f92672">[</span><span style="color: #f8f8f2">reg_tasks</span><span style="color: #f92672">.</span><span style="color: #a6e22e">get</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">i</span><span style="color: #f92672">).</span><span style="color: #a6e22e">getNumPoint</span><span style="color: #f92672">()]);</span>
- <span style="color: #f92672">}</span>
+ for(int i=0;i<numThreads;i++)
+ {
+     train_wPos_daal_sets.add(new int[reg_tasks.get(i).getNumPoint()]);
+     train_hPos_daal_sets.add(new int[reg_tasks.get(i).getNumPoint()]);
+     train_val_daal_sets.add(new double[reg_tasks.get(i).getNumPoint()]);
+ }
  
- <span style="color: #66d9ef">for</span> <span style="color: #f92672">(</span><span style="color: #66d9ef">int</span> <span style="color: #f8f8f2">q</span> <span style="color: #f92672">=</span> <span style="color: #ae81ff">0</span><span style="color: #f92672">;</span> <span style="color: #f8f8f2">q</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">numThreads</span><span style="color: #f92672">;</span> <span style="color: #f8f8f2">q</span><span style="color: #f92672">++)</span>
- <span style="color: #f92672">{</span>
-     <span style="color: #f8f8f2">threads</span><span style="color: #f92672">[</span><span style="color: #f8f8f2">q</span><span style="color: #f92672">]</span> <span style="color: #f92672">=</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">Thread</span><span style="color: #f92672">(</span><span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">TaskLoadPoints</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">q</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">numThreads</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">reg_tasks</span><span style="color: #f92672">.</span><span style="color: #a6e22e">get</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">q</span><span style="color: #f92672">).</span><span style="color: #a6e22e">getSetList</span><span style="color: #f92672">(),</span>
-                 <span style="color: #f8f8f2">train_wPos_daal_sets</span><span style="color: #f92672">.</span><span style="color: #a6e22e">get</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">q</span><span style="color: #f92672">),</span><span style="color: #f8f8f2">train_hPos_daal_sets</span><span style="color: #f92672">.</span><span style="color: #a6e22e">get</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">q</span><span style="color: #f92672">),</span> <span style="color: #f8f8f2">train_val_daal_sets</span><span style="color: #f92672">.</span><span style="color: #a6e22e">get</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">q</span><span style="color: #f92672">)));</span>
+ for (int q = 0; q<numThreads; q++)
+ {
+     threads[q] = new Thread(new TaskLoadPoints(q, numThreads, reg_tasks.get(q).getSetList(),
+                 train_wPos_daal_sets.get(q),train_hPos_daal_sets.get(q), train_val_daal_sets.get(q)));
  
-     <span style="color: #f8f8f2">threads</span><span style="color: #f92672">[</span><span style="color: #f8f8f2">q</span><span style="color: #f92672">].</span><span style="color: #a6e22e">start</span><span style="color: #f92672">();</span>
- <span style="color: #f92672">}</span>
+     threads[q].start();
+ }
  
- <span style="color: #66d9ef">for</span> <span style="color: #f92672">(</span><span style="color: #66d9ef">int</span> <span style="color: #f8f8f2">q</span><span style="color: #f92672">=</span><span style="color: #ae81ff">0</span><span style="color: #f92672">;</span> <span style="color: #f8f8f2">q</span><span style="color: #f92672">&lt;</span> <span style="color: #f8f8f2">numThreads</span><span style="color: #f92672">;</span> <span style="color: #f8f8f2">q</span><span style="color: #f92672">++)</span> <span style="color: #f92672">{</span>
+ for (int q=0; q< numThreads; q++) {
  
-     <span style="color: #66d9ef">try</span>
-     <span style="color: #f92672">{</span>
-         <span style="color: #f8f8f2">threads</span><span style="color: #f92672">[</span><span style="color: #f8f8f2">q</span><span style="color: #f92672">].</span><span style="color: #a6e22e">join</span><span style="color: #f92672">();</span>
-     <span style="color: #f92672">}</span><span style="color: #66d9ef">catch</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">InterruptedException</span> <span style="color: #f8f8f2">e</span><span style="color: #f92672">)</span>
-     <span style="color: #f92672">{</span>
-         <span style="color: #f8f8f2">System</span><span style="color: #f92672">.</span><span style="color: #a6e22e">out</span><span style="color: #f92672">.</span><span style="color: #a6e22e">println</span><span style="color: #f92672">(</span><span style="color: #e6db74">&quot;Thread interrupted.&quot;</span><span style="color: #f92672">);</span>
-     <span style="color: #f92672">}</span>
+     try
+     {
+         threads[q].join();
+     }catch(InterruptedException e)
+     {
+         System.out.println("Thread interrupted.");
+     }
  
- <span style="color: #f92672">}</span>
-</pre></div>
+ }
+
 
 <p>The second step is done inside DAAL codes by using the <em>releaseBlockOfColumnValues</em> function from DAAL&rsquo;s Java API. This
 function internally create a direct byte buffer to transfer the data.</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #66d9ef">int</span> <span style="color: #f8f8f2">itr_pos</span> <span style="color: #f92672">=</span> <span style="color: #ae81ff">0</span><span style="color: #f92672">;</span>
-<span style="color: #66d9ef">for</span> <span style="color: #f92672">(</span><span style="color: #66d9ef">int</span> <span style="color: #f8f8f2">i</span><span style="color: #f92672">=</span><span style="color: #ae81ff">0</span><span style="color: #f92672">;</span><span style="color: #f8f8f2">i</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">numThreads</span><span style="color: #f92672">;</span> <span style="color: #f8f8f2">i</span><span style="color: #f92672">++)</span>
-<span style="color: #f92672">{</span>
 
-    <span style="color: #f8f8f2">train_wPos_daal</span><span style="color: #f92672">.</span><span style="color: #a6e22e">releaseBlockOfColumnValues</span><span style="color: #f92672">(</span><span style="color: #ae81ff">0</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">itr_pos</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">reg_tasks</span><span style="color: #f92672">.</span><span style="color: #a6e22e">get</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">i</span><span style="color: #f92672">).</span><span style="color: #a6e22e">getNumPoint</span><span style="color: #f92672">(),</span> <span style="color: #f8f8f2">train_wPos_daal_sets</span><span style="color: #f92672">.</span><span style="color: #a6e22e">get</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">i</span><span style="color: #f92672">));</span>
-    <span style="color: #f8f8f2">train_hPos_daal</span><span style="color: #f92672">.</span><span style="color: #a6e22e">releaseBlockOfColumnValues</span><span style="color: #f92672">(</span><span style="color: #ae81ff">0</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">itr_pos</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">reg_tasks</span><span style="color: #f92672">.</span><span style="color: #a6e22e">get</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">i</span><span style="color: #f92672">).</span><span style="color: #a6e22e">getNumPoint</span><span style="color: #f92672">(),</span> <span style="color: #f8f8f2">train_hPos_daal_sets</span><span style="color: #f92672">.</span><span style="color: #a6e22e">get</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">i</span><span style="color: #f92672">));</span>
-    <span style="color: #f8f8f2">train_val_daal</span><span style="color: #f92672">.</span><span style="color: #a6e22e">releaseBlockOfColumnValues</span><span style="color: #f92672">(</span><span style="color: #ae81ff">0</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">itr_pos</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">reg_tasks</span><span style="color: #f92672">.</span><span style="color: #a6e22e">get</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">i</span><span style="color: #f92672">).</span><span style="color: #a6e22e">getNumPoint</span><span style="color: #f92672">(),</span> <span style="color: #f8f8f2">train_val_daal_sets</span><span style="color: #f92672">.</span><span style="color: #a6e22e">get</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">i</span><span style="color: #f92672">));</span>
-    <span style="color: #f8f8f2">itr_pos</span> <span style="color: #f92672">+=</span> <span style="color: #f8f8f2">reg_tasks</span><span style="color: #f92672">.</span><span style="color: #a6e22e">get</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">i</span><span style="color: #f92672">).</span><span style="color: #a6e22e">getNumPoint</span><span style="color: #f92672">();</span>
+int itr_pos = 0;
+for (int i=0;i<numThreads; i++)
+{
 
-<span style="color: #f92672">}</span>
-</pre></div>
+    train_wPos_daal.releaseBlockOfColumnValues(0, itr_pos, reg_tasks.get(i).getNumPoint(), train_wPos_daal_sets.get(i));
+    train_hPos_daal.releaseBlockOfColumnValues(0, itr_pos, reg_tasks.get(i).getNumPoint(), train_hPos_daal_sets.get(i));
+    train_val_daal.releaseBlockOfColumnValues(0, itr_pos, reg_tasks.get(i).getNumPoint(), train_val_daal_sets.get(i));
+    itr_pos += reg_tasks.get(i).getNumPoint();
+
+}
+
 
 <h3 id="create-model-matrices-and-model-rotator">Create Model Matrices and Model Rotator</h3>
 
@@ -160,22 +165,24 @@ function internally create a direct byte buffer to transfer the data.</p>
 after training to predict new data. Each mapper owns its portion of the whole W matrix, which is local to this mapper. This local W matrix is
 thus stored at the Off-JVM heap memory space, which is accessible to the DAAL native kernels. We only transfer an array of row identities from
 Java side into DAAL side, and the initialization is done within DAAL&rsquo;s kernel before the first iteration.</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #75715e">//----------------- create the daal table for local row ids -----------------</span>
-<span style="color: #f8f8f2">wMat_size</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">idArray</span><span style="color: #f92672">.</span><span style="color: #a6e22e">size</span><span style="color: #f92672">();</span>
-<span style="color: #f8f8f2">wMat_rowid_daal</span> <span style="color: #f92672">=</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">HomogenNumericTable</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">daal_Context</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">Integer</span><span style="color: #f92672">.</span><span style="color: #a6e22e">class</span><span style="color: #f92672">,</span> <span style="color: #ae81ff">1</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">wMat_size</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">NumericTable</span><span style="color: #f92672">.</span><span style="color: #a6e22e">AllocationFlag</span><span style="color: #f92672">.</span><span style="color: #a6e22e">DoAllocate</span><span style="color: #f92672">);</span>
-<span style="color: #f8f8f2">wMat_rowid_daal</span><span style="color: #f92672">.</span><span style="color: #a6e22e">releaseBlockOfColumnValues</span><span style="color: #f92672">(</span><span style="color: #ae81ff">0</span><span style="color: #f92672">,</span> <span style="color: #ae81ff">0</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">wMat_size</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">ids</span><span style="color: #f92672">);</span>
-</pre></div>
+
+//----------------- create the daal table for local row ids -----------------
+wMat_size = idArray.size();
+wMat_rowid_daal = new HomogenNumericTable(daal_Context, Integer.class, 1, wMat_size, NumericTable.AllocationFlag.DoAllocate);
+wMat_rowid_daal.releaseBlockOfColumnValues(0, 0, wMat_size, ids);
+
 
 <p>Unlike the W matrix, the H matrix is rotated among all the mappers multiple times in each iteration. Therefore, we keep one copy at the JVM heap memory and
 another copy at the native off-JVM heap memory. The conversion of data between the harp table of H model and that of a DAAL container is handled by the
 rotator class.</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #75715e">// Create H model</span>
-<span style="color: #f8f8f2">Table</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">DoubleArray</span><span style="color: #f92672">&gt;[]</span> <span style="color: #f8f8f2">hTableMap</span> <span style="color: #f92672">=</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">Table</span><span style="color: #f92672">[</span><span style="color: #f8f8f2">numModelSlices</span><span style="color: #f92672">];</span>
-<span style="color: #f8f8f2">createHModel</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">hTableMap</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">numModelSlices</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">vWHMap</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">oneOverSqrtR</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">random</span><span style="color: #f92672">);</span>
-<span style="color: #75715e">//create the rotator</span>
-<span style="color: #f8f8f2">RotatorDaal</span><span style="color: #f92672">&lt;</span><span style="color: #66d9ef">double</span><span style="color: #f92672">[],</span> <span style="color: #f8f8f2">DoubleArray</span><span style="color: #f92672">&gt;</span> <span style="color: #f8f8f2">rotator</span> <span style="color: #f92672">=</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">RotatorDaal</span><span style="color: #f92672">&lt;&gt;(</span><span style="color: #f8f8f2">hTableMap</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">r</span><span style="color: #f92672">,</span> <span style="color: #ae81ff">20</span><span style="color: #f92672">,</span> <span style="color: #66d9ef">this</span><span style="color: #f92672">,</span> <span style="color: #66d9ef">null</span><span style="color: #f92672">,</span> <span style="color: #e6db74">&quot;sgd&quot;</span><span style="color: #f92672">);</span>
-<span style="color: #f8f8f2">rotator</span><span style="color: #f92672">.</span><span style="color: #a6e22e">start</span><span style="color: #f92672">();</span>
-</pre></div>
+
+// Create H model
+Table<DoubleArray>[] hTableMap = new Table[numModelSlices];
+createHModel(hTableMap, numModelSlices, vWHMap, oneOverSqrtR, random);
+//create the rotator
+RotatorDaal<double[], DoubleArray> rotator = new RotatorDaal<>(hTableMap, r, 20, this, null, "sgd");
+rotator.start();
+
 
 <p>As Harp-DAAL-SGD uses two pipelines to overlap the computation and communication work, the data conversion brought by the H model matrix is also likely to be
 offset by the heavy computation work.</p>
@@ -184,54 +191,57 @@ offset by the heavy computation work.</p>
 
 <p>We implemented the local DAAL codes in the MF-SGD-Distri algorithm of DAAL&rsquo;s repository. It is highly abstracted as the other DAAL&rsquo;s algorithms, and the users only
 need a few lines of codes to invoke it.</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #75715e">//create DAAL algorithm object, using distributed version of DAAL-MF-SGD</span>
-<span style="color: #f8f8f2">Distri</span> <span style="color: #f8f8f2">sgdAlgorithm</span> <span style="color: #f92672">=</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">Distri</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">daal_Context</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">Double</span><span style="color: #f92672">.</span><span style="color: #a6e22e">class</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">Method</span><span style="color: #f92672">.</span><span style="color: #a6e22e">defaultSGD</span><span style="color: #f92672">);</span>
 
-<span style="color: #f8f8f2">sgdAlgorithm</span><span style="color: #f92672">.</span><span style="color: #a6e22e">input</span><span style="color: #f92672">.</span><span style="color: #a6e22e">set</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">InputId</span><span style="color: #f92672">.</span><span style="color: #a6e22e">dataWPos</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">train_wPos_daal</span><span style="color: #f92672">);</span>
-<span style="color: #f8f8f2">sgdAlgorithm</span><span style="color: #f92672">.</span><span style="color: #a6e22e">input</span><span style="color: #f92672">.</span><span style="color: #a6e22e">set</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">InputId</span><span style="color: #f92672">.</span><span style="color: #a6e22e">dataHPos</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">train_hPos_daal</span><span style="color: #f92672">);</span>
-<span style="color: #f8f8f2">sgdAlgorithm</span><span style="color: #f92672">.</span><span style="color: #a6e22e">input</span><span style="color: #f92672">.</span><span style="color: #a6e22e">set</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">InputId</span><span style="color: #f92672">.</span><span style="color: #a6e22e">dataVal</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">train_val_daal</span><span style="color: #f92672">);</span>
+//create DAAL algorithm object, using distributed version of DAAL-MF-SGD
+Distri sgdAlgorithm = new Distri(daal_Context, Double.class, Method.defaultSGD);
 
-<span style="color: #f8f8f2">sgdAlgorithm</span><span style="color: #f92672">.</span><span style="color: #a6e22e">input</span><span style="color: #f92672">.</span><span style="color: #a6e22e">set</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">InputId</span><span style="color: #f92672">.</span><span style="color: #a6e22e">testWPos</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">test_wPos_daal</span><span style="color: #f92672">);</span>
-<span style="color: #f8f8f2">sgdAlgorithm</span><span style="color: #f92672">.</span><span style="color: #a6e22e">input</span><span style="color: #f92672">.</span><span style="color: #a6e22e">set</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">InputId</span><span style="color: #f92672">.</span><span style="color: #a6e22e">testHPos</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">test_hPos_daal</span><span style="color: #f92672">);</span>
-<span style="color: #f8f8f2">sgdAlgorithm</span><span style="color: #f92672">.</span><span style="color: #a6e22e">input</span><span style="color: #f92672">.</span><span style="color: #a6e22e">set</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">InputId</span><span style="color: #f92672">.</span><span style="color: #a6e22e">testVal</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">test_val_daal</span><span style="color: #f92672">);</span>
+sgdAlgorithm.input.set(InputId.dataWPos, train_wPos_daal);
+sgdAlgorithm.input.set(InputId.dataHPos, train_hPos_daal);
+sgdAlgorithm.input.set(InputId.dataVal, train_val_daal);
 
-<span style="color: #f8f8f2">PartialResult</span> <span style="color: #f8f8f2">model_data</span> <span style="color: #f92672">=</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">PartialResult</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">daal_Context</span><span style="color: #f92672">);</span>
-<span style="color: #f8f8f2">sgdAlgorithm</span><span style="color: #f92672">.</span><span style="color: #a6e22e">setPartialResult</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">model_data</span><span style="color: #f92672">);</span>
+sgdAlgorithm.input.set(InputId.testWPos, test_wPos_daal);
+sgdAlgorithm.input.set(InputId.testHPos, test_hPos_daal);
+sgdAlgorithm.input.set(InputId.testVal, test_val_daal);
 
-<span style="color: #f8f8f2">model_data</span><span style="color: #f92672">.</span><span style="color: #a6e22e">set</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">PartialResultId</span><span style="color: #f92672">.</span><span style="color: #a6e22e">presWMat</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">wMat_rowid_daal</span><span style="color: #f92672">);</span>
-</pre></div>
+PartialResult model_data = new PartialResult(daal_Context);
+sgdAlgorithm.setPartialResult(model_data);
+
+model_data.set(PartialResultId.presWMat, wMat_rowid_daal);
+
 
 <p>The training and test dataset are imported to <em>sgdAlgorithm</em> as input arguments while the W matrix and H matrix are imported as result arguments. The kernel class is configurable with respect to the
 precision, the internal algorithm, and so forth. The same <em>sgdAlgorithm</em> could be used in both of the training and test process.</p>
 
 <p>First, we compute the RMSE value before the training process.</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">printRMSEbyDAAL</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">sgdAlgorithm</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">model_data</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">rotator</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">numWorkers</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">totalNumTestV</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">wMat_size</span><span style="color: #f92672">,</span> <span style="color: #ae81ff">0</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">configuration</span><span style="color: #f92672">);</span>
-</pre></div>
+
+printRMSEbyDAAL(sgdAlgorithm, model_data, rotator, numWorkers, totalNumTestV, wMat_size, 0, configuration);
+
 
 <p>Second, we start the iterative training process loops.</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #66d9ef">for</span> <span style="color: #f92672">(</span><span style="color: #66d9ef">int</span> <span style="color: #f8f8f2">i</span> <span style="color: #f92672">=</span> <span style="color: #ae81ff">1</span><span style="color: #f92672">;</span> <span style="color: #f8f8f2">i</span> <span style="color: #f92672">&lt;=</span> <span style="color: #f8f8f2">numIterations</span><span style="color: #f92672">;</span> <span style="color: #f8f8f2">i</span><span style="color: #f92672">++)</span> <span style="color: #f92672">{</span>
 
-    <span style="color: #66d9ef">for</span> <span style="color: #f92672">(</span><span style="color: #66d9ef">int</span> <span style="color: #f8f8f2">j</span> <span style="color: #f92672">=</span> <span style="color: #ae81ff">0</span><span style="color: #f92672">;</span> <span style="color: #f8f8f2">j</span> <span style="color: #f92672">&lt;</span> <span style="color: #f8f8f2">numWorkers</span><span style="color: #f92672">;</span> <span style="color: #f8f8f2">j</span><span style="color: #f92672">++)</span> <span style="color: #f92672">{</span>
+for (int i = 1; i <= numIterations; i++) {
 
-        <span style="color: #66d9ef">for</span> <span style="color: #f92672">(</span><span style="color: #66d9ef">int</span> <span style="color: #f8f8f2">k</span> <span style="color: #f92672">=</span> <span style="color: #ae81ff">0</span><span style="color: #f92672">;</span> <span style="color: #f8f8f2">k</span> <span style="color: #f92672">&lt;</span> <span style="color: #f8f8f2">numModelSlices</span><span style="color: #f92672">;</span> <span style="color: #f8f8f2">k</span><span style="color: #f92672">++)</span> <span style="color: #f92672">{</span>
+    for (int j = 0; j < numWorkers; j++) {
 
-            <span style="color: #75715e">//get the h matrix from the rotator</span>
-            <span style="color: #f8f8f2">NumericTable</span> <span style="color: #f8f8f2">hTableMap_daal</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">rotator</span><span style="color: #f92672">.</span><span style="color: #a6e22e">getDaal_Table</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">k</span><span style="color: #f92672">);</span>
-            <span style="color: #f8f8f2">model_data</span><span style="color: #f92672">.</span><span style="color: #a6e22e">set</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">PartialResultId</span><span style="color: #f92672">.</span><span style="color: #a6e22e">presHMat</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">hTableMap_daal</span><span style="color: #f92672">);</span>
+        for (int k = 0; k < numModelSlices; k++) {
 
-            <span style="color: #75715e">//set up the parameters for MF-DAAL-SGD</span>
-            <span style="color: #f8f8f2">sgdAlgorithm</span><span style="color: #f92672">.</span><span style="color: #a6e22e">parameter</span><span style="color: #f92672">.</span><span style="color: #a6e22e">set</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">epsilon</span><span style="color: #f92672">,</span><span style="color: #f8f8f2">lambda</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">r</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">wMap_size</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">hPartitionMapSize</span><span style="color: #f92672">,</span> <span style="color: #ae81ff">1</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">numThreads</span><span style="color: #f92672">,</span> <span style="color: #ae81ff">0</span><span style="color: #f92672">,</span> <span style="color: #ae81ff">1</span><span style="color: #f92672">);</span>
+            //get the h matrix from the rotator
+            NumericTable hTableMap_daal = rotator.getDaal_Table(k);
+            model_data.set(PartialResultId.presHMat, hTableMap_daal);
 
-            <span style="color: #75715e">//computation </span>
-            <span style="color: #f8f8f2">sgdAlgorithm</span><span style="color: #f92672">.</span><span style="color: #a6e22e">compute</span><span style="color: #f92672">();</span>
+            //set up the parameters for MF-DAAL-SGD
+            sgdAlgorithm.parameter.set(epsilon,lambda, r, wMap_size, hPartitionMapSize, 1, numThreads, 0, 1);
 
-            <span style="color: #75715e">//trigger the rotator after one time of computation</span>
-            <span style="color: #f8f8f2">rotator</span><span style="color: #f92672">.</span><span style="color: #a6e22e">rotate</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">k</span><span style="color: #f92672">);</span>
+            //computation 
+            sgdAlgorithm.compute();
 
-        <span style="color: #f92672">}</span>
-    <span style="color: #f92672">}</span>
-<span style="color: #f92672">}</span>
-</pre></div>
+            //trigger the rotator after one time of computation
+            rotator.rotate(k);
+
+        }
+    }
+}
+
 
 <p>After each iteration, we can choose to evaluate the training result immediately, or we may evaluate the result after every certain times of training iterations.</p>
 </article></section></div></div></div><script src="https://code.jquery.com/jquery-2.2.1.min.js"></script><script src="https://dsc-spidal.github.io/harp/js/app.min.js"></script></body></html>

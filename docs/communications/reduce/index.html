@@ -3,8 +3,7 @@
 <p><img src="https://dsc-spidal.github.io/harp/img/4-2-1.png" alt="reduce" /></p>
 
 <p><code>reduce</code> aims to combine tables from other workers to this worker. All workers should run it concurrently. The defination of the method is:</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #66d9ef">boolean</span> <span style="color: #a6e22e">reduce</span><span style="color: #f92672">(</span><span style="color: #66d9ef">final</span> <span style="color: #f8f8f2">String</span> <span style="color: #f8f8f2">contextName</span><span style="color: #f92672">,</span> <span style="color: #66d9ef">final</span> <span style="color: #f8f8f2">String</span> <span style="color: #f8f8f2">operationName</span><span style="color: #f92672">,</span> <span style="color: #66d9ef">final</span> <span style="color: #f8f8f2">Table</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">P</span><span style="color: #f92672">&gt;</span> <span style="color: #f8f8f2">table</span><span style="color: #f92672">,</span> <span style="color: #66d9ef">final</span> <span style="color: #66d9ef">int</span> <span style="color: #f8f8f2">reduceWorkerID</span><span style="color: #f92672">,</span> <span style="color: #66d9ef">final</span> <span style="color: #f8f8f2">DataMap</span> <span style="color: #f8f8f2">dataMap</span><span style="color: #f92672">,</span> <span style="color: #66d9ef">final</span> <span style="color: #f8f8f2">Workers</span> <span style="color: #f8f8f2">workers</span><span style="color: #f92672">)</span>
-</pre></div>
+boolean reduce(final String contextName, final String operationName, final Table<P> table, final int reduceWorkerID, final DataMap dataMap, final Workers workers)
 
 <ul>
 <li><code>contextName</code> &mdash; the name of the context</li>
@@ -16,6 +15,5 @@
 </ul>
 
 <h2 id="example">Example</h2>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">reduce</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">contextName</span><span style="color: #f92672">,</span> <span style="color: #e6db74">&quot;reduce&quot;</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">table</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">workers</span><span style="color: #f92672">.</span><span style="color: #a6e22e">getMasterID</span><span style="color: #f92672">(),</span> <span style="color: #f8f8f2">dataMap</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">workers</span><span style="color: #f92672">);</span>
-</pre></div>
+reduce(contextName, "reduce", table, workers.getMasterID(), dataMap, workers);
 </article></section></div></div></div><script src="https://code.jquery.com/jquery-2.2.1.min.js"></script><script src="https://dsc-spidal.github.io/harp/js/app.min.js"></script></body></html>

@@ -3,8 +3,7 @@
 <p><img src="https://dsc-spidal.github.io/harp/img/3-1-1.png" alt="broadcast" /></p>
 
 <p><code>broadcast</code> aims to share a table in one worker with others. All workers should run it concurrently. The defination of the method is:</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #66d9ef">boolean</span> <span style="color: #a6e22e">broadcast</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">String</span> <span style="color: #f8f8f2">contextName</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">String</span> <span style="color: #f8f8f2">operationName</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">Table</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">P</span><span style="color: #f92672">&gt;</span> <span style="color: #f8f8f2">table</span><span style="color: #f92672">,</span> <span style="color: #66d9ef">int</span> <span style="color: #f8f8f2">bcastWorkerID</span><span style="color: #f92672">,</span> <span style="color: #66d9ef">boolean</span> <span style="color: #f8f8f2">useMSTBcast</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">DataMap</span> <span style="color: #f8f8f2">dataMap</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">Workers</span> <span style="color: #f8f8f2">workers</span><span style="color: #f92672">)</span>
-</pre></div>
+boolean broadcast(String contextName, String operationName, Table<P> table, int bcastWorkerID, boolean useMSTBcast, DataMap dataMap, Workers workers)
 
 <ul>
 <li><code>contextName</code> &mdash; the name of the context</li>
@@ -17,6 +16,5 @@
 </ul>
 
 <h2 id="example">Example</h2>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">broadcast</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">contextName</span><span style="color: #f92672">,</span> <span style="color: #e6db74">&quot;chain-array-table-bcast-&quot;</span> <span style="color: #f92672">+</span> <span style="color: #f8f8f2">i</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">arrTable</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">workers</span><span style="color: #f92672">.</span><span style="color: #a6e22e">getMasterID</span><span style="color: #f92672">(),</span> <span style="color: #66d9ef">false</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">dataMap</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">workers</span><span style="color: #f92672">);</span>
-</pre></div>
+broadcast(contextName, "chain-array-table-bcast-" + i, arrTable, workers.getMasterID(), false, dataMap, workers);
 </article></section></div></div></div><script src="https://code.jquery.com/jquery-2.2.1.min.js"></script><script src="https://dsc-spidal.github.io/harp/js/app.min.js"></script></body></html>

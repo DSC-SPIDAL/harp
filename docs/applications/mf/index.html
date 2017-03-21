@@ -46,20 +46,17 @@ other workers, the code of a parallel machine learning algorithm can be modulari
 <h3 id="data-format">Data Format</h3>
 
 <p>The format for the data should be a list of <code>&lt;number of row, number of column, value&gt;</code>. For example,</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #ae81ff">1</span>    <span style="color: #ae81ff">4026</span>    <span style="color: #ae81ff">3</span>.299341
-<span style="color: #ae81ff">1</span>    <span style="color: #ae81ff">5990</span>    <span style="color: #ae81ff">7</span>.005311
-<span style="color: #ae81ff">2</span>    <span style="color: #ae81ff">5988</span>    <span style="color: #ae81ff">13</span>.235623
-<span style="color: #ae81ff">2</span>    <span style="color: #ae81ff">346</span>    <span style="color: #ae81ff">3</span>.518781
-<span style="color: #ae81ff">3</span>    <span style="color: #ae81ff">347</span>    <span style="color: #ae81ff">2</span>.846904
-</pre></div>
+1    4026    3.299341
+1    5990    7.005311
+2    5988    13.235623
+2    346    3.518781
+3    347    2.846904
 
 <h2 id="usage">Usage</h2>
 
 <h3 id="sgd">SGD</h3>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>hadoop jar harp-app-1.0-SNAPSHOT.jar edu.iu.sgd.SGDLauncher &lt;input dir&gt; &lt;r&gt; &lt;lambda&gt; &lt;epsilon&gt; &lt;num of iterations&gt; &lt;num of map tasks&gt; &lt;num of threads per worker&gt; &lt;timer&gt; &lt;num of model slices&gt; &lt;timer tuning&gt; &lt;work dir&gt; &lt;<span style="color: #f8f8f2">test</span> dir&gt;
-</pre></div>
+hadoop jar harp-app-1.0-SNAPSHOT.jar edu.iu.sgd.SGDLauncher <input dir> <r> <lambda> <epsilon> <num of iterations> <num of map tasks> <num of threads per worker> <timer> <num of model slices> <timer tuning> <work dir> <test dir>
 
 <h3 id="ccd">CCD</h3>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>hadoop jar harp-app-1.0-SNAPSHOT.jar edu.iu.ccd.CCDLauncher &lt;input dir&gt; &lt;r&gt; &lt;lambda&gt; &lt;num of iterations&gt; &lt;num of map tasks&gt; &lt;num of threads per worker&gt; &lt;num of model slices&gt; &lt;work dir&gt; &lt;<span style="color: #f8f8f2">test</span> dir&gt;
-</pre></div>
+hadoop jar harp-app-1.0-SNAPSHOT.jar edu.iu.ccd.CCDLauncher <input dir> <r> <lambda> <num of iterations> <num of map tasks> <num of threads per worker> <num of model slices> <work dir> <test dir>
 </article></section></div></div></div><script src="https://code.jquery.com/jquery-2.2.1.min.js"></script><script src="https://dsc-spidal.github.io/harp/js/app.min.js"></script></body></html>
