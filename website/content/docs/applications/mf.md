@@ -39,6 +39,28 @@ We adopt `Model Rotation` to parallel SGD and CCD algorithms. The data flow and 
 
   <img src="/img/model-rotation.png" width="100%" >
 
+# Performance
+
+<table>
+  <tr>
+    <td width="50%">
+      <img src=/harp-test/img/2-1-6.png border=0>
+    </td>
+    <td width="50%">
+      <img src=/harp-test/img/2-1-7.png border=0>
+    </td>
+  </tr>
+</table>
+
+![Overview-4](/img/2-1-4.png)
+
+Experiments are conducted on a 128-node Intel Haswell cluster at Indiana University. Among them, 32 nodes each have two 18-core Xeon E5-2699 v3 processors (36 cores in total), and 96 nodes each have two 12-core Xeon E5- 2670 v3 processors (24 cores in total). All the nodes have 128 GB memory and are connected by QDR InfiniBand. For our tests, JVM memory is set to "-Xmx120000m -Xms120000m", and IPoIB is used for communication.
+
+We use one big dataset which is generated from "ClueWeb09" to test LDA both on Harp and Petuum.
+
+In SGD, Harp SGD converges faster than NOMAD. On "clueweb2", with 30 nodes × 30 threads Xeon E5-2699 v3 nodes, Harp is 58% faster, and with 60 nodes × 20 threads Xeon E5-2670 v3 nodes, Harp is 93% faster when the test RMSE value converges to 1.61. The difference of the convergence speed increases because the random shifting mechanism in NOMAD becomes unstable when the scale goes up.
+
+In CCD, we again test the model convergence speed on "clueweb2" dataset. The results show that Harp CCD also has comparable performance with CCD++. Note that CCD++ use a different model update order, so that the convergence rate based on the same number of model update count is different with Harp CCD. However the tests on "clueweb2" reveal that with 30 nodes × 30 threads Xeon E5-2670 v3 nodes Harp CCD is 53% faster than CCD++ and with 60 nodes × 20 threads Xeon E5-2699 v3 nodes Harp CCD is 101% faster than CCD++ when the test RMSE converges to 1.68.
 
 # Run SGD and CCD example
 
