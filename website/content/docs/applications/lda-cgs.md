@@ -29,23 +29,15 @@ We adopt `Model Rotation` to parallel CGS LDA algorithm. The data flow and algor
 
 # Performance
 
-<table>
-	<tr>
-		<td width="33%">
-			<img src=/harp-test/img/2-1-5.png border=0>
-		</td>
-		<td width="33%">
-			<img src=/harp-test/img/2-1-6.png border=0>
-		</td>
-		<td width="33%">
-			<img src=/harp-test/img/2-1-7.png border=0>
-		</td>
-	</tr>
-</table>
+<img src=/harp-test/img/2-1-5.png width="50%">
 
 ![Overview-3](/img/2-1-3.png)
 
-![Overview-4](/img/2-1-4.png)
+Experiments are conducted on a 128-node Intel Haswell cluster at Indiana University. Among them, 32 nodes each have two 18-core Xeon E5-2699 v3 processors (36 cores in total), and 96 nodes each have two 12-core Xeon E5- 2670 v3 processors (24 cores in total). All the nodes have 128 GB memory and are connected by QDR InfiniBand. For our tests, JVM memory is set to "-Xmx120000m -Xms120000m", and IPoIB is used for communication.
+
+We use one big dataset which is generated from "ClueWeb09" to test LDA both on Harp and Petuum.
+
+Through examining the model likelihood achieved by the training time, the results show that Harp consistently outperforms Petuum. We test Harp CGS and Petuum on "clueweb1" with 30 nodes × 30 threads and 60 nodes × 20 threads two configurations. Both results show that Harp CGS converges faster than Petuum. Concerning the convergence speed on the same dataset with different configurations, we observe that the fewer the number of cores used and the more computation per core, the faster Harp runs compared to Petuum. When the scale goes up, the difference of the convergence speed reduces. With 30 nodes × 30 threads Xeon E5-2699 v3 nodes, Harp is 45% faster than Petuum while with 60 nodes × 20 threads Xeon E5-2670 v3 nodes, Harp is 18% faster than Petuum when the model likelihood converges to −1.37 × 1011.
 
 # Run LDA example
 
