@@ -1,4 +1,4 @@
 # DATA
 
 
-Sample data used for harp-tutorial-app
+Sample datasets for harp-tutorial-app
