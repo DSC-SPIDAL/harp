@@ -57,6 +57,8 @@ sections:
     sublinks:
       - name: Overview
         url: /docs/harpdaal/harpdaal
+      - name: K-means 
+        url: /docs/harpdaal/kmeans
       - name: Matrix Factorization (SGD)
         url: /docs/harpdaal/mfsgd
   - name: Harp Resources
