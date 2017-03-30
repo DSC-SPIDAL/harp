@@ -7,7 +7,7 @@ nav.hn-top-navbar.navbar.navbar-inverse.navbar-fixed-top role=navigation
         i.hn-toggle-button.fa.fa-bars
 
       a.hn-navbar-logo.navbar-brand href=/
-        img.pull-left src={{.Site.Params.assets.textLogoSmall}}
+        img.pull-left src={{.Site.Params.assets.textLogoSmall}} width="76%"
 
     #hn-navbar.navbar-collapse.collapse
       ul.nav.navbar-nav.navbar-right
