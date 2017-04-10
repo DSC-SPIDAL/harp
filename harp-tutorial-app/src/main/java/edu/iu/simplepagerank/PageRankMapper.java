@@ -32,9 +32,7 @@ public class PageRankMapper extends CollectiveMapper<String, String, LongWritabl
 		numUrls = conf.getInt(PageRankConstants.NUM_URLS, 1);
 		noIterations = conf.getInt(PageRankConstants.NUM_ITERATONS, 0);
 	}
-	/* Each mapCollective task handles one adjacency matrix in a split
-	 * key: file offset. We don't really use the key
-	 * value: <sourceUrl targetUrl-list>
+	/* Each mapCollective task handles one adjacency list in a split
 	 */
 	public void mapCollective( KeyValReader reader, Context context) throws IOException, InterruptedException {
 		
