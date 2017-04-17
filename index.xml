@@ -851,7 +851,9 @@ Usage: NNMapCollective &amp;lt;number of map tasks&amp;gt; &amp;lt;epochs&amp;gt
 &lt;h2 id=&#34;press&#34;&gt;Press&lt;/h2&gt;
 
 &lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;http://grids.ucs.indiana.edu/ptliupages/publications/MammothDataintheCloudClusteringSocialImages.pdf&#34;&gt;J. Qiu, B. Zhang. Mammoth Data in the Cloud: Clustering Social Images&lt;/a&gt;  (Book chapter in Cloud Computing and Big Data, IOS Press, 2013)&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;&lt;a href=&#34;http://ipcc.soic.iu.edu/Computation%20Abstractions.pdf&#34;&gt;B. Zhang, B. Peng, J. Qiu. Parallelizing Big Data Machine Learning Parallelizing Big Data Machine Learning&lt;/a&gt;  (in the book series on Advances in Parallel Computing published by IOS Press, 2017)&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;a href=&#34;http://grids.ucs.indiana.edu/ptliupages/publications/MammothDataintheCloudClusteringSocialImages.pdf&#34;&gt;J. Qiu, B. Zhang. Mammoth Data in the Cloud: Clustering Social Images&lt;/a&gt;  (Book chapter in Cloud Computing and Big Data, IOS Press, 2013)&lt;/p&gt;&lt;/li&gt;
 &lt;/ul&gt;
 </description>
     </item>
