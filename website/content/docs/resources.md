@@ -20,4 +20,6 @@ Harp Resources outside this documentation:
 
 ## Press
 
+* [B. Zhang, B. Peng, J. Qiu. Parallelizing Big Data Machine Learning Parallelizing Big Data Machine Learning](http://ipcc.soic.iu.edu/Computation%20Abstractions.pdf)  (in the book series on Advances in Parallel Computing published by IOS Press, 2017)
+
 * [J. Qiu, B. Zhang. Mammoth Data in the Cloud: Clustering Social Images](http://grids.ucs.indiana.edu/ptliupages/publications/MammothDataintheCloudClusteringSocialImages.pdf)  (Book chapter in Cloud Computing and Big Data, IOS Press, 2013)
