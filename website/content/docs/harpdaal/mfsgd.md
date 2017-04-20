@@ -34,7 +34,8 @@ Harp Mappers. 2) an intra-mapper layer that carries out the computation work on 
 ### Inter-Mapper Layout
 
 The training dataset is partitioned by row identities, and each mapper is assigned data points from a group of rows. 
-The model matrix W is also row-partitioned, and each mapper keeps its own local portion of W. The model H is, however, sliced and rotated among all the mappers. Figure 1 shows the
+The model matrix W is also row-partitioned, and each mapper keeps its own local portion of W. The model H is, however, 
+sliced and [rotated](https://dsc-spidal.github.io/harp/docs/communications/rotate/) among all the mappers. Figure 1 shows the
 inter-mapper layout of Harp-DAAL-SGD. 
 
 <img src="/img/6-2-5.png" width="66%"  >

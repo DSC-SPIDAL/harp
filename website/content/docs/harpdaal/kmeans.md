@@ -9,8 +9,9 @@ training point to every centroids, re-assigns the training point to new cluster 
 
 ## Implementation of Harp-DAAL-Kmeans
 
-Harp-DAAL-Kmeans is built upon Harp's original K-means parallel implementation, where it uses a regroup-allgather pattern to 
-synchronize model data, i.e. centroids, among each mapper. The difference between original Harp-Kmeans and Harp-DAAL-Kmeans 
+Harp-DAAL-Kmeans is built upon Harp's original K-means parallel implementation, where it uses a [regroup](https://dsc-spidal.github.io/harp/docs/communications/regroup/)
+and another [allgather](https://dsc-spidal.github.io/harp/docs/communications/allgather/) to synchronize model data, i.e. centroids, among each mapper. 
+The difference between original Harp-Kmeans and Harp-DAAL-Kmeans 
 is their local computation kernel. Harp-DAAL-Kmeans uses DAAL's K-means kernel, where the computation of point-centroid distance
 is transformed into BLAS-level 3 matrix-matrix operations. This replacement significantly improves the computation intensity of 
 the local computation, generating highly vectorized codes when compared to original Harp-Kmeans. 
