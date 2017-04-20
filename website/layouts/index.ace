@@ -7,7 +7,7 @@ html lang={{.Site.LanguageCode}}
     {{partial "css.includes.html" .}}
   body
     .hn-main
-      {{partial "navbar.html" .}}
+      {{partial "navindex.html" .}}
       .container-fluid
         .row
           .hn-jumbotron.jumbotron.text-center
