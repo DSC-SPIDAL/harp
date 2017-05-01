@@ -1,27 +1,56 @@
 ---
-title: K-Means
+title: Clustering using K Means
 ---
+
+&nbsp;&nbsp;&nbsp;&nbsp; Clustering is an example of unsupervised Machine learning algorithm which tries to cluster the data points (vector) into groups based on some similarity measure.  The goal of a clustering algorithm is to group similar examples into a cluster. For a given data set, it is possible to have different number of clusters depending upon the number of data points and the threshold for similarity of data points within a cluster.  
+
+&nbsp;&nbsp;&nbsp;&nbsp; There are many applications of K Means algorithm. A retail company may want to segment its customers based on geographical area and their purchase patterns. A librarian working with a digital library might want to cluster similar documents and group them together. All these applications are perfect examples of clustering where the user has already some idea about the number of clusters that are supposed to be in the data set.  
+
+&nbsp;&nbsp;&nbsp;&nbsp; There are various types of clustering algorithms. Of all of them, we will discuss about a partition based clustering algorithm called K Means. Partition based clustering simply divides the data points (or the d-dimensional space that the data points reside) into various clusters or groups. K means is an example of exclusive clustering in which each data point is assigned only to one cluster. The `K` in the `K` Means algorithm denotes the number of clusters. This is a user specified parameter. Regardless of the number of clusters that are actually in the data (which we do not know), we will specify the number of clusters as an input to the algorithm.  
+
+&nbsp;&nbsp;&nbsp;&nbsp; In order to better understand K Means algorithm, we will have to understand the following terminologies,  
+1. `Centroids`: Centroids are referred to as the prototype of any clusters. If the cluster prototype is mean, then the algorithm is referred to as K Means algorithm and if the cluster prototype is median, then the algorithm is K Median clustering.
+2. `Distance`: To measure the similarity between the data points, we will calculate the distance between each pair of data points to check their similarity. This means that the points are very close to each other (less distance) in the *d* dimensional space (where *d* refers to the number of dimensions in the data) are similar to each other.
+
+&nbsp;&nbsp;&nbsp;&nbsp; The K Means algorithm works as follows,  
+1. Choose `K` number of *d* dimensional data points randomly. These will be our initial set of centroids (cluster prototypes)
+2. Assign each data point to a cluster. This is done by finding the distance between the data point and all the cluster centroids and whichever centroid has less distance with the data points take the corresponding data point into its cluster. 
+3. Update the new centroids by taking an average over the *d* dimensional data points that are assigned to it. 
+4. Repeat steps 2 and 3 until convergence. Here, convergence refers to the fact that none of the data points change their clusters. 
+
+&nbsp;&nbsp;&nbsp;&nbsp; The performance of the K means algorithm greatly depends on the number of clusters that we choose and initially selecting the cluster centroids randomly. K means algorithm is also a greedy algorithm which does not guarantee convergence to the gloabl minimum. It is always prone to converge to a local minimum in which case, there is no guarantee to check whether the obtained convergence point is the global minimum or local minimum. 
+
+&nbsp;&nbsp;&nbsp;&nbsp; To better help you understand how the k means algorithm works, we have developed a video tutorial in which we initially create random cluster of data points and provide visual interpretation of k means algorithm. The link to the URL is mentioned below.  
+
+[YouTube Link](https://www.youtube.com/watch?v=0hpeium8E0g)
+
+## Parallel Design of K Means Clustering  
 
 <img src="/img/kmeans.png" width="80%" >
 
-K-Means is a very powerful and easily understood clustering algorithm. The aim of the algorithm is to divide a given set of points into `K` partitions. `K` needs to be specified by the user. In order to understand K-Means, first you need to understand the proceeding concepts and their meaning.
+&nbsp;&nbsp;&nbsp;&nbsp; As illustrated above, the algorithm for K means updates the cluster prototypes independently. The centroid updates can happen independently of other centroids. In vanilla kmeans, the centroids are the output of the algorithm. A centroid is a data point living in a *d* dimensional space where the data vectors are present. Hence, the output of our kmeans algorithm would be ***K*** *d*-dimensional vectors, each representing a cluster prototype (centroid).
 
-* `Centroids`:
-    Centroids can be defined as the center of each cluster. If we are performing clustering with k=3, we will have 3 centroids. To perform K-Means clustering, the users needs to provide the initial set of centroids.
+1. What is the model? What kind of data structure is used?  
+&nbsp;&nbsp;&nbsp;&nbsp; In vanilla k means implementation, centroids are the output of kmeans algorithm. This can be easily extended to enhanced version where each centroid is given a ID indicating the cluster and assigning the cluster ID to the data points that fall inside these clusters.  
+&nbsp;&nbsp;&nbsp;&nbsp; In our implementation, the centroids have a vector structure as a double array.  
 
-* `Distance`:
-    In order to group data points as close together or as far-apart we need to define a distance between two given data points. In K-Means clustering distance is normally calculated as the Euclidean Distance between two data points.
+2. What are the characteristic of data dependency in model update computation, can updates run concurrently?  
+&nbsp;&nbsp;&nbsp;&nbsp; In the core model update computation, each data points needs to have access to the complete model. This access is required to calculate the distance between every data point and the cluster centroid. Since harp uses model concurrent update, each data point finds its nearest centroid and partially updates the model. The true final update occurs only when all the data points finish their part of model update. 
 
-The K-Means algorithm simply repeats the following set of steps until there is no change in the partition assignments, in that it has clarified which data point is assigned to which partition.
+3. Which kind of parallellism is suitable, data parallelism or model parallelism?  
+&nbsp;&nbsp;&nbsp;&nbsp; Since Harp is built on top of Hadoop, Data parallelism comes for free. The data points are split depending on the chunk size configured in Hadoop and gets loaded into Mappers. There are two different solutions with which model parallelism can be achieved.
+	+ Each node gets one replica of the entire model and they update the model based on the chunk of the data that they receive.  These are local updates and it happens in parallel. Each node will have a copy of the local model and they synchronize when all the nodes complete their local model update computations. Here, the model update is not parallelized, but they are replicated and updated based on the local data 
+	+ The second method achieves the model parallelism by partitioning the model data and providing every node with one partition of the model. This type of mechanism rotates the model data once the local computation in a single node is completed. This process is repeated until each partition returns back to the original node after which the final model update happens. The final model update is gathering all the partitioned model data and combining it into a single model.  
 
-1. Choose K points as the initial set of centroids.
+4. Which collective communication operation is suitable to synchronize the model?  
+&nbsp;&nbsp;&nbsp;&nbsp; The nature of the kmeans algorithm provides us to use different collective communication operation using Harp. For the solution without model parallelism, we are using model replicas that are being sent to every mapper where each replica will be updated based on the local data. The replicas of the model can be synchronized using `allreduce`, after which we can calculate the new centroids to perform the next iteration. For vanilla kmeans, the combination of reduce/broadcast, push/pull, regroup/allgather are similar to allreduce.  
 
-2. Assign each data point in the data set to the closest centroid (this is done by calculating the distance between the data point and each centroid).
+&nbsp;&nbsp;&nbsp;&nbsp; For solutions employing model parallelism model is not replicated between mappers, instead the model data is partitioned between nodes. The movemement of model partitions are a kind of synchronized collective operation achieved by `rotate` collective communication operation supported in Harp. 
 
-3. Calculate the new centroids based on the clusters that were generated in step 2. Normally this is done by calculating the mean of each cluster.
 
-4. Repeat steps 2 and 3 until data points do not change cluster assignments, meaning their centroids are set.
+## DATAFLOW
 
+![dataflow](/img/4-2-2.png)
 
 ## Step 1 --- The Main Method
 The tasks of the main class is to configure and run the job iteratively.
@@ -342,14 +371,8 @@ For example:
 hadoop jar harp-tutorial-app-1.0-SNAPSHOT.jar edu.iu.kmeans.common.KmeansMapCollective 1000 10 10 2 10 /kmeans /tmp/kmeans allreduce
 ```
 
-Retrieve the results:
+Fetch the results:
 ```bash
 hdfs dfs -ls /
 hdfs dfs -cat /kmeans/centroids/*
 ```
-
-
-
-
-
-
