@@ -61,6 +61,8 @@ sections:
         url: /docs/harpdaal/kmeans
       - name: Matrix Factorization (SGD)
         url: /docs/harpdaal/mfsgd
+      - name: Recommender System (ALS)
+        url: /docs/harpdaal/als
   - name: Harp Resources
     sublinks:
       - name: Harp Resources
