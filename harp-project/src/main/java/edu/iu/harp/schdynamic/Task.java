@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,13 +21,13 @@ package edu.iu.harp.schdynamic;
  ******************************************************/
 public interface Task<I, O> {
 
-    /**
-     * The main computation of the task
-     * 
-     * @param input
-     *            the input
-     * @return the output
-     * @throws Exception
-     */
-    public O run(I input) throws Exception;
+  /**
+   * The main computation of the task
+   * 
+   * @param input
+   *          the input
+   * @return the output
+   * @throws Exception
+   */
+  public O run(I input) throws Exception;
 }

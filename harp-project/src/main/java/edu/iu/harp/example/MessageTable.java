@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,11 @@ package edu.iu.harp.example;
 
 import edu.iu.harp.keyval.Int2ValKVTable;
 
-public class MessageTable extends Int2ValKVTable<IntVal, MessagePartition> {
+public class MessageTable extends
+  Int2ValKVTable<IntVal, MessagePartition> {
 
-    public MessageTable(int tableID) {
-	super(tableID, new IntPlus(), IntVal.class, MessagePartition.class);
-    }
+  public MessageTable(int tableID) {
+    super(tableID, new IntPlus(), IntVal.class,
+      MessagePartition.class);
+  }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,59 +27,61 @@ import edu.iu.harp.resource.Writable;
  ******************************************************/
 public class Barrier extends Writable {
 
-    private boolean status;
+  private boolean status;
 
-    public Barrier() {
-	status = false;
-    }
+  public Barrier() {
+    status = false;
+  }
 
-    /**
-     * Set the status
-     * 
-     * @param st
-     *            the status
-     */
-    public void setStatus(boolean st) {
-	status = st;
-    }
+  /**
+   * Set the status
+   * 
+   * @param st
+   *          the status
+   */
+  public void setStatus(boolean st) {
+    status = st;
+  }
 
-    /**
-     * Get the status
-     * 
-     * @return the status
-     */
-    public boolean getStatus() {
-	return status;
-    }
+  /**
+   * Get the status
+   * 
+   * @return the status
+   */
+  public boolean getStatus() {
+    return status;
+  }
 
-    /**
-     * Write the status to DataOutput
-     */
-    @Override
-    public void write(DataOutput out) throws IOException {
-	out.writeBoolean(status);
-    }
+  /**
+   * Write the status to DataOutput
+   */
+  @Override
+  public void write(DataOutput out)
+    throws IOException {
+    out.writeBoolean(status);
+  }
 
-    /**
-     * Read the status from DataInput
-     */
-    @Override
-    public void read(DataInput in) throws IOException {
-	status = in.readBoolean();
-    }
+  /**
+   * Read the status from DataInput
+   */
+  @Override
+  public void read(DataInput in)
+    throws IOException {
+    status = in.readBoolean();
+  }
 
-    /**
-     * Get the number of bytes of the encoded data
-     */
-    @Override
-    public int getNumWriteBytes() {
-	return 1;
-    }
+  /**
+   * Get the number of bytes of the encoded data
+   */
+  @Override
+  public int getNumWriteBytes() {
+    return 1;
+  }
 
-    /**
-     * Clear the data
-     */
-    @Override
-    public void clear() {
-    }
+  /**
+   * Clear the data
+   */
+  @Override
+  public void clear() {
+  }
 }

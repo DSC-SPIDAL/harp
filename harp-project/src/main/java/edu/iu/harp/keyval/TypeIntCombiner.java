@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,16 +21,16 @@ package edu.iu.harp.keyval;
  ******************************************************/
 public class TypeIntCombiner {
 
-    /**
-     * Merge two int-type values
-     * 
-     * @param curVal
-     *            the current value
-     * @param newVal
-     *            the new value
-     * @return the merged value
-     */
-    public int combine(int curVal, int newVal) {
-	return curVal + newVal;
-    }
+  /**
+   * Merge two int-type values
+   * 
+   * @param curVal
+   *          the current value
+   * @param newVal
+   *          the new value
+   * @return the merged value
+   */
+  public int combine(int curVal, int newVal) {
+    return curVal + newVal;
+  }
 }

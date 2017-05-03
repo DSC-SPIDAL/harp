@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,23 +21,23 @@ package edu.iu.harp.resource;
  ******************************************************/
 public class BytesPool extends ArrayPool<byte[]> {
 
-    public BytesPool() {
-	super();
-    }
+  public BytesPool() {
+    super();
+  }
 
-    /**
-     * New a byte array of the size
-     */
-    @Override
-    protected byte[] createNewArray(int size) {
-	return new byte[size];
-    }
+  /**
+   * New a byte array of the size
+   */
+  @Override
+  protected byte[] createNewArray(int size) {
+    return new byte[size];
+  }
 
-    /**
-     * Get the length of the array
-     */
-    @Override
-    protected int getLength(byte[] array) {
-	return array.length;
-    }
+  /**
+   * Get the length of the array
+   */
+  @Override
+  protected int getLength(byte[] array) {
+    return array.length;
+  }
 }

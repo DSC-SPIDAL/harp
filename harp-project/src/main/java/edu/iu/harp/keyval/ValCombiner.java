@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,14 +21,15 @@ package edu.iu.harp.keyval;
  ******************************************************/
 public abstract class ValCombiner<V extends Value> {
 
-    /**
-     * Combine two Values
-     * 
-     * @param curVal
-     *            the current Value
-     * @param newVal
-     *            the new Value
-     * @return ValStatus
-     */
-    public abstract ValStatus combine(V curVal, V newVal);
+  /**
+   * Combine two Values
+   * 
+   * @param curVal
+   *          the current Value
+   * @param newVal
+   *          the new Value
+   * @return ValStatus
+   */
+  public abstract ValStatus combine(V curVal,
+    V newVal);
 }

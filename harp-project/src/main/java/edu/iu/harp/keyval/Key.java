@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,14 +24,14 @@ import edu.iu.harp.resource.Writable;
 
 public abstract class Key extends Writable {
 
-    /**
-     * The equals function to be overridden
-     */
-    @Override
-    public abstract boolean equals(Object obj);
+  /**
+   * The equals function to be overridden
+   */
+  @Override
+  public abstract boolean equals(Object obj);
 
-    /**
-     * The hashCode function to be overridden
-     */
-    public abstract int hashCode();
+  /**
+   * The hashCode function to be overridden
+   */
+  public abstract int hashCode();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,13 @@ package edu.iu.harp.example;
 import edu.iu.harp.keyval.ValCombiner;
 import edu.iu.harp.keyval.ValStatus;
 
-public class EdgeValCombiner extends ValCombiner<EdgeVal> {
+public class EdgeValCombiner
+  extends ValCombiner<EdgeVal> {
 
-    @Override
-    public ValStatus combine(EdgeVal curVal, EdgeVal newVal) {
-	curVal.addEdgeVal(newVal);
-	return ValStatus.COMBINED;
-    }
+  @Override
+  public ValStatus combine(EdgeVal curVal,
+    EdgeVal newVal) {
+    curVal.addEdgeVal(newVal);
+    return ValStatus.COMBINED;
+  }
 }

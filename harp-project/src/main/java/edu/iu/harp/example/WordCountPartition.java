@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package edu.iu.harp.example;
 
 import edu.iu.harp.keyval.Key2ValKVPartition;
 
-public class WordCountPartition extends Key2ValKVPartition<StringKey, IntCount> {
+public class WordCountPartition extends
+  Key2ValKVPartition<StringKey, IntCount> {
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,83 +23,86 @@ import java.io.IOException;
 import edu.iu.harp.resource.Writable;
 
 /*******************************************************
- * PartitionCount records the number of partitions on the worker
+ * PartitionCount records the number of partitions
+ * on the worker
  ******************************************************/
 public class PartitionCount extends Writable {
-    private int workerID;
-    private int partitionCount;
+  private int workerID;
+  private int partitionCount;
 
-    public PartitionCount() {
-    }
+  public PartitionCount() {
+  }
 
-    /**
-     * Write this to DataOutput
-     */
-    @Override
-    public void write(DataOutput out) throws IOException {
-	out.writeInt(workerID);
-	out.writeInt(partitionCount);
-    }
+  /**
+   * Write this to DataOutput
+   */
+  @Override
+  public void write(DataOutput out)
+    throws IOException {
+    out.writeInt(workerID);
+    out.writeInt(partitionCount);
+  }
 
-    /**
-     * Read this from DataInput
-     */
-    @Override
-    public void read(DataInput in) throws IOException {
-	this.workerID = in.readInt();
-	this.partitionCount = in.readInt();
-    }
+  /**
+   * Read this from DataInput
+   */
+  @Override
+  public void read(DataInput in)
+    throws IOException {
+    this.workerID = in.readInt();
+    this.partitionCount = in.readInt();
+  }
 
-    /**
-     * Set the workerID
-     * 
-     * @param workerID
-     *            the ID of the worker
-     */
-    public void setWorkerID(int workerID) {
-	this.workerID = workerID;
-    }
+  /**
+   * Set the workerID
+   * 
+   * @param workerID
+   *          the ID of the worker
+   */
+  public void setWorkerID(int workerID) {
+    this.workerID = workerID;
+  }
 
-    /**
-     * Get the ID of the worker
-     * 
-     * @return the ID of the worker
-     */
-    public int getWorkerID() {
-	return workerID;
-    }
+  /**
+   * Get the ID of the worker
+   * 
+   * @return the ID of the worker
+   */
+  public int getWorkerID() {
+    return workerID;
+  }
 
-    /**
-     * Set the count of partitions
-     * 
-     * @param pCount
-     *            the count of partitions
-     */
-    public void setPartitionCount(int pCount) {
-	this.partitionCount = pCount;
-    }
+  /**
+   * Set the count of partitions
+   * 
+   * @param pCount
+   *          the count of partitions
+   */
+  public void setPartitionCount(int pCount) {
+    this.partitionCount = pCount;
+  }
 
-    /**
-     * Get the count of partitions
-     * 
-     * @return the count of partitions
-     */
-    public int getPartitionCount() {
-	return this.partitionCount;
-    }
+  /**
+   * Get the count of partitions
+   * 
+   * @return the count of partitions
+   */
+  public int getPartitionCount() {
+    return this.partitionCount;
+  }
 
-    /**
-     * Get the number of bytes of the encoded data
-     */
-    @Override
-    public int getNumWriteBytes() {
-	return 8;
-    }
+  /**
+   * Get the number of bytes of the encoded data
+   */
+  @Override
+  public int getNumWriteBytes() {
+    return 8;
+  }
 
-    /**
-     * Clear the data
-     */
-    @Override
-    public void clear() {
-    }
+  /**
+   * Clear the data
+   */
+  @Override
+  public void clear() {
+  }
 }

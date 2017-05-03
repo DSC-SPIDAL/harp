@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,27 +17,28 @@
 package edu.iu.harp.partition;
 
 /*******************************************************
- * A Partitioner defines how to distribute the partitions to workers. Currently
- * it uses mode function on partition IDs.
+ * A Partitioner defines how to distribute the
+ * partitions to workers. Currently it uses mode
+ * function on partition IDs.
  ******************************************************/
 public class Partitioner {
 
-    private int numWorkers;
+  private int numWorkers;
 
-    public Partitioner(int numWorkers) {
-	this.numWorkers = numWorkers;
-    }
+  public Partitioner(int numWorkers) {
+    this.numWorkers = numWorkers;
+  }
 
-    protected int getNumWorkers() {
-	return numWorkers;
-    }
+  protected int getNumWorkers() {
+    return numWorkers;
+  }
 
-    public int getWorkerID(int partitionID) {
-	int workerID = partitionID % numWorkers;
-	if (workerID < 0) {
-	    return -workerID;
-	} else {
-	    return workerID;
-	}
+  public int getWorkerID(int partitionID) {
+    int workerID = partitionID % numWorkers;
+    if (workerID < 0) {
+      return -workerID;
+    } else {
+      return workerID;
     }
+  }
 }

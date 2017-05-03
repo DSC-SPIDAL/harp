@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,29 +21,30 @@ package edu.iu.harp.schdynamic;
  ******************************************************/
 public class Output<O> {
 
-    private O obj;
-    private boolean error;
+  private O obj;
+  private boolean error;
 
-    public Output(O obj, boolean error) {
-	this.obj = obj;
-	this.error = error;
-    }
+  public Output(O obj, boolean error) {
+    this.obj = obj;
+    this.error = error;
+  }
 
-    /**
-     * Get the output object
-     * 
-     * @return the output object
-     */
-    public O getOutput() {
-	return obj;
-    }
+  /**
+   * Get the output object
+   * 
+   * @return the output object
+   */
+  public O getOutput() {
+    return obj;
+  }
 
-    /**
-     * Check if it's an error or not
-     * 
-     * @return true if it's an error, false otherwise
-     */
-    public boolean isError() {
-	return error;
-    }
+  /**
+   * Check if it's an error or not
+   * 
+   * @return true if it's an error, false
+   *         otherwise
+   */
+  public boolean isError() {
+    return error;
+  }
 }

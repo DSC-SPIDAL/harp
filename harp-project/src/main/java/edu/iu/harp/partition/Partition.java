@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,78 +24,82 @@ import edu.iu.harp.resource.Simple;
 import edu.iu.harp.resource.Transferable;
 
 /*******************************************************
- * Partition provides a wrapper on an array or an object. Partitions have
- * partition IDs which is used to identify themselves in the distributed
+ * Partition provides a wrapper on an array or an
+ * object. Partitions have partition IDs which is
+ * used to identify themselves in the distributed
  * dataset.
  ******************************************************/
-public final class Partition<P extends Simple> extends Transferable {
-    private int partitionID;
-    private P partition;
+public final class Partition<P extends Simple>
+  extends Transferable {
+  private int partitionID;
+  private P partition;
 
-    public Partition(int partitionID, P partition) {
-	this.partition = partition;
-	this.partitionID = partitionID;
-    }
+  public Partition(int partitionID, P partition) {
+    this.partition = partition;
+    this.partitionID = partitionID;
+  }
 
-    /**
-     * Get the partition ID
-     * 
-     * @return ID
-     */
-    public int id() {
-	return partitionID;
-    }
+  /**
+   * Get the partition ID
+   * 
+   * @return ID
+   */
+  public int id() {
+    return partitionID;
+  }
 
-    /**
-     * Get the partition body
-     * 
-     * @return partition body
-     */
-    public P get() {
-	return partition;
-    }
+  /**
+   * Get the partition body
+   * 
+   * @return partition body
+   */
+  public P get() {
+    return partition;
+  }
 
-    /**
-     * Get the number bytes of encoded data. Four for storing the partitionID,
-     * plus the number bytes of encoded partition body data
-     */
-    @Override
-    public int getNumEnocdeBytes() {
-	return 4 + partition.getNumEnocdeBytes();
-    }
+  /**
+   * Get the number bytes of encoded data. Four
+   * for storing the partitionID, plus the number
+   * bytes of encoded partition body data
+   */
+  @Override
+  public int getNumEnocdeBytes() {
+    return 4 + partition.getNumEnocdeBytes();
+  }
 
-    /**
-     * Encode the partition data as DataOutput
-     */
-    @Override
-    public void encode(DataOutput out) throws IOException {
-	partition.encode(out);
-	out.writeInt(partitionID);
-    }
+  /**
+   * Encode the partition data as DataOutput
+   */
+  @Override
+  public void encode(DataOutput out)
+    throws IOException {
+    partition.encode(out);
+    out.writeInt(partitionID);
+  }
 
-    /**
-     * Release and reset the partition
-     */
-    @Override
-    public void release() {
-	partition.release();
-	this.reset();
-    }
+  /**
+   * Release and reset the partition
+   */
+  @Override
+  public void release() {
+    partition.release();
+    this.reset();
+  }
 
-    /**
-     * Free and reset the partition
-     */
-    @Override
-    public void free() {
-	partition.free();
-	this.reset();
-    }
+  /**
+   * Free and reset the partition
+   */
+  @Override
+  public void free() {
+    partition.free();
+    this.reset();
+  }
 
-    /**
-     * Reset the partition
-     */
-    private void reset() {
-	partitionID = Constant.UNKNOWN_PARTITION_ID;
-	partition = null;
-    }
+  /**
+   * Reset the partition
+   */
+  private void reset() {
+    partitionID = Constant.UNKNOWN_PARTITION_ID;
+    partition = null;
+  }
 }

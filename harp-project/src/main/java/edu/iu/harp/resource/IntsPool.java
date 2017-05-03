@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,23 +21,23 @@ package edu.iu.harp.resource;
  ******************************************************/
 public class IntsPool extends ArrayPool<int[]> {
 
-    public IntsPool() {
-	super();
-    }
+  public IntsPool() {
+    super();
+  }
 
-    /**
-     * New a int array of the size
-     */
-    @Override
-    protected int[] createNewArray(int size) {
-	return new int[size];
-    }
+  /**
+   * New a int array of the size
+   */
+  @Override
+  protected int[] createNewArray(int size) {
+    return new int[size];
+  }
 
-    /**
-     * Get the length of the array
-     */
-    @Override
-    protected int getLength(int[] array) {
-	return array.length;
-    }
+  /**
+   * Get the length of the array
+   */
+  @Override
+  protected int getLength(int[] array) {
+    return array.length;
+  }
 }
