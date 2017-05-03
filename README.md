@@ -56,9 +56,12 @@ Harp is a framework for machine learning applications.
 #### 3. Run Kmeans Map-collective job
 ##### The usage is
 ```bash
-hadoop jar harp-app-1.0-SNAPSHOT.jar edu.iu.kmeans.regroupallgather.KMeansLauncher <num of points> <num of centroids> <vector size> <num of point files per worker> <number of map tasks> <num threads> <number of iteration> <work dir> <local points dir>
+hadoop jar harp-app-1.0-SNAPSHOT.jar edu.iu.kmeans.regroupallgather.KMeansLauncher
+  <num of points> <num of centroids> <vector size> <num of point files per worker>
+  <number of map tasks> <num threads> <number of iteration> <work dir> <local points dir>
 ```
 ##### For example:
 ```bash
-hadoop jar harp-app-1.0-SNAPSHOT.jar edu.iu.kmeans.regroupallgather.KMeansLauncher 1000 10 100 5 2 2 10 /kmeans /tmp/kmeans
+hadoop jar harp-app-1.0-SNAPSHOT.jar edu.iu.kmeans.regroupallgather.KMeansLauncher
+  1000 10 100 5 2 2 10 /kmeans /tmp/kmeans
 ```
