@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,8 +84,8 @@ public class MultiFileSplit extends InputSplit
   }
 
   @Override
-  public long getLength() throws IOException,
-    InterruptedException {
+  public long getLength()
+    throws IOException, InterruptedException {
     return length;
   }
 
