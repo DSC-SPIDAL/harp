@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,9 @@ import edu.iu.harp.resource.DoubleArray;
 
 public class MatrixUtil {
 
-  public static void matrixMultiply(
-    DoubleArray A, DoubleArray B, DoubleArray C,
-    int aHeight, int bWidth, int len) {
+  public static void matrixMultiply(DoubleArray A,
+    DoubleArray B, DoubleArray C, int aHeight,
+    int bWidth, int len) {
     double[] aArray = A.get();
     double[] bArray = B.get();
     double[] cArray = C.get();
@@ -35,19 +35,17 @@ public class MatrixUtil {
       for (int j = 0; j < bWidth; j++) {
         tmp = 0;
         for (int k = 0; k < len; k++) {
-          tmp =
-            tmp + aArray[len * i + k]
-              * bArray[bWidth * k + j];
+          tmp = tmp + aArray[len * i + k]
+            * bArray[bWidth * k + j];
         }
         cArray[i * bWidth + j] = tmp;
       }
     }
   }
 
-  public static void matrixMultiply(
-    DoubleArray A, Partition<DoubleArray>[] B,
-    DoubleArray C, int aHeight, int bWidth,
-    int len) {
+  public static void matrixMultiply(DoubleArray A,
+    Partition<DoubleArray>[] B, DoubleArray C,
+    int aHeight, int bWidth, int len) {
     // we need to cross the partitions for each
     // column!
     double[] aArray = A.get();
@@ -67,9 +65,8 @@ public class MatrixUtil {
             bParHeight =
               B[l].get().size() / bWidth;
             for (int m = 0; m < bParHeight; m++) {
-              tmp =
-                tmp + aArray[len * i + k]
-                  * bParArr[bWidth * m + j];
+              tmp = tmp + aArray[len * i + k]
+                * bParArr[bWidth * m + j];
             }
           }
         }

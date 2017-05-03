@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,20 +25,17 @@ import org.apache.commons.logging.LogFactory;
 
 import edu.iu.harp.schdynamic.Task;
 
-public class DataInitTask implements
-  Task<VSetSplit, Object> {
+public class DataInitTask
+  implements Task<VSetSplit, Object> {
 
-  protected static final Log LOG = LogFactory
-    .getLog(DataInitTask.class);
+  protected static final Log LOG =
+    LogFactory.getLog(DataInitTask.class);
 
   private final Int2ObjectOpenHashMap<VRowCol>[] vWHMap;
-  private final Int2ObjectOpenHashMap<double[]> wMap;
 
   public DataInitTask(
-    Int2ObjectOpenHashMap<VRowCol>[] vWHMap,
-    Int2ObjectOpenHashMap<double[]> wMap) {
+    Int2ObjectOpenHashMap<VRowCol>[] vWHMap) {
     this.vWHMap = vWHMap;
-    this.wMap = wMap;
   }
 
   @Override
@@ -61,19 +58,16 @@ public class DataInitTask implements
       Int2ObjectMap.Entry<VRowCol> entry =
         iterator.next();
       VRowCol vRowCol = entry.getValue();
+      int[] ids = new int[vRowCol.numV];
+      System.arraycopy(vRowCol.ids, 0, ids, 0,
+        vRowCol.numV);
       double[] v = new double[vRowCol.numV];
       System.arraycopy(vRowCol.v, 0, v, 0,
         vRowCol.numV);
+      vRowCol.ids = ids;
       vRowCol.v = v;
-      vRowCol.m2 = new double[vRowCol.numV][];
-      for (int j = 0; j < vRowCol.numV; j++) {
-        vRowCol.m2[j] = wMap.get(vRowCol.ids[j]);
-        if (vRowCol.m2[j] == null) {
-          LOG.info("null W");
-        }
-      }
-      vRowCol.ids = null;
       vRowCol.m1 = null;
+      vRowCol.m2 = null;
     }
     vHMap.trim();
     return null;

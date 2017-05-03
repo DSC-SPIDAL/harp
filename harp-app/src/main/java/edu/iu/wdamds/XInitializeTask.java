@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,8 +32,8 @@ public class XInitializeTask implements
   }
 
   @Override
-  public Partition<DoubleArray> run(
-    RowData rowData) throws Exception {
+  public Partition<DoubleArray>
+    run(RowData rowData) throws Exception {
     // Copy to local
     int d = this.d;
     Random rand = new Random(rowData.rowOffset);
@@ -48,7 +48,7 @@ public class XInitializeTask implements
         doubles[i] = 0 - rand.nextDouble();
       }
     }
-    return new Partition<DoubleArray>(
-      rowData.row, doubleArray);
+    return new Partition<DoubleArray>(rowData.row,
+      doubleArray);
   }
 }

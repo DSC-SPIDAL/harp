@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,17 +38,16 @@ public class JobLauncher extends Configured
 
   public static void main(String[] argv)
     throws Exception {
-    int res =
-      ToolRunner.run(new Configuration(),
-        new JobLauncher(), argv);
+    int res = ToolRunner.run(new Configuration(),
+      new JobLauncher(), argv);
     System.exit(res);
   }
 
   @Override
   public int run(String[] args) throws Exception {
     if (args.length < 5) {
-      System.err
-        .println("Usage: edu.iu.benchmark.JobLauncher <command>"
+      System.err.println(
+        "Usage: edu.iu.benchmark.JobLauncher <command>"
           + "<number of bytes per partition>"
           + "<number of partitions>"
           + "<number of mappers>"
@@ -103,11 +102,10 @@ public class JobLauncher extends Configured
     int numMappers, int numIterations,
     Path inputDirPath, Path outputDirPath) {
     try {
-      Job benchamrkJob =
-        configureBenchmarkJob(cmd,
-          bytesPerPartition, numPartitions,
-          numMappers, numIterations,
-          inputDirPath, outputDirPath);
+      Job benchamrkJob = configureBenchmarkJob(
+        cmd, bytesPerPartition, numPartitions,
+        numMappers, numIterations, inputDirPath,
+        outputDirPath);
       benchamrkJob.waitForCompletion(true);
     } catch (IOException | URISyntaxException |
       ClassNotFoundException |
@@ -127,8 +125,8 @@ public class JobLauncher extends Configured
       inputDirPath);
     FileOutputFormat.setOutputPath(job,
       outputDirPath);
-    job
-      .setInputFormatClass(SingleFileInputFormat.class);
+    job.setInputFormatClass(
+      SingleFileInputFormat.class);
     job.setJarByClass(JobLauncher.class);
     job.setMapperClass(BenchmarkMapper.class);
     org.apache.hadoop.mapred.JobConf jobConf =

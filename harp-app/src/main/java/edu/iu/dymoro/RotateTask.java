@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,17 +33,17 @@ import edu.iu.harp.resource.IntArray;
 import edu.iu.harp.resource.Simple;
 import edu.iu.harp.schstatic.Task;
 
-public class RotateTask<P extends Simple> extends
-  Task<Integer, List<Partition<P>>[]> {
+public class RotateTask<P extends Simple>
+  extends Task<Integer, List<Partition<P>>[]> {
 
-  protected static final Log LOG = LogFactory
-    .getLog(RotateTask.class);
+  protected static final Log LOG =
+    LogFactory.getLog(RotateTask.class);
 
   private final CollectiveMapper<?, ?, ?, ?> mapper;
   private final Table<P> table;
   private final int numColSplits;
   private final List<Partition<P>>[] splitMap;
-  private final boolean randomSplit;
+  private boolean randomSplit;
   private final Random random;
   private final String contextName;
   private int operationID;
@@ -87,8 +87,8 @@ public class RotateTask<P extends Simple> extends
       dataWorkerMap = new Int2IntOpenHashMap();
       // Initialize partition positions
       for (int i = 0; i < numWorkers; i++) {
-        dataWorkerMap
-          .put(i, orders[curOrderID++]);
+        dataWorkerMap.put(i,
+          orders[curOrderID++]);
       }
       rotationMap = new Int2IntOpenHashMap();
     } else {
@@ -111,9 +111,9 @@ public class RotateTask<P extends Simple> extends
     long t1 = System.currentTimeMillis();
     cleanSplitMap();
     updateRotationMap();
-    mapper.rotate(contextName,
-      "rotate-" + table.getTableID() + "-"
-        + operationID, table, rotationMap);
+    mapper.rotate(contextName, "rotate-"
+      + table.getTableID() + "-" + operationID,
+      table, rotationMap);
     if (randomSplit) {
       randomSplitTable();
     } else {
@@ -125,6 +125,10 @@ public class RotateTask<P extends Simple> extends
     return splitMap;
   }
 
+  void setRandomSplit(boolean b) {
+    randomSplit = b;
+  }
+
   private void splitTable() {
     int size = table.getNumPartitions();
     IntArray array = IntArray.create(size, true);
@@ -133,8 +137,8 @@ public class RotateTask<P extends Simple> extends
     IntArrays.quickSort(ids, 0, size);
     for (int i = 0; i < size; i++) {
       int splitID = i % numColSplits;
-      splitMap[splitID].add(table
-        .getPartition(ids[i]));
+      splitMap[splitID]
+        .add(table.getPartition(ids[i]));
     }
     array.release();
   }
@@ -173,7 +177,8 @@ public class RotateTask<P extends Simple> extends
             newWorkerID);
           curOrderID++;
         }
-      } else if (curOrderID % orderRowLen == numWorkers) {
+      } else if (curOrderID
+        % orderRowLen == numWorkers) {
         // The first shift
         for (int i = 0; i < numWorkers; i++) {
           // Get data i, calculate the new
@@ -192,9 +197,9 @@ public class RotateTask<P extends Simple> extends
           // location
           int originWorkerID =
             dataWorkerMap.get(i);
-          int curWorkerID =
-            (originWorkerID + orders[curOrderID - 1])
-              % numWorkers;
+          int curWorkerID = (originWorkerID
+            + orders[curOrderID - 1])
+            % numWorkers;
           int newWorkerID =
             (originWorkerID + orders[curOrderID])
               % numWorkers;

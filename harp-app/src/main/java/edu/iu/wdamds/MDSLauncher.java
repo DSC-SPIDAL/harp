@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,9 +38,8 @@ public class MDSLauncher extends Configured
 
   public static void main(String[] argv)
     throws Exception {
-    int res =
-      ToolRunner.run(new Configuration(),
-        new MDSLauncher(), argv);
+    int res = ToolRunner.run(new Configuration(),
+      new MDSLauncher(), argv);
     System.exit(res);
   }
 
@@ -73,8 +72,8 @@ public class MDSLauncher extends Configured
       System.out.println("[8. Threshold value]");
       System.out
         .println("[9. The Target Dimension]");
-      System.out
-        .println("[10. Cooling parameter (alpha)]");
+      System.out.println(
+        "[10. Cooling parameter (alpha)]");
       System.out.println("[11. Input Data Size]");
       System.out
         .println("[11. CG iteration num]");
@@ -97,34 +96,32 @@ public class MDSLauncher extends Configured
     int cgIter = Integer.parseInt(args[11]);
     int numThreads = Integer.parseInt(args[12]);
 
-    System.out.println("[1. Num map tasks ]:\t"
-      + numMapTasks);
-    System.out.println("[2. Input Folder]:\t"
-      + inputFolder);
-    System.out
-      .println("[3. Input File Prefix]:\t"
-        + inputPrefix);
+    System.out.println(
+      "[1. Num map tasks ]:\t" + numMapTasks);
+    System.out.println(
+      "[2. Input Folder]:\t" + inputFolder);
+    System.out.println(
+      "[3. Input File Prefix]:\t" + inputPrefix);
     System.out
       .println("[4. Weighted File Prefix]:\t"
         + weightPrefix);
-    System.out.println("[5. V File Prefix]:\t"
-      + vPrefix);
-    System.out.println("[6. IDs File ]:\t"
-      + idsFile);
-    System.out.println("[7. Label Data File ]:\t"
-      + labelsFile);
-    System.out.println("[8. Threshold value ]:\t"
-      + threshold);
     System.out
-      .println("[9. The Target Dimension ]:\t"
-        + d);
+      .println("[5. V File Prefix]:\t" + vPrefix);
     System.out
-      .println("[10. Cooling parameter (alpha) ]:\t"
+      .println("[6. IDs File ]:\t" + idsFile);
+    System.out.println(
+      "[7. Label Data File ]:\t" + labelsFile);
+    System.out.println(
+      "[8. Threshold value ]:\t" + threshold);
+    System.out.println(
+      "[9. The Target Dimension ]:\t" + d);
+    System.out.println(
+      "[10. Cooling parameter (alpha) ]:\t"
         + alpha);
-    System.out.println("[11. Input Data Size]:\t"
-      + n);
-    System.out.println("[12. CG Iterations]:\t"
-      + cgIter);
+    System.out
+      .println("[11. Input Data Size]:\t" + n);
+    System.out
+      .println("[12. CG Iterations]:\t" + cgIter);
     System.out
       .println("[13. Num threads per mapper]:\t"
         + numThreads);
@@ -133,11 +130,10 @@ public class MDSLauncher extends Configured
     int numJobs = 3;
     boolean jobSuccess = true;
     do {
-      jobSuccess =
-        launch(numMapTasks, inputFolder,
-          inputPrefix, weightPrefix, vPrefix,
-          idsFile, labelsFile, threshold, d,
-          alpha, n, cgIter, numThreads);
+      jobSuccess = launch(numMapTasks,
+        inputFolder, inputPrefix, weightPrefix,
+        vPrefix, idsFile, labelsFile, threshold,
+        d, alpha, n, cgIter, numThreads);
       if (jobSuccess) {
         break;
       } else {
@@ -189,8 +185,8 @@ public class MDSLauncher extends Configured
       dataDirPath, fs, numMapTasks);
     return runWDAMDS(numMapTasks, dataDirPath,
       xFilePath, xOutFilePath, outDirPath,
-      idsFile, labelsFile, threshold, d, alpha,
-      n, cgIter, numThreads);
+      idsFile, labelsFile, threshold, d, alpha, n,
+      cgIter, numThreads);
   }
 
   private boolean runWDAMDS(int numMapTasks,
@@ -203,18 +199,17 @@ public class MDSLauncher extends Configured
     InterruptedException, ClassNotFoundException {
     long jobStartTime =
       System.currentTimeMillis();
-    Job mdsJob =
-      prepareWDAMDSJob(numMapTasks, dataDirPath,
-        xFilePath, xOutFilePath, outDirPath,
-        idsFile, labelsFile, threshold, d, alpha,
-        n, cgIter, numThreads);
+    Job mdsJob = prepareWDAMDSJob(numMapTasks,
+      dataDirPath, xFilePath, xOutFilePath,
+      outDirPath, idsFile, labelsFile, threshold,
+      d, alpha, n, cgIter, numThreads);
     boolean jobSuccess =
       mdsJob.waitForCompletion(true);
     if (jobSuccess) {
-      System.out
-        .println("| Job finished in "
-          + (System.currentTimeMillis() - jobStartTime)
-          / 1000.0 + " seconds |");
+      System.out.println("| Job finished in "
+        + (System.currentTimeMillis()
+          - jobStartTime) / 1000.0
+        + " seconds |");
       return true;
     } else {
       System.out.println("WDAMDS Job failed.");
@@ -230,9 +225,8 @@ public class MDSLauncher extends Configured
     int cgIter, int numThreads)
     throws IOException, URISyntaxException,
     InterruptedException, ClassNotFoundException {
-    Job job =
-      Job.getInstance(getConf(),
-        "map-collective-wdamds");
+    Job job = Job.getInstance(getConf(),
+      "map-collective-wdamds");
     Configuration jobConfig =
       job.getConfiguration();
     FileInputFormat.setInputPaths(job,
@@ -257,16 +251,16 @@ public class MDSLauncher extends Configured
     jobConfig.setDouble(MDSConstants.THRESHOLD,
       threshold);
     jobConfig.setInt(MDSConstants.D, d);
-    jobConfig
-      .setDouble(MDSConstants.ALPHA, alpha);
+    jobConfig.setDouble(MDSConstants.ALPHA,
+      alpha);
     jobConfig.setInt(MDSConstants.N, n);
-    jobConfig
-      .setInt(MDSConstants.CG_ITER, cgIter);
+    jobConfig.setInt(MDSConstants.CG_ITER,
+      cgIter);
     jobConfig.setInt(MDSConstants.NUM_THREADS,
       numThreads);
     // input class to file-based class
-    job
-      .setInputFormatClass(SingleFileInputFormat.class);
+    job.setInputFormatClass(
+      SingleFileInputFormat.class);
     job.setJarByClass(MDSLauncher.class);
     job.setMapperClass(WDAMDSMapper.class);
     // When use MultiFileInputFormat, remember to

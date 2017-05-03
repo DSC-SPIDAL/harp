@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,9 +33,9 @@ public class CenMergeTask implements
   }
 
   @Override
-  public Object run(
-    Partition<DoubleArray> cenPartition)
-    throws Exception {
+  public Object
+    run(Partition<DoubleArray> cenPartition)
+      throws Exception {
     int partitionID = cenPartition.id();
     double[] centroids = cenPartition.get().get();
     int cenSize = cenPartition.get().size();

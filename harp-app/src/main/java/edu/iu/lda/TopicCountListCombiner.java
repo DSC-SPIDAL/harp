@@ -14,26 +14,18 @@
  * limitations under the License.
  */
 
-package edu.iu.wdamds;
+package edu.iu.lda;
 
-import org.apache.hadoop.mapreduce.Mapper;
+import edu.iu.harp.partition.PartitionCombiner;
+import edu.iu.harp.partition.PartitionStatus;
 
-import edu.iu.harp.schdynamic.Task;
-
-public class DataLoadTask
-  implements Task<RowData, Object> {
-
-  private final Mapper<String, String, Object, Object>.Context context;
-
-  public DataLoadTask(
-    Mapper<String, String, Object, Object>.Context context) {
-    this.context = context;
-  }
+public class TopicCountListCombiner
+  extends PartitionCombiner<TopicCountList> {
 
   @Override
-  public Object run(RowData rowData)
-    throws Exception {
-    DataFileUtil.loadRowData(rowData, context);
-    return null;
+  public PartitionStatus combine(
+    TopicCountList curPartition,
+    TopicCountList newPartition) {
+    return PartitionStatus.COMBINE_FAILED;
   }
 }

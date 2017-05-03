@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,9 +45,8 @@ public class DataGenRunnable implements Runnable {
     Random random = new Random();
     try {
       DataOutputStream out =
-        new DataOutputStream(
-          new FileOutputStream(this.localDir
-            + File.separator + "data_"
+        new DataOutputStream(new FileOutputStream(
+          this.localDir + File.separator + "data_"
             + this.fileName));
       for (int i = 0; i < pointsPerFile; i++) {
         for (int j = 0; j < vectorSize; j++) {
@@ -57,8 +56,8 @@ public class DataGenRunnable implements Runnable {
         }
       }
       out.close();
-      System.out.println("Write file "
-        + this.fileName);
+      System.out
+        .println("Write file " + this.fileName);
     } catch (FileNotFoundException e) {
       e.printStackTrace();
     } catch (IOException e) {

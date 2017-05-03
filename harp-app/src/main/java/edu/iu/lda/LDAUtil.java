@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,6 @@
 
 package edu.iu.lda;
 
-import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.ints.IntArrays;
-
 import java.util.LinkedList;
 import java.util.List;
 
@@ -35,35 +31,39 @@ import edu.iu.harp.partition.Table;
 import edu.iu.harp.resource.IntArray;
 import edu.iu.harp.resource.Writable;
 import edu.iu.harp.schdynamic.DynamicScheduler;
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.ints.IntArrays;
+import it.unimi.dsi.fastutil.longs.LongArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
 
 public class LDAUtil {
-  protected static final Log LOG = LogFactory
-    .getLog(LDAUtil.class);
+  protected static final Log LOG =
+    LogFactory.getLog(LDAUtil.class);
 
-  static Int2ObjectOpenHashMap<DocWord> load(
-    LinkedList<String> vFilePaths,
-    int numThreads, Configuration configuration) {
-    DocStore vStore =
-      new DocStore(vFilePaths, numThreads,
-        configuration);
-    vStore.load();
-    return vStore.getMap();
+  static int load(LinkedList<String> vFilePaths,
+    int numThreads, Configuration configuration,
+    Int2ObjectOpenHashMap<DocWord> vDocMap,
+    Int2ObjectOpenHashMap<String> docIDMap) {
+    DocStore vStore = new DocStore(vFilePaths,
+      numThreads, configuration);
+    vStore.load(vDocMap, docIDMap);
+    return vStore.getMaxDocID();
   }
 
-  static
-    void
-    createDWSplitAndModel(
-      Int2ObjectOpenHashMap<DocWord> vDocMap,
-      Int2ObjectOpenHashMap<Int2IntOpenHashMap> dMap,
-      Table<TopicCount> wordTable,
-      Int2ObjectOpenHashMap<DocWord>[] vDWMap,
-      int numSplits, int numTopics, int numThreads) {
+  static void createDWSplitAndModel(
+    Int2ObjectOpenHashMap<DocWord> vDocMap,
+    LongArrayList[] dMap,
+    Table<TopicCountMap> wordTable,
+    Int2ObjectOpenHashMap<DocWord>[] vDWMap,
+    int numSplits, int numTopics,
+    int numThreads) {
     // Create a local V Map indexed by W columns
     // Create D model and local W model
     DWSplit[] dwSplits = new DWSplit[numSplits];
     for (int i = 0; i < numSplits; i++) {
-      vDWMap[i] = new Int2ObjectOpenHashMap<>();
       dwSplits[i] = new DWSplit(i);
+      vDWMap[i] = new Int2ObjectOpenHashMap<>();
     }
     IntArray idArray =
       IntArray.create(vDocMap.size(), false);
@@ -76,20 +76,18 @@ public class LDAUtil {
       int docID = ids[i];
       DocWord docWord = vDocMap.get(docID);
       // Create doc model
-      Int2IntOpenHashMap dRow = dMap.get(docID);
-      if (dRow == null) {
-        dRow = new Int2IntOpenHashMap();
-        dMap.put(docID, dRow);
+      if (dMap[docID] == null) {
+        dMap[docID] = new LongArrayList();
       }
       // Create word model
       for (int j = 0; j < docWord.numV; j++) {
-        Partition<TopicCount> partition =
+        Partition<TopicCountMap> partition =
           wordTable.getPartition(docWord.id2[j]);
         if (partition == null) {
-          TopicCount topicCount =
-            Writable.create(TopicCount.class);
-          wordTable
-            .addPartition(new Partition<TopicCount>(
+          TopicCountMap topicCount =
+            Writable.create(TopicCountMap.class);
+          wordTable.addPartition(
+            new Partition<TopicCountMap>(
               docWord.id2[j], topicCount));
         }
       }
@@ -114,9 +112,6 @@ public class LDAUtil {
     dwSplits = null;
     compute.start();
     compute.stop();
-    while (compute.hasOutput()) {
-      compute.waitForOutput();
-    }
     LOG.info("D & local W model are initialized");
   }
 
@@ -132,9 +127,8 @@ public class LDAUtil {
       map.put(id1, docWord);
     }
     // Search in ids2 for the current id2
-    int pos =
-      IntArrays.binarySearch(docWord.id2, 0,
-        docWord.numV, id2);
+    int pos = IntArrays.binarySearch(docWord.id2,
+      0, docWord.numV, id2);
     if (pos >= 0) {
       docWord.v[pos] += val;
     } else {
@@ -152,11 +146,11 @@ public class LDAUtil {
       }
       int insertPos = -pos - 1;
       System.arraycopy(docWord.id2, insertPos,
-        docWord.id2, insertPos + 1, docWord.numV
-          - insertPos);
+        docWord.id2, insertPos + 1,
+        docWord.numV - insertPos);
       System.arraycopy(docWord.v, insertPos,
-        docWord.v, insertPos + 1, docWord.numV
-          - insertPos);
+        docWord.v, insertPos + 1,
+        docWord.numV - insertPos);
       docWord.id2[insertPos] = id2;
       docWord.v[insertPos] = val;
       docWord.numV++;
@@ -164,9 +158,9 @@ public class LDAUtil {
   }
 
   static int createWordModel(
-    Table<TopicCount>[] wordTableMap,
+    Table<TopicCountList>[] wordTableMap,
     int numModelSlices,
-    Table<TopicCount> wordTable,
+    Table<TopicCountMap> wordTable,
     CollectiveMapper<?, ?, ?, ?> mapper) {
     // allreduce column index and the element
     // count on each column
@@ -175,29 +169,44 @@ public class LDAUtil {
       wordTable,
       new Partitioner(mapper.getNumWorkers()));
     for (int i = 0; i < numModelSlices; i++) {
-      wordTableMap[i] =
-        new Table<>(i, new TopicCountCombiner());
+      wordTableMap[i] = new Table<>(i,
+        new TopicCountListCombiner());
     }
-    IntArray idArray =
-      IntArray.create(
-        wordTable.getNumPartitions(), false);
+    IntArray idArray = IntArray.create(
+      wordTable.getNumPartitions(), false);
     int[] ids = idArray.get();
     wordTable.getPartitionIDs().toArray(ids);
     int size = idArray.size();
     IntArrays.quickSort(ids, 0, size);
     for (int i = 0; i < size; i++) {
       int sliceID = i % numModelSlices;
-      wordTableMap[sliceID]
-        .addPartition(wordTable
-          .getPartition(ids[i]));
+      TopicCountMap map =
+        wordTable.getPartition(ids[i]).get();
+      ObjectIterator<Int2IntMap.Entry> iterator =
+        map.getTopicCount().int2IntEntrySet()
+          .fastIterator();
+      TopicCountList list =
+        Writable.create(TopicCountList.class);
+      LongArrayList array = list.getTopicCount();
+      while (iterator.hasNext()) {
+        Int2IntMap.Entry entry = iterator.next();
+        long topicID = entry.getIntKey();
+        long topicCount = entry.getIntValue();
+        array.add((topicCount << 32) + topicID);
+      }
+      wordTableMap[sliceID].addPartition(
+        new Partition<TopicCountList>(ids[i],
+          list));
     }
     idArray.release();
+    wordTable.release();
+    wordTable = null;
     Table<IntArray> wordSumTable =
       new Table<>(0, new IntArrPlus());
     IntArray array = IntArray.create(1, false);
     array.get()[0] = size;
-    wordSumTable.addPartition(new Partition<>(0,
-      array));
+    wordSumTable
+      .addPartition(new Partition<>(0, array));
     mapper.allreduce("lda", "allreduce-wordsum",
       wordSumTable);
     int vocabularySize =
