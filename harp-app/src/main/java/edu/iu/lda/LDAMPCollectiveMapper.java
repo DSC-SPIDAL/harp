@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,12 @@
 
 package edu.iu.lda;
 
-import it.unimi.dsi.fastutil.ints.Int2IntMap;
-import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.objects.ObjectIterator;
-
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.LinkedList;
 import java.util.List;
@@ -37,96 +32,123 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.CollectiveMapper;
 
 import cc.mallet.types.Dirichlet;
-
 import edu.iu.dymoro.Rotator;
 import edu.iu.dymoro.Scheduler;
+import edu.iu.harp.example.DoubleArrPlus;
 import edu.iu.harp.example.IntArrPlus;
 import edu.iu.harp.example.LongArrPlus;
-import edu.iu.harp.example.DoubleArrPlus;
 import edu.iu.harp.partition.Partition;
 import edu.iu.harp.partition.Table;
+import edu.iu.harp.resource.DoubleArray;
 import edu.iu.harp.resource.IntArray;
 import edu.iu.harp.resource.LongArray;
-import edu.iu.harp.resource.DoubleArray;
 import edu.iu.harp.schdynamic.DynamicScheduler;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.longs.LongArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
 
-public class LDAMPCollectiveMapper
-  extends
+public class LDAMPCollectiveMapper extends
   CollectiveMapper<String, String, Object, Object> {
   private int numTopics;
   private double alpha;
   private double beta;
   private int numIterations;
   private int numThreads;
+  private double scheduleRatio;
+  private boolean enableTuning;
+  private int minBound;
+  private int maxBound;
   private long time;
-  private int numModelSlices;
+  private boolean hasOverTrained;
+  private int lastUnderTrainIte;
+  private int breakPeriod;
   private String modelDirPath;
   private boolean printModel;
   private int printInterval;
+  private int freeInterval;
+  private int numModelSlices;
   private long computeTime;
-  private long numVTrained;
   private long waitTime;
-  private boolean enableTuning;
 
   /**
    * Mapper configuration.
    */
   @Override
   protected void setup(Context context) {
-    LOG
-      .info("start setup: "
-        + new SimpleDateFormat("yyyyMMdd_HHmmss")
-          .format(Calendar.getInstance()
-            .getTime()));
+    LOG.info("start setup: "
+      + new SimpleDateFormat("yyyyMMdd_HHmmss")
+        .format(
+          Calendar.getInstance().getTime()));
     long startTime = System.currentTimeMillis();
     Configuration configuration =
       context.getConfiguration();
-    numTopics =
-      configuration.getInt(Constants.NUM_TOPICS,
-        100);
-    alpha =
-      configuration.getDouble(Constants.ALPHA,
-        0.1);
-    beta =
-      configuration.getDouble(Constants.BETA,
-        0.001);
-    numIterations =
-      configuration.getInt(
-        Constants.NUM_ITERATIONS, 100);
-    numThreads =
-      configuration.getInt(Constants.NUM_THREADS,
-        16);
-    time =
-      configuration
-        .getLong(Constants.TIME, 1000L);
-    numModelSlices =
-      configuration.getInt(
-        Constants.NUM_MODEL_SLICES, 2);
+    numTopics = configuration
+      .getInt(Constants.NUM_TOPICS, 100);
+    alpha = configuration
+      .getDouble(Constants.ALPHA, 0.1);
+    beta = configuration.getDouble(Constants.BETA,
+      0.001);
+    numIterations = configuration
+      .getInt(Constants.NUM_ITERATIONS, 100);
+    numThreads = configuration
+      .getInt(Constants.NUM_THREADS, 16);
+    scheduleRatio = configuration
+      .getDouble(Constants.SCHEDULE_RATIO, 2.0);
+    minBound =
+      configuration.getInt(Constants.MIN_BOUND,
+        Constants.TRAIN_MIN_THRESHOLD);
+    maxBound =
+      configuration.getInt(Constants.MAX_BOUND,
+        Constants.TRAIN_MAX_THRESHOLD);
+    if (minBound <= 0 || minBound > 100) {
+      minBound = Constants.TRAIN_MIN_THRESHOLD;
+    }
+    if (maxBound <= 0 || maxBound > 100) {
+      maxBound = Constants.TRAIN_MAX_THRESHOLD;
+    }
+    if (maxBound < minBound) {
+      maxBound = minBound;
+    }
+    if (maxBound == 100) {
+      minBound = 100;
+      enableTuning = false;
+    } else {
+      enableTuning = true;
+    }
+    time = enableTuning ? 1000L : 1000000000L;
+    hasOverTrained = false;
+    lastUnderTrainIte = 0;
+    breakPeriod = 0;
     modelDirPath =
       configuration.get(Constants.MODEL_DIR, "");
-    printModel =
-      configuration.getBoolean(
-        Constants.PRINT_MODEL, false);
+    printModel = configuration
+      .getBoolean(Constants.PRINT_MODEL, false);
     printInterval = 10;
+    freeInterval = 10;
+    numModelSlices = 2;
     computeTime = 0L;
-    numVTrained = 0L;
     waitTime = 0L;
-    enableTuning =
-      configuration.getBoolean(
-        Constants.ENABLE_TUNING, true);
     long endTime = System.currentTimeMillis();
-    LOG.info("config (ms): "
-      + (endTime - startTime));
+    LOG.info(
+      "config (ms): " + (endTime - startTime));
     LOG.info("Num Topics " + numTopics);
     LOG.info("Alpha " + alpha);
     LOG.info("Beta " + beta);
     LOG.info("Num Iterations " + numIterations);
-    LOG.info("Num Threads " + numThreads);
-    LOG.info("Mini Batch " + time);
-    LOG.info("Model Slices " + numModelSlices);
+    LOG.info("numThreads\\scheduleRaito "
+      + numThreads + "\\" + scheduleRatio);
+    LOG.info("enableTuning\\Time\\Bounds "
+      + enableTuning + "\\" + time + "\\"
+      + minBound + "\\" + maxBound);
     LOG.info("Model Dir Path " + modelDirPath);
     LOG.info("Print Model " + printModel);
-    LOG.info("Use Timer Tuning " + enableTuning);
+    LOG.info("Model Slices " + numModelSlices);
+    LOG.info("Container Memory " + configuration
+      .get("mapreduce.map.collective.memory.mb"));
+    LOG.info("Java Memory " + configuration
+      .get("mapreduce.map.collective.java.opts"));
   }
 
   protected void mapCollective(
@@ -136,8 +158,8 @@ public class LDAMPCollectiveMapper
     LinkedList<String> docFiles =
       getDocFiles(reader);
     try {
-      runLDA(docFiles,
-        context.getConfiguration(), context);
+      runLDA(docFiles, context.getConfiguration(),
+        context);
     } catch (Exception e) {
       LOG.error("Fail to run LDA.", e);
     }
@@ -145,9 +167,9 @@ public class LDAMPCollectiveMapper
       + (System.currentTimeMillis() - startTime));
   }
 
-  private LinkedList<String> getDocFiles(
-    final KeyValReader reader)
-    throws IOException, InterruptedException {
+  private LinkedList<String>
+    getDocFiles(final KeyValReader reader)
+      throws IOException, InterruptedException {
     final LinkedList<String> docFiles =
       new LinkedList<>();
     while (reader.nextKeyValue()) {
@@ -164,23 +186,28 @@ public class LDAMPCollectiveMapper
     final Configuration configuration,
     final Context context) throws Exception {
     // Load training data
-    LOG.info("Use Model Parallelism");
     Int2ObjectOpenHashMap<DocWord> vDocMap =
+      new Int2ObjectOpenHashMap<>();
+    final Int2ObjectOpenHashMap<String> docIDMap =
+      new Int2ObjectOpenHashMap<>();
+    final int maxDocIDw =
       LDAUtil.load(vFilePaths, numThreads,
-        configuration);
+        configuration, vDocMap, docIDMap);
+    LOG.info("Max Doc ID on Worker " + maxDocIDw);
     // ---------------------------------------------
     // Create vHMap and W model
-    int numSplits =
-      ((int) Math.round(numThreads / 20.0) + 1) * 20;
+    int numSplits = (int) Math
+      .ceil(Math.sqrt((double) numThreads
+        * (double) numThreads * scheduleRatio));
     final int numRowSplits = numSplits;
-    final int numColSplits = numRowSplits;
+    final int numColSplits = numSplits;
     LOG.info("numRowSplits: " + numRowSplits
       + " numColSplits: " + numColSplits);
     // D model and W model
-    Int2ObjectOpenHashMap<Int2IntOpenHashMap> dMap =
-      new Int2ObjectOpenHashMap<>();
-    Table<TopicCount> wordTable =
-      new Table<>(0, new TopicCountCombiner());
+    final LongArrayList[] dMap =
+      new LongArrayList[maxDocIDw + 1];
+    Table<TopicCountMap> wordTable =
+      new Table<>(0, new TopicCountMapCombiner());
     // vDMap grouped to splits based on row IDs
     final Int2ObjectOpenHashMap<DocWord>[] vDWMap =
       new Int2ObjectOpenHashMap[numRowSplits];
@@ -188,68 +215,62 @@ public class LDAMPCollectiveMapper
       wordTable, vDWMap, numRowSplits, numTopics,
       numThreads);
     vDocMap = null;
+    this.freeMemory();
+    this.freeConn();
+    System.gc();
     // Create global W model
-    Table<TopicCount>[] wordTableMap =
+    Table<TopicCountList>[] wordTableMap =
       new Table[numModelSlices];
     final int vocabularySize =
       LDAUtil.createWordModel(wordTableMap,
         numModelSlices, wordTable, this);
     wordTable = null;
-    printModelSize(wordTableMap);
+    printWordModelSize(wordTableMap);
+    printDocModelSize(dMap);
+    sortTopicCounts(wordTableMap, dMap);
+    // Count the training points per worker
+    final long numTokens = getNumTokens(vDWMap);
+    final int selfID = this.getSelfID();
+    final int numWorkers = this.getNumWorkers();
+    final long totalTokens = countWorkerTokenSum(
+      numTokens, selfID, numWorkers);
     this.freeMemory();
     this.freeConn();
     System.gc();
     // ----------------------------------------------
     // Calculate topic sums
-    final int[] zeroTopicSums =
-      new int[numTopics];
     final int[] topicSums = new int[numTopics];
+    getTopicSums("get-initial-topics-word-sum",
+      topicSums, wordTableMap);
+    printNumTokens(topicSums);
+    printLikelihood(wordTableMap, numWorkers, 0,
+      topicSums, vocabularySize);
     final double[] commons =
       new double[numTopics];
     final double[] rCoeffDistr =
       new double[numTopics];
-    getTopicSums("get-initial-topics-word-sum",
-      topicSums, zeroTopicSums, wordTableMap);
-    printNumTokens(topicSums);
     double rCoeffSum =
       calculateCommons(vocabularySize, topicSums,
         commons, rCoeffDistr);
-    // Count the training points per worker
-    final long numTokens = getNumTokens(vDWMap);
-    final int selfID = this.getSelfID();
-    final int numWorkers = this.getNumWorkers();
-    final long totalTokens =
-      countWorkerTokenSum(numTokens, selfID,
-        numWorkers);
-    LOG.info("Total number of tokens "
-      + totalTokens);
     // Create scheduler and rotator
-    Rotator<TopicCount> rotator =
+    boolean randomModelSplit = false;
+    int[] order = null;
+    Rotator<TopicCountList> rotator =
       new Rotator<>(wordTableMap, numColSplits,
-        false, this, null, "lda");
+        randomModelSplit, this, order, "lda");
     rotator.start();
-    List<LDAMPTask> ldaTasks = new LinkedList<>();
+    List<LDAMPTask> ldaTasks =
+      new ObjectArrayList<>();
     for (int i = 0; i < numThreads; i++) {
-      ldaTasks.add(new LDAMPTask(numTopics,
-        alpha, beta, commons, rCoeffDistr));
+      LDAMPTask task =
+        new LDAMPTask(dMap, numTopics, alpha,
+          beta, commons, rCoeffDistr);
+      task.setRCoeffSum(rCoeffSum);
+      ldaTasks.add(task);
     }
-    Scheduler<DocWord, TopicCount, LDAMPTask> scheduler =
+    Scheduler<Int2ObjectOpenHashMap<DocWord>, TopicCountList, LDAMPTask> scheduler =
       new Scheduler<>(numRowSplits, numColSplits,
         vDWMap, time, ldaTasks);
-      
-      // ADD: pb
-      // Initialize RMSE compute
-      LinkedList<CalcLikelihoodTask> calcLHTasks=
-        new LinkedList<>();
-      for (int i = 0; i < numThreads; i++) {
-    	  calcLHTasks.add(new CalcLikelihoodTask(numTopics, alpha, beta));
-      }
-      DynamicScheduler<List<Partition<TopicCount>>, Object, CalcLikelihoodTask> calcLHCompute =
-        new DynamicScheduler<>(calcLHTasks);
-        calcLHCompute.start();
-      printLikelihood(rotator, calcLHCompute,numWorkers, 0, topicSums, vocabularySize);
-      LOG.info("Iteration Starts.");
-      
     // -----------------------------------------
     // For iteration
     for (int i = 1; i <= numIterations; i++) {
@@ -257,82 +278,96 @@ public class LDAMPCollectiveMapper
       for (int j = 0; j < numWorkers; j++) {
         for (int k = 0; k < numModelSlices; k++) {
           long t1 = System.currentTimeMillis();
-          List<Partition<TopicCount>>[] wMap =
+          List<Partition<TopicCountList>>[] wMap =
             rotator.getSplitMap(k);
           long t2 = System.currentTimeMillis();
-          waitTime += (t2 - t1);
-          scheduler.schedule(wMap);
-          numVTrained +=
-            scheduler.getNumVItemsTrained();
+          scheduler.schedule(wMap, false);
           long t3 = System.currentTimeMillis();
-          computeTime += (t3 - t2);
           rotator.rotate(k);
+          waitTime += (t2 - t1);
+          computeTime += (t3 - t2);
         }
       }
+      long itePause1 = System.currentTimeMillis();
       rotator.pause();
+      long itePause2 = System.currentTimeMillis();
+      long numVTrained =
+        scheduler.getNumVItemsTrained();
+      if (enableTuning) {
+        long newTime = time;
+        // Stop adjust the timer,
+        // if recently there was a under train
+        if (lastUnderTrainIte == 0 || i
+          - lastUnderTrainIte >= breakPeriod) {
+          newTime = adjustMiniBatch(selfID,
+            computeTime, numVTrained, totalTokens,
+            i, time, minBound, maxBound,
+            numWorkers, numModelSlices);
+        }
+        if (time != newTime) {
+          // if (newTime < time) {
+          // this.freeMemory();
+          // }
+          time = newTime;
+          scheduler.setTimer(time);
+          sortTopicCounts(wordTableMap, dMap);
+        }
+      }
+      long itePause3 = System.currentTimeMillis();
+      // Update topic sums, rCoeff distr and sum
       getTopicSums("get-topics-word-sum-" + i,
-        topicSums, zeroTopicSums, wordTableMap);
-      rCoeffSum =
-        calculateCommons(vocabularySize,
-          topicSums, commons, rCoeffDistr);
+        topicSums, wordTableMap);
+      rCoeffSum = calculateCommons(vocabularySize,
+        topicSums, commons, rCoeffDistr);
       for (LDAMPTask ldaTask : ldaTasks) {
         ldaTask.setRCoeffSum(rCoeffSum);
+      }
+      long iteEnd = System.currentTimeMillis();
+      int percentage =
+        (int) Math.ceil((double) numVTrained
+          / (double) numTokens * 100.0);
+      LOG.info("Iteration " + i + ": "
+        + (iteEnd - iteStart) + ", compute time: "
+        + computeTime + ", misc: " + waitTime
+        + "\\" + (itePause2 - itePause1) + "\\"
+        + (itePause3 - itePause2) + "\\"
+        + (iteEnd - itePause3) + ", numTokens: "
+        + numVTrained + ", percentage(%): "
+        + percentage);
+      computeTime = 0L;
+      waitTime = 0L;
+      if (i % freeInterval == 0) {
+        this.freeMemory();
       }
       if (i % printInterval == 0 || i == 1
         || i == numIterations) {
         // this.logMemUsage();
         // this.logGCTime();
         printNumTokens(topicSums);
-        printModelSize(wordTableMap);
-        if (printModel) {
-        	
-        	
-        	// ADD: pb
-            // Initialize RMSE compute
-        	printLikelihood(rotator, calcLHCompute,numWorkers, i, topicSums,vocabularySize);
-        	
+        printWordModelSize(wordTableMap);
+        printDocModelSize(dMap);
+        printLikelihood(wordTableMap, numWorkers,
+          i, topicSums, vocabularySize);
+        if (printModel
+          && i % (printInterval * 10) == 0) {
+          LOG.info("Start to print word model.");
           try {
-            printWordTableMap(wordTableMap,
-              modelDirPath + "/tmp_model/" + i
-                + "/", selfID, configuration);
+            printWordTableMap(
+              wordTableMap, modelDirPath
+                + "/tmp_word_model/" + i + "/",
+              selfID, configuration);
+            // printDocMap(
+            // dMap, docIDMap, modelDirPath
+            // + "/tmp_doc_model/" + i + "/",
+            // selfID, configuration);
           } catch (Exception e) {
             LOG.error("Fail to print model.", e);
           }
         }
+        context.progress();
       }
-      int percentage =
-        (int) Math.round((double) numVTrained
-          / (double) numTokens * 100.0);
-      if (enableTuning) {
-        long newTime =
-          adjustMiniBatch(selfID, computeTime,
-            numVTrained, totalTokens, i, time,
-            numModelSlices, numWorkers);
-        if (time != newTime) {
-          if (newTime < time) {
-            // cached resources may not be
-            // suitable for the shrunk model
-            this.freeMemory();
-          }
-          time = newTime;
-          scheduler.setTimer(time);
-          LOG.info("Set next timer to " + time);
-        }
-      }
-      long iteEnd = System.currentTimeMillis();
-      LOG.info("Iteration " + i + ": "
-        + (iteEnd - iteStart)
-        + ", compute time: " + computeTime
-        + ", misc: " + waitTime + ", numTokens: "
-        + numVTrained + ", percentage(%): "
-        + percentage);
-      computeTime = 0L;
-      numVTrained = 0L;
-      waitTime = 0L;
-      context.progress();
       rotator.start();
     }
-    // Stop sgdCompute and rotation
     scheduler.stop();
     rotator.stop();
   }
@@ -341,30 +376,30 @@ public class LDAMPCollectiveMapper
     Int2ObjectOpenHashMap<DocWord>[] vDWMap) {
     long countV = 0L;
     for (int i = 0; i < vDWMap.length; i++) {
+      Int2ObjectOpenHashMap<DocWord> vWMap =
+        vDWMap[i];
       ObjectIterator<Int2ObjectMap.Entry<DocWord>> iterator =
-        vDWMap[i].int2ObjectEntrySet()
-          .fastIterator();
-      while (iterator.hasNext()) {
-        Int2ObjectMap.Entry<DocWord> entry =
-          iterator.next();
-        DocWord docWord = entry.getValue();
+        vWMap.int2ObjectEntrySet().fastIterator();
+      for (; iterator.hasNext();) {
+        DocWord docWord =
+          iterator.next().getValue();
         // Number of tokens
-        for (int j = 0; j < docWord.numV; j++) {
-          countV += docWord.v[j];
+        for (int k = 0; k < docWord.numV; k++) {
+          countV += docWord.z[k].length;
         }
       }
     }
     return countV;
   }
 
-  private long countWorkerTokenSum(
-    long numTokens, int selfID, int numWorkers) {
+  private long countWorkerTokenSum(long numTokens,
+    int selfID, int numWorkers) {
     Table<LongArray> workerVSumTable =
       new Table<>(0, new LongArrPlus());
     LongArray array = LongArray.create(1, false);
     array.get()[0] = numTokens;
-    workerVSumTable.addPartition(new Partition<>(
-      selfID, array));
+    workerVSumTable.addPartition(
+      new Partition<>(selfID, array));
     this.allgather("lda", "allgather-vsum",
       workerVSumTable);
     long totalNumToken = 0;
@@ -373,29 +408,44 @@ public class LDAMPCollectiveMapper
       int workerID = partition.id();
       long numV = partition.get().get()[0];
       totalNumToken += numV;
-      LOG.info("Worker ID: " + workerID + " "
-        + numV);
+      LOG.info(
+        "Worker ID: " + workerID + " " + numV);
     }
+    LOG.info(
+      "Total number of tokens " + totalNumToken);
     return totalNumToken;
   }
 
-  private void getTopicSums(final String opName,
-    final int[] topicSums,
-    final int[] zeroTopicSums,
-    final Table<TopicCount>[] wTableMap) {
-    System.arraycopy(zeroTopicSums, 0, topicSums,
-      0, numTopics);
+  private void getTopicSums(String opName,
+    int[] topicSums, LongArrayList[] dMap) {
+    Arrays.fill(topicSums, 0);
+    for (int i = 0; i < dMap.length; i++) {
+      if (dMap[i] != null) {
+        for (int j = 0; j < dMap[i].size(); j++) {
+          long t = dMap[i].getLong(j);
+          topicSums[(int) t] += (int) (t >>> 32);
+        }
+      }
+    }
+    Table<IntArray> table =
+      new Table<>(0, new IntArrPlus());
+    table.addPartition(new Partition<IntArray>(0,
+      new IntArray(topicSums, 0, numTopics)));
+    this.allreduce("lda", opName, table);
+  }
+
+  private void getTopicSums(String opName,
+    int[] topicSums,
+    Table<TopicCountList>[] wTableMap) {
+    Arrays.fill(topicSums, 0);
     for (int i = 0; i < wTableMap.length; i++) {
-      for (Partition<TopicCount> partition : wTableMap[i]
+      for (Partition<TopicCountList> partition : wTableMap[i]
         .getPartitions()) {
-        ObjectIterator<Int2IntMap.Entry> iterator =
-          partition.get().getTopicCount()
-            .int2IntEntrySet().fastIterator();
-        while (iterator.hasNext()) {
-          Int2IntMap.Entry entry =
-            iterator.next();
-          topicSums[entry.getIntKey()] +=
-            entry.getIntValue();
+        LongArrayList list =
+          partition.get().getTopicCount();
+        for (int j = 0; j < list.size(); j++) {
+          long t = list.getLong(j);
+          topicSums[(int) t] += (int) (t >>> 32);
         }
       }
     }
@@ -411,17 +461,132 @@ public class LDAMPCollectiveMapper
     double[] commons, double[] rCoeffDistr) {
     double rCoeffSum = 0.0;
     for (int i = 0; i < numTopics; i++) {
-      commons[i] =
-        1.0 / (topicSums[i] + beta
-          * vocabularySize);
+      commons[i] = 1.0
+        / (topicSums[i] + beta * vocabularySize);
       rCoeffDistr[i] = commons[i] * beta;
       rCoeffSum += rCoeffDistr[i];
     }
     return rCoeffSum;
   }
 
+  private long adjustMiniBatch(int selfID,
+    long computeTime, long numTokenTrained,
+    long totalTokens, int iteration,
+    long miniBatch, int minBound, int maxBound,
+    int numWorkers, int modelSlices) {
+    // Try to get worker ID
+    // and related computation Time
+    // and the percentage of
+    // completion
+    Table<LongArray> arrTable =
+      new Table<>(0, new LongArrPlus());
+    LongArray array = LongArray.create(2, false);
+    array.get()[0] = computeTime;
+    array.get()[1] = numTokenTrained;
+    arrTable.addPartition(
+      new Partition<>(selfID, array));
+    array = null;
+    this.allgather("lda",
+      "allgather-compute-status-" + iteration,
+      arrTable);
+    long totalComputeTime = 0L;
+    long totalTokensTrained = 0L;
+    for (Partition<LongArray> partition : arrTable
+      .getPartitions()) {
+      long[] recvArr = partition.get().get();
+      totalComputeTime += recvArr[0];
+      totalTokensTrained += recvArr[1];
+    }
+    arrTable.release();
+    arrTable = null;
+    // must been the ceiling
+    // make sure the minimum is not 0
+    long predictedComputeTime =
+      miniBatch * (long) numWorkers
+        * (long) modelSlices * (long) numWorkers;
+    // adjust the percentage
+    int percentage =
+      (int) Math.ceil(((double) totalTokensTrained
+        * 100.0 / (double) totalTokens)
+        * ((double) predictedComputeTime
+          / (double) totalComputeTime));
+    // real percentage is the percentage got in
+    // execution
+    int realPercentage =
+      (int) Math.ceil((double) totalTokensTrained
+        * 100.0 / (double) totalTokens);
+    boolean overTrain = false;
+    boolean underTrain = false;
+    if (percentage > maxBound) {
+      overTrain = true;
+    }
+    if (percentage < minBound) {
+      underTrain = true;
+    }
+    long newMinibatch = miniBatch;
+    if (overTrain) {
+      if (!hasOverTrained) {
+        hasOverTrained = true;
+      }
+      newMinibatch /= 2L;
+    } else if (underTrain) {
+      if (hasOverTrained) {
+        lastUnderTrainIte = iteration;
+        if (breakPeriod == 0) {
+          breakPeriod = 1;
+        } else {
+          breakPeriod *= 2;
+        }
+      }
+      newMinibatch *= 2L;
+      int potential = percentage * 2;
+      while (potential < minBound) {
+        potential *= 2;
+        newMinibatch *= 2L;
+      }
+    }
+    if (newMinibatch != miniBatch) {
+      LOG.info("Total trained tokens: "
+        + totalTokensTrained + " percentage: "
+        + percentage + " " + realPercentage
+        + " new timer: " + newMinibatch);
+    }
+    return newMinibatch;
+  }
+
+  private void sortTopicCounts(
+    Table<TopicCountList>[] wTableMap,
+    LongArrayList[] docMap) {
+    // long t1 = System.currentTimeMillis();
+    LinkedList<SortTask> sortTasks =
+      new LinkedList<>();
+    for (int i = 0; i < numThreads; i++) {
+      sortTasks.add(new SortTask(numTopics));
+    }
+    DynamicScheduler<LongArrayList, Object, SortTask> sortCompute =
+      new DynamicScheduler<>(sortTasks);
+    // compute local partial likelihood
+    for (int k = 0; k < numModelSlices; k++) {
+      for (Partition<TopicCountList> partition : wTableMap[k]
+        .getPartitions()) {
+        sortCompute.submit(
+          partition.get().getTopicCount());
+      }
+    }
+    for (int i = 0; i < docMap.length; i++) {
+      if (docMap[i] != null) {
+        sortCompute.submit(docMap[i]);
+      }
+    }
+    sortCompute.start();
+    sortCompute.stop();
+    // long t2 = System.currentTimeMillis();
+    // LOG.info(
+    // "Sort topic counts, took " + (t2 - t1));
+  }
+
   private void printWordTableMap(
-    Table<TopicCount>[] wordTableMap,
+    Table<TopicCountList>[] wordTableMap,
     String folderPath, int selfID,
     Configuration congfiguration)
     throws IOException {
@@ -436,21 +601,19 @@ public class LDAMPCollectiveMapper
     PrintWriter writer =
       new PrintWriter(new BufferedWriter(
         new OutputStreamWriter(fs.create(file))));
-    for (Table<TopicCount> wTable : wordTableMap) {
-      for (Partition<TopicCount> wPartition : wTable
+    for (Table<TopicCountList> wTable : wordTableMap) {
+      for (Partition<TopicCountList> wPartition : wTable
         .getPartitions()) {
         int wordID = wPartition.id();
-        Int2IntOpenHashMap wRow =
+        LongArrayList wRow =
           wPartition.get().getTopicCount();
         // Print word
         writer.print(wordID);
         // Print topic count
-        ObjectIterator<Int2IntMap.Entry> iterator =
-          wRow.int2IntEntrySet().fastIterator();
-        while (iterator.hasNext()) {
-          Int2IntMap.Entry ent = iterator.next();
-          writer.print(" " + ent.getIntKey()
-            + ":" + ent.getIntValue());
+        for (int i = 0; i < wRow.size(); i++) {
+          long t = wRow.getLong(i);
+          writer.print(" " + (int) t + ":"
+            + (int) (t >>> 32));
         }
         writer.println();
       }
@@ -459,16 +622,65 @@ public class LDAMPCollectiveMapper
     writer.close();
   }
 
-  private void printModelSize(
-    Table<TopicCount>[] wordTableMap) {
-    long size = 0L;
-    for (Table<TopicCount> wTable : wordTableMap) {
-      for (Partition<TopicCount> partition : wTable
-        .getPartitions()) {
-        size += partition.getNumEnocdeBytes();
+  private void printDocMap(LongArrayList[] docMap,
+    Int2ObjectOpenHashMap<String> docIDMap,
+    String folderPath, int selfID,
+    Configuration congfiguration)
+    throws IOException {
+    FileSystem fs =
+      FileSystem.get(congfiguration);
+    Path folder = new Path(folderPath);
+    if (!fs.exists(folder)) {
+      fs.mkdirs(folder);
+    }
+    Path file =
+      new Path(folderPath + "/" + selfID);
+    PrintWriter writer =
+      new PrintWriter(new BufferedWriter(
+        new OutputStreamWriter(fs.create(file))));
+    for (int i = 0; i < docMap.length; i++) {
+      if (docMap[i] != null) {
+        LongArrayList dRow = docMap[i];
+        // Print real doc ID
+        writer.print(docIDMap.get(i));
+        // Print topic count
+        for (int j = 0; j < dRow.size(); j++) {
+          long t = dRow.getLong(j);
+          writer.print(" " + (int) t + ":"
+            + (int) (t >>> 32));
+        }
+        writer.println();
       }
     }
-    LOG.info("W model size: " + size + " bytes");
+    writer.flush();
+    writer.close();
+  }
+
+  private void printWordModelSize(
+    Table<TopicCountList>[] wordTableMap) {
+    long size = 0L;
+    for (Table<TopicCountList> wTable : wordTableMap) {
+      for (Partition<TopicCountList> partition : wTable
+        .getPartitions()) {
+        size +=
+          partition.get().getTopicCount().size()
+            * 8;
+      }
+    }
+    LOG.info(
+      "Word model size: " + size + " bytes");
+  }
+
+  private void
+    printDocModelSize(LongArrayList[] docMap) {
+    long size = 0L;
+    for (int i = 0; i < docMap.length; i++) {
+      if (docMap[i] != null) {
+        size += (long) docMap[i].size() * 8L;
+      }
+    }
+    LOG
+      .info("Doc model size: " + size + " bytes");
   }
 
   private void printNumTokens(int[] topicSums) {
@@ -476,122 +688,59 @@ public class LDAMPCollectiveMapper
     for (int i = 0; i < topicSums.length; i++) {
       numTokens += topicSums[i];
     }
-    LOG.info("Number of tokens " + numTokens);
+    LOG.info("Total Topic Sum " + numTokens);
   }
 
-  private long adjustMiniBatch(int selfID,
-    long computeTime, long numTokenTrained,
-    long totalTokens, int iteration,
-    long miniBatch, int numModelSlices,
-    int numWorkers) {
-    // Try to get worker ID
-    // and related computation Time
-    // and the percentage of
-    // completion
-    Table<IntArray> arrTable =
-      new Table<>(0, new IntArrPlus());
-    IntArray array = IntArray.create(2, false);
-    array.get()[0] = (int) computeTime;
-    array.get()[1] = (int) numTokenTrained;
-    arrTable.addPartition(new Partition<>(selfID,
-      array));
-    this.allgather("lda",
-      "allgather-compute-status-" + iteration,
-      arrTable);
-    // int totalComputeTime = 0;
-    long totalTokensTrained = 0L;
-    for (Partition<IntArray> partition : arrTable
-      .getPartitions()) {
-      int[] recvArr = partition.get().get();
-      // totalComputeTime += recvArr[0];
-      totalTokensTrained += (long) recvArr[1];
-    }
-    arrTable.release();
-    int percentage =
-      (int) (Math
-        .round((double) totalTokensTrained
-          / (double) totalTokens * 100.0));
-    boolean overTrain = false;
-    boolean underTrain = false;
-    if (percentage >= Constants.TRAIN_MAX_THRESHOLD) {
-      overTrain = true;
-    }
-    if (percentage <= Constants.TRAIN_MIN_THRESHOLD) {
-      underTrain = true;
-    }
-    long newMinibatch = miniBatch;
-    if (overTrain) {
-      newMinibatch /= 2L;
-    } else if (underTrain) {
-      newMinibatch *= 2L;
-    }
-    if (newMinibatch != miniBatch) {
-      LOG.info("Now total percentage "
-        + percentage);
-    }
-    return newMinibatch;
-  }
-  
-  // ADD: pb
-  // Likelihood compute
   private void printLikelihood(
-		  Rotator<TopicCount> rotator,
-		  DynamicScheduler<List<Partition<TopicCount>>, Object, CalcLikelihoodTask> calcLHCompute,
-		  int numWorkers,int iteration,int[] topicSums,
-		  int vocabularySize){
-	  
-	  double likelihood = 0.;
-	  long t1 = System.currentTimeMillis();
-
-	  // compute local partial likelihood 
-        for (int k = 0; k < numModelSlices; k++) {
-	        List<Partition<TopicCount>>[] hMap =
-	          rotator.getSplitMap(k);
-	        calcLHCompute.submitAll(hMap);
-	        while (calcLHCompute.hasOutput()) {
-	        	calcLHCompute.waitForOutput();
-	        }
-	      }
-	    for (CalcLikelihoodTask calcTask : calcLHCompute
-	      .getTasks()) {
-	      likelihood += calcTask.getLikelihood();
-	    }
-	    
-	    
-	  // all reduce to get the sum
-	    DoubleArray array =
-	      DoubleArray.create(1, false);
-	    array.get()[0] = likelihood;
-	    
-	    Table<DoubleArray> lhTable =
-	      new Table<>(0, new DoubleArrPlus());
-	    lhTable
-	      .addPartition(new Partition<DoubleArray>(0,
-	        array));
-	    this.allreduce("lda", "allreduce-likelihood-"
-	      + iteration, lhTable);
-	    likelihood =
-	  	      lhTable.getPartition(0).get().get()[0];
-	    
-	    // the remain parts 
-	    for (int topic=0; topic < numTopics; topic++) {
-	    	likelihood -= 
-					Dirichlet.logGammaStirling( (beta * vocabularySize) +
-							topicSums[ topic ] );
-		}
-		
-		// logGamma(|V|*beta) for every topic
-	    likelihood += 
-				Dirichlet.logGammaStirling(beta * vocabularySize) * numTopics;
-
-	      long t2 = System.currentTimeMillis();
-	      waitTime += (t2 - t1);
-	    
-	    // output
-	    LOG.info("Iteration " + iteration + ": " + waitTime + ", logLikelihood: " + likelihood );
-	    lhTable.release();
-	}
-  
+    Table<TopicCountList>[] wTableMap,
+    int numWorkers, int iteration,
+    int[] topicSums, int vocabularySize) {
+    LinkedList<CalcLikelihoodTask> calcLHTasks =
+      new LinkedList<>();
+    for (int i = 0; i < numThreads; i++) {
+      calcLHTasks.add(new CalcLikelihoodTask(
+        numTopics, alpha, beta));
+    }
+    DynamicScheduler<Partition<TopicCountList>, Object, CalcLikelihoodTask> calcLHCompute =
+      new DynamicScheduler<>(calcLHTasks);
+    // compute local partial likelihood
+    for (int k = 0; k < numModelSlices; k++) {
+      calcLHCompute
+        .submitAll(wTableMap[k].getPartitions());
+    }
+    calcLHCompute.start();
+    calcLHCompute.stop();
+    double likelihood = 0.0;
+    for (CalcLikelihoodTask calcTask : calcLHCompute
+      .getTasks()) {
+      likelihood += calcTask.getLikelihood();
+    }
+    // all reduce to get the sum
+    DoubleArray array =
+      DoubleArray.create(1, false);
+    array.get()[0] = likelihood;
+    Table<DoubleArray> lhTable =
+      new Table<>(0, new DoubleArrPlus());
+    lhTable.addPartition(
+      new Partition<DoubleArray>(0, array));
+    this.allreduce("lda",
+      "allreduce-likelihood-" + iteration,
+      lhTable);
+    likelihood =
+      lhTable.getPartition(0).get().get()[0];
+    lhTable.release();
+    // the remain parts
+    for (int topic =
+      0; topic < numTopics; topic++) {
+      likelihood -= Dirichlet
+        .logGammaStirling((beta * vocabularySize)
+          + topicSums[topic]);
+    }
+    // logGamma(|V|*beta) for every topic
+    likelihood += Dirichlet.logGammaStirling(
+      beta * vocabularySize) * numTopics;
+    // output
+    LOG.info("Iteration " + iteration
+      + ", logLikelihood: " + likelihood);
+  }
 }
-  
-  

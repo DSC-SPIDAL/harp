@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,11 +27,11 @@ import edu.iu.harp.partition.Partition;
 import edu.iu.harp.resource.DoubleArray;
 import edu.iu.sgd.VRowCol;
 
-public class CCDMPTask implements
-  Task<List<VRowCol>, Object> {
+public class CCDMPTask
+  implements Task<List<VRowCol>, Object> {
 
-  protected static final Log LOG = LogFactory
-    .getLog(CCDMPTask.class);
+  protected static final Log LOG =
+    LogFactory.getLog(CCDMPTask.class);
   private final double lambda;
   private List<Partition<DoubleArray>> wPartitions;
   private List<Partition<DoubleArray>> hPartitions;

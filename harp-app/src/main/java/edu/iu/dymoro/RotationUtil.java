@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,8 +30,8 @@ import edu.iu.harp.partition.Table;
 import edu.iu.harp.resource.IntArray;
 
 public class RotationUtil {
-  protected static final Log LOG = LogFactory
-    .getLog(RotationUtil.class);
+  protected static final Log LOG =
+    LogFactory.getLog(RotationUtil.class);
 
   public static int[] getRotationSequences(
     Random random, int numWorkers,
@@ -41,29 +41,26 @@ public class RotationUtil {
     Table<IntArray> ordersTable =
       new Table<>(0, new IntArrPlus());
     if (mapper.isMaster()) {
-      int[] orders =
-        createRotationOrder(random,
-          numIterations, numWorkers);
+      int[] orders = createRotationOrder(random,
+        numIterations, numWorkers);
       ordersTable.addPartition(new Partition<>(0,
         new IntArray(orders, 0, orders.length)));
     }
     long t1 = System.currentTimeMillis();
-    mapper.broadcast("sgd",
-      "bcast-rotate-orders", ordersTable,
-      mapper.getMasterID(), false);
+    mapper.broadcast("sgd", "bcast-rotate-orders",
+      ordersTable, mapper.getMasterID(), false);
     int[] orders =
       ordersTable.getPartition(0).get().get();
     long t2 = System.currentTimeMillis();
-    LOG.info("Rotation order is bcasted. "
-      + (t2 - t1));
+    LOG.info(
+      "Rotation order is bcasted. " + (t2 - t1));
     return orders;
   }
 
   static int[] createRotationOrder(Random random,
     int numIterations, int numWorkers) {
-    int[] orders =
-      new int[(numWorkers * 2 - 1)
-        * numIterations];
+    int[] orders = new int[(numWorkers * 2 - 1)
+      * numIterations];
     int orderIndex = 0;
     IntArrayList workerIDList =
       new IntArrayList();
@@ -87,15 +84,15 @@ public class RotationUtil {
       }
       while (!workerIDList.isEmpty()) {
         orders[orderIndex++] =
-          workerIDList.removeInt(random
-            .nextInt(workerIDList.size()));
+          workerIDList.removeInt(
+            random.nextInt(workerIDList.size()));
       }
     }
     return orders;
   }
-  
-  public static void printRotateOrder(
-    int[] order, int numWorkers) {
+
+  public static void printRotateOrder(int[] order,
+    int numWorkers) {
     if (order != null) {
       int rowLen = 2 * numWorkers - 1;
       int numIterations = order.length / rowLen;

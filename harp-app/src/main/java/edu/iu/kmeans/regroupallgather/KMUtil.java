@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,8 +44,8 @@ import edu.iu.harp.resource.DoubleArray;
 
 public class KMUtil {
 
-  protected static final Log LOG = LogFactory
-    .getLog(KMUtil.class);
+  protected static final Log LOG =
+    LogFactory.getLog(KMUtil.class);
 
   /**
    * Generate centroids and upload to the cDir
@@ -76,16 +76,14 @@ public class KMUtil {
       // data[i] = 1000;
       data[i] = random.nextDouble() * 1000;
     }
-    Path initClustersFile =
-      new Path(cenDir,
-        Constants.CENTROID_FILE_NAME);
+    Path initClustersFile = new Path(cenDir,
+      Constants.CENTROID_FILE_NAME);
     System.out.println("Generate centroid data."
       + initClustersFile.toString());
     FSDataOutputStream out =
       fs.create(initClustersFile, true);
-    BufferedWriter bw =
-      new BufferedWriter(new OutputStreamWriter(
-        out));
+    BufferedWriter bw = new BufferedWriter(
+      new OutputStreamWriter(out));
     for (int i = 0; i < data.length; i++) {
       if ((i % vectorSize) == (vectorSize - 1)) {
         bw.write(data[i] + "");
@@ -154,8 +152,8 @@ public class KMUtil {
     for (int k = 0; k < numPointFiles; k++) {
       Future<?> f =
         service.submit(new DataGenRunnable(
-          pointsPerFile, localInputDir, Integer
-            .toString(k), vectorSize));
+          pointsPerFile, localInputDir,
+          Integer.toString(k), vectorSize));
       futures.add(f); // add a new thread
     }
     for (Future<?> f : futures) {
@@ -207,10 +205,10 @@ public class KMUtil {
       }
     }
     long endTime = System.currentTimeMillis();
-    LOG.info("File read (ms): "
-      + (endTime - startTime)
-      + ", number of point arrays: "
-      + arrays.size());
+    LOG.info(
+      "File read (ms): " + (endTime - startTime)
+        + ", number of point arrays: "
+        + arrays.size());
     return arrays;
   }
 
@@ -218,36 +216,35 @@ public class KMUtil {
     Configuration configuration, String cenDir,
     Table<DoubleArray> cenTable, int cenVecSize,
     String name) throws IOException {
-    String cFile =
-      cenDir + File.separator + "out"
-        + File.separator + name;
+    String cFile = cenDir + File.separator + "out"
+      + File.separator + name;
     Path cPath = new Path(cFile);
-    LOG.info("centroids path: "
-      + cPath.toString());
+    LOG.info(
+      "centroids path: " + cPath.toString());
     FileSystem fs = FileSystem.get(configuration);
     fs.delete(cPath, true);
     FSDataOutputStream out = fs.create(cPath);
-    BufferedWriter bw =
-      new BufferedWriter(new OutputStreamWriter(
-        out));
+    BufferedWriter bw = new BufferedWriter(
+      new OutputStreamWriter(out));
     int linePos = 0;
-    int[] idArray =
-      cenTable.getPartitionIDs().toArray(
-        new int[0]);
+    int[] idArray = cenTable.getPartitionIDs()
+      .toArray(new int[0]);
     IntArrays.quickSort(idArray);
     for (int i = 0; i < idArray.length; i++) {
       Partition<DoubleArray> partition =
         cenTable.getPartition(idArray[i]);
-      for (int j = 0; j < partition.get().size(); j++) {
+      for (int j = 0; j < partition.get()
+        .size(); j++) {
         linePos = j % cenVecSize;
         if (linePos == (cenVecSize - 1)) {
-          bw.write(partition.get().get()[j]
-            + "\n");
+          bw.write(
+            partition.get().get()[j] + "\n");
         } else if (linePos > 0) {
           // Every row with vectorSize + 1 length,
           // the first one is a count,
           // ignore it in output
-          bw.write(partition.get().get()[j] + " ");
+          bw.write(
+            partition.get().get()[j] + " ");
         }
       }
     }

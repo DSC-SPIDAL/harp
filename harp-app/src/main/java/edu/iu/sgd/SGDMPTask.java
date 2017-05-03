@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,58 +28,53 @@ import edu.iu.harp.partition.Partition;
 import edu.iu.harp.resource.DoubleArray;
 
 public class SGDMPTask extends
-  MPTask<VRowCol, DoubleArray> {
+  MPTask<Int2ObjectOpenHashMap<VRowCol>, DoubleArray> {
 
-  protected static final Log LOG = LogFactory
-    .getLog(SGDMPTask.class);
+  protected static final Log LOG =
+    LogFactory.getLog(SGDMPTask.class);
   private final int r;
   private final double lambda;
   private final double epsilon;
+  private final double[][] wMap;
 
   public SGDMPTask(int r, double lambda,
-    double epsilon) {
+    double epsilon, double[][] wMap) {
     this.r = r;
     this.lambda = lambda;
     this.epsilon = epsilon;
+    this.wMap = wMap;
   }
 
   public long doRun(
-    List<Partition<DoubleArray>> hPartitionList,
+    List<Partition<DoubleArray>> partitionList,
     Int2ObjectOpenHashMap<VRowCol> vRowColMap) {
     // Implement NZL2 loss function
     long numV = 0L;
-    for (Partition<DoubleArray> hPartition : hPartitionList) {
-      VRowCol vRowCol =
-        vRowColMap.get(hPartition.id());
-      if (vRowCol != null) {
-        numV += vRowCol.numV;
-        updateModel(vRowCol, hPartition.get()
-          .get());
+    for (Partition<DoubleArray> partition : partitionList) {
+      VRowCol vCol =
+        vRowColMap.get(partition.id());
+      if (vCol != null) {
+        double[] hRow = partition.get().get();
+        for (int i = 0; i < vCol.numV; i++) {
+          double[] wRow = wMap[vCol.ids[i]];
+          double error = -vCol.v[i];
+          for (int k = 0; k < r; k++) {
+            error += wRow[k] * hRow[k];
+          }
+          // Update H
+          // Update W
+          for (int k = 0; k < r; k++) {
+            double wk = wRow[k];
+            double hk = hRow[k];
+            wRow[k] = wk - epsilon
+              * (error * hk + lambda * wk);
+            hRow[k] = hk - epsilon
+              * (error * wk + lambda * hk);
+          }
+        }
+        numV += vCol.numV;
       }
     }
     return numV;
-  }
-
-  private void updateModel(VRowCol vCol,
-    double[] hRow) {
-    for (int i = 0; i < vCol.numV; i++) {
-      double[] wRow = vCol.m2[i];
-      double error = -vCol.v[i];
-      for (int k = 0; k < r; k++) {
-        error += wRow[k] * hRow[k];
-      }
-      // Update H
-      // Update W
-      for (int k = 0; k < r; k++) {
-        double wk = wRow[k];
-        double hk = hRow[k];
-        wRow[k] =
-          wk - epsilon
-            * (error * hk + lambda * wk);
-        hRow[k] =
-          hk - epsilon
-            * (error * wk + lambda * hk);
-      }
-    }
   }
 }

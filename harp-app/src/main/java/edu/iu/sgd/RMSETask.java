@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,8 +30,8 @@ import edu.iu.harp.resource.DoubleArray;
 public class RMSETask implements
   Task<List<Partition<DoubleArray>>, Object> {
 
-  protected static final Log LOG = LogFactory
-    .getLog(RMSETask.class);
+  protected static final Log LOG =
+    LogFactory.getLog(RMSETask.class);
 
   private final int r;
   private double rmse;
@@ -39,15 +39,18 @@ public class RMSETask implements
 
   private Int2ObjectOpenHashMap<VRowCol>[] vWHMap;
   private Int2ObjectOpenHashMap<VRowCol> testVColMap;
+  private double[][] wMap;
 
   public RMSETask(int r,
     Int2ObjectOpenHashMap<VRowCol>[] vWHMap,
-    Int2ObjectOpenHashMap<VRowCol> testVColMap) {
+    Int2ObjectOpenHashMap<VRowCol> testVColMap,
+    double[][] wMap) {
     this.r = r;
     rmse = 0.0;
     this.testRMSE = 0.0;
     this.vWHMap = vWHMap;
     this.testVColMap = testVColMap;
+    this.wMap = wMap;
   }
 
   public double getRMSE() {
@@ -63,25 +66,25 @@ public class RMSETask implements
   }
 
   @Override
-  public Object run(
-    List<Partition<DoubleArray>> hPartitions)
-    throws Exception {
+  public Object
+    run(List<Partition<DoubleArray>> hPartitions)
+      throws Exception {
     for (Partition<DoubleArray> partition : hPartitions) {
       int partitionID = partition.id();
-      double[] doubles = partition.get().get();
+      double[] hRow = partition.get().get();
       // for (Int2ObjectOpenHashMap<VRowCol> map :
       // vWHMap) {
       // VRowCol vRowCol = map.get(partitionID);
       // if (vRowCol != null) {
       // rmse +=
-      // calculateRMSE(vRowCol, doubles, r);
+      // calculateRMSE(vRowCol, hRow, r);
       // }
       // }
       VRowCol vRowCol =
         testVColMap.get(partitionID);
       if (vRowCol != null) {
         testRMSE +=
-          calculateRMSE(vRowCol, doubles, r);
+          calculateRMSE(vRowCol, hRow, r);
       }
     }
     return null;
@@ -91,7 +94,7 @@ public class RMSETask implements
     double[] hRow, int r) {
     double rmse = 0.0;
     for (int i = 0; i < vRowCol.numV; i++) {
-      double[] wRow = vRowCol.m2[i];
+      double[] wRow = wMap[vRowCol.ids[i]];
       double error = vRowCol.v[i];
       for (int k = 0; k < r; k++) {
         error -= wRow[k] * hRow[k];

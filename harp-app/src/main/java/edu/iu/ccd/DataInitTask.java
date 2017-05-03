@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,11 +26,11 @@ import edu.iu.sgd.VRowCol;
 import edu.iu.sgd.VSet;
 import edu.iu.sgd.VSetSplit;
 
-public class DataInitTask implements
-  Task<VSetSplit, Object> {
+public class DataInitTask
+  implements Task<VSetSplit, Object> {
 
-  protected static final Log LOG = LogFactory
-    .getLog(DataInitTask.class);
+  protected static final Log LOG =
+    LogFactory.getLog(DataInitTask.class);
 
   private final Int2ObjectOpenHashMap<VRowCol>[] vSplitMap;
 

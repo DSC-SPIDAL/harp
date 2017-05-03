@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,9 +40,8 @@ public class KMeansLauncher extends Configured
 
   public static void main(String[] argv)
     throws Exception {
-    int res =
-      ToolRunner.run(new Configuration(),
-        new KMeansLauncher(), argv);
+    int res = ToolRunner.run(new Configuration(),
+      new KMeansLauncher(), argv);
     System.exit(res);
   }
 
@@ -52,8 +51,8 @@ public class KMeansLauncher extends Configured
   @Override
   public int run(String[] args) throws Exception {
     if (args.length < 9) {
-      System.err
-        .println("Usage: edu.iu.kmeans.KMeansLauncher "
+      System.err.println(
+        "Usage: edu.iu.kmeans.KMeansLauncher "
           + "<num Of DataPoints> <num of Centroids> <vector size> "
           + "<num of point files per worker>"
           + "<number of map tasks> <num threads><number of iteration> "
@@ -78,8 +77,8 @@ public class KMeansLauncher extends Configured
       regenerateData =
         Boolean.parseBoolean(args[9]);
     }
-    System.out.println("Number of Map Tasks = "
-      + numMapTasks);
+    System.out.println(
+      "Number of Map Tasks = " + numMapTasks);
     int numPointFiles =
       numMapTasks * numPointFilePerWorker;
     if (numOfDataPoints / numPointFiles == 0
@@ -150,34 +149,34 @@ public class KMeansLauncher extends Configured
     // ----------------------------------------------------------------------
     long perJobSubmitTime =
       System.currentTimeMillis();
-    System.out
-      .println("Start Job "
-        + new SimpleDateFormat("HH:mm:ss.SSS")
-          .format(Calendar.getInstance()
-            .getTime()));
+    System.out.println("Start Job "
+      + new SimpleDateFormat("HH:mm:ss.SSS")
+        .format(
+          Calendar.getInstance().getTime()));
     Job kmeansJob =
       configureKMeansJob(numOfDataPoints,
         numCentroids, vectorSize, numPointFiles,
         numMapTasks, numThreads, numIterations,
         dataDir, cenDir, outDir, configuration);
     System.out
-      .println("Job"
-        + " configure in "
-        + (System.currentTimeMillis() - perJobSubmitTime)
-        + " miliseconds.");
+      .println(
+        "Job" + " configure in "
+          + (System.currentTimeMillis()
+            - perJobSubmitTime)
+          + " miliseconds.");
     // ----------------------------------------------------------
     boolean jobSuccess =
       kmeansJob.waitForCompletion(true);
+    System.out.println("end Jod "
+      + new SimpleDateFormat("HH:mm:ss.SSS")
+        .format(
+          Calendar.getInstance().getTime()));
     System.out
-      .println("end Jod "
-        + new SimpleDateFormat("HH:mm:ss.SSS")
-          .format(Calendar.getInstance()
-            .getTime()));
-    System.out
-      .println("Job"
-        + " finishes in "
-        + (System.currentTimeMillis() - perJobSubmitTime)
-        + " miliseconds.");
+      .println(
+        "Job" + " finishes in "
+          + (System.currentTimeMillis()
+            - perJobSubmitTime)
+          + " miliseconds.");
     // ---------------------------------------------------------
     if (!jobSuccess) {
       System.out.println("KMeans Job fails.");
@@ -191,16 +190,15 @@ public class KMeansLauncher extends Configured
     int numIterations, Path dataDir, Path cenDir,
     Path outDir, Configuration configuration)
     throws IOException, URISyntaxException {
-    Job job =
-      Job
-        .getInstance(configuration, "kmeans_job");
+    Job job = Job.getInstance(configuration,
+      "kmeans_job");
     FileInputFormat.setInputPaths(job, dataDir);
     FileOutputFormat.setOutputPath(job, outDir);
-    job
-      .setInputFormatClass(MultiFileInputFormat.class);
+    job.setInputFormatClass(
+      MultiFileInputFormat.class);
     job.setJarByClass(KMeansLauncher.class);
-    job
-      .setMapperClass(KMeansCollectiveMapper.class);
+    job.setMapperClass(
+      KMeansCollectiveMapper.class);
     org.apache.hadoop.mapred.JobConf jobConf =
       (JobConf) job.getConfiguration();
     jobConf.set("mapreduce.framework.name",

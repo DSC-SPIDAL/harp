@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,9 +32,9 @@ public class InnerProductCalcTask implements
   }
 
   @Override
-  public DoubleArray run(
-    Partition<DoubleArray> partition)
-    throws Exception {
+  public DoubleArray
+    run(Partition<DoubleArray> partition)
+      throws Exception {
     double[] xrs = partition.get().get();
     int xRowSize = partition.get().size();
     double sum = 0;
@@ -45,9 +45,8 @@ public class InnerProductCalcTask implements
     } else {
       // It is safe to get value from a shared map
       // in parallel
-      double[] rrs =
-        refTable.getPartition(partition.id())
-          .get().get();
+      double[] rrs = refTable
+        .getPartition(partition.id()).get().get();
       for (int i = 0; i < xRowSize; i++) {
         sum += xrs[i] * rrs[i];
       }

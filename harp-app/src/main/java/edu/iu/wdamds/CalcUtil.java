@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,8 @@ import edu.iu.harp.resource.IntArray;
 public class CalcUtil {
 
   /** Class logger */
-  protected static final Logger LOG = Logger
-    .getLogger(CalcUtil.class);
+  protected static final Logger LOG =
+    Logger.getLogger(CalcUtil.class);
 
   public static double calculateDistance(
     Partition<DoubleArray>[] x, int d, int[] iID,
@@ -74,10 +74,10 @@ public class CalcUtil {
    * @param len
    * @throws Exception
    */
-  public static void matrixMultiply(
-    DoubleArray A, Partition<DoubleArray>[] B,
-    DoubleArray C, int aHeight, int bWidth,
-    int len) throws Exception {
+  public static void matrixMultiply(DoubleArray A,
+    Partition<DoubleArray>[] B, DoubleArray C,
+    int aHeight, int bWidth, int len)
+    throws Exception {
     if (C.size() != aHeight * bWidth) {
       throw new Exception(
         "Cannot multiply matrices.");

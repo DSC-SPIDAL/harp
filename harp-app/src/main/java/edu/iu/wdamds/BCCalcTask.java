@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,8 +29,8 @@ public class BCCalcTask implements
   Task<RowData, Partition<DoubleArray>> {
 
   /** Class logger */
-  protected static final Logger LOG = Logger
-    .getLogger(BCCalcTask.class);
+  protected static final Logger LOG =
+    Logger.getLogger(BCCalcTask.class);
 
   private final Partition<DoubleArray>[] xPartitions;
   private final int d;
@@ -45,8 +45,8 @@ public class BCCalcTask implements
   }
 
   @Override
-  public Partition<DoubleArray> run(
-    RowData rowData) throws Exception {
+  public Partition<DoubleArray>
+    run(RowData rowData) throws Exception {
     // Copy to local
     int d = this.d;
     double tCur = this.tCur;
@@ -62,8 +62,8 @@ public class BCCalcTask implements
       rowData.weightArray, xPartitions, d,
       bcArray, rowData.row, rowData.rowOffset,
       rowData.height, rowData.width, tCur);
-    return new Partition<DoubleArray>(
-      rowData.row, bcArray);
+    return new Partition<DoubleArray>(rowData.row,
+      bcArray);
   }
 
   void calculateBC(ShortArray distArray,
@@ -94,10 +94,10 @@ public class BCCalcTask implements
 
   private void calculateBofZ(
     Partition<DoubleArray>[] xPartitions, int d,
-    ShortArray distArray,
-    DoubleArray weightArray, DoubleArray bofZ,
-    int row, int rowOffset, int rowEnd,
-    int height, int width, double tCur) {
+    ShortArray distArray, DoubleArray weightArray,
+    DoubleArray bofZ, int row, int rowOffset,
+    int rowEnd, int height, int width,
+    double tCur) {
     short[] dists = distArray.get();
     double[] weights = weightArray.get();
     double[] bOfZs = bofZ.get();
@@ -129,7 +129,8 @@ public class BCCalcTask implements
     double bOfZsIJ = 0;
     tmpII = rowOffset;
     for (int i = 0; i < xiArrSize; i += d) {
-      for (int j = 0; j < xPartitions.length; j++) {
+      for (int j =
+        0; j < xPartitions.length; j++) {
         xjArr = xPartitions[j].get().get();
         xjArrSize = xPartitions[j].get().size();
         for (int k = 0; k < xjArrSize; k += d) {
@@ -137,18 +138,16 @@ public class BCCalcTask implements
           if (tmpIJ != tmpII) {
             tmpWeight = weights[tmpIJ];
             if (tmpWeight != 0) {
-              tmpDist =
-                (double) dists[tmpIJ]
-                  / (double) Short.MAX_VALUE;
+              tmpDist = (double) dists[tmpIJ]
+                / (double) Short.MAX_VALUE;
               bOfZsIJ = 0;
               distance =
                 CalcUtil.calculateDistance(xiArr,
                   i, xjArr, k, d);
               if (distance >= 1.0E-10
                 && diff < tmpDist) {
-                bOfZsIJ =
-                  tmpWeight * vBlockVal
-                    * (tmpDist - diff) / distance;
+                bOfZsIJ = tmpWeight * vBlockVal
+                  * (tmpDist - diff) / distance;
               }
               bOfZsII -= bOfZsIJ;
               bOfZs[tmpIJ] = bOfZsIJ;

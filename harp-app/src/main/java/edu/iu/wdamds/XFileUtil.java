@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,12 +62,13 @@ class XFileUtil {
         partition = table.getPartition(id);
         parArray = partition.get();
         doubles = parArray.get();
-        for (int i = 0; i < parArray.size(); i++) {
+        for (int i = 0; i < parArray
+          .size(); i++) {
           if ((i % d) == 0) {
             writer.print(id + "\t");// print ID.
           }
-          writer.print(format.format(doubles[i])
-            + "\t");
+          writer.print(
+            format.format(doubles[i]) + "\t");
           if ((i % d) == (d - 1)) {
             writer.println("1");
             id++;
@@ -86,9 +87,8 @@ class XFileUtil {
     String labelFile) throws IOException {
     if (isMaster) {
       // Read label file
-      BufferedReader reader =
-        new BufferedReader(new FileReader(
-          labelFile));
+      BufferedReader reader = new BufferedReader(
+        new FileReader(labelFile));
       String line = null;
       String parts[] = null;
       Map<Integer, Integer> labels =
@@ -123,12 +123,13 @@ class XFileUtil {
         partition = table.getPartition(id);
         parArray = partition.get();
         doubles = parArray.get();
-        for (int i = 0; i < parArray.size(); i++) {
+        for (int i = 0; i < parArray
+          .size(); i++) {
           if ((i % d) == 0) {
             writer.print(id + "\t");// print ID.
           }
-          writer.print(format.format(doubles[i])
-            + "\t");
+          writer.print(
+            format.format(doubles[i]) + "\t");
           writer.print(String.valueOf(i) + "\t");
           if ((i % d) == (d - 1)) {
             writer.println(labels.get(id));

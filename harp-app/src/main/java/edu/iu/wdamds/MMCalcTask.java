@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,8 +28,8 @@ public class MMCalcTask implements
   Task<RowData, Partition<DoubleArray>> {
 
   /** Class logger */
-  protected static final Logger LOG = Logger
-    .getLogger(MMCalcTask.class);
+  protected static final Logger LOG =
+    Logger.getLogger(MMCalcTask.class);
 
   private final Partition<DoubleArray>[] xPartitions;
   private final int d;
@@ -41,8 +41,8 @@ public class MMCalcTask implements
   }
 
   @Override
-  public Partition<DoubleArray> run(
-    RowData rowData) throws Exception {
+  public Partition<DoubleArray>
+    run(RowData rowData) throws Exception {
     // Copy to local
     int d = this.d;
     int mmSize = rowData.height * d;
@@ -54,7 +54,7 @@ public class MMCalcTask implements
     CalcUtil.matrixMultiply(rowData.vArray,
       xPartitions, mmArray, rowData.height, d,
       rowData.width);
-    return new Partition<DoubleArray>(
-      rowData.row, mmArray);
+    return new Partition<DoubleArray>(rowData.row,
+      mmArray);
   }
 }

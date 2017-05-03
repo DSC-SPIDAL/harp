@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,11 +24,11 @@ import edu.iu.harp.partition.Partition;
 import edu.iu.harp.partition.Table;
 import edu.iu.harp.resource.DoubleArray;
 
-public class CenCalcTask implements
-  Task<double[], Object> {
+public class CenCalcTask
+  implements Task<double[], Object> {
 
-  protected static final Log LOG = LogFactory
-    .getLog(CenCalcTask.class);
+  protected static final Log LOG =
+    LogFactory.getLog(CenCalcTask.class);
 
   private double[][] centroids;
   private double[][] local;
@@ -50,7 +50,8 @@ public class CenCalcTask implements
     this.cenVecSize = cenVecSize;
   }
 
-  public void update(Table<DoubleArray> cenTable) {
+  public void
+    update(Table<DoubleArray> cenTable) {
     for (Partition<DoubleArray> partition : cenTable
       .getPartitions()) {
       int partitionID = partition.id();
@@ -77,8 +78,8 @@ public class CenCalcTask implements
           k++;
           double distance = 0.0;
           for (int l = 1; l < cenVecSize; l++) {
-            double diff =
-              (points[pStart++] - centroids[j][k++]);
+            double diff = (points[pStart++]
+              - centroids[j][k++]);
             distance += diff * diff;
           }
           if (distance < minDistance) {

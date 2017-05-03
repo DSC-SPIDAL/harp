@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,20 +22,13 @@ import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import edu.iu.harp.partition.PartitionCombiner;
 import edu.iu.harp.partition.PartitionStatus;
 
-/**
- * A map between a topic id and the count on this
- * topic.
- * 
- * @author zhangbj
- *
- */
-public class TopicCountCombiner extends
-  PartitionCombiner<TopicCount> {
+public class TopicCountMapCombiner
+  extends PartitionCombiner<TopicCountMap> {
 
   @Override
   public PartitionStatus combine(
-    TopicCount curPartition,
-    TopicCount newPartition) {
+    TopicCountMap curPartition,
+    TopicCountMap newPartition) {
     Int2IntOpenHashMap newTopicCount =
       newPartition.getTopicCount();
     if (!newTopicCount.isEmpty()) {

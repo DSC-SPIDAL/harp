@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,18 +30,20 @@ import edu.iu.harp.schstatic.StaticScheduler;
 
 public class Rotator<P extends Simple> {
 
-  protected static final Log LOG = LogFactory
-    .getLog(Rotator.class);
+  protected static final Log LOG =
+    LogFactory.getLog(Rotator.class);
 
   private StaticScheduler<Integer, List<Partition<P>>[], RotateTask<P>> rotation;
+  private final int numTasks;
 
   public Rotator(Table<P>[] tableMap,
     int numSplits, boolean randomSplit,
     CollectiveMapper<?, ?, ?, ?> mapper,
     int[] orders, String contextName) {
+    numTasks = tableMap.length;
     List<RotateTask<P>> rotateTasks =
       new LinkedList<>();
-    for (int i = 0; i < tableMap.length; i++) {
+    for (int i = 0; i < numTasks; i++) {
       rotateTasks.add(new RotateTask<>(
         tableMap[i], numSplits, randomSplit,
         mapper, orders, contextName));
@@ -49,8 +51,8 @@ public class Rotator<P extends Simple> {
     rotation = new StaticScheduler<>(rotateTasks);
   }
 
-  public List<Partition<P>>[] getSplitMap(
-    int taskID) {
+  public List<Partition<P>>[]
+    getSplitMap(int taskID) {
     List<Partition<P>>[] splitMap = null;
     if (rotation.hasOutput(taskID)) {
       splitMap = rotation.waitForOutput(taskID);
@@ -75,5 +77,11 @@ public class Rotator<P extends Simple> {
 
   public void stop() {
     rotation.stop();
+  }
+
+  public void setRandomSplit(boolean b) {
+    for (int i = 0; i < numTasks; i++) {
+      rotation.getTask(i).setRandomSplit(b);
+    }
   }
 }
