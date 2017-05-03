@@ -25,32 +25,41 @@ import org.apache.hadoop.mapreduce.protocol.ClientProtocol;
 import org.apache.hadoop.mapreduce.protocol.ClientProtocolProvider;
 
 /**
- * A new ClientProtocalProvider to support map-collective job, modified from
+ * A new ClientProtocalProvider to support
+ * map-collective job, modified from
  * YarnClientProtocolProvider
  * 
  * @author zhangbj
  *
  */
-public class MapCollectiveClientProtocolProvider extends ClientProtocolProvider {
+public class MapCollectiveClientProtocolProvider
+  extends ClientProtocolProvider {
 
-    public static String MAP_COLLECTIVE_FRAMEWORK_NAME = "map-collective";
+  public static String MAP_COLLECTIVE_FRAMEWORK_NAME =
+    "map-collective";
 
-    @Override
-    public ClientProtocol create(Configuration conf) throws IOException {
-	if (MAP_COLLECTIVE_FRAMEWORK_NAME.equals(conf.get(MRConfig.FRAMEWORK_NAME))) {
-	    System.out.println("Get map collective runner");
-	    return new MapCollectiveRunner(conf);
-	}
-	return null;
+  @Override
+  public ClientProtocol create(Configuration conf)
+    throws IOException {
+    if (MAP_COLLECTIVE_FRAMEWORK_NAME.equals(
+      conf.get(MRConfig.FRAMEWORK_NAME))) {
+      System.out
+        .println("Get map collective runner");
+      return new MapCollectiveRunner(conf);
     }
+    return null;
+  }
 
-    @Override
-    public ClientProtocol create(InetSocketAddress addr, Configuration conf) throws IOException {
-	return create(conf);
-    }
+  @Override
+  public ClientProtocol create(
+    InetSocketAddress addr, Configuration conf)
+    throws IOException {
+    return create(conf);
+  }
 
-    @Override
-    public void close(ClientProtocol clientProtocol) throws IOException {
-	// nothing to do
-    }
+  @Override
+  public void close(ClientProtocol clientProtocol)
+    throws IOException {
+    // nothing to do
+  }
 }

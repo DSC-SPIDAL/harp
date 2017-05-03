@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,23 +23,26 @@ import edu.iu.harp.schdynamic.Input;
  ******************************************************/
 public class Submitter<I> {
 
-    private TaskMonitor<I, ?, ? extends Task<I, ?>>[] taskMonitors;
+  private TaskMonitor<I, ?, ? extends Task<I, ?>>[] taskMonitors;
 
-    public Submitter(TaskMonitor<I, ?, ? extends Task<I, ?>>[] taskMonitors) {
-	this.taskMonitors = taskMonitors;
-    }
+  public Submitter(
+    TaskMonitor<I, ?, ? extends Task<I, ?>>[] taskMonitors) {
+    this.taskMonitors = taskMonitors;
+  }
 
-    /**
-     * Submit the task
-     * 
-     * @param taskID
-     *            the ID of the task
-     * @param input
-     *            the input
-     */
-    public void submit(int taskID, I input) {
-	if (taskID < taskMonitors.length && input != null) {
-	    taskMonitors[taskID].submit(new Input<>(input, false, false));
-	}
+  /**
+   * Submit the task
+   * 
+   * @param taskID
+   *          the ID of the task
+   * @param input
+   *          the input
+   */
+  public void submit(int taskID, I input) {
+    if (taskID < taskMonitors.length
+      && input != null) {
+      taskMonitors[taskID]
+        .submit(new Input<>(input, false, false));
     }
+  }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,9 +22,11 @@ import edu.iu.harp.partition.Table;
 /*******************************************************
  * KVTable is a table storing key-value pairs
  ******************************************************/
-public abstract class KVTable<P extends KVPartition> extends Table<P> {
+public abstract class KVTable<P extends KVPartition>
+  extends Table<P> {
 
-    public KVTable(int tableID, PartitionCombiner<P> combiner) {
-	super(tableID, combiner);
-    }
+  public KVTable(int tableID,
+    PartitionCombiner<P> combiner) {
+    super(tableID, combiner);
+  }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,44 +28,48 @@ import edu.iu.harp.client.Event;
  ******************************************************/
 public class EventQueue {
 
-    private static final Logger LOG = Logger.getLogger(EventQueue.class);
+  private static final Logger LOG =
+    Logger.getLogger(EventQueue.class);
 
-    private BlockingQueue<Event> eventQueue;
+  private BlockingQueue<Event> eventQueue;
 
-    public EventQueue() {
-	eventQueue = new LinkedBlockingQueue<>();
+  public EventQueue() {
+    eventQueue = new LinkedBlockingQueue<>();
+  }
+
+  /**
+   * Add a event to the queue
+   * 
+   * @param event
+   *          the event to be added
+   */
+  public void addEvent(Event event) {
+    this.eventQueue.add(event);
+  }
+
+  /**
+   * Retrieves and removes the head of this queue,
+   * waiting if necessary until an element becomes
+   * available.
+   * 
+   * @return the next event
+   */
+  public Event waitEvent() {
+    try {
+      return eventQueue.take();
+    } catch (InterruptedException e) {
+      LOG.error(
+        "Error when waiting and getting event.",
+        e);
     }
+    return null;
+  }
 
-    /**
-     * Add a event to the queue
-     * 
-     * @param event
-     *            the event to be added
-     */
-    public void addEvent(Event event) {
-	this.eventQueue.add(event);
-    }
-
-    /**
-     * Retrieves and removes the head of this queue, waiting if necessary until
-     * an element becomes available.
-     * 
-     * @return the next event
-     */
-    public Event waitEvent() {
-	try {
-	    return eventQueue.take();
-	} catch (InterruptedException e) {
-	    LOG.error("Error when waiting and getting event.", e);
-	}
-	return null;
-    }
-
-    /**
-     * Retrieves and removes the head of this queue, or returns null if this
-     * queue is empty.
-     */
-    public Event getEvent() {
-	return eventQueue.poll();
-    }
+  /**
+   * Retrieves and removes the head of this queue,
+   * or returns null if this queue is empty.
+   */
+  public Event getEvent() {
+    return eventQueue.poll();
+  }
 }

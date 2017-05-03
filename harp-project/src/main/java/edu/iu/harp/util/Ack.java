@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,35 +27,37 @@ import edu.iu.harp.resource.Writable;
  ******************************************************/
 public class Ack extends Writable {
 
-    public Ack() {
-    }
+  public Ack() {
+  }
 
-    /**
-     * Write this to DataOutput
-     */
-    @Override
-    public void write(DataOutput out) throws IOException {
-    }
+  /**
+   * Write this to DataOutput
+   */
+  @Override
+  public void write(DataOutput out)
+    throws IOException {
+  }
 
-    /**
-     * Read this from DataInput
-     */
-    @Override
-    public void read(DataInput in) throws IOException {
-    }
+  /**
+   * Read this from DataInput
+   */
+  @Override
+  public void read(DataInput in)
+    throws IOException {
+  }
 
-    /**
-     * Get the number of bytes of encoded data
-     */
-    @Override
-    public int getNumWriteBytes() {
-	return 0;
-    }
+  /**
+   * Get the number of bytes of encoded data
+   */
+  @Override
+  public int getNumWriteBytes() {
+    return 0;
+  }
 
-    /**
-     * Clear the data
-     */
-    @Override
-    public void clear() {
-    }
+  /**
+   * Clear the data
+   */
+  @Override
+  public void clear() {
+  }
 }

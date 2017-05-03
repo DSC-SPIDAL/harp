@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,12 @@ package edu.iu.harp.example;
 
 import edu.iu.harp.keyval.Key2ValKVTable;
 
-public class WordCountTable extends Key2ValKVTable<StringKey, IntCount, WordCountPartition> {
+public class WordCountTable extends
+  Key2ValKVTable<StringKey, IntCount, WordCountPartition> {
 
-    public WordCountTable(int tableID) {
-	super(tableID, new IntCountPlus(), StringKey.class, IntCount.class, WordCountPartition.class);
-    }
+  public WordCountTable(int tableID) {
+    super(tableID, new IntCountPlus(),
+      StringKey.class, IntCount.class,
+      WordCountPartition.class);
+  }
 }

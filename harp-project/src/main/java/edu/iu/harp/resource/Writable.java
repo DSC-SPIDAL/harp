@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,104 +29,125 @@ import edu.iu.harp.io.DataType;
  ******************************************************/
 public abstract class Writable extends Simple {
 
-    /**
-     * Get the number of Bytes of encoded data.
-     */
-    @Override
-    public final int getNumEnocdeBytes() {
-	return 1 + this.getClass().getName().length() * 2 + 4 + getNumWriteBytes();
+  /**
+   * Get the number of Bytes of encoded data.
+   */
+  @Override
+  public final int getNumEnocdeBytes() {
+    return 1
+      + this.getClass().getName().length() * 2 + 4
+      + getNumWriteBytes();
+  }
+
+  /**
+   * Encode the writable as DataOutput
+   */
+  @Override
+  public final void encode(DataOutput out)
+    throws IOException {
+    out.writeByte(DataType.WRITABLE);
+    out.writeUTF(this.getClass().getName());
+    this.write(out);
+  }
+
+  /**
+   * Get a new instance of the class
+   * 
+   * @return new instance
+   */
+  public final static <W extends Writable> W
+    newInstance(Class<W> clazz) {
+    try {
+      Constructor<W> constructor =
+        clazz.getConstructor();
+      return constructor.newInstance();
+    } catch (InstantiationException |
+      IllegalAccessException |
+      IllegalArgumentException |
+      InvocationTargetException |
+      NoSuchMethodException |
+      SecurityException e) {
+      return null;
     }
+  }
 
-    /**
-     * Encode the writable as DataOutput
-     */
-    @Override
-    public final void encode(DataOutput out) throws IOException {
-	out.writeByte(DataType.WRITABLE);
-	out.writeUTF(this.getClass().getName());
-	this.write(out);
+  /**
+   * Get a writable from ResourcePool
+   * 
+   * @return a writable
+   */
+  public final static <W extends Writable> W
+    create(Class<W> clazz) {
+    return ResourcePool.get().getWritablePool()
+      .getWritable(clazz);
+  }
+
+  /**
+   * Get the Class object associated with the
+   * class or interface with the given string
+   * name.
+   * 
+   * @param className
+   * @return the class object
+   */
+  public final static <W extends Writable>
+    Class<W> forClass(String className) {
+    try {
+      return (Class<W>) Class.forName(className);
+    } catch (ClassNotFoundException e) {
+      return null;
     }
+  }
 
-    /**
-     * Get a new instance of the class
-     * 
-     * @return new instance
-     */
-    public final static <W extends Writable> W newInstance(Class<W> clazz) {
-	try {
-	    Constructor<W> constructor = clazz.getConstructor();
-	    return constructor.newInstance();
-	} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException
-		| NoSuchMethodException | SecurityException e) {
-	    return null;
-	}
-    }
+  /**
+   * Release the writable from the ResourcePool
+   */
+  @Override
+  public final void release() {
+    ResourcePool.get().getWritablePool()
+      .releaseWritable(this);
+  }
 
-    /**
-     * Get a writable from ResourcePool
-     * 
-     * @return a writable
-     */
-    public final static <W extends Writable> W create(Class<W> clazz) {
-	return ResourcePool.get().getWritablePool().getWritable(clazz);
-    }
+  /**
+   * Free the writable from the ResourcePool
+   */
+  @Override
+  public final void free() {
+    ResourcePool.get().getWritablePool()
+      .freeWritable(this);
+  }
 
-    /**
-     * Get the Class object associated with the class or interface with the
-     * given string name.
-     * 
-     * @param className
-     * @return the class object
-     */
-    public final static <W extends Writable> Class<W> forClass(String className) {
-	try {
-	    return (Class<W>) Class.forName(className);
-	} catch (ClassNotFoundException e) {
-	    return null;
-	}
-    }
+  /**
+   * Abstract method for writing Writable data to
+   * DataOutPut
+   * 
+   * @param out
+   * @throws IOException
+   */
+  public abstract void write(DataOutput out)
+    throws IOException;
 
-    /**
-     * Release the writable from the ResourcePool
-     */
-    @Override
-    public final void release() {
-	ResourcePool.get().getWritablePool().releaseWritable(this);
-    }
+  /**
+   * Abstract method for reading Writable data
+   * from DataInput
+   * 
+   * @param in
+   * @throws IOException
+   */
+  public abstract void read(DataInput in)
+    throws IOException;
 
-    /**
-     * Free the writable from the ResourcePool
-     */
-    @Override
-    public final void free() {
-	ResourcePool.get().getWritablePool().freeWritable(this);
-    }
+  /**
+   * Abstract method for clearing the Writable
+   * data
+   */
+  public abstract void clear();
 
-    /**
-     * Abstract method for writing Writable data to DataOutPut
-     * 
-     * @param out
-     * @throws IOException
-     */
-    public abstract void write(DataOutput out) throws IOException;
-
-    /**
-     * Abstract method for reading Writable data from DataInput
-     * 
-     * @param in
-     * @throws IOException
-     */
-    public abstract void read(DataInput in) throws IOException;
-
-    /**
-     * Abstract method for clearing the Writable data
-     */
-    public abstract void clear();
-
-    /**
-     * Abstract method for getting the number of bytes of the Writable data
-     * 
-     * @return number of Bytes
-     */
-    public abstract int getNumWriteBytes();
+  /**
+   * Abstract method for getting the number of
+   * bytes of the Writable data
+   * 
+   * @return number of Bytes
+   */
+  public abstract int getNumWriteBytes();
 }

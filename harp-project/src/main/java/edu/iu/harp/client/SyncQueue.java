@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,148 +34,162 @@ import edu.iu.harp.worker.Workers;
  ******************************************************/
 public class SyncQueue {
 
-    protected static final Logger LOG = Logger.getLogger(SyncQueue.class);
+  protected static final Logger LOG =
+    Logger.getLogger(SyncQueue.class);
 
-    private final String contextName;
-    private final int sourceID;
-    private final int destID;
-    private final Workers workers;
-    private LinkedList<Transferable> queue;
-    private LinkedList<Transferable> localList;
-    private final BlockingQueue<SyncQueue> consumerQueue;
-    private boolean inConsumerQueue;
-    private boolean isConsuming;
+  private final String contextName;
+  private final int sourceID;
+  private final int destID;
+  private final Workers workers;
+  private LinkedList<Transferable> queue;
+  private LinkedList<Transferable> localList;
+  private final BlockingQueue<SyncQueue> consumerQueue;
+  private boolean inConsumerQueue;
+  private boolean isConsuming;
 
-    SyncQueue(String contextName, int sourceID, int destID, Workers workers, BlockingQueue<SyncQueue> consumerQueue) {
-	this.contextName = contextName;
-	this.sourceID = sourceID;
-	this.destID = destID;
-	this.workers = workers;
-	this.queue = new LinkedList<>();
-	this.localList = new LinkedList<>();
-	this.consumerQueue = consumerQueue;
-	this.inConsumerQueue = false;
-	this.isConsuming = false;
+  SyncQueue(String contextName, int sourceID,
+    int destID, Workers workers,
+    BlockingQueue<SyncQueue> consumerQueue) {
+    this.contextName = contextName;
+    this.sourceID = sourceID;
+    this.destID = destID;
+    this.workers = workers;
+    this.queue = new LinkedList<>();
+    this.localList = new LinkedList<>();
+    this.consumerQueue = consumerQueue;
+    this.inConsumerQueue = false;
+    this.isConsuming = false;
+  }
+
+  /**
+   * Get the context name
+   * 
+   * @return the context name
+   */
+  String getContextName() {
+    return contextName;
+  }
+
+  /**
+   * Get the ID of the destination
+   * 
+   * @return the ID of the destination
+   */
+  int getDestID() {
+    return destID;
+  }
+
+  /**
+   * Add an element
+   * 
+   * @param trans
+   */
+  synchronized void add(Simple trans) {
+    // Only add to the consumer queue if it is
+    // taken from the queue
+    if (inConsumerQueue) {
+      // LOG.info("this queue is in consumer
+      // queue");
+      if (trans != null) {
+        queue.addLast(trans);
+      }
+    } else if (isConsuming) {
+      // Add to local list
+      // LOG
+      // .info("this queue is consuming, add to
+      // local list");
+      if (trans != null) {
+        localList.addLast(trans);
+      }
+    } else {
+      // LOG
+      // .info("this queue is not consuming, add
+      // to consumer queue.");
+      if (trans != null) {
+        queue.addLast(trans);
+      }
+      consumerQueue.add(this);
+      inConsumerQueue = true;
     }
+  }
 
-    /**
-     * Get the context name
-     * 
-     * @return the context name
-     */
-    String getContextName() {
-	return contextName;
+  /**
+   * Enter to the consuming state. If it's in the
+   * consumer queue, then it's only allowed to
+   * take, not sending.
+   */
+  synchronized void enterConsumeBarrier() {
+    if (inConsumerQueue) {
+      inConsumerQueue = false;
+      if (!isConsuming) {
+        isConsuming = true;
+      }
     }
+  }
 
-    /**
-     * Get the ID of the destination
-     * 
-     * @return the ID of the destination
-     */
-    int getDestID() {
-	return destID;
+  /**
+   * Send data. It should be in the consuming
+   * state
+   */
+  void send() {
+    if (!inConsumeBarrier()) {
+      return;
     }
+    LinkedList<Transferable> transList = queue;
+    if (transList.isEmpty()) {
+      return;
+    }
+    Data data = new Data(DataType.SIMPLE_LIST,
+      contextName, sourceID, transList,
+      DataUtil.getNumTransListBytes(transList));
+    if (destID == SyncClient.ALL_WORKERS) {
+      // Broadcast events
+      Sender sender = new DataMSTBcastSender(data,
+        workers, Constant.MST_BCAST_DECODE);
+      sender.execute();
+    } else {
+      // Send events to worker ID
+      Sender sender = new DataSender(data, destID,
+        workers, Constant.SEND_DECODE);
+      sender.execute();
+    }
+    // Release the data
+    data.release();
+    leaveConsumeBarrier();
+  }
 
-    /**
-     * Add an element
-     * 
-     * @param trans
-     */
-    synchronized void add(Simple trans) {
-	// Only add to the consumer queue if it is
-	// taken from the queue
-	if (inConsumerQueue) {
-	    // LOG.info("this queue is in consumer queue");
-	    if (trans != null) {
-		queue.addLast(trans);
-	    }
-	} else if (isConsuming) {
-	    // Add to local list
-	    // LOG
-	    // .info("this queue is consuming, add to local list");
-	    if (trans != null) {
-		localList.addLast(trans);
-	    }
-	} else {
-	    // LOG
-	    // .info("this queue is not consuming, add to consumer queue.");
-	    if (trans != null) {
-		queue.addLast(trans);
-	    }
-	    consumerQueue.add(this);
-	    inConsumerQueue = true;
-	}
+  /**
+   * Check if it's in consuming state
+   * 
+   * @return true if it's in consuming state,
+   *         false otherwise
+   */
+  private synchronized boolean
+    inConsumeBarrier() {
+    if (!inConsumerQueue && isConsuming) {
+      return true;
+    } else {
+      return false;
     }
+  }
 
-    /**
-     * Enter to the consuming state. If it's in the consumer queue, then it's
-     * only allowed to take, not sending.
-     */
-    synchronized void enterConsumeBarrier() {
-	if (inConsumerQueue) {
-	    inConsumerQueue = false;
-	    if (!isConsuming) {
-		isConsuming = true;
-	    }
-	}
+  /**
+   * Exit the consuming state
+   */
+  private synchronized void
+    leaveConsumeBarrier() {
+    if (!inConsumerQueue && isConsuming) {
+      queue.clear();
+      isConsuming = false;
+      if (!localList.isEmpty()) {
+        // Exchange the local list and the queue
+        LinkedList<Transferable> tmpList = null;
+        tmpList = queue;
+        queue = localList;
+        localList = tmpList;
+        consumerQueue.add(this);
+        inConsumerQueue = true;
+      }
     }
-
-    /**
-     * Send data. It should be in the consuming state
-     */
-    void send() {
-	if (!inConsumeBarrier()) {
-	    return;
-	}
-	LinkedList<Transferable> transList = queue;
-	if (transList.isEmpty()) {
-	    return;
-	}
-	Data data = new Data(DataType.SIMPLE_LIST, contextName, sourceID, transList,
-		DataUtil.getNumTransListBytes(transList));
-	if (destID == SyncClient.ALL_WORKERS) {
-	    // Broadcast events
-	    Sender sender = new DataMSTBcastSender(data, workers, Constant.MST_BCAST_DECODE);
-	    sender.execute();
-	} else {
-	    // Send events to worker ID
-	    Sender sender = new DataSender(data, destID, workers, Constant.SEND_DECODE);
-	    sender.execute();
-	}
-	// Release the data
-	data.release();
-	leaveConsumeBarrier();
-    }
-
-    /**
-     * Check if it's in consuming state
-     * 
-     * @return true if it's in consuming state, false otherwise
-     */
-    private synchronized boolean inConsumeBarrier() {
-	if (!inConsumerQueue && isConsuming) {
-	    return true;
-	} else {
-	    return false;
-	}
-    }
-
-    /**
-     * Exit the consuming state
-     */
-    private synchronized void leaveConsumeBarrier() {
-	if (!inConsumerQueue && isConsuming) {
-	    queue.clear();
-	    isConsuming = false;
-	    if (!localList.isEmpty()) {
-		// Exchange the local list and the queue
-		LinkedList<Transferable> tmpList = null;
-		tmpList = queue;
-		queue = localList;
-		localList = tmpList;
-		consumerQueue.add(this);
-		inConsumerQueue = true;
-	    }
-	}
-    }
+  }
 }

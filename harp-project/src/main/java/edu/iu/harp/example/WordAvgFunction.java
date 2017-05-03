@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,17 +20,21 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectMap.Entry;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import edu.iu.harp.partition.PartitionFunction;
 
-public class WordAvgFunction extends PartitionFunction<WordCountPartition> {
+public class WordAvgFunction
+  extends PartitionFunction<WordCountPartition> {
 
-    @Override
-    public void apply(WordCountPartition partition) throws Exception {
-	ObjectIterator<Entry<StringKey, IntCount>> iterator = partition.getKVMap().object2ObjectEntrySet()
-		.fastIterator();
-	while (iterator.hasNext()) {
-	    Entry<StringKey, IntCount> entry = iterator.next();
-	    IntCount count = entry.getValue();
-	    count.setInt(count.getInt() / count.getCount());
-	}
+  @Override
+  public void apply(WordCountPartition partition)
+    throws Exception {
+    ObjectIterator<Entry<StringKey, IntCount>> iterator =
+      partition.getKVMap().object2ObjectEntrySet()
+        .fastIterator();
+    while (iterator.hasNext()) {
+      Entry<StringKey, IntCount> entry =
+        iterator.next();
+      IntCount count = entry.getValue();
+      count.setInt(
+        count.getInt() / count.getCount());
     }
-
+  }
 }

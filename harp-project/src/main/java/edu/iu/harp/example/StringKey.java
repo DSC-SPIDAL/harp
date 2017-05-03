@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,88 +27,91 @@ import edu.iu.harp.keyval.Key;
  ******************************************************/
 public class StringKey extends Key {
 
-    private String str;
+  private String str;
 
-    public StringKey() {
-    }
+  public StringKey() {
+  }
 
-    public StringKey(String str) {
-	this.str = str;
-    }
+  public StringKey(String str) {
+    this.str = str;
+  }
 
-    /**
-     * Set string
-     * 
-     * @param str
-     *            the string
-     */
-    public void setStringKey(String str) {
-	this.str = str;
-    }
+  /**
+   * Set string
+   * 
+   * @param str
+   *          the string
+   */
+  public void setStringKey(String str) {
+    this.str = str;
+  }
 
-    /**
-     * Get the string
-     * 
-     * @return the string
-     */
-    public String getStringKey() {
-	return this.str;
-    }
+  /**
+   * Get the string
+   * 
+   * @return the string
+   */
+  public String getStringKey() {
+    return this.str;
+  }
 
-    /**
-     * The overridden equals function
-     */
-    @Override
-    public boolean equals(Object object) {
-	if (object.getClass().equals(StringKey.class)) {
-	    StringKey strKey = (StringKey) object;
-	    return str.equals(strKey.getStringKey());
-	} else {
-	    return false;
-	}
+  /**
+   * The overridden equals function
+   */
+  @Override
+  public boolean equals(Object object) {
+    if (object.getClass()
+      .equals(StringKey.class)) {
+      StringKey strKey = (StringKey) object;
+      return str.equals(strKey.getStringKey());
+    } else {
+      return false;
     }
+  }
 
-    /**
-     * The overridden hashCode function
-     */
-    @Override
-    public int hashCode() {
-	return str.hashCode();
-    }
+  /**
+   * The overridden hashCode function
+   */
+  @Override
+  public int hashCode() {
+    return str.hashCode();
+  }
 
-    /**
-     * Write the string to DataOutput
-     */
-    @Override
-    public void write(DataOutput out) throws IOException {
-	out.writeUTF(str);
-    }
+  /**
+   * Write the string to DataOutput
+   */
+  @Override
+  public void write(DataOutput out)
+    throws IOException {
+    out.writeUTF(str);
+  }
 
-    /**
-     * Read the string from DataInput
-     */
-    @Override
-    public void read(DataInput in) throws IOException {
-	this.str = in.readUTF();
-    }
+  /**
+   * Read the string from DataInput
+   */
+  @Override
+  public void read(DataInput in)
+    throws IOException {
+    this.str = in.readUTF();
+  }
 
-    /**
-     * Get the number of bytes of encoded data
-     */
-    @Override
-    public int getNumWriteBytes() {
-	if (str == null) {
-	    return 0;
-	} else {
-	    return str.length() * 2 + 4;
-	}
+  /**
+   * Get the number of bytes of encoded data
+   */
+  @Override
+  public int getNumWriteBytes() {
+    if (str == null) {
+      return 0;
+    } else {
+      return str.length() * 2 + 4;
     }
+  }
 
-    /**
-     * Clear the string
-     */
-    @Override
-    public void clear() {
-	this.str = null;
-    }
+  /**
+   * Clear the string
+   */
+  @Override
+  public void clear() {
+    this.str = null;
+  }
 }

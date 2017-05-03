@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,5 +21,6 @@ import edu.iu.harp.resource.Writable;
 /*******************************************************
  * KVPartition manage key-value pairs
  ******************************************************/
-public abstract class KVPartition extends Writable {
+public abstract class KVPartition
+  extends Writable {
 }

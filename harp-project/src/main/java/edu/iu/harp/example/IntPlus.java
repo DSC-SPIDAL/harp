@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,11 @@ import edu.iu.harp.keyval.ValStatus;
 
 public class IntPlus extends ValCombiner<IntVal> {
 
-    @Override
-    public ValStatus combine(IntVal curVal, IntVal newVal) {
-	curVal.setInt(curVal.getInt() + newVal.getInt());
-	return ValStatus.COMBINED;
-    }
+  @Override
+  public ValStatus combine(IntVal curVal,
+    IntVal newVal) {
+    curVal
+      .setInt(curVal.getInt() + newVal.getInt());
+    return ValStatus.COMBINED;
+  }
 }

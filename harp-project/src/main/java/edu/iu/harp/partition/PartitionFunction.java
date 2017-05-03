@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,10 @@ package edu.iu.harp.partition;
 import edu.iu.harp.resource.Transferable;
 
 /*******************************************************
- * The abstract class defining function which can be applied to partitions
+ * The abstract class defining function which can
+ * be applied to partitions
  ******************************************************/
 public abstract class PartitionFunction<T extends Transferable> {
-    public abstract void apply(T partition) throws Exception;
+  public abstract void apply(T partition)
+    throws Exception;
 }
