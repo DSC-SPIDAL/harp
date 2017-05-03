@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,8 +36,8 @@ import edu.iu.harp.schdynamic.DynamicScheduler;
 import edu.iu.harp.schdynamic.Task;
 
 class VLoadTask implements Task<String, Object> {
-  protected static final Log LOG = LogFactory
-    .getLog(VLoadTask.class);
+  protected static final Log LOG =
+    LogFactory.getLog(VLoadTask.class);
 
   private final Configuration conf;
   private final boolean useVHMap;
@@ -70,9 +70,8 @@ class VLoadTask implements Task<String, Object> {
         FileSystem fs =
           inputFilePath.getFileSystem(conf);
         in = fs.open(inputFilePath);
-        reader =
-          new BufferedReader(
-            new InputStreamReader(in), 1048576);
+        reader = new BufferedReader(
+          new InputStreamReader(in), 1048576);
       } catch (Exception e) {
         LOG.error("Fail to open " + inputFile, e);
         isFailed = true;
@@ -137,8 +136,8 @@ class VLoadTask implements Task<String, Object> {
 }
 
 public class VStore {
-  protected static final Log LOG = LogFactory
-    .getLog(VStore.class);
+  protected static final Log LOG =
+    LogFactory.getLog(VStore.class);
 
   private final List<String> inputs;
   private final Int2ObjectOpenHashMap<VRowCol> vHMap;
@@ -168,8 +167,8 @@ public class VStore {
     List<VLoadTask> vLoadTasks =
       new LinkedList<>();
     for (int i = 0; i < numThreads; i++) {
-      vLoadTasks.add(new VLoadTask(conf,
-        useVHMap, useVWMap));
+      vLoadTasks.add(
+        new VLoadTask(conf, useVHMap, useVWMap));
     }
     DynamicScheduler<String, Object, VLoadTask> vLoadCompute =
       new DynamicScheduler<>(vLoadTasks);
@@ -201,9 +200,9 @@ public class VStore {
     long end = System.currentTimeMillis();
     // Report the total number of training points
     // loaded
-    LOG.info("Load num of points: "
-      + totalNumPoints + ", took: "
-      + (end - start));
+    LOG.info(
+      "Load num of points: " + totalNumPoints
+        + ", took: " + (end - start));
   }
 
   public static void add(
@@ -234,11 +233,9 @@ public class VStore {
     rowCol.numV++;
   }
 
-  public static
-    void
-    merge(
-      Int2ObjectOpenHashMap<VRowCol> map,
-      List<Int2ObjectOpenHashMap<VRowCol>> localVMaps) {
+  public static void merge(
+    Int2ObjectOpenHashMap<VRowCol> map,
+    List<Int2ObjectOpenHashMap<VRowCol>> localVMaps) {
     for (Int2ObjectOpenHashMap<VRowCol> localVMap : localVMaps) {
       ObjectIterator<Int2ObjectMap.Entry<VRowCol>> iterator =
         localVMap.int2ObjectEntrySet()
@@ -259,7 +256,8 @@ public class VStore {
           vRowCol.numV = 0;
           map.put(rowColID, vRowCol);
         }
-        if (vRowCol.numV + rowCol.numV > vRowCol.ids.length) {
+        if (vRowCol.numV
+          + rowCol.numV > vRowCol.ids.length) {
           int len =
             getArrLen(vRowCol.numV + rowCol.numV);
           int[] ids = new int[len];
@@ -280,11 +278,12 @@ public class VStore {
         vRowCol.numV += rowCol.numV;
       }
     }
+    map.trim();
   }
 
   private static int getArrLen(int numV) {
-    return 1 << (32 - Integer
-      .numberOfLeadingZeros(numV - 1));
+    return 1 << (32
+      - Integer.numberOfLeadingZeros(numV - 1));
   }
 
   public Int2ObjectOpenHashMap<VRowCol>

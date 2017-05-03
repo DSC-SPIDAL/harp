@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,8 +35,7 @@ import edu.iu.harp.schdynamic.DynamicScheduler;
 import edu.iu.kmeans.regroupallgather.Constants;
 import edu.iu.kmeans.regroupallgather.KMUtil;
 
-public class KMeansCollectiveMapper
-  extends
+public class KMeansCollectiveMapper extends
   CollectiveMapper<String, String, Object, Object> {
 
   private int pointsPerFile;
@@ -58,26 +57,20 @@ public class KMeansCollectiveMapper
     long startTime = System.currentTimeMillis();
     Configuration configuration =
       context.getConfiguration();
-    pointsPerFile =
-      configuration.getInt(
-        Constants.POINTS_PER_FILE, 20);
-    numCentroids =
-      configuration.getInt(
-        Constants.NUM_CENTROIDS, 20);
-    vectorSize =
-      configuration.getInt(Constants.VECTOR_SIZE,
-        20);
-    numMappers =
-      configuration.getInt(Constants.NUM_MAPPERS,
-        10);
+    pointsPerFile = configuration
+      .getInt(Constants.POINTS_PER_FILE, 20);
+    numCentroids = configuration
+      .getInt(Constants.NUM_CENTROIDS, 20);
+    vectorSize = configuration
+      .getInt(Constants.VECTOR_SIZE, 20);
+    numMappers = configuration
+      .getInt(Constants.NUM_MAPPERS, 10);
     numCenPars = numMappers;
     cenVecSize = vectorSize + 1;
-    numThreads =
-      configuration.getInt(Constants.NUM_THREADS,
-        10);
-    numIterations =
-      configuration.getInt(
-        Constants.NUM_ITERATIONS, 10);
+    numThreads = configuration
+      .getInt(Constants.NUM_THREADS, 10);
+    numIterations = configuration
+      .getInt(Constants.NUM_ITERATIONS, 10);
     cenDir = configuration.get(Constants.CEN_DIR);
     LOG.info("Points Per File " + pointsPerFile);
     LOG.info("Num Centroids " + numCentroids);
@@ -87,8 +80,8 @@ public class KMeansCollectiveMapper
     LOG.info("Num Iterations " + numIterations);
     LOG.info("Cen Dir " + cenDir);
     long endTime = System.currentTimeMillis();
-    LOG.info("config (ms) :"
-      + (endTime - startTime));
+    LOG.info(
+      "config (ms) :" + (endTime - startTime));
   }
 
   protected void mapCollective(
@@ -100,8 +93,8 @@ public class KMeansCollectiveMapper
     while (reader.nextKeyValue()) {
       String key = reader.getCurrentKey();
       String value = reader.getCurrentValue();
-      LOG.info("Key: " + key + ", Value: "
-        + value);
+      LOG.info(
+        "Key: " + key + ", Value: " + value);
       pointFiles.add(value);
     }
     Configuration conf =
@@ -138,8 +131,8 @@ public class KMeansCollectiveMapper
     // Initialize tasks
     List<ExpTask> expTasks = new LinkedList<>();
     for (int i = 0; i < numThreads; i++) {
-      expTasks.add(new ExpTask(cenTable,
-        cenVecSize));
+      expTasks
+        .add(new ExpTask(cenTable, cenVecSize));
     }
     DynamicScheduler<Points, Object, ExpTask> expCompute =
       new DynamicScheduler<>(expTasks);
@@ -158,17 +151,20 @@ public class KMeansCollectiveMapper
       // LOG.info("Iteration: " + i);
       // Expectation
       long t1 = System.currentTimeMillis();
-      for (int j = 0; j < this.getNumWorkers(); j++) {
+      for (int j = 0; j < this
+        .getNumWorkers(); j++) {
         // LOG.info("Expectation Round: " + j);
-        for (ExpTask task : expCompute.getTasks()) {
+        for (ExpTask task : expCompute
+          .getTasks()) {
           task.update();
         }
         expCompute.submitAll(pointsList);
         while (expCompute.hasOutput()) {
           expCompute.waitForOutput();
         }
-        this.rotate("kmeans", "exp-rotate-" + i
-          + "-" + j, cenTable, null);
+        this.rotate("kmeans",
+          "exp-rotate-" + i + "-" + j, cenTable,
+          null);
       }
       long t2 = System.currentTimeMillis();
       // Clean centroids
@@ -177,7 +173,8 @@ public class KMeansCollectiveMapper
           Arrays.fill(e.get().get(), 0.0);
         });
       // Maximization
-      for (int j = 0; j < this.getNumWorkers(); j++) {
+      for (int j = 0; j < this
+        .getNumWorkers(); j++) {
         // LOG.info("Maximization Round: " + j);
         for (Partition<DoubleArray> partition : cenTable
           .getPartitions()) {
@@ -191,15 +188,17 @@ public class KMeansCollectiveMapper
         while (maxCompute.hasOutput()) {
           maxCompute.waitForOutput();
         }
-        this.rotate("kmeans", "max-rotate-" + i
-          + "-" + j, cenTable, null);
+        this.rotate("kmeans",
+          "max-rotate-" + i + "-" + j, cenTable,
+          null);
       }
       long t3 = System.currentTimeMillis();
       for (Partition<DoubleArray> partition : cenTable
         .getPartitions()) {
         double[] doubles = partition.get().get();
         int size = partition.get().size();
-        for (int j = 0; j < size; j += cenVecSize) {
+        for (int j = 0; j < size; j +=
+          cenVecSize) {
           for (int k = 1; k < cenVecSize; k++) {
             // Calculate avg
             if (doubles[j] != 0) {
@@ -230,9 +229,8 @@ public class KMeansCollectiveMapper
   }
 
   private void generateCenTable(
-    Table<DoubleArray> cenTable,
-    int numCentroids, int numCenPartitions,
-    int cenVecSize) {
+    Table<DoubleArray> cenTable, int numCentroids,
+    int numCenPartitions, int cenVecSize) {
     int selfID = this.getSelfID();
     int numWorkers = this.getNumWorkers();
     Random random =
@@ -252,8 +250,8 @@ public class KMeansCollectiveMapper
             doubles[j] =
               random.nextDouble() * 1000;
           }
-          cenTable.addPartition(new Partition<>(
-            i, array));
+          cenTable.addPartition(
+            new Partition<>(i, array));
         }
       } else if (cenParSize > 0) {
         int size = cenParSize * cenVecSize;
@@ -265,8 +263,8 @@ public class KMeansCollectiveMapper
             doubles[j] =
               random.nextDouble() * 1000;
           }
-          cenTable.addPartition(new Partition<>(
-            i, array));
+          cenTable.addPartition(
+            new Partition<>(i, array));
         }
       }
     }

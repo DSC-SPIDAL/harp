@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,42 +25,42 @@ import java.net.Socket;
  ******************************************************/
 public class ServerConn {
 
-    private InputStream in;
-    private Socket socket;
+  private InputStream in;
+  private Socket socket;
 
-    ServerConn(InputStream in, Socket socket) {
-	this.socket = socket;
-	this.in = in;
-    }
+  ServerConn(InputStream in, Socket socket) {
+    this.socket = socket;
+    this.in = in;
+  }
 
-    /**
-     * Get the InputStream
-     * 
-     * @return the InputStream
-     */
-    InputStream getInputDtream() {
-	return this.in;
-    }
+  /**
+   * Get the InputStream
+   * 
+   * @return the InputStream
+   */
+  InputStream getInputDtream() {
+    return this.in;
+  }
 
-    /**
-     * Close the connection
-     */
-    void close() {
-	if (in != null || socket != null) {
-	    try {
-		if (in != null) {
-		    in.close();
-		}
-	    } catch (IOException e) {
-	    }
-	    try {
-		if (socket != null) {
-		    socket.close();
-		}
-	    } catch (IOException e) {
-	    }
-	    in = null;
-	    socket = null;
-	}
+  /**
+   * Close the connection
+   */
+  void close() {
+    if (in != null || socket != null) {
+      try {
+        if (in != null) {
+          in.close();
+        }
+      } catch (IOException e) {
+      }
+      try {
+        if (socket != null) {
+          socket.close();
+        }
+      } catch (IOException e) {
+      }
+      in = null;
+      socket = null;
     }
+  }
 }

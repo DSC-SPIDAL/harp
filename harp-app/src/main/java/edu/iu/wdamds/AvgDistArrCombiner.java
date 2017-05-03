@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ import edu.iu.harp.partition.PartitionCombiner;
 import edu.iu.harp.partition.PartitionStatus;
 import edu.iu.harp.resource.DoubleArray;
 
-public class AvgDistArrCombiner extends
-  PartitionCombiner<DoubleArray> {
+public class AvgDistArrCombiner
+  extends PartitionCombiner<DoubleArray> {
 
   @Override
   public PartitionStatus combine(

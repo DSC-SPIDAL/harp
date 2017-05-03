@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,84 +36,102 @@ import edu.iu.harp.resource.ByteArray;
  ******************************************************/
 public class DataReceiver extends Receiver {
 
-    private static final Logger LOG = Logger.getLogger(DataReceiver.class);
+  private static final Logger LOG =
+    Logger.getLogger(DataReceiver.class);
 
-    private final int selfID;
+  private final int selfID;
 
-    public DataReceiver(int selfID, ServerConn conn, EventQueue queue, DataMap map, byte commandType) {
-	super(conn, queue, map, commandType);
-	this.selfID = selfID;
+  public DataReceiver(int selfID, ServerConn conn,
+    EventQueue queue, DataMap map,
+    byte commandType) {
+    super(conn, queue, map, commandType);
+    this.selfID = selfID;
+  }
+
+  /**
+   * Defines how to handle the Data
+   */
+  @Override
+  protected void handleData(final ServerConn conn)
+    throws Exception {
+    InputStream in = conn.getInputDtream();
+    // Receive data
+    Data data = receiveData(in);
+    if (this
+      .getCommandType() == Constant.SEND_DECODE) {
+      (new Decoder(data, selfID,
+        EventType.MESSAGE_EVENT,
+        this.getEventQueue(), this.getDataMap()))
+          .fork();
+    } else {
+      DataUtil.addDataToQueueOrMap(selfID,
+        this.getEventQueue(),
+        EventType.MESSAGE_EVENT,
+        this.getDataMap(), data);
     }
+  }
 
-    /**
-     * Defines how to handle the Data
-     */
-    @Override
-    protected void handleData(final ServerConn conn) throws Exception {
-	InputStream in = conn.getInputDtream();
-	// Receive data
-	Data data = receiveData(in);
-	if (this.getCommandType() == Constant.SEND_DECODE) {
-	    (new Decoder(data, selfID, EventType.MESSAGE_EVENT, this.getEventQueue(), this.getDataMap())).fork();
-	} else {
-	    DataUtil.addDataToQueueOrMap(selfID, this.getEventQueue(), EventType.MESSAGE_EVENT, this.getDataMap(),
-		    data);
-	}
+  /**
+   * Receive the Data
+   * 
+   * @param in
+   *          the InputStream
+   * @return the Data received
+   * @throws Exception
+   */
+  private Data receiveData(final InputStream in)
+    throws Exception {
+    // Read head array size and body array size
+    int headArrSize = -1;
+    ByteArray opArray = ByteArray.create(4, true);
+    try {
+      IOUtil.receiveBytes(in, opArray.get(),
+        opArray.start(), opArray.size());
+      Deserializer deserializer =
+        new Deserializer(opArray);
+      headArrSize = deserializer.readInt();
+    } catch (IOException e) {
+      // Finally is executed first, then the
+      // exception is thrown
+      LOG.error("Fail to receive op array", e);
+      throw e;
+    } finally {
+      // Release
+      opArray.release();
     }
-
-    /**
-     * Receive the Data
-     * 
-     * @param in
-     *            the InputStream
-     * @return the Data received
-     * @throws Exception
-     */
-    private Data receiveData(final InputStream in) throws Exception {
-	// Read head array size and body array size
-	int headArrSize = -1;
-	ByteArray opArray = ByteArray.create(4, true);
-	try {
-	    IOUtil.receiveBytes(in, opArray.get(), opArray.start(), opArray.size());
-	    Deserializer deserializer = new Deserializer(opArray);
-	    headArrSize = deserializer.readInt();
-	} catch (IOException e) {
-	    // Finally is executed first, then the
-	    // exception is thrown
-	    LOG.error("Fail to receive op array", e);
-	    throw e;
-	} finally {
-	    // Release
-	    opArray.release();
-	}
-	// Read head array
-	ByteArray headArray = ByteArray.create(headArrSize, true);
-	if (headArray != null) {
-	    try {
-		IOUtil.receiveBytes(in, headArray.get(), headArray.start(), headArrSize);
-	    } catch (Exception e) {
-		LOG.error("Fail to receive head array", e);
-		headArray.release();
-		throw e;
-	    }
-	} else {
-	    throw new Exception("Null head array");
-	}
-	// Prepare bytes from resource pool
-	// Sending or receiving null array is allowed
-	Data data = new Data(headArray);
-	data.decodeHeadArray();
-	ByteArray bodyArray = data.getBodyArray();
-	if (bodyArray != null) {
-	    try {
-		IOUtil.receiveBytes(in, bodyArray.get(), bodyArray.start(), bodyArray.size());
-	    } catch (Exception e) {
-		LOG.error("Fail to receive body array", e);
-		headArray.release();
-		bodyArray.release();
-		throw e;
-	    }
-	}
-	return data;
+    // Read head array
+    ByteArray headArray =
+      ByteArray.create(headArrSize, true);
+    if (headArray != null) {
+      try {
+        IOUtil.receiveBytes(in, headArray.get(),
+          headArray.start(), headArrSize);
+      } catch (Exception e) {
+        LOG.error("Fail to receive head array",
+          e);
+        headArray.release();
+        throw e;
+      }
+    } else {
+      throw new Exception("Null head array");
     }
+    // Prepare bytes from resource pool
+    // Sending or receiving null array is allowed
+    Data data = new Data(headArray);
+    data.decodeHeadArray();
+    ByteArray bodyArray = data.getBodyArray();
+    if (bodyArray != null) {
+      try {
+        IOUtil.receiveBytes(in, bodyArray.get(),
+          bodyArray.start(), bodyArray.size());
+      } catch (Exception e) {
+        LOG.error("Fail to receive body array",
+          e);
+        headArray.release();
+        bodyArray.release();
+        throw e;
+      }
+    }
+    return data;
+  }
 }

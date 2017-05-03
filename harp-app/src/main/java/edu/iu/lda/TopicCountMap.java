@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,14 +29,14 @@ import org.apache.commons.logging.LogFactory;
 
 import edu.iu.harp.resource.Writable;
 
-public class TopicCount extends Writable {
+public class TopicCountMap extends Writable {
 
-  protected static final Log LOG = LogFactory
-    .getLog(TopicCount.class);
+  protected static final Log LOG =
+    LogFactory.getLog(TopicCountMap.class);
 
   private final Int2IntOpenHashMap topicCount;
 
-  public TopicCount() {
+  public TopicCountMap() {
     topicCount = new Int2IntOpenHashMap();
   }
 

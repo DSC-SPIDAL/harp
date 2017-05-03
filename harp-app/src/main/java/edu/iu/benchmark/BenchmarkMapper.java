@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,8 +27,7 @@ import edu.iu.harp.partition.Partition;
 import edu.iu.harp.partition.Table;
 import edu.iu.harp.resource.DoubleArray;
 
-public class BenchmarkMapper
-  extends
+public class BenchmarkMapper extends
   CollectiveMapper<String, String, Object, Object> {
 
   private String cmd;
@@ -45,26 +44,21 @@ public class BenchmarkMapper
     throws IOException, InterruptedException {
     Configuration configuration =
       context.getConfiguration();
-    cmd =
-      configuration.get(Constants.BENCHMARK_CMD,
-        "bcast");
-    numMappers =
-      configuration.getInt(Constants.NUM_MAPPERS,
-        1);
-    numPartitions =
-      configuration.getInt(
-        Constants.NUM_PARTITIONS, 1);
-    bytesPerPartition =
-      configuration.getInt(
-        Constants.BYTES_PER_PARTITION, 1);
-    numIterations =
-      configuration.getInt(
-        Constants.NUM_ITERATIONS, 1);
+    cmd = configuration
+      .get(Constants.BENCHMARK_CMD, "bcast");
+    numMappers = configuration
+      .getInt(Constants.NUM_MAPPERS, 1);
+    numPartitions = configuration
+      .getInt(Constants.NUM_PARTITIONS, 1);
+    bytesPerPartition = configuration
+      .getInt(Constants.BYTES_PER_PARTITION, 1);
+    numIterations = configuration
+      .getInt(Constants.NUM_ITERATIONS, 1);
     LOG.info("Benchmark CMD " + cmd);
     LOG.info("Num Mappers " + numMappers);
     LOG.info("Num Partitions " + numPartitions);
-    LOG.info("Bytes per Partition "
-      + bytesPerPartition);
+    LOG.info(
+      "Bytes per Partition " + bytesPerPartition);
     LOG.info("Num Iterations " + numIterations);
   }
 
@@ -75,8 +69,8 @@ public class BenchmarkMapper
     while (reader.nextKeyValue()) {
       String key = reader.getCurrentKey();
       String value = reader.getCurrentValue();
-      LOG.info("Key: " + key + ", Value: "
-        + value);
+      LOG.info(
+        "Key: " + key + ", Value: " + value);
     }
     int workerID = this.getSelfID();
     int numWorkers = this.getNumWorkers();
@@ -97,18 +91,18 @@ public class BenchmarkMapper
           LOG.info("before allreduce: " + j + " "
             + array.get()[0] + " "
             + array.get()[array.size() - 1]);
-          arrTable.addPartition(new Partition<>(
-            j, array));
+          arrTable.addPartition(
+            new Partition<>(j, array));
         }
         allreduce("main", "allreduce-" + i,
           arrTable);
         for (Partition<DoubleArray> partition : arrTable
           .getPartitions()) {
           DoubleArray array = partition.get();
-          LOG.info("after allreduce: "
-            + partition.id() + " "
-            + array.get()[0] + " "
-            + array.get()[array.size() - 1]);
+          LOG.info(
+            "after allreduce: " + partition.id()
+              + " " + array.get()[0] + " "
+              + array.get()[array.size() - 1]);
         }
         arrTable.release();
       }
@@ -132,13 +126,12 @@ public class BenchmarkMapper
           array.get()[0] = rand.nextDouble();
           array.get()[array.size() - 1] =
             rand.nextDouble();
-          LOG
-            .info("before allgather: "
-              + partitionID + " "
-              + array.get()[0] + " "
+          LOG.info(
+            "before allgather: " + partitionID
+              + " " + array.get()[0] + " "
               + array.get()[array.size() - 1]);
-          arrTable
-            .addPartition(new Partition<DoubleArray>(
+          arrTable.addPartition(
+            new Partition<DoubleArray>(
               partitionID, array));
         }
         allgather("main", "allgather-" + i,
@@ -146,10 +139,10 @@ public class BenchmarkMapper
         for (Partition<DoubleArray> partition : arrTable
           .getPartitions()) {
           DoubleArray array = partition.get();
-          LOG.info("after allgather: "
-            + partition.id() + " "
-            + array.get()[0] + " "
-            + array.get()[array.size() - 1]);
+          LOG.info(
+            "after allgather: " + partition.id()
+              + " " + array.get()[0] + " "
+              + array.get()[array.size() - 1]);
         }
         arrTable.release();
       }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,8 +40,8 @@ import edu.iu.harp.resource.ShortArray;
 public class DataFileUtil {
 
   /** Class logger */
-  protected static final Logger LOG = Logger
-    .getLogger(DataFileUtil.class);
+  protected static final Logger LOG =
+    Logger.getLogger(DataFileUtil.class);
 
   /**
    * Read partition file of this worker. We can
@@ -64,9 +64,8 @@ public class DataFileUtil {
       partitionFilePath.getFileSystem(conf);
     FSDataInputStream in =
       fs.open(partitionFilePath);
-    BufferedReader br1 =
-      new BufferedReader(
-        new InputStreamReader(in));
+    BufferedReader br1 = new BufferedReader(
+      new InputStreamReader(in));
     // Read row IDs
     // Read files
     LinkedList<Integer> rowIDs =
@@ -99,8 +98,8 @@ public class DataFileUtil {
     // Process row IDs and files paths to generate
     // row data
     RowData rowData = null;
-    for (int i = 0, j = 0; i < rowIDs.size(); i++, j +=
-      3) {
+    for (int i = 0, j = 0; i < rowIDs
+      .size(); i++, j += 3) {
       rowData = new RowData();
       rowData.distPath = filePaths.get(j);
       rowData.weightPath = filePaths.get(j + 1);
@@ -137,12 +136,10 @@ public class DataFileUtil {
     return totalPartitions;
   }
 
-  public static
-    boolean
-    loadRowData(
-      RowData rowData,
-      Mapper<String, String, Object, Object>.Context context)
-      throws IOException {
+  public static boolean loadRowData(
+    RowData rowData,
+    Mapper<String, String, Object, Object>.Context context)
+    throws IOException {
     loadDistData(rowData);
     context.progress();
     loadWeightData(rowData);
@@ -152,14 +149,12 @@ public class DataFileUtil {
     return true;
   }
 
-  private static void
-    loadDistData(RowData rowData)
-      throws IOException {
+  private static void loadDistData(
+    RowData rowData) throws IOException {
     // LOG.info("distPath: " + rowData.distPath);
     DataInputStream din =
-      new DataInputStream(
-        new BufferedInputStream(
-          new FileInputStream(rowData.distPath)));
+      new DataInputStream(new BufferedInputStream(
+        new FileInputStream(rowData.distPath)));
     try {
       // Because these data are loaded from files
       // and cached,
@@ -190,22 +185,20 @@ public class DataFileUtil {
     // LOG.info("weightPath: " +
     // rowData.weightPath);
     DataInputStream din =
-      new DataInputStream(
-        new BufferedInputStream(
-          new FileInputStream(rowData.weightPath)));
+      new DataInputStream(new BufferedInputStream(
+        new FileInputStream(rowData.weightPath)));
     try {
       // Because these data are loaded from files
       // and cached,
       // we allocate the memory automatically
       // without using resource pool.
-      double[] doubles =
-        new double[rowData.height * rowData.width];
+      double[] doubles = new double[rowData.height
+        * rowData.width];
       for (int i = 0; i < doubles.length; i++) {
         doubles[i] = (double) din.readShort();
       }
-      DoubleArray weightArray =
-        new DoubleArray(doubles, 0,
-          doubles.length);
+      DoubleArray weightArray = new DoubleArray(
+        doubles, 0, doubles.length);
       rowData.weightArray = weightArray;
     } finally {
       din.close();
@@ -216,9 +209,8 @@ public class DataFileUtil {
     throws IOException {
     // LOG.info("vPath: " + rowData.vPath);
     DataInputStream din =
-      new DataInputStream(
-        new BufferedInputStream(
-          new FileInputStream(rowData.vPath)));
+      new DataInputStream(new BufferedInputStream(
+        new FileInputStream(rowData.vPath)));
     try {
       // Because these data are loaded from files
       // and cached,

@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,8 +25,8 @@ import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 
 // need to be modified
-public class MultiFileRecordReader extends
-  RecordReader<String, String> {
+public class MultiFileRecordReader
+  extends RecordReader<String, String> {
   private List<Path> pathList;
   private int progress;
 
@@ -41,8 +41,8 @@ public class MultiFileRecordReader extends
 
   @Override
   public float getProgress() throws IOException {
-    System.out.println("In getProgress : "
-      + progress);
+    System.out
+      .println("In getProgress : " + progress);
     return (float) progress
       / (float) pathList.size();
   }
@@ -51,8 +51,8 @@ public class MultiFileRecordReader extends
   public String getCurrentKey()
     throws IOException, InterruptedException {
     Path path = pathList.get(progress);
-    System.out.println("in current key "
-      + path.toString() + ".");
+    System.out.println(
+      "in current key " + path.toString() + ".");
     return path.toString();
   }
 

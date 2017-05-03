@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,72 +18,78 @@ package edu.iu.harp.schdynamic;
 
 import java.util.concurrent.Semaphore;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.Logger;
 
 /*******************************************************
- * Some utils including acquiring semaphora and joining threads
+ * Some utils including acquiring semaphora and
+ * joining threads
  ******************************************************/
 public class ComputeUtil {
 
-    protected static final Log LOG = LogFactory.getLog(ComputeUtil.class);
+  protected static final Logger LOG =
+    Logger.getLogger(ComputeUtil.class);
 
-    /**
-     * Acquires the given number of permits from this semaphore
-     * 
-     * @param sem
-     *            the Semaphore
-     * @param count
-     *            the number of permits to acquire
-     */
-    public static void acquire(Semaphore sem, int count) {
-	boolean isFailed = false;
-	do {
-	    try {
-		sem.acquire(count);
-		isFailed = false;
-	    } catch (Exception e) {
-		isFailed = true;
-		LOG.error("Error when acquiring semaphore", e);
-	    }
-	} while (isFailed);
-    }
+  /**
+   * Acquires the given number of permits from
+   * this semaphore
+   * 
+   * @param sem
+   *          the Semaphore
+   * @param count
+   *          the number of permits to acquire
+   */
+  public static void acquire(Semaphore sem,
+    int count) {
+    boolean isFailed = false;
+    do {
+      try {
+        sem.acquire(count);
+        isFailed = false;
+      } catch (Exception e) {
+        isFailed = true;
+        LOG.error(
+          "Error when acquiring semaphore", e);
+      }
+    } while (isFailed);
+  }
 
-    /**
-     * Acquires a permit from this semaphore
-     * 
-     * @param sem
-     *            the Semaphore
-     */
-    public static void acquire(Semaphore sem) {
-	boolean isFailed = false;
-	do {
-	    try {
-		sem.acquire();
-		isFailed = false;
-	    } catch (Exception e) {
-		isFailed = true;
-		LOG.error("Error when acquiring semaphore", e);
-	    }
-	} while (isFailed);
-    }
+  /**
+   * Acquires a permit from this semaphore
+   * 
+   * @param sem
+   *          the Semaphore
+   */
+  public static void acquire(Semaphore sem) {
+    boolean isFailed = false;
+    do {
+      try {
+        sem.acquire();
+        isFailed = false;
+      } catch (Exception e) {
+        isFailed = true;
+        LOG.error(
+          "Error when acquiring semaphore", e);
+      }
+    } while (isFailed);
+  }
 
-    /**
-     * Join the thread
-     * 
-     * @param thread
-     *            the thread to be joined
-     */
-    public static void joinThread(Thread thread) {
-	boolean isFailed = false;
-	do {
-	    isFailed = false;
-	    try {
-		thread.join();
-	    } catch (Exception e) {
-		LOG.error("Error when joining thread.", e);
-		isFailed = true;
-	    }
-	} while (isFailed);
-    }
+  /**
+   * Join the thread
+   * 
+   * @param thread
+   *          the thread to be joined
+   */
+  public static void joinThread(Thread thread) {
+    boolean isFailed = false;
+    do {
+      isFailed = false;
+      try {
+        thread.join();
+      } catch (Exception e) {
+        LOG.error("Error when joining thread.",
+          e);
+        isFailed = true;
+      }
+    } while (isFailed);
+  }
 }

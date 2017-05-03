@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,10 +45,9 @@ class DataGenRunnable implements Runnable {
   @Override
   public void run() {
     try {
-      DataOutputStream out =
-        new DataOutputStream(
-          new FileOutputStream(localDir
-            + File.separator + "data_" + fileID));
+      DataOutputStream out = new DataOutputStream(
+        new FileOutputStream(localDir
+          + File.separator + "data_" + fileID));
       out.writeDouble(1000);
       out.close();
       System.out.println("Write file " + fileID);
@@ -82,8 +81,8 @@ public class DataGen {
     }
     boolean success = localDir.mkdir();
     if (success) {
-      System.out.println("Directory: " + localDir
-        + " created");
+      System.out.println(
+        "Directory: " + localDir + " created");
     }
     // Create random data points
     int poolSize =

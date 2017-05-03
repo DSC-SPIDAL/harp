@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,25 +19,26 @@ package edu.iu.harp.resource;
 /*******************************************************
  * A pool used for caching float arrays.
  ******************************************************/
-public class FloatsPool extends ArrayPool<float[]> {
+public class FloatsPool
+  extends ArrayPool<float[]> {
 
-    public FloatsPool() {
-	super();
-    }
+  public FloatsPool() {
+    super();
+  }
 
-    /**
-     * New a float array of the size
-     */
-    @Override
-    protected float[] createNewArray(int size) {
-	return new float[size];
-    }
+  /**
+   * New a float array of the size
+   */
+  @Override
+  protected float[] createNewArray(int size) {
+    return new float[size];
+  }
 
-    /**
-     * Get the length of the array
-     */
-    @Override
-    protected int getLength(float[] array) {
-	return array.length;
-    }
+  /**
+   * Get the length of the array
+   */
+  @Override
+  protected int getLength(float[] array) {
+    return array.length;
+  }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,33 +16,66 @@
 
 package edu.iu.dymoro;
 
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-
 import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import edu.iu.harp.schdynamic.Task;
 import edu.iu.harp.partition.Partition;
 import edu.iu.harp.resource.Simple;
+import edu.iu.harp.schdynamic.Task;
 
 public abstract class MPTask<D, S extends Simple>
   implements
   Task<RowColSplit<D, S>, RowColSplit<D, S>> {
 
-  protected static final Log LOG = LogFactory
-    .getLog(MPTask.class);
+  protected static final Log LOG =
+    LogFactory.getLog(MPTask.class);
+
+  private long numItems = 0L;
+
+  private long startTime = 0L;
+  private long endTime = 0L;
+  private long itemsRecored = 0L;
+  private boolean record = false;
 
   @Override
   public RowColSplit<D, S> run(
     RowColSplit<D, S> split) throws Exception {
-    split.numItems =
-      doRun(split.cData, split.rData);
+    long n = doRun(split.cData, split.rData);
+    numItems += n;
+    // ----------------------------------
+    // Code for recording
+    if (record) {
+      itemsRecored += n;
+      endTime = System.currentTimeMillis();
+    }
+    // ----------------------------------
     return split;
   }
 
-  public abstract long doRun(
-    List<Partition<S>> cData,
-    Int2ObjectOpenHashMap<D> rData);
+  public abstract long
+    doRun(List<Partition<S>> cData, D rData);
+
+  public long getNumItemsProcessed() {
+    long n = numItems;
+    numItems = 0L;
+    return n;
+  }
+
+  public void startRecord(boolean r) {
+    record = r;
+    if (record) {
+      startTime = System.currentTimeMillis();
+      itemsRecored = 0L;
+    }
+  }
+
+  public long getRecordDuration() {
+    return endTime - startTime;
+  }
+
+  public long getItemsRecorded() {
+    return itemsRecored;
+  }
 }

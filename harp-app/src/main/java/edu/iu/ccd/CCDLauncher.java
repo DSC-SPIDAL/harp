@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,9 +40,8 @@ public class CCDLauncher extends Configured
 
   public static void main(String[] argv)
     throws Exception {
-    int res =
-      ToolRunner.run(new Configuration(),
-        new CCDLauncher(), argv);
+    int res = ToolRunner.run(new Configuration(),
+      new CCDLauncher(), argv);
     System.exit(res);
   }
 
@@ -79,8 +78,8 @@ public class CCDLauncher extends Configured
         * minR;
     String workDirPath = args[7];
     String testFilePath = args[8];
-    System.out.println("Number of Map Tasks = "
-      + numMapTasks);
+    System.out.println(
+      "Number of Map Tasks = " + numMapTasks);
     if (numIteration <= 0) {
       numIteration = 1;
     }
@@ -136,38 +135,32 @@ public class CCDLauncher extends Configured
       // --------------------------------------------
       long perJobSubmitTime =
         System.currentTimeMillis();
-      System.out.println("Start Job#"
-        + jobID
-        + " "
-        + new SimpleDateFormat("HH:mm:ss.SSS")
-          .format(Calendar.getInstance()
-            .getTime()));
-      Job ccdJob =
-        configureCCDJob(inputDir, r, lambda,
-          numIterations, numMapTasks,
-          numThreadsPerWorker, numModelSlices,
-          modelDir, outputDir, testFilePath,
-          configuration, jobID);
+      System.out
+        .println("Start Job#" + jobID + " "
+          + new SimpleDateFormat("HH:mm:ss.SSS")
+            .format(
+              Calendar.getInstance().getTime()));
+      Job ccdJob = configureCCDJob(inputDir, r,
+        lambda, numIterations, numMapTasks,
+        numThreadsPerWorker, numModelSlices,
+        modelDir, outputDir, testFilePath,
+        configuration, jobID);
       boolean jobSuccess =
         ccdJob.waitForCompletion(true);
-      System.out.println("End Jod#"
-        + jobID
-        + " "
+      System.out.println("End Jod#" + jobID + " "
         + new SimpleDateFormat("HH:mm:ss.SSS")
-          .format(Calendar.getInstance()
-            .getTime()));
-      System.out
-        .println("| Job#"
-          + jobID
-          + " Finished in "
-          + (System.currentTimeMillis() - perJobSubmitTime)
+          .format(
+            Calendar.getInstance().getTime()));
+      System.out.println(
+        "| Job#" + jobID + " Finished in "
+          + (System.currentTimeMillis()
+            - perJobSubmitTime)
           + " miliseconds |");
       // ----------------------------------------
       if (!jobSuccess) {
         ccdJob.killJob();
-        System.out
-          .println("CCD Job failed. Job ID:"
-            + jobID);
+        System.out.println(
+          "CCD Job failed. Job ID:" + jobID);
         jobID++;
         if (jobID == 3) {
           break;
@@ -188,21 +181,20 @@ public class CCDLauncher extends Configured
     configuration.setInt(Constants.R, r);
     configuration.setDouble(Constants.LAMBDA,
       lambda);
-    configuration.setInt(
-      Constants.NUM_ITERATIONS, numIterations);
+    configuration.setInt(Constants.NUM_ITERATIONS,
+      numIterations);
     configuration.setInt(Constants.NUM_THREADS,
       numThreadsPerWorker);
-    System.out.println("Model Dir Path: "
-      + modelDir.toString());
+    System.out.println(
+      "Model Dir Path: " + modelDir.toString());
     configuration.set(Constants.MODEL_DIR,
       modelDir.toString());
     configuration.setInt(
       Constants.NUM_MODEL_SLICES, numModelSlices);
     configuration.set(Constants.TEST_FILE_PATH,
       testFilePath);
-    Job job =
-      Job.getInstance(configuration, "ccd_job_"
-        + jobID);
+    Job job = Job.getInstance(configuration,
+      "ccd_job_" + jobID);
     JobConf jobConf =
       (JobConf) job.getConfiguration();
     jobConf.set("mapreduce.framework.name",
@@ -211,13 +203,13 @@ public class CCDLauncher extends Configured
     jobConf.setInt(
       "mapreduce.job.max.split.locations", 10000);
     FileInputFormat.setInputPaths(job, inputDir);
-    FileOutputFormat
-      .setOutputPath(job, outputDir);
-    job
-      .setInputFormatClass(MultiFileInputFormat.class);
+    FileOutputFormat.setOutputPath(job,
+      outputDir);
+    job.setInputFormatClass(
+      MultiFileInputFormat.class);
     job.setJarByClass(CCDLauncher.class);
-    job
-      .setMapperClass(CCDMPCollectiveMapper.class);
+    job.setMapperClass(
+      CCDMPCollectiveMapper.class);
     job.setNumReduceTasks(0);
     return job;
   }

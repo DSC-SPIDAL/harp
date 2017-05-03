@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,8 +50,7 @@ import edu.iu.sgd.VSetCombiner;
 import edu.iu.sgd.VSetSplit;
 import edu.iu.sgd.VStore;
 
-public class CCDMPCollectiveMapper
-  extends
+public class CCDMPCollectiveMapper extends
   CollectiveMapper<String, String, Object, Object> {
   private int r;
   private double lambda;
@@ -73,32 +72,26 @@ public class CCDMPCollectiveMapper
    */
   @Override
   protected void setup(Context context) {
-    LOG
-      .info("start setup: "
-        + new SimpleDateFormat("yyyyMMdd_HHmmss")
-          .format(Calendar.getInstance()
-            .getTime()));
+    LOG.info("start setup: "
+      + new SimpleDateFormat("yyyyMMdd_HHmmss")
+        .format(
+          Calendar.getInstance().getTime()));
     long startTime = System.currentTimeMillis();
     Configuration configuration =
       context.getConfiguration();
     r = configuration.getInt(Constants.R, 100);
-    lambda =
-      configuration.getDouble(Constants.LAMBDA,
-        0.001);
-    numIterations =
-      configuration.getInt(
-        Constants.NUM_ITERATIONS, 100);
-    numThreads =
-      configuration.getInt(Constants.NUM_THREADS,
-        16);
+    lambda = configuration
+      .getDouble(Constants.LAMBDA, 0.001);
+    numIterations = configuration
+      .getInt(Constants.NUM_ITERATIONS, 100);
+    numThreads = configuration
+      .getInt(Constants.NUM_THREADS, 16);
     modelDirPath =
       configuration.get(Constants.MODEL_DIR, "");
-    numModelSlices =
-      configuration.getInt(
-        Constants.NUM_MODEL_SLICES, 2);
-    testFilePath =
-      configuration.get(Constants.TEST_FILE_PATH,
-        "");
+    numModelSlices = configuration
+      .getInt(Constants.NUM_MODEL_SLICES, 2);
+    testFilePath = configuration
+      .get(Constants.TEST_FILE_PATH, "");
     rmseIteInterval = 1;
     printRMSE = false;
     testRMSE = 0.0;
@@ -107,8 +100,8 @@ public class CCDMPCollectiveMapper
     totalNumV = 0L;
     waitTime = 0L;
     long endTime = System.currentTimeMillis();
-    LOG.info("config (ms): "
-      + (endTime - startTime));
+    LOG.info(
+      "config (ms): " + (endTime - startTime));
     LOG.info("R " + r);
     LOG.info("Lambda " + lambda);
     LOG.info("No. Iterations " + numIterations);
@@ -134,9 +127,9 @@ public class CCDMPCollectiveMapper
       + (System.currentTimeMillis() - startTime));
   }
 
-  private LinkedList<String> getVFiles(
-    final KeyValReader reader)
-    throws IOException, InterruptedException {
+  private LinkedList<String>
+    getVFiles(final KeyValReader reader)
+      throws IOException, InterruptedException {
     final LinkedList<String> vFiles =
       new LinkedList<>();
     while (reader.nextKeyValue()) {
@@ -153,9 +146,8 @@ public class CCDMPCollectiveMapper
     final Configuration configuration,
     final Context context) throws Exception {
     LOG.info("Use Model Parallelism");
-    VStore vStore =
-      new VStore(vFilePaths, numThreads,
-        configuration);
+    VStore vStore = new VStore(vFilePaths,
+      numThreads, configuration);
     vStore.load(true, true);
     Int2ObjectOpenHashMap<VRowCol> vWMap =
       vStore.getVWMap();
@@ -168,8 +160,8 @@ public class CCDMPCollectiveMapper
     for (VRowCol vRowCol : testVHMap.values()) {
       totalNumTestV += vRowCol.numV;
     }
-    LOG.info("Total num of test V: "
-      + totalNumTestV);
+    LOG.info(
+      "Total num of test V: " + totalNumTestV);
     // ---------------------------------------------
     // Find the W ID range and H ID range
     // Create vHMap and W model
@@ -181,12 +173,10 @@ public class CCDMPCollectiveMapper
       new Int2ObjectOpenHashMap[numRowSplits];
     Int2ObjectOpenHashMap<VRowCol>[] vHSplitMap =
       new Int2ObjectOpenHashMap[numColSplits];
-    final long workerNumWV =
-      createSplitMap(vWMap, vWSplitMap,
-        numRowSplits, numThreads, "W");
-    final long workerNumHV =
-      createSplitMap(vHMap, vHSplitMap,
-        numColSplits, numThreads, "H");
+    final long workerNumWV = createSplitMap(vWMap,
+      vWSplitMap, numRowSplits, numThreads, "W");
+    final long workerNumHV = createSplitMap(vHMap,
+      vHSplitMap, numColSplits, numThreads, "H");
     LOG.info("workerNumWV: " + workerNumWV
       + ", workerNumHV: " + workerNumHV);
     vWMap = null;
@@ -217,12 +207,12 @@ public class CCDMPCollectiveMapper
       new Table[numModelSlices];
     final Table<DoubleArray>[] hTableMap =
       new Table[numModelSlices];
-    final long totalNumRows =
-      createModel(wTableMap, numModelSlices,
-        vWSplitList, r, oneOverSqrtR, random, "W");
-    final long totalNumCols =
-      createModel(hTableMap, numModelSlices,
-        vHSplitList, r, oneOverSqrtR, random, "H");
+    final long totalNumRows = createModel(
+      wTableMap, numModelSlices, vWSplitList, r,
+      oneOverSqrtR, random, "W");
+    final long totalNumCols = createModel(
+      hTableMap, numModelSlices, vHSplitList, r,
+      oneOverSqrtR, random, "H");
     for (Table<DoubleArray> table : wTableMap) {
       LOG.info("W Table Slice: "
         + table.getNumPartitions());
@@ -236,16 +226,13 @@ public class CCDMPCollectiveMapper
     System.gc();
     // ----------------------------------------------
     // Create rotators
-    int[] orders =
-      RotationUtil
-        .getRotationSequences(random, numWorkers,
-          (numIterations + 1) * 4, this);
-    Rotator<DoubleArray> wRotator =
-      new Rotator<>(wTableMap, 1, false, this,
-        orders, "ccdw");
-    Rotator<DoubleArray> hRotator =
-      new Rotator<>(hTableMap, 1, false, this,
-        orders, "ccdh");
+    int[] orders = RotationUtil
+      .getRotationSequences(random, numWorkers,
+        (numIterations + 1) * 4, this);
+    Rotator<DoubleArray> wRotator = new Rotator<>(
+      wTableMap, 1, false, this, orders, "ccdw");
+    Rotator<DoubleArray> hRotator = new Rotator<>(
+      hTableMap, 1, false, this, orders, "ccdh");
     wRotator.start();
     hRotator.start();
     List<CCDMPTask> ccdTasks = new LinkedList<>();
@@ -279,9 +266,8 @@ public class CCDMPCollectiveMapper
     printRMSE(wRotator, hRotator, resCompute,
       vWSplitList, vHSplitList, numWorkers,
       numThreads, "0", totalNumV, useRow);
-    printTestRMSE(wRotator, hRotator,
-      rmseCompute, testVHMap, numWorkers,
-      totalNumTestV, "0");
+    printTestRMSE(wRotator, hRotator, rmseCompute,
+      testVHMap, numWorkers, totalNumTestV, "0");
     LOG.info("Iteration Starts.");
     // -----------------------------------------
     // For iteration
@@ -305,7 +291,8 @@ public class CCDMPCollectiveMapper
       waitTime = 0L;
       // Calculate RMSE
       printRMSE =
-        (i == 1 || i % rmseIteInterval == 0 || i == numIterations);
+        (i == 1 || i % rmseIteInterval == 0
+          || i == numIterations);
       if (printRMSE) {
         // this.logMemUsage();
         // this.logGCTime();
@@ -325,7 +312,8 @@ public class CCDMPCollectiveMapper
   long createSplitMap(
     Int2ObjectOpenHashMap<VRowCol> vMap,
     Int2ObjectOpenHashMap<VRowCol>[] vSplitMap,
-    int numSplits, int numThreads, String opName) {
+    int numSplits, int numThreads,
+    String opName) {
     Table<VSet> vSetTable =
       new Table<>(0, new VSetCombiner());
     ObjectIterator<Int2ObjectMap.Entry<VRowCol>> iterator =
@@ -335,14 +323,15 @@ public class CCDMPCollectiveMapper
         iterator.next();
       int id = entry.getIntKey();
       VRowCol vRowCol = entry.getValue();
-      vSetTable.addPartition(new Partition<>(id,
-        new VSet(vRowCol.id, vRowCol.ids,
-          vRowCol.v, vRowCol.numV)));
+      vSetTable.addPartition(
+        new Partition<>(id, new VSet(vRowCol.id,
+          vRowCol.ids, vRowCol.v, vRowCol.numV)));
     }
     vMap.clear();
     long start = System.currentTimeMillis();
     regroup("ccd", "regroup-v-" + opName,
-      vSetTable, new Partitioner(getNumWorkers()));
+      vSetTable,
+      new Partitioner(getNumWorkers()));
     long end = System.currentTimeMillis();
     LOG.info("Regroup " + opName + " took: "
       + (end - start)
@@ -357,9 +346,8 @@ public class CCDMPCollectiveMapper
       vSetList[i] = new VSetSplit(i);
     }
     long workerNumV = 0L;
-    IntArray idArray =
-      IntArray.create(
-        vSetTable.getNumPartitions(), false);
+    IntArray idArray = IntArray.create(
+      vSetTable.getNumPartitions(), false);
     int[] ids = idArray.get();
     vSetTable.getPartitionIDs().toArray(ids);
     IntArrays.quickSort(ids, 0, idArray.size());
@@ -459,10 +447,9 @@ public class CCDMPCollectiveMapper
         IntArray array =
           IntArray.create(1, false);
         array.get()[0] = vRowCol.numV;
-        PartitionStatus status =
-          vSumTable
-            .addPartition(new Partition<IntArray>(
-              vRowCol.id, array));
+        PartitionStatus status = vSumTable
+          .addPartition(new Partition<IntArray>(
+            vRowCol.id, array));
         if (status != PartitionStatus.ADDED) {
           array.release();
         }
@@ -471,8 +458,8 @@ public class CCDMPCollectiveMapper
     int numWorkers = this.getNumWorkers();
     this.regroup("ccd", "regroup-vsum-" + opName,
       vSumTable, new Partitioner(numWorkers));
-    this.allgather("ccd", "allgather-vsum-"
-      + opName, vSumTable);
+    this.allgather("ccd",
+      "allgather-vsum-" + opName, vSumTable);
     totalNumV = 0L;
     int totalNumRowCols =
       vSumTable.getNumPartitions();
@@ -509,17 +496,14 @@ public class CCDMPCollectiveMapper
     return totalNumRowCols;
   }
 
-  private
-    void
-    computeCCD(
-      Rotator<DoubleArray> wRotator,
-      Rotator<DoubleArray> hRotator,
-      DynamicScheduler<List<VRowCol>, Object, CCDMPTask> ccdCompute,
-      DynamicScheduler<List<VRowCol>, Object, ResTask> resCompute,
-      List<VRowCol>[] vWSplitList,
-      List<VRowCol>[] vHSplitList,
-      int numWorkers, boolean useRow)
-      throws InterruptedException {
+  private void computeCCD(
+    Rotator<DoubleArray> wRotator,
+    Rotator<DoubleArray> hRotator,
+    DynamicScheduler<List<VRowCol>, Object, CCDMPTask> ccdCompute,
+    DynamicScheduler<List<VRowCol>, Object, ResTask> resCompute,
+    List<VRowCol>[] vWSplitList,
+    List<VRowCol>[] vHSplitList, int numWorkers,
+    boolean useRow) throws InterruptedException {
     for (int j = 0; j < numWorkers; j++) {
       for (int k = 0; k < numModelSlices; k++) {
         long t1 = System.currentTimeMillis();
@@ -532,7 +516,8 @@ public class CCDMPCollectiveMapper
           task.useRow(useRow);
           task.setWHPartitionLists(wList, hList);
         }
-        for (ResTask task : resCompute.getTasks()) {
+        for (ResTask task : resCompute
+          .getTasks()) {
           task.setInit(false);
           task.setRMSE(false);
           if (j == 0 && k == 0) {
@@ -569,17 +554,14 @@ public class CCDMPCollectiveMapper
     }
   }
 
-  private
-    void
-    printRMSE(
-      Rotator<DoubleArray> wRotator,
-      Rotator<DoubleArray> hRotator,
-      DynamicScheduler<List<VRowCol>, Object, ResTask> resCompute,
-      List<VRowCol>[] vWSplitList,
-      List<VRowCol>[] vHSplitList,
-      int numWorkers, int numThreads,
-      String name, long totalNumV, boolean useRow)
-      throws InterruptedException {
+  private void printRMSE(
+    Rotator<DoubleArray> wRotator,
+    Rotator<DoubleArray> hRotator,
+    DynamicScheduler<List<VRowCol>, Object, ResTask> resCompute,
+    List<VRowCol>[] vWSplitList,
+    List<VRowCol>[] vHSplitList, int numWorkers,
+    int numThreads, String name, long totalNumV,
+    boolean useRow) throws InterruptedException {
     // Reset
     for (ResTask task : resCompute.getTasks()) {
       task.getRowRMSE();
@@ -600,11 +582,10 @@ public class CCDMPCollectiveMapper
     array.get()[1] = colRMSE;
     Table<DoubleArray> rmseArrTable =
       new Table<>(0, new DoubleArrPlus());
-    rmseArrTable
-      .addPartition(new Partition<DoubleArray>(0,
-        array));
-    this.allreduce("ccd", "allreduce-rmse-"
-      + name, rmseArrTable);
+    rmseArrTable.addPartition(
+      new Partition<DoubleArray>(0, array));
+    this.allreduce("ccd",
+      "allreduce-rmse-" + name, rmseArrTable);
     rowRMSE =
       rmseArrTable.getPartition(0).get().get()[0];
     colRMSE =
@@ -614,27 +595,25 @@ public class CCDMPCollectiveMapper
       Math.sqrt(rowRMSE / (double) totalNumV);
     colRMSE =
       Math.sqrt(colRMSE / (double) totalNumV);
-    LOG.info("Row RMSE " + rowRMSE
-      + ", Col RMSE " + colRMSE);
+    LOG.info("Row RMSE " + rowRMSE + ", Col RMSE "
+      + colRMSE);
   }
 
-  private
-    void
-    calcRes(
-      Rotator<DoubleArray> wRotator,
-      Rotator<DoubleArray> hRotator,
-      DynamicScheduler<List<VRowCol>, Object, ResTask> resCompute,
-      List<VRowCol>[] vWSplitList,
-      List<VRowCol>[] vHSplitList,
-      int numWorkers, boolean useRow)
-      throws InterruptedException {
+  private void calcRes(
+    Rotator<DoubleArray> wRotator,
+    Rotator<DoubleArray> hRotator,
+    DynamicScheduler<List<VRowCol>, Object, ResTask> resCompute,
+    List<VRowCol>[] vWSplitList,
+    List<VRowCol>[] vHSplitList, int numWorkers,
+    boolean useRow) throws InterruptedException {
     for (int j = 0; j < numWorkers; j++) {
       for (int k = 0; k < numModelSlices; k++) {
         List<Partition<DoubleArray>> wList =
           wRotator.getSplitMap(k)[0];
         List<Partition<DoubleArray>> hList =
           hRotator.getSplitMap(k)[0];
-        for (ResTask task : resCompute.getTasks()) {
+        for (ResTask task : resCompute
+          .getTasks()) {
           task.setInit(false);
           task.setRMSE(false);
           if (j == 0 && k == 0) {
@@ -661,15 +640,13 @@ public class CCDMPCollectiveMapper
     }
   }
 
-  private
-    void
-    printTestRMSE(
-      Rotator<DoubleArray> wRotator,
-      Rotator<DoubleArray> hRotator,
-      DynamicScheduler<VRowCol, Object, TestRMSETask> rmseCompute,
-      Int2ObjectOpenHashMap<VRowCol> testVHListMap,
-      int numWorkers, long totalNumTestV,
-      String name) throws InterruptedException {
+  private void printTestRMSE(
+    Rotator<DoubleArray> wRotator,
+    Rotator<DoubleArray> hRotator,
+    DynamicScheduler<VRowCol, Object, TestRMSETask> rmseCompute,
+    Int2ObjectOpenHashMap<VRowCol> testVHListMap,
+    int numWorkers, long totalNumTestV,
+    String name) throws InterruptedException {
     double result =
       computeTestRMSE(wRotator, hRotator,
         rmseCompute, testVHListMap, numWorkers);
@@ -678,28 +655,25 @@ public class CCDMPCollectiveMapper
     array.get()[0] = result;
     Table<DoubleArray> rmseArrTable =
       new Table<>(0, new DoubleArrPlus());
-    rmseArrTable
-      .addPartition(new Partition<DoubleArray>(0,
-        array));
-    this.allreduce("ccd", "allreduce-test-rmse-"
-      + name, rmseArrTable);
+    rmseArrTable.addPartition(
+      new Partition<DoubleArray>(0, array));
+    this.allreduce("ccd",
+      "allreduce-test-rmse-" + name,
+      rmseArrTable);
     testRMSE =
       rmseArrTable.getPartition(0).get().get()[0];
     rmseArrTable.release();
-    testRMSE =
-      Math
-        .sqrt(testRMSE / (double) totalNumTestV);
+    testRMSE = Math
+      .sqrt(testRMSE / (double) totalNumTestV);
     LOG.info("Test RMSE " + testRMSE);
   }
 
-  private
-    double
-    computeTestRMSE(
-      Rotator<DoubleArray> wRotator,
-      Rotator<DoubleArray> hRotator,
-      DynamicScheduler<VRowCol, Object, TestRMSETask> rmseCompute,
-      Int2ObjectOpenHashMap<VRowCol> testVHListMap,
-      int numWorkers) throws InterruptedException {
+  private double computeTestRMSE(
+    Rotator<DoubleArray> wRotator,
+    Rotator<DoubleArray> hRotator,
+    DynamicScheduler<VRowCol, Object, TestRMSETask> rmseCompute,
+    Int2ObjectOpenHashMap<VRowCol> testVHListMap,
+    int numWorkers) throws InterruptedException {
     double result = 0.0;
     for (int j = 0; j < numWorkers; j++) {
       for (int k = 0; k < numModelSlices; k++) {
@@ -720,8 +694,8 @@ public class CCDMPCollectiveMapper
           }
           task.setWHPartitionLists(wList, hList);
         }
-        rmseCompute.submitAll(testVHListMap
-          .values());
+        rmseCompute
+          .submitAll(testVHListMap.values());
         while (rmseCompute.hasOutput()) {
           rmseCompute.waitForOutput();
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,8 +35,8 @@ class DataGen {
     // if (fs.exists(xFilePath)) {
     // fs.delete(xFilePath, true);
     // }
-    System.out.println("Generate X data: "
-      + xFilePath.toString());
+    System.out.println(
+      "Generate X data: " + xFilePath.toString());
     Random rand =
       new Random(System.currentTimeMillis()); // Real
                                               // random
@@ -95,12 +95,12 @@ class DataGen {
       return false;
     }
     int numFileSets = files.length / 3;
-    System.out.println("Number of file sets. "
-      + numFileSets);
+    System.out.println(
+      "Number of file sets. " + numFileSets);
     int numSetPerPartition =
       numFileSets / numMapTasks;
-    System.out
-      .println("Number of file set per partition. "
+    System.out.println(
+      "Number of file set per partition. "
         + numSetPerPartition);
     int restPartitions =
       numFileSets % numMapTasks;
@@ -113,27 +113,25 @@ class DataGen {
       new LinkedList<>();
     for (int i = 0; i < files.length; i++) {
       String fileName = files[i].getName();
-      System.out.println("File_" + i + " "
-        + fileName);
+      System.out
+        .println("File_" + i + " " + fileName);
       if (fileName.startsWith(inputPrefix)) {
         // Find a set of files and create rowID
-        int rowID =
-          Integer.parseInt(fileName.replaceFirst(
-            inputPrefix, ""));
+        int rowID = Integer.parseInt(
+          fileName.replaceFirst(inputPrefix, ""));
         // String inputFileName = fileName;
         String weightFileName =
           fileName.replaceFirst(inputPrefix,
             weightPrefix);
-        String vFileName =
-          fileName.replaceFirst(inputPrefix,
-            vPrefix);
+        String vFileName = fileName
+          .replaceFirst(inputPrefix, vPrefix);
         rowIDs.add(rowID);
-        filePaths.add(inputDirPath + "/"
-          + fileName);
-        filePaths.add(inputDirPath + "/"
-          + weightFileName);
-        filePaths.add(inputDirPath + "/"
-          + vFileName);
+        filePaths
+          .add(inputDirPath + "/" + fileName);
+        filePaths.add(
+          inputDirPath + "/" + weightFileName);
+        filePaths
+          .add(inputDirPath + "/" + vFileName);
         count++;
         // The base count limit is
         // numSetPerPartition,
@@ -150,8 +148,8 @@ class DataGen {
         if (count == countLimit) {
           // Create a partition file
           Path partitionFilePath =
-            new Path(dataDirPath, "partition_"
-              + partitionID);
+            new Path(dataDirPath,
+              "partition_" + partitionID);
           try {
             FSDataOutputStream out =
               fs.create(partitionFilePath, true);
@@ -160,14 +158,16 @@ class DataGen {
                 new OutputStreamWriter(out));
             bw.write(MDSConstants.ROWS_TAG);
             bw.newLine();
-            for (int j = 0; j < rowIDs.size(); j++) {
-              bw.write(rowIDs.get(j).intValue()
-                + "");
+            for (int j = 0; j < rowIDs
+              .size(); j++) {
+              bw.write(
+                rowIDs.get(j).intValue() + "");
               bw.newLine();
             }
             bw.write(MDSConstants.FILES_TAG);
             bw.newLine();
-            for (int j = 0; j < filePaths.size(); j++) {
+            for (int j = 0; j < filePaths
+              .size(); j++) {
               bw.write(filePaths.get(j));
               bw.newLine();
             }

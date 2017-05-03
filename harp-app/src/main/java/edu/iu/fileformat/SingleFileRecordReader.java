@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,8 +25,8 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 
 // need to be modified
-public class SingleFileRecordReader extends
-  RecordReader<String, String> {
+public class SingleFileRecordReader
+  extends RecordReader<String, String> {
   private Path path;
   private boolean done = false;
 

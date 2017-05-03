@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ package edu.iu.sgd;
 import edu.iu.harp.partition.PartitionCombiner;
 import edu.iu.harp.partition.PartitionStatus;
 
-public class VSetCombiner extends
-  PartitionCombiner<VSet> {
+public class VSetCombiner
+  extends PartitionCombiner<VSet> {
 
   @Override
   public PartitionStatus combine(

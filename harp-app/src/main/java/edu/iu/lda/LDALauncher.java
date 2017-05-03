@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,9 +40,8 @@ public class LDALauncher extends Configured
 
   public static void main(String[] argv)
     throws Exception {
-    int res =
-      ToolRunner.run(new Configuration(),
-        new LDALauncher(), argv);
+    int res = ToolRunner.run(new Configuration(),
+      new LDALauncher(), argv);
     System.exit(res);
   }
 
@@ -51,17 +50,16 @@ public class LDALauncher extends Configured
    */
   @Override
   public int run(String[] args) throws Exception {
-    if (args.length < 12) {
+    if (args.length < 13) {
       System.err
         .println("Usage: edu.iu.lda.LDALauncher "
           + "<doc dir> "
           + "<num of topics> <alpha> <beta> <num of iterations> "
-          + "<num of map tasks> <num of threads per worker> "
-          + "<timer> <num of model slices> "
-          + "<enable timer tuning>"
+          + "<min training percentage> "
+          + "<max training percentage> "
+          + "<num of mappers> <num of threads per worker> <schedule ratio> "
+          + "<memory (MB)> "
           + "<work dir> <print model>");
-      ToolRunner
-        .printGenericCommandUsage(System.err);
       return -1;
     }
     String docDirPath = args[0];
@@ -69,34 +67,38 @@ public class LDALauncher extends Configured
     double alpha = Double.parseDouble(args[2]);
     double beta = Double.parseDouble(args[3]);
     int numIteration = Integer.parseInt(args[4]);
-    int numMapTasks = Integer.parseInt(args[5]);
+    int minBound = Integer.parseInt(args[5]);
+    int maxBound = Integer.parseInt(args[6]);
+    int numMapTasks = Integer.parseInt(args[7]);
     int numThreadsPerWorker =
-      Integer.parseInt(args[6]);
-    long time = Long.parseLong(args[7]);
-    int numModelSlices =
       Integer.parseInt(args[8]);
-    boolean enableTuning =
-      Boolean.parseBoolean(args[9]);
-    String workDirPath = args[10];
+    double scheduleRatio =
+      Double.parseDouble(args[9]);
+    int mem = Integer.parseInt(args[10]);
+    String workDirPath = args[11];
     boolean printModel =
-      Boolean.parseBoolean(args[11]);
-    System.out.println("Number of Map Tasks = "
-      + numMapTasks);
+      Boolean.parseBoolean(args[12]);
+    System.out.println(
+      "Number of Mappers = " + numMapTasks);
     if (numIteration <= 0) {
       numIteration = 1;
     }
+    if (mem < 1000) {
+      return -1;
+    }
     launch(docDirPath, numTopics, alpha, beta,
-      numIteration, numMapTasks,
-      numThreadsPerWorker, time, numModelSlices,
-      enableTuning, workDirPath, printModel);
+      numIteration, minBound, maxBound,
+      numMapTasks, numThreadsPerWorker,
+      scheduleRatio, mem, workDirPath,
+      printModel);
     return 0;
   }
 
   private void launch(String docDirPath,
     int numTopics, double alpha, double beta,
-    int numIterations, int numMapTasks,
-    int numThreadsPerWorker, long time,
-    int numModelSlices, boolean enableTuning,
+    int numIterations, int minBound, int maxBound,
+    int numMapTasks, int numThreadsPerWorker,
+    double scheduleRatio, int mem,
     String workDirPath, boolean printModel)
     throws IOException, URISyntaxException,
     InterruptedException, ExecutionException,
@@ -117,121 +119,120 @@ public class LDALauncher extends Configured
       new Path(workDirPath, "output");
     long startTime = System.currentTimeMillis();
     runLDA(docDir, numTopics, alpha, beta,
-      numIterations, numMapTasks,
-      numThreadsPerWorker, time, numModelSlices,
-      enableTuning, modelDir, outputDir,
-      printModel, configuration);
+      numIterations, minBound, maxBound,
+      numMapTasks, numThreadsPerWorker,
+      scheduleRatio, mem, printModel, modelDir,
+      outputDir, configuration);
     long endTime = System.currentTimeMillis();
     System.out
-      .println("Total SGD Execution Time: "
+      .println("Total LDA Execution Time: "
         + (endTime - startTime));
   }
 
   private void runLDA(Path docDir, int numTopics,
     double alpha, double beta, int numIterations,
-    int numMapTasks, int numThreadsPerWorker,
-    long miniBatch, int numModelSlices,
-    boolean enableTuning, Path modelDir,
-    Path outputDir, boolean printModel,
-    Configuration configuration)
+    int minBound, int maxBound, int numMapTasks,
+    int numThreadsPerWorker, double scheduleRatio,
+    int mem, boolean printModel, Path modelDir,
+    Path outputDir, Configuration configuration)
     throws IOException, URISyntaxException,
     InterruptedException, ClassNotFoundException {
     System.out.println("Starting Job");
     int jobID = 0;
-    do {
-      // --------------------------------------------
-      long perJobSubmitTime =
-        System.currentTimeMillis();
-      System.out.println("Start Job#"
-        + jobID
-        + " "
-        + new SimpleDateFormat("HH:mm:ss.SSS")
-          .format(Calendar.getInstance()
-            .getTime()));
-      Job ldaJob =
-        configureLDAJob(docDir, numTopics, alpha,
-          beta, numIterations, numMapTasks,
-          numThreadsPerWorker, miniBatch,
-          numModelSlices, enableTuning, modelDir,
-          outputDir, printModel, configuration,
-          jobID);
-      boolean jobSuccess =
-        ldaJob.waitForCompletion(true);
-      System.out.println("End Jod#"
-        + jobID
-        + " "
-        + new SimpleDateFormat("HH:mm:ss.SSS")
-          .format(Calendar.getInstance()
-            .getTime()));
-      System.out
-        .println("| Job#"
-          + jobID
-          + " Finished in "
-          + (System.currentTimeMillis() - perJobSubmitTime)
+    // --------------------------------------------
+    long perJobSubmitTime =
+      System.currentTimeMillis();
+    System.out.println("Start Job#" + jobID + " "
+      + new SimpleDateFormat("HH:mm:ss.SSS")
+        .format(
+          Calendar.getInstance().getTime()));
+    Job ldaJob =
+      configureLDAJob(docDir, numTopics, alpha,
+        beta, numIterations, minBound, maxBound,
+        numMapTasks, numThreadsPerWorker,
+        scheduleRatio, mem, printModel, modelDir,
+        outputDir, configuration, jobID);
+    boolean jobSuccess =
+      ldaJob.waitForCompletion(true);
+    System.out.println("End Jod#" + jobID + " "
+      + new SimpleDateFormat("HH:mm:ss.SSS")
+        .format(
+          Calendar.getInstance().getTime()));
+    System.out
+      .println(
+        "| Job#" + jobID + " Finished in "
+          + (System.currentTimeMillis()
+            - perJobSubmitTime)
           + " miliseconds |");
-      // ----------------------------------------
-      if (!jobSuccess) {
-        ldaJob.killJob();
-        System.out
-          .println("LDA Job failed. Job ID:"
-            + jobID);
-        jobID++;
-        if (jobID == 1) {
-          break;
-        }
-      } else {
-        break;
-      }
-    } while (true);
+    // ----------------------------------------
+    if (!jobSuccess) {
+      ldaJob.killJob();
+      System.out.println(
+        "LDA Job failed. Job ID:" + jobID);
+    }
   }
 
   private Job configureLDAJob(Path docDir,
     int numTopics, double alpha, double beta,
-    int numIterations, int numMapTasks,
-    int numThreadsPerWorker, long time,
-    int numModelSlices, boolean enableTuning,
-    Path modelDir, Path outputDir,
-    boolean printModel,
-    Configuration configuration, int jobID)
+    int numIterations, int minBound, int maxBound,
+    int numMapTasks, int numThreadsPerWorker,
+    double scheduleRatio, int mem,
+    boolean printModel, Path modelDir,
+    Path outputDir, Configuration configuration,
+    int jobID)
     throws IOException, URISyntaxException {
     configuration.setInt(Constants.NUM_TOPICS,
       numTopics);
     configuration.setDouble(Constants.ALPHA,
       alpha);
     configuration.setDouble(Constants.BETA, beta);
-    configuration.setInt(
-      Constants.NUM_ITERATIONS, numIterations);
+    configuration.setInt(Constants.NUM_ITERATIONS,
+      numIterations);
+    configuration.setInt(Constants.MIN_BOUND,
+      minBound);
+    configuration.setInt(Constants.MAX_BOUND,
+      maxBound);
     configuration.setInt(Constants.NUM_THREADS,
       numThreadsPerWorker);
-    configuration.setLong(Constants.TIME, time);
-    configuration.setInt(
-      Constants.NUM_MODEL_SLICES, numModelSlices);
-    configuration.setBoolean(
-      Constants.ENABLE_TUNING, enableTuning);
-    System.out.println("Model Dir Path: "
-      + modelDir.toString());
+    configuration.setDouble(
+      Constants.SCHEDULE_RATIO, scheduleRatio);
+    System.out.println(
+      "Model Dir Path: " + modelDir.toString());
     configuration.set(Constants.MODEL_DIR,
       modelDir.toString());
     configuration.setBoolean(
       Constants.PRINT_MODEL, printModel);
-    Job job =
-      Job.getInstance(configuration, "lda_job_"
-        + jobID);
+    Job job = Job.getInstance(configuration,
+      "lda_job_" + jobID);
     JobConf jobConf =
       (JobConf) job.getConfiguration();
+
     jobConf.set("mapreduce.framework.name",
       "map-collective");
+    // mapreduce.map.collective.memory.mb
+    // 125000
+    jobConf.setInt(
+      "mapreduce.map.collective.memory.mb", mem);
+    // mapreduce.map.collective.java.opts
+    // -Xmx120000m -Xms120000m
+    int xmx = (mem - 5000) > (mem * 0.9)
+      ? (mem - 5000) : (int) Math.ceil(mem * 0.9);
+    int xmn = (int) Math.ceil(0.25 * xmx);
+    jobConf.set(
+      "mapreduce.map.collective.java.opts",
+      "-Xmx" + xmx + "m -Xms" + xmx + "m"
+        + " -Xmn" + xmn + "m");
     jobConf.setNumMapTasks(numMapTasks);
     jobConf.setInt(
       "mapreduce.job.max.split.locations", 10000);
     FileInputFormat.setInputPaths(job, docDir);
-    FileOutputFormat
-      .setOutputPath(job, outputDir);
-    job
-      .setInputFormatClass(MultiFileInputFormat.class);
+    FileOutputFormat.setOutputPath(job,
+      outputDir);
+    job.setInputFormatClass(
+      MultiFileInputFormat.class);
     job.setJarByClass(LDALauncher.class);
-    job
-      .setMapperClass(LDAMPCollectiveMapper.class);
+    job.setMapperClass(
+      LDAMPCollectiveMapper.class);
     job.setNumReduceTasks(0);
     return job;
   }

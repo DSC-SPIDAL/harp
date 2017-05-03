@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,8 +44,8 @@ public class VSet extends Writable {
   }
 
   private int getArrLen(int numV) {
-    return 1 << (32 - Integer
-      .numberOfLeadingZeros(numV - 1));
+    return 1 << (32
+      - Integer.numberOfLeadingZeros(numV - 1));
   }
 
   public int getID() {
@@ -76,8 +76,8 @@ public class VSet extends Writable {
       ids = newIDs;
       v = newV;
     }
-    System.arraycopy(other.getIDs(), 0, ids,
-      numV, other.getNumV());
+    System.arraycopy(other.getIDs(), 0, ids, numV,
+      other.getNumV());
     System.arraycopy(other.getV(), 0, v, numV,
       other.getNumV());
     numV += other.getNumV();

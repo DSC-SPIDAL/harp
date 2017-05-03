@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,5 +20,7 @@ package edu.iu.harp.io;
  * The statuses of the Data
  ******************************************************/
 public enum DataStatus {
-    DECODED, ENCODED_ARRAY_DECODED, ENCODE_FAILED_DECODED, ENCODED_ARRAY, ENCODED_ARRAY_DECODE_FAILED, DECODE_FAILED
+  DECODED, ENCODED_ARRAY_DECODED,
+  ENCODE_FAILED_DECODED, ENCODED_ARRAY,
+  ENCODED_ARRAY_DECODE_FAILED, DECODE_FAILED
 }

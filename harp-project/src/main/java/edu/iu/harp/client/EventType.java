@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,11 @@
 package edu.iu.harp.client;
 
 /*******************************************************
- * There are three event types. One is for the local event. Another is for the
- * collective event (broadcasting). The third one is the message event
- * (point-to-point).
+ * There are three event types. One is for the
+ * local event. Another is for the collective
+ * event (broadcasting). The third one is the
+ * message event (point-to-point).
  ******************************************************/
 public enum EventType {
-    MESSAGE_EVENT, COLLECTIVE_EVENT, LOCAL_EVENT
+  MESSAGE_EVENT, COLLECTIVE_EVENT, LOCAL_EVENT
 }
