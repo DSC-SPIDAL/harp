@@ -28,8 +28,6 @@ import org.apache.hadoop.mapreduce.protocol.ClientProtocolProvider;
  * A new ClientProtocalProvider to support
  * map-collective job, modified from
  * YarnClientProtocolProvider
- * 
- * @author zhangbj
  *
  */
 public class MapCollectiveClientProtocolProvider
