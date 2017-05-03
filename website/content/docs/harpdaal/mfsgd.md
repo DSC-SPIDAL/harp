@@ -48,7 +48,7 @@ updates its own rows from model matrices W and H without mutual locks.
 
 For the intra-mapper parallel computing, we adopt a hybrid usage of TBB concurrent containers and OpenMP directives. 
 
-## A Code Walk through of Harp-DAAL-SGD
+## A Code Walk Through of Harp-DAAL-SGD
 
 The main body of Harp-DAAL-SGD is the *mapCollective* function of class *SGDDaalCollectiveMapper*. 
 
