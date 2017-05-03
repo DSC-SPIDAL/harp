@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ import edu.iu.harp.schdynamic.Task;
 import edu.iu.harp.resource.DoubleArray;
 import edu.iu.harp.resource.ShortArray;
 
-public class AvgDistCalcTask implements
-  Task<RowData, DoubleArray> {
+public class AvgDistCalcTask
+  implements Task<RowData, DoubleArray> {
 
   @Override
   public DoubleArray run(RowData rowData)
@@ -39,9 +39,8 @@ public class AvgDistCalcTask implements
     int len = distArray.size();
     for (int i = 0; i < len; i++) {
       if (weightDoubles[i] != 0) {
-        distDouble =
-          (double) distShorts[i]
-            / (double) Short.MAX_VALUE;
+        distDouble = (double) distShorts[i]
+          / (double) Short.MAX_VALUE;
         average += distDouble;
         avgSquare += (distDouble * distDouble);
         if (maxDelta < distDouble) {

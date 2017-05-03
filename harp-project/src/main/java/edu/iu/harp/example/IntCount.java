@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,89 +23,92 @@ import java.io.IOException;
 import edu.iu.harp.keyval.Value;
 
 /*******************************************************
- * IntCount-type Value, storing the count of the associate int value.
+ * IntCount-type Value, storing the count of the
+ * associate int value.
  ******************************************************/
 public class IntCount extends Value {
 
-    private int val;
-    private int count;
+  private int val;
+  private int count;
 
-    public IntCount() {
-    }
+  public IntCount() {
+  }
 
-    public IntCount(int v, int c) {
-	this.val = v;
-	this.count = c;
-    }
+  public IntCount(int v, int c) {
+    this.val = v;
+    this.count = c;
+  }
 
-    /**
-     * Set the value
-     * 
-     * @param val
-     *            the value
-     */
-    public void setInt(int val) {
-	this.val = val;
-    }
+  /**
+   * Set the value
+   * 
+   * @param val
+   *          the value
+   */
+  public void setInt(int val) {
+    this.val = val;
+  }
 
-    /**
-     * Get the value
-     * 
-     * @return the value
-     */
-    public int getInt() {
-	return this.val;
-    }
+  /**
+   * Get the value
+   * 
+   * @return the value
+   */
+  public int getInt() {
+    return this.val;
+  }
 
-    /**
-     * Get the count
-     * 
-     * @return the count
-     */
-    public int getCount() {
-	return count;
-    }
+  /**
+   * Get the count
+   * 
+   * @return the count
+   */
+  public int getCount() {
+    return count;
+  }
 
-    /**
-     * Set the count
-     * 
-     * @param count
-     *            the count
-     */
-    public void setCount(int count) {
-	this.count = count;
-    }
+  /**
+   * Set the count
+   * 
+   * @param count
+   *          the count
+   */
+  public void setCount(int count) {
+    this.count = count;
+  }
 
-    /**
-     * Write the data to DataOutput
-     */
-    @Override
-    public void write(DataOutput out) throws IOException {
-	out.writeInt(val);
-	out.writeInt(count);
-    }
+  /**
+   * Write the data to DataOutput
+   */
+  @Override
+  public void write(DataOutput out)
+    throws IOException {
+    out.writeInt(val);
+    out.writeInt(count);
+  }
 
-    /**
-     * Read the data from DataInput
-     */
-    @Override
-    public void read(DataInput in) throws IOException {
-	this.val = in.readInt();
-	this.count = in.readInt();
-    }
+  /**
+   * Read the data from DataInput
+   */
+  @Override
+  public void read(DataInput in)
+    throws IOException {
+    this.val = in.readInt();
+    this.count = in.readInt();
+  }
 
-    /**
-     * Get the number of bytes of encoded data
-     */
-    @Override
-    public int getNumWriteBytes() {
-	return 8;
-    }
+  /**
+   * Get the number of bytes of encoded data
+   */
+  @Override
+  public int getNumWriteBytes() {
+    return 8;
+  }
 
-    /**
-     * Clear the data
-     */
-    @Override
-    public void clear() {
-    }
+  /**
+   * Clear the data
+   */
+  @Override
+  public void clear() {
+  }
 }

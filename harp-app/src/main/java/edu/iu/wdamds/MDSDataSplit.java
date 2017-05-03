@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,16 +32,16 @@ public class MDSDataSplit {
     if (args.length != 8) {
       System.out.println("Usage: ");
       System.out.println("[1. Data File]");
-      System.out
-        .println("[2. Temporary directory to split data]");
+      System.out.println(
+        "[2. Temporary directory to split data]");
       System.out.println("[3. Temp file prefix]");
       System.out.println("[4. Output IDs file]");
       System.out
         .println("[5. Num of partitions]");
       System.out.println("[6. row size]");
       System.out.println("[7. width size]");
-      System.out
-        .println("[8. Type of input value format (0: short; 1: double)]");
+      System.out.println(
+        "[8. Type of input value format (0: short; 1: double)]");
       System.exit(0);
     }
     double beginTime = System.currentTimeMillis();
@@ -57,8 +57,8 @@ public class MDSDataSplit {
     // splits.
     if (!(new File(tmpDir)).exists()) {
       if (!(new File(tmpDir)).mkdir()) {
-        System.err
-          .println("Failed to create the temporary directory to split data");
+        System.err.println(
+          "Failed to create the temporary directory to split data");
         System.exit(-1);
       }
     }
@@ -81,13 +81,13 @@ public class MDSDataSplit {
       System.exit(-1);
     }
     double endTime = System.currentTimeMillis();
-    System.out
-      .println("==========================================================");
+    System.out.println(
+      "==========================================================");
     System.out.println("Time to split data = "
       + (endTime - beginTime) / 1000
       + " Seconds.");
-    System.out
-      .println("==========================================================");
+    System.out.println(
+      "==========================================================");
     System.exit(0);
   }
 
@@ -112,8 +112,8 @@ public class MDSDataSplit {
     int curHeight = 0;
     int count = 0;
     for (int i = 0; i < numPartitions; i++) {
-      System.out.println("The " + i
-        + "th partition");
+      System.out
+        .println("The " + i + "th partition");
       idsWriter.write(i + "\t");
       outputFile =
         tmpDir + "/" + tmpFilePrefix + i;
@@ -149,10 +149,9 @@ public class MDSDataSplit {
   public static void writeToBinFile(
     double[][] row, int curHeight, int size,
     String fileName) throws IOException {
-    DataOutputStream dout =
-      new DataOutputStream(
-        new BufferedOutputStream(
-          new FileOutputStream(fileName)));
+    DataOutputStream dout = new DataOutputStream(
+      new BufferedOutputStream(
+        new FileOutputStream(fileName)));
     for (int i = 0; i < curHeight; i++) {
       for (int j = 0; j < size; j++) {
         dout.writeDouble(row[i][j]);
@@ -196,8 +195,8 @@ public class MDSDataSplit {
     int curHeight = 0;
     int count = 0;
     for (int i = 0; i < numPartitions; i++) {
-      System.out.println("The " + i
-        + "th partition");
+      System.out
+        .println("The " + i + "th partition");
       idsWriter.write(i + "\t");
       outputFile =
         tmpDir + "/" + tmpFilePrefix + i;
@@ -230,13 +229,12 @@ public class MDSDataSplit {
     idsWriter.close();
   }
 
-  public static void writeToBinFile(
-    short[][] row, int curHeight, int width,
-    String fileName) throws IOException {
-    DataOutputStream dout =
-      new DataOutputStream(
-        new BufferedOutputStream(
-          new FileOutputStream(fileName)));
+  public static void writeToBinFile(short[][] row,
+    int curHeight, int width, String fileName)
+    throws IOException {
+    DataOutputStream dout = new DataOutputStream(
+      new BufferedOutputStream(
+        new FileOutputStream(fileName)));
     for (int i = 0; i < curHeight; i++) {
       for (int j = 0; j < width; j++) {
         dout.writeShort(row[i][j]);

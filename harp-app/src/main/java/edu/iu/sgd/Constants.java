@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,12 +32,9 @@ public class Constants {
   public static final String TEST_FILE_PATH =
     "test_file_path";
   public static final int ARR_LEN = 16;
-  public static final String ENABLE_TUNING =
-    "enable_tuning";
-  public static final double COMM_VS_COMPUTE =
-    10.0;
-  public static final double MAX_RATIO = 0.9;
-  public static final double MIN_RATIO = 0.618;
-  public static final double GOLDEN_RATIO = (Math
-    .sqrt(5.0) - 1.0) / 2.0;
+  public static final String TRAIN_RATIO =
+    "train_ratio";
+  public static final String SCHEDULE_RATIO =
+    "schedule_ratio";
+  public static final int TARGET_BOUND = 60;
 }

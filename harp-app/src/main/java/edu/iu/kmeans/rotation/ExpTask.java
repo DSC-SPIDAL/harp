@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,11 +33,11 @@ class Points {
   public int[][] cenIDs;
 }
 
-public class ExpTask implements
-  Task<Points, Object> {
+public class ExpTask
+  implements Task<Points, Object> {
 
-  protected static final Log LOG = LogFactory
-    .getLog(ExpTask.class);
+  protected static final Log LOG =
+    LogFactory.getLog(ExpTask.class);
 
   private Table<DoubleArray> cenTable;
   private List<Partition<DoubleArray>> centroids;
@@ -74,8 +74,8 @@ public class ExpTask implements
           k++;
           double distance = 0.0;
           for (int l = 1; l < cenVecSize; l++) {
-            double diff =
-              (pointArray[pStart++] - cenArray[k++]);
+            double diff = (pointArray[pStart++]
+              - cenArray[k++]);
             distance += diff * diff;
           }
           if (distance < minDistance) {

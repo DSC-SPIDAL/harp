@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,153 +22,179 @@ import it.unimi.dsi.fastutil.objects.ObjectCollection;
 import edu.iu.harp.resource.Simple;
 
 /*******************************************************
- * The abstraction of distributed dataset. A table is assigned with an ID for
- * reference.
+ * The abstraction of distributed dataset. A table
+ * is assigned with an ID for reference.
  ******************************************************/
 public class Table<P extends Simple> {
 
-    private final int tableID;
-    private final Int2ObjectOpenHashMap<Partition<P>> partitions;
-    /* Combiner defines how to merge two partitions */
-    private final PartitionCombiner<P> combiner;
+  private final int tableID;
+  private final Int2ObjectOpenHashMap<Partition<P>> partitions;
+  /*
+   * Combiner defines how to merge two partitions
+   */
+  private final PartitionCombiner<P> combiner;
 
-    /**
-     * Constructor.
-     * 
-     * @param tableID
-     *            a table is assigned with an ID which is convenient for
-     *            reference. Any ID is allowed.
-     * @param combiner
-     *            the combiner used for partitions
-     */
-    public Table(int tableID, PartitionCombiner<P> combiner) {
-	this.tableID = tableID;
-	this.partitions = new Int2ObjectOpenHashMap<>();
-	this.combiner = combiner;
-    }
+  /**
+   * Constructor.
+   * 
+   * @param tableID
+   *          a table is assigned with an ID which
+   *          is convenient for reference. Any ID
+   *          is allowed.
+   * @param combiner
+   *          the combiner used for partitions
+   */
+  public Table(int tableID,
+    PartitionCombiner<P> combiner) {
+    this.tableID = tableID;
+    this.partitions =
+      new Int2ObjectOpenHashMap<>();
+    this.combiner = combiner;
+  }
 
-    /**
-     * Get the table ID
-     * 
-     * @return table ID
-     */
-    public int getTableID() {
-	return tableID;
-    }
+  public Table(int tableID,
+    PartitionCombiner<P> combiner, int size) {
+    this.tableID = tableID;
+    this.partitions =
+      new Int2ObjectOpenHashMap<>(size);
+    this.combiner = combiner;
+  }
 
-    /**
-     * Get the combiner
-     * 
-     * @return combiner
-     */
-    public PartitionCombiner<P> getCombiner() {
-	return this.combiner;
-    }
+  /**
+   * Get the table ID
+   * 
+   * @return table ID
+   */
+  public int getTableID() {
+    return tableID;
+  }
 
-    /**
-     * Get the number of partitions in this table
-     * 
-     * @return number of partitions
-     */
-    public final int getNumPartitions() {
-	return partitions.size();
-    }
+  /**
+   * Get the combiner
+   * 
+   * @return combiner
+   */
+  public PartitionCombiner<P> getCombiner() {
+    return this.combiner;
+  }
 
-    /**
-     * Get the IDs of the partitions in this table
-     * 
-     * @return ID set
-     */
-    public final IntSet getPartitionIDs() {
-	return partitions.keySet();
-    }
+  /**
+   * Get the number of partitions in this table
+   * 
+   * @return number of partitions
+   */
+  public final int getNumPartitions() {
+    return partitions.size();
+  }
 
-    /**
-     * Get the partitions in this table
-     * 
-     * @return partition collection
-     */
-    public final ObjectCollection<Partition<P>> getPartitions() {
-	return partitions.values();
-    }
+  /**
+   * Get the IDs of the partitions in this table
+   * 
+   * @return ID set
+   */
+  public final IntSet getPartitionIDs() {
+    return partitions.keySet();
+  }
 
-    /**
-     * Add a partition into a table. If the ID of the partition already exists
-     * in this table, combine this new partition with the partition of the same
-     * ID in this table. Otherwise, insert this new partition to the table.
-     * 
-     * @param partition
-     * @return partition status
-     */
-    public final PartitionStatus addPartition(Partition<P> partition) {
-	if (partition == null) {
-	    return PartitionStatus.ADD_FAILED;
-	}
-	Partition<P> curPartition = this.partitions.get(partition.id());
-	if (curPartition == null) {
-	    return insertPartition(partition);
-	} else {
-	    return combiner.combine(curPartition.get(), partition.get());
-	}
-    }
+  /**
+   * Get the partitions in this table
+   * 
+   * @return partition collection
+   */
+  public final ObjectCollection<Partition<P>>
+    getPartitions() {
+    return partitions.values();
+  }
 
-    /**
-     * Insert a partition to this table
-     * 
-     * @param partition
-     * @return PartitionStatus.ADDED
-     */
-    protected final PartitionStatus insertPartition(Partition<P> partition) {
-	partitions.put(partition.id(), partition);
-	return PartitionStatus.ADDED;
+  /**
+   * Add a partition into a table. If the ID of
+   * the partition already exists in this table,
+   * combine this new partition with the partition
+   * of the same ID in this table. Otherwise,
+   * insert this new partition to the table.
+   * 
+   * @param partition
+   * @return partition status
+   */
+  public final PartitionStatus
+    addPartition(Partition<P> partition) {
+    if (partition == null) {
+      return PartitionStatus.ADD_FAILED;
     }
+    Partition<P> curPartition =
+      this.partitions.get(partition.id());
+    if (curPartition == null) {
+      return insertPartition(partition);
+    } else {
+      return combiner.combine(curPartition.get(),
+        partition.get());
+    }
+  }
 
-    /**
-     * Get the partition by partitionID
-     * 
-     * @param partitionID
-     * @return the partition associated with the partitionID
-     */
-    public final Partition<P> getPartition(int partitionID) {
-	return partitions.get(partitionID);
-    }
+  /**
+   * Insert a partition to this table
+   * 
+   * @param partition
+   * @return PartitionStatus.ADDED
+   */
+  protected final PartitionStatus
+    insertPartition(Partition<P> partition) {
+    partitions.put(partition.id(), partition);
+    return PartitionStatus.ADDED;
+  }
 
-    /**
-     * Remove the partition from this table
-     * 
-     * @param partitionID
-     * @return the removed partition
-     */
-    public final Partition<P> removePartition(int partitionID) {
-	return partitions.remove(partitionID);
-    }
+  /**
+   * Get the partition by partitionID
+   * 
+   * @param partitionID
+   * @return the partition associated with the
+   *         partitionID
+   */
+  public final Partition<P>
+    getPartition(int partitionID) {
+    return partitions.get(partitionID);
+  }
 
-    /**
-     * If this table is empty, return true; else, return false.
-     * 
-     * @return true or false
-     */
-    public final boolean isEmpty() {
-	return partitions.isEmpty();
-    }
+  /**
+   * Remove the partition from this table
+   * 
+   * @param partitionID
+   * @return the removed partition
+   */
+  public final Partition<P>
+    removePartition(int partitionID) {
+    return partitions.remove(partitionID);
+  }
 
-    /**
-     * Release the partitions
-     */
-    public final void release() {
-	for (Partition<P> partition : partitions.values()) {
-	    partition.release();
-	}
-	partitions.clear();
-    }
+  /**
+   * If this table is empty, return true; else,
+   * return false.
+   * 
+   * @return true or false
+   */
+  public final boolean isEmpty() {
+    return partitions.isEmpty();
+  }
 
-    /**
-     * Free the partitions
-     */
-    public final void free() {
-	for (Partition<P> partition : partitions.values()) {
-	    partition.free();
-	}
-	partitions.clear();
+  /**
+   * Release the partitions
+   */
+  public final void release() {
+    for (Partition<P> partition : partitions
+      .values()) {
+      partition.release();
     }
+    partitions.clear();
+  }
+
+  /**
+   * Free the partitions
+   */
+  public final void free() {
+    for (Partition<P> partition : partitions
+      .values()) {
+      partition.free();
+    }
+    partitions.clear();
+  }
 }

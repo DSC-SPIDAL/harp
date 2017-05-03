@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,70 +25,80 @@ import edu.iu.harp.resource.Array;
 /*******************************************************
  * ByteArray class for managing double[] data.
  ******************************************************/
-public final class DoubleArray extends Array<double[]> {
+public final class DoubleArray
+  extends Array<double[]> {
 
-    public DoubleArray(double[] arr, int start, int size) {
-	super(arr, start, size);
-    }
+  public DoubleArray(double[] arr, int start,
+    int size) {
+    super(arr, start, size);
+  }
 
-    /**
-     * Get the number of Bytes of encoded data. One byte for storing DataType,
-     * four bytes for storing the size, size*8 bytes for storing the data.
-     */
-    @Override
-    public int getNumEnocdeBytes() {
-	return size * 8 + 5;
-    }
+  /**
+   * Get the number of Bytes of encoded data. One
+   * byte for storing DataType, four bytes for
+   * storing the size, size*8 bytes for storing
+   * the data.
+   */
+  @Override
+  public int getNumEnocdeBytes() {
+    return size * 8 + 5;
+  }
 
-    /**
-     * Encode the array as DataOutput
-     */
-    @Override
-    public void encode(DataOutput out) throws IOException {
-	out.writeByte(DataType.DOUBLE_ARRAY);
-	int len = start + size;
-	out.writeInt(size);
-	for (int i = start; i < len; i++) {
-	    out.writeDouble(array[i]);
-	}
+  /**
+   * Encode the array as DataOutput
+   */
+  @Override
+  public void encode(DataOutput out)
+    throws IOException {
+    out.writeByte(DataType.DOUBLE_ARRAY);
+    int len = start + size;
+    out.writeInt(size);
+    for (int i = start; i < len; i++) {
+      out.writeDouble(array[i]);
     }
+  }
 
-    /**
-     * Create an array. Firstly try to get an array from ResourcePool; if
-     * failed, new an array.
-     * 
-     * @param len
-     * @param approximate
-     * @return
-     */
-    public static DoubleArray create(int len, boolean approximate) {
-	if (len > 0) {
-	    double[] doubles = ResourcePool.get().getDoublesPool().getArray(len, approximate);
-	    if (doubles != null) {
-		return new DoubleArray(doubles, 0, len);
-	    } else {
-		return null;
-	    }
-	} else {
-	    return null;
-	}
+  /**
+   * Create an array. Firstly try to get an array
+   * from ResourcePool; if failed, new an array.
+   * 
+   * @param len
+   * @param approximate
+   * @return
+   */
+  public static DoubleArray create(int len,
+    boolean approximate) {
+    if (len > 0) {
+      double[] doubles =
+        ResourcePool.get().getDoublesPool()
+          .getArray(len, approximate);
+      if (doubles != null) {
+        return new DoubleArray(doubles, 0, len);
+      } else {
+        return null;
+      }
+    } else {
+      return null;
     }
+  }
 
-    /**
-     * Release the array from the ResourcePool
-     */
-    @Override
-    public void release() {
-	ResourcePool.get().getDoublesPool().releaseArray(array);
-	this.reset();
-    }
+  /**
+   * Release the array from the ResourcePool
+   */
+  @Override
+  public void release() {
+    ResourcePool.get().getDoublesPool()
+      .releaseArray(array);
+    this.reset();
+  }
 
-    /**
-     * Free the array from the ResourcePool
-     */
-    @Override
-    public void free() {
-	ResourcePool.get().getDoublesPool().freeArray(array);
-	this.reset();
-    }
+  /**
+   * Free the array from the ResourcePool
+   */
+  @Override
+  public void free() {
+    ResourcePool.get().getDoublesPool()
+      .freeArray(array);
+    this.reset();
+  }
 }

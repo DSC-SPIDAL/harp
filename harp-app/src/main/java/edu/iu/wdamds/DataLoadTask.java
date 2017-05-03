@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ import org.apache.hadoop.mapreduce.Mapper;
 
 import edu.iu.harp.schdynamic.Task;
 
-public class DataLoadTask implements
-  Task<RowData, Object> {
+public class DataLoadTask
+  implements Task<RowData, Object> {
 
   private final Mapper<String, String, Object, Object>.Context context;
 

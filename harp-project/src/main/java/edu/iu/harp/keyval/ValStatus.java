@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,5 +20,5 @@ package edu.iu.harp.keyval;
  * Defines the status after operating on Values
  */
 public enum ValStatus {
-    ADDED, ADD_FAILED, COMBINED, COMBINE_FAILED
+  ADDED, ADD_FAILED, COMBINED, COMBINE_FAILED
 }

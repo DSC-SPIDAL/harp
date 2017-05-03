@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,11 +27,11 @@ import org.apache.hadoop.fs.Path;
 
 import edu.iu.harp.schdynamic.Task;
 
-public class PointLoadTask implements
-  Task<String, double[]> {
+public class PointLoadTask
+  implements Task<String, double[]> {
 
-  protected static final Log LOG = LogFactory
-    .getLog(PointLoadTask.class);
+  protected static final Log LOG =
+    LogFactory.getLog(PointLoadTask.class);
 
   private int pointsPerFile;
   private int cenVecSize;
@@ -51,9 +51,8 @@ public class PointLoadTask implements
     boolean isSuccess = false;
     do {
       try {
-        double[] array =
-          loadPoints(fileName, pointsPerFile,
-            cenVecSize, conf);
+        double[] array = loadPoints(fileName,
+          pointsPerFile, cenVecSize, conf);
         return array;
       } catch (Exception e) {
         LOG.error("load " + fileName

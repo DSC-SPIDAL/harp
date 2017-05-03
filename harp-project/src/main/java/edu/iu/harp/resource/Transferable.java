@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,32 +20,34 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 /*******************************************************
- * The abstract class of transferable data structures.
+ * The abstract class of transferable data
+ * structures.
  ******************************************************/
 public abstract class Transferable {
 
-    /**
-     * Get the number of Bytes of encoded data.
-     * 
-     * @return number of bytes
-     */
-    public abstract int getNumEnocdeBytes();
+  /**
+   * Get the number of Bytes of encoded data.
+   * 
+   * @return number of bytes
+   */
+  public abstract int getNumEnocdeBytes();
 
-    /**
-     * Encode the data as DataOutPut
-     * 
-     * @param out
-     * @throws IOException
-     */
-    public abstract void encode(DataOutput out) throws IOException;
+  /**
+   * Encode the data as DataOutPut
+   * 
+   * @param out
+   * @throws IOException
+   */
+  public abstract void encode(DataOutput out)
+    throws IOException;
 
-    /**
-     * Release the data
-     */
-    public abstract void release();
+  /**
+   * Release the data
+   */
+  public abstract void release();
 
-    /**
-     * Free the data
-     */
-    public abstract void free();
+  /**
+   * Free the data
+   */
+  public abstract void free();
 }

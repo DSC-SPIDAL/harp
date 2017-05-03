@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,14 +33,13 @@ class CenPair {
   }
 }
 
-public class MaxTask implements
-  Task<CenPair, Object> {
+public class MaxTask
+  implements Task<CenPair, Object> {
   private final BlockingQueue<Points> pointsList;
   private final Table<DoubleArray> cenTable;
   private final int cenVecSize;
 
-  public MaxTask(
-    BlockingQueue<Points> pointsList,
+  public MaxTask(BlockingQueue<Points> pointsList,
     Table<DoubleArray> cenTable, int cenVecSize) {
     this.pointsList = pointsList;
     this.cenTable = cenTable;
@@ -50,9 +49,8 @@ public class MaxTask implements
   @Override
   public Object run(CenPair pair)
     throws Exception {
-    double[] cenArray =
-      cenTable.getPartition(pair.cenParID).get()
-        .get();
+    double[] cenArray = cenTable
+      .getPartition(pair.cenParID).get().get();
     for (Points points : pointsList) {
       double[] pointArray = points.pointArray;
       int[][] cenIDs = points.cenIDs;

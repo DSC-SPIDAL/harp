@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,8 +33,7 @@ import edu.iu.harp.resource.DoubleArray;
 import edu.iu.harp.resource.Simple;
 import edu.iu.harp.schdynamic.DynamicScheduler;
 
-public class WDAMDSMapper
-  extends
+public class WDAMDSMapper extends
   CollectiveMapper<String, String, Object, Object> {
   // private int numMapTasks;
   // private String xFile;
@@ -88,8 +87,8 @@ public class WDAMDSMapper
     cgIter = conf.getInt(MDSConstants.CG_ITER, 1);
     maxNumThreads =
       conf.getInt(MDSConstants.NUM_THREADS, 8);
-    LOG.info("Max number of threads: "
-      + maxNumThreads);
+    LOG.info(
+      "Max number of threads: " + maxNumThreads);
     cgRealIter = 0;
 
     totalInitXTime = 0;
@@ -112,8 +111,8 @@ public class WDAMDSMapper
 
   @Override
   public void mapCollective(KeyValReader reader,
-    Context context) throws IOException,
-    InterruptedException {
+    Context context)
+    throws IOException, InterruptedException {
     LOG.info("Start collective mapper.");
     LinkedList<String> partitionFiles =
       new LinkedList<>();
@@ -121,8 +120,8 @@ public class WDAMDSMapper
     while (reader.nextKeyValue()) {
       String key = reader.getCurrentKey();
       String value = reader.getCurrentValue();
-      LOG.info("Key: " + key + ", Value: "
-        + value);
+      LOG.info(
+        "Key: " + key + ", Value: " + value);
       partitionFiles.add(value);
     }
     context.progress();
@@ -175,10 +174,9 @@ public class WDAMDSMapper
     // -----------------------------------------------
     // Calculate initial stress value
     double tCur = 0.0;
-    double preStress =
-      calculateStress("calc-initial-stress",
-        rowDataMap, xPartitions, tCur,
-        sumOrigDistanceSquare);
+    double preStress = calculateStress(
+      "calc-initial-stress", rowDataMap,
+      xPartitions, tCur, sumOrigDistanceSquare);
     LOG.info("Initial Stress: " + preStress);
     // -----------------------------------------------
     // Starting value
@@ -199,30 +197,27 @@ public class WDAMDSMapper
     int iter = 0;
     int smacofRealIter = 0;
     while (tCur > tMin) {
-      preStress =
-        calculateStress("calc-pre-stress"
-          + smacofRealIter, rowDataMap,
-          xPartitions, tCur,
-          sumOrigDistanceSquare);
+      preStress = calculateStress(
+        "calc-pre-stress" + smacofRealIter,
+        rowDataMap, xPartitions, tCur,
+        sumOrigDistanceSquare);
       diffStress = threshold + 1.0;
       LOG.info("###############################");
       LOG.info("# T_Cur = " + tCur);
       LOG.info("###############################");
       while (diffStress >= threshold) {
-        Table<DoubleArray> bcTable =
-          calculateBC(rowDataMap, xPartitions,
-            tCur);
+        Table<DoubleArray> bcTable = calculateBC(
+          rowDataMap, xPartitions, tCur);
         // Calculate new X
         conjugateGradient(rowDataMap, bcTable,
           xPartitions);
         // Release bc
         bcTable.release();
         bcTable = null;
-        stress =
-          calculateStress("calc-stress"
-            + smacofRealIter, rowDataMap,
-            xPartitions, tCur,
-            sumOrigDistanceSquare);
+        stress = calculateStress(
+          "calc-stress" + smacofRealIter,
+          rowDataMap, xPartitions, tCur,
+          sumOrigDistanceSquare);
         diffStress = preStress - stress;
         iter++;
         smacofRealIter++;
@@ -258,17 +253,17 @@ public class WDAMDSMapper
     // T == 0
     tCur = 0.0;
     iter = 0;
-    preStress =
-      calculateStress("calc-pre-stress"
-        + smacofRealIter, rowDataMap,
-        xPartitions, tCur, sumOrigDistanceSquare);
+    preStress = calculateStress(
+      "calc-pre-stress" + smacofRealIter,
+      rowDataMap, xPartitions, tCur,
+      sumOrigDistanceSquare);
     diffStress = threshold + 1.0;
     LOG.info("%%%%%%%%%%%%%%%%%%%%%%");
     LOG.info("% T_Cur = " + tCur);
     LOG.info("%%%%%%%%%%%%%%%%%%%%%%");
     while (diffStress > threshold) {
-      Table<DoubleArray> bcTable =
-        calculateBC(rowDataMap, xPartitions, tCur);
+      Table<DoubleArray> bcTable = calculateBC(
+        rowDataMap, xPartitions, tCur);
       // LOG.info("BC end");
       conjugateGradient(rowDataMap, bcTable,
         xPartitions);
@@ -276,11 +271,10 @@ public class WDAMDSMapper
       // Release bc
       bcTable.release();
       bcTable = null;
-      stress =
-        calculateStress("calc-stress"
-          + smacofRealIter, rowDataMap,
-          xPartitions, tCur,
-          sumOrigDistanceSquare);
+      stress = calculateStress(
+        "calc-stress" + smacofRealIter,
+        rowDataMap, xPartitions, tCur,
+        sumOrigDistanceSquare);
       // LOG.info("Stress end");
       diffStress = preStress - stress;
       iter++;
@@ -309,14 +303,14 @@ public class WDAMDSMapper
       qoR1 / (avgOrigDistance * avgOrigDistance);
     LOG.info("Normalize1 = " + qoR1
       + " Normalize2 = " + qoR2);
-    LOG
-      .info("Average of Delta(original distance) = "
+    LOG.info(
+      "Average of Delta(original distance) = "
         + avgOrigDistance);
     endTime = System.currentTimeMillis();
-    double finalStress =
-      calculateStress("calc-final-stress"
-        + smacofRealIter, rowDataMap,
-        xPartitions, tCur, sumOrigDistanceSquare);
+    double finalStress = calculateStress(
+      "calc-final-stress" + smacofRealIter,
+      rowDataMap, xPartitions, tCur,
+      sumOrigDistanceSquare);
     // Store X file
     if (labelsFile.endsWith("NoLabel")) {
       XFileUtil.storeXOnMaster(conf, xTable, d,
@@ -328,11 +322,11 @@ public class WDAMDSMapper
     xTable.release();
     xTable = null;
     xPartitions = null;
-    LOG
-      .info("===================================================");
+    LOG.info(
+      "===================================================");
     LOG.info("CG REAL ITER:" + cgRealIter);
-    LOG.info("SMACOF REAL ITER: "
-      + smacofRealIter);
+    LOG.info(
+      "SMACOF REAL ITER: " + smacofRealIter);
     LOG.info("Init X Time " + totalInitXTime);
     LOG.info("Init X  Count " + totalInitXCount);
     LOG.info("Stress Time " + totalStressTime);
@@ -345,26 +339,26 @@ public class WDAMDSMapper
       + totalInnerProductTime);
     LOG.info("Inner Product Count "
       + totalInnerProductCount);
-    LOG.info("Allgather Time "
-      + totalAllgatherTime);
+    LOG.info(
+      "Allgather Time " + totalAllgatherTime);
     LOG.info("Allgather Sync Time "
       + totalAllgatherSyncTime);
-    LOG.info("Allgather Count "
-      + totalAllgatherCount);
+    LOG.info(
+      "Allgather Count " + totalAllgatherCount);
     LOG.info("Allgather Val Time "
       + totalAllgatherValTime);
     LOG.info("Allgather Val Sync Time "
       + totalAllgatherValSyncTime);
     LOG.info("Allgather Val Count "
       + totalAllgatherValCount);
-    LOG
-      .info("For CG iter: "
-        + ((double) cgRealIter / (double) smacofRealIter)
-        + "\tFinal Result is:\t" + finalStress
-        + "\t" + (endTime - startTime) / 1000
-        + " seconds.");
-    LOG
-      .info("===================================================");
+    LOG.info("For CG iter: "
+      + ((double) cgRealIter
+        / (double) smacofRealIter)
+      + "\tFinal Result is:\t" + finalStress
+      + "\t" + (endTime - startTime) / 1000
+      + " seconds.");
+    LOG.info(
+      "===================================================");
   }
 
   private Map<Integer, RowData> loadData(
@@ -381,8 +375,8 @@ public class WDAMDSMapper
     totalPartitions =
       DataFileUtil.readPartitionFile(
         partitionFile, idsFile, conf, rowDataMap);
-    LOG.info("Total partitions: "
-      + totalPartitions);
+    LOG.info(
+      "Total partitions: " + totalPartitions);
     // Load data
     // doTasks(rowDataList, "data-load-task",
     // new DataLoadTask(context), maxNumThreads);
@@ -434,9 +428,9 @@ public class WDAMDSMapper
         compute.waitForOutput();
       if (output != null) {
         PartitionStatus status =
-          arrTable
-            .addPartition(new Partition<DoubleArray>(
-              0, output));
+          arrTable.addPartition(
+            new Partition<DoubleArray>(0,
+              output));
         if (status != PartitionStatus.ADDED) {
           output.release();
         }
@@ -492,8 +486,10 @@ public class WDAMDSMapper
     endTime = System.nanoTime();
     totalAllgatherTime += (endTime - startTime);
     totalAllgatherCount += 1;
-    if (xTable.getNumPartitions() != totalPartitions) {
-      throw new Exception("Fail to initialize X.");
+    if (xTable
+      .getNumPartitions() != totalPartitions) {
+      throw new Exception(
+        "Fail to initialize X.");
     }
     return xTable;
   }
@@ -507,8 +503,8 @@ public class WDAMDSMapper
     LinkedList<StressCalcTask> stressCalcTasks =
       new LinkedList<>();
     for (int i = 0; i < maxNumThreads; i++) {
-      stressCalcTasks.add(new StressCalcTask(
-        xPartitions, d, tCur));
+      stressCalcTasks.add(
+        new StressCalcTask(xPartitions, d, tCur));
     }
     DynamicScheduler<RowData, DoubleArray, StressCalcTask> compute =
       new DynamicScheduler<>(stressCalcTasks);
@@ -524,9 +520,9 @@ public class WDAMDSMapper
         compute.waitForOutput();
       if (output != null) {
         PartitionStatus status =
-          arrTable
-            .addPartition(new Partition<DoubleArray>(
-              0, output));
+          arrTable.addPartition(
+            new Partition<DoubleArray>(0,
+              output));
         if (status != PartitionStatus.ADDED) {
           output.release();
         }
@@ -562,8 +558,8 @@ public class WDAMDSMapper
     LinkedList<BCCalcTask> calcBCTasks =
       new LinkedList<>();
     for (int i = 0; i < maxNumThreads; i++) {
-      calcBCTasks.add(new BCCalcTask(xPartitions,
-        d, tCur));
+      calcBCTasks.add(
+        new BCCalcTask(xPartitions, d, tCur));
     }
     DynamicScheduler<RowData, Partition<DoubleArray>, BCCalcTask> compute =
       new DynamicScheduler<>(calcBCTasks);
@@ -612,9 +608,9 @@ public class WDAMDSMapper
     }
     // r is distributed
     // calculate rTr needs allgather partial rTr
-    double rTr =
-      calculateInnerProduct("inner-product-0-"
-        + cgRealIter, rTable, null);
+    double rTr = calculateInnerProduct(
+      "inner-product-0-" + cgRealIter, rTable,
+      null);
     // LOG.info("rTr " + rTr);
     int cgCount = 0;
     while (cgCount < cgIter) {
@@ -638,9 +634,9 @@ public class WDAMDSMapper
       // Calculate alpha
       // ap is distributed, we use ap to find
       // related p (based on row ID)
-      double ip =
-        calculateInnerProduct("inner-product-1-"
-          + cgRealIter, apTable, pTable);
+      double ip = calculateInnerProduct(
+        "inner-product-1-" + cgRealIter, apTable,
+        pTable);
       // LOG.info("ip for alpha " + ip);
       double alpha = rTr / ip;
       // LOG.info("alpha " + alpha);
@@ -687,17 +683,17 @@ public class WDAMDSMapper
       for (Partition<DoubleArray> ap : apTable
         .getPartitions()) {
         double[] aps = ap.get().get();
-        double[] rs =
-          rTable.getPartition(ap.id()).get()
-            .get();
-        for (int i = 0; i < ap.get().size(); i++) {
+        double[] rs = rTable.getPartition(ap.id())
+          .get().get();
+        for (int i = 0; i < ap.get()
+          .size(); i++) {
           rs[i] = rs[i] - alpha * aps[i];
         }
       }
       // Calculate beta
-      double rTr1 =
-        calculateInnerProduct("inner-product-2-"
-          + cgRealIter, rTable, null);
+      double rTr1 = calculateInnerProduct(
+        "inner-product-2-" + cgRealIter, rTable,
+        null);
       // LOG.info("rTr1 " + rTr1);
       double beta = rTr1 / rTr;
       // LOG.info("beta " + beta);
@@ -738,8 +734,8 @@ public class WDAMDSMapper
     LinkedList<MMCalcTask> mmCalcTasks =
       new LinkedList<>();
     for (int i = 0; i < maxNumThreads; i++) {
-      mmCalcTasks.add(new MMCalcTask(xPartitions,
-        d));
+      mmCalcTasks
+        .add(new MMCalcTask(xPartitions, d));
     }
     DynamicScheduler<RowData, Partition<DoubleArray>, MMCalcTask> compute =
       new DynamicScheduler<>(mmCalcTasks);
@@ -765,7 +761,8 @@ public class WDAMDSMapper
 
   private double calculateInnerProduct(
     String opName, Table<DoubleArray> table,
-    Table<DoubleArray> refTable) throws Exception {
+    Table<DoubleArray> refTable)
+    throws Exception {
     long startTime = System.currentTimeMillis();
     LinkedList<InnerProductCalcTask> innerProductTasks =
       new LinkedList<>();
@@ -786,9 +783,8 @@ public class WDAMDSMapper
     while (compute.hasOutput()) {
       DoubleArray output =
         compute.waitForOutput();
-      outputTable
-        .addPartition(new Partition<DoubleArray>(
-          0, output));
+      outputTable.addPartition(
+        new Partition<DoubleArray>(0, output));
     }
     long endTime = System.currentTimeMillis();
     totalInnerProductTime +=
@@ -803,7 +799,8 @@ public class WDAMDSMapper
 
   private Partition<DoubleArray>[]
     getPartitionArrayFromXTable(
-      Table<DoubleArray> xTable) throws Exception {
+      Table<DoubleArray> xTable)
+      throws Exception {
     Partition<DoubleArray>[] xPartitions =
       new Partition[xTable.getNumPartitions()];
     for (Partition<DoubleArray> xPartition : xTable

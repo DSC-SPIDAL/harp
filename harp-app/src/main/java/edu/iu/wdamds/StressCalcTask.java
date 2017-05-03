@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,12 +22,12 @@ import edu.iu.harp.partition.Partition;
 import edu.iu.harp.resource.DoubleArray;
 import edu.iu.harp.schdynamic.Task;
 
-public class StressCalcTask implements
-  Task<RowData, DoubleArray> {
+public class StressCalcTask
+  implements Task<RowData, DoubleArray> {
 
   /** Class logger */
-  protected static final Logger LOG = Logger
-    .getLogger(StressCalcTask.class);
+  protected static final Logger LOG =
+    Logger.getLogger(StressCalcTask.class);
 
   private final Partition<DoubleArray>[] xPartitions;
   private final int d;
@@ -71,13 +71,13 @@ public class StressCalcTask implements
     double tmpDist = 0;
     tmpII = rowData.rowOffset;
     for (int i = 0; i < xiArrSize; i += d) {
-      for (int j = 0; j < xPartitions.length; j++) {
+      for (int j =
+        0; j < xPartitions.length; j++) {
         xjArr = xPartitions[j].get().get();
         xjArrSize = xPartitions[j].get().size();
         for (int k = 0; k < xjArrSize; k += d) {
-          tmpDist =
-            (double) dists[tmpIJ]
-              / (double) Short.MAX_VALUE;
+          tmpDist = (double) dists[tmpIJ]
+            / (double) Short.MAX_VALUE;
           tmpWeight = weights[tmpIJ];
           if (tmpWeight != 0 && tmpDist >= diff) {
             distance = 0;

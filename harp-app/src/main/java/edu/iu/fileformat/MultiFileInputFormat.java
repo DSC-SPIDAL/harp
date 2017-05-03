@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,11 +36,11 @@ import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 
-public class MultiFileInputFormat extends
-  FileInputFormat<String, String> {
+public class MultiFileInputFormat
+  extends FileInputFormat<String, String> {
 
-  private static final Log LOG = LogFactory
-    .getLog(MultiFileInputFormat.class);
+  private static final Log LOG =
+    LogFactory.getLog(MultiFileInputFormat.class);
 
   static final String NUM_INPUT_FILES =
     "mapreduce.input.num.files";
@@ -56,7 +56,7 @@ public class MultiFileInputFormat extends
     int numMaps = jobConf.getNumMapTasks();
     LOG.info("NUMBER OF FILES: " + files.size());
     LOG.info("NUMBER OF MAPS: " + numMaps);
-    // randomizeFileListOrder(files);
+    randomizeFileListOrder(files);
     int avg = files.size() / numMaps;
     int rest = files.size() % numMaps;
     int tmp = 0;
@@ -71,9 +71,8 @@ public class MultiFileInputFormat extends
       if (tmp < avg) {
         pathList.add(file.getPath());
         length = length + file.getLen();
-        FileSystem fs =
-          file.getPath().getFileSystem(
-            job.getConfiguration());
+        FileSystem fs = file.getPath()
+          .getFileSystem(job.getConfiguration());
         BlockLocation[] blkLocations =
           fs.getFileBlockLocations(file, 0,
             file.getLen());
@@ -87,18 +86,17 @@ public class MultiFileInputFormat extends
         if (tmp == avg && rest == 0) {
           LOG.info("Split on host: "
             + getHostsString(hostSet));
-          splits.add(new MultiFileSplit(pathList,
-            length, hostSet
-              .toArray(new String[0])));
+          splits.add(
+            new MultiFileSplit(pathList, length,
+              hostSet.toArray(new String[0])));
           tmp = 0;
           length = 0;
         }
       } else if (tmp == avg && rest > 0) {
         pathList.add(file.getPath());
         length = length + file.getLen();
-        FileSystem fs =
-          file.getPath().getFileSystem(
-            job.getConfiguration());
+        FileSystem fs = file.getPath()
+          .getFileSystem(job.getConfiguration());
         BlockLocation[] blkLocations =
           fs.getFileBlockLocations(file, 0,
             file.getLen());
@@ -111,20 +109,19 @@ public class MultiFileInputFormat extends
         rest--;
         LOG.info("Split on host: "
           + getHostsString(hostSet));
-        splits
-          .add(new MultiFileSplit(pathList,
-            length, hostSet
-              .toArray(new String[0])));
+        splits.add(
+          new MultiFileSplit(pathList, length,
+            hostSet.toArray(new String[0])));
         tmp = 0;
         length = 0;
       }
     }
     // Save the number of input files in the
     // job-conf
-    job.getConfiguration().setLong(
-      NUM_INPUT_FILES, numMaps);
-    LOG.info("Total # of splits: "
-      + splits.size());
+    job.getConfiguration()
+      .setLong(NUM_INPUT_FILES, numMaps);
+    LOG.info(
+      "Total # of splits: " + splits.size());
     return splits;
   }
 

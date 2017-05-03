@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Indiana University
+ * Copyright 2013-2017 Indiana University
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,8 +36,7 @@ import edu.iu.harp.partition.Table;
 import edu.iu.harp.resource.DoubleArray;
 import edu.iu.harp.schdynamic.DynamicScheduler;
 
-public class KMeansCollectiveMapper
-  extends
+public class KMeansCollectiveMapper extends
   CollectiveMapper<String, String, Object, Object> {
 
   private int pointsPerFile;
@@ -59,26 +58,20 @@ public class KMeansCollectiveMapper
     long startTime = System.currentTimeMillis();
     Configuration configuration =
       context.getConfiguration();
-    pointsPerFile =
-      configuration.getInt(
-        Constants.POINTS_PER_FILE, 20);
-    numCentroids =
-      configuration.getInt(
-        Constants.NUM_CENTROIDS, 20);
-    vectorSize =
-      configuration.getInt(Constants.VECTOR_SIZE,
-        20);
-    numMappers =
-      configuration.getInt(Constants.NUM_MAPPERS,
-        10);
+    pointsPerFile = configuration
+      .getInt(Constants.POINTS_PER_FILE, 20);
+    numCentroids = configuration
+      .getInt(Constants.NUM_CENTROIDS, 20);
+    vectorSize = configuration
+      .getInt(Constants.VECTOR_SIZE, 20);
+    numMappers = configuration
+      .getInt(Constants.NUM_MAPPERS, 10);
     numCenPars = numMappers;
     cenVecSize = vectorSize + 1;
-    numThreads =
-      configuration.getInt(Constants.NUM_THREADS,
-        10);
-    numIterations =
-      configuration.getInt(
-        Constants.NUM_ITERATIONS, 10);
+    numThreads = configuration
+      .getInt(Constants.NUM_THREADS, 10);
+    numIterations = configuration
+      .getInt(Constants.NUM_ITERATIONS, 10);
     cenDir = configuration.get(Constants.CEN_DIR);
     LOG.info("Points Per File " + pointsPerFile);
     LOG.info("Num Centroids " + numCentroids);
@@ -88,8 +81,8 @@ public class KMeansCollectiveMapper
     LOG.info("Num Iterations " + numIterations);
     LOG.info("Cen Dir " + cenDir);
     long endTime = System.currentTimeMillis();
-    LOG.info("config (ms) :"
-      + (endTime - startTime));
+    LOG.info(
+      "config (ms) :" + (endTime - startTime));
   }
 
   protected void mapCollective(
@@ -101,8 +94,8 @@ public class KMeansCollectiveMapper
     while (reader.nextKeyValue()) {
       String key = reader.getCurrentKey();
       String value = reader.getCurrentValue();
-      LOG.info("Key: " + key + ", Value: "
-        + value);
+      LOG.info(
+        "Key: " + key + ", Value: " + value);
       pointFiles.add(value);
     }
     Configuration conf =
@@ -121,9 +114,10 @@ public class KMeansCollectiveMapper
     if (this.isMaster()) {
       createCenTable(cenTable, numCentroids,
         numCenPars, cenVecSize);
-      loadCentroids(cenTable, cenVecSize, cenDir
-        + File.separator
-        + Constants.CENTROID_FILE_NAME, conf);
+      loadCentroids(cenTable, cenVecSize,
+        cenDir + File.separator
+          + Constants.CENTROID_FILE_NAME,
+        conf);
     }
     // Bcast centroids
     bcastCentroids(cenTable, this.getMasterID());
@@ -135,15 +129,15 @@ public class KMeansCollectiveMapper
     List<CenCalcTask> cenCalcTasks =
       new LinkedList<>();
     for (int i = 0; i < numThreads; i++) {
-      cenCalcTasks.add(new CenCalcTask(cenTable,
-        cenVecSize));
+      cenCalcTasks.add(
+        new CenCalcTask(cenTable, cenVecSize));
     }
     DynamicScheduler<double[], Object, CenCalcTask> calcCompute =
       new DynamicScheduler<>(cenCalcTasks);
     List<CenMergeTask> tasks = new LinkedList<>();
     for (int i = 0; i < numThreads; i++) {
-      tasks.add(new CenMergeTask(calcCompute
-        .getTasks()));
+      tasks.add(
+        new CenMergeTask(calcCompute.getTasks()));
     }
     DynamicScheduler<Partition<DoubleArray>, Object, CenMergeTask> mergeCompute =
       new DynamicScheduler<>(tasks);
@@ -178,7 +172,8 @@ public class KMeansCollectiveMapper
         .getPartitions()) {
         double[] doubles = partition.get().get();
         int size = partition.get().size();
-        for (int j = 0; j < size; j += cenVecSize) {
+        for (int j = 0; j < size; j +=
+          cenVecSize) {
           for (int k = 1; k < cenVecSize; k++) {
             // Calculate avg
             if (doubles[j] != 0) {
@@ -217,9 +212,8 @@ public class KMeansCollectiveMapper
   }
 
   private void createCenTable(
-    Table<DoubleArray> cenTable,
-    int numCentroids, int numCenPartitions,
-    int cenVecSize) {
+    Table<DoubleArray> cenTable, int numCentroids,
+    int numCenPartitions, int cenVecSize) {
     int cenParSize =
       numCentroids / numCenPartitions;
     int cenRest = numCentroids % numCenPartitions;
@@ -228,15 +222,15 @@ public class KMeansCollectiveMapper
         int size = (cenParSize + 1) * cenVecSize;
         DoubleArray array =
           DoubleArray.create(size, false);
-        cenTable.addPartition(new Partition<>(i,
-          array));
+        cenTable.addPartition(
+          new Partition<>(i, array));
         cenRest--;
       } else if (cenParSize > 0) {
         int size = cenParSize * cenVecSize;
         DoubleArray array =
           DoubleArray.create(size, false);
-        cenTable.addPartition(new Partition<>(i,
-          array));
+        cenTable.addPartition(
+          new Partition<>(i, array));
       } else {
         break;
       }
@@ -252,18 +246,16 @@ public class KMeansCollectiveMapper
    * @param configuration
    * @throws IOException
    */
-  private void
-    loadCentroids(Table<DoubleArray> cenTable,
-      int cenVecSize, String cFileName,
-      Configuration configuration)
-      throws IOException {
+  private void loadCentroids(
+    Table<DoubleArray> cenTable, int cenVecSize,
+    String cFileName, Configuration configuration)
+    throws IOException {
     long startTime = System.currentTimeMillis();
     Path cPath = new Path(cFileName);
     FileSystem fs = FileSystem.get(configuration);
     FSDataInputStream in = fs.open(cPath);
-    BufferedReader br =
-      new BufferedReader(
-        new InputStreamReader(in));
+    BufferedReader br = new BufferedReader(
+      new InputStreamReader(in));
     String[] curLine = null;
     int curPos = 0;
     for (Partition<DoubleArray> partition : cenTable
@@ -272,7 +264,8 @@ public class KMeansCollectiveMapper
       double[] cData = array.get();
       int start = array.start();
       int size = array.size();
-      for (int i = start; i < (start + size); i++) {
+      for (int i =
+        start; i < (start + size); i++) {
         // Don't set the first element in each row
         if (i % cenVecSize != 0) {
           // cData[i] = in.readDouble();
@@ -306,10 +299,9 @@ public class KMeansCollectiveMapper
     long startTime = System.currentTimeMillis();
     boolean isSuccess = false;
     try {
-      isSuccess =
-        this.broadcast("main",
-          "broadcast-centroids", table, bcastID,
-          false);
+      isSuccess = this.broadcast("main",
+        "broadcast-centroids", table, bcastID,
+        false);
     } catch (Exception e) {
       LOG.error("Fail to bcast.", e);
     }
