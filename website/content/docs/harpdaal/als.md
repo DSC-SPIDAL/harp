@@ -39,4 +39,21 @@ The implementation of ALS in our Harp-DAAL consists of two levels.
 
 ### Data Conversion From COO to CSR
 
+The default Sparse Matrix format of Harp is Coordinate Format (COO), which represents a training point in triple values (RowID, ColID, val), whereas, the 
+sparse matrix format for DAAL ALS kernel is Compressed Sparse Row Format (CSR). Therefore, the first step is to convert incomming training data from COO to 
+CSR.
+
+```java
+
+//remapping row ids
+ReMapRowColID remapper_row = new ReMapRowColID(rowIds, this.getSelfID(), this.getNumWorkers(), this);
+int[] row_mapping = remapper_row.getRemapping();
+
+//remapping col ids
+ReMapRowColID remapper_col = new ReMapRowColID(colIds, this.getSelfID(), this.getNumWorkers(), this);
+int[] col_mapping = remapper_col.getRemapping();
+
+```
+
+
 
