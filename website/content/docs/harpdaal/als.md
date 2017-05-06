@@ -278,7 +278,7 @@ testModel(iteration, usersPartition, itemsPartition, usersPartialResultLocal, it
 
 ```
 
-Comparing the RMSE value before and after training process, we could evaluate the correctness and efficiency of our Harp-DAAL-ALS algorithm.
+Comparing the RMSE value before and after the training process, we could evaluate the correctness and efficiency of our Harp-DAAL-ALS algorithm.
 
 
 
