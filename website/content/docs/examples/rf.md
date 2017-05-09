@@ -5,32 +5,30 @@ title: Harp Random Forests
 
 <img src="/img/4-5-1.png" width="60%"  >
 
-Random forests are an ensemble learning method for classification, regression and other tasks, that operate by constructing a multitude of decision trees at training time and outputting the class that is the mode of the classes (classification) or mean prediction (regression) of the individual trees. Random decision forests correct for decision trees' habit of overfitting to their training set.
+&nbsp;&nbsp;&nbsp;&nbsp; Random forests are an example of ensemble learning method called Bagging (Bootstrap Aggregation). Bagging is an ensemble technique which works based on the idea of wisdom of crowds. In this technique, multiple individual classifiers are built and these individual predictions are combined to produce a final output. Even if the individual classifier are weak i.e., slightly better than random (accuracy > 50%), bagging classifiers work when the individual classifiers are independent of each other. In case of classification, Bagged classifier votes among the individual classifiers and chooses its prediction as the mode of the predictions (one which occurs most of the times) and for regression problem, the mean of all the predictions is usually taken. 
 
-The training algorithm for random forests applies the general technique of bootstrap aggregating, or bagging, to tree learners. Given a training set `X` with responses `Y`, bagging repeatedly selects a random sample with replacement of the training set. After training, predictions for unseen samples can be made by averaging the predictions from all the individual regression trees or by taking the majority vote in the case of decision trees. Random forests also do another bagging -- feature bagging, which is a random subset of the features. The reason for doing this is the correlation of the trees in an ordinary bootstrap sample: if one or a few features are very strong predictors for the response variable (target output), these features will be selected in many of the B trees, causing them to become correlated.
- 
+&nbsp;&nbsp;&nbsp;&nbsp;Random forest is one such implementation of bagging in which individual classifiers are decision trees. Decision trees are easily interpretable model with great prediction power. It works as a set of if-else decision rules. Since decision tree has inbuilt feature selection present in the algorithm which selects the best features online, it is a favourable first choice when the data set has large number of features. There are various implementation of bagging decision trees. The problem with bagging decision trees is that, there is a possibility that the individual decision trees can choose the same features while making split and hence they can loose their independence property and become correlated. To avoid this, Random forest model implementation randomly selects a subset of the features and chooses the best among those subset of features to make the split at that level. 
 
-## DEFINITION
+&nbsp;&nbsp;&nbsp;&nbsp; Since the model building part consists of building multiple decision trees, we could make use of parallel implementation architecture of Harp to improve upon the efficiency of the algorithm's runtime and resource utilization. The training algorithm for random forests applies the general technique of bootstrap aggregation (bagging) to tree learners. Given a training set `X` with responses `Y`, bagging repeatedly selects a random sample with replacement of the training set. This bootstrap training data is used to build the decision tree in every mapper (node). Each node builds multiple decision trees based on the number of trees to be built per node which is specified by the user. Since there is no dependency between individual trees (as they are independent), there is no need of communication required between each nodes or the model data. 
 
-* `N` is the number of data points
-* `M` is the number of selected features
-* `K` is the number of trees
+&nbsp;&nbsp;&nbsp;&nbsp; After building multiple decision trees in each mapper, the test data is broadcasted to all the nodes where each decision trees makes their own set of predictions. These predictions are combined using `allreduce` collective communication method. The final prediction is done by taking average of all the predictions in case of regression trees and by taking majority vote in case of classification trees. As discussed earlier, random forest performs by using feature bagging, where at each split of decision tree random subset of features are selected and the best among them is chosen as split point. This helps in reducing the correlation between the trees and provides independent classifiers.  
 
-## METHOD
+### Parameter Definition
+1. `N` - Number of data points
+2. `M` - Number of randomly selected features
+3. `K` - Number of individual trees to build
 
-The following is the procedure of Harp Random Forests training:
 
-1. Randomly select `N` samples with replacement for `K` trees (totally `K` times).
+### Method
+The following is the procedure adapted for implementing Random forest algorithm using Harp 
+1. Randomly select `N` data points with replacement for `K` trees. This has to be done `K` times to ensure that each sample is independent of each other
+2. Select `M` features randomly at each level from which the best feature will be used to build the decision tree
+3. Build decision tree using the subset of features. Trees can be stopped at particular depth to avoid overfitting
+4. Repeat steps 2 and 3 `K` times. 
 
-2. Select `M` features randomly which will be used in decision tree.
+Since the entire process works on building the trees `K` times, this can be parallelized using Harp. Below code explains how Random forests have been implemented using Harp AllReduce communication pattern. The complete code is available in GitHub.
 
-3. Build decision tree based on these `M` features
-
-4. Repeat Step 2 and 3 `K` times.
-
-Predicting part will use these decision trees to predict `K` results. For regression, the result is the average of each tree's result and for classification, the majority vote will be the output.
-
-## Step 0 --- Data preprocessing
+### Step 0 --- Data preprocessing
 
 ```Java
 // In the case of merging the data from different location, main process needs to create bootstrap samples.
@@ -66,7 +64,7 @@ if(doBootstrapSampling) {
 } 
 ```
 
-## Step 1 ---Train forests
+### Step 1 ---Train forests
 ```Java
 // Create the Random Forest classifier that uses 5 neighbors to make decisions
 Classifier rf = new RandomForest(numTrees, false, numAttributes, new Random());
@@ -74,7 +72,7 @@ Classifier rf = new RandomForest(numTrees, false, numAttributes, new Random());
 rf.buildClassifier(trainDataPoints);
 ```
 
-## Step 2 --- Synchronize majority vote
+### Step 2 --- Synchronize majority vote
 ```Java
 for (Instance inst : testDataPoints) {
     // This will hold this random forest's class vote for this data point
