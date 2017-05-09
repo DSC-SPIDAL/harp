@@ -4,6 +4,16 @@
 
 &nbsp;&nbsp;&nbsp;&nbsp;Neural networks are well suited for problems in which training data is noisy and complex sensor data such as inputs from cameras and microphones. Multi layered neural networks are built from large number of neural units. Neural networks are built out of densely interconnected set of simple units, where each unit takes a number of real-valued inputs (possible the outputs of other units) and produces a single real valued output which is used as input for further present neural units. These single neural units can be a perceptron which learns the parameters using perceptron rule or delta rule (based on gradient descent) . It can also be a sigmoid unit where each unit takes a linear set of inputs and produces a non linear differentiable output which helps in performing gradient descent to reduce the error. 
 
+&nbsp;&nbsp;&nbsp;&nbsp; In our implementation, the data set is distributed to separate processes while keeping the structure of the neural network intact. The motivation for this approach is that the dimensions of the data might be large and cannot be handled by one process. The parallelization can be handled in two ways:
+1. Model/Parameter averaging
+2. Derivative averaging
+
+&nbsp;&nbsp;&nbsp;&nbsp;Experimental results show that model averaging works better in practice, especially when using a large minibatch size. The method used for training the learning neural network is mini batch gradient descent. In mini batch gradient descent, the gradient is computed against more than one training example and less than for the complete training examples i.e., it's in between stochastic and batch gradient descent. 
+
+&nbsp;&nbsp;&nbsp;&nbsp;Neural networks usually take more time to training. This training time gets increased when there is large amount of training data. To speed up the process of training, we took random samples to create mini batches with replacement from the training data and distribute the learning over different processes. Each process will train on its local mini-batch data that consists of the feature vectors X and its corresponding targets Y, and the local weights will be updated accordingly. The weights are a vector of matrices where each matrix holds the weight connections from one layer to the next. These weight matrices are attened and concatenated to get the nal representation of the weights to be distributed.
+
+&nbsp;&nbsp;&nbsp;&nbsp;These local weights, across all the processes, will then be combined by using Allreduce, which is called for every five epochs to ensure that the weights are updated across tasks more frequently, and then averaged to obtain the final weights. These weights are the final model used for prediction on the test data. The prediction is not an expensive operation and thus can be handled by the master process. This process is repeated on ten random splits of training and testing data to ensure that we have a good estimate of the generalization error.
+
 &nbsp;&nbsp;&nbsp;&nbsp; The learning algorithm tries to learn the weights from the data, and then the network can be used to recognize patterns. Here, we give a simple tutorial on how to parallel a standard implementation of the BackPropagation algorithm for a multi layered feed forward network.  
 
 ## PARALLEL DESIGN
