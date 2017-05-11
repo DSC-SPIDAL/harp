@@ -1062,7 +1062,7 @@ the users of well optimized building blocks for data analytics and machine learn
 
 &lt;ul&gt;
 &lt;li&gt;MPI-like collective communication operations that are highly optimized for big data problems.&lt;/li&gt;
-&lt;li&gt;efficient and innovative computation models for different machine learning problems.&lt;/li&gt;
+&lt;li&gt;Efficient and innovative computation models for different machine learning problems.&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;p&gt;However, the original Harp framework only supports development of Java applications, which is a common choice within the Hadoop ecosystem.
@@ -1150,10 +1150,8 @@ overhead of data conversion could be significantly reduced. It is also very stra
 
 &lt;h3 id=&#34;install-intel-s-daal&#34;&gt;Install Intel&amp;rsquo;s DAAL&lt;/h3&gt;
 
-&lt;p&gt;You can either download Intel&amp;rsquo;s DAAL product with licence from their website &lt;a href=&#34;https://software.intel.com/en-us/blogs/daal&#34;&gt;https://software.intel.com/en-us/blogs/daal&lt;/a&gt;, or build it from source code. DAAL&amp;rsquo;s source code
-is open-sourced and available on the GitHub.&lt;/p&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;git clone https://github.com/01org/daal.git
-&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;The source code of DAAL is placed under the directory &lt;em&gt;harp-daal-app/src-daal&lt;/em&gt;. The DAAL codes are forked from Intel&amp;rsquo;s DAAL 2017 release version and
+please follow the instructions within README.md to compile and install the codebase.&lt;/p&gt;
 
 &lt;p&gt;After installation, you can run the bin/daalvars.sh script to set up all the DAAL related environment variables.&lt;/p&gt;
 &lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;source&lt;/span&gt; /path-to-daal/bin/daalvars.sh intel64
