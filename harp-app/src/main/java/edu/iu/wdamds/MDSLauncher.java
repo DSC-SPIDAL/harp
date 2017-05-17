@@ -50,13 +50,13 @@ public class MDSLauncher extends Configured
   public int run(String[] args) throws Exception {
     // Command lines
     // Command line example
-    // bin/hadoop jar
-    // harp-app-hadoop-2.2.0.jar
+    // hadoop jar
+    // harp-app-hadoop-2.6.0.jar
     // edu.iu.wdamds.MDSLauncher
     // 8
-    // /N/u/zhangbj/hadoop-2.6.0/mds_data_split/data/
+    // mds_data_split/data/
     // distance_ weight_ v_
-    // /N/u/zhangbj/hadoop-2.6.0/mds_data_split/ids/distance_ids
+    // mds_data_split/ids/distance_ids
     // NoLabel 0.01 3 0.01 4640 10
     if (args.length != 13) {
       System.out.println("Usage: ");
