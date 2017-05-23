@@ -25,10 +25,8 @@ The Harp based SVM algorithm works as follows:
 
 5. Repeat Step 2 to 4 until support vectors don't change any more.
 
-<img src="/img/4-5-2.png" width="50%"  >
+<img src="/img/4-5-2.png" size="30%"  >
 
-
-The source code can be found in Harp GitHub repository by click [Harp SVM](https://github.com/DSC-SPIDAL/harp/tree/master/harp-tutorial-app/src/main/java/edu/iu/svm).
 
 ## Step 0 --- Data preprocessing
 
