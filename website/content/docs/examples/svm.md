@@ -25,7 +25,6 @@ The Harp based SVM algorithm works as follows:
 
 5. Repeat Step 2 to 4 until support vectors don't change any more.
 
-![SVM-2]
 <img src="/img/4-5-2.png" width="50%"  >
 
 
