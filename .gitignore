@@ -97,7 +97,3 @@ website/static/
 
 # Visual Studio Code
 .vscode
-
-# lib
-*.a
-*.lib
