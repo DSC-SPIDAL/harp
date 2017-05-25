@@ -890,7 +890,7 @@ Usage: NNMapCollective &amp;lt;number of map tasks&amp;gt; &amp;lt;epochs&amp;gt
 &lt;li&gt;&lt;p&gt;Repeat Step 2 to 4 until support vectors don&amp;rsquo;t change any more.&lt;/p&gt;&lt;/li&gt;
 &lt;/ol&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/4-5-2.png&#34; alt=&#34;SVM-2&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/4-5-2.png&#34; width=&#34;50%&#34;&gt;&lt;/p&gt;
 
 &lt;p&gt;The source code can be found in Harp GitHub repository by click &lt;a href=&#34;https://github.com/DSC-SPIDAL/harp/tree/master/harp-tutorial-app/src/main/java/edu/iu/svm&#34;&gt;Harp SVM&lt;/a&gt;.&lt;/p&gt;
 
