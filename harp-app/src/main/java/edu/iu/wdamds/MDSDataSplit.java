@@ -29,6 +29,21 @@ import java.io.IOException;
 
 public class MDSDataSplit {
   public static void main(String[] args) {
+    // java edu.iu.wdamds.MDSDataSplit
+    // mds_data/4640_pid.bin mds_data_split/data/
+    // distance_ mds_data_split/ids/distance_ids
+    // 32 4640 4640 0
+    //
+    // java edu.iu.wdamds.MDSDataSplit
+    // mds_data/4640_weight_all1.bin
+    // mds_data_split/data/ weight_
+    // mds_data_split/ids/weight_ids 32 4640 4640
+    // 0
+    //
+    // java edu.iu.wdamds.MDSDataSplit
+    // mds_data/4640_v_all1.bin
+    // mds_data_split/data/ v_
+    // mds_data_split/ids/v_ids 32 4640 4640 1
     if (args.length != 8) {
       System.out.println("Usage: ");
       System.out.println("[1. Data File]");

@@ -48,16 +48,15 @@ public class MDSLauncher extends Configured
    */
   @Override
   public int run(String[] args) throws Exception {
-    // Command lines
     // Command line example
-    // bin/hadoop jar
-    // harp-app-hadoop-2.2.0.jar
-    // edu.iu.wdamds.MDSLauncher
-    // 8
-    // /N/u/zhangbj/hadoop-2.6.0/mds_data_split/data/
+    // input files are in a shared directory
+    // hadoop jar
+    // harp-app-hadoop-2.6.0.jar
+    // edu.iu.wdamds.MDSLauncher 8
+    // /mds_data_split/data/
     // distance_ weight_ v_
-    // /N/u/zhangbj/hadoop-2.6.0/mds_data_split/ids/distance_ids
-    // NoLabel 0.01 3 0.01 4640 10
+    // /mds_data_split/ids/distance_ids
+    // NoLabel 0.01 3 0.01 4640 10 8
     if (args.length != 13) {
       System.out.println("Usage: ");
       System.out.println("[1. Num map tasks ]");
@@ -76,9 +75,9 @@ public class MDSLauncher extends Configured
         "[10. Cooling parameter (alpha)]");
       System.out.println("[11. Input Data Size]");
       System.out
-        .println("[11. CG iteration num]");
+        .println("[12. CG iteration num]");
       System.out
-        .println("[12. Num threads per mapper]");
+        .println("[13. Num threads per mapper]");
       System.exit(0);
     }
     // Args
@@ -125,21 +124,10 @@ public class MDSLauncher extends Configured
     System.out
       .println("[13. Num threads per mapper]:\t"
         + numThreads);
-
-    int jobCount = 0;
-    int numJobs = 3;
-    boolean jobSuccess = true;
-    do {
-      jobSuccess = launch(numMapTasks,
-        inputFolder, inputPrefix, weightPrefix,
-        vPrefix, idsFile, labelsFile, threshold,
-        d, alpha, n, cgIter, numThreads);
-      if (jobSuccess) {
-        break;
-      } else {
-        jobCount++;
-      }
-    } while (jobCount < numJobs);
+    boolean jobSuccess = launch(numMapTasks,
+      inputFolder, inputPrefix, weightPrefix,
+      vPrefix, idsFile, labelsFile, threshold, d,
+      alpha, n, cgIter, numThreads);
     return 0;
   }
 
