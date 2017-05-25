@@ -24,7 +24,7 @@ the users of well optimized building blocks for data analytics and machine learn
 Compared to contemporary communication libraries, such as Hadoop and Spark, Harp has the following advantages:
 
 * MPI-like collective communication operations that are highly optimized for big data problems.
-* efficient and innovative computation models for different machine learning problems.
+* Efficient and innovative computation models for different machine learning problems.
 
 However, the original Harp framework only supports development of Java applications, which is a common choice within the Hadoop ecosystem. 
 The downside of the pure Java implementation is the lack of support for emerging new hardware architectures such as Intel's Xeon Phi. 
@@ -113,14 +113,9 @@ converter.HarpToDaalDouble();
 
 ### Install Intel's DAAL 
 
-You can either download Intel's DAAL product with licence from their website https://software.intel.com/en-us/blogs/daal, or build it from source code. DAAL's source code 
-is open-sourced and available on the GitHub. 
+The source code of DAAL is placed under the directory *harp-daal-app/src-daal*. The DAAL codes are forked from Intel's DAAL 2017 release version and 
+please follow the instructions within README.md to compile and install the codebase. 
 
-```bash
-
-git clone https://github.com/01org/daal.git
-
-```
 After installation, you can run the bin/daalvars.sh script to set up all the DAAL related environment variables. 
 
 ```bash

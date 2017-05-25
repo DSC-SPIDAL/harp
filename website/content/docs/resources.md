@@ -10,7 +10,7 @@ Harp Resources outside this documentation:
 
 * [B. Zhang, B. Peng, J. Qiu. High Performance LDA through Collective Model Communication Optimization](http://ipcc.soic.iu.edu/ICCS-harp-lda.pdf) (ICCS, 2016)
 
-* [B. Zhang. A Collective Communication Layer for the Software Stack of Big Data Analytics](http://ipcc.soic.iu.edu/A%20Collective%20Communication%20Layer.pdf) (Doctor symposium in IC2E, 2016)
+* [B. Zhang. A Collective Communication Layer for the Software Stack of Big Data Analytics](http://ipcc.soic.iu.edu/A%20Collective%20Communication%20Layer.pdf) (Doctor Symposium in IC2E, 2016)
 
 * [B. Zhang, Y. Ruan, J. Qiu. Harp: Collective Communication on Hadoop](http://dsc.soic.indiana.edu/publications/HarpQiuZhang.pdf) (Short paper in IC2E, 2015)
 
@@ -20,6 +20,6 @@ Harp Resources outside this documentation:
 
 ## Press
 
-* [B. Zhang, B. Peng, J. Qiu. Parallelizing Big Data Machine Learning Parallelizing Big Data Machine Learning](http://ipcc.soic.iu.edu/Computation%20Abstractions.pdf)  (in the book series on Advances in Parallel Computing published by IOS Press, 2017)
+* [B. Zhang, B. Peng, J. Qiu. Parallelizing Big Data Machine Learning Applications with Model Rotation]()  (Book Chapter in series Advances in Parallel Computing, IOS Press, 2017)
 
 * [J. Qiu, B. Zhang. Mammoth Data in the Cloud: Clustering Social Images](http://grids.ucs.indiana.edu/ptliupages/publications/MammothDataintheCloudClusteringSocialImages.pdf)  (Book chapter in Cloud Computing and Big Data, IOS Press, 2013)
