@@ -59,7 +59,7 @@ struct DAAL_EXPORT Parameter : public daal::algorithms::Parameter
     Parameter(size_t nFactors = 10, size_t maxIterations = 5, double alpha = 40.0, double lambda = 0.01,
               double preferenceThreshold = 0.0, size_t seed = 777777) :
         nFactors(nFactors), maxIterations(maxIterations), alpha(alpha), lambda(lambda),
-        preferenceThreshold(preferenceThreshold), numThreads(0)
+        preferenceThreshold(preferenceThreshold), numThreads(1)
     {}
 
     size_t nFactors;            /*!< Number of factors */
