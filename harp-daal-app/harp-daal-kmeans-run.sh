@@ -13,7 +13,7 @@ fi
 hdfs dfs -mkdir -p /Hadoop/Libraries
 hdfs dfs -put ${DAALROOT}/lib/intel64_lin/libJavaAPI.so /Hadoop/Libraries/
 hdfs dfs -put ${TBB_ROOT}/lib/intel64_lin_mic/libtbb* /Hadoop/Libraries/
-hdfs dfs -put ${DAALROOT}/../../daal-src/omp/lib/libiomp5.so /Hadoop/Libraries/
+hdfs dfs -put ${DAALROOT}/../../omp/lib/libiomp5.so /Hadoop/Libraries/
 
 # daal.jar will be used in command line
 export LIBJARS=${DAALROOT}/lib/daal.jar
