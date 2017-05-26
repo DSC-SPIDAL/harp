@@ -9,7 +9,7 @@
 *.dll
 *.exe
 *.o
-*.so
+# *.so
 #*.jar
 *.fyc
 *.rbc
