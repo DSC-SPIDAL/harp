@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package edu.iu.kmeans.rotation;
+package edu.iu.daal_kmeans.rotation;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -33,18 +33,21 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
-import edu.iu.fileformat.MultiFileInputFormat;
-import edu.iu.kmeans.regroupallgather.Constants;
-import edu.iu.kmeans.regroupallgather.KMUtil;
+import org.apache.hadoop.filecache.DistributedCache;
+import java.net.URI;
 
-public class KMeansLauncher extends Configured
+import edu.iu.fileformat.MultiFileInputFormat;
+import edu.iu.daal_kmeans.regroupallgather.Constants;
+import edu.iu.daal_kmeans.regroupallgather.KMUtil;
+
+public class KMeansDaalLauncher extends Configured
   implements Tool {
 
   public static void main(String[] argv)
     throws Exception {
     int res =
       ToolRunner.run(new Configuration(),
-        new KMeansLauncher(), argv);
+        new KMeansDaalLauncher(), argv);
     System.exit(res);
   }
 
@@ -53,9 +56,22 @@ public class KMeansLauncher extends Configured
    */
   @Override
   public int run(String[] args) throws Exception {
+
+      /* Put shared libraries into the distributed cache */
+      Configuration conf = this.getConf();
+
+      DistributedCache.createSymlink(conf);
+      DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libJavaAPI.so#libJavaAPI.so"), conf);
+
+      DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbb.so.2#libtbb.so.2"), conf);
+      DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbb.so#libtbb.so"), conf);
+      DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbbmalloc.so.2#libtbbmalloc.so.2"), conf);
+      DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbbmalloc.so#libtbbmalloc.so"), conf);
+      DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libiomp5.so#libiomp5.so"), conf);
+
     if (args.length < 9) {
       System.err
-        .println("Usage: edu.iu.kmmoro.KMeansLauncher "
+        .println("Usage: edu.iu.kmmoro.KMeansDaalLauncher "
           + "<num Of DataPoints> <num of Centroids> <vector size> "
           + "<num of point files per worker>"
           + "<number of map tasks> <num threads> <number of iteration> "
@@ -192,9 +208,9 @@ public class KMeansLauncher extends Configured
     FileOutputFormat.setOutputPath(job, outDir);
     job
       .setInputFormatClass(MultiFileInputFormat.class);
-    job.setJarByClass(KMeansLauncher.class);
+    job.setJarByClass(KMeansDaalLauncher.class);
     job
-      .setMapperClass(KMeansCollectiveMapper.class);
+      .setMapperClass(KMeansDaalCollectiveMapper.class);
     org.apache.hadoop.mapred.JobConf jobConf =
       (JobConf) job.getConfiguration();
     jobConf.set("mapreduce.framework.name",
@@ -202,6 +218,12 @@ public class KMeansLauncher extends Configured
     jobConf.setNumMapTasks(numMapTasks);
     jobConf.setInt(
       "mapreduce.job.max.split.locations", 10000);
+
+    jobConf.setInt("mapreduce.map.collective.memory.mb", 110000);
+
+    jobConf.set("mapreduce.map.collective.java.opts",
+      "-Xmx100000m -Xms100000m");
+
     job.setNumReduceTasks(0);
     Configuration jobConfig =
       job.getConfiguration();

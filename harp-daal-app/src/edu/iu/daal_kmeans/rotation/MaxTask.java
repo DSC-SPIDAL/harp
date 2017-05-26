@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package edu.iu.kmeans.rotation;
+package edu.iu.daal_kmeans.rotation;
 
 import java.util.concurrent.BlockingQueue;
 
@@ -62,6 +62,7 @@ public class MaxTask implements
           // Add point to centroid
           int a = pair.offset;
           int b = i * cenVecSize;
+          //count plus 1
           cenArray[a++]++;
           pointArray[b++] = Double.MAX_VALUE;
           for (int j = 1; j < cenVecSize; j++) {

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package edu.iu.kmeans.rotation;
+package edu.iu.daal_kmeans.rotation;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -27,15 +27,27 @@ import java.util.concurrent.LinkedBlockingQueue;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapred.CollectiveMapper;
 
+import edu.iu.daal.*;
+import java.nio.DoubleBuffer;
+
 import edu.iu.harp.example.DoubleArrPlus;
 import edu.iu.harp.partition.Partition;
 import edu.iu.harp.partition.Table;
 import edu.iu.harp.resource.DoubleArray;
 import edu.iu.harp.schdynamic.DynamicScheduler;
-import edu.iu.kmeans.regroupallgather.Constants;
-import edu.iu.kmeans.regroupallgather.KMUtil;
+import edu.iu.daal_kmeans.regroupallgather.Constants;
+import edu.iu.daal_kmeans.regroupallgather.KMUtil;
 
-public class KMeansCollectiveMapper
+//import daa.jar API
+import com.intel.daal.algorithms.kmeans.*;
+import com.intel.daal.algorithms.kmeans.init.*;
+
+import com.intel.daal.data_management.data.NumericTable;
+import com.intel.daal.data_management.data.HomogenNumericTable;
+import com.intel.daal.data_management.data.HomogenBMNumericTable;
+import com.intel.daal.services.DaalContext;
+
+public class KMeansDaalCollectiveMapper
   extends
   CollectiveMapper<String, String, Object, Object> {
 
@@ -135,19 +147,23 @@ public class KMeansCollectiveMapper
       new Table<>(0, new DoubleArrPlus());
     generateCenTable(cenTable, numCentroids,
       numCenPars, cenVecSize);
+
     // Initialize tasks
     List<ExpTask> expTasks = new LinkedList<>();
     for (int i = 0; i < numThreads; i++) {
       expTasks.add(new ExpTask(cenTable,
         cenVecSize));
     }
+
     DynamicScheduler<Points, Object, ExpTask> expCompute =
       new DynamicScheduler<>(expTasks);
+
     List<MaxTask> maxTasks = new LinkedList<>();
     for (int i = 0; i < numThreads; i++) {
       maxTasks.add(new MaxTask(pointsList,
         cenTable, cenVecSize));
     }
+
     DynamicScheduler<CenPair, Object, MaxTask> maxCompute =
       new DynamicScheduler<>(maxTasks);
     expCompute.start();
@@ -155,14 +171,18 @@ public class KMeansCollectiveMapper
     // ----------------------------------------------------
     // For iterations
     for (int i = 0; i < numIterations; i++) {
+
       // LOG.info("Iteration: " + i);
       // Expectation
       long t1 = System.currentTimeMillis();
+
       for (int j = 0; j < this.getNumWorkers(); j++) {
+
         // LOG.info("Expectation Round: " + j);
         for (ExpTask task : expCompute.getTasks()) {
           task.update();
         }
+
         expCompute.submitAll(pointsList);
         while (expCompute.hasOutput()) {
           expCompute.waitForOutput();
@@ -170,12 +190,15 @@ public class KMeansCollectiveMapper
         this.rotate("kmeans", "exp-rotate-" + i
           + "-" + j, cenTable, null);
       }
+
       long t2 = System.currentTimeMillis();
+
       // Clean centroids
       cenTable.getPartitions().parallelStream()
         .forEach(e -> {
           Arrays.fill(e.get().get(), 0.0);
         });
+
       // Maximization
       for (int j = 0; j < this.getNumWorkers(); j++) {
         // LOG.info("Maximization Round: " + j);
@@ -194,6 +217,7 @@ public class KMeansCollectiveMapper
         this.rotate("kmeans", "max-rotate-" + i
           + "-" + j, cenTable, null);
       }
+
       long t3 = System.currentTimeMillis();
       for (Partition<DoubleArray> partition : cenTable
         .getPartitions()) {
@@ -208,6 +232,7 @@ public class KMeansCollectiveMapper
           }
         }
       }
+
       long t4 = System.currentTimeMillis();
       LOG.info("Expectation: " + (t2 - t1)
         + ", Maximization: " + (t3 - t2)

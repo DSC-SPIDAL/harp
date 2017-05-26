@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package edu.iu.kmeans.rotation;
+package edu.iu.daal_kmeans.rotation;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -59,10 +59,18 @@ public class ExpTask implements
   public Object run(Points points)
     throws Exception {
     double[] pointArray = points.pointArray;
+
+    //what is cenIDs ???
+    //num of centroids in this points strucuture, 
+    //each centoird has two entries, cenID[0] stores
+    //the partition id of the nearest centroid, cenID[1]
+    //stores the offset of this centroid in partition id
     int[][] cenIDs = points.cenIDs;
+
     int pointIndex = 0;
-    for (int i = 0; i < pointArray.length; i +=
-      cenVecSize) {
+
+    for (int i = 0; i < pointArray.length; i+= cenVecSize) {
+
       int[] cenID = cenIDs[pointIndex];
       double minDistance = pointArray[i];
       for (Partition<DoubleArray> partition : centroids) {
@@ -80,11 +88,14 @@ public class ExpTask implements
           }
           if (distance < minDistance) {
             minDistance = distance;
+            //record which partition has the nearest distance
             cenID[0] = partitionID;
+            //record the start pos of this centroid
             cenID[1] = k - cenVecSize;
           }
         }
       }
+
       pointArray[i] = minDistance;
       pointIndex++;
     }

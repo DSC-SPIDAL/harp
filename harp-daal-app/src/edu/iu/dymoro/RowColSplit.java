@@ -16,8 +16,6 @@
 
 package edu.iu.dymoro;
 
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-
 import java.util.List;
 
 import edu.iu.harp.partition.Partition;
@@ -26,7 +24,7 @@ import edu.iu.harp.resource.Simple;
 public class RowColSplit<D, S extends Simple> {
   int row = -1;
   int col = -1;
-  Int2ObjectOpenHashMap<D> rData = null;
+  D rData = null;
   List<Partition<S>> cData = null;
   long numItems = 0L;
 }

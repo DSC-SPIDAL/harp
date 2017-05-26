@@ -36,7 +36,6 @@ import java.nio.IntBuffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.io.PrintWriter;
-// import java.lang.reflect.Field;
 import java.util.ListIterator;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -58,6 +57,7 @@ import edu.iu.harp.partition.Partitioner;
 import edu.iu.harp.partition.Table;
 import edu.iu.harp.resource.DoubleArray;
 import edu.iu.harp.resource.IntArray;
+import edu.iu.harp.resource.LongArray;
 import edu.iu.harp.schdynamic.DynamicScheduler;
 import edu.iu.daal.*;
 
@@ -66,9 +66,7 @@ import com.intel.daal.algorithms.mf_sgd.*;
 import com.intel.daal.data_management.data.NumericTable;
 import com.intel.daal.data_management.data.HomogenNumericTable;
 import com.intel.daal.data_management.data.HomogenBMNumericTable;
-// import com.intel.daal.data_management.data.AOSNumericTable;
 import com.intel.daal.data_management.data.SOANumericTable;
-// import com.intel.daal.data_management.data.MergedNumericTable;
 import com.intel.daal.data_management.data_source.DataSource;
 import com.intel.daal.data_management.data_source.FileDataSource;
 import com.intel.daal.services.DaalContext;
@@ -92,7 +90,7 @@ public class SGDDaalCollectiveMapper
         //time value used by timer
         private double time;
         //use or not use timer tuning
-        private boolean timerTuning;
+        private boolean enableTuning;
         //number of pipelines in model rotation
         private int numModelSlices;
         //iteration interval of doing rmse test
@@ -175,13 +173,13 @@ public class SGDDaalCollectiveMapper
             modelDirPath =
                 configuration.get(Constants.MODEL_DIR, "");
 
-            time =
-                configuration
-                .getDouble(Constants.Time, 1000);
+            enableTuning = configuration
+                    .getBoolean(Constants.ENABLE_TUNING, true);
 
-            numModelSlices =
-                configuration.getInt(
-                        Constants.NUM_MODEL_SLICES, 2);
+            time = enableTuning ? 1000L : 1000000000L;
+           
+            numModelSlices = 2;
+           
             testFilePath =
                 configuration.get(Constants.TEST_FILE_PATH,
                         "");
@@ -196,9 +194,6 @@ public class SGDDaalCollectiveMapper
             itrTimeStamp = 0L;
             waitTime = 0L;
             numVTrained = 0L;
-            timerTuning =
-                configuration.getBoolean(
-                        Constants.ENABLE_TUNING, true);
             totalNumTrain = 0L;
             totalNumCols = 0L;
             effectiveTestV = 0L;
@@ -218,7 +213,7 @@ public class SGDDaalCollectiveMapper
             LOG.info("Model Dir Path " + modelDirPath);
             LOG.info("TEST FILE PATH " + testFilePath);
             LOG.info("JAVA OPTS " + javaOpts);
-            LOG.info("Time Tuning " + timerTuning);
+            LOG.info("Time Tuning " + enableTuning);
         }
 
         /**
@@ -336,9 +331,6 @@ public class SGDDaalCollectiveMapper
 
             //create DAAL algorithm object, using distributed version of DAAL-MF-SGD  
             Distri sgdAlgorithm = new Distri(daal_Context, Double.class, Method.defaultSGD);
-
-            //TO REMOVE!!
-            sgdAlgorithm.parameter.setIsSGD2(1);
 
             // --------------------------loading training and test datasets into DAAL ------------------------------
             sgdAlgorithm.input.set(InputId.dataWPos, train_wPos_daal);
@@ -463,7 +455,7 @@ public class SGDDaalCollectiveMapper
                 jniDataConvertTime_itr = sgdAlgorithm.parameter.GetDataConvertTime();
                 jniTime += jniDataConvertTime_itr;
 
-                if (i == 1 && timerTuning) {
+                if (i == 1 && enableTuning) {
 
                     //check
                     LOG.info("adjust minibatch: selfID: "+this.getSelfID()+" compute task time: "+compute_task_time_itr+" numVTrained: "+numVTrained+" time " + time);
@@ -489,7 +481,7 @@ public class SGDDaalCollectiveMapper
 
                 //printout summary for this iteration
                 LOG.info("Summary for itr: "+i+" total: "+iteTime+" compute: "+ (compute_time_itr - jniDataConvertTime_itr) + 
-                        " data convert: " + jniDataConvertTime_itr + "convert overhead: " + (jniDataConvertTime_itr*100/compute_time_itr)
+                        " data convert: " + jniDataConvertTime_itr + "convert overhead: " + (jniDataConvertTime_itr*100/(compute_time_itr+1))
                         + "%, wait: "+ wait_time_itr+" percentage: "+ percentage + " TimeStamp: " + iterationAccu + " s");
                 
                 context.progress();
@@ -547,37 +539,106 @@ public class SGDDaalCollectiveMapper
             //vRowMap sort by row ids
             long regroupTotalStart = System.currentTimeMillis();
 
-            Table<VSet> vSetTable =
-                new Table<>(0, new VSetCombiner());
-            ObjectIterator<Int2ObjectMap.Entry<VRowCol>> iterator =
-                vRowMap.int2ObjectEntrySet().fastIterator();
-            while (iterator.hasNext()) {
-                Int2ObjectMap.Entry<VRowCol> entry =
-                    iterator.next();
-                int rowID = entry.getIntKey();
-                VRowCol vRowCol = entry.getValue();
-                //vRowCol.ids store columns ids
-                vSetTable.addPartition(new Partition<>(
-                            rowID, new VSet(vRowCol.id, vRowCol.ids,
-                                vRowCol.v, vRowCol.numV)));
-            }
+            LOG.info("Number of training data rows: " + vRowMap.size());
+            
+            // Organize vWMap
+            int maxRowID = Integer.MIN_VALUE;
+
+            VRowCol[] values =
+                vRowMap.values().toArray(new VRowCol[0]);
             // Clean the data
             vRowMap.clear();
+            vRowMap.trim();
+            Table<VSet> vSetTable = new Table<>(0,
+                    new VSetCombiner(), values.length);
+            for (int i = 0; i < values.length; i++) {
+                VRowCol vRowCol = values[i];
+                vSetTable.addPartition(new Partition<>(
+                            vRowCol.id, new VSet(vRowCol.id,
+                                vRowCol.ids, vRowCol.v, vRowCol.numV)));
+                if ((i + 1) % 1000000 == 0) {
+                    LOG.info("Processed " + (i + 1));
+                }
+                if (vRowCol.id > maxRowID) {
+                    maxRowID = vRowCol.id;
+                }
+            }
+            values = null;
+
+            //-------------------------- to optimize--------------------------
+            //
+            // Table<VSet> vSetTable =
+            //     new Table<>(0, new VSetCombiner());
+            // ObjectIterator<Int2ObjectMap.Entry<VRowCol>> iterator =
+            //     vRowMap.int2ObjectEntrySet().fastIterator();
+            // while (iterator.hasNext()) {
+            //     Int2ObjectMap.Entry<VRowCol> entry =
+            //         iterator.next();
+            //     int rowID = entry.getIntKey();
+            //     VRowCol vRowCol = entry.getValue();
+            //     //vRowCol.ids store columns ids
+            //     vSetTable.addPartition(new Partition<>(
+            //                 rowID, new VSet(vRowCol.id, vRowCol.ids,
+            //                     vRowCol.v, vRowCol.numV)));
+            // }
+
+            //-------------------------- to optimize--------------------------
+            //
+            // Clean the data
+            // vRowMap.clear();
 
             // ------------- start regroup the data indexed by row ids-------------
-            long start = System.currentTimeMillis();
-            regroup("sgd", "regroup-vw", vSetTable,
-                    new Partitioner(this.getNumWorkers()));
-            long end = System.currentTimeMillis();
+            // long start = System.currentTimeMillis();
+            // regroup("sgd", "regroup-vw", vSetTable,
+            //         new Partitioner(this.getNumWorkers()));
+            // long end = System.currentTimeMillis();
+            //
+            // LOG.info("Regroup data by rows took: "
+            //         + (end - start)
+            //         + " miliseconds, number of rows in local: "
+            //         + vSetTable.getNumPartitions());
+            //
+            // this.freeMemory();
+            // long regroupTotalEnd = System.currentTimeMillis();
+            // LOG.info("Time of Regrouping VRowMap: " + (regroupTotalEnd - regroupTotalStart));
 
+            // Randomize the row distribution among
+            // workers
+            long start = System.currentTimeMillis();
+            int oldNumRows = vSetTable.getNumPartitions();
+            Table<LongArray> seedTable =
+                new Table<>(0, new LongArrMax());
+            long seed = System.currentTimeMillis();
+            LOG.info("Generate seed" + ", maxRowID "
+                    + maxRowID + ", seed: " + seed);
+            LongArray seedArray =
+                LongArray.create(2, false);
+            seedArray.get()[0] = (long) maxRowID;
+            seedArray.get()[1] = seed;
+            seedTable.addPartition(
+                    new Partition<>(0, seedArray));
+            this.allreduce("sgd", "get-row-seed",
+                    seedTable);
+            maxRowID = (int) seedTable.getPartition(0)
+                .get().get()[0];
+            seed =
+                seedTable.getPartition(0).get().get()[1];
+            seedTable.release();
+            seedTable = null;
+            LOG.info("Regroup data by rows " + oldNumRows
+                    + ", maxRowID " + maxRowID + ", seed: "
+                    + seed);
+            regroup("sgd", "regroup-vw", vSetTable,
+                    new RandomPartitioner(maxRowID, seed,
+                        this.getNumWorkers())
+                    // new Partitioner(this.getNumWorkers())
+                   );
+            long end = System.currentTimeMillis();
             LOG.info("Regroup data by rows took: "
                     + (end - start)
-                    + " miliseconds, number of rows in local: "
-                    + vSetTable.getNumPartitions());
-
+                    + ", number of rows in local(o/n): "
+                    + oldNumRows + " random distribution");
             this.freeMemory();
-            long regroupTotalEnd = System.currentTimeMillis();
-            LOG.info("Time of Regrouping VRowMap: " + (regroupTotalEnd - regroupTotalStart));
 
             // ------------- finish regroup the data indexed by row ids-------------
             //
