@@ -16,23 +16,21 @@
 
 package edu.iu.dymoro;
 
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-
 import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import edu.iu.harp.schdynamic.Task;
 import edu.iu.harp.partition.Partition;
 import edu.iu.harp.resource.Simple;
+import edu.iu.harp.schdynamic.Task;
 
 public abstract class MPTask<D, S extends Simple>
   implements
   Task<RowColSplit<D, S>, RowColSplit<D, S>> {
 
-  protected static final Log LOG = LogFactory
-    .getLog(MPTask.class);
+  protected static final Log LOG =
+    LogFactory.getLog(MPTask.class);
 
   @Override
   public RowColSplit<D, S> run(
@@ -42,7 +40,6 @@ public abstract class MPTask<D, S extends Simple>
     return split;
   }
 
-  public abstract long doRun(
-    List<Partition<S>> cData,
-    Int2ObjectOpenHashMap<D> rData);
+  public abstract long
+    doRun(List<Partition<S>> cData, D rData);
 }

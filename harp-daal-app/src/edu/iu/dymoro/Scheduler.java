@@ -16,8 +16,6 @@
 
 package edu.iu.dymoro;
 
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-
 import java.util.List;
 import java.util.Random;
 import java.util.Timer;
@@ -27,13 +25,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import edu.iu.harp.schdynamic.DynamicScheduler;
 import edu.iu.harp.partition.Partition;
 import edu.iu.harp.resource.Simple;
+import edu.iu.harp.schdynamic.DynamicScheduler;
 
 public class Scheduler<D, S extends Simple, T extends MPTask<D, S>> {
-  protected static final Log LOG = LogFactory
-    .getLog(Scheduler.class);
+  protected static final Log LOG =
+    LogFactory.getLog(Scheduler.class);
 
   private final int[] rowCount;
   private final int numRowSplits;
@@ -47,7 +45,7 @@ public class Scheduler<D, S extends Simple, T extends MPTask<D, S>> {
   private int numFreeCols;
   private final byte[][] splitMap;
   private long numItemsTrained;
-  private final Int2ObjectOpenHashMap<D>[] vWHMap;
+  private final D[] vWHMap;
 
   private long time;
   private Timer timer;
@@ -56,8 +54,7 @@ public class Scheduler<D, S extends Simple, T extends MPTask<D, S>> {
   private final DynamicScheduler<RowColSplit<D, S>, RowColSplit<D, S>, T> compute;
 
   public Scheduler(int numRowSplits,
-    int numColSplits,
-    Int2ObjectOpenHashMap<D>[] vWHMap, long time,
+    int numColSplits, D[] vWHMap, long time,
     List<T> tasks) {
     rowCount = new int[numRowSplits];
     this.numRowSplits = numRowSplits;
@@ -87,7 +84,8 @@ public class Scheduler<D, S extends Simple, T extends MPTask<D, S>> {
     this.time = time;
   }
 
-  public void schedule(List<Partition<S>>[] hMap) {
+  public void
+    schedule(List<Partition<S>>[] hMap) {
     for (int i = 0; i < numRowSplits; i++) {
       freeRow[numFreeRows++] = i;
     }
@@ -134,42 +132,68 @@ public class Scheduler<D, S extends Simple, T extends MPTask<D, S>> {
       if (isRunning.get()) {
         // Find a matched col for the last row
         if (freeRowID != -1) {
+          // Reservoir sampling
+          int selectedColIndex = -1;
+          int count = 0;
           for (int i = 0; i < numFreeCols; i++) {
             if (splitMap[freeRowID][freeCol[i]] == 0) {
-              split = new RowColSplit<>();
-              split.row = freeRowID;
-              split.col = freeCol[i];
-              split.rData = vWHMap[split.row];
-              split.cData = hMap[split.col];
-              split.numItems = 0L;
-              splitMap[split.row][split.col]++;
-              rowCount[split.row]++;
-              colCount[split.col]++;
-              freeCol[i] = freeCol[--numFreeCols];
-              freeRowID = -1;
-              compute.submit(split);
-              break;
+              count++;
+              if (count == 1) {
+                selectedColIndex = i;
+              } else if (random
+                .nextInt(count) == 0) {
+                selectedColIndex = i;
+              }
             }
+          }
+          if (count > 0) {
+            RowColSplit<D, S> s =
+              new RowColSplit<>();
+            s.row = freeRowID;
+            s.col = freeCol[selectedColIndex];
+            s.rData = vWHMap[s.row];
+            s.cData = hMap[s.col];
+            s.numItems = 0L;
+            splitMap[s.row][s.col]++;
+            rowCount[s.row]++;
+            colCount[s.col]++;
+            freeCol[selectedColIndex] =
+              freeCol[--numFreeCols];
+            freeRowID = -1;
+            compute.submit(s);
           }
         }
         // Find a matched row for the last col
         if (freeColID != -1) {
+          // Reservoir sampling
+          int selectedRowIndex = -1;
+          int count = 0;
           for (int i = 0; i < numFreeRows; i++) {
             if (splitMap[freeRow[i]][freeColID] == 0) {
-              split = new RowColSplit<>();
-              split.row = freeRow[i];
-              split.col = freeColID;
-              split.rData = vWHMap[split.row];
-              split.cData = hMap[split.col];
-              split.numItems = 0L;
-              splitMap[split.row][split.col]++;
-              rowCount[split.row]++;
-              colCount[split.col]++;
-              freeRow[i] = freeRow[--numFreeRows];
-              freeColID = -1;
-              compute.submit(split);
-              break;
+              count++;
+              if (count == 1) {
+                selectedRowIndex = i;
+              } else if (random
+                .nextInt(count) == 0) {
+                selectedRowIndex = i;
+              }
             }
+          }
+          if (count > 0) {
+            RowColSplit<D, S> s =
+              new RowColSplit<>();
+            s.row = freeRow[selectedRowIndex];
+            s.col = freeColID;
+            s.rData = vWHMap[s.row];
+            s.cData = hMap[s.col];
+            s.numItems = 0L;
+            splitMap[s.row][s.col]++;
+            rowCount[s.row]++;
+            colCount[s.col]++;
+            freeRow[selectedRowIndex] =
+              freeRow[--numFreeRows];
+            freeColID = -1;
+            compute.submit(s);
           }
         }
         if (freeRowID != -1) {

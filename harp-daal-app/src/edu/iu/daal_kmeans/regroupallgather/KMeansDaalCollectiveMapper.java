@@ -184,7 +184,14 @@ public class KMeansDaalCollectiveMapper
                 totalLength += pointArrays.get(k).length;
             }
 
-            //create a daal NumericTable to hold training point data at native side
+            //create daal table for cenTable first so it can be allocated
+            //on HBM if available
+            long nFeature_cen = vectorSize;
+            long totalLength_cen = numCentroids*nFeature_cen;
+            long tableSize_cen = totalLength_cen/nFeature_cen;
+            NumericTable cenTable_daal = new HomogenBMNumericTable(daal_Context, Double.class, nFeature_cen, tableSize_cen, NumericTable.AllocationFlag.DoAllocate);
+            double[] buffer_array_cen = new double[(int)totalLength_cen]; 
+            
             long tableSize = totalLength/nFeature;
             NumericTable pointsArray_daal = new HomogenBMNumericTable(daal_Context, Double.class, nFeature, tableSize, NumericTable.AllocationFlag.DoAllocate);
 
@@ -202,6 +209,7 @@ public class KMeansDaalCollectiveMapper
             //to accomplish the first step of computing distances between training points and centroids
             DistributedStep1Local kmeansLocal = new DistributedStep1Local(daal_Context, Double.class, Method.defaultDense, numCentroids);
             kmeansLocal.input.set(InputId.data, pointsArray_daal);
+            kmeansLocal.parameter.setNThreads(numThreads);
 
             // ----------------------------------------------------- For iterations -----------------------------------------------------
             for (int i = 0; i < numIterations; i++) {
@@ -209,9 +217,9 @@ public class KMeansDaalCollectiveMapper
 
                 long t1 = System.currentTimeMillis();
 
-                //create daal table for cenTable and strip the sentinel element
-                long nFeature_cen = vectorSize;
-                long totalLength_cen = numCentroids*nFeature_cen;
+                //create daal table for cenTable without sentinel element
+                //long nFeature_cen = vectorSize;
+                //long totalLength_cen = numCentroids*nFeature_cen;
 
                 long[] array_startP_cen = new long[cenTable.getNumPartitions()];
                 long[] sentinel_startP_cen = new long[cenTable.getNumPartitions()];
@@ -230,9 +238,12 @@ public class KMeansDaalCollectiveMapper
                     ptr++;
                 }
 
-                long tableSize_cen = totalLength_cen/nFeature_cen;
-                NumericTable cenTable_daal = new HomogenBMNumericTable(daal_Context, Double.class, nFeature_cen, tableSize_cen, NumericTable.AllocationFlag.DoAllocate);
-                double[] buffer_array_cen = new double[(int)totalLength_cen];
+                //Instead of allocate every iteration, allocate once
+                //and reuse for each iteration
+                //long tableSize_cen = totalLength_cen/nFeature_cen;
+                //NumericTable cenTable_daal = new HomogenBMNumericTable(daal_Context, Double.class, nFeature_cen, tableSize_cen, NumericTable.AllocationFlag.DoAllocate);
+                //double[] buffer_array_cen = new double[(int)totalLength_cen];
+                Arrays.fill(buffer_array_cen, 0);
 
                 //convert training points from List to daal table
                 Thread[] threads_cen = new Thread[numThreads];
@@ -291,7 +302,7 @@ public class KMeansDaalCollectiveMapper
                     }
                 }
 
-                cenTable_daal.freeDataMemory();
+                //cenTable_daal.freeDataMemory();
 
                 long t4 = System.currentTimeMillis();
 
@@ -345,7 +356,11 @@ public class KMeansDaalCollectiveMapper
                 logGCTime();
                 context.progress();
 
-            }
+            }//for iteration
+
+
+            //After the iteration, free the cenTable
+            cenTable_daal.freeDataMemory();
 
             LOG.info("Time Summary Per Itr: Training: " + train_time/numIterations + 
                     " Compute: " + compute_time/numIterations + 
