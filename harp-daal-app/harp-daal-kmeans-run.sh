@@ -2,9 +2,11 @@
 
 # enter the directory of hadoop and copy your_harp_daal.jar file here
 cp ./target/harp-daal-app-1.0-SNAPSHOT.jar ${HADOOP_HOME}
-cd ${HADOOP_HOME}
-source /N/u/fg474admin/lc37/SPIDAL/harp/harp-daal-app/__release_tango_lnx/daal/bin/daalvars.sh intel64
+# set up daal environment
+source ./__release_tango_lnx/daal/bin/daalvars.sh intel64
 echo "${DAALROOT}"
+
+cd ${HADOOP_HOME}
 
 # check that safemode is not enabled 
 hdfs dfsadmin -safemode get | grep -q "ON"
