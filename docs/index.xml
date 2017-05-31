@@ -851,7 +851,7 @@ Usage: NNMapCollective &amp;lt;number of map tasks&amp;gt; &amp;lt;epochs&amp;gt
 &lt;h2 id=&#34;press&#34;&gt;Press&lt;/h2&gt;
 
 &lt;ul&gt;
-&lt;li&gt;&lt;p&gt;[B. Zhang, B. Peng, J. Qiu. Parallelizing Big Data Machine Learning Applications with Model Rotation]()  (Book Chapter in series Advances in Parallel Computing, IOS Press, 2017)&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;&lt;a href=&#34;http://dsc.soic.indiana.edu/publications/Parallelizing%20Big%20Data%20Machine%20Learning%20Applications%20with%20Model%20Rotation.pdf&#34;&gt;B. Zhang, B. Peng, J. Qiu. Parallelizing Big Data Machine Learning Applications with Model Rotation&lt;/a&gt;  (Book Chapter in series Advances in Parallel Computing, IOS Press, 2017)&lt;/p&gt;&lt;/li&gt;
 
 &lt;li&gt;&lt;p&gt;&lt;a href=&#34;http://grids.ucs.indiana.edu/ptliupages/publications/MammothDataintheCloudClusteringSocialImages.pdf&#34;&gt;J. Qiu, B. Zhang. Mammoth Data in the Cloud: Clustering Social Images&lt;/a&gt;  (Book chapter in Cloud Computing and Big Data, IOS Press, 2013)&lt;/p&gt;&lt;/li&gt;
 &lt;/ul&gt;
