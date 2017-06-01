@@ -16,7 +16,7 @@ If you are using windows, we suggest you to install an Ubuntu system on a virtua
 
 1. Make sure your computer can use `ssh` to access `localhost` and can install `Java` as well.
 
-2. Download and extract the hadoop-2.6.0 binary into your machine. It's available at [hadoop-2.6.0.tar.gz](https://dist.apache.org/repos/dist/release/hadoop/common/hadoop-2.6.0/hadoop-2.6.0.tar.gz).
+2. Download and extract the hadoop-2.6.0 binary into your machine. It's available at [hadoop-2.6.0.tar.gz](https://archive.apache.org/dist/hadoop/core/hadoop-2.6.0/hadoop-2.6.0.tar.gz).
 
 3. Set the environment variables in `~/.bashrc`.
 ```bash
