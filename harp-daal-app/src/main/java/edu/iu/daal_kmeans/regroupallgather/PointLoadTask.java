@@ -86,8 +86,8 @@ public class PointLoadTask implements
     FSDataInputStream in = fs.open(pointFilePath);
     try {
       for (int i = 0; i < points.length;) {
-        points[i++] = Double.MAX_VALUE;
-        for (int j = 1; j < cenVecSize; j++) {
+//        points[i++] = Double.MAX_VALUE;
+        for (int j = 0; j < cenVecSize; j++) {
           points[i++] = in.readDouble();
         }
       }
