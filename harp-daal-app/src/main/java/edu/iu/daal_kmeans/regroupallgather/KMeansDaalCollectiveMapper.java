@@ -194,26 +194,25 @@ public class KMeansDaalCollectiveMapper extends
       row_idx += row_len;
     }
 
-    //Service.printNumericTable("pointsArray_daal:", pointsArray_daal);
+    Service.printNumericTable("pointsArray_daal:", pointsArray_daal);
     //create the algorithm DistributedStep1Local
     DistributedStep1Local pcaLocal = new DistributedStep1Local(daal_Context, Double.class, Method.correlationDense);
     pcaLocal.input.set(InputId.data, pointsArray_daal);
     pres = (PartialCorrelationResult)pcaLocal.compute();
     // pres1 = (PartialResult)pcaLocal.compute();
     //Service.printNumericTable("step1LocalResultNew:", pres.get(PartialCorrelationResultID.crossProductCorrelation));
-    System.out.println("checking on the original");
-    pointsArray_daal.pack();
-    pointsArray_daal.unpack(daal_Context);
-    System.out.println("checking on the original done");
+    // System.out.println("checking on the original");
+    // pointsArray_daal.pack();
+    // pointsArray_daal.unpack(daal_Context);
+    // System.out.println("checking on the original done");
 
     // System.out.println("checking on the original pres");
     // pres.pack();
     // pres.unpack(daal_Context);
     // System.out.println("checking on the original pres done");
-    Table<ByteArray> step1LocalResult_table_NoObservation = communicate(pres.get(PartialCorrelationResultID.crossProductCorrelation), "corr");
-    Table<ByteArray> step1LocalResult_table_crossPro = communicate(pres.get(PartialCorrelationResultID.nObservations), "obser");
+    Table<ByteArray> step1LocalResult_table_crossPro = communicate(pres.get(PartialCorrelationResultID.crossProductCorrelation), "corr");
+    Table<ByteArray> step1LocalResult_table_NoObservation  = communicate(pres.get(PartialCorrelationResultID.nObservations), "obser");
     Table<ByteArray> step1LocalResult_table_sumCorr = communicate(pres.get(PartialCorrelationResultID.sumCorrelation), "sum");
-
 
     if(this.isMaster())
     {
@@ -265,12 +264,12 @@ public class KMeansDaalCollectiveMapper extends
         LOG.error("Failed to serialize.", e);
       }
       /* Finalize computations and retrieve the results */
-      // Result res = pcaMaster.finalizeCompute();
+      Result res = pcaMaster.finalizeCompute();
 
-      // NumericTable eigenValues = res.get(ResultId.eigenValues);
-      // NumericTable eigenVectors = res.get(ResultId.eigenVectors);
-      // Service.printNumericTable("Eigenvalues:", eigenValues);
-      // Service.printNumericTable("Eigenvectors:", eigenVectors);
+      NumericTable eigenValues = res.get(ResultId.eigenValues);
+      NumericTable eigenVectors = res.get(ResultId.eigenVectors);
+      Service.printNumericTable("Eigenvalues:", eigenValues);
+      Service.printNumericTable("Eigenvectors:", eigenVectors);
       daal_Context.dispose();
     }
   }
@@ -332,14 +331,14 @@ public class KMeansDaalCollectiveMapper extends
     System.out.println("Size of step1out bytearr[]: "+ buffer.length);
     ByteArrayInputStream inputByteStream = new ByteArrayInputStream(buffer);
     System.out.println("Size of step1out bytearr[]: "+ buffer.length);
-    for (int i = 0; i < buffer.length; i++)
-    {
-      if (i > 0)
-      {
-        System.out.print(", ");
-      }
-      System.out.print(buffer[i]);
-    }
+    // for (int i = 0; i < buffer.length; i++)
+    // {
+    //   if (i > 0)
+    //   {
+    //     System.out.print(", ");
+    //   }
+    //   System.out.print(buffer[i]);
+    // }
     System.out.println("created a new ByteArray");
     ObjectInputStream inputStream = new ObjectInputStream(inputByteStream);
     System.out.println("new inputStream");

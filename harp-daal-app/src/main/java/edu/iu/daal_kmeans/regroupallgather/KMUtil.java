@@ -145,20 +145,17 @@ public class KMUtil {
       throw new IOException("No point to write.");
     }
     // Create random data points
-    int poolSize =
-      Runtime.getRuntime().availableProcessors();
-    ExecutorService service =
-      Executors.newFixedThreadPool(poolSize);
-    List<Future<?>> futures =
-      new LinkedList<Future<?>>();
-    for (int k = 0; k < numPointFiles; k++) {
-      Future<?> f =
-        service.submit(new DataGenRunnable(
-          pointsPerFile, localInputDir, Integer
-            .toString(k), vectorSize));
+    int poolSize = Runtime.getRuntime().availableProcessors();
+    ExecutorService service = Executors.newFixedThreadPool(poolSize);
+    List<Future<?>> futures = new LinkedList<Future<?>>();
+    for (int k = 0; k < numPointFiles; k++)
+    {
+      Future<?> f = service.submit(new DataGenRunnable(
+        pointsPerFile, localInputDir, Integer.toString(k), vectorSize));
       futures.add(f); // add a new thread
     }
-    for (Future<?> f : futures) {
+    for (Future<?> f : futures)
+    {
       f.get();
     }
     // Shut down the executor service so that this
@@ -185,25 +182,35 @@ public class KMUtil {
   public static List<double[]> loadPoints(
     List<String> fileNames, int pointsPerFile,
     int cenVecSize, Configuration conf,
-    int numThreads) {
+    int numThreads)
+  {
     long startTime = System.currentTimeMillis();
-    List<PointLoadTask> tasks =
-      new LinkedList<>();
+    List<PointLoadTask> tasks = new LinkedList<>();
     List<double[]> arrays = new LinkedList<>();
-    for (int i = 0; i < numThreads; i++) {
-      tasks.add(new PointLoadTask(pointsPerFile,
-        cenVecSize, conf));
+    for (int i = 0; i < numThreads; i++)
+    {
+      tasks.add(new PointLoadTask(pointsPerFile, cenVecSize, conf));
     }
-    DynamicScheduler<String, double[], PointLoadTask> compute =
-      new DynamicScheduler<>(tasks);
-    for (String fileName : fileNames) {
+    DynamicScheduler<String, double[], PointLoadTask> compute = new DynamicScheduler<>(tasks);
+    for (String fileName : fileNames)
+    {
       compute.submit(fileName);
     }
     compute.start();
     compute.stop();
-    while (compute.hasOutput()) {
+    while (compute.hasOutput())
+    {
       double[] output = compute.waitForOutput();
-      if (output != null) {
+      if (output != null)
+      {
+        for (int i = 0; i < output.length; i++)
+        {
+          if (i > 0)
+          {
+            System.out.print(", ");
+          }
+          System.out.print(output[i]);
+        }
         arrays.add(output);
       }
     }
