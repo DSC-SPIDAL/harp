@@ -17,12 +17,21 @@
 package edu.iu.daal_kmeans.regroupallgather;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Arrays;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStreamWriter;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -33,16 +42,28 @@ import org.apache.hadoop.mapred.CollectiveMapper;
 import edu.iu.harp.example.DoubleArrPlus;
 import edu.iu.harp.partition.Partition;
 import edu.iu.harp.partition.Partitioner;
+import edu.iu.harp.partition.PartitionStatus;
 import edu.iu.harp.partition.Table;
 import edu.iu.harp.resource.DoubleArray;
 import edu.iu.harp.schdynamic.DynamicScheduler;
+
+import edu.iu.harp.resource.ByteArray;
 
 import edu.iu.daal.*;
 import java.nio.DoubleBuffer;
 
 //import daa.jar API
-import com.intel.daal.algorithms.kmeans.*;
-import com.intel.daal.algorithms.kmeans.init.*;
+//import com.intel.daal.algorithms.kmeans.*;
+//import com.intel.daal.algorithms.kmeans.init.*;
+
+//import PCA from DAAL library
+import com.intel.daal.algorithms.PartialResult;
+import com.intel.daal.algorithms.pca.*;
+// import com.intel.daal.algorithms.implicit_als..*;
+import com.intel.daal.data_management.data_source.DataSource;
+import com.intel.daal.data_management.data_source.FileDataSource;
+//import com.intel.daal.examples.utils.Service;
+import edu.iu.harp.resource.ByteArray;
 
 import com.intel.daal.data_management.data.NumericTable;
 import com.intel.daal.data_management.data.HomogenNumericTable;
@@ -72,6 +93,7 @@ public class KMeansDaalCollectiveMapper extends
   private long comm_time = 0;
 
   private static DaalContext daal_Context = new DaalContext();
+//  private static DaalContext master_context = new DaalContext();
 
   /**
    * Mapper configuration.
@@ -80,6 +102,7 @@ public class KMeansDaalCollectiveMapper extends
   protected void setup(Context context)
   throws IOException, InterruptedException
   {
+    System.out.println("setup function");
     long startTime = System.currentTimeMillis();
     Configuration configuration = context.getConfiguration();
     pointsPerFile = configuration.getInt(Constants.POINTS_PER_FILE, 20);
@@ -106,6 +129,7 @@ public class KMeansDaalCollectiveMapper extends
   protected void mapCollective(KeyValReader reader, Context context)
       throws IOException, InterruptedException
   {
+    System.out.println("mapCollective function");
     long startTime = System.currentTimeMillis();
     List<String> pointFiles = new LinkedList<String>();
     while (reader.nextKeyValue())
@@ -133,19 +157,11 @@ public class KMeansDaalCollectiveMapper extends
   private void runKmeans(List<String> fileNames, Configuration conf, Context context)
       throws IOException
   {
-    // Load centroids
-    Table<DoubleArray> cenTable = new Table<>(0, new DoubleArrPlus());
-    if (this.isMaster())
-    {
-      createCenTable(cenTable, numCentroids, numCenPars, cenVecSize);
-      loadCentroids(cenTable, cenVecSize, cenDir
-              + File.separator + Constants.CENTROID_FILE_NAME, conf);
-    }
-    // Bcast centroids
-    bcastCentroids(cenTable, this.getMasterID());
+    // Table<DoubleArray> points_harp = new Table<>(0, new DoubleArrPlus());
+    PartialCorrelationResult pres = new PartialCorrelationResult(daal_Context);
+    System.out.println("This is some node. runKmeans");
 
-    //pointArrays are used in daal table with feature dimension to be
-    //vectorSize instead of cenVecSize
+    //pointArrays are used in daal table with feature dimension to be vectorSize instead of cenVecSize
     List<double[]> pointArrays = KMUtil.loadPoints(fileNames, pointsPerFile,
                 vectorSize, conf, numThreads);
 
@@ -164,15 +180,8 @@ public class KMeansDaalCollectiveMapper extends
       totalLength += pointArrays.get(k).length;
     }
 
-    //create daal table for cenTable first so it can be allocated
-    //on HBM if available
-    long nFeature_cen = vectorSize;
-    long totalLength_cen = numCentroids*nFeature_cen;
-    long tableSize_cen = totalLength_cen/nFeature_cen;
-    NumericTable cenTable_daal = new HomogenBMNumericTable(daal_Context, Double.class, nFeature_cen, tableSize_cen, NumericTable.AllocationFlag.DoAllocate);
-    double[] buffer_array_cen = new double[(int)totalLength_cen];
-
     long tableSize = totalLength/nFeature;
+    System.out.println("tableSize="+tableSize);
     NumericTable pointsArray_daal = new HomogenBMNumericTable(daal_Context, Double.class, nFeature, tableSize, NumericTable.AllocationFlag.DoAllocate);
 
     int row_idx = 0;
@@ -185,296 +194,161 @@ public class KMeansDaalCollectiveMapper extends
       row_idx += row_len;
     }
 
+    //Service.printNumericTable("pointsArray_daal:", pointsArray_daal);
     //create the algorithm DistributedStep1Local
-    //to accomplish the first step of computing distances between training points and centroids
-    DistributedStep1Local kmeansLocal = new DistributedStep1Local(daal_Context, Double.class, Method.defaultDense, numCentroids);
-    kmeansLocal.input.set(InputId.data, pointsArray_daal);
-    kmeansLocal.parameter.setNThreads(numThreads);
+    DistributedStep1Local pcaLocal = new DistributedStep1Local(daal_Context, Double.class, Method.correlationDense);
+    pcaLocal.input.set(InputId.data, pointsArray_daal);
+    pres = (PartialCorrelationResult)pcaLocal.compute();
+    // pres1 = (PartialResult)pcaLocal.compute();
+    //Service.printNumericTable("step1LocalResultNew:", pres.get(PartialCorrelationResultID.crossProductCorrelation));
+    System.out.println("checking on the original");
+    pointsArray_daal.pack();
+    pointsArray_daal.unpack(daal_Context);
+    System.out.println("checking on the original done");
 
-    // ----------------------------------------------------- For iterations -----------------------------------------------------
-    for (int i = 0; i < numIterations; i++)
+    // System.out.println("checking on the original pres");
+    // pres.pack();
+    // pres.unpack(daal_Context);
+    // System.out.println("checking on the original pres done");
+    Table<ByteArray> step1LocalResult_table_NoObservation = communicate(pres.get(PartialCorrelationResultID.crossProductCorrelation), "corr");
+    Table<ByteArray> step1LocalResult_table_crossPro = communicate(pres.get(PartialCorrelationResultID.nObservations), "obser");
+    Table<ByteArray> step1LocalResult_table_sumCorr = communicate(pres.get(PartialCorrelationResultID.sumCorrelation), "sum");
+
+
+    if(this.isMaster())
     {
-      LOG.info("Iteration: " + i);
+      System.out.println("This is the master node and yolo");
+      DistributedStep2Master pcaMaster = new DistributedStep2Master(daal_Context, Double.class, Method.correlationDense);
 
-      long t1 = System.currentTimeMillis();
-
-      //create daal table for cenTable without sentinel element
-      //long nFeature_cen = vectorSize;
-      //long totalLength_cen = numCentroids*nFeature_cen;
-
-      long[] array_startP_cen = new long[cenTable.getNumPartitions()];
-      long[] sentinel_startP_cen = new long[cenTable.getNumPartitions()];
-      double[][] array_data_cen = new double[cenTable.getNumPartitions()][];
-
-      int ptr = 0;
-      long startP = 0;
-      long sentinel_startP = 0;
-      for (Partition<DoubleArray> partition : cenTable.getPartitions())
-      {
-        array_data_cen[ptr] = partition.get().get();
-        array_startP_cen[ptr] = startP;
-        sentinel_startP_cen[ptr] = sentinel_startP;
-        long increment = ((array_data_cen[ptr].length)/(cenVecSize));
-        sentinel_startP += increment;
-        startP += (increment*nFeature_cen);
-        ptr++;
-      }
-
-      //Instead of allocate every iteration, allocate once
-      //and reuse for each iteration
-      //long tableSize_cen = totalLength_cen/nFeature_cen;
-      //NumericTable cenTable_daal = new HomogenBMNumericTable(daal_Context, Double.class, nFeature_cen, tableSize_cen, NumericTable.AllocationFlag.DoAllocate);
-      //double[] buffer_array_cen = new double[(int)totalLength_cen];
-      Arrays.fill(buffer_array_cen, 0);
-
-      //convert training points from List to daal table
-      Thread[] threads_cen = new Thread[numThreads];
-
-      //parallel copy partitions of cenTale into an entire primitive array
-      for (int q = 0; q<numThreads; q++)
-      {
-        threads_cen[q] = new Thread(new TaskSentinelListToBufferDouble(q, numThreads, (int)nFeature_cen, cenTable.getNumPartitions(), array_startP_cen, array_data_cen, buffer_array_cen));
-        threads_cen[q].start();
-      }
-
-      for (int q = 0; q< numThreads; q++)
-      {
-        try
+     try
+     {
+        for (int i = 0; i < this.getNumWorkers(); i++)
         {
-            threads_cen[q].join();
+          // System.out.println("This is the"+i+"th iteration"+"in"+this.getNumWorkers());
+          // for (int j = 0; j < step1LocalResult_table.getPartition(0).get().get().length; j++)
+          // {
+          //   if (j > 0)
+          //   {
+          //     System.out.print(", ");
+          //   }
+          //   System.out.print(step1LocalResult_table.getPartition(0).get().get()[j]);
+          // }
+          // System.out.println("THe sesond part");
+          // for (int j = 0; j < step1LocalResult_table.getPartition(1).get().get().length; j++)
+          // {
+          //   if (j > 0)
+          //   {
+          //       System.out.print(", ");
+          //   }
+          //   System.out.print(step1LocalResult_table.getPartition(1).get().get()[j]);
+          // }
+          NumericTable step1LocalResultNew_NoObservation = deserializeStep1Result(step1LocalResult_table_NoObservation.getPartition(i).get().get());
+          NumericTable step1LocalResultNew_crossPro      = deserializeStep1Result(step1LocalResult_table_crossPro.getPartition(i).get().get());
+          NumericTable step1LocalResultNew_sumCorr       = deserializeStep1Result(step1LocalResult_table_sumCorr.getPartition(i).get().get());
 
+          PartialCorrelationResult step1LocalResultNew = new PartialCorrelationResult(daal_Context);
+          step1LocalResultNew.set(PartialCorrelationResultID.crossProductCorrelation, step1LocalResultNew_crossPro);
+          step1LocalResultNew.set(PartialCorrelationResultID.nObservations, step1LocalResultNew_NoObservation);
+          step1LocalResultNew.set(PartialCorrelationResultID.sumCorrelation, step1LocalResultNew_sumCorr);
+
+          System.out.println("This is the"+i+this.getNumWorkers());
+          // Service.printNumericTable("step1LocalResultNew:", pres.get(PartialCorrelationResultID.crossProductCorrelation));
+          pcaMaster.input.add(MasterInputId.partialResults, step1LocalResultNew);
         }
-        catch(InterruptedException e)
-        {
-            System.out.println("Thread interrupted.");
-        }
+        System.out.println("Going to compute now");
+        pcaMaster.compute();
+        System.out.println("Computation done");
       }
-
-      //release the array into daal side cenTable
-      ((HomogenBMNumericTable)cenTable_daal).releaseBlockOfRowsByte(0, tableSize_cen, buffer_array_cen);
-      kmeansLocal.input.set(InputId.inputCentroids, cenTable_daal);
-
-      long t2 = System.currentTimeMillis();
-      PartialResult pres = kmeansLocal.compute();
-      long t3 = System.currentTimeMillis();
-
-      // partialSum: double array vectorSize*numCentroids
-      double[] partialSum = (double[]) ((HomogenNumericTable)pres.get(PartialResultId.partialSums)).getDoubleArray();
-
-      // nObservations: int array numCentroids
-      double[] nObservations = (double[]) ((HomogenNumericTable)pres.get(PartialResultId.nObservations)).getDoubleArray();
-
-      //copy partialSum and nObservations back to cenTable
-      threads_cen = new Thread[numThreads];
-      for (int q = 0; q<numThreads; q++)
+      catch (Exception e)
       {
-        threads_cen[q] = new Thread(new TaskSentinelListUpdateDouble(q, numThreads, (int)nFeature_cen, cenTable.getNumPartitions(), array_startP_cen, sentinel_startP_cen,
-                    array_data_cen, partialSum, nObservations));
-        threads_cen[q].start();
+        System.out.println("Throws Exception: "+e);
+        LOG.error("Failed to serialize.", e);
       }
+      /* Finalize computations and retrieve the results */
+      // Result res = pcaMaster.finalizeCompute();
 
-      for (int q = 0; q< numThreads; q++)
-      {
-        try
-        {
-            threads_cen[q].join();
-
-        }
-        catch(InterruptedException e)
-        {
-            System.out.println("Thread interrupted.");
-        }
-      }
-
-      //cenTable_daal.freeDataMemory();
-      long t4 = System.currentTimeMillis();
-
-      // Allreduce
-      regroup("main", "regroup-" + i, cenTable,
-              new Partitioner(this.getNumWorkers()));
-
-      long t5 = System.currentTimeMillis();
-
-      //calculate the average value in multi-threading
-      int num_partition = cenTable.getNumPartitions();
-      Thread[] threads_avg = new Thread[num_partition];
-
-      int thread_id = 0;
-      for (Partition<DoubleArray> partition : cenTable.getPartitions())
-      {
-        DoubleArray array = partition.get();
-        threads_avg[thread_id] = new Thread(new TaskAvgCalc(cenVecSize, array));
-        threads_avg[thread_id].start();
-        thread_id++;
-      }
-
-      for (int q = 0; q< num_partition; q++)
-      {
-        try
-        {
-            threads_avg[q].join();
-        }
-        catch(InterruptedException e)
-        {
-            System.out.println("Thread interrupted.");
-        }
-      }
-
-      long t6 = System.currentTimeMillis();
-
-      allgather("main", "allgather-" + i, cenTable);
-
-      long t7 = System.currentTimeMillis();
-
-      train_time += (t7 - t1);
-      compute_time += ((t3 -t2) + (t6 - t5));
-      convert_time += ((t2- t1) + (t4 - t3));
-      comm_time += ((t5 - t4) + (t7 - t6));
-
-      LOG.info("Compute: " + ((t3 -t2) + (t6 - t5))
-              + ", Convert: " + ((t2- t1) + (t4 - t3))
-              + ", Aggregate: " + ((t5 - t4) + (t7 - t6)));
-      logMemUsage();
-      logGCTime();
-      context.progress();
-    }//for iteration
-
-
-      //After the iteration, free the cenTable
-    cenTable_daal.freeDataMemory();
-
-    LOG.info("Time Summary Per Itr: Training: " + train_time/numIterations +
-            " Compute: " + compute_time/numIterations +
-            " Convert: " + convert_time/numIterations +
-            " Comm: " + comm_time/numIterations);
-
-    pointsArray_daal.freeDataMemory();
-    // calcCompute.stop();
-    // mergeCompute.stop();
-    // Write out centroids
-    if (this.isMaster())
-    {
-      LOG.info("Start to write out centroids.");
-      long startTime = System.currentTimeMillis();
-      KMUtil.storeCentroids(conf, cenDir, cenTable, cenVecSize, "output");
-      long endTime = System.currentTimeMillis();
-      LOG.info("Store centroids time (ms): " + (endTime - startTime));
-    }
-    cenTable.release();
-  }
-
-  /**
-   * @brief generate the Harp side centroid table
-   *
-   * @param cenTable
-   * @param numCentroids
-   * @param numCenPartitions
-   * @param cenVecSize
-   *
-   * @return
-   */
-  private void createCenTable(
-          Table<DoubleArray> cenTable,
-          int numCentroids, int numCenPartitions,
-          int cenVecSize)
-  {
-    int cenParSize = numCentroids / numCenPartitions;
-    int cenRest = numCentroids % numCenPartitions;
-    for (int i = 0; i < numCenPartitions; i++)
-    {
-      if (cenRest > 0)
-      {
-        int size = (cenParSize + 1) * cenVecSize;
-        DoubleArray array = DoubleArray.create(size, false);
-        cenTable.addPartition(new Partition<>(i, array));
-        cenRest--;
-      }
-      else if (cenParSize > 0)
-      {
-        int size = cenParSize * cenVecSize;
-        DoubleArray array = DoubleArray.create(size, false);
-        cenTable.addPartition(new Partition<>(i,array));
-      }
-      else
-      {
-        break;
-      }
+      // NumericTable eigenValues = res.get(ResultId.eigenValues);
+      // NumericTable eigenVectors = res.get(ResultId.eigenVectors);
+      // Service.printNumericTable("Eigenvalues:", eigenValues);
+      // Service.printNumericTable("Eigenvectors:", eigenVectors);
+      daal_Context.dispose();
     }
   }
 
-  /**
-   * Fill data from centroid file to cenDataMap
-   *
-   * @param cenDataMap
-   * @param vectorSize
-   * @param cFileName
-   * @param configuration
-   * @throws IOException
-   */
-  private void loadCentroids(Table<DoubleArray> cenTable,
-              int cenVecSize, String cFileName,
-              Configuration configuration)
-      throws IOException
+  public Table<ByteArray> communicate(NumericTable res, String stri) throws IOException
   {
-    long startTime = System.currentTimeMillis();
-    Path cPath = new Path(cFileName);
-    FileSystem fs = FileSystem.get(configuration);
-    FSDataInputStream in = fs.open(cPath);
-    BufferedReader br = new BufferedReader(new InputStreamReader(in));
-    String[] curLine = null;
-    int curPos = 0;
-    for (Partition<DoubleArray> partition : cenTable.getPartitions())
-    {
-      DoubleArray array = partition.get();
-      double[] cData = array.get();
-      int start = array.start();
-      int size = array.size();
-      for (int i = start; i < (start + size); i++)
-      {
-        // Don't set the first element in each row
-        if (i % cenVecSize != 0)
-        {
-          // cData[i] = in.readDouble();
-          if (curLine == null || curPos == curLine.length)
-          {
-              curLine = br.readLine().split(" ");
-              curPos = 0;
-          }
-          cData[i] = Double.parseDouble(curLine[curPos]);
-          curPos++;
-        }
-      }
-    }
-    br.close();
-    long endTime = System.currentTimeMillis();
-    LOG.info("Load centroids (ms): " + (endTime - startTime));
-  }
-
-  /**
-   * Broadcast centroids data in partitions
-   *
-   * @param table
-   * @param numPartitions
-   * @throws IOException
-   */
-  private void bcastCentroids(Table<DoubleArray> table, int bcastID)
-      throws IOException
-  {
-    long startTime = System.currentTimeMillis();
-    boolean isSuccess = false;
     try
     {
-      isSuccess = this.broadcast("main", "broadcast-centroids", table, bcastID, false);
+      byte[] serialStep1LocalResult = serializeStep1Result(res);
+      System.out.println("Size of step1out: "+serialStep1LocalResult.length);
+      // for (int i = 0; i < serialStep1LocalResult.length; i++)
+      // {
+      //   if (i > 0)
+      //   {
+      //     System.out.print(", ");
+      //   }
+      //   System.out.print(serialStep1LocalResult[i]);
+      // }
+      ByteArray step1LocalResult_harp = new ByteArray(serialStep1LocalResult, 0, serialStep1LocalResult.length);
+      Table<ByteArray> step1LocalResult_table = new Table<>(0, new ByteArrPlus());
+      step1LocalResult_table.addPartition(new Partition<>(this.getSelfID(), step1LocalResult_harp));
+
+      //reduce to master node with id 0
+      System.out.println("Before: "+ step1LocalResult_table.getNumPartitions());
+      this.allgather("pca", "sync-partial-res-"+stri, step1LocalResult_table);
+      System.out.println("After: "+ step1LocalResult_table.getNumPartitions());
+      // System.out.println("Size of step1out: "+ step1LocalResult_table.length);
+
+      return step1LocalResult_table;
     }
     catch (Exception e)
     {
-      LOG.error("Fail to bcast.", e);
+      System.out.println("Threw Exception" + e);
+      LOG.error("Fail to serilization.", e);
+      return null;
     }
-    long endTime = System.currentTimeMillis();
-    LOG.info("Bcast centroids (ms): " + (endTime - startTime));
-    if (!isSuccess)
+  }
+
+  private byte[] serializeStep1Result(NumericTable res) throws IOException
+  {
+    // Create an output stream to serialize the numeric table
+    ByteArrayOutputStream outputByteStream = new ByteArrayOutputStream();
+    ObjectOutputStream outputStream = new ObjectOutputStream(outputByteStream);
+
+    // Serialize the partialResult table into the output stream
+    res.pack();
+    System.out.println("it works here");
+    outputStream.writeObject(res);
+
+    // Store the serialized data in an array
+    byte[] buffer = outputByteStream.toByteArray();
+    return buffer;
+  }
+
+  private NumericTable deserializeStep1Result(byte[] buffer) throws IOException, ClassNotFoundException
+  {
+    // Create an input stream to deserialize the numeric table from the array
+    System.out.println("Size of step1out bytearr[]:");
+    System.out.println("Size of step1out bytearr[]: "+ buffer.length);
+    ByteArrayInputStream inputByteStream = new ByteArrayInputStream(buffer);
+    System.out.println("Size of step1out bytearr[]: "+ buffer.length);
+    for (int i = 0; i < buffer.length; i++)
     {
-      throw new IOException("Fail to bcast");
+      if (i > 0)
+      {
+        System.out.print(", ");
+      }
+      System.out.print(buffer[i]);
     }
+    System.out.println("created a new ByteArray");
+    ObjectInputStream inputStream = new ObjectInputStream(inputByteStream);
+    System.out.println("new inputStream");
+    // Create a numeric table object
+    NumericTable restoredRes = (NumericTable)inputStream.readObject();
+    // PartialCorrelationResult restoredRes;
+    System.out.println("read the object");
+    restoredRes.unpack(daal_Context);
+    System.out.println("done everything. now returning");
+    return restoredRes;
   }
 }
