@@ -58,48 +58,6 @@ public class KMUtil {
    * @param fs
    * @throws IOException
    */
-  static void generateCentroids(int numCentroids,
-    int vectorSize, Configuration configuration,
-    Path cenDir, FileSystem fs)
-    throws IOException {
-    Random random = new Random();
-    double[] data = null;
-    if (fs.exists(cenDir))
-      fs.delete(cenDir, true);
-    if (!fs.mkdirs(cenDir)) {
-      throw new IOException(
-        "Mkdirs failed to create "
-          + cenDir.toString());
-    }
-    data = new double[numCentroids * vectorSize];
-    for (int i = 0; i < data.length; i++) {
-      // data[i] = 1000;
-      data[i] = random.nextDouble() * 1000;
-    }
-    Path initClustersFile =
-      new Path(cenDir,
-        Constants.CENTROID_FILE_NAME);
-    System.out.println("Generate centroid data."
-      + initClustersFile.toString());
-    FSDataOutputStream out =
-      fs.create(initClustersFile, true);
-    BufferedWriter bw =
-      new BufferedWriter(new OutputStreamWriter(
-        out));
-    for (int i = 0; i < data.length; i++) {
-      if ((i % vectorSize) == (vectorSize - 1)) {
-        bw.write(data[i] + "");
-        bw.newLine();
-      } else {
-        bw.write(data[i] + " ");
-      }
-    }
-    bw.flush();
-    bw.close();
-    System.out
-      .println("Wrote centroids data to file");
-  }
-
   /**
    * Generate data and upload to the data dir.
    * 
@@ -220,47 +178,6 @@ public class KMUtil {
       + ", number of point arrays: "
       + arrays.size());
     return arrays;
-  }
-
-  public static void storeCentroids(
-    Configuration configuration, String cenDir,
-    Table<DoubleArray> cenTable, int cenVecSize,
-    String name) throws IOException {
-    String cFile =
-      cenDir + File.separator + "out"
-        + File.separator + name;
-    Path cPath = new Path(cFile);
-    LOG.info("centroids path: "
-      + cPath.toString());
-    FileSystem fs = FileSystem.get(configuration);
-    fs.delete(cPath, true);
-    FSDataOutputStream out = fs.create(cPath);
-    BufferedWriter bw =
-      new BufferedWriter(new OutputStreamWriter(
-        out));
-    int linePos = 0;
-    int[] idArray =
-      cenTable.getPartitionIDs().toArray(
-        new int[0]);
-    IntArrays.quickSort(idArray);
-    for (int i = 0; i < idArray.length; i++) {
-      Partition<DoubleArray> partition =
-        cenTable.getPartition(idArray[i]);
-      for (int j = 0; j < partition.get().size(); j++) {
-        linePos = j % cenVecSize;
-        if (linePos == (cenVecSize - 1)) {
-          bw.write(partition.get().get()[j]
-            + "\n");
-        } else if (linePos > 0) {
-          // Every row with vectorSize + 1 length,
-          // the first one is a count,
-          // ignore it in output
-          bw.write(partition.get().get()[j] + " ");
-        }
-      }
-    }
-    bw.flush();
-    bw.close();
   }
 
   public static void DeleteFileFolder(String path) {

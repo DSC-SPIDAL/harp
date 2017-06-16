@@ -71,14 +71,9 @@ public class KMeansDaalCollectiveMapper extends
     CollectiveMapper<String, String, Object, Object>
 {
   private int pointsPerFile;
-  private int numCentroids;
   private int vectorSize;
-  private int numCenPars;
-  private int cenVecSize;
   private int numMappers;
   private int numThreads;
-  private int numIterations;
-  private String cenDir;
 
   //to measure the time
   private long convert_time = 0;
