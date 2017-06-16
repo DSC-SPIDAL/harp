@@ -49,7 +49,7 @@ public class KMUtil {
 
   /**
    * Generate centroids and upload to the cDir
-   * 
+   *
    * @param numCentroids
    * @param vectorSize
    * @param configuration
