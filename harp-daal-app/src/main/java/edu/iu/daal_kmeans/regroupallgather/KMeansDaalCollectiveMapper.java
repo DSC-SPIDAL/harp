@@ -52,17 +52,11 @@ import edu.iu.harp.resource.ByteArray;
 import edu.iu.daal.*;
 import java.nio.DoubleBuffer;
 
-//import daa.jar API
-//import com.intel.daal.algorithms.kmeans.*;
-//import com.intel.daal.algorithms.kmeans.init.*;
-
 //import PCA from DAAL library
 import com.intel.daal.algorithms.PartialResult;
 import com.intel.daal.algorithms.pca.*;
-// import com.intel.daal.algorithms.implicit_als..*;
 import com.intel.daal.data_management.data_source.DataSource;
 import com.intel.daal.data_management.data_source.FileDataSource;
-//import com.intel.daal.examples.utils.Service;
 import edu.iu.harp.resource.ByteArray;
 
 import com.intel.daal.data_management.data.NumericTable;
@@ -93,7 +87,6 @@ public class KMeansDaalCollectiveMapper extends
   private long comm_time = 0;
 
   private static DaalContext daal_Context = new DaalContext();
-//  private static DaalContext master_context = new DaalContext();
 
   /**
    * Mapper configuration.
@@ -102,34 +95,22 @@ public class KMeansDaalCollectiveMapper extends
   protected void setup(Context context)
   throws IOException, InterruptedException
   {
-    System.out.println("setup function");
     long startTime = System.currentTimeMillis();
     Configuration configuration = context.getConfiguration();
     pointsPerFile = configuration.getInt(Constants.POINTS_PER_FILE, 20);
-    numCentroids = configuration.getInt(Constants.NUM_CENTROIDS, 20);
     vectorSize = configuration.getInt(Constants.VECTOR_SIZE, 20);
     numMappers = configuration.getInt(Constants.NUM_MAPPERS, 10);
-    // numCenPars = numMappers;
-    cenVecSize = vectorSize + 1;
     numThreads = configuration.getInt(Constants.NUM_THREADS, 10);
-    numCenPars = numThreads;
-    numIterations = configuration.getInt(Constants.NUM_ITERATIONS, 10);
-    cenDir = configuration.get(Constants.CEN_DIR);
     LOG.info("Points Per File " + pointsPerFile);
-    LOG.info("Num Centroids " + numCentroids);
     LOG.info("Vector Size " + vectorSize);
     LOG.info("Num Mappers " + numMappers);
     LOG.info("Num Threads " + numThreads);
-    LOG.info("Num Iterations " + numIterations);
-    LOG.info("Cen Dir " + cenDir);
     long endTime = System.currentTimeMillis();
     LOG.info("config (ms) :" + (endTime - startTime));
   }
 
-  protected void mapCollective(KeyValReader reader, Context context)
-      throws IOException, InterruptedException
+  protected void mapCollective(KeyValReader reader, Context context) throws IOException, InterruptedException
   {
-    System.out.println("mapCollective function");
     long startTime = System.currentTimeMillis();
     List<String> pointFiles = new LinkedList<String>();
     while (reader.nextKeyValue())
@@ -140,9 +121,8 @@ public class KMeansDaalCollectiveMapper extends
       pointFiles.add(value);
     }
     Configuration conf = context.getConfiguration();
-    runKmeans(pointFiles, conf, context);
-    LOG.info("Total iterations in master view: "
-            + (System.currentTimeMillis() - startTime));
+    runPCA(pointFiles, conf, context);
+    LOG.info("Total iterations in master view: " + (System.currentTimeMillis() - startTime));
   }
 
   /**
@@ -154,200 +134,134 @@ public class KMeansDaalCollectiveMapper extends
    *
    * @return
    */
-  private void runKmeans(List<String> fileNames, Configuration conf, Context context)
-      throws IOException
+  private void runPCA(List<String> fileNames, Configuration conf, Context context) throws IOException
   {
-    // Table<DoubleArray> points_harp = new Table<>(0, new DoubleArrPlus());
+    /*creating an object to store the partial results on each node*/
     PartialCorrelationResult pres = new PartialCorrelationResult(daal_Context);
-    System.out.println("This is some node. runKmeans");
 
-    //pointArrays are used in daal table with feature dimension to be vectorSize instead of cenVecSize
-    List<double[]> pointArrays = KMUtil.loadPoints(fileNames, pointsPerFile,
-                vectorSize, conf, numThreads);
+    System.out.println("File taken by this:"+ fileNames.get(0));
 
-    //---------------- convert cenTable and pointArrays to Daal table ------------------
-    //create the daal table for pointsArrays
-    long nFeature = vectorSize;
-    long totalLength = 0;
+    FileDataSource dataSource = new FileDataSource(daal_Context, "/N/u/pgangwar/pca_"+this.getSelfID()+".csv",
+                                                   DataSource.DictionaryCreationFlag.DoDictionaryFromContext,
+                                                   DataSource.NumericTableAllocationFlag.DoAllocateNumericTable);
 
-    long[] array_startP = new long[pointArrays.size()];
-    double[][] array_data = new double[pointArrays.size()][];
+    /* Retrieve the data from the input file */
+    dataSource.loadDataBlock();
 
-    for(int k=0;k<pointArrays.size();k++)
-    {
-      array_data[k] = pointArrays.get(k);
-      array_startP[k] = totalLength;
-      totalLength += pointArrays.get(k).length;
-    }
+    /* Set the input data on local nodes */
+    NumericTable pointsArray_daal = dataSource.getNumericTable();
 
-    long tableSize = totalLength/nFeature;
-    System.out.println("tableSize="+tableSize);
-    NumericTable pointsArray_daal = new HomogenBMNumericTable(daal_Context, Double.class, nFeature, tableSize, NumericTable.AllocationFlag.DoAllocate);
-
-    int row_idx = 0;
-    int row_len = 0;
-    for (int k=0; k<pointArrays.size(); k++)
-    {
-      row_len = (array_data[k].length)/(int)nFeature;
-      //release data from Java side to native side
-      ((HomogenBMNumericTable)pointsArray_daal).releaseBlockOfRowsByte(row_idx, row_len, array_data[k]);
-      row_idx += row_len;
-    }
-
-    Service.printNumericTable("pointsArray_daal:", pointsArray_daal);
-    //create the algorithm DistributedStep1Local
+    /* Create an algorithm to compute PCA decomposition using the correlation method on local nodes */
     DistributedStep1Local pcaLocal = new DistributedStep1Local(daal_Context, Double.class, Method.correlationDense);
+
+    /* Set the input data on local nodes */
     pcaLocal.input.set(InputId.data, pointsArray_daal);
+
+    /*Compute the partial results on the local data nodes*/
     pres = (PartialCorrelationResult)pcaLocal.compute();
-    // pres1 = (PartialResult)pcaLocal.compute();
-    //Service.printNumericTable("step1LocalResultNew:", pres.get(PartialCorrelationResultID.crossProductCorrelation));
-    // System.out.println("checking on the original");
-    // pointsArray_daal.pack();
-    // pointsArray_daal.unpack(daal_Context);
-    // System.out.println("checking on the original done");
 
-    // System.out.println("checking on the original pres");
-    // pres.pack();
-    // pres.unpack(daal_Context);
-    // System.out.println("checking on the original pres done");
-    Table<ByteArray> step1LocalResult_table_crossPro = communicate(pres.get(PartialCorrelationResultID.crossProductCorrelation), "corr");
-    Table<ByteArray> step1LocalResult_table_NoObservation  = communicate(pres.get(PartialCorrelationResultID.nObservations), "obser");
-    Table<ByteArray> step1LocalResult_table_sumCorr = communicate(pres.get(PartialCorrelationResultID.sumCorrelation), "sum");
+    /*Do an reduce to send all the data to the master node*/
+    Table<ByteArray> step1LocalResult_table = communicate(pres);
 
+    /*Start the Step 2 on the master node*/
     if(this.isMaster())
     {
-      System.out.println("This is the master node and yolo");
+      /*create a new algorithm for the master node computations*/
       DistributedStep2Master pcaMaster = new DistributedStep2Master(daal_Context, Double.class, Method.correlationDense);
-
-     try
+      try
      {
         for (int i = 0; i < this.getNumWorkers(); i++)
         {
-          // System.out.println("This is the"+i+"th iteration"+"in"+this.getNumWorkers());
-          // for (int j = 0; j < step1LocalResult_table.getPartition(0).get().get().length; j++)
-          // {
-          //   if (j > 0)
-          //   {
-          //     System.out.print(", ");
-          //   }
-          //   System.out.print(step1LocalResult_table.getPartition(0).get().get()[j]);
-          // }
-          // System.out.println("THe sesond part");
-          // for (int j = 0; j < step1LocalResult_table.getPartition(1).get().get().length; j++)
-          // {
-          //   if (j > 0)
-          //   {
-          //       System.out.print(", ");
-          //   }
-          //   System.out.print(step1LocalResult_table.getPartition(1).get().get()[j]);
-          // }
-          NumericTable step1LocalResultNew_NoObservation = deserializeStep1Result(step1LocalResult_table_NoObservation.getPartition(i).get().get());
-          NumericTable step1LocalResultNew_crossPro      = deserializeStep1Result(step1LocalResult_table_crossPro.getPartition(i).get().get());
-          NumericTable step1LocalResultNew_sumCorr       = deserializeStep1Result(step1LocalResult_table_sumCorr.getPartition(i).get().get());
+          /*get the partial results from the local nodes and deserialize*/
+          PartialCorrelationResult step1LocalResultNew = deserializeStep1Result(step1LocalResult_table.getPartition(i).get().get());
 
-          PartialCorrelationResult step1LocalResultNew = new PartialCorrelationResult(daal_Context);
-          step1LocalResultNew.set(PartialCorrelationResultID.crossProductCorrelation, step1LocalResultNew_crossPro);
-          step1LocalResultNew.set(PartialCorrelationResultID.nObservations, step1LocalResultNew_NoObservation);
-          step1LocalResultNew.set(PartialCorrelationResultID.sumCorrelation, step1LocalResultNew_sumCorr);
-
-          System.out.println("This is the"+i+this.getNumWorkers());
-          // Service.printNumericTable("step1LocalResultNew:", pres.get(PartialCorrelationResultID.crossProductCorrelation));
+          /*add the partial results from the loacl nodes to the master node input*/
           pcaMaster.input.add(MasterInputId.partialResults, step1LocalResultNew);
         }
-        System.out.println("Going to compute now");
+        /*compute the results on the master node*/
         pcaMaster.compute();
-        System.out.println("Computation done");
       }
-      catch (Exception e)
+      catch(Exception e)
       {
-        System.out.println("Throws Exception: "+e);
-        LOG.error("Failed to serialize.", e);
+        System.out.println("Exception: + " + e);
       }
-      /* Finalize computations and retrieve the results */
-      Result res = pcaMaster.finalizeCompute();
 
+      /*get the results from master node*/
+      Result res = pcaMaster.finalizeCompute();
       NumericTable eigenValues = res.get(ResultId.eigenValues);
       NumericTable eigenVectors = res.get(ResultId.eigenVectors);
+
+      /*printing the results*/
       Service.printNumericTable("Eigenvalues:", eigenValues);
       Service.printNumericTable("Eigenvectors:", eigenVectors);
+
+      /*free the memory*/
       daal_Context.dispose();
     }
   }
 
-  public Table<ByteArray> communicate(NumericTable res, String stri) throws IOException
+  /**
+   * @brief communicate via reduce by invoking Harp Java API
+   *
+   * @param res
+   *
+   * @return step1LocalResult_table
+   */
+  public Table<ByteArray> communicate(PartialCorrelationResult res) throws IOException
   {
     try
     {
       byte[] serialStep1LocalResult = serializeStep1Result(res);
-      System.out.println("Size of step1out: "+serialStep1LocalResult.length);
-      // for (int i = 0; i < serialStep1LocalResult.length; i++)
-      // {
-      //   if (i > 0)
-      //   {
-      //     System.out.print(", ");
-      //   }
-      //   System.out.print(serialStep1LocalResult[i]);
-      // }
       ByteArray step1LocalResult_harp = new ByteArray(serialStep1LocalResult, 0, serialStep1LocalResult.length);
       Table<ByteArray> step1LocalResult_table = new Table<>(0, new ByteArrPlus());
       step1LocalResult_table.addPartition(new Partition<>(this.getSelfID(), step1LocalResult_harp));
-
-      //reduce to master node with id 0
-      System.out.println("Before: "+ step1LocalResult_table.getNumPartitions());
-      this.allgather("pca", "sync-partial-res-"+stri, step1LocalResult_table);
-      System.out.println("After: "+ step1LocalResult_table.getNumPartitions());
-      // System.out.println("Size of step1out: "+ step1LocalResult_table.length);
-
+      this.reduce("pca", "sync-partial-res", step1LocalResult_table, this.getMasterID());
       return step1LocalResult_table;
     }
     catch (Exception e)
     {
-      System.out.println("Threw Exception" + e);
       LOG.error("Fail to serilization.", e);
       return null;
     }
   }
 
-  private byte[] serializeStep1Result(NumericTable res) throws IOException
+  /**
+   * @brief Serialize the PartialCorrelationResult by invoking Harp Java API
+   *
+   * @param res
+   *
+   * @return buffer
+   */
+  private byte[] serializeStep1Result(PartialCorrelationResult res) throws IOException
   {
-    // Create an output stream to serialize the numeric table
     ByteArrayOutputStream outputByteStream = new ByteArrayOutputStream();
     ObjectOutputStream outputStream = new ObjectOutputStream(outputByteStream);
-
-    // Serialize the partialResult table into the output stream
     res.pack();
-    System.out.println("it works here");
     outputStream.writeObject(res);
-
-    // Store the serialized data in an array
     byte[] buffer = outputByteStream.toByteArray();
     return buffer;
   }
 
-  private NumericTable deserializeStep1Result(byte[] buffer) throws IOException, ClassNotFoundException
+
+  /**
+   * @brief deSerialize the dataStructure invoking DAAL Java API
+   *
+   * @param buffer
+   *
+   * @return restoredRes
+   */
+  private PartialCorrelationResult deserializeStep1Result(byte[] buffer) throws IOException, ClassNotFoundException
   {
-    // Create an input stream to deserialize the numeric table from the array
-    System.out.println("Size of step1out bytearr[]:");
-    System.out.println("Size of step1out bytearr[]: "+ buffer.length);
     ByteArrayInputStream inputByteStream = new ByteArrayInputStream(buffer);
-    System.out.println("Size of step1out bytearr[]: "+ buffer.length);
-    // for (int i = 0; i < buffer.length; i++)
-    // {
-    //   if (i > 0)
-    //   {
-    //     System.out.print(", ");
-    //   }
-    //   System.out.print(buffer[i]);
-    // }
-    System.out.println("created a new ByteArray");
     ObjectInputStream inputStream = new ObjectInputStream(inputByteStream);
-    System.out.println("new inputStream");
-    // Create a numeric table object
-    NumericTable restoredRes = (NumericTable)inputStream.readObject();
-    // PartialCorrelationResult restoredRes;
-    System.out.println("read the object");
+    PartialCorrelationResult restoredRes = (PartialCorrelationResult)inputStream.readObject();
     restoredRes.unpack(daal_Context);
-    System.out.println("done everything. now returning");
     return restoredRes;
   }
 }
+
+// TODO optimize the code and coding style
+// TODO prepare the documentationn
+// TODO check the performance by checking the timings in both the daal implementation and harp-daal
+// TODO run the same code for a larger dataset
+// TODO push all this to github repository

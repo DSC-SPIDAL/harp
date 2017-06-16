@@ -84,7 +84,7 @@
 // #include "outlier_detection_multivariate_types.h"
 // #include "outlier_detection_univariate_types.h"
 
-// #include "pca_types.h"
+#include "pca_types.h"
 // #include "pivoted_qr_types.h"
 
 // #include "qr_types.h"
@@ -325,9 +325,9 @@ Factory::Factory()
     // registerObject(new Creator<algorithms::multivariate_outlier_detection::Result>());
     // registerObject(new Creator<algorithms::univariate_outlier_detection::Result>());
     //
-    // registerObject(new Creator<algorithms::pca::Result>());
-    // registerObject(new Creator<algorithms::pca::PartialResult<algorithms::pca::correlationDense> >());
-    // registerObject(new Creator<algorithms::pca::PartialResult<algorithms::pca::svdDense        > >());
+     registerObject(new Creator<algorithms::pca::Result>());
+     registerObject(new Creator<algorithms::pca::PartialResult<algorithms::pca::correlationDense> >());
+     registerObject(new Creator<algorithms::pca::PartialResult<algorithms::pca::svdDense        > >());
     //
     // registerObject(new Creator<algorithms::pivoted_qr::Result>());
     //

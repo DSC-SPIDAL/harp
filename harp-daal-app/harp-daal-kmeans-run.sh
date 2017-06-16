@@ -25,11 +25,11 @@ hdfs dfs -put ${DAALROOT}/../../omp/lib/libiomp5.so /Hadoop/Libraries/
 export LIBJARS=${DAALROOT}/lib/daal.jar
 
 # num of training data points
-Pts=10
+Pts=1000
 # num of training data centroids
 Ced=2
 # feature vector dimension
-Dim=3
+Dim=10
 # file per mapper
 File=1
 # iteration times
@@ -37,10 +37,10 @@ ITR=10
 # memory allocated to each mapper (MB)
 Mem=185000
 # generate training data or not (once generated, data file /kmeans-P$Pts-C$Ced-D$Dim-N$Node is in hdfs, you could reuse them next time)
-GenData=true
+GenData=false
 # num of mappers (nodes)
 Node=2
 # num of threads on each mapper(node)
 Thd=64
 
-hadoop jar harp-daal-app-1.0-SNAPSHOT.jar edu.iu.daal_kmeans.regroupallgather.KMeansDaalLauncher -libjars ${LIBJARS} $Pts $Ced $Dim $File $Node $Thd $ITR $Mem /kmeans-P$Pts-C$Ced-D$Dim-N$Node /tmp/kmeans $GenData 
+hadoop jar harp-daal-app-1.0-SNAPSHOT.jar edu.iu.daal_kmeans.regroupallgather.KMeansDaalLauncher -libjars ${LIBJARS} $Pts $Dim $File $Node $Thd $Mem /pca/input /pca/input $GenData

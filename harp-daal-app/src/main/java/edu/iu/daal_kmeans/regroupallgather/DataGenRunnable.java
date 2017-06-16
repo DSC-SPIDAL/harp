@@ -54,7 +54,6 @@ public class DataGenRunnable implements Runnable {
           // point = 1000;
           point = random.nextDouble()*2 -1;
           out.writeDouble(point);
-          System.out.println("point:" + point);
         }
       }
       out.close();
