@@ -40,7 +40,7 @@ The following commands and information are useful in understanding and writing H
 
 Easiest way to run the Harp-DAAL-SVD example is through the command line input shown below as an example (all together as one command)
 
-`hadoop jar harp-daal-app-1.0-SNAPSHOT.jar edu.iu.daal_svd.SVDDaalLauncher -libjars ${LIBJARS} 10000 20 1 2 64 185000 /kmeans-P$Pts-C$Ced-D$Dim-N$Node /tmp/kmeans true`
+`hadoop jar harp-daal-app-1.0-SNAPSHOT.jar edu.iu.daal_svd.SVDDaalLauncher -libjars ${LIBJARS} 10000 20 1 2 64 185000 /svd-P$Pts-C$Ced-D$Dim-N$Node /tmp/svd true`
 
 ### Explanation of the arguments required by Harp-DAAL in the example input
 
@@ -50,8 +50,8 @@ Easiest way to run the Harp-DAAL-SVD example is through the command line input s
 * 2 --- Number of nodes (mappers)
 * 64 --- Number of threads on each mapper (node)
 * 185000 --- Memory allocated to each mapper (in MB)
-* /kmeans-P$Pts-C$Ced-D$Dim-N$Node --- workDir
-* /tmp/kmeans --- outDir
+* /svd-P$Pts-C$Ced-D$Dim-N$Node --- workDir
+* /tmp/svd --- outDir
 * true --- Boolean specifying to generate data or not
 
 ## Overview of the code for adding routines and debugging 
