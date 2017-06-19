@@ -29,6 +29,11 @@ Intel's DAAL computation routines to compute decomposition in a highly efficient
 for Harp integration which uses collective communication to further optimize the algorithm.
 
 ## Getting Started
+
+### Setting up Hadoop and Harp-daal
+Details about setting up Hadoop along with Harp on the cluster can be found [here](https://dsc-spidal.github.io/harp/docs/getting-started-cluster/ "Installation"). 
+Furthermore DAAL installation and usage can be found [here](https://dsc-spidal.github.io/harp/docs/harpdaal/harpdaal/ "Daal usage").
+
 The following commands and information are useful in understanding and writing Harp-DAAL-SVD examples. 
 
 ### How to run Harp - DAAL - SVD
@@ -64,8 +69,7 @@ Takes and checks input given from the commandline/shell script. Initializes valu
 number of mappers, threads per mapper, memory allocated to each mapper, etcetera.
 
 ```java
-private void launch(int numOfDataPoints, int vectorSize, int numPointFiles, int numMapTasks,
-    int numThreads, int mem, String workDir, String localPointFilesDir, boolean generateData);
+private void launch(int numOfDataPoints, int vectorSize, int numPointFiles, int numMapTasks, int numThreads, int mem, String workDir, String localPointFilesDir, boolean generateData);
 ```
 Configures and launches Harp-DAAL-SVD jobs, generating data if required. 
 
