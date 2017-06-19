@@ -96,7 +96,6 @@
 // #include "stump_model.h"
 // #include "stump_training_types.h"
 
-
 #include "svd_types.h"
 
 // #include "svm_model.h"
