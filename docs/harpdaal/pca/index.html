@@ -1,0 +1,139 @@
+<!DOCTYPE html><html lang="en-us"><head><link rel="shortcut icon" type="image/png" sizes="16x16" href="https://dsc-spidal.github.io/harp/img/favicon-16x9.png"><link rel="shortcut icon" type="image/png" sizes="32x32" href="https://dsc-spidal.github.io/harp/img/favicon-32x18.png"><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="generator" content="Hugo 0.16-DEV" /><meta property="og:locale" content="en_US"><meta property="og:type" content="article"><meta property="og:title" content="harp"><meta property="og:image" content="/img/logo54x54.png"><meta property="og:url" content="https://dsc-spidal.github.io/harp/"><meta name="twitter:title" content="harp"><meta name="twitter:image" content=""><meta property="og:site_name" content="Harp-DAAL-PCA"><meta property="og:url" content=""><meta property="og:description" content=""><meta name="twitter:description" content=""><title>harp Documentation - Harp-DAAL-PCA</title><link rel="stylesheet" href="https://dsc-spidal.github.io/harp/css/style.min.css"><link rel="stylesheet" href="https://dsc-spidal.github.io/harp/css/font-awesome.min.css"><link rel="stylesheet" href="https://dsc-spidal.github.io/harp/css/pygments.css"></head><body><nav class="hn-top-navbar navbar navbar-inverse navbar-fixed-top" role="navigation"><div class="hn-navbar-container container-fluid"><div class="navbar-header"><button class="navbar-toggle collapsed" type="button" data-toggle="collapse" data-target="#hn-navbar" aria-controls="hn-navbar" aria-expanded="false"><span class="sr-only"><Toggle>navigation</Toggle></span><i class="hn-toggle-button fa fa-bars"></i></button><a class="hn-navbar-logo navbar-brand" href="https://dsc-spidal.github.io/harp/"><img class="pull-left" src="https://dsc-spidal.github.io/harp/img/0-1-2.png" width="76%"></a></div><div id="hn-navbar" class="navbar-collapse collapse"><ul class="nav navbar-nav navbar-right"><li><a href="https://dsc-spidal.github.io/harp/docs/getting-started">Docs</a></li><li><a href="https://dsc-spidal.github.io/harp/api">API</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/resources">Resources</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/contributors/community">Community</a></li><li><a href="https://github.com/DSC-SPIDAL/harp/">GitHub</a></li><li><a href="https://groups.google.com/forum/#!forum/harp-users">Mailing List</a></li></ul></div></div></nav><div class="hn-main"><div class="container"><div class="row"><aside class="hn-sidebar hidden-xs col-sm-4 col-md-3 col-lg-2 collapse"><nav class="hn-sidebar-nav"><div id="hn-accordion" class="panel-group" role="tablist" aria-multiselectable="true"><div class="panel panel-default"><section id="quick-start" class="panel-heading" role="tab"><h4 class="panel-title"><a role="button" data-toggle="collapse" data-parent="#hn-accordion" href="#collapse-quick-start" aria-labelledby="quick-start"><i class="fa fa-caret-right"></i>Quick Start</a></h4></section><div id="collapse-quick-start" class="panel-collapse collapse" aria-labelledby="quick-start"><div class="panel-body"><ul><li><a href="https://dsc-spidal.github.io/harp/docs/getting-started">Harp Installation (single)</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/getting-started-cluster">Harp Installation (cluster)</a></li></ul></div></div></div><div class="panel panel-default"><section id="programming-guides" class="panel-heading" role="tab"><h4 class="panel-title"><a role="button" data-toggle="collapse" data-parent="#hn-accordion" href="#collapse-programming-guides" aria-labelledby="programming-guides"><i class="fa fa-caret-right"></i>Programming Guides</a></h4></section><div id="collapse-programming-guides" class="panel-collapse collapse" aria-labelledby="programming-guides"><div class="panel-body"><ul><li><a href="https://dsc-spidal.github.io/harp/docs/programming/overview">Overview</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/programming/data-interface">Data Interfaces and Types</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/programming/scheduler">Schedulers</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/programming/computation-models">Computation Models</a></li></ul></div></div></div><div class="panel panel-default"><section id="collective-communication" class="panel-heading" role="tab"><h4 class="panel-title"><a role="button" data-toggle="collapse" data-parent="#hn-accordion" href="#collapse-collective-communication" aria-labelledby="collective-communication"><i class="fa fa-caret-right"></i>Collective Communication</a></h4></section><div id="collapse-collective-communication" class="panel-collapse collapse" aria-labelledby="collective-communication"><div class="panel-body"><ul><li><a href="https://dsc-spidal.github.io/harp/docs/communications/broadcast">broadcast</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/communications/reduce">reduce</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/communications/allgather">allgather</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/communications/allreduce">allreduce</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/communications/regroup">regroup</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/communications/pushandpull">push &amp; pull</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/communications/rotate">rotate</a></li></ul></div></div></div><div class="panel panel-default"><section id="examples" class="panel-heading" role="tab"><h4 class="panel-title"><a role="button" data-toggle="collapse" data-parent="#hn-accordion" href="#collapse-examples" aria-labelledby="examples"><i class="fa fa-caret-right"></i>Examples</a></h4></section><div id="collapse-examples" class="panel-collapse collapse" aria-labelledby="examples"><div class="panel-body"><ul><li><a href="https://dsc-spidal.github.io/harp/docs/examples/overview">Overview</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/examples/kmeans">K-Means</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/examples/mlrsgd">Multiclass Logistic Regression</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/examples/lda">Latent Dirichlet Allocation (CVB)</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/examples/svm">Support Vector Machine</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/examples/rf">Random Forests</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/examples/nn">Neural Network</a></li></ul></div></div></div><div class="panel panel-default"><section id="applications" class="panel-heading" role="tab"><h4 class="panel-title"><a role="button" data-toggle="collapse" data-parent="#hn-accordion" href="#collapse-applications" aria-labelledby="applications"><i class="fa fa-caret-right"></i>Applications</a></h4></section><div id="collapse-applications" class="panel-collapse collapse" aria-labelledby="applications"><div class="panel-body"><ul><li><a href="https://dsc-spidal.github.io/harp/docs/applications/lda-cgs">Latent Dirichlet Allocation (CGS)</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/applications/mf">Matrix Factorization</a></li></ul></div></div></div><div class="panel panel-default"><section id="harp-daal" class="panel-heading" role="tab"><h4 class="panel-title"><a role="button" data-toggle="collapse" data-parent="#hn-accordion" href="#collapse-harp-daal" aria-labelledby="harp-daal"><i class="fa fa-caret-right"></i>Harp-DAAL</a></h4></section><div id="collapse-harp-daal" class="panel-collapse collapse" aria-labelledby="harp-daal"><div class="panel-body"><ul><li><a href="https://dsc-spidal.github.io/harp/docs/harpdaal/harpdaal">Overview</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/harpdaal/kmeans">K-means</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/harpdaal/mfsgd">Matrix Factorization (SGD)</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/harpdaal/als">Recommender System (ALS)</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/harpdaal/svd">Singular Value Decomposition (SVD)</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/harpdaal/pca">Principal Component Analysis (PCA)</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/harpdaal/nn">Neural Network</a></li></ul></div></div></div><div class="panel panel-default"><section id="harp-resources" class="panel-heading" role="tab"><h4 class="panel-title"><a role="button" data-toggle="collapse" data-parent="#hn-accordion" href="#collapse-harp-resources" aria-labelledby="harp-resources"><i class="fa fa-caret-right"></i>Harp Resources</a></h4></section><div id="collapse-harp-resources" class="panel-collapse collapse" aria-labelledby="harp-resources"><div class="panel-body"><ul><li><a href="https://dsc-spidal.github.io/harp/docs/resources">Harp Resources</a></li></ul></div></div></div><div class="panel panel-default"><section id="contributors" class="panel-heading" role="tab"><h4 class="panel-title"><a role="button" data-toggle="collapse" data-parent="#hn-accordion" href="#collapse-contributors" aria-labelledby="contributors"><i class="fa fa-caret-right"></i>Contributors</a></h4></section><div id="collapse-contributors" class="panel-collapse collapse" aria-labelledby="contributors"><div class="panel-body"><ul><li><a href="https://dsc-spidal.github.io/harp/docs/contributors/community">Community</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/contributors/contributors">Contributors</a></li></ul></div></div></div></div></nav></aside><section class="hn-docs-main col-sm-8 col-md-9 col-lg-10 col-sm-offset-4 col-md-offset-3 col-lg-offset-2"><header class="hn-docs-header page-header"><h1>Harp-DAAL-PCA</h1><div class="hn-docs-description"></div></header><article class="hn-docs-content">
+
+<h2 id="overview:e6247d3ba0dd41b6cedb6b09b131e433">Overview</h2>
+
+<p>Principle Component Analysis (PCA) is a widely used statistical procedure that uses an orthogonal transformation to convert a set of observations of possibly correlated variables into a set of values of linearly uncorrelated variables called principal components (or sometimes, principal modes of variation).
+PCA can be done by two methods:</p>
+
+<ul>
+<li>Eigenvalue decomposition of a data covariance (or cross-correlation)</li>
+<li>Singular Value Decomposition of a data</li>
+</ul>
+
+<p>It is usually performed after normalizing (centering by the mean) the data matrix for each attribute.</p>
+
+<h2 id="implementation-of-harp-daal-pca:e6247d3ba0dd41b6cedb6b09b131e433">Implementation of Harp-DAAL-PCA</h2>
+
+<p>Harp-DAAL-PCA is built upon the original DAAL distributed implementation of the algorithm using the Harp interface libraries for the collective-communication among the data nodes. The two step implementation is similar to the Map-Reduce Model of the Hadoop.
+Here are the steps to implement and run the PCA code.</p>
+
+<h3 id="brief-background:e6247d3ba0dd41b6cedb6b09b131e433">Brief background</h3>
+
+<ul>
+<li><p>There are primarily three kind of nodes involved with the implementation.</p>
+
+<ol>
+<li>name node (also known as master node)</li>
+<li>data node (also known as slave node)</li>
+<li>login node</li>
+</ol></li>
+
+<li><p>The data files (csv <a href="https://github.com/DSC-SPIDAL/harp/tree/master/harp-daal-app/daal-src/examples/data/distributed" title="sample data">sample</a>) which is data tagged with <code>pca</code> can be tested the following ways:</p>
+
+<ol>
+<li>On the shared location</li>
+<li>On each datanode individually</li>
+<li>Hadoop Filesystem Format (HDFS) <a href="https://www.tutorialspoint.com/hadoop/hadoop_hdfs_overview.htm" title="hdfs tutorial">Tutorial</a><br /></li>
+</ol></li>
+
+<li><p>The description of the Intel DAAL algorithm used can be found <a href="https://software.intel.com/en-us/daal-programming-guide" title="Intel implementation">here</a></p></li>
+
+<li><p>Harp&rsquo;s collective communication has been described <a href="https://dsc-spidal.github.io/harp/docs/programming/overview/" title="Collective Communication">here</a></p></li>
+
+<li><p>The <a href="https://github.com/DSC-SPIDAL/harp/tree/master/harp-daal-app/daal-src/lang_interface/java/com/intel/daal" title="language interface">Java language</a> services provided by intel as a wrapper to their C++ code.</p></li>
+</ul>
+
+<h3 id="code-walk-through:e6247d3ba0dd41b6cedb6b09b131e433">Code Walk-Through</h3>
+
+<p>Only the MapCollective function is explained <a href="https://github.com/DSC-SPIDAL/harp/blob/master/harp-project/src/main/java/org/apache/hadoop/mapred/CollectiveMapper.java" title="Collective Mapper">here</a> as the rest of the code follows the same Harp-DAAL style.</p>
+
+<h4 id="step-1-on-slave-nodes:e6247d3ba0dd41b6cedb6b09b131e433">Step 1 (on slave nodes)</h4>
+
+<p>The first step involves reading the files from the filesystem into the DAAL <a href="https://software.intel.com/en-us/node/564579" title="Numeric Table"><em>NumericTable</em></a> data structure.  In this example the files have been stored on the shared memory system. The files have to be read in the DAAL table format as the local computations are performed by the DAAL libraries. Note that for the first step, all the nodes act as slave nodes, and the master node comes into existence only for the second step.</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">FileDataSource</span> <span style="color: #f8f8f2">dataSource</span> <span style="color: #f92672">=</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">FileDataSource</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">daal_Context</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">fileNames</span><span style="color: #f92672">+</span><span style="color: #e6db74">&quot;/pca_&quot;</span><span style="color: #f92672">+</span><span style="color: #66d9ef">this</span><span style="color: #f92672">.</span><span style="color: #a6e22e">getSelfID</span><span style="color: #f92672">()+</span><span style="color: #e6db74">&quot;.csv&quot;</span><span style="color: #f92672">,</span><span style="color: #f8f8f2">DataSource</span><span style="color: #f92672">.</span><span style="color: #a6e22e">DictionaryCreationFlag</span><span style="color: #f92672">.</span><span style="color: #a6e22e">DoDictionaryFromContext</span><span style="color: #f92672">,</span><span style="color: #f8f8f2">DataSource</span><span style="color: #f92672">.</span><span style="color: #a6e22e">NumericTableAllocationFlag</span><span style="color: #f92672">.</span><span style="color: #a6e22e">DoAllocateNumericTable</span><span style="color: #f92672">);</span>
+
+<span style="color: #75715e">/* Retrieve the data from the input */</span> <span style="color: #f8f8f2">dataSource</span><span style="color: #f92672">.</span><span style="color: #a6e22e">loadDataBlock</span><span style="color: #f92672">();</span>
+
+<span style="color: #75715e">/* Set the input data on local nodes */</span>
+<span style="color: #f8f8f2">NumericTable</span> <span style="color: #f8f8f2">pointsArray_daal</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">dataSource</span><span style="color: #f92672">.</span><span style="color: #a6e22e">getNumericTable</span><span style="color: #f92672">();</span>
+</pre></div>
+
+<h4 id="step-2-on-slave-node:e6247d3ba0dd41b6cedb6b09b131e433">Step 2 (on slave node)</h4>
+
+<p>The PCA algorithm is created and its input is set as the Numeric Table created in the previous step.  The computation gives the partial results on each local node.</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #75715e">/* Create an algorithm to compute PCA using the correlation method on local nodes */</span>
+<span style="color: #f8f8f2">DistributedStep1Local</span> <span style="color: #f8f8f2">pcaLocal</span> <span style="color: #f92672">=</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">DistributedStep1Local</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">daal_Context</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">Double</span><span style="color: #f92672">.</span><span style="color: #a6e22e">class</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">Method</span><span style="color: #f92672">.</span><span style="color: #a6e22e">correlationDense</span><span style="color: #f92672">);</span>
+
+<span style="color: #75715e">/* Set the input data on local nodes */</span>
+<span style="color: #f8f8f2">pcaLocal</span><span style="color: #f92672">.</span><span style="color: #a6e22e">input</span><span style="color: #f92672">.</span><span style="color: #a6e22e">set</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">InputId</span><span style="color: #f92672">.</span><span style="color: #a6e22e">data</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">pointsArray_daal</span><span style="color: #f92672">);</span>
+
+<span style="color: #75715e">/*Compute the partial results on the local data nodes*/</span>
+<span style="color: #f8f8f2">pres</span> <span style="color: #f92672">=(</span><span style="color: #f8f8f2">PartialCorrelationResult</span><span style="color: #f92672">)</span><span style="color: #f8f8f2">pcaLocal</span><span style="color: #f92672">.</span><span style="color: #a6e22e">compute</span><span style="color: #f92672">();</span>
+</pre></div>
+
+<h4 id="step-3-communication:e6247d3ba0dd41b6cedb6b09b131e433">Step 3 (communication)</h4>
+
+<p>The partial results on each local node are sent to the master node for final computations using <a href="https://dsc-spidal.github.io/harp/docs/communications/allreduce/" title="harp all reduce">allreduce</a>.</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #75715e">/*Do an reduce to send all the data to the master node*/</span>
+<span style="color: #f8f8f2">Table</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">ByteArray</span><span style="color: #f92672">&gt;</span> <span style="color: #f8f8f2">step1LocalResult_table</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">communicate</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">pres</span><span style="color: #f92672">);</span>  
+</pre></div>
+
+<h4 id="step-4-on-master-node:e6247d3ba0dd41b6cedb6b09b131e433">Step 4 (on master node)</h4>
+
+<p>The master node collects the partial results from each slave into the <code>step1LocalResult_table</code> table which has as many partitions as the number of slaves. Each partition id also denotes the slave id.  The corresponding partition&rsquo;s  <code>PartialCorrelationResult</code> data is extracted and added to the list of inputs to the final <code>DistributedStep2Master</code> algorithm which is to be executed on the master node. The <code>compute()</code> followed by <code>finalizeCompute()</code> methods will calculate the eigenvectors and eigenvalues.</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">DistributedStep2Master</span> <span style="color: #f8f8f2">pcaMaster</span> <span style="color: #f92672">=</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">DistributedStep2Master</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">daal_Context</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">Double</span><span style="color: #f92672">.</span><span style="color: #a6e22e">class</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">Method</span><span style="color: #f92672">.</span><span style="color: #a6e22e">correlationDense</span><span style="color: #f92672">);</span>
+<span style="color: #66d9ef">for</span> <span style="color: #f92672">(</span><span style="color: #66d9ef">int</span> <span style="color: #f8f8f2">i</span> <span style="color: #f92672">=</span> <span style="color: #ae81ff">0</span><span style="color: #f92672">;</span> <span style="color: #f8f8f2">i</span> <span style="color: #f92672">&lt;</span> <span style="color: #66d9ef">this</span><span style="color: #f92672">.</span><span style="color: #a6e22e">getNumWorkers</span><span style="color: #f92672">();</span> <span style="color: #f8f8f2">i</span><span style="color: #f92672">++)</span>
+<span style="color: #f92672">{</span>
+   <span style="color: #75715e">/*get the partial results from the local nodes and deserialize*/</span>
+   <span style="color: #f8f8f2">PartialCorrelationResult</span> <span style="color: #f8f8f2">step1LocalResultNew</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">deserializeStep1Result</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">step1LocalResult_table</span><span style="color: #f92672">.</span><span style="color: #a6e22e">getPartition</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">i</span><span style="color: #f92672">).</span><span style="color: #a6e22e">get</span><span style="color: #f92672">().</span><span style="color: #a6e22e">get</span><span style="color: #f92672">());</span>
+
+   <span style="color: #75715e">/*add the partial results from the loacl nodes to the master node input*/</span>
+   <span style="color: #f8f8f2">pcaMaster</span><span style="color: #f92672">.</span><span style="color: #a6e22e">input</span><span style="color: #f92672">.</span><span style="color: #a6e22e">add</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">MasterInputId</span><span style="color: #f92672">.</span><span style="color: #a6e22e">partialResults</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">step1LocalResultNew</span><span style="color: #f92672">);</span>
+<span style="color: #f92672">}</span>
+<span style="color: #75715e">/*compute the results on the master node*/</span>
+<span style="color: #f8f8f2">pcaMaster</span><span style="color: #f92672">.</span><span style="color: #a6e22e">compute</span><span style="color: #f92672">();</span>
+<span style="color: #75715e">/*get the results from master node*/</span>
+<span style="color: #f8f8f2">Result</span> <span style="color: #f8f8f2">res</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">pcaMaster</span><span style="color: #f92672">.</span><span style="color: #a6e22e">finalizeCompute</span><span style="color: #f92672">();</span>
+</pre></div>
+
+<h4 id="step-5-results:e6247d3ba0dd41b6cedb6b09b131e433">Step 5 (Results)</h4>
+
+<p>The Results calculated in the previous steps can be printed using the Service class function.</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">NumericTable</span> <span style="color: #f8f8f2">eigenValues</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">res</span><span style="color: #f92672">.</span><span style="color: #a6e22e">get</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">ResultId</span><span style="color: #f92672">.</span><span style="color: #a6e22e">eigenValues</span><span style="color: #f92672">);</span>
+<span style="color: #f8f8f2">NumericTable</span> <span style="color: #f8f8f2">eigenVectors</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">res</span><span style="color: #f92672">.</span><span style="color: #a6e22e">get</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">ResultId</span><span style="color: #f92672">.</span><span style="color: #a6e22e">eigenVectors</span><span style="color: #f92672">);</span>
+
+<span style="color: #75715e">/*printing the results*/</span>
+<span style="color: #f8f8f2">Service</span><span style="color: #f92672">.</span><span style="color: #a6e22e">printNumericTable</span><span style="color: #f92672">(</span><span style="color: #e6db74">&quot;Eigenvalues:&quot;</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">eigenValues</span><span style="color: #f92672">);</span>
+<span style="color: #f8f8f2">Service</span><span style="color: #f92672">.</span><span style="color: #a6e22e">printNumericTable</span><span style="color: #f92672">(</span><span style="color: #e6db74">&quot;Eigenvectors:&quot;</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">eigenVectors</span><span style="color: #f92672">);</span>
+</pre></div>
+
+<h3 id="executing-the-code:e6247d3ba0dd41b6cedb6b09b131e433">Executing the code</h3>
+
+<h4 id="setting-up-hadoop-and-harp-daal:e6247d3ba0dd41b6cedb6b09b131e433">Setting up Hadoop and Harp-daal</h4>
+
+<p>Details about setting up Hadoop along with Harp on the cluster can be found <a href="https://dsc-spidal.github.io/harp/docs/getting-started-cluster/" title="Installation">here</a>.
+Furthermore DAAL installation and usage can be found <a href="https://dsc-spidal.github.io/harp/docs/harpdaal/harpdaal/" title="Daal usage">here</a>.</p>
+
+<h4 id="running-the-code:e6247d3ba0dd41b6cedb6b09b131e433">Running the code</h4>
+
+<p>Run the <code>harp-daal-pca.sh</code> script to run the code.</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">cd</span> <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/harp-daal-app
+./harp-daal-pca.sh  
+</pre></div>
+
+<p>To edit the location of the data set file location edit the following line in the  shell script file</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>hadoop jar harp-daal-app-1.0-SNAPSHOT.jar edu.iu.daal_pca.PCADaalLauncher -libjars <span style="color: #e6db74">${</span><span style="color: #f8f8f2">LIBJARS</span><span style="color: #e6db74">}</span> <span style="color: #f8f8f2">$Pts</span> <span style="color: #f8f8f2">$Dim</span> <span style="color: #f8f8f2">$File</span> <span style="color: #f8f8f2">$Node</span> <span style="color: #f8f8f2">$Thd</span> <span style="color: #f8f8f2">$Mem</span> /pca/input /pca/input <span style="color: #f8f8f2">$GenData</span>
+</pre></div>
+
+<p>Where each variable is defined as below</p>
+
+<ul>
+<li>Pts: Number of training data points (i.e. 1000)</li>
+<li>Dim: Feature vector dimension (i.e. 10)</li>
+<li>File: File per mapper (i.e. 1)</li>
+<li>Mem: Memory allocated to each mapper in MB (i.e. 185000)</li>
+<li>GenData: Generate training data or not(once generated, data file /PCA-P\$Pts-C\$Dim-N\$Node is in hdfs, you could reuse the training data here next time) (i.e. false)</li>
+<li>Node: Number of mappers or nodes (i.e. 2)</li>
+<li>Thd: Number of threads on each mapper or node (i.e. 64)</li>
+</ul>
+</article></section></div></div></div><script src="https://code.jquery.com/jquery-2.2.1.min.js"></script><script src="https://dsc-spidal.github.io/harp/js/app.min.js"></script></body></html>
