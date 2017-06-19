@@ -17,8 +17,8 @@ Here are the steps to implement and run the Neural Network code.</p>
 <li><p>There are primarily three kinds of nodes involved with the implementation.</p>
 
 <ol>
-<li>name node (also known as master node)</li>
-<li>data node (also known as slave node)</li>
+<li>name node</li>
+<li>data node (divided into master and slave nodes, where slave nodes compute in parallel and communicate results to the master node)</li>
 <li>login node</li>
 </ol></li>
 
@@ -187,7 +187,7 @@ Run the <code>harp-daal-nn-run.sh</code> script here to run the code.</p>
 ./harp-daal-nn.sh  
 </pre></div>
 
-<p>Details of script -</p>
+<p>Details of the script can be seen below:</p>
 <div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #75715e">#!/bin/bash</span>
 
 <span style="color: #75715e"># enter the directory of hadoop and copy your_harp_daal.jar file here</span>
@@ -214,11 +214,25 @@ hdfs dfs -put /N/u/mayank/daal/omp/lib/libiomp5.so /Hadoop/Libraries/
 <span style="color: #75715e"># daal.jar will be used in command line</span>
 <span style="color: #f8f8f2">export</span> <span style="color: #f8f8f2">LIBJARS</span><span style="color: #f92672">=</span><span style="color: #e6db74">${</span><span style="color: #f8f8f2">DAALROOT</span><span style="color: #e6db74">}</span>/lib/daal.jar
 
+<span style="color: #75715e"># num of training data points</span>
+<span style="color: #75715e">#Pts=50000</span>
+<span style="color: #75715e"># num of training data centroids</span>
+<span style="color: #75715e">#Ced=1000</span>
+<span style="color: #75715e"># feature vector dimension</span>
+<span style="color: #75715e">#Dim=100</span>
+<span style="color: #75715e"># file per mapper</span>
+<span style="color: #75715e">#File=5</span>
+<span style="color: #75715e"># iteration times</span>
+<span style="color: #75715e">#ITR=10</span>
+<span style="color: #75715e"># memory allocated to each mapper (MB)</span>
+<span style="color: #75715e">#Mem=185000</span>
+<span style="color: #75715e"># generate training data or not (once generated, data file /kmeans-P$Pts-C$Ced-D$Dim-N$Node is in hdfs, you could reuse them next time)</span>
+<span style="color: #75715e">#GenData=false</span>
 <span style="color: #75715e"># num of mappers (nodes)</span>
 <span style="color: #f8f8f2">Node</span><span style="color: #f92672">=</span>2
 <span style="color: #75715e"># num of threads on each mapper(node)</span>
 <span style="color: #f8f8f2">Thd</span><span style="color: #f92672">=</span>64
 
-hadoop jar harp-daal-app-1.0-SNAPSHOT.jar edu.iu.daal_nn.NNDaalLauncher -libjars <span style="color: #e6db74">${</span><span style="color: #f8f8f2">LIBJARS</span><span style="color: #e6db74">}</span>  /nn/input <span style="color: #f8f8f2">$Node</span> <span style="color: #f8f8f2">$Thd</span> 
+hadoop jar harp-daal-app-1.0-SNAPSHOT.jar edu.iu.daal_nn.NNDaalLauncher -libjars <span style="color: #e6db74">${</span><span style="color: #f8f8f2">LIBJARS</span><span style="color: #e6db74">}</span>  /nn/input /nn/work <span style="color: #f8f8f2">$Node</span> <span style="color: #f8f8f2">$Thd</span> 
 </pre></div>
 </article></section></div></div></div><script src="https://code.jquery.com/jquery-2.2.1.min.js"></script><script src="https://dsc-spidal.github.io/harp/js/app.min.js"></script></body></html>

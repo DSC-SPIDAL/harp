@@ -23,8 +23,8 @@ Here are the steps to implement and run the PCA code.</p>
 <li><p>There are primarily three kind of nodes involved with the implementation.</p>
 
 <ol>
-<li>name node (also known as master node)</li>
-<li>data node (also known as slave node)</li>
+<li>name node</li>
+<li>data node (divided into master and slave nodes, where slave nodes compute in parallel and communicate results to the master node)</li>
 <li>login node</li>
 </ol></li>
 
@@ -49,13 +49,52 @@ Here are the steps to implement and run the PCA code.</p>
 
 <h4 id="step-1-on-slave-nodes:e6247d3ba0dd41b6cedb6b09b131e433">Step 1 (on slave nodes)</h4>
 
-<p>The first step involves reading the files from the filesystem into the DAAL <a href="https://software.intel.com/en-us/node/564579" title="Numeric Table"><em>NumericTable</em></a> data structure.  In this example the files have been stored on the shared memory system. The files have to be read in the DAAL table format as the local computations are performed by the DAAL libraries. Note that for the first step, all the nodes act as slave nodes, and the master node comes into existence only for the second step.</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">FileDataSource</span> <span style="color: #f8f8f2">dataSource</span> <span style="color: #f92672">=</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">FileDataSource</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">daal_Context</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">fileNames</span><span style="color: #f92672">+</span><span style="color: #e6db74">&quot;/pca_&quot;</span><span style="color: #f92672">+</span><span style="color: #66d9ef">this</span><span style="color: #f92672">.</span><span style="color: #a6e22e">getSelfID</span><span style="color: #f92672">()+</span><span style="color: #e6db74">&quot;.csv&quot;</span><span style="color: #f92672">,</span><span style="color: #f8f8f2">DataSource</span><span style="color: #f92672">.</span><span style="color: #a6e22e">DictionaryCreationFlag</span><span style="color: #f92672">.</span><span style="color: #a6e22e">DoDictionaryFromContext</span><span style="color: #f92672">,</span><span style="color: #f8f8f2">DataSource</span><span style="color: #f92672">.</span><span style="color: #a6e22e">NumericTableAllocationFlag</span><span style="color: #f92672">.</span><span style="color: #a6e22e">DoAllocateNumericTable</span><span style="color: #f92672">);</span>
+<p>The first step involves reading the files from the filesystem into the DAAL <a href="https://software.intel.com/en-us/node/564579" title="Numeric Table"><em>NumericTable</em></a> data structure.  The files have to be read in the DAAL table format as the local computations are performed by the DAAL libraries. Note that for the first step, all the nodes act as slave nodes and the master node comes into the picture only for the second step.</p>
+
+<p>Reading the files could be done in following two ways:</p>
+
+<hr />
+
+<p>1) The files have been stored on the shared memory system</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">FileDataSource</span> <span style="color: #f8f8f2">dataSource</span> <span style="color: #f92672">=</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">FileDataSource</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">daal_Context</span><span style="color: #f92672">,</span> <span style="color: #e6db74">&quot;/pca_&quot;</span><span style="color: #f92672">+</span><span style="color: #66d9ef">this</span><span style="color: #f92672">.</span><span style="color: #a6e22e">getSelfID</span><span style="color: #f92672">()+</span><span style="color: #e6db74">&quot;.csv&quot;</span><span style="color: #f92672">,</span><span style="color: #f8f8f2">DataSource</span><span style="color: #f92672">.</span><span style="color: #a6e22e">DictionaryCreationFlag</span><span style="color: #f92672">.</span><span style="color: #a6e22e">DoDictionaryFromContext</span><span style="color: #f92672">,</span><span style="color: #f8f8f2">DataSource</span><span style="color: #f92672">.</span><span style="color: #a6e22e">NumericTableAllocationFlag</span><span style="color: #f92672">.</span><span style="color: #a6e22e">DoAllocateNumericTable</span><span style="color: #f92672">);</span>
 
 <span style="color: #75715e">/* Retrieve the data from the input */</span> <span style="color: #f8f8f2">dataSource</span><span style="color: #f92672">.</span><span style="color: #a6e22e">loadDataBlock</span><span style="color: #f92672">();</span>
 
 <span style="color: #75715e">/* Set the input data on local nodes */</span>
 <span style="color: #f8f8f2">NumericTable</span> <span style="color: #f8f8f2">pointsArray_daal</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">dataSource</span><span style="color: #f92672">.</span><span style="color: #a6e22e">getNumericTable</span><span style="color: #f92672">();</span>
+</pre></div>
+
+<hr />
+
+<p>2) The files have been randomly generated and stored on HDFS, which are then read by the <code>PCAUtil</code> as a list of double arrays afterwards being converted to the DAAL <a href="https://software.intel.com/en-us/node/564579" title="Numeric Table"><em>NumericTable</em></a> data structure.</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">List</span><span style="color: #f92672">&lt;</span><span style="color: #66d9ef">double</span><span style="color: #f92672">[]&gt;</span> <span style="color: #f8f8f2">pointArrays</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">PCAUtil</span><span style="color: #f92672">.</span><span style="color: #a6e22e">loadPoints</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">fileNames</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">pointsPerFile</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">vectorSize</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">conf</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">numThreads</span><span style="color: #f92672">);</span>
+
+<span style="color: #75715e">//create the daal table for pointsArrays</span>
+<span style="color: #66d9ef">long</span> <span style="color: #f8f8f2">nFeature</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">vectorSize</span><span style="color: #f92672">;</span>
+<span style="color: #66d9ef">long</span> <span style="color: #f8f8f2">totalLength</span> <span style="color: #f92672">=</span> <span style="color: #ae81ff">0</span><span style="color: #f92672">;</span>
+
+<span style="color: #66d9ef">long</span><span style="color: #f92672">[]</span> <span style="color: #f8f8f2">array_startP</span> <span style="color: #f92672">=</span> <span style="color: #66d9ef">new</span> <span style="color: #66d9ef">long</span><span style="color: #f92672">[</span><span style="color: #f8f8f2">pointArrays</span><span style="color: #f92672">.</span><span style="color: #a6e22e">size</span><span style="color: #f92672">()];</span>
+<span style="color: #66d9ef">double</span><span style="color: #f92672">[][]</span> <span style="color: #f8f8f2">array_data</span> <span style="color: #f92672">=</span> <span style="color: #66d9ef">new</span> <span style="color: #66d9ef">double</span><span style="color: #f92672">[</span><span style="color: #f8f8f2">pointArrays</span><span style="color: #f92672">.</span><span style="color: #a6e22e">size</span><span style="color: #f92672">()][];</span>
+
+<span style="color: #66d9ef">for</span><span style="color: #f92672">(</span><span style="color: #66d9ef">int</span> <span style="color: #f8f8f2">k</span><span style="color: #f92672">=</span><span style="color: #ae81ff">0</span><span style="color: #f92672">;</span><span style="color: #f8f8f2">k</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">pointArrays</span><span style="color: #f92672">.</span><span style="color: #a6e22e">size</span><span style="color: #f92672">();</span><span style="color: #f8f8f2">k</span><span style="color: #f92672">++)</span>
+<span style="color: #f92672">{</span>
+  <span style="color: #f8f8f2">array_data</span><span style="color: #f92672">[</span><span style="color: #f8f8f2">k</span><span style="color: #f92672">]</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">pointArrays</span><span style="color: #f92672">.</span><span style="color: #a6e22e">get</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">k</span><span style="color: #f92672">);</span>
+  <span style="color: #f8f8f2">array_startP</span><span style="color: #f92672">[</span><span style="color: #f8f8f2">k</span><span style="color: #f92672">]</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">totalLength</span><span style="color: #f92672">;</span>
+  <span style="color: #f8f8f2">totalLength</span> <span style="color: #f92672">+=</span> <span style="color: #f8f8f2">pointArrays</span><span style="color: #f92672">.</span><span style="color: #a6e22e">get</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">k</span><span style="color: #f92672">).</span><span style="color: #a6e22e">length</span><span style="color: #f92672">;</span>
+<span style="color: #f92672">}</span>
+
+<span style="color: #66d9ef">long</span> <span style="color: #f8f8f2">tableSize</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">totalLength</span><span style="color: #f92672">/</span><span style="color: #f8f8f2">nFeature</span><span style="color: #f92672">;</span>
+<span style="color: #f8f8f2">NumericTable</span> <span style="color: #f8f8f2">pointsArray_daal</span> <span style="color: #f92672">=</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">HomogenBMNumericTable</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">daal_Context</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">Double</span><span style="color: #f92672">.</span><span style="color: #a6e22e">class</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">nFeature</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">tableSize</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">NumericTable</span><span style="color: #f92672">.</span><span style="color: #a6e22e">AllocationFlag</span><span style="color: #f92672">.</span><span style="color: #a6e22e">DoAllocate</span><span style="color: #f92672">);</span>
+
+<span style="color: #66d9ef">int</span> <span style="color: #f8f8f2">row_idx</span> <span style="color: #f92672">=</span> <span style="color: #ae81ff">0</span><span style="color: #f92672">;</span>
+<span style="color: #66d9ef">int</span> <span style="color: #f8f8f2">row_len</span> <span style="color: #f92672">=</span> <span style="color: #ae81ff">0</span><span style="color: #f92672">;</span>
+<span style="color: #66d9ef">for</span> <span style="color: #f92672">(</span><span style="color: #66d9ef">int</span> <span style="color: #f8f8f2">k</span><span style="color: #f92672">=</span><span style="color: #ae81ff">0</span><span style="color: #f92672">;</span> <span style="color: #f8f8f2">k</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">pointArrays</span><span style="color: #f92672">.</span><span style="color: #a6e22e">size</span><span style="color: #f92672">();</span> <span style="color: #f8f8f2">k</span><span style="color: #f92672">++)</span>
+<span style="color: #f92672">{</span>
+  <span style="color: #f8f8f2">row_len</span> <span style="color: #f92672">=</span> <span style="color: #f92672">(</span><span style="color: #f8f8f2">array_data</span><span style="color: #f92672">[</span><span style="color: #f8f8f2">k</span><span style="color: #f92672">].</span><span style="color: #a6e22e">length</span><span style="color: #f92672">)/(</span><span style="color: #66d9ef">int</span><span style="color: #f92672">)</span><span style="color: #f8f8f2">nFeature</span><span style="color: #f92672">;</span>
+  <span style="color: #75715e">//release data from Java side to native side</span>
+  <span style="color: #f92672">((</span><span style="color: #f8f8f2">HomogenBMNumericTable</span><span style="color: #f92672">)</span><span style="color: #f8f8f2">pointsArray_daal</span><span style="color: #f92672">).</span><span style="color: #a6e22e">releaseBlockOfRowsByte</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">row_idx</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">row_len</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">array_data</span><span style="color: #f92672">[</span><span style="color: #f8f8f2">k</span><span style="color: #f92672">]);</span>
+  <span style="color: #f8f8f2">row_idx</span> <span style="color: #f92672">+=</span> <span style="color: #f8f8f2">row_len</span><span style="color: #f92672">;</span>
+<span style="color: #f92672">}</span>
 </pre></div>
 
 <h4 id="step-2-on-slave-node:e6247d3ba0dd41b6cedb6b09b131e433">Step 2 (on slave node)</h4>
@@ -109,7 +148,7 @@ Here are the steps to implement and run the PCA code.</p>
 
 <h3 id="executing-the-code:e6247d3ba0dd41b6cedb6b09b131e433">Executing the code</h3>
 
-<h4 id="setting-up-hadoop-and-harp-daal:e6247d3ba0dd41b6cedb6b09b131e433">Setting up Hadoop and Harp-daal</h4>
+<h4 id="setting-up-hadoop-and-harp-daal:e6247d3ba0dd41b6cedb6b09b131e433">Setting up Hadoop and Harp-DAAL</h4>
 
 <p>Details about setting up Hadoop along with Harp on the cluster can be found <a href="https://dsc-spidal.github.io/harp/docs/getting-started-cluster/" title="Installation">here</a>.
 Furthermore DAAL installation and usage can be found <a href="https://dsc-spidal.github.io/harp/docs/harpdaal/harpdaal/" title="Daal usage">here</a>.</p>
@@ -122,7 +161,7 @@ Furthermore DAAL installation and usage can be found <a href="https://dsc-spidal
 </pre></div>
 
 <p>To edit the location of the data set file location edit the following line in the  shell script file</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>hadoop jar harp-daal-app-1.0-SNAPSHOT.jar edu.iu.daal_pca.PCADaalLauncher -libjars <span style="color: #e6db74">${</span><span style="color: #f8f8f2">LIBJARS</span><span style="color: #e6db74">}</span> <span style="color: #f8f8f2">$Pts</span> <span style="color: #f8f8f2">$Dim</span> <span style="color: #f8f8f2">$File</span> <span style="color: #f8f8f2">$Node</span> <span style="color: #f8f8f2">$Thd</span> <span style="color: #f8f8f2">$Mem</span> /pca/input /pca/input <span style="color: #f8f8f2">$GenData</span>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>hadoop jar harp-daal-app-1.0-SNAPSHOT.jar edu.iu.daal_pca.PCADaalLauncher -libjars <span style="color: #e6db74">${</span><span style="color: #f8f8f2">LIBJARS</span><span style="color: #e6db74">}</span> <span style="color: #f8f8f2">$Pts</span> <span style="color: #f8f8f2">$Dim</span> <span style="color: #f8f8f2">$File</span> <span style="color: #f8f8f2">$Node</span> <span style="color: #f8f8f2">$Thd</span> <span style="color: #f8f8f2">$Mem</span> /pca-P<span style="color: #f8f8f2">$Pts</span>-D<span style="color: #f8f8f2">$Dim</span>-N<span style="color: #f8f8f2">$Node</span> /tmp/pca <span style="color: #f8f8f2">$GenData</span>
 </pre></div>
 
 <p>Where each variable is defined as below</p>
@@ -135,5 +174,7 @@ Furthermore DAAL installation and usage can be found <a href="https://dsc-spidal
 <li>GenData: Generate training data or not(once generated, data file /PCA-P\$Pts-C\$Dim-N\$Node is in hdfs, you could reuse the training data here next time) (i.e. false)</li>
 <li>Node: Number of mappers or nodes (i.e. 2)</li>
 <li>Thd: Number of threads on each mapper or node (i.e. 64)</li>
+<li>Where /pca-P$Pts-D$Dim-N$Node is the location holding the input files</li>
+<li>Where /tmp/pca is the working directory</li>
 </ul>
 </article></section></div></div></div><script src="https://code.jquery.com/jquery-2.2.1.min.js"></script><script src="https://dsc-spidal.github.io/harp/js/app.min.js"></script></body></html>

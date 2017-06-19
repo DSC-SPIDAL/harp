@@ -59,7 +59,7 @@ Furthermore DAAL installation and usage can be found &lt;a href=&#34;https://dsc
 
 &lt;p&gt;Easiest way to run the Harp-DAAL-SVD example is through the command line input shown below as an example (all together as one command)&lt;/p&gt;
 
-&lt;p&gt;&lt;code&gt;hadoop jar harp-daal-app-1.0-SNAPSHOT.jar edu.iu.daal_svd.SVDDaalLauncher -libjars ${LIBJARS} 10000 20 1 2 64 185000 /kmeans-P$Pts-C$Ced-D$Dim-N$Node /tmp/kmeans true&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;hadoop jar harp-daal-app-1.0-SNAPSHOT.jar edu.iu.daal_svd.SVDDaalLauncher -libjars ${LIBJARS} 10000 20 1 2 64 185000 /svd-P$Pts-C$Ced-D$Dim-N$Node /tmp/svd true&lt;/code&gt;&lt;/p&gt;
 
 &lt;h3 id=&#34;explanation-of-the-arguments-required-by-harp-daal-in-the-example-input:7acd18b9c63a99d3e2b9e734b5874be7&#34;&gt;Explanation of the arguments required by Harp-DAAL in the example input&lt;/h3&gt;
 
@@ -70,8 +70,8 @@ Furthermore DAAL installation and usage can be found &lt;a href=&#34;https://dsc
 &lt;li&gt;2 &amp;mdash; Number of nodes (mappers)&lt;/li&gt;
 &lt;li&gt;64 &amp;mdash; Number of threads on each mapper (node)&lt;/li&gt;
 &lt;li&gt;185000 &amp;mdash; Memory allocated to each mapper (in MB)&lt;/li&gt;
-&lt;li&gt;/kmeans-P$Pts-C$Ced-D$Dim-N$Node &amp;mdash; workDir&lt;/li&gt;
-&lt;li&gt;/tmp/kmeans &amp;mdash; outDir&lt;/li&gt;
+&lt;li&gt;/svd-P$Pts-C$Ced-D$Dim-N$Node &amp;mdash; workDir&lt;/li&gt;
+&lt;li&gt;/tmp/svd &amp;mdash; outDir&lt;/li&gt;
 &lt;li&gt;true &amp;mdash; Boolean specifying to generate data or not&lt;/li&gt;
 &lt;/ul&gt;
 
