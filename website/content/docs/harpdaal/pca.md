@@ -17,8 +17,8 @@ Here are the steps to implement and run the PCA code.
 
 ### Brief background
 * There are primarily three kind of nodes involved with the implementation.
-  1. name node (also known as master node) 
-  1. data node (also known as slave node)
+  1. name node
+  1. data node (divided into master and slave nodes, where slave nodes compute in parallel and communicate results to the master node)
   1. login node
   
 * The data files (csv [sample](https://github.com/DSC-SPIDAL/harp/tree/master/harp-daal-app/daal-src/examples/data/distributed "sample data")) which is data tagged with `pca` can be tested the following ways:
@@ -34,19 +34,55 @@ Here are the steps to implement and run the PCA code.
 
 ### Code Walk-Through 
 Only the MapCollective function is explained [here](https://github.com/DSC-SPIDAL/harp/blob/master/harp-project/src/main/java/org/apache/hadoop/mapred/CollectiveMapper.java "Collective Mapper") as the rest of the code follows the same Harp-DAAL style.
- 
+
 #### Step 1 (on slave nodes)
-The first step involves reading the files from the filesystem into the DAAL [_NumericTable_](https://software.intel.com/en-us/node/564579 "Numeric Table") data structure.  In this example the files have been stored on the shared memory system. The files have to be read in the DAAL table format as the local computations are performed by the DAAL libraries. Note that for the first step, all the nodes act as slave nodes, and the master node comes into existence only for the second step. 
+The first step involves reading the files from the filesystem into the DAAL [_NumericTable_](https://software.intel.com/en-us/node/564579 "Numeric Table") data structure.  The files have to be read in the DAAL table format as the local computations are performed by the DAAL libraries. Note that for the first step, all the nodes act as slave nodes and the master node comes into the picture only for the second step. 
+
+Reading the files could be done in following two ways:
+
+------------------------------------------------------------
+1) The files have been stored on the shared memory system
+
 ```java
-FileDataSource dataSource = new FileDataSource(daal_Context, fileNames+"/pca_"+this.getSelfID()+".csv",DataSource.DictionaryCreationFlag.DoDictionaryFromContext,DataSource.NumericTableAllocationFlag.DoAllocateNumericTable);
+FileDataSource dataSource = new FileDataSource(daal_Context, "/pca_"+this.getSelfID()+".csv",DataSource.DictionaryCreationFlag.DoDictionaryFromContext,DataSource.NumericTableAllocationFlag.DoAllocateNumericTable);
 
 /* Retrieve the data from the input */ dataSource.loadDataBlock();
 
 /* Set the input data on local nodes */
 NumericTable pointsArray_daal = dataSource.getNumericTable();
-
 ```
+-----------------------------------------------------------------
+2) The files have been randomly generated and stored on HDFS, which are then read by the `PCAUtil` as a list of double arrays afterwards being converted to the DAAL [_NumericTable_](https://software.intel.com/en-us/node/564579 "Numeric Table") data structure.
+```java
+List<double[]> pointArrays = PCAUtil.loadPoints(fileNames, pointsPerFile, vectorSize, conf, numThreads);
 
+//create the daal table for pointsArrays
+long nFeature = vectorSize;
+long totalLength = 0;
+
+long[] array_startP = new long[pointArrays.size()];
+double[][] array_data = new double[pointArrays.size()][];
+
+for(int k=0;k<pointArrays.size();k++)
+{
+  array_data[k] = pointArrays.get(k);
+  array_startP[k] = totalLength;
+  totalLength += pointArrays.get(k).length;
+}
+
+long tableSize = totalLength/nFeature;
+NumericTable pointsArray_daal = new HomogenBMNumericTable(daal_Context, Double.class, nFeature, tableSize, NumericTable.AllocationFlag.DoAllocate);
+
+int row_idx = 0;
+int row_len = 0;
+for (int k=0; k<pointArrays.size(); k++)
+{
+  row_len = (array_data[k].length)/(int)nFeature;
+  //release data from Java side to native side
+  ((HomogenBMNumericTable)pointsArray_daal).releaseBlockOfRowsByte(row_idx, row_len, array_data[k]);
+  row_idx += row_len;
+}
+```
   
 #### Step 2 (on slave node)
 The PCA algorithm is created and its input is set as the Numeric Table created in the previous step.  The computation gives the partial results on each local node.
@@ -103,7 +139,7 @@ Service.printNumericTable("Eigenvectors:", eigenVectors);
 
 ### Executing the code 
 
-#### Setting up Hadoop and Harp-daal
+#### Setting up Hadoop and Harp-DAAL
 Details about setting up Hadoop along with Harp on the cluster can be found [here](https://dsc-spidal.github.io/harp/docs/getting-started-cluster/ "Installation"). 
 Furthermore DAAL installation and usage can be found [here](https://dsc-spidal.github.io/harp/docs/harpdaal/harpdaal/ "Daal usage").
 
@@ -116,7 +152,7 @@ cd $HARP_ROOT_DIR/harp-daal-app
 To edit the location of the data set file location edit the following line in the  shell script file
 
 ```shell
-hadoop jar harp-daal-app-1.0-SNAPSHOT.jar edu.iu.daal_pca.PCADaalLauncher -libjars ${LIBJARS} $Pts $Dim $File $Node $Thd $Mem /pca/input /pca/input $GenData
+hadoop jar harp-daal-app-1.0-SNAPSHOT.jar edu.iu.daal_pca.PCADaalLauncher -libjars ${LIBJARS} $Pts $Dim $File $Node $Thd $Mem /pca-P$Pts-D$Dim-N$Node /tmp/pca $GenData
 ```
 Where each variable is defined as below
 
@@ -127,3 +163,5 @@ Where each variable is defined as below
 * GenData: Generate training data or not(once generated, data file /PCA-P\$Pts-C\$Dim-N\$Node is in hdfs, you could reuse the training data here next time) (i.e. false)
 * Node: Number of mappers or nodes (i.e. 2)
 * Thd: Number of threads on each mapper or node (i.e. 64)
+* Where /pca-P$Pts-D$Dim-N$Node is the location holding the input files
+* Where /tmp/pca is the working directory

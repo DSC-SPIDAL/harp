@@ -13,8 +13,8 @@ Here are the steps to implement and run the Neural Network code.
 
 ### Brief background
 * There are primarily three kinds of nodes involved with the implementation.
-  1. name node (also known as master node)
-  1. data node (also known as slave node)
+  1. name node 
+  1. data node (divided into master and slave nodes, where slave nodes compute in parallel and communicate results to the master node)
   1. login node
   
 * The data files (csv [sample](http://https://github.com/01org/daal/tree/daal_2018_beta_update1/examples/data/distributed)) which is data tagged with `neural_network_train` can be tested the following ways:
@@ -207,10 +207,24 @@ hdfs dfs -put /N/u/mayank/daal/omp/lib/libiomp5.so /Hadoop/Libraries/
 # daal.jar will be used in command line
 export LIBJARS=${DAALROOT}/lib/daal.jar
 
+# num of training data points
+#Pts=50000
+# num of training data centroids
+#Ced=1000
+# feature vector dimension
+#Dim=100
+# file per mapper
+#File=5
+# iteration times
+#ITR=10
+# memory allocated to each mapper (MB)
+#Mem=185000
+# generate training data or not (once generated, data file /kmeans-P$Pts-C$Ced-D$Dim-N$Node is in hdfs, you could reuse them next time)
+#GenData=false
 # num of mappers (nodes)
 Node=2
 # num of threads on each mapper(node)
 Thd=64
 
-hadoop jar harp-daal-app-1.0-SNAPSHOT.jar edu.iu.daal_nn.NNDaalLauncher -libjars ${LIBJARS}  /nn/input $Node $Thd 
+hadoop jar harp-daal-app-1.0-SNAPSHOT.jar edu.iu.daal_nn.NNDaalLauncher -libjars ${LIBJARS}  /nn/input /nn/work $Node $Thd 
 ```
