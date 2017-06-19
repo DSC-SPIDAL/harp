@@ -63,6 +63,12 @@ sections:
         url: /docs/harpdaal/mfsgd
       - name: Recommender System (ALS)
         url: /docs/harpdaal/als
+      - name: Singular Value Decomposition (SVD)
+        url: /docs/harpdaal/svd
+      - name: Principal Component Analysis (PCA)
+        url: /docs/harpdaal/pca
+      - name: Neural Network
+        url: /docs/harpdaal/nn
   - name: Harp Resources
     sublinks:
       - name: Harp Resources
