@@ -31,8 +31,7 @@ CORE.ALGORITHMS.INC := kmeans                                                   
                        covariance                                                \
                        pca                                                       \
                        svd                                                       \
-					   mf_sgd													 
-
+                       mf_sgd													 
 
 CORE.SERVICES       := compression
 
