@@ -254,9 +254,3 @@ public class KMeansDaalCollectiveMapper extends
     return restoredRes;
   }
 }
-
-// TODO optimize the code and coding style
-// TODO prepare the documentationn
-// TODO check the performance by checking the timings in both the daal implementation and harp-daal
-// TODO run the same code for a larger dataset
-// TODO push all this to github repository

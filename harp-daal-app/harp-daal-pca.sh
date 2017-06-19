@@ -26,21 +26,17 @@ export LIBJARS=${DAALROOT}/lib/daal.jar
 
 # num of training data points
 Pts=1000
-# num of training data centroids
-Ced=2
 # feature vector dimension
 Dim=10
 # file per mapper
 File=1
-# iteration times
-ITR=10
 # memory allocated to each mapper (MB)
 Mem=185000
 # generate training data or not (once generated, data file /kmeans-P$Pts-C$Ced-D$Dim-N$Node is in hdfs, you could reuse them next time)
-GenData=false
+GenData=true
 # num of mappers (nodes)
 Node=2
 # num of threads on each mapper(node)
 Thd=64
 
-hadoop jar harp-daal-app-1.0-SNAPSHOT.jar edu.iu.daal_kmeans.regroupallgather.KMeansDaalLauncher -libjars ${LIBJARS} $Pts $Dim $File $Node $Thd $Mem /pca/input /pca/input $GenData
+hadoop jar harp-daal-app-1.0-SNAPSHOT.jar edu.iu.daal_pca.PCADaalLauncher -libjars ${LIBJARS} $Pts $Dim $File $Node $Thd $Mem /pca-P$Pts-D$Dim-N$Node /tmp/pca $GenData
