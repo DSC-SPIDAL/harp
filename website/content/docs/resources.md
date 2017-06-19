@@ -20,6 +20,6 @@ Harp Resources outside this documentation:
 
 ## Press
 
-* [B. Zhang, B. Peng, J. Qiu. Parallelizing Big Data Machine Learning Applications with Model Rotation]()  (Book Chapter in series Advances in Parallel Computing, IOS Press, 2017)
+* [B. Zhang, B. Peng, J. Qiu. Parallelizing Big Data Machine Learning Applications with Model Rotation](http://dsc.soic.indiana.edu/publications/Parallelizing%20Big%20Data%20Machine%20Learning%20Applications%20with%20Model%20Rotation.pdf)  (Book Chapter in series Advances in Parallel Computing, IOS Press, 2017)
 
 * [J. Qiu, B. Zhang. Mammoth Data in the Cloud: Clustering Social Images](http://grids.ucs.indiana.edu/ptliupages/publications/MammothDataintheCloudClusteringSocialImages.pdf)  (Book chapter in Cloud Computing and Big Data, IOS Press, 2013)

@@ -20,212 +20,34 @@
 
 CORE.ALGORITHMS     := kmeans                                                    \
                        implicit_als                                              \
-                        neural_networks                                                \
-                       neural_networks/initializers/uniform                           \
-                       neural_networks/initializers/xavier                            \
-                       neural_networks/layers                                         \
-                       neural_networks/layers/abs_layer/backward                      \
-                       neural_networks/layers/abs_layer/forward                       \
-                       neural_networks/layers/batch_normalization_layer/backward      \
-                       neural_networks/layers/batch_normalization_layer/forward       \
-                       neural_networks/layers/concat_layer/backward                   \
-                       neural_networks/layers/concat_layer/forward                    \
-                       neural_networks/layers/concat_layer                            \
-                       neural_networks/layers/convolution2d_layer/backward            \
-                       neural_networks/layers/convolution2d_layer/forward             \
-                       neural_networks/layers/locallyconnected2d_layer/backward       \
-                       neural_networks/layers/locallyconnected2d_layer/forward        \
-                       neural_networks/layers/dropout_layer/backward                  \
-                       neural_networks/layers/dropout_layer/forward                   \
-                       neural_networks/layers/dropout_layer                           \
-                       neural_networks/layers/fullyconnected_layer/backward           \
-                       neural_networks/layers/fullyconnected_layer/forward            \
-                       neural_networks/layers/logistic_layer/backward                 \
-                       neural_networks/layers/logistic_layer/forward                  \
-                       neural_networks/layers/lrn_layer/backward                      \
-                       neural_networks/layers/lrn_layer/forward                       \
-                       neural_networks/layers/lrn_layer                               \
-                       neural_networks/layers/pooling1d_layer                         \
-                       neural_networks/layers/pooling1d_layer/backward                \
-                       neural_networks/layers/pooling1d_layer/forward                 \
-                       neural_networks/layers/pooling2d_layer                         \
-                       neural_networks/layers/pooling2d_layer/backward                \
-                       neural_networks/layers/pooling2d_layer/forward                 \
-                       neural_networks/layers/pooling3d_layer                         \
-                       neural_networks/layers/pooling3d_layer/backward                \
-                       neural_networks/layers/pooling3d_layer/forward                 \
-                       neural_networks/layers/spatial_pooling2d_layer                 \
-                       neural_networks/layers/spatial_pooling2d_layer/backward        \
-                       neural_networks/layers/spatial_pooling2d_layer/forward         \
-                       neural_networks/layers/prelu_layer/backward                    \
-                       neural_networks/layers/prelu_layer/forward                     \
-                       neural_networks/layers/relu_layer/backward                     \
-                       neural_networks/layers/relu_layer/forward                      \
-                       neural_networks/layers/smoothrelu_layer/backward               \
-                       neural_networks/layers/smoothrelu_layer/forward                \
-                       neural_networks/layers/loss_layer/softmax_cross_layer/backward \
-                       neural_networks/layers/loss_layer/softmax_cross_layer/forward  \
-                       neural_networks/layers/softmax_layer/backward                  \
-                       neural_networks/layers/softmax_layer/forward                   \
-                       neural_networks/layers/split_layer/backward                    \
-                       neural_networks/layers/split_layer/forward                     \
-                       neural_networks/layers/tanh_layer/backward                     \
-                       neural_networks/layers/tanh_layer/forward                      \
-                       neural_networks/layers/lcn_layer/backward                      \
-                       neural_networks/layers/lcn_layer/forward                       \
-                       neural_networks/layers/lcn_layer                               \
-                       normalization/zscore                                           \
-                       objective_function                                             \
-                       objective_function/mse                                         \
-                       optimization_solver                                            \
-                       optimization_solver/sgd                                        \
-                       optimization_solver/lbfgs                                      \
-                       optimization_solver/adagrad                                    \
-                       outlierdetection_multivariate                                  \
-                       outlierdetection_univariate                                    \
-                       pca                                                            \
-                       pivoted_qr                                                     \
-                       qr                                                             \
-             mf_sgd                             \
-                       quantiles                                                      \
-                       ridge_regression                                               \
-                       sgd                                                            \
-                       sorting                                                        \
-                       stump                                                          \
-                       svd                                                            \
-                       svm														  
+                       covariance                                                \
+                       pca                                                       \
+                       svd                                                       \
+                       mf_sgd														  
+
 
 CORE.ALGORITHMS.INC := kmeans                                                    \
                        implicit_als                                              \
-             neural_networks                                           \
-                       neural_networks/initializers                              \
-                       neural_networks/initializers/uniform                      \
-                       neural_networks/initializers/xavier                       \
-                       neural_networks/layers                                    \
-                       neural_networks/layers/abs                                \
-                       neural_networks/layers/batch_normalization                \
-                       neural_networks/layers/concat                             \
-                       neural_networks/layers/convolution2d                      \
-                       neural_networks/layers/locallyconnected2d                 \
-                       neural_networks/layers/dropout                            \
-                       neural_networks/layers/fullyconnected                     \
-                       neural_networks/layers/logistic                           \
-                       neural_networks/layers/lrn                                \
-                       neural_networks/layers/pooling1d                          \
-                       neural_networks/layers/pooling2d                          \
-                       neural_networks/layers/pooling3d                          \
-                       neural_networks/layers/spatial_pooling2d                  \
-                       neural_networks/layers/prelu                              \
-                       neural_networks/layers/relu                               \
-                       neural_networks/layers/smoothrelu                         \
-                       neural_networks/layers/softmax                            \
-                       neural_networks/layers/loss                               \
-                       neural_networks/layers/split                              \
-                       neural_networks/layers/tanh                               \
-                       neural_networks/layers/lcn                                \
-                       normalization                                             \
-                       optimization_solver                                       \
-                       optimization_solver/mse                                   \
-                       optimization_solver/objective_function                    \
-                       optimization_solver/iterative_solver                      \
-                       optimization_solver/sgd                                   \
-                       optimization_solver/lbfgs                                 \
-                       optimization_solver/adagrad                               \
-                       outlier_detection                                         \
+                       covariance                                                \
                        pca                                                       \
-                       pivoted_qr                                                \
-                       qr                                                        \
-             mf_sgd                          \
-                       quantiles                                                 \
-                       ridge_regression                                          \
-                       sorting                                                   \
-                       stump                                                     \
                        svd                                                       \
-                       svm                                                       \
-                       weak_learner									 
+                       mf_sgd													 
+
 
 CORE.SERVICES       := compression
 
 JJ.ALGORITHMS       := kmeans                                                    \
                        kmeans/init                                               \
+                       covariance                                                \
                        implicit_als                                              \
                        implicit_als/prediction                                   \
                        implicit_als/prediction/ratings                           \
                        implicit_als/training                                     \
                        implicit_als/training/init                                \
-                       neural_networks                                           \
-                       neural_networks/initializers                              \
-                       neural_networks/initializers/uniform                      \
-                       neural_networks/layers                                    \
-                       neural_networks/layers/abs                                \
-                       neural_networks/layers/average_pooling1d                  \
-                       neural_networks/layers/average_pooling2d                  \
-                       neural_networks/layers/average_pooling3d                  \
-                       neural_networks/layers/batch_normalization                \
-                       neural_networks/layers/concat                             \
-                       neural_networks/layers/convolution2d                      \
-                       neural_networks/layers/dropout                            \
-                       neural_networks/layers/fullyconnected                     \
-                       neural_networks/layers/logistic                           \
-                       neural_networks/layers/loss                               \
-                       neural_networks/layers/lrn                                \
-                       neural_networks/layers/maximum_pooling1d                  \
-                       neural_networks/layers/maximum_pooling2d                  \
-                       neural_networks/layers/maximum_pooling3d                  \
-                       neural_networks/layers/stochastic_pooling2d               \
-                       neural_networks/layers/spatial_pooling2d                  \
-                       neural_networks/layers/spatial_average_pooling2d          \
-                       neural_networks/layers/spatial_maximum_pooling2d          \
-                       neural_networks/layers/spatial_stochastic_pooling2d       \
-                       neural_networks/layers/pooling1d                          \
-                       neural_networks/layers/pooling2d                          \
-                       neural_networks/layers/pooling3d                          \
-                       neural_networks/layers/prelu                              \
-                       neural_networks/layers/relu                               \
-                       neural_networks/layers/smoothrelu                         \
-                       neural_networks/layers/softmax                            \
-                       neural_networks/layers/softmax_cross                      \
-                       neural_networks/layers/split                              \
-                       neural_networks/layers/tanh                               \
-                       neural_networks/layers/lcn                                \
-                       neural_networks/layers/locallyconnected2d                 \
-                       neural_networks/prediction                                \
-                       neural_networks/training                                  \
-                       normalization/zscore                                      \
-                       optimization_solver                                       \
-                       optimization_solver/objective_function                    \
-                       optimization_solver/sum_of_functions                      \
-                       optimization_solver/mse                                   \
-                       optimization_solver/iterative_solver                      \
-                       optimization_solver/sgd                                   \
-                       optimization_solver/lbfgs                                 \
-                       optimization_solver/adagrad                               \
                        pca                                                       \
-                       pivoted_qr                                                \
-                       qr                                                        \
-                       mf_sgd                                                    \
-                       quality_metric                                            \
-                       quality_metric_set                                        \
-                       quantiles                                                 \
-                       ridge_regression                                          \
-                       ridge_regression/prediction                               \
-                       ridge_regression/training                                 \
-                       sorting                                                   \
-                       stump                                                     \
-                       stump/prediction                                          \
-                       stump/training                                            \
                        svd                                                       \
-                       svm                                                       \
-                       svm/prediction                                            \
-                       svm/quality_metric_set                                    \
-                       svm/training                                              \
-                       two_class_classifier                                      \
-                       two_class_classifier/prediction                           \
-                       two_class_classifier/training                             \
-                       univariate_outlier_detection                              \
-                       weak_learner                                              \
-                       weak_learner/prediction                                   \
-                       weak_learner/training                                                 
+                       mf_sgd                                                    
+
 
 JJ.DATA_MANAGEMENT  := data                                                      \
                        data_source                                               \
