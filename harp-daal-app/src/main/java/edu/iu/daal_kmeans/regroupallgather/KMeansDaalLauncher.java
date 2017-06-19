@@ -66,7 +66,7 @@ public class KMeansDaalLauncher extends Configured
 
     if (args.length < 8)
     {
-      System.err.println("Usage: edu.iu.kmeans.KMeansDaalLauncher "
+      System.err.println("Usage: edu.iu.pca.PCADaalLauncher "
         + "<num Of DataPoints> <vector size> "
         + "<num of point files per worker>"
         + "<number of map tasks> <num threads>"
@@ -117,10 +117,10 @@ public class KMeansDaalLauncher extends Configured
     }
 
     long startTime = System.currentTimeMillis();
-    runKMeansAllReduce(numOfDataPoints, vectorSize, numPointFiles, numMapTasks, numThreads, mem, dataDir, outDir, configuration);
+    runharpPCA(numOfDataPoints, vectorSize, numPointFiles, numMapTasks, numThreads, mem, dataDir, outDir, configuration);
   }
 
-  private void runKMeansAllReduce( int numOfDataPoints, int vectorSize, int numPointFiles, int numMapTasks, int numThreads,
+  private void runharpPCA( int numOfDataPoints, int vectorSize, int numPointFiles, int numMapTasks, int numThreads,
     int mem, Path dataDir, Path outDir, Configuration configuration)
     throws IOException, URISyntaxException, InterruptedException, ClassNotFoundException
   {
@@ -137,7 +137,7 @@ public class KMeansDaalLauncher extends Configured
     // ---------------------------------------------------------
     if (!jobSuccess)
     {
-      System.out.println("KMeans Job fails.");
+      System.out.println("PCA Job fails.");
     }
   }
 
@@ -146,7 +146,7 @@ public class KMeansDaalLauncher extends Configured
     int mem, Path dataDir, Path outDir, Configuration configuration)
     throws IOException, URISyntaxException
   {
-    Job job = Job.getInstance(configuration, "kmeans_job");
+    Job job = Job.getInstance(configuration, "PCA_job");
 
     FileInputFormat.setInputPaths(job, dataDir);
     FileOutputFormat.setOutputPath(job, outDir);

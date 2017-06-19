@@ -42,10 +42,10 @@ import edu.iu.harp.partition.Partition;
 import edu.iu.harp.partition.Table;
 import edu.iu.harp.resource.DoubleArray;
 
-public class KMUtil {
+public class PCAUtil {
 
   protected static final Log LOG = LogFactory
-    .getLog(KMUtil.class);
+    .getLog(PCAUtil.class);
 
   /**
    * Generate data and upload to the data dir.
@@ -65,30 +65,31 @@ public class KMUtil {
     String localInputDir, FileSystem fs,
     Path dataDir) throws IOException,
     InterruptedException, ExecutionException {
-    int pointsPerFile =
-      numOfDataPoints / numPointFiles;
-    System.out.println("Writing " + pointsPerFile
-      + " vectors to a file");
+    int pointsPerFile = numOfDataPoints / numPointFiles;
+    System.out.println("Writing " + pointsPerFile + " vectors to a file");
     // Check data directory
-    if (fs.exists(dataDir)) {
+    if (fs.exists(dataDir))
+    {
       fs.delete(dataDir, true);
     }
     // Check local directory
     File localDir = new File(localInputDir);
     // If existed, regenerate data
-    if (localDir.exists()
-      && localDir.isDirectory()) {
-      for (File file : localDir.listFiles()) {
+    if (localDir.exists() && localDir.isDirectory()) 
+    {
+      for (File file : localDir.listFiles()) 
+      {
         file.delete();
       }
       localDir.delete();
     }
     boolean success = localDir.mkdir();
-    if (success) {
-      System.out.println("Directory: "
-        + localInputDir + " created");
+    if (success)
+    {
+      System.out.println("Directory: " + localInputDir + " created");
     }
-    if (pointsPerFile == 0) {
+    if (pointsPerFile == 0) 
+    {
       throw new IOException("No point to write.");
     }
     // Create random data points
@@ -97,8 +98,7 @@ public class KMUtil {
     List<Future<?>> futures = new LinkedList<Future<?>>();
     for (int k = 0; k < numPointFiles; k++)
     {
-      Future<?> f = service.submit(new DataGenRunnable(
-        pointsPerFile, localInputDir, Integer.toString(k), vectorSize));
+      Future<?> f = service.submit(new DataGenRunnable(pointsPerFile, localInputDir, Integer.toString(k), vectorSize));
       futures.add(f); // add a new thread
     }
     for (Future<?> f : futures)
@@ -114,22 +114,16 @@ public class KMUtil {
     DeleteFileFolder(localInputDir);
   }
 
-  public static void generateData(
-    int numDataPoints, int numCentroids,
-    int vectorSize, int numPointFiles,
-    Configuration configuration, FileSystem fs,
-    Path dataDir, Path cenDir, String localDir)
-    throws IOException, InterruptedException,
-    ExecutionException {
+  public static void generateData(int numDataPoints, int vectorSize, int numPointFiles,
+    Configuration configuration, FileSystem fs, Path dataDir, String localDir)
+    throws IOException, InterruptedException, ExecutionException
+  {
     System.out.println("Generating data..... ");
-    generatePoints(numDataPoints, vectorSize,
-      numPointFiles, localDir, fs, dataDir);
+    generatePoints(numDataPoints, vectorSize, numPointFiles, localDir, fs, dataDir);
   }
 
-  public static List<double[]> loadPoints(
-    List<String> fileNames, int pointsPerFile,
-    int cenVecSize, Configuration conf,
-    int numThreads)
+  public static List<double[]> loadPoints( List<String> fileNames, int pointsPerFile,
+    int cenVecSize, Configuration conf, int numThreads)
   {
     long startTime = System.currentTimeMillis();
     List<PointLoadTask> tasks = new LinkedList<>();
@@ -145,6 +139,7 @@ public class KMUtil {
     }
     compute.start();
     compute.stop();
+
     while (compute.hasOutput())
     {
       double[] output = compute.waitForOutput();
@@ -161,11 +156,10 @@ public class KMUtil {
         arrays.add(output);
       }
     }
+
     long endTime = System.currentTimeMillis();
-    LOG.info("File read (ms): "
-      + (endTime - startTime)
-      + ", number of point arrays: "
-      + arrays.size());
+    LOG.info("File read (ms): " + (endTime - startTime)
+      + ", number of point arrays: " + arrays.size());
     return arrays;
   }
 

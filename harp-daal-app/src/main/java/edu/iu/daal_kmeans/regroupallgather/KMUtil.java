@@ -1,6 +1,6 @@
 /*
  * Copyright 2013-2016 Indiana University
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -48,19 +48,8 @@ public class KMUtil {
     .getLog(KMUtil.class);
 
   /**
-   * Generate centroids and upload to the cDir
-   *
-   * @param numCentroids
-   * @param vectorSize
-   * @param configuration
-   * @param random
-   * @param cenDir
-   * @param fs
-   * @throws IOException
-   */
-  /**
    * Generate data and upload to the data dir.
-   * 
+   *
    * @param numOfDataPoints
    * @param vectorSize
    * @param numPointFiles

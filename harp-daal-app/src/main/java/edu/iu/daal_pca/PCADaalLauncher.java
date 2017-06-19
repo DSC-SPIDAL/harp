@@ -118,6 +118,14 @@ public class PCADaalLauncher extends Configured
       fs.delete(outDir, true);
     }
 
+    if(generateData)
+    {
+      System.out.println("Generate data:");
+      PCAUtil.generateData(numOfDataPoints, vectorSize, numPointFiles,
+                        configuration, fs, dataDir, localPointFilesDir);
+
+    }
+
     long startTime = System.currentTimeMillis();
     runharpPCA(numOfDataPoints, vectorSize, numPointFiles, numMapTasks, numThreads, mem, dataDir, outDir, configuration);
   }

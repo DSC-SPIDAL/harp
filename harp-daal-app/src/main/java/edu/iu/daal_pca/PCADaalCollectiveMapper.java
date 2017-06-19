@@ -134,17 +134,48 @@ public class PCADaalCollectiveMapper extends
     /*creating an object to store the partial results on each node*/
     PartialCorrelationResult pres = new PartialCorrelationResult(daal_Context);
 
-    System.out.println("File taken by this:"+ fileNames.get(0));
+    /*use this for data on shared directory*/
 
-    FileDataSource dataSource = new FileDataSource(daal_Context, "/N/u/pgangwar/pca_"+this.getSelfID()+".csv",
-                                                   DataSource.DictionaryCreationFlag.DoDictionaryFromContext,
-                                                   DataSource.NumericTableAllocationFlag.DoAllocateNumericTable);
+    // System.out.println("File taken by this:"+ fileNames.get(0));
+
+    // FileDataSource dataSource = new FileDataSource(daal_Context, "/N/u/pgangwar/pca_"+this.getSelfID()+".csv",
+    //                                                DataSource.DictionaryCreationFlag.DoDictionaryFromContext,
+    //                                                DataSource.NumericTableAllocationFlag.DoAllocateNumericTable);
 
     /* Retrieve the data from the input file */
-    dataSource.loadDataBlock();
+    // dataSource.loadDataBlock();
 
     /* Set the input data on local nodes */
-    NumericTable pointsArray_daal = dataSource.getNumericTable();
+    // NumericTable pointsArray_daal = dataSource.getNumericTable();
+
+    List<double[]> pointArrays = PCAUtil.loadPoints(fileNames, pointsPerFile, vectorSize, conf, numThreads);
+
+    //create the daal table for pointsArrays
+    long nFeature = vectorSize;
+    long totalLength = 0;
+
+    long[] array_startP = new long[pointArrays.size()];
+    double[][] array_data = new double[pointArrays.size()][];
+
+    for(int k=0;k<pointArrays.size();k++)
+    {
+      array_data[k] = pointArrays.get(k);
+      array_startP[k] = totalLength;
+      totalLength += pointArrays.get(k).length;
+    }
+
+    long tableSize = totalLength/nFeature;
+    NumericTable pointsArray_daal = new HomogenBMNumericTable(daal_Context, Double.class, nFeature, tableSize, NumericTable.AllocationFlag.DoAllocate);
+
+    int row_idx = 0;
+    int row_len = 0;
+    for (int k=0; k<pointArrays.size(); k++)
+    {
+      row_len = (array_data[k].length)/(int)nFeature;
+      //release data from Java side to native side
+      ((HomogenBMNumericTable)pointsArray_daal).releaseBlockOfRowsByte(row_idx, row_len, array_data[k]);
+      row_idx += row_len;
+    }
 
     /* Create an algorithm to compute PCA decomposition using the correlation method on local nodes */
     DistributedStep1Local pcaLocal = new DistributedStep1Local(daal_Context, Double.class, Method.correlationDense);
