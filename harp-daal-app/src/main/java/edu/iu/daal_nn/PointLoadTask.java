@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package edu.iu.daal_kmeans.regroupallgather;
+package edu.iu.daal_nn;
 
 import java.io.IOException;
+import java.lang.*;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -24,11 +25,13 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import java.util.LinkedList;
+import java.util.List;
 
 import edu.iu.harp.schdynamic.Task;
 
 public class PointLoadTask implements
-  Task<String, double[]> {
+  Task<String, List<double[]>> {
 
   protected static final Log LOG = LogFactory
     .getLog(PointLoadTask.class);
@@ -45,13 +48,15 @@ public class PointLoadTask implements
   }
 
   @Override
-  public double[] run(String fileName)
+  public List<double[]> run(String fileName)
     throws Exception {
+    long threadId = Thread.currentThread().getId();
+   // System.out.println("PointLoadTaskthread "+threadId);
     int count = 0;
     boolean isSuccess = false;
     do {
       try {
-        double[] array =
+        List<double[]> array =
           loadPoints(fileName, pointsPerFile,
             cenVecSize, conf);
         return array;
@@ -67,32 +72,32 @@ public class PointLoadTask implements
     return null;
   }
 
-  /**
-   * Load data points from a file.
-   * 
-   * @param file
-   * @param conf
-   * @return
-   * @throws IOException
-   */
-  public static double[] loadPoints(String file,
+  public static List<double[]> loadPoints(String file,
     int pointsPerFile, int cenVecSize,
     Configuration conf) throws Exception {
-    double[] points =
+    List<double[]> points = new LinkedList<double[]>();
+    double[] trainingData =
       new double[pointsPerFile * cenVecSize];
+      double[] labelData =
+      new double[pointsPerFile * 1]; 
     Path pointFilePath = new Path(file);
     FileSystem fs =
       pointFilePath.getFileSystem(conf);
     FSDataInputStream in = fs.open(pointFilePath);
-    try {
-      for (int i = 0; i < points.length;) {
-        points[i++] = Double.MAX_VALUE;
-        for (int j = 1; j < cenVecSize; j++) {
-          points[i++] = in.readDouble();
+    int k =0;
+    try{
+      for(int i = 0; i < pointsPerFile;i++){
+        String[] line = in.readLine().split(",");
+        for(int j = 0; j < cenVecSize; j++){
+          trainingData[k] = Double.parseDouble(line[j]);
+          k++;
         }
+        labelData[i] = Double.parseDouble(line[cenVecSize]);
       }
-    } finally {
+    } finally{
       in.close();
+      points.add(trainingData);
+      points.add(labelData);
     }
     return points;
   }

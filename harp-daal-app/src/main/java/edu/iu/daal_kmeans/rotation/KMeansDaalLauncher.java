@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package edu.iu.daal_kmeans.regroupallgather;
+package edu.iu.daal_kmeans.rotation;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -37,6 +37,8 @@ import org.apache.hadoop.filecache.DistributedCache;
 import java.net.URI;
 
 import edu.iu.fileformat.MultiFileInputFormat;
+import edu.iu.daal_kmeans.regroupallgather.Constants;
+import edu.iu.daal_kmeans.regroupallgather.KMUtil;
 
 public class KMeansDaalLauncher extends Configured
   implements Tool {
@@ -67,13 +69,12 @@ public class KMeansDaalLauncher extends Configured
       DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbbmalloc.so#libtbbmalloc.so"), conf);
       DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libiomp5.so#libiomp5.so"), conf);
 
-      if (args.length < 10) {
+    if (args.length < 9) {
       System.err
-        .println("Usage: edu.iu.kmeans.KMeansDaalLauncher "
+        .println("Usage: edu.iu.kmmoro.KMeansDaalLauncher "
           + "<num Of DataPoints> <num of Centroids> <vector size> "
           + "<num of point files per worker>"
-          + "<number of map tasks> <num threads><number of iteration> "
-          + "<mem>"
+          + "<number of map tasks> <num threads> <number of iteration> "
           + "<work dir> <local points dir>");
       ToolRunner
         .printGenericCommandUsage(System.err);
@@ -88,13 +89,12 @@ public class KMeansDaalLauncher extends Configured
     int numMapTasks = Integer.parseInt(args[4]);
     int numThreads = Integer.parseInt(args[5]);
     int numIteration = Integer.parseInt(args[6]);
-    int mem = Integer.parseInt(args[7]);
-    String workDir = args[8];
-    String localPointFilesDir = args[9];
+    String workDir = args[7];
+    String localPointFilesDir = args[8];
     boolean regenerateData = true;
-    if (args.length == 11) {
+    if (args.length == 10) {
       regenerateData =
-        Boolean.parseBoolean(args[10]);
+        Boolean.parseBoolean(args[9]);
     }
     System.out.println("Number of Map Tasks = "
       + numMapTasks);
@@ -109,7 +109,7 @@ public class KMeansDaalLauncher extends Configured
     }
     launch(numOfDataPoints, numCentroids,
       vectorSize, numPointFiles, numMapTasks,
-      numThreads, numIteration, mem, workDir,
+      numThreads, numIteration, workDir,
       localPointFilesDir, regenerateData);
     return 0;
   }
@@ -117,7 +117,7 @@ public class KMeansDaalLauncher extends Configured
   private void launch(int numOfDataPoints,
     int numCentroids, int vectorSize,
     int numPointFiles, int numMapTasks,
-    int numThreads, int numIterations, int mem,
+    int numThreads, int numIterations,
     String workDir, String localPointFilesDir,
     boolean generateData) throws IOException,
     URISyntaxException, InterruptedException,
@@ -143,12 +143,10 @@ public class KMeansDaalLauncher extends Configured
         configuration, fs, dataDir, cenDir,
         localPointFilesDir);
     }
-    KMUtil.generateCentroids(numCentroids,
-      vectorSize, configuration, cenDir, fs);
     long startTime = System.currentTimeMillis();
     runKMeansAllReduce(numOfDataPoints,
       numCentroids, vectorSize, numPointFiles,
-      numMapTasks, numThreads, numIterations, mem,
+      numMapTasks, numThreads, numIterations,
       dataDir, cenDir, outDir, configuration);
     long endTime = System.currentTimeMillis();
     System.out
@@ -160,14 +158,12 @@ public class KMeansDaalLauncher extends Configured
     int numOfDataPoints, int numCentroids,
     int vectorSize, int numPointFiles,
     int numMapTasks, int numThreads,
-    int numIterations, int mem, Path dataDir, Path cenDir,
+    int numIterations, Path dataDir, Path cenDir,
     Path outDir, Configuration configuration)
     throws IOException, URISyntaxException,
     InterruptedException, ClassNotFoundException {
     System.out.println("Starting Job");
-    // ----------------------------------------------------------------------
-    long perJobSubmitTime =
-      System.currentTimeMillis();
+    long t1 = System.currentTimeMillis();
     System.out
       .println("Start Job "
         + new SimpleDateFormat("HH:mm:ss.SSS")
@@ -176,13 +172,11 @@ public class KMeansDaalLauncher extends Configured
     Job kmeansJob =
       configureKMeansJob(numOfDataPoints,
         numCentroids, vectorSize, numPointFiles,
-        numMapTasks, numThreads, numIterations, mem,
+        numMapTasks, numThreads, numIterations,
         dataDir, cenDir, outDir, configuration);
-    System.out
-      .println("Job"
-        + " configure in "
-        + (System.currentTimeMillis() - perJobSubmitTime)
-        + " miliseconds.");
+    System.out.println("Job configure in "
+      + (System.currentTimeMillis() - t1)
+      + " miliseconds.");
     // ----------------------------------------------------------
     boolean jobSuccess =
       kmeansJob.waitForCompletion(true);
@@ -191,11 +185,9 @@ public class KMeansDaalLauncher extends Configured
         + new SimpleDateFormat("HH:mm:ss.SSS")
           .format(Calendar.getInstance()
             .getTime()));
-    System.out
-      .println("Job"
-        + " finishes in "
-        + (System.currentTimeMillis() - perJobSubmitTime)
-        + " miliseconds.");
+    System.out.println("Job finishes in "
+      + (System.currentTimeMillis() - t1)
+      + " miliseconds.");
     // ---------------------------------------------------------
     if (!jobSuccess) {
       System.out.println("KMeans Job fails.");
@@ -206,7 +198,7 @@ public class KMeansDaalLauncher extends Configured
     int numOfDataPoints, int numCentroids,
     int vectorSize, int numPointFiles,
     int numMapTasks, int numThreads,
-    int numIterations, int mem, Path dataDir, Path cenDir,
+    int numIterations, Path dataDir, Path cenDir,
     Path outDir, Configuration configuration)
     throws IOException, URISyntaxException {
     Job job =
@@ -227,30 +219,10 @@ public class KMeansDaalLauncher extends Configured
     jobConf.setInt(
       "mapreduce.job.max.split.locations", 10000);
 
-    // mapreduce.map.collective.memory.mb
-    // 125000
-    jobConf.setInt(
-      "mapreduce.map.collective.memory.mb", mem);
-    // mapreduce.map.collective.java.opts
-    // -Xmx120000m -Xms120000m
-    // int xmx = (mem - 5000) > (mem * 0.5)
-    //   ? (mem - 5000) : (int) Math.ceil(mem * 0.5);
-    int xmx = (int) Math.ceil((mem - 5000)*0.5);
-    int xmn = (int) Math.ceil(0.25 * xmx);
-    jobConf.set(
-      "mapreduce.map.collective.java.opts",
-      "-Xmx" + xmx + "m -Xms" + xmx + "m"
-        + " -Xmn" + xmn + "m");
+    jobConf.setInt("mapreduce.map.collective.memory.mb", 110000);
 
-    // //Configuration on Juliet
-    // jobConf.setInt("mapreduce.map.collective.memory.mb", 110000);
-    // jobConf.set("mapreduce.map.collective.java.opts",
-    //   "-Xmx50000m -Xms50000m");
-    //
-    // //Configuration on Tango
-    // // jobConf.setInt("mapreduce.map.collective.memory.mb", 185000);
-    // // jobConf.set("mapreduce.map.collective.java.opts",
-    // //   "-Xmx80000m -Xms80000m");
+    jobConf.set("mapreduce.map.collective.java.opts",
+      "-Xmx100000m -Xms100000m");
 
     job.setNumReduceTasks(0);
     Configuration jobConfig =

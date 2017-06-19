@@ -52,7 +52,7 @@ public class DataGenRunnable implements Runnable {
       for (int i = 0; i < pointsPerFile; i++) {
         for (int j = 0; j < vectorSize; j++) {
           // point = 1000;
-          point = random.nextDouble()*2 -1;
+          point = random.nextDouble() * 1000;
           out.writeDouble(point);
         }
       }

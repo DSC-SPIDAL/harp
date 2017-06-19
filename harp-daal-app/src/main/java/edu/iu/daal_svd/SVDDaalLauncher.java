@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package edu.iu.daal_kmeans.regroupallgather;
+package edu.iu.daal_svd;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -38,14 +38,14 @@ import java.net.URI;
 
 import edu.iu.fileformat.MultiFileInputFormat;
 
-public class KMeansDaalLauncher extends Configured
+public class SVDDaalLauncher extends Configured
   implements Tool {
 
   public static void main(String[] argv)
     throws Exception {
     int res =
       ToolRunner.run(new Configuration(),
-        new KMeansDaalLauncher(), argv);
+        new SVDDaalLauncher(), argv);
     System.exit(res);
   }
 
@@ -67,57 +67,51 @@ public class KMeansDaalLauncher extends Configured
       DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbbmalloc.so#libtbbmalloc.so"), conf);
       DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libiomp5.so#libiomp5.so"), conf);
 
-      if (args.length < 10) {
+      if (args.length < 8) {
       System.err
-        .println("Usage: edu.iu.kmeans.KMeansDaalLauncher "
-          + "<num Of DataPoints> <num of Centroids> <vector size> "
+        .println("Usage: edu.iu.daal_svd.SVDDaalLauncher "
+          + "<num Of DataPoints> <vector size> "
           + "<num of point files per worker>"
-          + "<number of map tasks> <num threads><number of iteration> "
+          + "<number of map tasks> <num threads> "
           + "<mem>"
-          + "<work dir> <local points dir>");
+          + "<work dir> <local points dir>" + "less parameters");
       ToolRunner
         .printGenericCommandUsage(System.err);
       return -1;
     }
     int numOfDataPoints =
       Integer.parseInt(args[0]);
-    int numCentroids = Integer.parseInt(args[1]);
-    int vectorSize = Integer.parseInt(args[2]);
+    // int numCentroids = Integer.parseInt(args[1]);
+    int vectorSize = Integer.parseInt(args[1]);
     int numPointFilePerWorker =
-      Integer.parseInt(args[3]);
-    int numMapTasks = Integer.parseInt(args[4]);
-    int numThreads = Integer.parseInt(args[5]);
-    int numIteration = Integer.parseInt(args[6]);
-    int mem = Integer.parseInt(args[7]);
-    String workDir = args[8];
-    String localPointFilesDir = args[9];
+      Integer.parseInt(args[2]);
+    int numMapTasks = Integer.parseInt(args[3]);
+    int numThreads = Integer.parseInt(args[4]);
+    int mem = Integer.parseInt(args[5]);
+    String workDir = args[6];
+    String localPointFilesDir = args[7];
     boolean regenerateData = true;
-    if (args.length == 11) {
+    if (args.length == 8) {
       regenerateData =
-        Boolean.parseBoolean(args[10]);
+        Boolean.parseBoolean(args[8]);
     }
     System.out.println("Number of Map Tasks = "
       + numMapTasks);
     int numPointFiles =
       numMapTasks * numPointFilePerWorker;
-    if (numOfDataPoints / numPointFiles == 0
-      || numCentroids / numMapTasks == 0) {
+    if (numOfDataPoints / numPointFiles == 0) {
       return -1;
     }
-    if (numIteration == 0) {
-      numIteration = 1;
-    }
-    launch(numOfDataPoints, numCentroids,
+    launch(numOfDataPoints,
       vectorSize, numPointFiles, numMapTasks,
-      numThreads, numIteration, mem, workDir,
+      numThreads, mem, workDir,
       localPointFilesDir, regenerateData);
     return 0;
   }
 
   private void launch(int numOfDataPoints,
-    int numCentroids, int vectorSize,
-    int numPointFiles, int numMapTasks,
-    int numThreads, int numIterations, int mem,
+   int vectorSize, int numPointFiles, int numMapTasks,
+    int numThreads, int mem,
     String workDir, String localPointFilesDir,
     boolean generateData) throws IOException,
     URISyntaxException, InterruptedException,
@@ -126,41 +120,40 @@ public class KMeansDaalLauncher extends Configured
     Path workDirPath = new Path(workDir);
     FileSystem fs = FileSystem.get(configuration);
     Path dataDir = new Path(workDirPath, "data");
-    Path cenDir =
-      new Path(workDirPath, "centroids");
-    if (fs.exists(cenDir)) {
-      fs.delete(cenDir, true);
-    }
-    fs.mkdirs(cenDir);
+    // Path cenDir =
+    //   new Path(workDirPath, "centroids");
+    // if (fs.exists(cenDir)) {
+    //   fs.delete(cenDir, true);
+    // }
+    // fs.mkdirs(cenDir);
     Path outDir = new Path(workDirPath, "out");
     if (fs.exists(outDir)) {
       fs.delete(outDir, true);
     }
     if (generateData) {
       System.out.println("Generate data.");
-      KMUtil.generateData(numOfDataPoints,
-        numCentroids, vectorSize, numPointFiles,
-        configuration, fs, dataDir, cenDir,
+      SVDUtil.generateData(numOfDataPoints,
+        vectorSize, numPointFiles,
+        configuration, fs, dataDir,
         localPointFilesDir);
     }
-    KMUtil.generateCentroids(numCentroids,
-      vectorSize, configuration, cenDir, fs);
+
     long startTime = System.currentTimeMillis();
-    runKMeansAllReduce(numOfDataPoints,
-      numCentroids, vectorSize, numPointFiles,
-      numMapTasks, numThreads, numIterations, mem,
-      dataDir, cenDir, outDir, configuration);
+    runSVDAllReduce(numOfDataPoints,
+      vectorSize, numPointFiles,
+      numMapTasks, numThreads, mem,
+      dataDir, outDir, configuration);
     long endTime = System.currentTimeMillis();
     System.out
-      .println("Total K-means Execution Time: "
+      .println("Total SVD Execution Time: "
         + (endTime - startTime));
   }
 
-  private void runKMeansAllReduce(
-    int numOfDataPoints, int numCentroids,
+  private void runSVDAllReduce(
+    int numOfDataPoints,
     int vectorSize, int numPointFiles,
     int numMapTasks, int numThreads,
-    int numIterations, int mem, Path dataDir, Path cenDir,
+    int mem, Path dataDir,
     Path outDir, Configuration configuration)
     throws IOException, URISyntaxException,
     InterruptedException, ClassNotFoundException {
@@ -173,11 +166,11 @@ public class KMeansDaalLauncher extends Configured
         + new SimpleDateFormat("HH:mm:ss.SSS")
           .format(Calendar.getInstance()
             .getTime()));
-    Job kmeansJob =
-      configureKMeansJob(numOfDataPoints,
-        numCentroids, vectorSize, numPointFiles,
-        numMapTasks, numThreads, numIterations, mem,
-        dataDir, cenDir, outDir, configuration);
+    Job svdJob =
+      configureSVDJob(numOfDataPoints,
+        vectorSize, numPointFiles,
+        numMapTasks, numThreads,  mem,
+        dataDir, outDir, configuration);
     System.out
       .println("Job"
         + " configure in "
@@ -185,7 +178,7 @@ public class KMeansDaalLauncher extends Configured
         + " miliseconds.");
     // ----------------------------------------------------------
     boolean jobSuccess =
-      kmeansJob.waitForCompletion(true);
+      svdJob.waitForCompletion(true);
     System.out
       .println("end Jod "
         + new SimpleDateFormat("HH:mm:ss.SSS")
@@ -198,27 +191,27 @@ public class KMeansDaalLauncher extends Configured
         + " miliseconds.");
     // ---------------------------------------------------------
     if (!jobSuccess) {
-      System.out.println("KMeans Job fails.");
+      System.out.println("SVD Job fails.");
     }
   }
 
-  private Job configureKMeansJob(
-    int numOfDataPoints, int numCentroids,
+  private Job configureSVDJob(
+    int numOfDataPoints,
     int vectorSize, int numPointFiles,
     int numMapTasks, int numThreads,
-    int numIterations, int mem, Path dataDir, Path cenDir,
+    int mem, Path dataDir,
     Path outDir, Configuration configuration)
     throws IOException, URISyntaxException {
     Job job =
       Job
-        .getInstance(configuration, "kmeans_job");
+        .getInstance(configuration, "svd_job");
     FileInputFormat.setInputPaths(job, dataDir);
     FileOutputFormat.setOutputPath(job, outDir);
     job
       .setInputFormatClass(MultiFileInputFormat.class);
-    job.setJarByClass(KMeansDaalLauncher.class);
+    job.setJarByClass(SVDDaalLauncher.class);
     job
-      .setMapperClass(KMeansDaalCollectiveMapper.class);
+      .setMapperClass(SVDDaalCollectiveMapper.class);
     org.apache.hadoop.mapred.JobConf jobConf =
       (JobConf) job.getConfiguration();
     jobConf.set("mapreduce.framework.name",
@@ -257,18 +250,12 @@ public class KMeansDaalLauncher extends Configured
       job.getConfiguration();
     jobConfig.setInt(Constants.POINTS_PER_FILE,
       numOfDataPoints / numPointFiles);
-    jobConfig.setInt(Constants.NUM_CENTROIDS,
-      numCentroids);
     jobConfig.setInt(Constants.VECTOR_SIZE,
       vectorSize);
     jobConfig.setInt(Constants.NUM_MAPPERS,
       numMapTasks);
     jobConfig.setInt(Constants.NUM_THREADS,
       numThreads);
-    jobConfig.setInt(Constants.NUM_ITERATIONS,
-      numIterations);
-    jobConfig.set(Constants.CEN_DIR,
-      cenDir.toString());
     return job;
   }
 }
