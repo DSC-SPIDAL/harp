@@ -1,6 +1,6 @@
 /*
  * Copyright 2013-2016 Indiana University
- *
+ * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,7 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.iu.daal_kmeans.regroupallgather;
+
+package edu.iu.daal_nn;
 
 import edu.iu.harp.partition.PartitionCombiner;
 import edu.iu.harp.partition.PartitionStatus;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package edu.iu.daal_kmeans.regroupallgather;
+package edu.iu.daal_svd;
 
 import java.io.IOException;
 
@@ -47,10 +47,12 @@ public class PointLoadTask implements
   @Override
   public double[] run(String fileName)
     throws Exception {
+    long threadId = Thread.currentThread().getId();
+    System.out.println("PointLoadTaskThread "+ threadId);
     int count = 0;
     boolean isSuccess = false;
-    do {
-      try {
+    do{
+      try{
         double[] array =
           loadPoints(fileName, pointsPerFile,
             cenVecSize, conf);
@@ -86,8 +88,8 @@ public class PointLoadTask implements
     FSDataInputStream in = fs.open(pointFilePath);
     try {
       for (int i = 0; i < points.length;) {
-        points[i++] = Double.MAX_VALUE;
-        for (int j = 1; j < cenVecSize; j++) {
+        //points[i++] = Double.MAX_VALUE;
+        for (int j = 0; j < cenVecSize; j++) {
           points[i++] = in.readDouble();
         }
       }

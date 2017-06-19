@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package edu.iu.daal_kmeans.regroupallgather;
+package edu.iu.daal_svd;
 
 import it.unimi.dsi.fastutil.ints.IntArrays;
 
@@ -42,63 +42,11 @@ import edu.iu.harp.partition.Partition;
 import edu.iu.harp.partition.Table;
 import edu.iu.harp.resource.DoubleArray;
 
-public class KMUtil {
+public class SVDUtil {
 
   protected static final Log LOG = LogFactory
-    .getLog(KMUtil.class);
+    .getLog(SVDUtil.class);
 
-  /**
-   * Generate centroids and upload to the cDir
-   * 
-   * @param numCentroids
-   * @param vectorSize
-   * @param configuration
-   * @param random
-   * @param cenDir
-   * @param fs
-   * @throws IOException
-   */
-  static void generateCentroids(int numCentroids,
-    int vectorSize, Configuration configuration,
-    Path cenDir, FileSystem fs)
-    throws IOException {
-    Random random = new Random();
-    double[] data = null;
-    if (fs.exists(cenDir))
-      fs.delete(cenDir, true);
-    if (!fs.mkdirs(cenDir)) {
-      throw new IOException(
-        "Mkdirs failed to create "
-          + cenDir.toString());
-    }
-    data = new double[numCentroids * vectorSize];
-    for (int i = 0; i < data.length; i++) {
-      // data[i] = 1000;
-      data[i] = random.nextDouble() * 1000;
-    }
-    Path initClustersFile =
-      new Path(cenDir,
-        Constants.CENTROID_FILE_NAME);
-    System.out.println("Generate centroid data."
-      + initClustersFile.toString());
-    FSDataOutputStream out =
-      fs.create(initClustersFile, true);
-    BufferedWriter bw =
-      new BufferedWriter(new OutputStreamWriter(
-        out));
-    for (int i = 0; i < data.length; i++) {
-      if ((i % vectorSize) == (vectorSize - 1)) {
-        bw.write(data[i] + "");
-        bw.newLine();
-      } else {
-        bw.write(data[i] + " ");
-      }
-    }
-    bw.flush();
-    bw.close();
-    System.out
-      .println("Wrote centroids data to file");
-  }
 
   /**
    * Generate data and upload to the data dir.
@@ -171,10 +119,10 @@ public class KMUtil {
   }
 
   public static void generateData(
-    int numDataPoints, int numCentroids,
+    int numDataPoints,
     int vectorSize, int numPointFiles,
     Configuration configuration, FileSystem fs,
-    Path dataDir, Path cenDir, String localDir)
+    Path dataDir, String localDir)
     throws IOException, InterruptedException,
     ExecutionException {
     System.out.println("Generating data..... ");
