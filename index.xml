@@ -2,11 +2,152 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>harp</title>
-    <link>https://dsc-spidal.github.io/harp/index.xml</link>
+    <link>https://dsc-spidal.github.io/harp/</link>
     <description>Recent content on harp</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <atom:link href="https://dsc-spidal.github.io/harp/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title></title>
+      <link>https://dsc-spidal.github.io/harp/docs/harpdaal/svd/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://dsc-spidal.github.io/harp/docs/harpdaal/svd/</guid>
+      <description>
+
+&lt;h1 id=&#34;harp-daal-singular-value-decomposition:7acd18b9c63a99d3e2b9e734b5874be7&#34;&gt;Harp - DAAL - Singular Value Decomposition&lt;/h1&gt;
+
+&lt;h2 id=&#34;overview:7acd18b9c63a99d3e2b9e734b5874be7&#34;&gt;Overview&lt;/h2&gt;
+
+&lt;p&gt;Singular Value Decomposition is a method which seeks to reduce the rank of a data matrix, thus finding the unique vectors, features, or characteristics of the data matrix at hand. This algorithm has been used in, but is not limited to signal processing, weather prediction, hotspot detection, and recommender systems.&lt;/p&gt;
+
+&lt;p&gt;The basic idea is to decompose the data matrix M into the following components:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/svd/svdpng.png&#34; width=&#34;25%&#34; height=&#34;25%&#34;&gt;&lt;br&gt;&lt;/p&gt;
+
+&lt;p&gt;Where&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/svd/sigma.png&#34; width=&#34;3%&#34; height=&#34;3%&#34;&gt;&lt;br&gt;&lt;/p&gt;
+
+&lt;p&gt;Is a diagonal matrix holding the singular values of M.&lt;/p&gt;
+
+&lt;p&gt;While,&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/svd/u.png&#34; width=&#34;4%&#34; height=&#34;4%&#34;&gt;&lt;br&gt;&lt;/p&gt;
+
+&lt;p&gt;and&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/svd/vt.png&#34; width=&#34;5%&#34; height=&#34;5%&#34;&gt;&lt;br&gt;&lt;/p&gt;
+
+&lt;p&gt;are orthogonal matrices which diagonalize the matrix M in some way.&lt;/p&gt;
+
+&lt;p&gt;This package supports the implementation of Singular Value Decomposition under the Harp environment. It leverages
+Intel&amp;rsquo;s DAAL computation routines to compute decomposition in a highly efficient manner and provides a wrapper
+for Harp integration which uses collective communication to further optimize the algorithm.&lt;/p&gt;
+
+&lt;h2 id=&#34;getting-started:7acd18b9c63a99d3e2b9e734b5874be7&#34;&gt;Getting Started&lt;/h2&gt;
+
+&lt;p&gt;The following commands and information are useful in understanding and writing Harp-DAAL-SVD examples.&lt;/p&gt;
+
+&lt;h3 id=&#34;how-to-run-harp-daal-svd:7acd18b9c63a99d3e2b9e734b5874be7&#34;&gt;How to run Harp - DAAL - SVD&lt;/h3&gt;
+
+&lt;p&gt;Easiest way to run the Harp-DAAL-SVD example is through the command line input shown below as an example (all together as one command)&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;hadoop jar harp-daal-app-1.0-SNAPSHOT.jar edu.iu.daal_svd.SVDDaalLauncher -libjars ${LIBJARS} 10000 20 1 2 64 185000 /kmeans-P$Pts-C$Ced-D$Dim-N$Node /tmp/kmeans true&lt;/code&gt;&lt;/p&gt;
+
+&lt;h3 id=&#34;explanation-of-the-arguments-required-by-harp-daal-in-the-example-input:7acd18b9c63a99d3e2b9e734b5874be7&#34;&gt;Explanation of the arguments required by Harp-DAAL in the example input&lt;/h3&gt;
+
+&lt;ul&gt;
+&lt;li&gt;10000 &amp;mdash; Number of training data points&lt;/li&gt;
+&lt;li&gt;20 &amp;mdash; Dimension of feature vector&lt;/li&gt;
+&lt;li&gt;1 &amp;mdash; Files per mapper&lt;/li&gt;
+&lt;li&gt;2 &amp;mdash; Number of nodes (mappers)&lt;/li&gt;
+&lt;li&gt;64 &amp;mdash; Number of threads on each mapper (node)&lt;/li&gt;
+&lt;li&gt;185000 &amp;mdash; Memory allocated to each mapper (in MB)&lt;/li&gt;
+&lt;li&gt;/kmeans-P$Pts-C$Ced-D$Dim-N$Node &amp;mdash; workDir&lt;/li&gt;
+&lt;li&gt;/tmp/kmeans &amp;mdash; outDir&lt;/li&gt;
+&lt;li&gt;true &amp;mdash; Boolean specifying to generate data or not&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&#34;overview-of-the-code-for-adding-routines-and-debugging:7acd18b9c63a99d3e2b9e734b5874be7&#34;&gt;Overview of the code for adding routines and debugging&lt;/h2&gt;
+
+&lt;p&gt;A step by step introduction of main code fragments to help understand the data flow and
+code structure.&lt;/p&gt;
+
+&lt;h3 id=&#34;main-functions-in-svddaallauncher-java:7acd18b9c63a99d3e2b9e734b5874be7&#34;&gt;Main functions in SVDDaalLauncher.java&lt;/h3&gt;
+
+&lt;hr /&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;run&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;String&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[]&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;args&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;Takes and checks input given from the commandline/shell script. Initializes values like number of data points,
+number of mappers, threads per mapper, memory allocated to each mapper, etcetera.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;launch&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;numOfDataPoints&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;vectorSize&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;numPointFiles&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;numMapTasks&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt;
+    &lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;numThreads&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;mem&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;String&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;workDir&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;String&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;localPointFilesDir&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;boolean&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;generateData&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;Configures and launches Harp-DAAL-SVD jobs, generating data if required.&lt;/p&gt;
+
+&lt;h3 id=&#34;main-functions-in-svddaalcollectivemapper-java:7acd18b9c63a99d3e2b9e734b5874be7&#34;&gt;Main functions in SVDDaalCollectiveMapper.java&lt;/h3&gt;
+
+&lt;hr /&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;protected&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;mapCollective&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;KeyValReader&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;reader&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Context&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;context&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;Assigns the reader to different nodes.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;runSVD&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;List&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;String&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;fileNames&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Configuration&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;conf&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Context&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;context&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;This function should be visualized in three parts. In the first part it receives data and converts it into a DAAL table. It then calculuates svdStep1Local on each slave node which is the step 1 of distributed SVD algorithm.&lt;/p&gt;
+
+&lt;p&gt;It then uses allgather to communicate data from step 1 for step 2 to be done on the master node.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;allgather&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;svd&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;sync-partial-res&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;step1LocalResultForStep2_table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;If this function is run on the master node, it receives data from each of the local nodes and computes inputForStep3FromStep2.
+This is communicated to each of the local nodes using allgather.&lt;/p&gt;
+
+&lt;p&gt;Finally, the function calculates svdStep3Local on each of the local nodes which completes the calculation of the two orthogonal matrices and extrapolates singular values as part of Singular Value Decomposition&lt;/p&gt;
+
+&lt;p&gt;The results are printed to standard output&lt;/p&gt;
+
+&lt;h2 id=&#34;step-1-2-and-3-references:7acd18b9c63a99d3e2b9e734b5874be7&#34;&gt;Step 1, 2, and 3 references&lt;/h2&gt;
+
+&lt;p&gt;Step 1 on local nodes&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/svd/step1.png&#34; width=&#34;100%&#34; height=&#34;100%&#34;&gt;&lt;br&gt;&lt;/p&gt;
+
+&lt;p&gt;Step 2 on master node&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/svd/step2.png&#34; width=&#34;100%&#34; height=&#34;100%&#34;&gt;&lt;br&gt;&lt;/p&gt;
+
+&lt;p&gt;Step 3 on local nodes&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/svd/step3.png&#34; width=&#34;100%&#34; height=&#34;100%&#34;&gt;&lt;br&gt;&lt;/p&gt;
+
+&lt;h3 id=&#34;some-nuances-of-the-code:7acd18b9c63a99d3e2b9e734b5874be7&#34;&gt;Some nuances of the code.&lt;/h3&gt;
+
+&lt;p&gt;Serialisation of DAAL tables into HARP tables for collective communication and the deserialization
+back to DAAL tables is done with the helper functions written in SVDDaalCollectiveMapper.java&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;S &amp;mdash; NumericTable containing singular values&lt;/li&gt;
+&lt;li&gt;U &amp;mdash; NumericTable containing left orthogonal matrix&lt;/li&gt;
+&lt;li&gt;V &amp;mdash; NumericTable containing right orthogonal matrix&lt;br /&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&#34;debugging-and-testing:7acd18b9c63a99d3e2b9e734b5874be7&#34;&gt;Debugging and testing&lt;/h3&gt;
+
+&lt;p&gt;Code is to be run on namenode and the output is generated on datanodes.
+To check the std output, stderr and syslog, go to a datanode and browse to the log files
+from the appropriate folder specified in core-site.xml specified during the Harp configuration.&lt;/p&gt;
+
+&lt;p&gt;Log files are contained in latest application-xxxxx-xxx folder for the latest run and in
+container-xx-xx folder inside it. The log files are distributed across different datanodes, to check each of them you have to visit different datanodes and repeat the process described
+above.&lt;/p&gt;
+</description>
+    </item>
     
     <item>
       <title>Allgather</title>
@@ -30,7 +171,7 @@
 &lt;li&gt;&lt;code&gt;workers&lt;/code&gt; &amp;mdash; the workers&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;h2 id=&#34;example&#34;&gt;Example&lt;/h2&gt;
+&lt;h2 id=&#34;example:5a2fffc8ee9a4ab40180821691adaa9d&#34;&gt;Example&lt;/h2&gt;
 &lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;allgather&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;contextName&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;allgather&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;dataMap&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;workers&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 </description>
@@ -58,7 +199,7 @@
 &lt;li&gt;&lt;code&gt;workers&lt;/code&gt; &amp;mdash; the workers&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;h2 id=&#34;example&#34;&gt;Example&lt;/h2&gt;
+&lt;h2 id=&#34;example:fd1b52a2335bde3883c302364d3b26fc&#34;&gt;Example&lt;/h2&gt;
 &lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;allreduce&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;contextName&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;allreduce&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;dataMap&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;workers&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 </description>
@@ -88,7 +229,7 @@
 &lt;li&gt;&lt;code&gt;workers&lt;/code&gt; &amp;mdash; the workers&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;h2 id=&#34;example&#34;&gt;Example&lt;/h2&gt;
+&lt;h2 id=&#34;example:836b347b76acd97416de6b187aacf8f4&#34;&gt;Example&lt;/h2&gt;
 &lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;broadcast&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;contextName&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;chain-array-table-bcast-&amp;quot;&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;arrTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;workers&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getMasterID&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(),&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;false&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;dataMap&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;workers&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 </description>
@@ -102,7 +243,7 @@
       <guid>https://dsc-spidal.github.io/harp/docs/contributors/community/</guid>
       <description>
 
-&lt;h2 id=&#34;contributing-to-harp&#34;&gt;Contributing to Harp&lt;/h2&gt;
+&lt;h2 id=&#34;contributing-to-harp:f3b3effc19b97b19aaf2ce392427d255&#34;&gt;Contributing to Harp&lt;/h2&gt;
 
 &lt;p&gt;Discussion about Harp happens on GitHub and over mailing list.&lt;/p&gt;
 
@@ -113,7 +254,7 @@
 
 &lt;p&gt;Community is critical to Harp. Contributions are welcomed!&lt;/p&gt;
 
-&lt;h2 id=&#34;how-can-i-contribute-to-harp&#34;&gt;How Can I Contribute to Harp?&lt;/h2&gt;
+&lt;h2 id=&#34;how-can-i-contribute-to-harp:f3b3effc19b97b19aaf2ce392427d255&#34;&gt;How Can I Contribute to Harp?&lt;/h2&gt;
 
 &lt;p&gt;You can first read the following pages to have a basic understanding
 of Heron:&lt;/p&gt;
@@ -132,7 +273,7 @@ if your patch involves lots of changes.&lt;/p&gt;
 you should post on &lt;a href=&#34;https://groups.google.com/forum/#!forum/harp-users&#34;&gt;mailing list&lt;/a&gt; instead
 of opening GitHub issues.&lt;/strong&gt;&lt;/p&gt;
 
-&lt;h3 id=&#34;submitting-a-patch&#34;&gt;Submitting a Patch&lt;/h3&gt;
+&lt;h3 id=&#34;submitting-a-patch:f3b3effc19b97b19aaf2ce392427d255&#34;&gt;Submitting a Patch&lt;/h3&gt;
 
 &lt;ol&gt;
 &lt;li&gt;&lt;p&gt;Read and accept the
@@ -185,7 +326,7 @@ Describe clearly your pull request the change.&lt;/p&gt;&lt;/li&gt;
 
 &lt;p&gt;&lt;code&gt;Table&lt;/code&gt; is a container for partitions. It is a high-level data structure and the unit for collective communication.&lt;/p&gt;
 
-&lt;h1 id=&#34;table-and-partitions&#34;&gt;Table and Partitions&lt;/h1&gt;
+&lt;h1 id=&#34;table-and-partitions:76b042dcd192baf25cf82f076fbbcb59&#34;&gt;Table and Partitions&lt;/h1&gt;
 
 &lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/3-1-2.png&#34; alt=&#34;table-partition&#34; /&gt;&lt;/p&gt;
 
@@ -212,7 +353,7 @@ Describe clearly your pull request the change.&lt;/p&gt;&lt;/li&gt;
 &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
-&lt;h1 id=&#34;data-abstraction&#34;&gt;Data Abstraction&lt;/h1&gt;
+&lt;h1 id=&#34;data-abstraction:76b042dcd192baf25cf82f076fbbcb59&#34;&gt;Data Abstraction&lt;/h1&gt;
 
 &lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/3-1-3.png&#34; alt=&#34;data-types&#34; /&gt;&lt;/p&gt;
 
@@ -341,6 +482,8 @@ Describe clearly your pull request the change.&lt;/p&gt;&lt;/li&gt;
 &lt;p&gt;Anchal Khandelwal&lt;/p&gt;
 
 &lt;p&gt;Gowtham Ayna Raveendran&lt;/p&gt;
+
+&lt;p&gt;Mihai Avram&lt;/p&gt;
 </description>
     </item>
     
@@ -375,11 +518,11 @@ Training: Machine learning algorithms are normally iterative computation, proces
 
 &lt;p&gt;The tutorial follows a similar structure, with 4 main sections:&lt;/p&gt;
 
-&lt;h2 id=&#34;1-understanding-algorithm&#34;&gt;1. Understanding Algorithm&lt;/h2&gt;
+&lt;h2 id=&#34;1-understanding-algorithm:68f80267fa3a50980dbb745a782b8dca&#34;&gt;1. Understanding Algorithm&lt;/h2&gt;
 
 &lt;p&gt;This part gives simple background information on the target machine learning algorithm itself. The original algorithm does not need to have parallelism in consideration.&lt;/p&gt;
 
-&lt;h2 id=&#34;2-parallel-design&#34;&gt;2. Parallel Design&lt;/h2&gt;
+&lt;h2 id=&#34;2-parallel-design:68f80267fa3a50980dbb745a782b8dca&#34;&gt;2. Parallel Design&lt;/h2&gt;
 
 &lt;p&gt;This part illustrates the process of how to analysis the original sequential algorithm and to utilize the intrinsic parallelisms to design a parallel algorithm.&lt;/p&gt;
 
@@ -387,7 +530,7 @@ Training: Machine learning algorithms are normally iterative computation, proces
 
 &lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/4-1-1.png&#34; alt=&#34;Overview-1&#34; /&gt;&lt;/p&gt;
 
-&lt;h5 id=&#34;figure-map-collective-programming-model-on-iterative-machine-learning-algorithms&#34;&gt;Figure Map-Collective Programming Model on Iterative Machine Learning Algorithms&lt;/h5&gt;
+&lt;h5 id=&#34;figure-map-collective-programming-model-on-iterative-machine-learning-algorithms:68f80267fa3a50980dbb745a782b8dca&#34;&gt;Figure Map-Collective Programming Model on Iterative Machine Learning Algorithms&lt;/h5&gt;
 
 &lt;p&gt;For training data, Harp will load the local data split on each node into memory in the initialization step of training, with no disk I/O to access the training data in the future. By default, the data split mechanism support by Hadoop Mapreduce are used.&lt;/p&gt;
 
@@ -405,11 +548,11 @@ Training: Machine learning algorithms are normally iterative computation, proces
 &lt;li&gt;&lt;p&gt;Which collective communication operation is optimal to synchronize the model?&lt;/p&gt;&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;h2 id=&#34;3-code-and-comments&#34;&gt;3. Code and Comments&lt;/h2&gt;
+&lt;h2 id=&#34;3-code-and-comments:68f80267fa3a50980dbb745a782b8dca&#34;&gt;3. Code and Comments&lt;/h2&gt;
 
 &lt;p&gt;The code snippets and comments illustrate the details of parallel implementations.&lt;/p&gt;
 
-&lt;h2 id=&#34;4-run-demo&#34;&gt;4. Run Demo&lt;/h2&gt;
+&lt;h2 id=&#34;4-run-demo:68f80267fa3a50980dbb745a782b8dca&#34;&gt;4. Run Demo&lt;/h2&gt;
 
 &lt;p&gt;Following the command or scripts, user can try the tutorial examples on a dataset by themselves.&lt;/p&gt;
 </description>
@@ -425,19 +568,19 @@ Training: Machine learning algorithms are normally iterative computation, proces
 
 &lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/2-4-1.png&#34; alt=&#34;Inter-node Computation Model&#34; /&gt;&lt;/p&gt;
 
-&lt;h2 id=&#34;computation-model-a-locking-use-the-synchronized-algorithm-and-the-latest-model-parameters&#34;&gt;Computation Model A (Locking, use the synchronized algorithm and the latest model parameters)&lt;/h2&gt;
+&lt;h2 id=&#34;computation-model-a-locking-use-the-synchronized-algorithm-and-the-latest-model-parameters:65a3f7c5e7c05d2ed4f6681b102451b4&#34;&gt;Computation Model A (Locking, use the synchronized algorithm and the latest model parameters)&lt;/h2&gt;
 
 &lt;p&gt;This “Locking”-based computation model guarantees each worker the exclusive access to model parameters. Once a worker trains a data item, it locks the related model parameters and prevents other workers from accessing them. When the related model parameters are updated, the worker unlocks the parameters. Thus, the model parameters used in local computation is always the latest. This computation model can be implemented through Harp event-driven APIs.&lt;/p&gt;
 
-&lt;h2 id=&#34;computation-model-b-rotation-use-the-synchronized-algorithm-and-the-latest-model-parameters&#34;&gt;Computation Model B (Rotation, use the synchronized algorithm and the latest model parameters)&lt;/h2&gt;
+&lt;h2 id=&#34;computation-model-b-rotation-use-the-synchronized-algorithm-and-the-latest-model-parameters:65a3f7c5e7c05d2ed4f6681b102451b4&#34;&gt;Computation Model B (Rotation, use the synchronized algorithm and the latest model parameters)&lt;/h2&gt;
 
 &lt;p&gt;The second model is a “Rotation”-based computation model that rotates model parameters between workers. Each worker first takes a part of the shared model and performs training. Then, the model is shifted between the workers. Through model rotation, each model parameters are updated by one worker at a time so that the model is consistent. This computation model can be implemented with Harp “rotate” operation.&lt;/p&gt;
 
-&lt;h2 id=&#34;computation-model-c-allreduce-use-the-synchronized-algorithm-and-the-stale-model-parameters&#34;&gt;Computation Model C (Allreduce, use the synchronized algorithm and the stale model parameters)&lt;/h2&gt;
+&lt;h2 id=&#34;computation-model-c-allreduce-use-the-synchronized-algorithm-and-the-stale-model-parameters:65a3f7c5e7c05d2ed4f6681b102451b4&#34;&gt;Computation Model C (Allreduce, use the synchronized algorithm and the stale model parameters)&lt;/h2&gt;
 
 &lt;p&gt;In this computation model, each process first fetches all the model parameters required by local computation. When the local computation is completed, modifications of the local model from all processes are gathered to update the model. This computation model can be implemented through either the “allreduce” operation for small models, the “regroup+allgather” operation or “psuh&amp;amp;pull” with big models.&lt;/p&gt;
 
-&lt;h2 id=&#34;computation-model-d-no-sync-use-the-asynchronous-algorithm-and-the-stale-model-parameters&#34;&gt;Computation Model D (No-sync, use the asynchronous algorithm and the stale model parameters)&lt;/h2&gt;
+&lt;h2 id=&#34;computation-model-d-no-sync-use-the-asynchronous-algorithm-and-the-stale-model-parameters:65a3f7c5e7c05d2ed4f6681b102451b4&#34;&gt;Computation Model D (No-sync, use the asynchronous algorithm and the stale model parameters)&lt;/h2&gt;
 
 &lt;p&gt;For the last computation model, each process independently fetches related model parameters, performs local computation, and returns model modifications. Unlike the “Locking”-based computation model, workers are allowed to fetch or update the same model parameters in parallel. In contrast to the “Rotation” and the “Allreduce” computation models, there is no synchronization barrier. This computation model can be implemented through Harp event-driven APIs.&lt;/p&gt;
 </description>
@@ -491,7 +634,7 @@ Training: Machine learning algorithms are normally iterative computation, proces
 &lt;li&gt;&lt;code&gt;K&lt;/code&gt; is the number of iteration&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;h2 id=&#34;parallel-design&#34;&gt;PARALLEL DESIGN&lt;/h2&gt;
+&lt;h2 id=&#34;parallel-design:e1b862678abc2854a915b8f438d1a26e&#34;&gt;PARALLEL DESIGN&lt;/h2&gt;
 
 &lt;ul&gt;
 &lt;li&gt;&lt;p&gt;What are the model? What kind of data structure?&lt;/p&gt;
@@ -513,11 +656,11 @@ Training: Machine learning algorithms are normally iterative computation, proces
 &lt;p&gt;DynamicScheduler can be used for thread-level parallelism, and Rotate can be used in the inter-node model synchronization.&lt;/p&gt;&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;h2 id=&#34;dataflow&#34;&gt;DATAFLOW&lt;/h2&gt;
+&lt;h2 id=&#34;dataflow:e1b862678abc2854a915b8f438d1a26e&#34;&gt;DATAFLOW&lt;/h2&gt;
 
 &lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/4-3-2.png&#34; alt=&#34;dataflow&#34; /&gt;&lt;/p&gt;
 
-&lt;h2 id=&#34;step-0-data-preprocessing&#34;&gt;Step 0 &amp;mdash; Data preprocessing&lt;/h2&gt;
+&lt;h2 id=&#34;step-0-data-preprocessing:e1b862678abc2854a915b8f438d1a26e&#34;&gt;Step 0 &amp;mdash; Data preprocessing&lt;/h2&gt;
 
 &lt;p&gt;Harp MLR will use the data in the vector format. Each vector in a file represented by the format &lt;code&gt;&amp;lt;did&amp;gt; [&amp;lt;fid&amp;gt;:&amp;lt;weight&amp;gt;]&lt;/code&gt;:&lt;/p&gt;
 
@@ -532,7 +675,7 @@ Training: Machine learning algorithms are normally iterative computation, proces
 hdfs dfs -put input_data/* /input
 &lt;/pre&gt;&lt;/div&gt;
 
-&lt;h2 id=&#34;step-1-initialize&#34;&gt;Step 1 &amp;mdash; Initialize&lt;/h2&gt;
+&lt;h2 id=&#34;step-1-initialize:e1b862678abc2854a915b8f438d1a26e&#34;&gt;Step 1 &amp;mdash; Initialize&lt;/h2&gt;
 
 &lt;p&gt;For Harp MLR, we will use dynamic scheduling as mentioned above. Before we set up the dynamic scheduler, we need to initialize the weight matrix &lt;code&gt;W&lt;/code&gt;, which will be partitioned into &lt;code&gt;T&lt;/code&gt; parts representing to &lt;code&gt;T&lt;/code&gt; labels which means that each label belongs to one partition and is treated as an independent task.&lt;/p&gt;
 &lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;initTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;()&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
@@ -551,7 +694,7 @@ hdfs dfs -put input_data/* /input
 &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
-&lt;h2 id=&#34;step-2-mapper-communication&#34;&gt;Step 2 &amp;mdash; Mapper communication&lt;/h2&gt;
+&lt;h2 id=&#34;step-2-mapper-communication:e1b862678abc2854a915b8f438d1a26e&#34;&gt;Step 2 &amp;mdash; Mapper communication&lt;/h2&gt;
 
 &lt;p&gt;In this main process, we use &lt;code&gt;regroup&lt;/code&gt; to distribute the partitions to the workers first. The workers will get almost the same number of partitions. Then we start the scheduler. For each time we submit one partition to each thread in the scheduler and the threads will all use SGD to approximate &lt;code&gt;W&lt;/code&gt; with each label. After the workers finish once with their own partitions, we will use &lt;code&gt;rotate&lt;/code&gt; operation to swap the partitions among the workers. When finishing the all process, each worker should use its own data training the whole partition &lt;code&gt;K&lt;/code&gt; times, of which &lt;code&gt;K&lt;/code&gt; is the number of iteration. &lt;code&gt;allgather&lt;/code&gt; operation collects all partitions in each worker, combines the partitions, and shares the outcome with all workers. Finally, the Master worker outputs the weight matrix &lt;code&gt;W&lt;/code&gt;.&lt;/p&gt;
 &lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;protected&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;mapCollective&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;KeyValReader&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;reader&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Context&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;context&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;throws&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;IOException&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;InterruptedException&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
@@ -582,7 +725,7 @@ hdfs dfs -put input_data/* /input
 &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
-&lt;h2 id=&#34;usage&#34;&gt;USAGE&lt;/h2&gt;
+&lt;h2 id=&#34;usage:e1b862678abc2854a915b8f438d1a26e&#34;&gt;USAGE&lt;/h2&gt;
 &lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;$ hadoop jar harp-tutorial-app-1.0-SNAPSHOT.jar edu.iu.mlr.MLRMapCollective &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;alpha&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;number of iteration&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;number of features&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;number of workers&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;number of threads&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;topic file path&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;qrel file path&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;input path in HDFS&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;output path in HDFS&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt;
 &lt;span style=&#34;color: #75715e&#34;&gt;#e.g. hadoop jar harp-tutorial-app-1.0-SNAPSHOT.jar edu.iu.mlr.MLRMapCollective 1.0 100 47236 2 16 /rcv1v2/rcv1.topics.txt /rcv1v2/rcv1-v2.topics.qrels /input /output&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
@@ -605,7 +748,7 @@ hdfs dfs -put input_data/* /input
 
 &lt;p&gt;Here, we give a simple tutorial on how to parallel a standard implementation of the &lt;a href=&#34;https://en.wikipedia.org/wiki/Backpropagation&#34;&gt;BP algorithm&lt;/a&gt; for a feed-forward network.&lt;/p&gt;
 
-&lt;h2 id=&#34;parallel-design&#34;&gt;PARALLEL DESIGN&lt;/h2&gt;
+&lt;h2 id=&#34;parallel-design:d53501e04079b53fe39a85cd37d15502&#34;&gt;PARALLEL DESIGN&lt;/h2&gt;
 
 &lt;ul&gt;
 &lt;li&gt;&lt;p&gt;What are the model? What kind of data structure?&lt;/p&gt;
@@ -629,11 +772,11 @@ hdfs dfs -put input_data/* /input
 &lt;p&gt;Synchronize replicas of the model by allreduce is an simple solution.&lt;/p&gt;&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;h2 id=&#34;dataflow&#34;&gt;DATAFLOW&lt;/h2&gt;
+&lt;h2 id=&#34;dataflow:d53501e04079b53fe39a85cd37d15502&#34;&gt;DATAFLOW&lt;/h2&gt;
 
 &lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/nn-dataflow.png&#34; width=&#34;60%&#34;  &gt;&lt;/p&gt;
 
-&lt;h2 id=&#34;step-1-set-table&#34;&gt;Step 1 &amp;mdash; Set Table&lt;/h2&gt;
+&lt;h2 id=&#34;step-1-set-table:d53501e04079b53fe39a85cd37d15502&#34;&gt;Step 1 &amp;mdash; Set Table&lt;/h2&gt;
 
 &lt;p&gt;The data format wrapper code is in charge of the conversion between the native DoubleMatrix and Harp Table.&lt;/p&gt;
 &lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;DoubleArray&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;train&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;DoubleMatrix&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;X&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;DoubleMatrix&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Y&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;DoubleArray&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;localWeightTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;mini_epochs&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;numMapTasks&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;double&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;lambda&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;throws&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;IOException&lt;/span&gt;
@@ -648,7 +791,7 @@ hdfs dfs -put input_data/* /input
 &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
-&lt;h2 id=&#34;step-2-communication&#34;&gt;Step 2 &amp;mdash;Communication&lt;/h2&gt;
+&lt;h2 id=&#34;step-2-communication:d53501e04079b53fe39a85cd37d15502&#34;&gt;Step 2 &amp;mdash;Communication&lt;/h2&gt;
 
 &lt;p&gt;The code snippet for the core part of computation in the iterative training. There  are only a few lines of differences between the harp distributed version and the original sequential version.&lt;/p&gt;
 &lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #75715e&#34;&gt;// Calculate the new weights &lt;/span&gt;
@@ -662,11 +805,11 @@ hdfs dfs -put input_data/* /input
 &lt;span style=&#34;color: #f8f8f2&#34;&gt;weightTable&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;localNN&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;modelAveraging&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;weightTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;numMapTasks&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
-&lt;h2 id=&#34;data&#34;&gt;DATA&lt;/h2&gt;
+&lt;h2 id=&#34;data:d53501e04079b53fe39a85cd37d15502&#34;&gt;DATA&lt;/h2&gt;
 
 &lt;p&gt;The MNIST dataset is used in this tutorial. Refer the &lt;a href=&#34;https://github.com/DSC-SPIDAL/harp/tree/master/data/tutorial/mnist&#34;&gt;dataset script&lt;/a&gt; for more details.&lt;/p&gt;
 
-&lt;h2 id=&#34;usage&#34;&gt;USAGE&lt;/h2&gt;
+&lt;h2 id=&#34;usage:d53501e04079b53fe39a85cd37d15502&#34;&gt;USAGE&lt;/h2&gt;
 &lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;$ hadoop jar harp-tutorial-app-1.0-SNAPSHOT.jar edu.iu.NN.NNMapCollective
 Usage: NNMapCollective &amp;lt;number of map tasks&amp;gt; &amp;lt;epochs&amp;gt; &amp;lt;syncIterNum&amp;gt; &amp;lt;hiddenLayers&amp;gt; &amp;lt;minibatchsize&amp;gt; &amp;lt;lambda&amp;gt; &amp;lt;workDir&amp;gt;
 &lt;span style=&#34;color: #75715e&#34;&gt;# hadoop jar harp-tutorial-app-1.0-SNAPSHOT.jar edu.iu.NN.NNMapCollective 2 20 5 100,32 2000 0 /nn&lt;/span&gt;
@@ -686,7 +829,7 @@ Usage: NNMapCollective &amp;lt;number of map tasks&amp;gt; &amp;lt;epochs&amp;gt
 
 &lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/harp-overview.png&#34; alt=&#34;Overview-0&#34; /&gt;&lt;/p&gt;
 
-&lt;h2 id=&#34;big-model-problems-and-the-limitation-of-existing-tools&#34;&gt;Big Model Problems and The Limitation of Existing Tools:&lt;/h2&gt;
+&lt;h2 id=&#34;big-model-problems-and-the-limitation-of-existing-tools:68f80267fa3a50980dbb745a782b8dca&#34;&gt;Big Model Problems and The Limitation of Existing Tools:&lt;/h2&gt;
 
 &lt;p&gt;Data analytics is undergoing a revolution in many scientific domains. Machine learning becomes a popular method for analytics for which it allows computers to learn from the existing data and make predictions based off it. They have been widely used in computer vision, text mining, advertising, recommender systems, network analysis and genetics. Unfortunately, analyzing such huge data usually exceeds the capability of a single or even a few machines owing to the incredible volume of data available, and thus requires algorithm parallelization at an unprecedented scale. Scaling up these algorithms is challenging because of their prohibitive computation cost, not only the need to process enormous training data in iterations, but also the requirement to synchronize big model in rounds for algorithm convergence. The problem is simply referred as &amp;ldquo;the big model problem of big data machine learning&amp;rdquo;.&lt;/p&gt;
 
@@ -694,7 +837,7 @@ Usage: NNMapCollective &amp;lt;number of map tasks&amp;gt; &amp;lt;epochs&amp;gt
 
 &lt;p&gt;While in contemporary tools performance is improved with in-memory caching, observations show that the parallelization of these iterative applications still suffers from two issues. To simplify the programming process, many tools’ design tries to fix the parallel execution flow and developers are only required to fill the bodies of user functions. However this results in limited support of the synchronization patterns. The parallelization performance suffers from performance inefficiency due to in-proper usage of synchronization patterns. To avoid this issue, some work turn to use MPI to develop machine learning applications. However, these applications developed achieve high performance but fall into the complicated code bases since MPI only provides basic communication operations.&lt;/p&gt;
 
-&lt;h2 id=&#34;harp-highlights&#34;&gt;Harp Highlights:&lt;/h2&gt;
+&lt;h2 id=&#34;harp-highlights:68f80267fa3a50980dbb745a782b8dca&#34;&gt;Harp Highlights:&lt;/h2&gt;
 
 &lt;p&gt;To solve the problems mentioned above, the Harp’s approach is to use collective communication techniques to improve the performance of model synchronization in parallel machine learning. Therefore a MapCollective programming model is extended from the original MapReduce programming model. Similar to the MapReduce model, the MapCollective model still read key-value pairs as inputs. However, instead of using the shuffling phase, Harp uses optimized collective communication operations for data movement and provide high-level interfaces with partitioned distributed dataset abstractions for various synchronization patterns in iterative machine learning computation. These enhancements are designed as plug-ins to Hadoop so Harp can enrich the whole big data software stack.&lt;/p&gt;
 
@@ -724,7 +867,7 @@ Usage: NNMapCollective &amp;lt;number of map tasks&amp;gt; &amp;lt;epochs&amp;gt
 
 &lt;p&gt;The training algorithm for random forests applies the general technique of bootstrap aggregating, or bagging, to tree learners. Given a training set &lt;code&gt;X&lt;/code&gt; with responses &lt;code&gt;Y&lt;/code&gt;, bagging repeatedly selects a random sample with replacement of the training set. After training, predictions for unseen samples can be made by averaging the predictions from all the individual regression trees or by taking the majority vote in the case of decision trees. Random forests can also do another bagging &amp;ndash; feature bagging, which is a random subset of the features. The reason for doing this is the correlation of the trees in an ordinary bootstrap sample: if one or a few features are very strong predictors for the response variable (target output), these features will be selected in many of the B trees, causing them to become correlated.&lt;/p&gt;
 
-&lt;h2 id=&#34;definition&#34;&gt;DEFINITION&lt;/h2&gt;
+&lt;h2 id=&#34;definition:2c84034595814347bf43e90d15dbeb2c&#34;&gt;DEFINITION&lt;/h2&gt;
 
 &lt;ul&gt;
 &lt;li&gt;&lt;code&gt;N&lt;/code&gt; is the number of data points&lt;/li&gt;
@@ -732,7 +875,7 @@ Usage: NNMapCollective &amp;lt;number of map tasks&amp;gt; &amp;lt;epochs&amp;gt
 &lt;li&gt;&lt;code&gt;K&lt;/code&gt; is the number of trees&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;h2 id=&#34;method&#34;&gt;METHOD&lt;/h2&gt;
+&lt;h2 id=&#34;method:2c84034595814347bf43e90d15dbeb2c&#34;&gt;METHOD&lt;/h2&gt;
 
 &lt;p&gt;The following is the procedure of Harp Random Forests training:&lt;/p&gt;
 
@@ -748,7 +891,7 @@ Usage: NNMapCollective &amp;lt;number of map tasks&amp;gt; &amp;lt;epochs&amp;gt
 
 &lt;p&gt;The predicting part will use these decision trees to predict &lt;code&gt;K&lt;/code&gt; results. For regression, the result is the average of each tree&amp;rsquo;s result and for classification, the majority vote will be the output.&lt;/p&gt;
 
-&lt;h2 id=&#34;step-0-data-preprocessing&#34;&gt;Step 0 &amp;mdash; Data preprocessing&lt;/h2&gt;
+&lt;h2 id=&#34;step-0-data-preprocessing:2c84034595814347bf43e90d15dbeb2c&#34;&gt;Step 0 &amp;mdash; Data preprocessing&lt;/h2&gt;
 &lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #75715e&#34;&gt;// In the case of merging the data from different location, main process needs to create bootstrap samples.&lt;/span&gt;
 &lt;span style=&#34;color: #75715e&#34;&gt;// So here, the main process loads all the data and creates the bootstrap samples.&lt;/span&gt;
 &lt;span style=&#34;color: #66d9ef&#34;&gt;if&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;doBootstrapSampling&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;                                     
@@ -782,14 +925,14 @@ Usage: NNMapCollective &amp;lt;number of map tasks&amp;gt; &amp;lt;epochs&amp;gt
 &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt; 
 &lt;/pre&gt;&lt;/div&gt;
 
-&lt;h2 id=&#34;step-1-train-forests&#34;&gt;Step 1 &amp;mdash;Train forests&lt;/h2&gt;
+&lt;h2 id=&#34;step-1-train-forests:2c84034595814347bf43e90d15dbeb2c&#34;&gt;Step 1 &amp;mdash;Train forests&lt;/h2&gt;
 &lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #75715e&#34;&gt;// Create the Random Forest classifier that uses 5 neighbors to make decisions&lt;/span&gt;
 &lt;span style=&#34;color: #f8f8f2&#34;&gt;Classifier&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;rf&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;RandomForest&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;numTrees&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;false&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;numAttributes&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Random&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;());&lt;/span&gt;
 &lt;span style=&#34;color: #75715e&#34;&gt;// Learn the forest&lt;/span&gt;
 &lt;span style=&#34;color: #f8f8f2&#34;&gt;rf&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;buildClassifier&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;trainDataPoints&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
-&lt;h2 id=&#34;step-2-synchronize-majority-vote&#34;&gt;Step 2 &amp;mdash; Synchronize majority vote&lt;/h2&gt;
+&lt;h2 id=&#34;step-2-synchronize-majority-vote:2c84034595814347bf43e90d15dbeb2c&#34;&gt;Step 2 &amp;mdash; Synchronize majority vote&lt;/h2&gt;
 &lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;for&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;Instance&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;inst&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;testDataPoints&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
     &lt;span style=&#34;color: #75715e&#34;&gt;// This will hold this random forest&amp;#39;s class vote for this data point&lt;/span&gt;
     &lt;span style=&#34;color: #75715e&#34;&gt;//IntArray votes = IntArray.create(C, false);&lt;/span&gt;
@@ -834,7 +977,7 @@ Usage: NNMapCollective &amp;lt;number of map tasks&amp;gt; &amp;lt;epochs&amp;gt
 
 &lt;p&gt;Harp Resources outside this documentation:&lt;/p&gt;
 
-&lt;h2 id=&#34;conference-journal-papers&#34;&gt;Conference &amp;amp; Journal Papers&lt;/h2&gt;
+&lt;h2 id=&#34;conference-journal-papers:74f7fb04a75e766307d398251c369a21&#34;&gt;Conference &amp;amp; Journal Papers&lt;/h2&gt;
 
 &lt;ul&gt;
 &lt;li&gt;&lt;p&gt;&lt;a href=&#34;http://ipcc.soic.iu.edu/Computation%20Abstractions.pdf&#34;&gt;B. Zhang, B. Peng, J. Qiu. Model-Centric Computation Abstractions in Machine Learning Applications&lt;/a&gt; (BeyondMR, 2016)&lt;/p&gt;&lt;/li&gt;
@@ -848,7 +991,7 @@ Usage: NNMapCollective &amp;lt;number of map tasks&amp;gt; &amp;lt;epochs&amp;gt
 &lt;li&gt;&lt;p&gt;&lt;a href=&#34;http://cgl.soic.indiana.edu/publications/116-zhang.pdf&#34;&gt;B. Zhang, J. Qiu. High Performance Clustering of Social Images in a Map-Collective Programming Model&lt;/a&gt; (Poster in SoCC, 2013)&lt;/p&gt;&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;h2 id=&#34;press&#34;&gt;Press&lt;/h2&gt;
+&lt;h2 id=&#34;press:74f7fb04a75e766307d398251c369a21&#34;&gt;Press&lt;/h2&gt;
 
 &lt;ul&gt;
 &lt;li&gt;&lt;p&gt;&lt;a href=&#34;http://dsc.soic.indiana.edu/publications/Parallelizing%20Big%20Data%20Machine%20Learning%20Applications%20with%20Model%20Rotation.pdf&#34;&gt;B. Zhang, B. Peng, J. Qiu. Parallelizing Big Data Machine Learning Applications with Model Rotation&lt;/a&gt;  (Book Chapter in series Advances in Parallel Computing, IOS Press, 2017)&lt;/p&gt;&lt;/li&gt;
@@ -874,7 +1017,7 @@ Usage: NNMapCollective &amp;lt;number of map tasks&amp;gt; &amp;lt;epochs&amp;gt
 
 &lt;p&gt;In this project, Harp won&amp;rsquo;t touch the core code base of computing SVM. It will use LibSVM, which is an open source library and does parallel around LibSVM. And it is developed at the National Taiwan University and written in C++ with other programming languages&amp;rsquo; APIs. LibSVM implements the SMO algorithm for kernelized support vector machines (SVMs), supporting classification and regression.&lt;/p&gt;
 
-&lt;h2 id=&#34;method&#34;&gt;METHOD&lt;/h2&gt;
+&lt;h2 id=&#34;method:e568f1a097194d1d19c4657d52ba5998&#34;&gt;METHOD&lt;/h2&gt;
 
 &lt;p&gt;The Harp based SVM algorithm works as follows:&lt;/p&gt;
 
@@ -894,7 +1037,7 @@ Usage: NNMapCollective &amp;lt;number of map tasks&amp;gt; &amp;lt;epochs&amp;gt
 
 &lt;p&gt;The source code can be found in Harp GitHub repository by click &lt;a href=&#34;https://github.com/DSC-SPIDAL/harp/tree/master/harp-tutorial-app/src/main/java/edu/iu/svm&#34;&gt;Harp SVM&lt;/a&gt;.&lt;/p&gt;
 
-&lt;h2 id=&#34;step-0-data-preprocessing&#34;&gt;Step 0 &amp;mdash; Data preprocessing&lt;/h2&gt;
+&lt;h2 id=&#34;step-0-data-preprocessing:e568f1a097194d1d19c4657d52ba5998&#34;&gt;Step 0 &amp;mdash; Data preprocessing&lt;/h2&gt;
 
 &lt;p&gt;Harp SVM will follow LibSVM&amp;rsquo;s data format. Each data point in a file is represented by a line of the format &lt;code&gt;&amp;lt;label&amp;gt; [&amp;lt;fid&amp;gt;:&amp;lt;feature&amp;gt;]&lt;/code&gt;:&lt;/p&gt;
 
@@ -909,7 +1052,7 @@ Usage: NNMapCollective &amp;lt;number of map tasks&amp;gt; &amp;lt;epochs&amp;gt
 hdfs dfs -put input_data/* /input
 &lt;/pre&gt;&lt;/div&gt;
 
-&lt;h2 id=&#34;step-1-initialize-and-load-data&#34;&gt;Step 1 &amp;mdash; Initialize and load data&lt;/h2&gt;
+&lt;h2 id=&#34;step-1-initialize-and-load-data:e568f1a097194d1d19c4657d52ba5998&#34;&gt;Step 1 &amp;mdash; Initialize and load data&lt;/h2&gt;
 &lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;Vector&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;Double&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;vy&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Vector&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;Double&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;();&lt;/span&gt;
 &lt;span style=&#34;color: #f8f8f2&#34;&gt;Vector&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;svm_node&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[]&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;vx&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Vector&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;svm_node&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[]&amp;gt;();&lt;/span&gt;
 &lt;span style=&#34;color: #f8f8f2&#34;&gt;Vector&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;Double&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;svy&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Vector&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;Double&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;();&lt;/span&gt;
@@ -969,7 +1112,7 @@ hdfs dfs -put input_data/* /input
 &lt;span style=&#34;color: #f8f8f2&#34;&gt;svmParameter&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;weight&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;double&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;];&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
-&lt;h2 id=&#34;step-2-train-via-libsvm-s-api&#34;&gt;Step 2 &amp;mdash;Train via LibSVM&amp;rsquo;s API&lt;/h2&gt;
+&lt;h2 id=&#34;step-2-train-via-libsvm-s-api:e568f1a097194d1d19c4657d52ba5998&#34;&gt;Step 2 &amp;mdash;Train via LibSVM&amp;rsquo;s API&lt;/h2&gt;
 &lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #75715e&#34;&gt;//initial svm problem&lt;/span&gt;
 &lt;span style=&#34;color: #f8f8f2&#34;&gt;svmProblem&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;svm_problem&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
 &lt;span style=&#34;color: #f8f8f2&#34;&gt;svmProblem&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;l&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;currentTrainingData&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;size&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
@@ -994,7 +1137,7 @@ hdfs dfs -put input_data/* /input
 &lt;span style=&#34;color: #f8f8f2&#34;&gt;svmModel&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;svm&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;svm_train&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;svmProblem&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;svmParameter&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
-&lt;h2 id=&#34;step-3-communication-among-nodes&#34;&gt;Step 3 &amp;mdash; Communication among nodes&lt;/h2&gt;
+&lt;h2 id=&#34;step-3-communication-among-nodes:e568f1a097194d1d19c4657d52ba5998&#34;&gt;Step 3 &amp;mdash; Communication among nodes&lt;/h2&gt;
 &lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;Table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;HarpString&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;svTable&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;HarpStringPlus&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;());&lt;/span&gt;
 
 &lt;span style=&#34;color: #f8f8f2&#34;&gt;HarpString&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;harpString&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;HarpString&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
@@ -1020,7 +1163,7 @@ hdfs dfs -put input_data/* /input
 &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
-&lt;h2 id=&#34;usage&#34;&gt;USAGE&lt;/h2&gt;
+&lt;h2 id=&#34;usage:e568f1a097194d1d19c4657d52ba5998&#34;&gt;USAGE&lt;/h2&gt;
 
 &lt;p&gt;Run Harp SVM:&lt;/p&gt;
 &lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;$ hadoop jar build/harp3-app-hadoop-2.6.0.jar edu.iu.svm.IterativeSVM &amp;lt;number of mappers&amp;gt; &amp;lt;number of iteration&amp;gt; &amp;lt;output path in HDFS&amp;gt; &amp;lt;data &lt;span style=&#34;color: #f8f8f2&#34;&gt;set&lt;/span&gt; path&amp;gt;
@@ -1028,175 +1171,6 @@ hdfs dfs -put input_data/* /input
 
 &lt;p&gt;Fetch the result:&lt;/p&gt;
 &lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;$ hdfs dfs -get &amp;lt;output path in HDFS&amp;gt; &amp;lt;path you want to store the output&amp;gt;
-&lt;/pre&gt;&lt;/div&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>Harp-DAAL Framework</title>
-      <link>https://dsc-spidal.github.io/harp/docs/harpdaal/harpdaal/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>https://dsc-spidal.github.io/harp/docs/harpdaal/harpdaal/</guid>
-      <description>
-
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/6-1-2/6-1-2-1-1.png&#34; width=&#34;7.08%&#34;&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/6-1-2/6-1-2-1-2.png&#34; width=&#34;55.54%&#34;&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/6-1-2/6-1-2-1-3.png&#34; width=&#34;7.38%&#34;&gt;
-&lt;br /&gt;
-&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/6-1-2/6-1-2-2-1.png&#34; width=&#34;7.08%&#34;&gt;&lt;a href=&#34;https://dsc-spidal.github.io/harp/docs/programming/computation-models/&#34;&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/6-1-2/6-1-2-2-2.png&#34; width=&#34;55.54%&#34;&gt;&lt;/a&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/6-1-2/6-1-2-2-3.png&#34; width=&#34;7.38%&#34;&gt;
-&lt;br /&gt;
-&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/6-1-2/6-1-2-3-1.png&#34; width=&#34;7.08%&#34;&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/6-1-2/6-1-2-3-2.png&#34; width=&#34;55.54%&#34;&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/6-1-2/6-1-2-3-3.png&#34; width=&#34;7.38%&#34;&gt;
-&lt;br /&gt;
-&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/6-1-2/6-1-2-4-1.png&#34; width=&#34;7.08%&#34;&gt;&lt;a href=&#34;https://software.intel.com/en-us/intel-daal&#34;&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/6-1-2/6-1-2-4-2.png&#34; width=&#34;55.54%&#34;&gt;&lt;/a&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/6-1-2/6-1-2-4-3.png&#34; width=&#34;7.38%&#34;&gt;
-&lt;br /&gt;
-&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/6-1-2/6-1-2-5-1.png&#34; width=&#34;7.08%&#34;&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/6-1-2/6-1-2-5-2.png&#34; width=&#34;55.54%&#34;&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/6-1-2/6-1-2-5-3.png&#34; width=&#34;7.38%&#34;&gt;&lt;/p&gt;
-
-&lt;p&gt;Figure 1 shows the position of Harp-DAAL within the whole HPC-Big Data software stack.&lt;/p&gt;
-
-&lt;h2 id=&#34;what-is-harp-daal&#34;&gt;What is Harp-DAAL?&lt;/h2&gt;
-
-&lt;p&gt;Harp-DAAL is a new framework that aims to run data analytics algorithms on distributed HPC architectures. The framework consists of two layers: a communication layer and a computation layer. A communication layer is handled by Harp,
-a communication library plug-in into Hadoop ecosystem, and a computation layer is handled by Intel&amp;rsquo;s Data Analytics Acceleration Library (DAAL), which is a library that provides
-the users of well optimized building blocks for data analytics and machine learning applications on Intel&amp;rsquo;s architectures.&lt;/p&gt;
-
-&lt;p&gt;Compared to contemporary communication libraries, such as Hadoop and Spark, Harp has the following advantages:&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;MPI-like collective communication operations that are highly optimized for big data problems.&lt;/li&gt;
-&lt;li&gt;Efficient and innovative computation models for different machine learning problems.&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;However, the original Harp framework only supports development of Java applications, which is a common choice within the Hadoop ecosystem.
-The downside of the pure Java implementation is the lack of support for emerging new hardware architectures such as Intel&amp;rsquo;s Xeon Phi.
-By invoking DAAL&amp;rsquo;s native kernels, applications can leverage the huge number of threads on many-core platforms, which is a great
-advantage for computation-intensive data analytics algorithms. This is also the tendency of merging HPC and Big Data domain.&lt;/p&gt;
-
-&lt;h2 id=&#34;how-to-build-a-harp-daal-application&#34;&gt;How to build a Harp-DAAL Application ?&lt;/h2&gt;
-
-&lt;p&gt;If you already have a legacy Harp application codes, you need only identify the local computation module, and replace it by invoking correspondent
-DAAL kernels. Although DAAL&amp;rsquo;s kernels are written in C/C++, it does provide users of a Java API. The API is highly packaged, and the users only need
-a few lines of codes to finish the invocation of kernels. For instance, the main function of a PCA application in DAAL is shown as below:&lt;/p&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;static&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;main&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;String&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[]&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;args&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;throws&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;java&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;io&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;FileNotFoundException&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;java&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;io&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;IOException&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-
-     &lt;span style=&#34;color: #75715e&#34;&gt;/* Read a data set from a file and create a numeric table for storing the input data */&lt;/span&gt;
-     &lt;span style=&#34;color: #f8f8f2&#34;&gt;CSRNumericTable&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;data&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Service&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;createSparseTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;context&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;datasetFileName&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-
-     &lt;span style=&#34;color: #75715e&#34;&gt;/* Create an algorithm to compute PCA decomposition using the correlation method */&lt;/span&gt;
-     &lt;span style=&#34;color: #f8f8f2&#34;&gt;Batch&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;pcaAlgorithm&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Batch&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;context&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Double&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;class&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Method&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;correlationDense&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-
-     &lt;span style=&#34;color: #f8f8f2&#34;&gt;com&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;intel&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;daal&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;algorithms&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;covariance&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;Batch&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;covarianceSparse&lt;/span&gt;
-         &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;com&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;intel&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;daal&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;algorithms&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;covariance&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;Batch&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;context&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Double&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;class&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;com&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;intel&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;daal&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;algorithms&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;covariance&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;Method&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;fastCSR&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-     &lt;span style=&#34;color: #f8f8f2&#34;&gt;pcaAlgorithm&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;parameter&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;setCovariance&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;covarianceSparse&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-
-     &lt;span style=&#34;color: #75715e&#34;&gt;/* Set the input data */&lt;/span&gt;
-     &lt;span style=&#34;color: #f8f8f2&#34;&gt;pcaAlgorithm&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;input&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;set&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;InputId&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;data&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;data&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-
-     &lt;span style=&#34;color: #75715e&#34;&gt;/* Compute PCA decomposition */&lt;/span&gt;
-     &lt;span style=&#34;color: #f8f8f2&#34;&gt;Result&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;res&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;pcaAlgorithm&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;compute&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
-
-     &lt;span style=&#34;color: #f8f8f2&#34;&gt;NumericTable&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;eigenValues&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;res&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;get&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;ResultId&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;eigenValues&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-     &lt;span style=&#34;color: #f8f8f2&#34;&gt;NumericTable&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;eigenVectors&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;res&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;get&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;ResultId&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;eigenVectors&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-     &lt;span style=&#34;color: #f8f8f2&#34;&gt;Service&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;printNumericTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;Eigenvalues:&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;eigenValues&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-     &lt;span style=&#34;color: #f8f8f2&#34;&gt;Service&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;printNumericTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;Eigenvectors:&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;eigenVectors&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-
-     &lt;span style=&#34;color: #f8f8f2&#34;&gt;context&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;dispose&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
-&lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
-
-&lt;p&gt;DAAL&amp;rsquo;s Java API is usually contains the following objects:&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;Data: user&amp;rsquo;s data packed in DAAL&amp;rsquo;s data structure, e.g., NumericTable, DataCollection&lt;/li&gt;
-&lt;li&gt;Algorithm:  the engine of machine learning, each has three modes: Batch, Distri, Online&lt;/li&gt;
-&lt;li&gt;Input: the user&amp;rsquo;s input data to Algorithm&lt;/li&gt;
-&lt;li&gt;Parameter: the parameters provided by users during the running of algorithms&lt;/li&gt;
-&lt;li&gt;Result: the feedback of Algorithm after running, retrieved by users&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;Before invoking your DAAL kernels,the most suitable data structure for the problem should be chosen. For many NumericTable types,
-the Java API provides two ways of storing data. One is to store data on the JVM heap side, and whenever the native computation kernels require
-the dataset, it will automatically copy the data from JVM heap to the off-heap memory space. The other way is to store data on Java&amp;rsquo;s direct byte buffer, and
-native computation kernels can access them directly without any data copy. Therefore, you should evaluate the overhead of loading and writing data from memory
-in your application. For many data-intensive applications, it is wise to store the data on the direct byte buffer.&lt;/p&gt;
-
-&lt;p&gt;If you build the Harp-DAAL application from scratch, you should also carefully choose the data structure on the Harp side. The thumb rule is to allocate data in
-contiguous primitive Java array, because most of DAAL&amp;rsquo;s Java API only accepts primitive array as input arguments. If Harp&amp;rsquo;s own Table structure is used and the
-contained data is distributed into different partitions, then you may use the Harp-DAAL data conversion API to transfer the data between a Harp table and a DAAL
-table.&lt;/p&gt;
-
-&lt;h3 id=&#34;harp-daal-data-conversion-api&#34;&gt;Harp-DAAL Data Conversion API&lt;/h3&gt;
-
-&lt;p&gt;Harp-DAAL now provides a group of classes under the path &lt;em&gt;Harp/harp-daal-app/src/edu/iu/daal&lt;/em&gt;, which manipulates the data transfer
-between Harp&amp;rsquo;s data structure and that of DAAL.&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;RotatorDaal: a rotator which internally converts the H matrix from Harp table to DAAL&amp;rsquo;s NumericTable&lt;/li&gt;
-&lt;li&gt;RotateTaskDaal: the tasks executed by RotatorDaal in the model rotation paradigm.&lt;/li&gt;
-&lt;li&gt;HomogenTableHarpMap: convert data between DAAL&amp;rsquo;s HomogenNumericTable and Harp&amp;rsquo;s map&lt;/li&gt;
-&lt;li&gt;HomogenTableHarpTable: convert data between DAAL&amp;rsquo;s HomogenNumericTable and Harp&amp;rsquo;s table&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;Within the &lt;em&gt;RotatorDaal&lt;/em&gt;, the data transfers between Harp and DAAL is also overlapped by the computation work in another pipeline. Thus, if there is enough computation workload, the
-overhead of data conversion could be significantly reduced. It is also very straightforward to invoke these conversion tools.&lt;/p&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #75715e&#34;&gt;//create a conversion class between harp map and daal&amp;#39;s table&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;HomogenTableHarpMap&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;double&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[]&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;converter&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;HomogenTableHarpMap&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;double&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[]&amp;gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;wMap&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;wMap_index&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;wMap_daal&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;wMap_size&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;r&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;numThreads&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;convert_wTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;HarpToDaalDouble&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
-
-&lt;span style=&#34;color: #75715e&#34;&gt;//create a conversion class between a harp table and a daal table&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;converter&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;HomogenTableHarpTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;I&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;P&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;P&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;daal_table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getNumPartitions&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(),&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;rdim&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;numThreads&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;converter&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;HarpToDaalDouble&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
-
-&lt;h2 id=&#34;how-to-compile-and-run-harp-daal-application&#34;&gt;How to Compile and Run Harp-DAAL Application ?&lt;/h2&gt;
-
-&lt;h3 id=&#34;install-intel-s-daal&#34;&gt;Install Intel&amp;rsquo;s DAAL&lt;/h3&gt;
-
-&lt;p&gt;The source code of DAAL is placed under the directory &lt;em&gt;harp-daal-app/src-daal&lt;/em&gt;. The DAAL codes are forked from Intel&amp;rsquo;s DAAL 2017 release version and
-please follow the instructions within README.md to compile and install the codebase.&lt;/p&gt;
-
-&lt;p&gt;After installation, you can run the bin/daalvars.sh script to set up all the DAAL related environment variables.&lt;/p&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;source&lt;/span&gt; /path-to-daal/bin/daalvars.sh intel64
-&lt;/pre&gt;&lt;/div&gt;
-
-&lt;p&gt;The important environment variable is the &lt;em&gt;DAALROOT&lt;/em&gt;, which points to the path of DAAL&amp;rsquo;s source code. You can run the examples of each algorithm within DAAL to test
-the installation of your DAAL library.&lt;/p&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;cd&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;$DAALROOT&lt;/span&gt;/../__release_lnx/daal/examples/cpp
-make &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;libia32&lt;span style=&#34;color: #f8f8f2&#34;&gt;|&lt;/span&gt;soia32&lt;span style=&#34;color: #f8f8f2&#34;&gt;|&lt;/span&gt;libintel64&lt;span style=&#34;color: #f8f8f2&#34;&gt;|&lt;/span&gt;sointel64&lt;span style=&#34;color: #f8f8f2&#34;&gt;|&lt;/span&gt;help&lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;example&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt;name&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;compiler&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt;compiler_name&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;mode&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt;mode_name&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;threading&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt;threading_name&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
-
-&lt;h3 id=&#34;setup-daal-within-harp&#34;&gt;Setup DAAL within Harp&lt;/h3&gt;
-
-&lt;p&gt;To use DAAL within Harp, you need first add DAAL Java API to your Java source code&lt;/p&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #75715e&#34;&gt;// packages from Daal&lt;/span&gt;
-&lt;span style=&#34;color: #f92672&#34;&gt;import&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;com.intel.daal.services.DaalContext&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-&lt;span style=&#34;color: #f92672&#34;&gt;import&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;com.intel.daal.algorithms.*&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-&lt;span style=&#34;color: #f92672&#34;&gt;import&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;com.intel.daal.data_management.data.NumericTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
-
-&lt;p&gt;To compile your Harp-DAAL codes by ant, add the following lines to your &lt;em&gt;build.xml&lt;/em&gt;&lt;/p&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;fileset&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;dir=&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;${env.DAALROOT}&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt;
-&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;include&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;name=&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;**/*.jar&amp;quot;&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;/&amp;gt;&lt;/span&gt;
-&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;include&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;name=&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;**/lib/*.jar&amp;quot;&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;/&amp;gt;&lt;/span&gt;
-&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;/fileset&amp;gt;&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
-
-&lt;p&gt;Since DAAL&amp;rsquo;s Java API will invoke the native DAAL kernels, we need to load the native lib files into Harp&amp;rsquo;s environment in two steps&lt;/p&gt;
-
-&lt;p&gt;1.Load these required native libraries in HDFS&lt;/p&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;hdfs dfs -put &lt;span style=&#34;color: #e6db74&#34;&gt;${&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;DAALROOT&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;}&lt;/span&gt;/lib/intel64_lin/libJavaAPI.so /Hadoop/Libraries/
-hdfs dfs -put &lt;span style=&#34;color: #e6db74&#34;&gt;${&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;DAALROOT&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;}&lt;/span&gt;/../tbb/lib/intel64_lin/gcc4.4/libtbb* /Hadoop/Libraries/
-hdfs dfs -put &lt;span style=&#34;color: #e6db74&#34;&gt;${&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;DAALROOT&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;}&lt;/span&gt;/../../daal-misc/lib/libiomp5.so /Hadoop/Libraries/
-&lt;/pre&gt;&lt;/div&gt;
-
-&lt;p&gt;2.Load native libraries from HDFS to distributed cache of Harp&amp;rsquo;s program.&lt;/p&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #75715e&#34;&gt;/* Put shared libraries into the distributed cache */&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;Configuration&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;conf&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getConf&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;DistributedCache&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;createSymlink&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;conf&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;DistributedCache&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;addCacheFile&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;URI&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;/Hadoop/Libraries/libJavaAPI.so#libJavaAPI.so&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;),&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;conf&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;DistributedCache&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;addCacheFile&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;URI&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;/Hadoop/Libraries/libtbb.so.2#libtbb.so.2&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;),&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;conf&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;DistributedCache&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;addCacheFile&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;URI&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;/Hadoop/Libraries/libtbb.so#libtbb.so&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;),&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;conf&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;DistributedCache&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;addCacheFile&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;URI&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;/Hadoop/Libraries/libtbbmalloc.so.2#libtbbmalloc.so.2&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;),&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;conf&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;DistributedCache&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;addCacheFile&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;URI&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;/Hadoop/Libraries/libtbbmalloc.so#libtbbmalloc.so&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;),&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;conf&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-&lt;span style=&#34;color: #f8f8f2&#34;&gt;DistributedCache&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;addCacheFile&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;URI&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;/Hadoop/Libraries/libiomp5.so#libiomp5.so&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;),&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;conf&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 </description>
     </item>
