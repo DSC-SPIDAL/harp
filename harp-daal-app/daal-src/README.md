@@ -1,59 +1,60 @@
-# DAAL-MF-SGD 
+# Harp-DAAL-Local 
 
-DAAL-MF-SGD is an algorithm that we implemented based on the DAAL2017 version released by Intel. 
-at their github repository: https://github.com/01org/daal
-DAAL2017 is licensed under Apache License 2.0.
+Harp-DAAL-Local is the implementation of local computation codes of Harp-DAAL-APP. The current codes are forked from DAAL2017 version released by Intel. 
+at their github repository: https://github.com/01org/daal DAAL2017 is licensed under Apache License 2.0.
+Harp-DAAL-Local has six applications as follows
 
-This solver could be used to factorize a sparse matrix $V$ into two dense matrices $W$ and $H$, which is widely
+* K-means
+* MF-SGD
+* MF-ALS
+* SVD
+* PCA
+* Neural Network
 
-$V = WH$
+## Installation
 
-used in the recommender systems, such as the recommended movies provided to users by Netflix. This Matrix Factorization 
-(MF for short) uses a machine learning algorithm, Stochastic Gradient Descent (SGD), to find the two object matrices $W$ and 
-$H$. In this machine learning scenario, matrix $V$ contains two datasets, one is the training set and the other is the 
-test set. Both of matrices $W$ and $H$ are considered to be model data, whose values are updated by the training process of 
-SGD. After the training, we evaluate the result by calculating the difference between the true value of test points and the multiplication
-of that value by model $W$ and $H$. The procedure could be expressed as two stages:
+The current version has only been tested on Linux X64 platform. Please follow the steps to compile and install Harp-DAAL-Local
 
-1.Training Stage
+### Enter directory and execute the makefile file 
 
-* $E^{t-1}_{ij} = V^{t-1}_{train,ij} - \sum_{k=0}^r W^{t-1}_{ik} H^{t-1}_{kj}$
-* $W^t_{i*} = W^{t-1}_{i*} - \eta (E^{t-1}_{ij}\cdot H^{t-1}_{*j} - \lambda \cdot W^{t-1}_{i*})$
-* $H^t_{*j} = H^{t-1}_{*j} - \eta (E^{t-1}_{ij}\cdot W^{t-1}_{i*} - \lambda \cdot H^{t-1}_{*j})$
+```bash
+cd harp/harp-daal-app/daal-src
+```
+Compile and populate the release directory
+```bash
+make _release PLAT=lnx32e 
+```
+Users may use other make objects, such as *clean*, *_daal*, please refer to the content of makefile file. 
+The compilation will generate two directories. 
 
-2.Test Stage
+*release_dir* stores the compiled lib files and example files. The name and path of release directory is specified by the variable *RELEASEDIR* in the makefile.
+*work_dir* stores the temporary files generated in the compilation. The name and path of work directory is specified by the variable *WORKDIR* in the makefile
 
-* $RMSE = V_{test, ij} - \sum_{k=0}^{r}W_{i,k}H_{k,j}$
+### Set environment variables
 
-The training process uses an iterative Standard SGD algorithm, which contains one vector inner product and two AXPY updates. In order to 
-improve the performance of these linear algebra computation, we implement these kernels within DAAL's framework by using highly optimized 
-libraries and tools from Intel. 
+After the compilation, users shall source the daal.var script in *release_dir* to set up the environment variables such as *DAALROOT*
+```bash
+source /path-to-release_dir/daal/bin/daalvars.sh
+echo $DAALROOT
+```
 
-Our delivered package includes a core part of C++ native codes under the following paths of DAAL2017,
+## Development
 
-* daal/include/algorithms/mf_sgd
-* daal/algorithms/mf_sgd
+To add applications to Harp-DAAL-Local, users shall use the APIs provided by DAAL team. A complete application consists of three parts
 
-and it also has a Java interface under the paths 
+1. C++ codes in directory daal-src/algorithms/kernel/app-name, which is the implementation of the application
+2. Java codes in directory daal-src/lang_interface/java/com/intel/daal/algorithms, which is the Java API of this application. 
+3. JNI codes in directory daal-src/lang_service/java/com/intel/daal/algorithms, which combines the C++ codes with the Java API codes
 
-* daal/lang_interface/java/com/intel/daal/algorithms/mf_sgd
-* daal/lang_service/java/com/intel/daal/algorithms/mf_sgd
+Before compile the newly added application codes, please add the application folder name into *makefile.lst* file. 
+If the new application has implemented some serializable objects, please add the correspondent lines for the objects to 
+the file daal-src/algorithms/kernel/daal_factory_impl.cpp
 
-There are examples of SGD under the paths
+```c++
+#include "new_app.h"
+registerObject(new Creator<algorithms::new_app::Result>());
+registerObject(new Creator<algorithms::new_app::PartialResult<algorithms::new_app::method> >());
+```
 
-* daal/examples/cpp/source/mf_sgd
-* daal/examples/java/com/intel/daal/examples/mf_sgd
-
-To Run the examples, unzip the movielens train and test dataset under *daal/examples/data/batch*.
-Using tar to combine the three split files of movielens-train into one movielens-train.mm file.
-
-Copy the two files:
-
-* movielens-train.mm
-* movielens-test.mm
-
-into *daal/examples/data/distributed* if you would like to test the distributed examples. 
-
-A detailed online documentation could be found at https://github.iu.edu/pages/IU-Big-Data-Lab/DAAL-2017-MF-SGD/
-
+These lines will register *Result* and *PartialResult* objects within *new_app* algorithm.
 
