@@ -24,23 +24,9 @@
 
 &lt;p&gt;The basic idea is to decompose the data matrix M into the following components:&lt;/p&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/svd/svdpng.png&#34; width=&#34;25%&#34; height=&#34;25%&#34;&gt;&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/svd/svdpng.png&#34; width=&#34;20%&#34; height=&#34;20%&#34;&gt;&lt;br&gt;&lt;/p&gt;
 
-&lt;p&gt;Where&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/svd/sigma.png&#34; width=&#34;3%&#34; height=&#34;3%&#34;&gt;&lt;br&gt;&lt;/p&gt;
-
-&lt;p&gt;Is a diagonal matrix holding the singular values of M.&lt;/p&gt;
-
-&lt;p&gt;While,&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/svd/u.png&#34; width=&#34;4%&#34; height=&#34;4%&#34;&gt;&lt;br&gt;&lt;/p&gt;
-
-&lt;p&gt;and&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/svd/vt.png&#34; width=&#34;5%&#34; height=&#34;5%&#34;&gt;&lt;br&gt;&lt;/p&gt;
-
-&lt;p&gt;are orthogonal matrices which diagonalize the matrix M in some way.&lt;/p&gt;
+&lt;p&gt;Where &lt;img src=&#34;https://dsc-spidal.github.io/harp/img/svd/sigma.png&#34; width=&#34;15px&#34; height=&#34;15px&#34;&gt; is a diagonal matrix holding the singular values of M. While, &lt;img src=&#34;https://dsc-spidal.github.io/harp/img/svd/u.png&#34; width=&#34;15px&#34; height=&#34;15px&#34;&gt; and &lt;img src=&#34;https://dsc-spidal.github.io/harp/img/svd/vt.png&#34; width=&#34;15px&#34; height=&#34;15px&#34;&gt; are orthogonal matrices which diagonalize the matrix M in some way.&lt;/p&gt;
 
 &lt;p&gt;This package supports the implementation of Singular Value Decomposition under the Harp environment. It leverages
 Intel&amp;rsquo;s DAAL computation routines to compute decomposition in a highly efficient manner and provides a wrapper

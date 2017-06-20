@@ -8,23 +8,9 @@
 
 <p>The basic idea is to decompose the data matrix M into the following components:</p>
 
-<p><img src="https://dsc-spidal.github.io/harp/img/svd/svdpng.png" width="25%" height="25%"><br></p>
+<p><img src="https://dsc-spidal.github.io/harp/img/svd/svdpng.png" width="20%" height="20%"><br></p>
 
-<p>Where</p>
-
-<p><img src="https://dsc-spidal.github.io/harp/img/svd/sigma.png" width="3%" height="3%"><br></p>
-
-<p>Is a diagonal matrix holding the singular values of M.</p>
-
-<p>While,</p>
-
-<p><img src="https://dsc-spidal.github.io/harp/img/svd/u.png" width="4%" height="4%"><br></p>
-
-<p>and</p>
-
-<p><img src="https://dsc-spidal.github.io/harp/img/svd/vt.png" width="5%" height="5%"><br></p>
-
-<p>are orthogonal matrices which diagonalize the matrix M in some way.</p>
+<p>Where <img src="https://dsc-spidal.github.io/harp/img/svd/sigma.png" width="15px" height="15px"> is a diagonal matrix holding the singular values of M. While, <img src="https://dsc-spidal.github.io/harp/img/svd/u.png" width="15px" height="15px"> and <img src="https://dsc-spidal.github.io/harp/img/svd/vt.png" width="15px" height="15px"> are orthogonal matrices which diagonalize the matrix M in some way.</p>
 
 <p>This package supports the implementation of Singular Value Decomposition under the Harp environment. It leverages
 Intel&rsquo;s DAAL computation routines to compute decomposition in a highly efficient manner and provides a wrapper
