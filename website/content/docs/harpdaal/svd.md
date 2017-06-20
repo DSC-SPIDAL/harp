@@ -6,23 +6,9 @@ Singular Value Decomposition is a method which seeks to reduce the rank of a dat
 
 The basic idea is to decompose the data matrix M into the following components:
 
-<img src="/img/svd/svdpng.png" width="25%" height="25%"><br>
+<img src="/img/svd/svdpng.png" width="20%" height="20%"><br>
 
-Where
-
-<img src="/img/svd/sigma.png" width="3%" height="3%"><br>
-
-Is a diagonal matrix holding the singular values of M.
-
-While,
-
-<img src="/img/svd/u.png" width="4%" height="4%"><br>
-
-and
-
-<img src="/img/svd/vt.png" width="5%" height="5%"><br>
-
-are orthogonal matrices which diagonalize the matrix M in some way.
+Where <img src="/img/svd/sigma.png" width="15px" height="15px"> is a diagonal matrix holding the singular values of M. While, <img src="/img/svd/u.png" width="15px" height="15px"> and <img src="/img/svd/vt.png" width="15px" height="15px"> are orthogonal matrices which diagonalize the matrix M in some way.
 
 This package supports the implementation of Singular Value Decomposition under the Harp environment. It leverages
 Intel's DAAL computation routines to compute decomposition in a highly efficient manner and provides a wrapper
