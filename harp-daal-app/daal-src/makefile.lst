@@ -1,5 +1,5 @@
 #===============================================================================
-# Copyright 2014-2016 Intel Corporation
+#Copyright 2014-2016 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -25,13 +25,13 @@ CORE.ALGORITHMS     := kmeans                                                   
                        svd                                                       \
                        mf_sgd														  
 
-
 CORE.ALGORITHMS.INC := kmeans                                                    \
                        implicit_als                                              \
                        covariance                                                \
                        pca                                                       \
                        svd                                                       \
                        mf_sgd													 
+
 
 CORE.SERVICES       := compression
 
@@ -46,6 +46,7 @@ JJ.ALGORITHMS       := kmeans                                                   
                        pca                                                       \
                        svd                                                       \
                        mf_sgd                                                    
+
 
 JJ.DATA_MANAGEMENT  := data                                                      \
                        data_source                                               \
