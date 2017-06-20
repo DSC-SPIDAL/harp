@@ -17,6 +17,7 @@
     "develop": "gulp dev"
   },
   "devDependencies": {
+    "gulp": "^3.9.1",
     "gulp-install": "^1.1.0"
   }
 }

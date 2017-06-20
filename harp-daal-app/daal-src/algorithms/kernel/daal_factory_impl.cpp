@@ -51,7 +51,7 @@
 // #include "correlation_distance_types.h"
 // #include "cosine_distance_types.h"
 //
-// #include "covariance_types.h"
+#include "covariance_types.h"
 //
 // #include "em_gmm_types.h"
 //
@@ -96,7 +96,7 @@
 // #include "stump_model.h"
 // #include "stump_training_types.h"
 
-// #include "svd_types.h"
+#include "svd_types.h"
 
 // #include "svm_model.h"
 // #include "svm_train_types.h"
@@ -278,8 +278,8 @@ Factory::Factory()
     // registerObject(new Creator<algorithms::correlation_distance::Result>());
     // registerObject(new Creator<algorithms::cosine_distance::Result>());
     //
-    // registerObject(new Creator<algorithms::covariance::PartialResult>());
-    // registerObject(new Creator<algorithms::covariance::Result>());
+    registerObject(new Creator<algorithms::covariance::PartialResult>());
+    registerObject(new Creator<algorithms::covariance::Result>());
     //
     // registerObject(new Creator<algorithms::em_gmm::init::Result>());
     // registerObject(new Creator<algorithms::em_gmm::Result>());
@@ -325,9 +325,9 @@ Factory::Factory()
     // registerObject(new Creator<algorithms::multivariate_outlier_detection::Result>());
     // registerObject(new Creator<algorithms::univariate_outlier_detection::Result>());
     //
-     registerObject(new Creator<algorithms::pca::Result>());
-     registerObject(new Creator<algorithms::pca::PartialResult<algorithms::pca::correlationDense> >());
-     registerObject(new Creator<algorithms::pca::PartialResult<algorithms::pca::svdDense        > >());
+    registerObject(new Creator<algorithms::pca::Result>());
+    registerObject(new Creator<algorithms::pca::PartialResult<algorithms::pca::correlationDense> >());
+    registerObject(new Creator<algorithms::pca::PartialResult<algorithms::pca::svdDense        > >());
     //
     // registerObject(new Creator<algorithms::pivoted_qr::Result>());
     //
@@ -353,10 +353,10 @@ Factory::Factory()
     // registerObject(new Creator<algorithms::stump::Model>());
     // registerObject(new Creator<algorithms::stump::training::Result>());
     //
-    // registerObject(new Creator<algorithms::svd::Result>());
-    // registerObject(new Creator<algorithms::svd::OnlinePartialResult>());
-    // registerObject(new Creator<algorithms::svd::DistributedPartialResult>());
-    // registerObject(new Creator<algorithms::svd::DistributedPartialResultStep3>());
+    registerObject(new Creator<algorithms::svd::Result>());
+    registerObject(new Creator<algorithms::svd::OnlinePartialResult>());
+    registerObject(new Creator<algorithms::svd::DistributedPartialResult>());
+    registerObject(new Creator<algorithms::svd::DistributedPartialResultStep3>());
     //
     // registerObject(new Creator<algorithms::svm::Model>());
     // registerObject(new Creator<algorithms::svm::training::Result>());
