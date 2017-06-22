@@ -46,7 +46,7 @@ import com.intel.daal.algorithms.kmeans.init.*;
 
 import com.intel.daal.data_management.data.NumericTable;
 import com.intel.daal.data_management.data.HomogenNumericTable;
-import com.intel.daal.data_management.data.HomogenBMNumericTable;
+// import com.intel.daal.data_management.data.HomogenBMNumericTable;
 import com.intel.daal.services.DaalContext;
 
 /**
@@ -189,11 +189,13 @@ public class KMeansDaalCollectiveMapper
             long nFeature_cen = vectorSize;
             long totalLength_cen = numCentroids*nFeature_cen;
             long tableSize_cen = totalLength_cen/nFeature_cen;
-            NumericTable cenTable_daal = new HomogenBMNumericTable(daal_Context, Double.class, nFeature_cen, tableSize_cen, NumericTable.AllocationFlag.DoAllocate);
+            // NumericTable cenTable_daal = new HomogenBMNumericTable(daal_Context, Double.class, nFeature_cen, tableSize_cen, NumericTable.AllocationFlag.DoAllocate);
+            NumericTable cenTable_daal = new HomogenNumericTable(daal_Context, Double.class, nFeature_cen, tableSize_cen, NumericTable.AllocationFlag.DoAllocate);
             double[] buffer_array_cen = new double[(int)totalLength_cen]; 
             
             long tableSize = totalLength/nFeature;
-            NumericTable pointsArray_daal = new HomogenBMNumericTable(daal_Context, Double.class, nFeature, tableSize, NumericTable.AllocationFlag.DoAllocate);
+            // NumericTable pointsArray_daal = new HomogenBMNumericTable(daal_Context, Double.class, nFeature, tableSize, NumericTable.AllocationFlag.DoAllocate);
+            NumericTable pointsArray_daal = new HomogenNumericTable(daal_Context, Double.class, nFeature, tableSize, NumericTable.AllocationFlag.DoAllocate);
 
             int row_idx = 0;
             int row_len = 0;
@@ -201,7 +203,9 @@ public class KMeansDaalCollectiveMapper
             {
                 row_len = (array_data[k].length)/(int)nFeature;
                 //release data from Java side to native side
-                ((HomogenBMNumericTable)pointsArray_daal).releaseBlockOfRowsByte(row_idx, row_len, array_data[k]);
+                // ((HomogenBMNumericTable)pointsArray_daal).releaseBlockOfRowsByte(row_idx, row_len, array_data[k]);
+                DoubleBuffer array_data_buf = DoubleBuffer.wrap(array_data[k]);
+                pointsArray_daal.releaseBlockOfRows(row_idx, row_len, array_data_buf);
                 row_idx += row_len;
             }
 
@@ -209,7 +213,7 @@ public class KMeansDaalCollectiveMapper
             //to accomplish the first step of computing distances between training points and centroids
             DistributedStep1Local kmeansLocal = new DistributedStep1Local(daal_Context, Double.class, Method.defaultDense, numCentroids);
             kmeansLocal.input.set(InputId.data, pointsArray_daal);
-            kmeansLocal.parameter.setNThreads(numThreads);
+            // kmeansLocal.parameter.setNThreads(numThreads);
 
             // ----------------------------------------------------- For iterations -----------------------------------------------------
             for (int i = 0; i < numIterations; i++) {
@@ -268,7 +272,9 @@ public class KMeansDaalCollectiveMapper
                 }
 
                 //release the array into daal side cenTable
-                ((HomogenBMNumericTable)cenTable_daal).releaseBlockOfRowsByte(0, tableSize_cen, buffer_array_cen);
+                // ((HomogenBMNumericTable)cenTable_daal).releaseBlockOfRowsByte(0, tableSize_cen, buffer_array_cen);
+                DoubleBuffer array_cen_buf = DoubleBuffer.wrap(buffer_array_cen);
+                cenTable_daal.releaseBlockOfRows(0, tableSize_cen, array_cen_buf);
                 kmeansLocal.input.set(InputId.inputCentroids, cenTable_daal);
 
                 long t2 = System.currentTimeMillis();

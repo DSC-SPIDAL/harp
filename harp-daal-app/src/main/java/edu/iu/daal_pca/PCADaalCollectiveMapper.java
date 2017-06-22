@@ -61,7 +61,7 @@ import edu.iu.harp.resource.ByteArray;
 
 import com.intel.daal.data_management.data.NumericTable;
 import com.intel.daal.data_management.data.HomogenNumericTable;
-import com.intel.daal.data_management.data.HomogenBMNumericTable;
+// import com.intel.daal.data_management.data.HomogenBMNumericTable;
 import com.intel.daal.services.DaalContext;
 
 /**
@@ -165,7 +165,8 @@ public class PCADaalCollectiveMapper extends
     }
 
     long tableSize = totalLength/nFeature;
-    NumericTable pointsArray_daal = new HomogenBMNumericTable(daal_Context, Double.class, nFeature, tableSize, NumericTable.AllocationFlag.DoAllocate);
+    // NumericTable pointsArray_daal = new HomogenBMNumericTable(daal_Context, Double.class, nFeature, tableSize, NumericTable.AllocationFlag.DoAllocate);
+    NumericTable pointsArray_daal = new HomogenNumericTable(daal_Context, Double.class, nFeature, tableSize, NumericTable.AllocationFlag.DoAllocate);
 
     int row_idx = 0;
     int row_len = 0;
@@ -173,7 +174,9 @@ public class PCADaalCollectiveMapper extends
     {
       row_len = (array_data[k].length)/(int)nFeature;
       //release data from Java side to native side
-      ((HomogenBMNumericTable)pointsArray_daal).releaseBlockOfRowsByte(row_idx, row_len, array_data[k]);
+      // ((HomogenBMNumericTable)pointsArray_daal).releaseBlockOfRowsByte(row_idx, row_len, array_data[k]);
+      DoubleBuffer array_data_buf = DoubleBuffer.wrap(array_data[k]);
+      pointsArray_daal.releaseBlockOfRows(row_idx, row_len, array_data_buf);
       row_idx += row_len;
     }
 

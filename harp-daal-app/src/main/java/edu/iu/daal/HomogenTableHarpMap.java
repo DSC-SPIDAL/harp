@@ -36,7 +36,7 @@ import edu.iu.harp.io.DataType;
 import edu.iu.harp.resource.Array;
 
 import com.intel.daal.data_management.data.HomogenNumericTable;
-import com.intel.daal.data_management.data.HomogenBMNumericTable;
+// import com.intel.daal.data_management.data.HomogenBMNumericTable;
 import com.intel.daal.data_management.data.NumericTable;
 
 /**
@@ -230,9 +230,11 @@ public class HomogenTableHarpMap<E extends Object> {
       }
 
       //load buffer into daal table
-      // DoubleBuffer buffer_daal = DoubleBuffer.wrap(buffer_array_double);
-      // daal_table.releaseBlockOfRows(0, map_size, buffer_daal);
-      ((HomogenBMNumericTable)daal_table).releaseBlockOfRowsByte(0, map_size, buffer_array_double);
+      DoubleBuffer buffer_daal = DoubleBuffer.wrap(buffer_array_double);
+      daal_table.releaseBlockOfRows(0, map_size, buffer_daal);
+
+      //daal-2017
+      // ((HomogenBMNumericTable)daal_table).releaseBlockOfRowsByte(0, map_size, buffer_array_double);
 
   }//}}}
 
@@ -265,11 +267,11 @@ public class HomogenTableHarpMap<E extends Object> {
       }
 
       //retrieve data from daal table to buffer
-      // DoubleBuffer buffer_daal = DoubleBuffer.allocate(vec_size*map_size);
-      // buffer_daal = daal_table.getBlockOfRows(0, map_size, buffer_daal);
-      // buffer_daal.get(buffer_array_double, 0, vec_size*map_size);
+      DoubleBuffer buffer_daal = DoubleBuffer.allocate(vec_size*map_size);
+      buffer_daal = daal_table.getBlockOfRows(0, map_size, buffer_daal);
+      buffer_daal.get(buffer_array_double, 0, vec_size*map_size);
 
-      ((HomogenBMNumericTable)daal_table).getBlockOfRowsByte(0, map_size, buffer_array_double);
+      // ((HomogenBMNumericTable)daal_table).getBlockOfRowsByte(0, map_size, buffer_array_double);
 
       //multi-threading copy
       Thread[] threads = new Thread[num_threads];
@@ -346,9 +348,9 @@ public class HomogenTableHarpMap<E extends Object> {
       }
 
       //load buffer into daal table
-      // FloatBuffer buffer_daal = FloatBuffer.wrap(buffer_array_float);
-      // daal_table.releaseBlockOfRows(0, map_size, buffer_daal);
-      ((HomogenBMNumericTable)daal_table).releaseBlockOfRowsByte(0, map_size, buffer_array_float);
+      FloatBuffer buffer_daal = FloatBuffer.wrap(buffer_array_float);
+      daal_table.releaseBlockOfRows(0, map_size, buffer_daal);
+      // ((HomogenBMNumericTable)daal_table).releaseBlockOfRowsByte(0, map_size, buffer_array_float);
 
   }//}}}
 
@@ -381,11 +383,11 @@ public class HomogenTableHarpMap<E extends Object> {
       }
 
       //retrieve data from daal table to buffer
-      // FloatBuffer buffer_daal = FloatBuffer.allocate(vec_size*map_size);
-      // buffer_daal = daal_table.getBlockOfRows(0, map_size, buffer_daal);
-      // buffer_daal.get(buffer_array_float, 0, vec_size*map_size);
+      FloatBuffer buffer_daal = FloatBuffer.allocate(vec_size*map_size);
+      buffer_daal = daal_table.getBlockOfRows(0, map_size, buffer_daal);
+      buffer_daal.get(buffer_array_float, 0, vec_size*map_size);
 
-      ((HomogenBMNumericTable)daal_table).getBlockOfRowsByte(0, map_size, buffer_array_float);
+      // ((HomogenBMNumericTable)daal_table).getBlockOfRowsByte(0, map_size, buffer_array_float);
 
       //multi-threading copy
       Thread[] threads = new Thread[num_threads];
@@ -462,9 +464,9 @@ public class HomogenTableHarpMap<E extends Object> {
       }
 
       //load buffer into daal table
-      // IntBuffer buffer_daal = IntBuffer.wrap(buffer_array_int);
-      // daal_table.releaseBlockOfRows(0, map_size, buffer_daal);
-      ((HomogenBMNumericTable)daal_table).releaseBlockOfRowsByte(0, map_size, buffer_array_int);
+      IntBuffer buffer_daal = IntBuffer.wrap(buffer_array_int);
+      daal_table.releaseBlockOfRows(0, map_size, buffer_daal);
+      // ((HomogenBMNumericTable)daal_table).releaseBlockOfRowsByte(0, map_size, buffer_array_int);
 
   }//}}}
 
@@ -497,10 +499,10 @@ public class HomogenTableHarpMap<E extends Object> {
       }
 
       //retrieve data from daal table to buffer
-      // IntBuffer buffer_daal = IntBuffer.allocate(vec_size*map_size);
-      // buffer_daal = daal_table.getBlockOfRows(0, map_size, buffer_daal);
-      // buffer_daal.get(buffer_array_int, 0, vec_size*map_size);
-      ((HomogenBMNumericTable)daal_table).getBlockOfRowsByte(0, map_size, buffer_array_int);
+      IntBuffer buffer_daal = IntBuffer.allocate(vec_size*map_size);
+      buffer_daal = daal_table.getBlockOfRows(0, map_size, buffer_daal);
+      buffer_daal.get(buffer_array_int, 0, vec_size*map_size);
+      // ((HomogenBMNumericTable)daal_table).getBlockOfRowsByte(0, map_size, buffer_array_int);
 
       //multi-threading copy
       Thread[] threads = new Thread[num_threads];

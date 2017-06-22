@@ -50,7 +50,6 @@ import com.intel.daal.algorithms.implicit_als.training.init.*;
 import com.intel.daal.data_management.data.NumericTable;
 import com.intel.daal.data_management.data.CSRNumericTable;
 import com.intel.daal.data_management.data.HomogenNumericTable;
-import com.intel.daal.data_management.data.HomogenBMNumericTable;
 import com.intel.daal.data_management.data.SOANumericTable;
 import com.intel.daal.data_management.data.KeyValueDataCollection;
 
@@ -94,7 +93,7 @@ public class ALSTrainStep4 {
         this.collect_mapper = collect_mapper;
 
         this.algo.parameter.setNFactors(this.nFactor);
-        this.algo.parameter.setNumThreads(this.numThreads);
+        // this.algo.parameter.setNumThreads(this.numThreads);
 
         LOG.info("Default Alpha: " + this.algo.parameter.getAlpha());
         this.algo.parameter.setAlpha(this.alpha);

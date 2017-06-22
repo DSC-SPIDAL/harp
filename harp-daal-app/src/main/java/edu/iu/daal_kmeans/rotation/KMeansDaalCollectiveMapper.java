@@ -44,7 +44,6 @@ import com.intel.daal.algorithms.kmeans.init.*;
 
 import com.intel.daal.data_management.data.NumericTable;
 import com.intel.daal.data_management.data.HomogenNumericTable;
-import com.intel.daal.data_management.data.HomogenBMNumericTable;
 import com.intel.daal.services.DaalContext;
 
 public class KMeansDaalCollectiveMapper

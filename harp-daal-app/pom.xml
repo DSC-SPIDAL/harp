@@ -23,7 +23,8 @@
             <artifactId>daal</artifactId>
             <scope>system</scope>
             <version>1.0</version>
-            <systemPath>${basedir}/__release_tango_lnx/daal/lib/daal.jar</systemPath>
+            <systemPath>/N/u/lc37/Lib/DAAL2018_Beta/__release_lnx/daal/lib/daal.jar</systemPath>
+            <!-- <systemPath>${basedir}/__release_tango_lnx/daal/lib/daal.jar</systemPath> -->
         </dependency>
 
     </dependencies>

@@ -31,7 +31,7 @@ import edu.iu.harp.schstatic.StaticScheduler;
 import edu.iu.dymoro.*;
 
 import com.intel.daal.data_management.data.HomogenNumericTable;
-import com.intel.daal.data_management.data.HomogenBMNumericTable;
+// import com.intel.daal.data_management.data.HomogenBMNumericTable;
 import com.intel.daal.data_management.data.NumericTable;
 
 /**
