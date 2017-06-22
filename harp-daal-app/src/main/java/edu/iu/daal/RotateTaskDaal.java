@@ -39,7 +39,7 @@ import edu.iu.harp.resource.Array;
 import edu.iu.dymoro.*;
 import com.intel.daal.data_management.data.HomogenNumericTable;
 import com.intel.daal.data_management.data.SOANumericTable;
-import com.intel.daal.data_management.data.HomogenBMNumericTable;
+// import com.intel.daal.data_management.data.HomogenBMNumericTable;
 import com.intel.daal.data_management.data.NumericTable;
 import com.intel.daal.services.DaalContext;
 
@@ -114,8 +114,8 @@ public class RotateTaskDaal<I, P extends Array<I> > extends
     this.numThreads = numThreads;
 
     //use standard HomogenNumericTable or optimized HomogenBMNumericTable in DAAL
-    // this.daal_table = new HomogenNumericTable(daal_Context, Double.class, this.rdim, table.getNumPartitions(), NumericTable.AllocationFlag.DoAllocate);
-    this.daal_table = new HomogenBMNumericTable(daal_Context, Double.class, this.rdim, table.getNumPartitions(), NumericTable.AllocationFlag.DoAllocate);
+    this.daal_table = new HomogenNumericTable(daal_Context, Double.class, this.rdim, table.getNumPartitions(), NumericTable.AllocationFlag.DoAllocate);
+    // this.daal_table = new HomogenBMNumericTable(daal_Context, Double.class, this.rdim, table.getNumPartitions(), NumericTable.AllocationFlag.DoAllocate);
 
     //create the converter
     this.converter = new HomogenTableHarpTable<I, P, Table<P> >(table, this.daal_table, table.getNumPartitions(), this.rdim, this.numThreads);
@@ -144,8 +144,8 @@ public class RotateTaskDaal<I, P extends Array<I> > extends
     int table_size = table.getNumPartitions();
     this.daal_table.freeDataMemory(); 
 
-    // this.daal_table = new HomogenNumericTable(daal_Context, Double.class, this.rdim, table_size, NumericTable.AllocationFlag.DoAllocate);
-    this.daal_table = new HomogenBMNumericTable(daal_Context, Double.class, this.rdim, table_size, NumericTable.AllocationFlag.DoAllocate);
+    this.daal_table = new HomogenNumericTable(daal_Context, Double.class, this.rdim, table_size, NumericTable.AllocationFlag.DoAllocate);
+    // this.daal_table = new HomogenBMNumericTable(daal_Context, Double.class, this.rdim, table_size, NumericTable.AllocationFlag.DoAllocate);
 
     this.converter = new HomogenTableHarpTable<I, P, Table<P> >(table, this.daal_table, table_size, this.rdim, this.numThreads);
     this.converter.HarpToDaalDouble();

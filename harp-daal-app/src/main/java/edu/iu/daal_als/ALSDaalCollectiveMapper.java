@@ -84,10 +84,7 @@ import com.intel.daal.data_management.data.NumericTable;
 import com.intel.daal.data_management.data.CSRNumericTable;
 import com.intel.daal.data_management.data.HomogenNumericTable;
 import com.intel.daal.data_management.data.KeyValueDataCollection;
-// import com.intel.daal.examples.utils.Service;
 
-import com.intel.daal.algorithms.mf_sgd.*;
-import com.intel.daal.data_management.data.HomogenBMNumericTable;
 import com.intel.daal.data_management.data.SOANumericTable;
 import com.intel.daal.data_management.data_source.DataSource;
 import com.intel.daal.data_management.data_source.FileDataSource;
@@ -158,32 +155,12 @@ public class ALSDaalCollectiveMapper
 
         //DAAL related
         private static DaalContext daal_Context = new DaalContext();
-        //daal table to hold row ids of local model W 
-        private HomogenBMNumericTable wMat_rowid_daal;  
-        //num of local rows of training set
-        private long wMat_size;
         //max global row ids
         private long maxRowID = 0;
         private double alpha = 40.0;
         private double lambda_als = 0.06;
         // private double alpha = 20.0;
 
-        //daal table to hold row ids of local training set
-        private HomogenBMNumericTable train_wPos_daal;
-        //daal table to hold cols ids of local training set
-        private HomogenBMNumericTable train_hPos_daal;
-        //daal table to hold values of local training set
-        private HomogenBMNumericTable train_val_daal;
-
-        //daal table to hold row ids of test set
-        private HomogenBMNumericTable test_wPos_daal;
-        //daal table to hold col ids of test set
-        private HomogenBMNumericTable test_hPos_daal;
-        //daal table to hold values of test set
-        private HomogenBMNumericTable test_val_daal;
-        //daal table to hold rotated H model
-        private NumericTable hTableMap_daal;
-        
         /**
          * Mapper configuration.
          */
@@ -401,7 +378,7 @@ public class ALSDaalCollectiveMapper
             InitDistributed initAlgorithm = new InitDistributed(daal_Context, Double.class, InitMethod.fastCSR);
             initAlgorithm.parameter.setFullNUsers(this.maxRowID + 1);
             initAlgorithm.parameter.setNFactors(r);
-            initAlgorithm.parameter.setNumThreads(numThreads);
+            // initAlgorithm.parameter.setNumThreads(numThreads);
             initAlgorithm.parameter.setSeed(initAlgorithm.parameter.getSeed() + this.getSelfID());
             initAlgorithm.input.set(InitInputId.data, trainDaalTableTran);
 

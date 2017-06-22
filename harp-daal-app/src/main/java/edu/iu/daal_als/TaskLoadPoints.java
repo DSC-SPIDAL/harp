@@ -32,7 +32,6 @@ import com.intel.daal.data_management.data.NumericTable;
 import com.intel.daal.data_management.data.HomogenNumericTable;
 
 import com.intel.daal.services.*;
-import com.intel.daal.algorithms.mf_sgd.*;
 
 import com.intel.daal.services.DaalContext;
 
