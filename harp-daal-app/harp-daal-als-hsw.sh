@@ -30,22 +30,22 @@ Arch=hsw
 # ---------------------- test Harp-DAAL ----------------------
 
 # Scaling Test from 10 nodes to 30 nodes on yahoomusic 
-# Dataset=yahoomusic-train
-# Testset=yahoomusic-test
-Dataset=netflix-train
-Testset=netflix-test
+Dataset=yahoomusic-train
+Testset=yahoomusic-test
+# Dataset=netflix-train
+# Testset=netflix-test
 # Dataset=movielens-train
 # Testset=movielens-test
 
 Dim=100
 
 ## pars for yahoomusic
-# Lambda=1
-# Epsilon=0.0001
+Lambda=1
+Epsilon=0.0001
 
 ## pars for netflix
-Lambda=0.05
-Epsilon=0.002
+# Lambda=0.05
+# Epsilon=0.002
 Itr=5
 Mem=110000
 
@@ -53,7 +53,7 @@ Mem=110000
 Thd=24
 Tune=false
 
-Node=1
+Node=2
 hdfs dfs -mkdir -p /Hadoop/als-work
 hdfs dfs -rm -r /Hadoop/als-work/*                                                        
 
