@@ -351,23 +351,38 @@ public class ALSDaalCollectiveMapper
             int workerNum = this.getNumWorkers();
 
             //global var broadcast
-            long[] usersPartition = new long[workerNum + 1];  
+            long[] usersPartition = { workerNum };
 
-            //global var broadcast
-            long[] itemsPartition = new long[workerNum + 1]; 
+            long[] usersPartition_test = new long[workerNum + 1];  
+            long[] itemsPartition_test = new long[workerNum + 1]; 
+
+            NumericTable userOffsets;
+            NumericTable itemOffsets;
 
             //local var
-            KeyValueDataCollection usersOutBlocks; 
+            // KeyValueDataCollection usersOutBlocks; 
             //local var
-            KeyValueDataCollection itemsOutBlocks;
+            // KeyValueDataCollection itemsOutBlocks;
+            
+            // for Step 1
             //local var, sync on master node
+            KeyValueDataCollection initStep1LocalResult = null;
             DistributedPartialResultStep1 step1LocalResult;
+
+            // for Step 2
             //global var
+            KeyValueDataCollection initStep2LocalInput = null;
             NumericTable step2MasterResult = null;
+
+            // for Step 3
+            KeyValueDataCollection userStep3LocalInput = null;
+            KeyValueDataCollection itemStep3LocalInput = null;
             //local var
             KeyValueDataCollection step3LocalResult;
+
+            // for Step 4
             //global vars 
-            KeyValueDataCollection step4LocalInput;
+            KeyValueDataCollection step4LocalInput = new KeyValueDataCollection(daal_Context);
             //local vars
             DistributedPartialResultStep4 itemsPartialResultLocal = null;
             //local vars
@@ -375,56 +390,77 @@ public class ALSDaalCollectiveMapper
 
             // ------------------------------ initialization start ------------------------------
 
-            InitDistributed initAlgorithm = new InitDistributed(daal_Context, Double.class, InitMethod.fastCSR);
+            InitDistributedStep1Local initAlgorithm = new  InitDistributedStep1Local(daal_Context, Double.class, InitMethod.fastCSR);
             initAlgorithm.parameter.setFullNUsers(this.maxRowID + 1);
             initAlgorithm.parameter.setNFactors(r);
             // initAlgorithm.parameter.setNumThreads(numThreads);
             initAlgorithm.parameter.setSeed(initAlgorithm.parameter.getSeed() + this.getSelfID());
+            initAlgorithm.parameter.setPartition(new HomogenNumericTable(daal_Context, usersPartition, 1, usersPartition.length));
+
             initAlgorithm.input.set(InitInputId.data, trainDaalTableTran);
 
             // Initialize the implicit ALS model 
             InitPartialResult initPartialResult = initAlgorithm.compute();
-
+            itemStep3LocalInput = initPartialResult.get(InitPartialResultBaseId.outputOfInitForComputeStep3);
+            userOffsets = initPartialResult.get(InitPartialResultBaseId.offsets, this.getSelfID());
             // partialModel is local on each node
-            PartialModel partialModel = initPartialResult.get(InitPartialResultId.partialModel);
-            itemsPartialResultLocal = new DistributedPartialResultStep4(daal_Context);
+            PartialModel partialModel  = initPartialResult.get(InitPartialResultId.partialModel);
 
+            itemsPartialResultLocal = new DistributedPartialResultStep4(daal_Context);
             //store the partialModel on local slave node
             itemsPartialResultLocal.set(DistributedPartialResultStep4Id.outputOfStep4ForStep1, partialModel);
-            step4LocalInput = new KeyValueDataCollection(daal_Context);
+
+            //initStep1LocalResult shall be broadcasted to each node
+            initStep1LocalResult = initPartialResult.get(InitPartialResultCollectionId.outputOfStep1ForStep2);
+            initStep2LocalInput = new KeyValueDataCollection(daal_Context);
+
+            ALSInitResult init_res = new ALSInitResult(initStep1LocalResult, initStep2LocalInput, this.getSelfID(), this);
+            init_res.communicate();
+            init_res.compute();
+
+            //initialize step 2 
+            InitDistributedStep2Local initAlgorithm_step2 = new InitDistributedStep2Local(daal_Context, Double.class, InitMethod.fastCSR);
+
+            initAlgorithm_step2.input.set(InitStep2LocalInputId.inputOfStep2FromStep1, initStep2LocalInput);
+
+            /* Compute partial results of the second step on local nodes */
+            InitDistributedPartialResultStep2 initPartialResult_step2 = initAlgorithm_step2.compute();
+
+            trainDaalTable = (CSRNumericTable)(initPartialResult_step2.get(InitDistributedPartialResultStep2Id.transposedData));
+            userStep3LocalInput = initPartialResult_step2.get(InitPartialResultBaseId.outputOfInitForComputeStep3);
+            itemOffsets = initPartialResult_step2.get(InitPartialResultBaseId.offsets, this.getSelfID());
 
             // ------------------------------ initialization end ------------------------------
 
-            // ------------------------------ computePartialModelBlocksToNode start ------------------------------
+            // ------------------------------ compute initial RMSE from test dataset ------------------------------
             long dataTableRows = trainDaalTable.getNumberOfRows();
             long dataTableTranRows = trainDaalTableTran.getNumberOfRows();
-
+            //
             //allreduce to get the users and items partition table
             Table<LongArray> dataTable_partition = new Table<>(0, new LongArrPlus());
-
+            //
             LongArray partition_array = LongArray.create(2, false);
             partition_array.get()[0] = dataTableRows;
             partition_array.get()[1] = dataTableTranRows;
-
+            //
             dataTable_partition.addPartition(new Partition<>(this.getSelfID(), partition_array));
 
             this.allgather("als", "get-partition-info", dataTable_partition);
-
-            usersPartition[0] = 0;
-            itemsPartition[0] = 0;
-
+            //
+            usersPartition_test[0] = 0;
+            itemsPartition_test[0] = 0;
+            //
             for (int j=0;j<workerNum;j++) 
             {
-                usersPartition[j+1] = usersPartition[j] + dataTable_partition.getPartition(j).get().get()[0];  
-                itemsPartition[j+1] = itemsPartition[j] + dataTable_partition.getPartition(j).get().get()[1];
+                usersPartition_test[j+1] = usersPartition_test[j] + dataTable_partition.getPartition(j).get().get()[0];  
+                itemsPartition_test[j+1] = itemsPartition_test[j] + dataTable_partition.getPartition(j).get().get()[1];
             }
+            //
+            // //compute out blocks
+            // usersOutBlocks = computeOutBlocks(daal_Context, workerNum, trainDaalTable, itemsPartition);
+            // itemsOutBlocks = computeOutBlocks(daal_Context, workerNum, trainDaalTableTran, usersPartition);
 
-            //compute out blocks
-            usersOutBlocks = computeOutBlocks(daal_Context, workerNum, trainDaalTable, itemsPartition);
-            itemsOutBlocks = computeOutBlocks(daal_Context, workerNum, trainDaalTableTran, usersPartition);
-
-            // ------------------------------ compute initial RMSE from test dataset ------------------------------
-            testModelInitRMSEMulti(usersPartition, itemsPartition, dataTableRows, testDataMap, row_mapping, col_mapping);
+            testModelInitRMSEMulti(usersPartition_test, itemsPartition_test, dataTableRows, testDataMap, row_mapping, col_mapping);
 
             // ------------------------------ Training Model Start ------------------------------
             for (int iteration=0; iteration < numIterations; iteration++) 
@@ -479,7 +515,7 @@ public class ALSDaalCollectiveMapper
                 comm_time_itr_step2 += (end - start);
 
                 // ----------------------------------------- step3 on local node -----------------------------------------
-                ALSTrainStep3 algo_step3 = new ALSTrainStep3(r, numThreads, itemsPartition, itemsOutBlocks, itemsPartialResultLocal, this);
+                ALSTrainStep3 algo_step3 = new ALSTrainStep3(r, numThreads, itemOffsets, itemsPartialResultLocal, itemStep3LocalInput, this);
                 start = System.currentTimeMillis();
 
                 DistributedPartialResultStep3 partialResult_step3 = algo_step3.compute();
@@ -491,6 +527,7 @@ public class ALSDaalCollectiveMapper
                 start = System.currentTimeMillis();
                 // Prepare input objects for the fourth step of the distributed algorithm 
                 step3LocalResult = partialResult_step3.get(DistributedPartialResultStep3Id.outputOfStep3ForStep4);
+
                 Table<ByteArray> step3LocalResult_table = new Table<>(0, new ByteArrPlus());
 
                 step4LocalInput = algo_step3.communicate(step3LocalResult, step4LocalInput, step3LocalResult_table);
@@ -559,7 +596,7 @@ public class ALSDaalCollectiveMapper
                 comm_time_itr_step2 += (end - start);
 
                 // ----------------------------------------- step3 on local node update item  -----------------------------------------
-                algo_step3 = new ALSTrainStep3(r, numThreads, usersPartition, usersOutBlocks, usersPartialResultLocal, this);
+                algo_step3 = new ALSTrainStep3(r, numThreads, userOffsets, usersPartialResultLocal, userStep3LocalInput, this);
                 start = System.currentTimeMillis();
                 
                 if (partialResult_step3 != null)
@@ -581,7 +618,6 @@ public class ALSDaalCollectiveMapper
                 end = System.currentTimeMillis();
                 comm_time_itr_step3 += (end - start);
                 
-
                 // // ----------------------------------------- step4 on local node to update items-----------------------------------------
                 start = System.currentTimeMillis();
                 algo_step4 = new ALSTrainStep4(r, numThreads, alpha, lambda_als, step4LocalInput, trainDaalTableTran, 
@@ -630,7 +666,7 @@ public class ALSDaalCollectiveMapper
                 System.gc();
 
                 //test model after this iteration
-                testModelMulti(iteration, usersPartition, itemsPartition, usersPartialResultLocal, itemsPartialResultLocal, testDataMap, row_mapping, col_mapping);
+                testModelMulti(iteration, usersPartition_test, itemsPartition_test, usersPartialResultLocal, itemsPartialResultLocal, testDataMap, row_mapping, col_mapping);
 
             }
 
