@@ -73,9 +73,9 @@ CollectiveMapper<String, String, Object, Object>{
 
   private DistributedStep2Master netMaster;
   private TrainingTopology topology;
-  private int batchSizeLocal = 25;
-  private int pointsPerFile = 1500;
-  private int vectorSize = 20;
+ private int batchSizeLocal = 25;
+ private int pointsPerFile = 1500;
+ private int vectorSize = 20;                                
   private int groundTruthvectorSize = 1;
   private int numMappers;
   private int numThreads;
@@ -235,9 +235,8 @@ CollectiveMapper<String, String, Object, Object>{
 
     double[] learningRateArray = new double[1];
     learningRateArray[0] = 0.001;
-    com.intel.daal.algorithms.optimization_solver.sgd.Batch sgdAlgorithm =
-    new com.intel.daal.algorithms.optimization_solver.sgd.Batch(daal_Context, Double.class, 
-     com.intel.daal.algorithms.optimization_solver.sgd.Method.defaultDense);
+    Batch sgdAlgorithm =
+    new Batch(daal_Context, Float.class, Method.defaultDense);
     sgdAlgorithm.parameter.setBatchSize(batchSizeLocal);
     sgdAlgorithm.parameter.setLearningRateSequence(new HomogenNumericTable(daal_Context, learningRateArray, 1, 1));
 
@@ -246,26 +245,30 @@ CollectiveMapper<String, String, Object, Object>{
     TrainingTopology topology = NeuralNetConfiguratorDistr.configureNet(daal_Context);
 
     net.parameter.setOptimizationSolver(sgdAlgorithm);
-    net.initialize(featureTensorInit.getDimensions(), topology);
+    long[] sampleSize = featureTensorInit.getDimensions();
+    sampleSize[0] = batchSizeLocal;
+    net.initialize(sampleSize, topology);
 
-    TrainingModel trainingModel = net.getResult().get(TrainingResultId.model);
+    TrainingModel trainingModel = new TrainingModel(daal_Context);
+    trainingModel.initialize(Float.class, sampleSize, topology, null);
 
     int nSamples = (int)featureTensorInit.getDimensions()[0];
+
     Table<ByteArray> partialResultTable = new Table<>(0, new ByteArrPlus());
 
     for (int i = 0; i < nSamples - batchSizeLocal + 1; i += batchSizeLocal) {
 
       //local computation
 
-      DistributedStep1Local netLocal = new DistributedStep1Local(daal_Context, sgdAlgorithm);
+      DistributedStep1Local netLocal = new DistributedStep1Local(daal_Context);
       netLocal.input.set(DistributedStep1LocalInputId.inputModel, trainingModel);
       netLocal.input.set(TrainingInputId.data, Service.getNextSubtensor(daal_Context, featureTensorInit, i, batchSizeLocal));
       netLocal.input.set(TrainingInputId.groundTruth, Service.getNextSubtensor(daal_Context, labelTensorInit, i, batchSizeLocal));
       netLocal.parameter.setOptimizationSolver(sgdAlgorithm);
-      PartialResult partialResult = netLocal.compute();	
+      PartialResult partialResult = netLocal.compute(); 
       partialResultTable.addPartition(new Partition<>(i+this.getSelfID()*nSamples, serializePartialResult(partialResult)));
       boolean reduceStatus = false;
-      reduceStatus = this.reduce("nn", "sync-partialresult", partialResultTable, this.getMasterID());	
+      reduceStatus = this.reduce("nn", "sync-partialresult", partialResultTable, this.getMasterID()); 
 
       if(!reduceStatus){
         System.out.println("reduce not successful");
@@ -281,7 +284,7 @@ CollectiveMapper<String, String, Object, Object>{
           try {
            net.input.add(DistributedStep2MasterInputId.partialResults, 0, deserializePartialResult(partialResultTable.getPartition(pid[j]).get()));
          } catch (Exception e) 
-         {	
+         {  
           System.out.println("Fail to deserilize partialResultTable" + e.toString());
           e.printStackTrace();
         }
@@ -318,7 +321,6 @@ if(this.isMaster()){
   PredictionModel predictionModel = trainingModel.getPredictionModel(Float.class);
   Tensor predictionData = getTensor(daal_Context, conf, testFilePath, vectorSize, 2000);
   Tensor predictionGroundTruth = getTensor(daal_Context, conf, "/nn/test/neural_network_test_ground_truth.csv", 1, 2000);
-
   System.out.println("predictionData size "+ predictionData.getSize());
   PredictionBatch net = new PredictionBatch(daal_Context);
   long[] predictionDimensions = predictionData.getDimensions();
@@ -380,7 +382,6 @@ private static ByteArray serializeNumericTable(NumericTable dataTable) throws IO
 }
 
 private static NumericTable deserializeNumericTable(ByteArray byteArray) throws IOException, ClassNotFoundException {
-    	//try {
   /* Create an input stream to deserialize the numeric table from the array */
   byte[] buffer = byteArray.get();
   ByteArrayInputStream inputByteStream = new ByteArrayInputStream(buffer);
