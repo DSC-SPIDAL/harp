@@ -22,7 +22,6 @@
  */
 
 package edu.iu.daal_pca;
-//package com.intel.daal.examples.utils;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -41,7 +40,13 @@ import com.intel.daal.data_management.data.KeyValueDataCollection;
 import com.intel.daal.data_management.data_source.*;
 import com.intel.daal.services.DaalContext;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 public class Service {
+
+    protected static final Log LOG = LogFactory.getLog(Service.class);
+
     public static void readRow(String line, int offset, int nCols, double[] data) throws IOException {
         if (line == null) {
             throw new IOException("Unable to read input dataset");
@@ -125,8 +130,10 @@ public class Service {
 
     public static void printClassificationResult(double[] groundTruth, double[] classificationResults,
             String classificatorName) {
-        System.out.println(classificatorName + " classification:");
-        System.out.println("Ground truth | Classification results");
+        // System.out.println(classificatorName + " classification:");
+        LOG.info(classificatorName + " classification:");
+        // System.out.println("Ground truth | Classification results");
+        LOG.info("Ground truth | Classification results");
 
         for (int i = 0; i < Math.min(groundTruth.length, 20); i++) {
             System.out.format("%+f\t\t%+f\n", groundTruth[i], classificationResults[i]);
@@ -228,6 +235,7 @@ public class Service {
             builder.append("\n");
         }
         System.out.println(builder.toString());
+        LOG.info(builder.toString());
     }
 
     public static void printNumericTable(String header, CSRNumericTable nt, long nPrintedRows, long nPrintedCols) {
@@ -269,6 +277,7 @@ public class Service {
             builder.append("\n");
         }
         System.out.println(builder.toString());
+        LOG.info(builder.toString());
     }
 
     public static void printNumericTable(String header, NumericTable nt, long nRows) {

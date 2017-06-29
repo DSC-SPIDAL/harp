@@ -154,7 +154,8 @@ public class SVDDaalCollectiveMapper
                 String value = reader.getCurrentValue();
                 LOG.info("Key: " + key + ", Value: "
                         + value);
-                System.out.println("file name: " + value);
+                // System.out.println("file name: " + value);
+                LOG.info("file name: " + value);
                 pointFiles.add(value);
             }
             
@@ -189,7 +190,8 @@ public class SVDDaalCollectiveMapper
             long nFeature = vectorSize;
             long totalLength = 0;
 
-            System.out.println("vectorSize is  " + vectorSize);
+            // System.out.println("vectorSize is  " + vectorSize);
+            LOG.info("vectorSize is  " + vectorSize);
             
 
 
@@ -223,8 +225,6 @@ public class SVDDaalCollectiveMapper
             }
 
             // Compute the results
-
-
             printNumericTable("Model pointsArray_daal: ", pointsArray_daal, 10,10);
 
 
@@ -287,7 +287,8 @@ public class SVDDaalCollectiveMapper
 
             //dataFromStep2ForStep3 = (DataCollection)inputForStep3FromStep2.get(iNode);
 
-            byte[] serialStep2MasterResult = serializeStep2MResult((KeyValueDataCollection)inputForStep3FromStep2);
+            // byte[] serialStep2MasterResult = serializeStep2MResult((KeyValueDataCollection)inputForStep3FromStep2);
+            byte[] serialStep2MasterResult = serializeStep2MResult(inputForStep3FromStep2);
             ByteArray step2MasterResult_harp = new ByteArray(serialStep2MasterResult, 0, serialStep2MasterResult.length);
             step2Result_table.addPartition(new Partition<>(this.getSelfID(), step2MasterResult_harp));
 
@@ -310,7 +311,8 @@ public class SVDDaalCollectiveMapper
 
         this.allgather("svd2", "sync-step2-master", step2Result_table);
 
-        System.out.println("Communicated data from step 2 at master to all slaves");
+        // System.out.println("Communicated data from step 2 at master to all slaves");
+        LOG.info("Communicated data from step 2 at master to all slaves");
         /* Create an algorithm to compute SVD on local nodes */
         
         svdStep3Local = new DistributedStep3Local(daal_Context, Double.class, Method.defaultDense);
@@ -337,7 +339,8 @@ public class SVDDaalCollectiveMapper
         
         pointsArray_daal.freeDataMemory();
         printNumericTable("Model U:", U, 10,10);
-        System.out.println("Final factorization ");
+        // System.out.println("Final factorization ");
+        LOG.info("Final factorization ");
         printNumericTable("Left orthogonal matrix U (10 first vectors):", U, 10,10);
 
         }
@@ -441,6 +444,7 @@ public class SVDDaalCollectiveMapper
             builder.append("\n");
         }
         System.out.println(builder.toString());
+        LOG.info(builder.toString());
     }
 
 

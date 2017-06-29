@@ -145,14 +145,14 @@ public class PCAUtil {
       double[] output = compute.waitForOutput();
       if (output != null)
       {
-        for (int i = 0; i < output.length; i++)
-        {
-          if (i > 0)
-          {
-            System.out.print(", ");
-          }
-          System.out.print(output[i]);
-        }
+        // for (int i = 0; i < output.length; i++)
+        // {
+        //   if (i > 0)
+        //   {
+        //     System.out.print(", ");
+        //   }
+        //   System.out.print(output[i]);
+        // }
         arrays.add(output);
       }
     }

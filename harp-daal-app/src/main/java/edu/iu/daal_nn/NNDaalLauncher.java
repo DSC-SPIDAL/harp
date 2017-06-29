@@ -67,28 +67,46 @@ implements Tool {
     DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbbmalloc.so#libtbbmalloc.so"), conf);
     DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libiomp5.so#libiomp5.so"), conf);
 
-    if (args.length < 4) {
-      System.err.println("Usage: edu.iu.daal_nn "+"less parameters");
+    if (args.length < 8) {
+      System.err.println("Usage: edu.iu.daal_nn "
+                + "<input train dir> "
+                + "<input test dir>"
+                + "<input ground truth dir>"
+                + "<workDirPath> "
+                + "<mem per mapper>"
+                + "<batch size>"
+                + "<num mappers> <thread per worker>");
       ToolRunner.printGenericCommandUsage(System.err);
       return -1;
     }
     String inputDirPath = args[0];            
-    String workDirPath = args[1];    
-    int numMapTasks = Integer.parseInt(args[2]);      
-    int numThreadsPerWorker = Integer.parseInt(args[3]);
+    String testDirPath = args[1];            
+    String testGroundTruthDirPath = args[2];            
+    String workDirPath = args[3];    
+    int mem = Integer.parseInt(args[4]);
+    int batchSize = Integer.parseInt(args[5]);
+    int numMapTasks = Integer.parseInt(args[6]);      
+    int numThreadsPerWorker = Integer.parseInt(args[7]);
 
     System.out.println("Number of Map Tasks = " + numMapTasks);
     System.out.println("Number of Map Tasks = "+ numMapTasks);
 
-  launch(inputDirPath, workDirPath, numMapTasks, numThreadsPerWorker);
-  return 0;
+    if (mem < 1000) {
+      return -1;
+    }
+
+    launch(inputDirPath, testDirPath, testGroundTruthDirPath, workDirPath, mem, batchSize, numMapTasks, numThreadsPerWorker);
+    return 0;
 }
 
 private void launch(String inputDirPath, 
-  String workDirPath,  int numMapTasks,
-  int numThreadsPerWorker) throws IOException,
+  String testDirPath, 
+  String testGroundTruthDirPath, 
+  String workDirPath, int mem, int batchSize, 
+  int numMapTasks, int numThreadsPerWorker) throws IOException,
 URISyntaxException, InterruptedException,
 ExecutionException, ClassNotFoundException {
+
   Configuration configuration = getConf();
   FileSystem fs = FileSystem.get(configuration);
   Path inputDir = new Path(inputDirPath);
@@ -102,7 +120,8 @@ ExecutionException, ClassNotFoundException {
     // Do not make output dir
   Path outputDir = new Path(workDirPath, "output");
   long startTime = System.currentTimeMillis();
-  runNN(inputDir,  numMapTasks,
+
+  runNN(inputDir, testDirPath, testGroundTruthDirPath, mem, batchSize, numMapTasks,
       numThreadsPerWorker, modelDir,
       outputDir, configuration);
 
@@ -112,12 +131,13 @@ ExecutionException, ClassNotFoundException {
         + (endTime - startTime));
 }
 
-private void runNN(Path inputDir, 
+private void runNN(Path inputDir, String testDirPath, String testGroundTruthDirPath, int mem, int batchSize,  
     int numMapTasks, int numThreadsPerWorker,
      Path modelDir, Path outputDir,
     Configuration configuration)
     throws IOException, URISyntaxException,
     InterruptedException, ClassNotFoundException {
+
     System.out.println("Starting Job");
 
     long perJobSubmitTime =
@@ -128,7 +148,7 @@ private void runNN(Path inputDir,
           Calendar.getInstance().getTime()));
 
     Job nnJob =
-      configureNNJob(inputDir,
+      configureNNJob(inputDir, testDirPath, testGroundTruthDirPath, mem, batchSize,
         numMapTasks, numThreadsPerWorker,
         modelDir, outputDir, configuration);
 
@@ -155,36 +175,52 @@ private void runNN(Path inputDir,
   }
 
   private Job configureNNJob(Path inputDir,
-    int numMapTasks, int numThreadsPerWorker,
+    String testDirPath, String testGroundTruthDirPath,
+    int mem, int batchSize, int numMapTasks, int numThreadsPerWorker,
     Path modelDir, Path outputDir,
     Configuration configuration)
     throws IOException, URISyntaxException {
-    configuration.set(Constants.TEST_FILE_PATH, "/nn/test/neural_network_test.csv");
-    Job job =
-      Job
-        .getInstance(configuration, "nn_job");
-    FileInputFormat.setInputPaths(job, inputDir);                         //doubt
-    FileOutputFormat.setOutputPath(job, outputDir);
-    job
-      .setInputFormatClass(MultiFileInputFormat.class);
-    job.setJarByClass(NNDaalLauncher.class);
-    job
-      .setMapperClass(NNDaalCollectiveMapper.class);
-    org.apache.hadoop.mapred.JobConf jobConf =
-      (JobConf) job.getConfiguration();
+
+    configuration.set(Constants.TEST_FILE_PATH, testDirPath);
+    configuration.set(Constants.TEST_TRUTH_PATH, testGroundTruthDirPath);
+    configuration.setInt(Constants.NUM_MAPPERS, numMapTasks);
+    configuration.setInt(Constants.NUM_THREADS, numThreadsPerWorker);
+    configuration.setInt(Constants.BATCH_SIZE, batchSize);
+
+    Job job = Job.getInstance(configuration, "nn_job");
+    JobConf jobConf = (JobConf) job.getConfiguration();
+
     jobConf.set("mapreduce.framework.name",
       "map-collective");
-    jobConf.setNumMapTasks(numMapTasks);
+
     jobConf.setInt(
       "mapreduce.job.max.split.locations", 10000);
 
+    // mapreduce.map.collective.memory.mb
+    // 125000
+    jobConf.setInt(
+      "mapreduce.map.collective.memory.mb", mem);
+    // mapreduce.map.collective.java.opts
+    // -Xmx120000m -Xms120000m
+    // int xmx = (mem - 5000) > (mem * 0.5)
+    //   ? (mem - 5000) : (int) Math.ceil(mem * 0.5);
+    int xmx = (int) Math.ceil((mem - 5000)*0.5);
+    int xmn = (int) Math.ceil(0.25 * xmx);
+    jobConf.set(
+      "mapreduce.map.collective.java.opts",
+      "-Xmx" + xmx + "m -Xms" + xmx + "m"
+        + " -Xmn" + xmn + "m");
+
+    jobConf.setNumMapTasks(numMapTasks);
+
+    FileInputFormat.setInputPaths(job, inputDir);                         
+    FileOutputFormat.setOutputPath(job, outputDir);
+
+    job.setInputFormatClass(MultiFileInputFormat.class);
+    job.setJarByClass(NNDaalLauncher.class);
+    job.setMapperClass(NNDaalCollectiveMapper.class);
     job.setNumReduceTasks(0);
-    Configuration jobConfig =
-      job.getConfiguration();
-    jobConfig.setInt(Constants.NUM_MAPPERS,
-      numMapTasks);
-    jobConfig.setInt(Constants.NUM_THREADS,
-      numThreadsPerWorker);
+    
     System.out.println("Launcher launched");
     return job;
   }
