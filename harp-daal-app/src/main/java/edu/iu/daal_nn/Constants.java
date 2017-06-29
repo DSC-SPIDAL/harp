@@ -21,4 +21,8 @@ public class Constants {
     "work_dir";
   public static final String TEST_FILE_PATH =
   "test_file_path";
+  public static final String TEST_TRUTH_PATH =
+  "ground_truth_file_path";
+  public static final String BATCH_SIZE =
+  "batch size";
 }
