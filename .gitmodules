@@ -1,6 +1,8 @@
 [submodule "website/public"]
 	path = website/public
 	url = https://github.com/DSC-SPIDAL/harp.git
+    branch = gh-pages
 [submodule "harp-daal-app/daal-src"]
 	path = harp-daal-app/daal-src
 	url = git@github.com:francktcheng/Harp-DAAL-Local.git
+    branch = daal_2018_beta_update1
