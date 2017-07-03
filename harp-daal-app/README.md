@@ -69,11 +69,17 @@ make daal PLAT=lnx32e
 source __release_lnx/daal/bin/daalvars.sh 
 ```
 2. Installation from optimized DAAL source code within DSC-SPIDAL/harp (Recommended)
+If you already use option "--recursive" (supported by git version 1.9 and later) when you git clone 
+harp repository, the daal-src as a submodule has already been downloaded. Otherwise, you shall manually
+fetch the submodule source code of daal-src as follows.
 ```bash
 # enter the harp root directory
 cd harp
 # pull the daal src (as a submodule)
 git submodule update --init --recursive
+```
+Compile and make the lib files
+```bash
 # enter daal src directory
 cd harp-daal-app/daal-src
 # compile and install
@@ -93,14 +99,14 @@ with big model.
 3. Update daal-src submodule
 If users choose second option and install the submodule daal-src of DSC-SPIDAL/harp. The daal-src points to a 
 certain commit of our DAAL code version. If users would like to explore the latest updates of our DAAL code
-please make https://github.com/francktcheng/Harp-DAAL-Local.git as a remote upstream repository and git pull daal_2018_beta_update1 
+please make branch daal_2018_beta of repository https://github.com/DSC-SPIDAL/harp.git as a remote upstream and git pull daal_2018_beta 
 branch
 ```bash
 cd harp/harp-daal-app/daal-src
+git checkout daal_2018_beta
 git remote -v 
 git remote rename origin upstream 
-git pull upstream daal_2018_beta_update1:daal_2018_beta_update1
-git checkout daal_2018_beta_update1
+git pull upstream daal_2018_beta:daal_2018_beta
 ```
 
 ## Compile and Run Harp-DAAL Applications
