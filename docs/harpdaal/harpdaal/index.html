@@ -121,8 +121,8 @@ git clone git@github.com:01org/daal.git
 <span style="color: #f8f8f2">cd</span> daal
 <span style="color: #75715e"># compile and install</span>
 make daal <span style="color: #f8f8f2">PLAT</span><span style="color: #f92672">=</span>lnx32e
-<span style="color: #75715e"># setup the DAALROOT environment variables</span>
-<span style="color: #f8f8f2">source</span> __release_lnx/daal/bin/daalvars.sh 
+<span style="color: #75715e"># setup the DAALROOT environment variables use intel64 or ia32</span>
+<span style="color: #f8f8f2">source</span> __release_lnx/daal/bin/daalvars.sh intel64
 </pre></div></li>
 
 <li><p>Installation from optimized DAAL source code within DSC-SPIDAL/harp (Recommended)</p>
@@ -135,7 +135,7 @@ git submodule update --init --recursive
 <span style="color: #75715e"># compile and install</span>
 make daal <span style="color: #f8f8f2">PLAT</span><span style="color: #f92672">=</span>lnx32e
 <span style="color: #75715e"># setup the DAALROOT environment variables</span>
-<span style="color: #f8f8f2">source</span> ../__release_lnx/daal/bin/daalvars.sh 
+<span style="color: #f8f8f2">source</span> ../__release_lnx/daal/bin/daalvars.sh intel64 
 </pre></div>
 
 <p>The DAAL source code within DSC-SPIDAL/harp has some modifications upon a certain version of Intel DAAL source code.
