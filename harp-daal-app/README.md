@@ -79,7 +79,7 @@ cd harp-daal-app/daal-src
 # compile and install
 make daal PLAT=lnx32e
 # setup the DAALROOT environment variables
-source ../__release_lnx/daal/bin/daalvars.sh 
+source ../__release_lnx/daal/bin/daalvars.sh intel64
 ```
 The DAAL source code within DSC-SPIDAL/harp has some modifications upon a certain version of Intel DAAL source code. 
 The current source code is based on Intel DAAL version 2018 beta update1. Installation from Intel DAAL latest version 
