@@ -5,7 +5,10 @@
 We use gulp and hugo to build the harp website. You can refer to [Using Gulp with Hugo](https://devotter.com/blog/using-gulp-with-hugo) for learning about how to use gulp and hugo to build a website.
 
 ### Fetch public submodule
-website/public is a submodule of harp 
+website/public is a submodule of harp repository 
+If you already use option "--recursive" (supported by git version 1.9 and later) when you git clone 
+harp repository, the website/public as a submodule has already been downloaded. Otherwise, you shall manually
+fetch the submodule source code of website/public as follows.
 ```bash
 # enter the root directory of harp
 cd harp/ 
