@@ -4,5 +4,5 @@
 	branch = gh-pages
 [submodule "harp-daal-app/daal-src"]
 	path = harp-daal-app/daal-src
-	url = https://github.com/francktcheng/Harp-DAAL-Local.git
-    branch = daal_2018_beta_update1
+	url = https://github.com/DSC-SPIDAL/harp.git
+	branch = daal_2018_beta
