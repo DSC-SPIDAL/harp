@@ -42,6 +42,8 @@ import edu.iu.harp.partition.Partition;
 import edu.iu.harp.partition.Table;
 import edu.iu.harp.resource.DoubleArray;
 
+import edu.iu.data_gen.*;
+
 public class SVDUtil {
 
   protected static final Log LOG = LogFactory
@@ -100,10 +102,14 @@ public class SVDUtil {
     List<Future<?>> futures =
       new LinkedList<Future<?>>();
     for (int k = 0; k < numPointFiles; k++) {
-      Future<?> f =
-        service.submit(new DataGenRunnable(
-          pointsPerFile, localInputDir, Integer
-            .toString(k), vectorSize));
+      // Future<?> f =
+      //   service.submit(new DataGenRunnable(
+      //     pointsPerFile, localInputDir, Integer
+      //       .toString(k), vectorSize));
+      Future<?> f = 
+          service.submit(new DataGenMMDense(pointsPerFile, 
+        localInputDir, Integer.toString(k), vectorSize));
+
       futures.add(f); // add a new thread
     }
     for (Future<?> f : futures) {

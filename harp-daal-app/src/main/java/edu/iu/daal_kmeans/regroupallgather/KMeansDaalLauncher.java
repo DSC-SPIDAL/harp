@@ -128,23 +128,34 @@ public class KMeansDaalLauncher extends Configured
     Path dataDir = new Path(workDirPath, "data");
     Path cenDir =
       new Path(workDirPath, "centroids");
-    if (fs.exists(cenDir)) {
-      fs.delete(cenDir, true);
-    }
+
+    // if (fs.exists(cenDir)) {
+    //   fs.delete(cenDir, true);
+    // }
+
     fs.mkdirs(cenDir);
     Path outDir = new Path(workDirPath, "out");
     if (fs.exists(outDir)) {
       fs.delete(outDir, true);
     }
     if (generateData) {
-      System.out.println("Generate data.");
-      KMUtil.generateData(numOfDataPoints,
-        numCentroids, vectorSize, numPointFiles,
-        configuration, fs, dataDir, cenDir,
-        localPointFilesDir);
+        System.out.println("Generate data.");
+        KMUtil.generateData(numOfDataPoints,
+                numCentroids, vectorSize, numPointFiles,
+                configuration, fs, dataDir, cenDir,
+                localPointFilesDir);
+
+        if (fs.exists(cenDir)) {
+            fs.delete(cenDir, true);
+        }
+
+        KMUtil.generateCentroids(numCentroids,
+                vectorSize, configuration, cenDir, fs);
     }
-    KMUtil.generateCentroids(numCentroids,
-      vectorSize, configuration, cenDir, fs);
+
+    // KMUtil.generateCentroids(numCentroids,
+    //   vectorSize, configuration, cenDir, fs);
+    //
     long startTime = System.currentTimeMillis();
     runKMeansAllReduce(numOfDataPoints,
       numCentroids, vectorSize, numPointFiles,

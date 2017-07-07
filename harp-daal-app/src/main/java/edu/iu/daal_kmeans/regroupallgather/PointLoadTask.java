@@ -26,6 +26,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
 import edu.iu.harp.schdynamic.Task;
+import edu.iu.data_gen.*;
 
 public class PointLoadTask implements
   Task<String, double[]> {
@@ -51,9 +52,12 @@ public class PointLoadTask implements
     boolean isSuccess = false;
     do {
       try {
-        double[] array =
-          loadPoints(fileName, pointsPerFile,
+        
+        // double[] array = DataLoader.loadPoints(fileName, pointsPerFile,
+        //     cenVecSize, conf);
+        double[] array = DataLoader.loadPointsMMDense(fileName, pointsPerFile,
             cenVecSize, conf);
+
         return array;
       } catch (Exception e) {
         LOG.error("load " + fileName
