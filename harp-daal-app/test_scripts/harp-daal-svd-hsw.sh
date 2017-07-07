@@ -41,7 +41,7 @@ Thd=8
 # memory allocated to each mapper (MB)
 Mem=110000
 # generate training data or not (once generated, data file /kmeans-P$Pts-C$Ced-D$Dim-N$Node is in hdfs, you could reuse them next time)
-GenData=false
+GenData=true
 
 echo "Test-$Arch-daal-svd-P$Pts-D$Dim-F$File-N$Node-T$Thd Start" 
 hadoop jar harp-daal-app-1.0-SNAPSHOT.jar edu.iu.daal_svd.SVDDaalLauncher -libjars ${LIBJARS} $Pts $Dim $File $Node $Thd $Mem /Svd-P$Pts-D$Dim-F$File-N$Node /tmp/SVD $GenData 2>$logDir/Test-$Arch-daal-svd-P$Pts-D$Dim-F$File-N$Node-T$Thd.log

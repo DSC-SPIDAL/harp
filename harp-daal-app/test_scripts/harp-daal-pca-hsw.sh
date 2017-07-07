@@ -36,7 +36,7 @@ File=5
 # memory allocated to each mapper (MB)
 Mem=110000
 # generate training data or not (once generated, data file /kmeans-P$Pts-C$Ced-D$Dim-N$Node is in hdfs, you could reuse them next time)
-GenData=false
+GenData=true
 # num of mappers (nodes)
 Node=2
 # num of threads on each mapper(node)

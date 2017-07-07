@@ -30,7 +30,7 @@ logDir=/N/u/lc37/HADOOP/Test_longs/logs
 Arch=hsw
 
 # num of training data points
-Pts=500000
+Pts=50000
 # num of training data centroids
 Ced=1000
 # feature vector dimension
@@ -43,11 +43,11 @@ ITR=10
 # Mem=185000
 Mem=110000
 # generate training data or not (once generated, data file /kmeans-P$Pts-C$Ced-D$Dim-N$Node is in hdfs, you could reuse them next time)
-GenData=false
+GenData=true
 # num of mappers (nodes)
 Node=4
 # num of threads on each mapper(node)
-Thd=8
+Thd=24
 
 echo "Test-$Arch-daal-kmeans-P$Pts-C$Ced-D$Dim-F$File-ITR$ITR-N$Node-Thd$Thd Start" 
 hadoop jar harp-daal-app-1.0-SNAPSHOT.jar edu.iu.daal_kmeans.regroupallgather.KMeansDaalLauncher -libjars ${LIBJARS} $Pts $Ced $Dim $File $Node $Thd $ITR $Mem /kmeans-P$Pts-C$Ced-D$Dim-F$File-ITR$ITR-N$Node /tmp/kmeans $GenData 2>$logDir/Test-$Arch-daal-kmeans-P$Pts-C$Ced-D$Dim-F$File-ITR$ITR-N$Node-Thd$Thd.log  
