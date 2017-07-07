@@ -64,6 +64,7 @@ import com.intel.daal.services.DaalContext;
 import com.intel.daal.algorithms.optimization_solver.sgd.Batch;
 import com.intel.daal.algorithms.optimization_solver.sgd.Method;
 
+import com.intel.daal.services.Environment;
 
 
 /**
@@ -91,6 +92,17 @@ public class NNDaalCollectiveMapper
         private PredictionResult predictionResult;
         private String testFilePath;
         private String testGroundTruthPath;
+
+        //to measure the time
+        private long load_time = 0;
+        private long convert_time = 0;
+        private long total_time = 0;
+        private long compute_time = 0;
+        private long comm_time = 0;
+        private long ts_start = 0;
+        private long ts_end = 0;
+        private long ts1 = 0;
+        private long ts2 = 0;
 
         private static DaalContext daal_Context = new DaalContext();
 
@@ -167,6 +179,10 @@ public class NNDaalCollectiveMapper
 
         private void runNN(List<String> trainingDataFiles, Configuration conf, Context context) throws IOException {
 
+            ts_start = System.currentTimeMillis();
+
+            ts1 = System.currentTimeMillis();
+
             // extracting points from csv files
             List<List<double[]>> pointArrays = NNUtil.loadPoints(trainingDataFiles, pointsPerFile,
                     vectorSize, conf, numThreads);
@@ -179,7 +195,11 @@ public class NNDaalCollectiveMapper
                 labelPoints.add(pointArrays.get(i).get(1));
             }
 
+            ts2 = System.currentTimeMillis();
+            load_time += (ts2 - ts1);
+
             // converting data to Numeric Table
+            ts1 = System.currentTimeMillis();
 
             long nFeature = vectorSize;
             long nLabel = 1;
@@ -244,8 +264,10 @@ public class NNDaalCollectiveMapper
             System.out.println("tensor size : "+ featureTensorInit.getSize());
             System.out.println("tensor size : "+ labelTensorInit.getSize());
 
-            // Initializing sgd algorithm
+            ts2 = System.currentTimeMillis();
+            convert_time += (ts2 - ts1);
 
+            // Initializing sgd algorithm
             double[] learningRateArray = new double[1];
             learningRateArray[0] = 0.001;
             Batch sgdAlgorithm =
@@ -269,9 +291,15 @@ public class NNDaalCollectiveMapper
 
             Table<ByteArray> partialResultTable = new Table<>(0, new ByteArrPlus());
 
+            //set thread number used in DAAL
+            LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
+            Environment.setNumberOfThreads(numThreads);
+            LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
+
             for (int i = 0; i < nSamples - batchSizeLocal + 1; i += batchSizeLocal) {
 
                 //local computation
+                ts1 = System.currentTimeMillis();
 
                 DistributedStep1Local netLocal = new DistributedStep1Local(daal_Context);
                 netLocal.input.set(DistributedStep1LocalInputId.inputModel, trainingModel);
@@ -279,9 +307,17 @@ public class NNDaalCollectiveMapper
                 netLocal.input.set(TrainingInputId.groundTruth, Service.getNextSubtensor(daal_Context, labelTensorInit, i, batchSizeLocal));
                 netLocal.parameter.setOptimizationSolver(sgdAlgorithm);
                 PartialResult partialResult = netLocal.compute(); 
+
+                ts2 = System.currentTimeMillis();
+                compute_time += (ts2 - ts1);
+
+                ts1 = System.currentTimeMillis();
                 partialResultTable.addPartition(new Partition<>(i+this.getSelfID()*nSamples, serializePartialResult(partialResult)));
                 boolean reduceStatus = false;
                 reduceStatus = this.reduce("nn", "sync-partialresult", partialResultTable, this.getMasterID()); 
+
+                ts2 = System.currentTimeMillis();
+                comm_time += (ts2 - ts1);
 
                 if(!reduceStatus){
                     System.out.println("reduce not successful");
@@ -290,9 +326,12 @@ public class NNDaalCollectiveMapper
                 System.out.println("number of partition in partialresult after reduce :" + partialResultTable.getNumPartitions());
 
                 Table<ByteArray> wbHarpTable = new Table<>(0, new ByteArrPlus());
-                if (this.isMaster()) {
+                if (this.isMaster()) 
+                {
                     int[] pid = partialResultTable.getPartitionIDs().toIntArray();
 
+                    
+                    ts1 = System.currentTimeMillis();
                     for(int j = 0; j< pid.length; j++){
                         try {
                             net.input.add(DistributedStep2MasterInputId.partialResults, 0, deserializePartialResult(partialResultTable.getPartition(pid[j]).get()));
@@ -302,13 +341,26 @@ public class NNDaalCollectiveMapper
                             e.printStackTrace();
                         }
                     }
+
+                    ts2 = System.currentTimeMillis();
+                    comm_time += (ts2 - ts1);
+
+                    ts1 = System.currentTimeMillis();
                     DistributedPartialResult result = net.compute();
+                    ts2 = System.currentTimeMillis();
+                    compute_time += (ts2 - ts1);
+
+                    ts1 = System.currentTimeMillis();
                     wbHarpTable.addPartition(new Partition<>(this.getMasterID(), 
                                 serializeNumericTable(result.get(DistributedPartialResultId.resultFromMaster).get(TrainingResultId.model).getWeightsAndBiases())));
                     NumericTable wbMaster = result.get(DistributedPartialResultId.resultFromMaster).get(TrainingResultId.model).getWeightsAndBiases();
                     System.out.println("master derivatives size : "+ wbMaster.getNumberOfColumns() +"and "+ wbMaster.getNumberOfRows());
+                    ts2 = System.currentTimeMillis();
+                    comm_time += (ts2 - ts1);
+
                 }
 
+                ts1 = System.currentTimeMillis();
                 bcastTrainingModel(wbHarpTable, this.getMasterID());
                 try {
                     NumericTable wbMaster = deserializeNumericTable(wbHarpTable.getPartition(this.getMasterID()).get());
@@ -326,10 +378,19 @@ public class NNDaalCollectiveMapper
                     System.out.println("Fail to serilization trainingModel" + e.toString());
                     e.printStackTrace();
                 } 
+
+                ts2 = System.currentTimeMillis();
+                comm_time += (ts2 - ts1);
+
             }
 
             if(this.isMaster()){
+
+                ts1 = System.currentTimeMillis();
                 TrainingResult result = net.finalizeCompute();
+                ts2 = System.currentTimeMillis();
+                compute_time += (ts2 - ts1);
+
                 TrainingModel finalTrainingModel = result.get(TrainingResultId.model);
                 PredictionModel predictionModel = trainingModel.getPredictionModel(Float.class);
 
@@ -345,12 +406,26 @@ public class NNDaalCollectiveMapper
                 net.parameter.setBatchSize(predictionDimensions[0]);
                 net.input.set(PredictionTensorInputId.data, predictionData);
                 net.input.set(PredictionModelInputId.model, predictionModel);
+
+                ts1 = System.currentTimeMillis();
                 predictionResult = net.compute();
+                ts2 = System.currentTimeMillis();
+                compute_time += (ts2 - ts1);
 
                 Service.printTensors("Ground truth", "Neural network predictions: each class probability",
                         "Neural network classification results (first 50 observations):",
                         predictionGroundTruth, predictionResult.get(PredictionResultId.prediction), 50);
             }
+
+            ts_end = System.currentTimeMillis();
+            total_time = (ts_end - ts_start);
+
+            LOG.info("Total Execution Time of NN: "+ total_time);
+            LOG.info("Loading Data Time of NN: "+ load_time);
+            LOG.info("Computation Time of NN: "+ compute_time);
+            LOG.info("Comm Time of NN: "+ comm_time);
+            LOG.info("DataType Convert Time of NN: "+ convert_time);
+            LOG.info("Misc Time of NN: "+ (total_time - load_time - compute_time - comm_time - convert_time));
 
         }
 

@@ -74,7 +74,7 @@ public class SVDDaalLauncher extends Configured
           + "<num of point files per worker>"
           + "<number of map tasks> <num threads> "
           + "<mem>"
-          + "<work dir> <local points dir>" + "less parameters");
+          + "<work dir> <local points dir>");
       ToolRunner
         .printGenericCommandUsage(System.err);
       return -1;
@@ -91,7 +91,7 @@ public class SVDDaalLauncher extends Configured
     String workDir = args[6];
     String localPointFilesDir = args[7];
     boolean regenerateData = true;
-    if (args.length == 8) {
+    if (args.length == 9) {
       regenerateData =
         Boolean.parseBoolean(args[8]);
     }

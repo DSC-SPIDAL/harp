@@ -48,6 +48,7 @@ import com.intel.daal.data_management.data.NumericTable;
 import com.intel.daal.data_management.data.HomogenNumericTable;
 // import com.intel.daal.data_management.data.HomogenBMNumericTable;
 import com.intel.daal.services.DaalContext;
+import com.intel.daal.services.Environment;
 
 /**
  * @brief the Harp mapper for running K-means
@@ -216,6 +217,11 @@ public class KMeansDaalCollectiveMapper
             // kmeansLocal.parameter.setNThreads(numThreads);
 
             // ----------------------------------------------------- For iterations -----------------------------------------------------
+            // set up the maximal threads used by DAAL kernels
+            LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
+            Environment.setNumberOfThreads(numThreads);
+            LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
+
             for (int i = 0; i < numIterations; i++) {
                 LOG.info("Iteration: " + i);
 

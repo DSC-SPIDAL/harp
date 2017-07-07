@@ -49,7 +49,7 @@ Itr=5
 Mem=110000
 
 ## on 6 nodes 
-Thd=24
+Thd=8
 Tune=false
 
 Node=2

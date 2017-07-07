@@ -54,276 +54,320 @@ import com.intel.daal.data_management.data.*;
 // import com.intel.daal.data_management.data.NumericTable;
 import com.intel.daal.data_management.data_source.DataSource;
 import com.intel.daal.data_management.data_source.FileDataSource;
-//import com.intel.daal.examples.utils.Service;
 import com.intel.daal.services.DaalContext;
-
-// import com.intel.daal.algorithms.neural_networks.*;
-// import com.intel.daal.algorithms.neural_networks.initializers.gaussian.*;
-// import com.intel.daal.algorithms.neural_networks.initializers.truncated_gaussian.*;
-// import com.intel.daal.algorithms.neural_networks.initializers.uniform.*;
-// import com.intel.daal.algorithms.neural_networks.initializers.xavier.*;
-// import com.intel.daal.algorithms.neural_networks.layers.*;
-// import com.intel.daal.algorithms.neural_networks.prediction.*;
-// import com.intel.daal.algorithms.neural_networks.training.*;
-// import com.intel.daal.data_management.data.*;
-// import com.intel.daal.services.DaalContext;
-// import com.intel.daal.algorithms.optimization_solver.sgd.Batch;
-// import com.intel.daal.algorithms.optimization_solver.sgd.Method;
-
-
-
-/**
- * @brief the Harp mapper for running Neural Network
- */
-
+import com.intel.daal.services.Environment;
 
 public class QRDaalCollectiveMapper
-extends
-CollectiveMapper<String, String, Object, Object>{
+    extends
+    CollectiveMapper<String, String, Object, Object>{
 
 
 
-  private DataCollection dataFromStep1ForStep2;
-  private DataCollection dataFromStep1ForStep3;
-  private DataCollection dataFromStep2ForStep3;
-  private static KeyValueDataCollection inputForStep3FromStep2;
+        private DataCollection dataFromStep1ForStep2;
+        private DataCollection dataFromStep1ForStep3;
+        private DataCollection dataFromStep2ForStep3;
+        private static KeyValueDataCollection inputForStep3FromStep2;
 
-  private NumericTable R;
-  private NumericTable Qi;
+        private NumericTable R;
+        private NumericTable Qi;
 
-  private DistributedStep1Local qrStep1Local;
-  private DistributedStep2Master qrStep2Master;
-  private DistributedStep3Local qrStep3Local;
-  private int pointsPerFile = 4000;                             //change
-  private int vectorSize = 18;
-  private static DaalContext daal_Context = new DaalContext();
-  private int numMappers;
-  private int numThreads;
-    /**
-   * Mapper configuration.
-   */
-    @Override
-    protected void setup(Context context)
-    throws IOException, InterruptedException {
-      long startTime = System.currentTimeMillis();
-      Configuration configuration =
-      context.getConfiguration();
-      numMappers = configuration
-      .getInt(Constants.NUM_MAPPERS, 10);
-      numThreads = configuration
-      .getInt(Constants.NUM_THREADS, 10);
+        private DistributedStep1Local qrStep1Local;
+        private DistributedStep2Master qrStep2Master;
+        private DistributedStep3Local qrStep3Local;
+        private int pointsPerFile = 4000;                             //change
+        private int vectorSize = 18;
+        private static DaalContext daal_Context = new DaalContext();
+        private int numMappers;
+        private int numThreads;
 
-      LOG.info("Num Mappers " + numMappers);
-      LOG.info("Num Threads " + numThreads);
-      long endTime = System.currentTimeMillis();
-      LOG.info(
-        "config (ms) :" + (endTime - startTime));
-      System.out.println("Collective Mapper launched");
+        //to measure the time
+        private long total_time = 0;
+        private long load_time = 0;
+        private long convert_time = 0;
+        private long compute_time = 0;
+        private long comm_time = 0;
+        private long ts_start = 0;
+        private long ts_end = 0;
+        private long ts1 = 0;
+        private long ts2 = 0;
 
-    }
+        /**
+         * Mapper configuration.
+         */
+        @Override
+        protected void setup(Context context)
+        throws IOException, InterruptedException {
+        long startTime = System.currentTimeMillis();
+        Configuration configuration =
+            context.getConfiguration();
+        numMappers = configuration
+            .getInt(Constants.NUM_MAPPERS, 10);
+        numThreads = configuration
+            .getInt(Constants.NUM_THREADS, 10);
 
-    protected void mapCollective(
-      KeyValReader reader, Context context)
-    throws IOException, InterruptedException {
-      long startTime = System.currentTimeMillis();
-      List<String> trainingDataFiles =
-      new LinkedList<String>();
+        LOG.info("Num Mappers " + numMappers);
+        LOG.info("Num Threads " + numThreads);
+        long endTime = System.currentTimeMillis();
+        LOG.info(
+                "config (ms) :" + (endTime - startTime));
+        System.out.println("Collective Mapper launched");
 
-    //splitting files between mapper
-
-      while (reader.nextKeyValue()) {
-        String key = reader.getCurrentKey();
-        String value = reader.getCurrentValue();
-        LOG.info("Key: " + key + ", Value: "
-          + value);
-        System.out.println("file name : " + value);
-        trainingDataFiles.add(value);
-      }
-
-      Configuration conf = context.getConfiguration();
-
-      Path pointFilePath = new Path(trainingDataFiles.get(0));
-      System.out.println("path = "+ pointFilePath.getName());
-      FileSystem fs = pointFilePath.getFileSystem(conf);
-      FSDataInputStream in = fs.open(pointFilePath);
-
-      runQR(trainingDataFiles, conf, context);
-      LOG.info("Total iterations in master view: "
-        + (System.currentTimeMillis() - startTime));
-      this.freeMemory();
-      this.freeConn();
-      System.gc();
-    }
-
-
-
-    private void runQR(List<String> trainingDataFiles, Configuration conf, Context context) throws IOException {
-
-    // extracting points from csv files
-      List<double[]> pointArrays = QRUtil.loadPoints(trainingDataFiles, pointsPerFile,
-        vectorSize, conf, numThreads);
-      for(int i = 0; i<20; i++){
-        System.out.println(" point array : "+pointArrays.get(1)[i]);
-      }
-    
-
-    // converting data to Numeric Table
-
-      long nFeature = vectorSize;
-      long nLabel = 1;
-      long totalLengthFeature = 0;
-
-      long[] array_startP_feature = new long[pointArrays.size()];
-      double[][] array_data_feature = new double[pointArrays.size()][];
-
-      for(int k=0;k<pointArrays.size();k++)
-      {
-       array_data_feature[k] = pointArrays.get(k);
-       array_startP_feature[k] = totalLengthFeature;
-       totalLengthFeature += pointArrays.get(k).length;
-      }
-
-    long featuretableSize = totalLengthFeature/nFeature;
-
-   //initializing Numeric Table
-
-    NumericTable featureArray_daal = new HomogenNumericTable(daal_Context, Double.class, nFeature, featuretableSize, NumericTable.AllocationFlag.DoAllocate);
-
-    int row_idx_feature = 0;
-    int row_len_feature = 0;
-
-    for (int k=0; k<pointArrays.size(); k++) 
-    {
-      row_len_feature = (array_data_feature[k].length)/(int)nFeature;
-        //release data from Java side to native side
-      ((HomogenNumericTable)featureArray_daal).releaseBlockOfRows(row_idx_feature, row_len_feature, DoubleBuffer.wrap(array_data_feature[k]));
-      row_idx_feature += row_len_feature;
-    }
-
-    qrStep1Local = new DistributedStep1Local(daal_Context, Float.class, Method.defaultDense);
-    qrStep1Local.input.set(InputId.data, featureArray_daal);
-    DistributedStep1LocalPartialResult pres = qrStep1Local.compute();
-    dataFromStep1ForStep2 = pres.get(PartialResultId.outputOfStep1ForStep2);
-    dataFromStep1ForStep3 = pres.get(PartialResultId.outputOfStep1ForStep3);
-
-    Table<ByteArray> partialStep12 = new Table<>(0, new ByteArrPlus());
-    partialStep12.addPartition(new Partition<>(this.getSelfID(), serializePartialResult(dataFromStep1ForStep2)));
-    System.out.println("number of partition in partialresult before reduce :" + partialStep12.getNumPartitions());
-    boolean reduceStatus = false;
-    reduceStatus = this.reduce("nn", "sync-partialresult", partialStep12, this.getMasterID()); 
-
-    if(!reduceStatus){
-      System.out.println("reduce not successful");
-    }
-    else{
-      System.out.println("reduce successful");
-    }
-        
-    System.out.println("number of partition in partialresult after reduce :" + partialStep12.getNumPartitions());
-    
-    Table<ByteArray> partialStep32 = new Table<>(0, new ByteArrPlus());
-    System.out.println("number of partition in partialstep32 before broadcast :" + partialStep32.getNumPartitions());
-
-    
-    
-    System.out.println("self id : " + this.getSelfID());
-
-    if(this.isMaster()){
-      qrStep2Master = new DistributedStep2Master(daal_Context, Float.class, Method.defaultDense);
-      System.out.println("this is a master node");
-      int[] pid = partialStep12.getPartitionIDs().toIntArray();
-       for(int j = 0; j< pid.length; j++){
-          try {
-            System.out.println("pid : "+pid[j]);
-           qrStep2Master.input.add(DistributedStep2MasterInputId.inputOfStep2FromStep1, pid[j],
-            deserializePartialResult(partialStep12.getPartition(pid[j]).get())); 
-         } catch (Exception e) 
-         {  
-          System.out.println("Fail to deserilize partialResultTable" + e.toString());
-          e.printStackTrace();
         }
-      }
 
-       DistributedStep2MasterPartialResult presStep2 = qrStep2Master.compute();
-       inputForStep3FromStep2 = presStep2.get(DistributedPartialResultCollectionId.outputOfStep2ForStep3);
+        protected void mapCollective(
+                KeyValReader reader, Context context)
+            throws IOException, InterruptedException {
+            long startTime = System.currentTimeMillis();
+            List<String> trainingDataFiles =
+                new LinkedList<String>();
 
-        for(int j = 0; j< pid.length; j++){
-          partialStep32.addPartition(new Partition<>(j,serializePartialResult
-          ((DataCollection)inputForStep3FromStep2.get(j))));
-       }
+            //splitting files between mapper
 
-      Result result = qrStep2Master.finalizeCompute();
-      R = result.get(ResultId.matrixR);
-    }
+            while (reader.nextKeyValue()) {
+                String key = reader.getCurrentKey();
+                String value = reader.getCurrentValue();
+                LOG.info("Key: " + key + ", Value: "
+                        + value);
+                System.out.println("file name : " + value);
+                trainingDataFiles.add(value);
+            }
 
-    boolean isSuccess = broadcast("main","broadcast-partialStep32", partialStep32, 0,false);
-    if(isSuccess){
-        System.out.println("broadcast successful");
+            Configuration conf = context.getConfiguration();
+
+            Path pointFilePath = new Path(trainingDataFiles.get(0));
+            System.out.println("path = "+ pointFilePath.getName());
+            FileSystem fs = pointFilePath.getFileSystem(conf);
+            FSDataInputStream in = fs.open(pointFilePath);
+
+            runQR(trainingDataFiles, conf, context);
+            LOG.info("Total iterations in master view: "
+                    + (System.currentTimeMillis() - startTime));
+            this.freeMemory();
+            this.freeConn();
+            System.gc();
+                }
+
+
+
+        private void runQR(List<String> trainingDataFiles, Configuration conf, Context context) throws IOException 
+        {
+
+            ts_start = System.currentTimeMillis();
+
+            //set thread number used in DAAL
+            LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
+            Environment.setNumberOfThreads(numThreads);
+            LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
+
+
+            ts1 = System.currentTimeMillis();
+            // extracting points from csv files
+            List<double[]> pointArrays = QRUtil.loadPoints(trainingDataFiles, pointsPerFile,
+                    vectorSize, conf, numThreads);
+            for(int i = 0; i<20; i++){
+                System.out.println(" point array : "+pointArrays.get(1)[i]);
+            }
+
+            ts2 = System.currentTimeMillis();
+            load_time += (ts2 - ts1);
+
+            // converting data to Numeric Table
+            ts1 = System.currentTimeMillis();
+
+            long nFeature = vectorSize;
+            long nLabel = 1;
+            long totalLengthFeature = 0;
+
+            long[] array_startP_feature = new long[pointArrays.size()];
+            double[][] array_data_feature = new double[pointArrays.size()][];
+
+            for(int k=0;k<pointArrays.size();k++)
+            {
+                array_data_feature[k] = pointArrays.get(k);
+                array_startP_feature[k] = totalLengthFeature;
+                totalLengthFeature += pointArrays.get(k).length;
+            }
+
+            long featuretableSize = totalLengthFeature/nFeature;
+
+            //initializing Numeric Table
+
+            NumericTable featureArray_daal = new HomogenNumericTable(daal_Context, Double.class, nFeature, featuretableSize, NumericTable.AllocationFlag.DoAllocate);
+
+            int row_idx_feature = 0;
+            int row_len_feature = 0;
+
+            for (int k=0; k<pointArrays.size(); k++) 
+            {
+                row_len_feature = (array_data_feature[k].length)/(int)nFeature;
+                //release data from Java side to native side
+                ((HomogenNumericTable)featureArray_daal).releaseBlockOfRows(row_idx_feature, row_len_feature, DoubleBuffer.wrap(array_data_feature[k]));
+                row_idx_feature += row_len_feature;
+            }
+
+            ts2 = System.currentTimeMillis();
+            convert_time += (ts2 - ts1);
+
+            qrStep1Local = new DistributedStep1Local(daal_Context, Float.class, Method.defaultDense);
+            qrStep1Local.input.set(InputId.data, featureArray_daal);
+            DistributedStep1LocalPartialResult pres = qrStep1Local.compute();
+            dataFromStep1ForStep2 = pres.get(PartialResultId.outputOfStep1ForStep2);
+            dataFromStep1ForStep3 = pres.get(PartialResultId.outputOfStep1ForStep3);
+
+            ts1 = System.currentTimeMillis();
+
+            Table<ByteArray> partialStep12 = new Table<>(0, new ByteArrPlus());
+            partialStep12.addPartition(new Partition<>(this.getSelfID(), serializePartialResult(dataFromStep1ForStep2)));
+            System.out.println("number of partition in partialresult before reduce :" + partialStep12.getNumPartitions());
+            boolean reduceStatus = false;
+            reduceStatus = this.reduce("nn", "sync-partialresult", partialStep12, this.getMasterID()); 
+
+            if(!reduceStatus){
+                System.out.println("reduce not successful");
+            }
+            else{
+                System.out.println("reduce successful");
+            }
+
+            System.out.println("number of partition in partialresult after reduce :" + partialStep12.getNumPartitions());
+
+            ts2 = System.currentTimeMillis();
+            comm_time += (ts2 - ts1);
+
+            Table<ByteArray> partialStep32 = new Table<>(0, new ByteArrPlus());
+            System.out.println("number of partition in partialstep32 before broadcast :" + partialStep32.getNumPartitions());
+
+            System.out.println("self id : " + this.getSelfID());
+
+            if(this.isMaster())
+            {
+
+                qrStep2Master = new DistributedStep2Master(daal_Context, Float.class, Method.defaultDense);
+
+                System.out.println("this is a master node");
+                int[] pid = partialStep12.getPartitionIDs().toIntArray();
+
+                ts1 = System.currentTimeMillis();
+                for(int j = 0; j< pid.length; j++){
+                    try {
+                        System.out.println("pid : "+pid[j]);
+                        qrStep2Master.input.add(DistributedStep2MasterInputId.inputOfStep2FromStep1, pid[j],
+                                deserializePartialResult(partialStep12.getPartition(pid[j]).get())); 
+                    } catch (Exception e) 
+                    {  
+                        System.out.println("Fail to deserilize partialResultTable" + e.toString());
+                        e.printStackTrace();
+                    }
+                }
+
+                ts2 = System.currentTimeMillis();
+                comm_time += (ts2 - ts1);
+                
+                ts1 = System.currentTimeMillis();
+                DistributedStep2MasterPartialResult presStep2 = qrStep2Master.compute();
+                
+
+                inputForStep3FromStep2 = presStep2.get(DistributedPartialResultCollectionId.outputOfStep2ForStep3);
+
+                for(int j = 0; j< pid.length; j++){
+                    partialStep32.addPartition(new Partition<>(j,serializePartialResult
+                                ((DataCollection)inputForStep3FromStep2.get(j))));
+                }
+
+                Result result = qrStep2Master.finalizeCompute();
+                R = result.get(ResultId.matrixR);
+
+                ts2 = System.currentTimeMillis();
+                compute_time += (ts2 - ts1);
+            }
+
+            boolean isSuccess = broadcast("main","broadcast-partialStep32", partialStep32, 0,false);
+            if(isSuccess){
+                System.out.println("broadcast successful");
+            }
+            else{
+                System.out.println("broadcast not successful");
+            }
+
+
+            System.out.println("number of partition in partialstep32 after broadcast :" + partialStep32.getNumPartitions());
+
+
+            qrStep3Local = new DistributedStep3Local(daal_Context, Float.class, Method.defaultDense);
+            qrStep3Local.input.set(DistributedStep3LocalInputId.inputOfStep3FromStep1,dataFromStep1ForStep3); 
+
+            ts1 = System.currentTimeMillis();
+
+            try{
+                qrStep3Local.input.set(DistributedStep3LocalInputId.inputOfStep3FromStep2, 
+                        deserializePartialResult(partialStep32.getPartition(this.getSelfID()).get()));
+            } catch (Exception e) 
+            {  
+                System.out.println("Fail to deserilize partialResultTable" + e.toString());
+                e.printStackTrace();
+            }
+
+            ts2 = System.currentTimeMillis();
+            comm_time += (ts2 - ts1);
+
+            ts1 = System.currentTimeMillis();
+            qrStep3Local.compute();
+            Result result = qrStep3Local.finalizeCompute();
+
+            ts2 = System.currentTimeMillis();
+            compute_time += (ts2 - ts1);
+
+            Qi = result.get(ResultId.matrixQ);
+            System.out.println("number of rows" + Qi.getNumberOfRows());
+            System.out.println("number of columns" + Qi.getNumberOfColumns());
+
+            Table<ByteArray> resultNT = new Table<>(0, new ByteArrPlus());
+
+            Service.printNumericTable("Orthogonal matrix Q (10 first vectors):", Qi, 10);
+            if(this.isMaster()){
+                Service.printNumericTable("Triangular matrix R:", R);
+            }
+
+            ts_end = System.currentTimeMillis();
+            total_time = (ts_end - ts_start);
+
+            LOG.info("Total Execution Time of QR: "+ total_time);
+            LOG.info("Loading Data Time of QR: "+ load_time);
+            LOG.info("Computation Time of QR: "+ compute_time);
+            LOG.info("Comm Time of QR: "+ comm_time);
+            LOG.info("DataType Convert Time of QR: "+ convert_time);
+            LOG.info("Misc Time of QR: "+ (total_time - load_time - compute_time - comm_time - convert_time));
+
         }
-    else{
-      System.out.println("broadcast not successful");
+
+
+        private static ByteArray serializePartialResult(DataCollection partialResult) throws IOException {
+            /* Create an output stream to serialize the numeric table */
+            ByteArrayOutputStream outputByteStream = new ByteArrayOutputStream();
+            ObjectOutputStream outputStream = new ObjectOutputStream(outputByteStream);
+
+            /* Serialize the numeric table into the output stream */
+            partialResult.pack();
+            outputStream.writeObject(partialResult);
+
+            /* Store the serialized data in an array */
+            byte[] serializedPartialResult = outputByteStream.toByteArray();
+
+            ByteArray partialResultHarp = new ByteArray(serializedPartialResult, 0, serializedPartialResult.length);
+            return partialResultHarp;
+        }
+
+        private static DataCollection deserializePartialResult(ByteArray byteArray) throws IOException, ClassNotFoundException {
+            /* Create an input stream to deserialize the numeric table from the array */
+            byte[] buffer = byteArray.get();
+            ByteArrayInputStream inputByteStream = new ByteArrayInputStream(buffer);
+            ObjectInputStream inputStream = new ObjectInputStream(inputByteStream);
+
+            /* Create a numeric table object */
+            DataCollection restoredDataTable = (DataCollection) inputStream.readObject();
+            restoredDataTable.unpack(daal_Context);
+
+            return restoredDataTable;
+        } 
+
     }
-
-
-    System.out.println("number of partition in partialstep32 after broadcast :" + partialStep32.getNumPartitions());
-
-
-    qrStep3Local = new DistributedStep3Local(daal_Context, Float.class, Method.defaultDense);
-    qrStep3Local.input.set(DistributedStep3LocalInputId.inputOfStep3FromStep1,dataFromStep1ForStep3); 
-
-    try{
-    qrStep3Local.input.set(DistributedStep3LocalInputId.inputOfStep3FromStep2, 
-      deserializePartialResult(partialStep32.getPartition(this.getSelfID()).get()));
-    } catch (Exception e) 
-           {  
-            System.out.println("Fail to deserilize partialResultTable" + e.toString());
-            e.printStackTrace();
-          }
-
-
-    qrStep3Local.compute();
-    Result result = qrStep3Local.finalizeCompute();
-    Qi = result.get(ResultId.matrixQ);
-    System.out.println("number of rows" + Qi.getNumberOfRows());
-    System.out.println("number of columns" + Qi.getNumberOfColumns());
-
-    Table<ByteArray> resultNT = new Table<>(0, new ByteArrPlus());
-
-    Service.printNumericTable("Orthogonal matrix Q (10 first vectors):", Qi, 10);
-    if(this.isMaster()){
-      Service.printNumericTable("Triangular matrix R:", R);
-    }
-
-}
-
-
-  private static ByteArray serializePartialResult(DataCollection partialResult) throws IOException {
-    /* Create an output stream to serialize the numeric table */
-    ByteArrayOutputStream outputByteStream = new ByteArrayOutputStream();
-    ObjectOutputStream outputStream = new ObjectOutputStream(outputByteStream);
-
-    /* Serialize the numeric table into the output stream */
-    partialResult.pack();
-    outputStream.writeObject(partialResult);
-
-    /* Store the serialized data in an array */
-    byte[] serializedPartialResult = outputByteStream.toByteArray();
-
-    ByteArray partialResultHarp = new ByteArray(serializedPartialResult, 0, serializedPartialResult.length);
-    return partialResultHarp;
-  }
-
-  private static DataCollection deserializePartialResult(ByteArray byteArray) throws IOException, ClassNotFoundException {
-    /* Create an input stream to deserialize the numeric table from the array */
-    byte[] buffer = byteArray.get();
-    ByteArrayInputStream inputByteStream = new ByteArrayInputStream(buffer);
-    ObjectInputStream inputStream = new ObjectInputStream(inputByteStream);
-
-    /* Create a numeric table object */
-    DataCollection restoredDataTable = (DataCollection) inputStream.readObject();
-    restoredDataTable.unpack(daal_Context);
-
-    return restoredDataTable;
-  } 
-
-}

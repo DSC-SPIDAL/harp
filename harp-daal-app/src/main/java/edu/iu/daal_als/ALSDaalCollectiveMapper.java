@@ -89,6 +89,7 @@ import com.intel.daal.data_management.data.SOANumericTable;
 import com.intel.daal.data_management.data_source.DataSource;
 import com.intel.daal.data_management.data_source.FileDataSource;
 import com.intel.daal.services.DaalContext;
+import com.intel.daal.services.Environment;
 
 public class ALSDaalCollectiveMapper
     extends
@@ -463,6 +464,10 @@ public class ALSDaalCollectiveMapper
             testModelInitRMSEMulti(usersPartition_test, itemsPartition_test, dataTableRows, testDataMap, row_mapping, col_mapping);
 
             // ------------------------------ Training Model Start ------------------------------
+            LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
+            Environment.setNumberOfThreads(numThreads);
+            LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
+
             for (int iteration=0; iteration < numIterations; iteration++) 
             {
                 long compute_time_itr_step1 = 0;
