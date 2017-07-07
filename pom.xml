@@ -117,9 +117,9 @@
                     <source>1.8</source>
                     <target>1.8</target>
                     <excludes>
-                        <!-- <exclude>**/daal_als/*</exclude> -->
-                        <!-- <exclude>**/daal_kmeans/**/*</exclude> -->
-                        <!-- <exclude>**/daal_sgd/*</exclude> -->
+                        <exclude>**/daal_als/*</exclude>
+                        <exclude>**/daal_kmeans/**/*</exclude>
+                        <exclude>**/daal_sgd/*</exclude>
                         <!-- <exclude>**/daal_svd/*</exclude> -->
                         <!-- <exclude>**/daal_pca/*</exclude> -->
                         <!-- <exclude>**/daal_nn/*</exclude> -->

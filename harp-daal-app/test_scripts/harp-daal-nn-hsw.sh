@@ -30,7 +30,7 @@ Batch=50
 # num of mappers (nodes)
 Node=2
 # num of threads on each mapper(node)
-Thd=24
+Thd=8
 
 echo "Test-$Arch-daal-nn-$Dataset-N$Node-T$Thd-B$Batch Start" 
 hadoop jar harp-daal-app-1.0-SNAPSHOT.jar edu.iu.daal_nn.NNDaalLauncher -libjars ${LIBJARS}  /Hadoop/nn-input/$Dataset/train /Hadoop/nn-input/$Dataset/test /Hadoop/nn-input/$Dataset/groundTruth /nn/work $Mem $Batch $Node $Thd 2>$logDir/Test-$Arch-daal-nn-$Dataset-N$Node-T$Thd-B$Batch.log 

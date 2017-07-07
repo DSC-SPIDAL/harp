@@ -30,7 +30,7 @@ logDir=/N/u/lc37/HADOOP/Test_longs/logs
 Arch=hsw
 
 # num of training data points
-Pts=50000
+Pts=500000
 # num of training data centroids
 Ced=1000
 # feature vector dimension
@@ -43,15 +43,15 @@ ITR=10
 # Mem=185000
 Mem=110000
 # generate training data or not (once generated, data file /kmeans-P$Pts-C$Ced-D$Dim-N$Node is in hdfs, you could reuse them next time)
-GenData=true
+GenData=false
 # num of mappers (nodes)
-Node=2
+Node=4
 # num of threads on each mapper(node)
-Thd=24
+Thd=8
 
-echo "Test-$Arch-daal-kmeans-P$Pts-C$Ced-D$Dim-F$File-ITR$ITR-N$Node Start" 
-hadoop jar harp-daal-app-1.0-SNAPSHOT.jar edu.iu.daal_kmeans.regroupallgather.KMeansDaalLauncher -libjars ${LIBJARS} $Pts $Ced $Dim $File $Node $Thd $ITR $Mem /kmeans-P$Pts-C$Ced-D$Dim-F$File-ITR$ITR-N$Node /tmp/kmeans $GenData 2>$logDir/Test-$Arch-daal-kmeans-P$Pts-C$Ced-D$Dim-F$File-ITR$ITR-N$Node.log  
-echo "Test-$Arch-daal-kmeans-P$Pts-C$Ced-D$Dim-F$File-ITR$ITR-N$Node End" 
+echo "Test-$Arch-daal-kmeans-P$Pts-C$Ced-D$Dim-F$File-ITR$ITR-N$Node-Thd$Thd Start" 
+hadoop jar harp-daal-app-1.0-SNAPSHOT.jar edu.iu.daal_kmeans.regroupallgather.KMeansDaalLauncher -libjars ${LIBJARS} $Pts $Ced $Dim $File $Node $Thd $ITR $Mem /kmeans-P$Pts-C$Ced-D$Dim-F$File-ITR$ITR-N$Node /tmp/kmeans $GenData 2>$logDir/Test-$Arch-daal-kmeans-P$Pts-C$Ced-D$Dim-F$File-ITR$ITR-N$Node-Thd$Thd.log  
+echo "Test-$Arch-daal-kmeans-P$Pts-C$Ced-D$Dim-F$File-ITR$ITR-N$Node-Thd$Thd End" 
 
 
 

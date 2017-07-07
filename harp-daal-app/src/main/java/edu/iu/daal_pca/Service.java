@@ -229,13 +229,13 @@ public class Service {
         builder.append("\n");
         for (long i = 0; i < nRows; i++) {
             for (long j = 0; j < nCols; j++) {
-                String tmp = String.format("%-6.3f   ", result.get((int) (i * nNtCols + j)));
+                String tmp = String.format("%-6.3f ", result.get((int) (i * nNtCols + j)));
                 builder.append(tmp);
             }
             builder.append("\n");
         }
         System.out.println(builder.toString());
-        LOG.info(builder.toString());
+        // LOG.info(builder.toString());
     }
 
     public static void printNumericTable(String header, CSRNumericTable nt, long nPrintedRows, long nPrintedCols) {
@@ -271,13 +271,13 @@ public class Service {
                         + k)];
             }
             for (int j = 0; j < nCols; j++) {
-                String tmp = String.format("%-6.3f   ", oneDenseRow[j]);
+                String tmp = String.format("%-6.3f ", oneDenseRow[j]);
                 builder.append(tmp);
             }
             builder.append("\n");
         }
         System.out.println(builder.toString());
-        LOG.info(builder.toString());
+        // LOG.info(builder.toString());
     }
 
     public static void printNumericTable(String header, NumericTable nt, long nRows) {

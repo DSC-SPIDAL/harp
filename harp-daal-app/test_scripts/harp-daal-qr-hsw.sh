@@ -13,6 +13,7 @@ hdfs dfsadmin -safemode get | grep -q "ON"
 if [[ "$?" = "0" ]]; then
     hdfs dfsadmin -safemode leave
 fi
+
 # put daal and tbb, omp libs to hdfs, they will be loaded into the distributed cache
 hdfs dfs -mkdir -p /Hadoop/Libraries
 hdfs dfs -rm /Hadoop/Libraries/*
@@ -30,7 +31,7 @@ Mem=110000
 # num of mappers (nodes)
 Node=2
 # num of threads on each mapper(node)
-Thd=24
+Thd=8
 
 echo "Test-$Arch-daal-qr-$Dataset-N$Node-T$Thd Start" 
 hadoop jar harp-daal-app-1.0-SNAPSHOT.jar edu.iu.daal_qr.QRDaalLauncher -libjars ${LIBJARS}  /Hadoop/qr-input/$Dataset /qr/work $Mem $Node $Thd 2>$logDir/Test-$Arch-daal-qr-$Dataset-N$Node-T$Thd.log 

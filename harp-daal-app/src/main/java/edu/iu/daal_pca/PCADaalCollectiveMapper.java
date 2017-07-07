@@ -63,6 +63,7 @@ import com.intel.daal.data_management.data.NumericTable;
 import com.intel.daal.data_management.data.HomogenNumericTable;
 // import com.intel.daal.data_management.data.HomogenBMNumericTable;
 import com.intel.daal.services.DaalContext;
+import com.intel.daal.services.Environment;
 
 /**
  * @brief the Harp mapper for running PCA
@@ -76,10 +77,15 @@ public class PCADaalCollectiveMapper extends
   private int numThreads;
 
   //to measure the time
+  private long load_time = 0;
   private long convert_time = 0;
-  private long train_time = 0;
+  private long total_time = 0;
   private long compute_time = 0;
   private long comm_time = 0;
+  private long ts_start = 0;
+  private long ts_end = 0;
+  private long ts1 = 0;
+  private long ts2 = 0;
 
   private static DaalContext daal_Context = new DaalContext();
 
@@ -131,26 +137,24 @@ public class PCADaalCollectiveMapper extends
    */
   private void runPCA(List<String> fileNames, Configuration conf, Context context) throws IOException
   {
+    ts_start = System.currentTimeMillis();
     /*creating an object to store the partial results on each node*/
     PartialCorrelationResult pres = new PartialCorrelationResult(daal_Context);
 
-    /*use this for data on shared directory*/
+    //set thread number used in DAAL
+    LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
+    Environment.setNumberOfThreads(numThreads);
+    LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
 
-    // System.out.println("File taken by this:"+ fileNames.get(0));
-
-    // FileDataSource dataSource = new FileDataSource(daal_Context, "/N/u/pgangwar/pca_"+this.getSelfID()+".csv",
-    //                                                DataSource.DictionaryCreationFlag.DoDictionaryFromContext,
-    //                                                DataSource.NumericTableAllocationFlag.DoAllocateNumericTable);
-
-    /* Retrieve the data from the input file */
-    // dataSource.loadDataBlock();
-
-    /* Set the input data on local nodes */
-    // NumericTable pointsArray_daal = dataSource.getNumericTable();
-
+    //load data
+    ts1 = System.currentTimeMillis();
     List<double[]> pointArrays = PCAUtil.loadPoints(fileNames, pointsPerFile, vectorSize, conf, numThreads);
+    ts2 = System.currentTimeMillis();
+    load_time += (ts2 - ts1);
 
     //create the daal table for pointsArrays
+    ts1 = System.currentTimeMillis();
+
     long nFeature = vectorSize;
     long totalLength = 0;
 
@@ -180,53 +184,85 @@ public class PCADaalCollectiveMapper extends
       row_idx += row_len;
     }
 
+    ts2 = System.currentTimeMillis();
+    convert_time += (ts2 - ts2);
+
     /* Create an algorithm to compute PCA decomposition using the correlation method on local nodes */
     DistributedStep1Local pcaLocal = new DistributedStep1Local(daal_Context, Double.class, Method.correlationDense);
 
     /* Set the input data on local nodes */
     pcaLocal.input.set(InputId.data, pointsArray_daal);
 
+    
+    ts1 = System.currentTimeMillis();
     /*Compute the partial results on the local data nodes*/
     pres = (PartialCorrelationResult)pcaLocal.compute();
+    ts2 = System.currentTimeMillis();
+    compute_time += (ts2 - ts1);
 
+    ts1 = System.currentTimeMillis();
     /*Do an reduce to send all the data to the master node*/
     Table<ByteArray> step1LocalResult_table = communicate(pres);
+    ts2 = System.currentTimeMillis();
+    comm_time += (ts2 - ts1);
 
     /*Start the Step 2 on the master node*/
     if(this.isMaster())
     {
-      /*create a new algorithm for the master node computations*/
-      DistributedStep2Master pcaMaster = new DistributedStep2Master(daal_Context, Double.class, Method.correlationDense);
-      try
-     {
-        for (int i = 0; i < this.getNumWorkers(); i++)
+        /*create a new algorithm for the master node computations*/
+        DistributedStep2Master pcaMaster = new DistributedStep2Master(daal_Context, Double.class, Method.correlationDense);
+
+        try
         {
-          /*get the partial results from the local nodes and deserialize*/
-          PartialCorrelationResult step1LocalResultNew = deserializeStep1Result(step1LocalResult_table.getPartition(i).get().get());
+            ts1 = System.currentTimeMillis();
+            for (int i = 0; i < this.getNumWorkers(); i++)
+            {
+                /*get the partial results from the local nodes and deserialize*/
+                PartialCorrelationResult step1LocalResultNew = deserializeStep1Result(step1LocalResult_table.getPartition(i).get().get());
 
-          /*add the partial results from the loacl nodes to the master node input*/
-          pcaMaster.input.add(MasterInputId.partialResults, step1LocalResultNew);
+                /*add the partial results from the loacl nodes to the master node input*/
+                pcaMaster.input.add(MasterInputId.partialResults, step1LocalResultNew);
+            }
+
+            ts2 = System.currentTimeMillis();
+            comm_time += (ts2 - ts1);
+            /*compute the results on the master node*/
+            ts1 = System.currentTimeMillis();
+            pcaMaster.compute();
+            ts2 = System.currentTimeMillis();
+            compute_time += (ts2 - ts1);
         }
-        /*compute the results on the master node*/
-        pcaMaster.compute();
-      }
-      catch(Exception e)
-      {
-        System.out.println("Exception: + " + e);
-      }
+        catch(Exception e)
+        {
+            System.out.println("Exception: + " + e);
+        }
 
-      /*get the results from master node*/
-      Result res = pcaMaster.finalizeCompute();
-      NumericTable eigenValues = res.get(ResultId.eigenValues);
-      NumericTable eigenVectors = res.get(ResultId.eigenVectors);
+        /*get the results from master node*/
+        ts1 = System.currentTimeMillis();
+        Result res = pcaMaster.finalizeCompute();
+        ts2 = System.currentTimeMillis();
+        compute_time += (ts2 - ts1);
 
-      /*printing the results*/
-      Service.printNumericTable("Eigenvalues:", eigenValues);
-      Service.printNumericTable("Eigenvectors:", eigenVectors);
+        NumericTable eigenValues = res.get(ResultId.eigenValues);
+        NumericTable eigenVectors = res.get(ResultId.eigenVectors);
 
-      /*free the memory*/
-      daal_Context.dispose();
+        /*printing the results*/
+        Service.printNumericTable("Eigenvalues:", eigenValues);
+        Service.printNumericTable("Eigenvectors:", eigenVectors);
+
+        /*free the memory*/
+        daal_Context.dispose();
     }
+
+    ts_end = System.currentTimeMillis();
+    total_time = (ts_end - ts_start);
+    LOG.info("Total Execution Time of PCA: "+ total_time);
+    LOG.info("Loading Data Time of PCA: "+ load_time);
+    LOG.info("Computation Time of PCA: "+ compute_time);
+    LOG.info("Comm Time of PCA: "+ comm_time);
+    LOG.info("DataType Convert Time of PCA: "+ convert_time);
+    LOG.info("Misc Time of PCA: "+ (total_time - load_time - compute_time - comm_time - convert_time));
+
   }
 
   /**

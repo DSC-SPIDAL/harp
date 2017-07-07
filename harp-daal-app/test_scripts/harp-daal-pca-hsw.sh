@@ -28,19 +28,19 @@ export LIBJARS=${DAALROOT}/lib/daal.jar
 Arch=hsw
 
 # num of training data points
-Pts=1000
+Pts=10000
 # feature vector dimension
-Dim=10
+Dim=100
 # file per mapper
-File=1
+File=5
 # memory allocated to each mapper (MB)
 Mem=110000
 # generate training data or not (once generated, data file /kmeans-P$Pts-C$Ced-D$Dim-N$Node is in hdfs, you could reuse them next time)
-GenData=true
+GenData=false
 # num of mappers (nodes)
 Node=2
 # num of threads on each mapper(node)
-Thd=24
+Thd=8
 
 echo "Test-$Arch-daal-pca-P$Pts-D$Dim-F$File-N$Node-T$Thd Start" 
 hadoop jar harp-daal-app-1.0-SNAPSHOT.jar edu.iu.daal_pca.PCADaalLauncher -libjars ${LIBJARS} $Pts $Dim $File $Node $Thd $Mem /Pca-P$Pts-D$Dim-F$File-N$Node /tmp/PCA $GenData 2>$logDir/Test-$Arch-daal-pca-P$Pts-D$Dim-F$File-N$Node-T$Thd.log
