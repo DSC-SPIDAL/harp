@@ -69,6 +69,8 @@ sections:
         url: /docs/harpdaal/pca
       - name: Neural Network
         url: /docs/harpdaal/nn
+      - name: QR Decomposition (QR) 
+        url: /docs/harpdaal/qr
   - name: Harp Resources
     sublinks:
       - name: Harp Resources
