@@ -18,7 +18,7 @@ hdfs dfs -mkdir -p /Hadoop/Libraries
 hdfs dfs -rm /Hadoop/Libraries/*
 hdfs dfs -put ${DAALROOT}/lib/intel64_lin/libJavaAPI.so /Hadoop/Libraries/
 hdfs dfs -put ${TBBROOT}/lib/intel64_lin/gcc4.4/libtbb* /Hadoop/Libraries/
-hdfs dfs -put ${DAALROOT}/../../daal-misc/lib/libiomp5.so /Hadoop/Libraries/
+hdfs dfs -put ${DAALROOT}/../../omp/lib/libiomp5.so /Hadoop/Libraries/
 
 # use the path at account lc37
 logDir=/N/u/lc37/HADOOP/Test_longs/logs
