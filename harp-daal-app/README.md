@@ -66,7 +66,7 @@ cd daal
 # compile and install
 make daal PLAT=lnx32e
 # setup the DAALROOT environment variables
-source __release_lnx/daal/bin/daalvars.sh 
+source __release_lnx/daal/bin/daalvars.sh intel64
 ```
 2. Installation from optimized DAAL source code within DSC-SPIDAL/harp (Recommended)
 If you already use option "--recursive" (supported by git version 1.9 and later) when you git clone 
