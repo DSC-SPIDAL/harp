@@ -483,9 +483,11 @@ Describe clearly your pull request the change.&lt;/p&gt;&lt;/li&gt;
 
 &lt;p&gt;Abby Kaufman&lt;/p&gt;
 
-&lt;p&gt;Anchal Khandelwal&lt;/p&gt;
+&lt;p&gt;Mayank Jindal&lt;/p&gt;
 
-&lt;p&gt;Gowtham Ayna Raveendran&lt;/p&gt;
+&lt;p&gt;Prawal Gangwar&lt;/p&gt;
+
+&lt;p&gt;Anurag Sharma&lt;/p&gt;
 
 &lt;p&gt;Mihai Avram&lt;/p&gt;
 </description>
@@ -984,6 +986,8 @@ Usage: NNMapCollective &amp;lt;number of map tasks&amp;gt; &amp;lt;epochs&amp;gt
 &lt;h2 id=&#34;conference-journal-papers&#34;&gt;Conference &amp;amp; Journal Papers&lt;/h2&gt;
 
 &lt;ul&gt;
+&lt;li&gt;&lt;p&gt;&lt;a href=&#34;http://dsc.soic.indiana.edu/publications/2017CLOUDSpecialTrack_12261.pdf&#34;&gt;L. Chen, B. Peng, B. Zhang, T. Liu, Y. Zou, L. Jiang, R. Henschel, C. Stewart, Z. Zhang, E. Mccallum, T. Zahniser, O. Jon, J. Qiu. Benchmarking Harp-DAAL: High Performance Hadoop on KNL Clusters&lt;/a&gt; (IEEE Cloud Computing, 2017)&lt;/p&gt;&lt;/li&gt;
+
 &lt;li&gt;&lt;p&gt;&lt;a href=&#34;http://ipcc.soic.iu.edu/Computation%20Abstractions.pdf&#34;&gt;B. Zhang, B. Peng, J. Qiu. Model-Centric Computation Abstractions in Machine Learning Applications&lt;/a&gt; (BeyondMR, 2016)&lt;/p&gt;&lt;/li&gt;
 
 &lt;li&gt;&lt;p&gt;&lt;a href=&#34;http://ipcc.soic.iu.edu/ICCS-harp-lda.pdf&#34;&gt;B. Zhang, B. Peng, J. Qiu. High Performance LDA through Collective Model Communication Optimization&lt;/a&gt; (ICCS, 2016)&lt;/p&gt;&lt;/li&gt;
@@ -995,7 +999,7 @@ Usage: NNMapCollective &amp;lt;number of map tasks&amp;gt; &amp;lt;epochs&amp;gt
 &lt;li&gt;&lt;p&gt;&lt;a href=&#34;http://cgl.soic.indiana.edu/publications/116-zhang.pdf&#34;&gt;B. Zhang, J. Qiu. High Performance Clustering of Social Images in a Map-Collective Programming Model&lt;/a&gt; (Poster in SoCC, 2013)&lt;/p&gt;&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;h2 id=&#34;press&#34;&gt;Press&lt;/h2&gt;
+&lt;h2 id=&#34;book-book-chapter&#34;&gt;Book &amp;amp; Book Chapter&lt;/h2&gt;
 
 &lt;ul&gt;
 &lt;li&gt;&lt;p&gt;&lt;a href=&#34;http://dsc.soic.indiana.edu/publications/Parallelizing%20Big%20Data%20Machine%20Learning%20Applications%20with%20Model%20Rotation.pdf&#34;&gt;B. Zhang, B. Peng, J. Qiu. Parallelizing Big Data Machine Learning Applications with Model Rotation&lt;/a&gt;  (Book Chapter in series Advances in Parallel Computing, IOS Press, 2017)&lt;/p&gt;&lt;/li&gt;
