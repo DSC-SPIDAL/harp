@@ -73,38 +73,41 @@ import com.intel.daal.services.Environment;
 
 
 public class NNDaalCollectiveMapper
-    extends
-    CollectiveMapper<String, String, Object, Object>{
+extends
+CollectiveMapper<String, String, Object, Object>{
 
-        private DistributedStep2Master netMaster;
-        private TrainingTopology topology;
-        // private int batchSizeLocal = 25;
-        private int batchSizeLocal;
-        private int pointsPerFile = 1500;
-        private int vectorSize = 20;                                
-        private int groundTruthvectorSize = 1;
-        private int numMappers;
-        private int numThreads;
-        private Tensor featureTensorInit;
-        private Tensor labelTensorInit;
-        private int numWbPars;
-        private DistributedStep2Master net;
-        private PredictionResult predictionResult;
-        private String testFilePath;
-        private String testGroundTruthPath;
+    private DistributedStep2Master netMaster;
+    private int batchSizeLocal = 25;
+    private int pointsPerFile = 1500;
+    private int vectorSize = 20;                                
+    private int groundTruthvectorSize = 1;
+    private int numMappers;
+    private int numThreads;
+    private Tensor featureTensorInit;
+    private Tensor labelTensorInit;
+    private int numWbPars;
+    private DistributedStep2Master net;
+    private DistributedStep1Local netLocal;
+    private String testFilePath;
+    private String testGroundTruthPath;
+    private TrainingTopology topology;
+    private TrainingTopology topologyLocal;
+    private TrainingModel trainingModel;
+    private PredictionModel predictionModel;
+    private PredictionResult predictionResult;
 
         //to measure the time
-        private long load_time = 0;
-        private long convert_time = 0;
-        private long total_time = 0;
-        private long compute_time = 0;
-        private long comm_time = 0;
-        private long ts_start = 0;
-        private long ts_end = 0;
-        private long ts1 = 0;
-        private long ts2 = 0;
+    private long load_time = 0;
+    private long convert_time = 0;
+    private long total_time = 0;
+    private long compute_time = 0;
+    private long comm_time = 0;
+    private long ts_start = 0;
+    private long ts_end = 0;
+    private long ts1 = 0;
+    private long ts2 = 0;
 
-        private static DaalContext daal_Context = new DaalContext();
+    private static DaalContext daal_Context = new DaalContext();
 
         /**
          * Mapper configuration.
@@ -112,42 +115,42 @@ public class NNDaalCollectiveMapper
         @Override
         protected void setup(Context context)
         throws IOException, InterruptedException {
-        long startTime = System.currentTimeMillis();
-        Configuration configuration =
+            long startTime = System.currentTimeMillis();
+            Configuration configuration =
             context.getConfiguration();
-        numMappers = configuration
+            numMappers = configuration
             .getInt(Constants.NUM_MAPPERS, 10);
-        numThreads = configuration
+            numThreads = configuration
             .getInt(Constants.NUM_THREADS, 10);
 
-        batchSizeLocal = configuration
+            batchSizeLocal = configuration
             .getInt(Constants.BATCH_SIZE, 10);
 
-        numWbPars = numThreads;
-        testFilePath =
+            numWbPars = numThreads;
+            testFilePath =
             configuration.get(Constants.TEST_FILE_PATH,"");
 
-        testGroundTruthPath =
+            testGroundTruthPath =
             configuration.get(Constants.TEST_TRUTH_PATH,"");
 
-        LOG.info("Num Mappers " + numMappers);
-        LOG.info("Num Threads " + numThreads);
-        LOG.info("BatchSize " + batchSizeLocal);
-        long endTime = System.currentTimeMillis();
-        LOG.info(
+            LOG.info("Num Mappers " + numMappers);
+            LOG.info("Num Threads " + numThreads);
+            LOG.info("BatchSize " + batchSizeLocal);
+            long endTime = System.currentTimeMillis();
+            LOG.info(
                 "config (ms) :" + (endTime - startTime));
-        System.out.println("Collective Mapper launched");
+            System.out.println("Collective Mapper launched");
 
         }
 
         protected void mapCollective(
-                KeyValReader reader, Context context)
-            throws IOException, InterruptedException {
+            KeyValReader reader, Context context)
+        throws IOException, InterruptedException {
             long startTime = System.currentTimeMillis();
             List<String> trainingDataFiles =
-                new LinkedList<String>();
+            new LinkedList<String>();
             List<String> trainingDataGroundTruthFiles =                       
-                new LinkedList<String>();
+            new LinkedList<String>();
 
             //splitting files between mapper
 
@@ -155,7 +158,7 @@ public class NNDaalCollectiveMapper
                 String key = reader.getCurrentKey();
                 String value = reader.getCurrentValue();
                 LOG.info("Key: " + key + ", Value: "
-                        + value);
+                    + value);
                 System.out.println("file name : " + value);
                 trainingDataFiles.add(value);
             }
@@ -169,11 +172,11 @@ public class NNDaalCollectiveMapper
 
             runNN(trainingDataFiles, conf, context);
             LOG.info("Total iterations in master view: "
-                    + (System.currentTimeMillis() - startTime));
+                + (System.currentTimeMillis() - startTime));
             this.freeMemory();
             this.freeConn();
             System.gc();
-                }
+        }
 
 
 
@@ -185,7 +188,7 @@ public class NNDaalCollectiveMapper
 
             // extracting points from csv files
             List<List<double[]>> pointArrays = NNUtil.loadPoints(trainingDataFiles, pointsPerFile,
-                    vectorSize, conf, numThreads);
+                vectorSize, conf, numThreads);
             List<double[]> featurePoints = new LinkedList<>();
             for(int i = 0; i<pointArrays.size(); i++){
                 featurePoints.add(pointArrays.get(i).get(0));
@@ -256,9 +259,6 @@ public class NNDaalCollectiveMapper
                 row_idx_label += row_len_label;
             }
 
-
-
-
             featureTensorInit = Service.readTensorFromNumericTable(daal_Context, featureArray_daal, true);
             labelTensorInit = Service.readTensorFromNumericTable(daal_Context, labelArray_daal, true);
             System.out.println("tensor size : "+ featureTensorInit.getSize());
@@ -267,155 +267,14 @@ public class NNDaalCollectiveMapper
             ts2 = System.currentTimeMillis();
             convert_time += (ts2 - ts1);
 
-            // Initializing sgd algorithm
-            double[] learningRateArray = new double[1];
-            learningRateArray[0] = 0.001;
-            Batch sgdAlgorithm =
-                new Batch(daal_Context, Float.class, Method.defaultDense);
-            sgdAlgorithm.parameter.setBatchSize(batchSizeLocal);
-            sgdAlgorithm.parameter.setLearningRateSequence(new HomogenNumericTable(daal_Context, learningRateArray, 1, 1));
-
-
-            net = new DistributedStep2Master(daal_Context, sgdAlgorithm);
-            TrainingTopology topology = NeuralNetConfiguratorDistr.configureNet(daal_Context);
-
-            net.parameter.setOptimizationSolver(sgdAlgorithm);
-            long[] sampleSize = featureTensorInit.getDimensions();
-            sampleSize[0] = batchSizeLocal;
-            net.initialize(sampleSize, topology);
-
-            TrainingModel trainingModel = new TrainingModel(daal_Context);
-            trainingModel.initialize(Float.class, sampleSize, topology, null);
-
-            int nSamples = (int)featureTensorInit.getDimensions()[0];
-
-            Table<ByteArray> partialResultTable = new Table<>(0, new ByteArrPlus());
-
-            //set thread number used in DAAL
-            LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
-            Environment.setNumberOfThreads(numThreads);
-            LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
-
-            for (int i = 0; i < nSamples - batchSizeLocal + 1; i += batchSizeLocal) {
-
-                //local computation
-                ts1 = System.currentTimeMillis();
-
-                DistributedStep1Local netLocal = new DistributedStep1Local(daal_Context);
-                netLocal.input.set(DistributedStep1LocalInputId.inputModel, trainingModel);
-                netLocal.input.set(TrainingInputId.data, Service.getNextSubtensor(daal_Context, featureTensorInit, i, batchSizeLocal));
-                netLocal.input.set(TrainingInputId.groundTruth, Service.getNextSubtensor(daal_Context, labelTensorInit, i, batchSizeLocal));
-                netLocal.parameter.setOptimizationSolver(sgdAlgorithm);
-                PartialResult partialResult = netLocal.compute(); 
-
-                ts2 = System.currentTimeMillis();
-                compute_time += (ts2 - ts1);
-
-                ts1 = System.currentTimeMillis();
-                partialResultTable.addPartition(new Partition<>(i+this.getSelfID()*nSamples, serializePartialResult(partialResult)));
-                boolean reduceStatus = false;
-                reduceStatus = this.reduce("nn", "sync-partialresult", partialResultTable, this.getMasterID()); 
-
-                ts2 = System.currentTimeMillis();
-                comm_time += (ts2 - ts1);
-
-                if(!reduceStatus){
-                    System.out.println("reduce not successful");
-                }
-
-                System.out.println("number of partition in partialresult after reduce :" + partialResultTable.getNumPartitions());
-
-                Table<ByteArray> wbHarpTable = new Table<>(0, new ByteArrPlus());
-                if (this.isMaster()) 
-                {
-                    int[] pid = partialResultTable.getPartitionIDs().toIntArray();
-
-                    
-                    ts1 = System.currentTimeMillis();
-                    for(int j = 0; j< pid.length; j++){
-                        try {
-                            net.input.add(DistributedStep2MasterInputId.partialResults, 0, deserializePartialResult(partialResultTable.getPartition(pid[j]).get()));
-                        } catch (Exception e) 
-                        {  
-                            System.out.println("Fail to deserilize partialResultTable" + e.toString());
-                            e.printStackTrace();
-                        }
-                    }
-
-                    ts2 = System.currentTimeMillis();
-                    comm_time += (ts2 - ts1);
-
-                    ts1 = System.currentTimeMillis();
-                    DistributedPartialResult result = net.compute();
-                    ts2 = System.currentTimeMillis();
-                    compute_time += (ts2 - ts1);
-
-                    ts1 = System.currentTimeMillis();
-                    wbHarpTable.addPartition(new Partition<>(this.getMasterID(), 
-                                serializeNumericTable(result.get(DistributedPartialResultId.resultFromMaster).get(TrainingResultId.model).getWeightsAndBiases())));
-                    NumericTable wbMaster = result.get(DistributedPartialResultId.resultFromMaster).get(TrainingResultId.model).getWeightsAndBiases();
-                    System.out.println("master derivatives size : "+ wbMaster.getNumberOfColumns() +"and "+ wbMaster.getNumberOfRows());
-                    ts2 = System.currentTimeMillis();
-                    comm_time += (ts2 - ts1);
-
-                }
-
-                ts1 = System.currentTimeMillis();
-                bcastTrainingModel(wbHarpTable, this.getMasterID());
-                try {
-                    NumericTable wbMaster = deserializeNumericTable(wbHarpTable.getPartition(this.getMasterID()).get());
-                    wbHarpTable.removePartition(this.getMasterID());
-
-                    if(partialResultTable.getNumPartitions()>0){
-                        int[] rid = partialResultTable.getPartitionIDs().toIntArray();
-                        for(int m =0 ; m < rid.length; m++){
-                            partialResultTable.removePartition(rid[m]);
-                        }
-                    }
-                    netLocal.input.get(DistributedStep1LocalInputId.inputModel).setWeightsAndBiases(wbMaster);
-                } catch (Exception e) 
-                {
-                    System.out.println("Fail to serilization trainingModel" + e.toString());
-                    e.printStackTrace();
-                } 
-
-                ts2 = System.currentTimeMillis();
-                comm_time += (ts2 - ts1);
-
-            }
-
+            initializeNetwork(featureTensorInit, labelTensorInit);
+            trainModel(featureTensorInit, labelTensorInit);
             if(this.isMaster()){
-
-                ts1 = System.currentTimeMillis();
-                TrainingResult result = net.finalizeCompute();
-                ts2 = System.currentTimeMillis();
-                compute_time += (ts2 - ts1);
-
-                TrainingModel finalTrainingModel = result.get(TrainingResultId.model);
-                PredictionModel predictionModel = trainingModel.getPredictionModel(Float.class);
-
-                // Tensor predictionData = getTensor(daal_Context, conf, testFilePath, vectorSize, 2000);
-                // Tensor predictionGroundTruth = getTensor(daal_Context, conf, testGroundTruthPath, 1, 2000);
-
-                Tensor predictionData = getTensorHDFS(daal_Context, conf, testFilePath, vectorSize, 2000);
-                Tensor predictionGroundTruth = getTensorHDFS(daal_Context, conf, testGroundTruthPath, 1, 2000);
-
-                System.out.println("predictionData size "+ predictionData.getSize());
-                PredictionBatch net = new PredictionBatch(daal_Context);
-                long[] predictionDimensions = predictionData.getDimensions();
-                net.parameter.setBatchSize(predictionDimensions[0]);
-                net.input.set(PredictionTensorInputId.data, predictionData);
-                net.input.set(PredictionModelInputId.model, predictionModel);
-
-                ts1 = System.currentTimeMillis();
-                predictionResult = net.compute();
-                ts2 = System.currentTimeMillis();
-                compute_time += (ts2 - ts1);
-
-                Service.printTensors("Ground truth", "Neural network predictions: each class probability",
-                        "Neural network classification results (first 50 observations):",
-                        predictionGroundTruth, predictionResult.get(PredictionResultId.prediction), 50);
+                testModel(conf);
+                printResults(conf);
             }
+
+            daal_Context.dispose();
 
             ts_end = System.currentTimeMillis();
             total_time = (ts_end - ts_start);
@@ -429,6 +288,169 @@ public class NNDaalCollectiveMapper
 
         }
 
+        private void initializeNetwork(Tensor featureTensorInit, Tensor labelTensorInit){
+            com.intel.daal.algorithms.optimization_solver.sgd.Batch sgdAlgorithm =
+            new com.intel.daal.algorithms.optimization_solver.sgd.Batch(daal_Context, Float.class, com.intel.daal.algorithms.optimization_solver.sgd.Method.defaultDense);
+            sgdAlgorithm.parameter.setBatchSize(batchSizeLocal);
+
+            long[] sampleSize = featureTensorInit.getDimensions();
+            sampleSize[0] = batchSizeLocal;
+            if(this.isMaster()){
+                net = new DistributedStep2Master(daal_Context, sgdAlgorithm);
+                topology = NeuralNetConfiguratorDistr.configureNet(daal_Context);
+                net.parameter.setOptimizationSolver(sgdAlgorithm);
+                net.initialize(sampleSize, topology);
+            }
+            topologyLocal = NeuralNetConfiguratorDistr.configureNet(daal_Context);
+            netLocal = new DistributedStep1Local(daal_Context);
+            trainingModel = new TrainingModel(daal_Context);
+            trainingModel.initialize(Float.class, sampleSize, topologyLocal, null);
+            netLocal.input.set(DistributedStep1LocalInputId.inputModel, trainingModel);
+        }
+
+        private void trainModel(Tensor featureTensorInit, Tensor labelTensorInit) throws java.io.FileNotFoundException, java.io.IOException {
+            com.intel.daal.algorithms.optimization_solver.sgd.Batch sgdAlgorithm =
+            new com.intel.daal.algorithms.optimization_solver.sgd.Batch(daal_Context, Float.class, com.intel.daal.algorithms.optimization_solver.sgd.Method.defaultDense);
+
+            double[] learningRateArray = new double[1];
+            learningRateArray[0] = 0.0001;
+
+            sgdAlgorithm.parameter.setLearningRateSequence(new HomogenNumericTable(daal_Context, learningRateArray, 1, 1));
+            sgdAlgorithm.parameter.setBatchSize(batchSizeLocal);
+            if(this.isMaster()){
+                net.parameter.setOptimizationSolver(sgdAlgorithm);
+            }
+            int nSamples = (int)featureTensorInit.getDimensions()[0]; 
+
+            LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
+            Environment.setNumberOfThreads(numThreads);
+            LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
+
+            for (int i = 0; i < nSamples - batchSizeLocal + 1; i += batchSizeLocal) {
+
+            //local computation
+                ts1 = System.currentTimeMillis();
+
+                netLocal.input.set(TrainingInputId.data, Service.getNextSubtensor(daal_Context, featureTensorInit, i, batchSizeLocal));
+                netLocal.input.set(TrainingInputId.groundTruth, Service.getNextSubtensor(daal_Context, labelTensorInit, i, batchSizeLocal));
+
+                PartialResult partialResult = netLocal.compute();
+
+                ts2 = System.currentTimeMillis();
+                compute_time += (ts2 - ts1);
+
+                ts1 = System.currentTimeMillis();
+                Table<ByteArray> partialResultTable = new Table<>(0, new ByteArrPlus());
+
+                partialResultTable.addPartition(new Partition<>(i+this.getSelfID()*nSamples, serializePartialResult(partialResult)));
+
+                boolean reduceStatus = false;
+                reduceStatus = this.reduce("nn", "sync-partialresult", partialResultTable, this.getMasterID()); 
+
+                ts2 = System.currentTimeMillis();
+                comm_time += (ts2 - ts1);
+
+                if(!reduceStatus){
+                    System.out.println("reduce not successful");
+                }
+
+                if (this.isMaster()) {
+                    int[] pid = partialResultTable.getPartitionIDs().toIntArray();
+
+                    ts1 = System.currentTimeMillis();
+                    for(int j = 0; j< pid.length; j++){
+                        try {
+                            net.input.add(DistributedStep2MasterInputId.partialResults, j, deserializePartialResult(partialResultTable.getPartition(pid[j]).get()));
+                        } catch (Exception e) 
+                        {  
+                            System.out.println("Fail to deserilize partialResultTable" + e.toString());
+                            e.printStackTrace();
+                        }
+                    }
+
+                    ts2 = System.currentTimeMillis();
+                    comm_time += (ts2 - ts1);
+                }
+
+                if (i == 0) {
+                    if(this.isMaster()){
+                        TrainingModel trainingModelOnMaster = net.getResult().get(TrainingResultId.model);
+                        TrainingModel trainingModelOnLocal  = netLocal.input.get(DistributedStep1LocalInputId.inputModel);
+                        trainingModelOnMaster.setWeightsAndBiases(trainingModelOnLocal.getWeightsAndBiases());
+                        ForwardLayers forwardLayers = trainingModelOnMaster.getForwardLayers();
+                        for (int j = 0; j < forwardLayers.size(); j++) {
+                            forwardLayers.get(j).getLayerParameter().setWeightsAndBiasesInitializationFlag(true);
+                        }
+                    }
+                }
+
+                Table<ByteArray> wbHarpTable = new Table<>(0, new ByteArrPlus());
+
+                if(this.isMaster()){
+                    ts1 = System.currentTimeMillis();
+                    DistributedPartialResult result = net.compute();
+                    ts2 = System.currentTimeMillis();
+                    compute_time += (ts2 - ts1);
+
+                    ts1 = System.currentTimeMillis();
+                    NumericTable wb = result.get(DistributedPartialResultId.resultFromMaster).get(TrainingResultId.model).getWeightsAndBiases();
+
+                    wbHarpTable.addPartition(new Partition<>(this.getMasterID(), 
+                        serializeNumericTable(wb)));
+                    ts2 = System.currentTimeMillis();
+                    comm_time += (ts2 - ts1);
+                }
+
+                ts1 = System.currentTimeMillis();
+                bcastTrainingModel(wbHarpTable, this.getMasterID());
+
+                try {
+                    NumericTable wbMaster = deserializeNumericTable(wbHarpTable.getPartition(this.getMasterID()).get()); 
+                    netLocal.input.get(DistributedStep1LocalInputId.inputModel).setWeightsAndBiases(wbMaster);
+
+                } catch (Exception e) 
+                {  
+                    System.out.println("Fail to deserilize partialResultTable" + e.toString());
+                    e.printStackTrace();
+                }
+                ts2 = System.currentTimeMillis();
+                comm_time += (ts2 - ts1);
+            }
+
+            if(this.isMaster()){
+                ts1 = System.currentTimeMillis();
+                TrainingResult result = net.finalizeCompute();
+                ts2 = System.currentTimeMillis();
+                compute_time += (ts2 - ts1);
+
+                TrainingModel finalTrainingModel = result.get(TrainingResultId.model);
+                NumericTable finalresult = finalTrainingModel.getWeightsAndBiases();
+                predictionModel = trainingModel.getPredictionModel(Float.class);
+            }
+        }
+
+        private void testModel(Configuration conf) throws java.io.FileNotFoundException, java.io.IOException {
+            Tensor predictionData = getTensorHDFS(daal_Context, conf, testFilePath, vectorSize, 2000);
+            PredictionBatch net = new PredictionBatch(daal_Context);
+            long[] predictionDimensions = predictionData.getDimensions();
+            net.parameter.setBatchSize(predictionDimensions[0]);
+            net.input.set(PredictionTensorInputId.data, predictionData);
+            net.input.set(PredictionModelInputId.model, predictionModel);
+
+            ts1 = System.currentTimeMillis();
+            predictionResult = net.compute();
+            ts2 = System.currentTimeMillis();
+            compute_time += (ts2 - ts1);
+
+
+        }
+
+        private void printResults(Configuration conf) throws java.io.FileNotFoundException, java.io.IOException {
+            Tensor predictionGroundTruth = getTensorHDFS(daal_Context, conf, testGroundTruthPath, 1, 2000);
+            Service.printTensors("Ground truth", "Neural network predictions: each class probability",
+                "Neural network classification results (first 50 observations):",
+                predictionGroundTruth, predictionResult.get(PredictionResultId.prediction), 50);
+        }
 
         private static ByteArray serializePartialResult(PartialResult partialResult) throws IOException {
             /* Create an output stream to serialize the numeric table */
@@ -492,15 +514,15 @@ public class NNDaalCollectiveMapper
             boolean isSuccess = false;
             try {
                 isSuccess =
-                    this.broadcast("main",
-                            "broadcast-trainingmodel", table, bcastID,
-                            false);
+                this.broadcast("main",
+                    "broadcast-trainingmodel", table, bcastID,
+                    false);
             } catch (Exception e) {
                 LOG.error("Fail to bcast.", e);
             }
             long endTime = System.currentTimeMillis();
             LOG.info("Bcast trainingmodel (ms): "
-                    + (endTime - startTime));
+                + (endTime - startTime));
             if (!isSuccess) {
                 System.out.println("broadcast not successful");
                 throw new IOException("Fail to bcast");
@@ -509,13 +531,13 @@ public class NNDaalCollectiveMapper
 
 
         private Tensor getTensor(DaalContext daal_Context, Configuration conf, String inputFile, int vectorSize, int numRows) 
-            throws IOException{
+        throws IOException{
             Path inputFilePath = new Path(inputFile);
             boolean isFailed = false;
             FSDataInputStream in = null;
             try {
                 FileSystem fs =
-                    inputFilePath.getFileSystem(conf);
+                inputFilePath.getFileSystem(conf);
                 in = fs.open(inputFilePath);
             } catch (Exception e) {
                 System.out.println("Fail to open  test file " + testFilePath + e.toString());
@@ -542,20 +564,20 @@ public class NNDaalCollectiveMapper
         }
 
         private Tensor getTensorHDFS(DaalContext daal_Context, Configuration conf, String inputFiles, int vectorSize, int numRows) 
-            throws IOException{
+        throws IOException{
             Path inputFilePaths = new Path(inputFiles);
             List<String> inputFileList = new LinkedList<>();
 
             try {
                 FileSystem fs =
-                    inputFilePaths.getFileSystem(conf);
+                inputFilePaths.getFileSystem(conf);
                 RemoteIterator<LocatedFileStatus> iterator =
-                    fs.listFiles(inputFilePaths, true);
+                fs.listFiles(inputFilePaths, true);
 
                 while (iterator.hasNext()) {
                     String name =
-                        iterator.next().getPath().toUri()
-                        .toString();
+                    iterator.next().getPath().toUri()
+                    .toString();
                     inputFileList.add(name);
                 }
 
@@ -582,7 +604,7 @@ public class NNDaalCollectiveMapper
                 try {
 
                     FileSystem fs =
-                        file_path.getFileSystem(conf);
+                    file_path.getFileSystem(conf);
                     in = fs.open(file_path);
 
                 } catch (Exception e) {
