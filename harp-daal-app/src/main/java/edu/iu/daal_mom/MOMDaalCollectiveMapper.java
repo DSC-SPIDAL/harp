@@ -51,6 +51,7 @@ import com.intel.daal.algorithms.low_order_moments.*;
 import com.intel.daal.data_management.data.*;
 import com.intel.daal.services.DaalContext;
 
+import com.intel.daal.services.Environment;
 
 
 /**
@@ -142,70 +143,75 @@ CollectiveMapper<String, String, Object, Object>{
 
     private void runMOM(List<String> trainingDataFiles, Configuration conf, Context context) throws IOException {
 
-      ts_start = System.currentTimeMillis();
+        //set thread number used in DAAL
+        LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
+        Environment.setNumberOfThreads(numThreads);
+        LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
 
-      ts1 = System.currentTimeMillis();
-    // extracting points from csv files
-      List<double[]> pointArrays = MOMUtil.loadPoints(trainingDataFiles, pointsPerFile,
-        vectorSize, conf, numThreads);
-      ts2 = System.currentTimeMillis();
-      load_time += (ts2 - ts1);
+        ts_start = System.currentTimeMillis();
 
-     // converting data to Numeric Table
-      ts1 = System.currentTimeMillis();
-      long nFeature = vectorSize;
-      long nLabel = 1;
-      long totalLengthFeature = 0;
+        ts1 = System.currentTimeMillis();
+        // extracting points from csv files
+        List<double[]> pointArrays = MOMUtil.loadPoints(trainingDataFiles, pointsPerFile,
+                vectorSize, conf, numThreads);
+        ts2 = System.currentTimeMillis();
+        load_time += (ts2 - ts1);
 
-      long[] array_startP_feature = new long[pointArrays.size()];
-      double[][] array_data_feature = new double[pointArrays.size()][];
+        // converting data to Numeric Table
+        ts1 = System.currentTimeMillis();
+        long nFeature = vectorSize;
+        long nLabel = 1;
+        long totalLengthFeature = 0;
 
-      for(int k=0;k<pointArrays.size();k++)
-      {
-       array_data_feature[k] = pointArrays.get(k);
-       array_startP_feature[k] = totalLengthFeature;
-       totalLengthFeature += pointArrays.get(k).length;
-     }
+        long[] array_startP_feature = new long[pointArrays.size()];
+        double[][] array_data_feature = new double[pointArrays.size()][];
 
-     long featuretableSize = totalLengthFeature/nFeature;
+        for(int k=0;k<pointArrays.size();k++)
+        {
+            array_data_feature[k] = pointArrays.get(k);
+            array_startP_feature[k] = totalLengthFeature;
+            totalLengthFeature += pointArrays.get(k).length;
+        }
 
-   //initializing Numeric Table
-     NumericTable featureArray_daal = new HomogenNumericTable(daal_Context, Double.class, nFeature, featuretableSize, NumericTable.AllocationFlag.DoAllocate);
+        long featuretableSize = totalLengthFeature/nFeature;
 
-     int row_idx_feature = 0;
-     int row_len_feature = 0;
+        //initializing Numeric Table
+        NumericTable featureArray_daal = new HomogenNumericTable(daal_Context, Double.class, nFeature, featuretableSize, NumericTable.AllocationFlag.DoAllocate);
 
-     for (int k=0; k<pointArrays.size(); k++) 
-     {
-      row_len_feature = (array_data_feature[k].length)/(int)nFeature;
-        //release data from Java side to native side
-      ((HomogenNumericTable)featureArray_daal).releaseBlockOfRows(row_idx_feature, row_len_feature, DoubleBuffer.wrap(array_data_feature[k]));
-      row_idx_feature += row_len_feature;
-      }
-    ts2 = System.currentTimeMillis();
-    convert_time += (ts2 - ts1);
+        int row_idx_feature = 0;
+        int row_len_feature = 0;
 
-    Table<ByteArray> partialResultTable = new Table<>(0, new ByteArrPlus());
+        for (int k=0; k<pointArrays.size(); k++) 
+        {
+            row_len_feature = (array_data_feature[k].length)/(int)nFeature;
+            //release data from Java side to native side
+            ((HomogenNumericTable)featureArray_daal).releaseBlockOfRows(row_idx_feature, row_len_feature, DoubleBuffer.wrap(array_data_feature[k]));
+            row_idx_feature += row_len_feature;
+        }
+        ts2 = System.currentTimeMillis();
+        convert_time += (ts2 - ts1);
 
-    computeOnLocalNode(featureArray_daal, partialResultTable);
-    if(this.isMaster()){
-      computeOnMasterNode(partialResultTable);
-      printResults(result);
+        Table<ByteArray> partialResultTable = new Table<>(0, new ByteArrPlus());
 
+        computeOnLocalNode(featureArray_daal, partialResultTable);
+        if(this.isMaster()){
+            computeOnMasterNode(partialResultTable);
+            printResults(result);
+
+        }
+
+        daal_Context.dispose();
+
+        ts_end = System.currentTimeMillis();
+        total_time = (ts_end - ts_start);
+
+        LOG.info("Total Execution Time of MOM: "+ total_time);
+        LOG.info("Loading Data Time of MOM: "+ load_time);
+        LOG.info("Computation Time of MOM: "+ compute_time);
+        LOG.info("Comm Time of MOM: "+ comm_time);
+        LOG.info("DataType Convert Time of MOM: "+ convert_time);
+        LOG.info("Misc Time of MOM: "+ (total_time - load_time - compute_time - comm_time - convert_time));
     }
-    
-    daal_Context.dispose();
-
-    ts_end = System.currentTimeMillis();
-    total_time = (ts_end - ts_start);
-    
-    LOG.info("Total Execution Time of NN: "+ total_time);
-    LOG.info("Loading Data Time of NN: "+ load_time);
-    LOG.info("Computation Time of NN: "+ compute_time);
-    LOG.info("Comm Time of NN: "+ comm_time);
-    LOG.info("DataType Convert Time of NN: "+ convert_time);
-    LOG.info("Misc Time of NN: "+ (total_time - load_time - compute_time - comm_time - convert_time));
-  }
 
   private void computeOnLocalNode(NumericTable featureArray_daal, Table<ByteArray> partialResultTable) throws java.io.IOException {
 
@@ -223,7 +229,7 @@ CollectiveMapper<String, String, Object, Object>{
     ts1 = System.currentTimeMillis();
     partialResultTable.addPartition(new Partition<>(this.getSelfID(), serializePartialResult(partialResult)));
     boolean reduceStatus = false;
-    reduceStatus = this.reduce("cov", "sync-partialresult", partialResultTable, this.getMasterID());
+    reduceStatus = this.reduce("mom", "sync-partialresult", partialResultTable, this.getMasterID());
     ts2 = System.currentTimeMillis();
     comm_time += (ts2 - ts1);
 

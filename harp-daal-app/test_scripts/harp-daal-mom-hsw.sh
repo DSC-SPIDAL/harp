@@ -4,7 +4,8 @@ Arch=hsw
 
 cp ../target/harp-daal-app-1.0-SNAPSHOT.jar ${HADOOP_HOME}
 
-source /N/u/mayank/daal/__release_lnx/daal/bin/daalvars.sh intel64
+source /N/u/lc37/Lib/DAAL2018_Beta/__release_lnx/daal/bin/daalvars.sh intel64
+
 echo "${DAALROOT}"
 
 cd ${HADOOP_HOME}
@@ -21,17 +22,16 @@ hdfs dfs -put ${TBBROOT}/lib/intel64_lin/gcc4.4/libtbb* /Hadoop/Libraries/
 hdfs dfs -put ${DAALROOT}/../../omp/lib/libiomp5.so /Hadoop/Libraries/
 
 # use the path at account lc37
-logDir=/N/u/mayank/HADOOP/Test_longs/logs
+logDir=/N/u/lc37/HADOOP/Test_longs/logs
 export LIBJARS=${DAALROOT}/lib/daal.jar
 
-Dataset=daal_mom
+Dataset=daal_mom_dense
 Mem=110000
-Batch=50
 # num of mappers (nodes)
 Node=2
 # num of threads on each mapper(node)
-Thd=24
+Thd=8
 
-echo "Test-$Arch-daal-mom-$Dataset-N$Node-T$Thd-B$Batch Start" 
-hadoop jar harp-daal-app-1.0-SNAPSHOT.jar edu.iu.daal_mom.MOMDaalLauncher -libjars ${LIBJARS}  /Hadoop/mom-input/$Dataset/train /Hadoop/mom-input/$Dataset/test /Hadoop/mom-input/$Dataset/groundTruth /mom/work $Mem $Batch $Node $Thd 2>$logDir/Test-$Arch-daal-mom-$Dataset-N$Node-T$Thd-B$Batch.log 
-echo "Test-$Arch-daal-mom-$Dataset-N$Node-T$Thd-B$Batch End" 
+echo "Test-$Arch-daal-mom-$Dataset-N$Node-T$Thd Start" 
+hadoop jar harp-daal-app-1.0-SNAPSHOT.jar edu.iu.daal_mom.MOMDaalLauncher -libjars ${LIBJARS}  /Hadoop/mom-input/$Dataset /mom/work $Mem $Node $Thd 2>$logDir/Test-$Arch-daal-mom-$Dataset-N$Node-T$Thd.log 
+echo "Test-$Arch-daal-mom-$Dataset-N$Node-T$Thd End" 

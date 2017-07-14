@@ -67,26 +67,23 @@ implements Tool {
     DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbbmalloc.so#libtbbmalloc.so"), conf);
     DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libiomp5.so#libiomp5.so"), conf);
 
-    if (args.length < 8) {
+    if (args.length < 5) {
       System.err.println("Usage: edu.iu.daal_cov "
-                + "<input train dir> "
-                + "<input test dir>"
-                + "<input ground truth dir>"
+                + "<input  dir> "
                 + "<workDirPath> "
                 + "<mem per mapper>"
-                + "<batch size>"
                 + "<num mappers> <thread per worker>");
       ToolRunner.printGenericCommandUsage(System.err);
       return -1;
     }
     String inputDirPath = args[0];            
-    String testDirPath = args[1];            
-    String testGroundTruthDirPath = args[2];            
-    String workDirPath = args[3];    
-    int mem = Integer.parseInt(args[4]);
-    int batchSize = Integer.parseInt(args[5]);
-    int numMapTasks = Integer.parseInt(args[6]);      
-    int numThreadsPerWorker = Integer.parseInt(args[7]);
+    // String testDirPath = args[1];            
+    // String testGroundTruthDirPath = args[2];            
+    String workDirPath = args[1];    
+    int mem = Integer.parseInt(args[2]);
+    // int batchSize = Integer.parseInt(args[5]);
+    int numMapTasks = Integer.parseInt(args[3]);      
+    int numThreadsPerWorker = Integer.parseInt(args[4]);
 
     System.out.println("Number of Map Tasks = " + numMapTasks);
     System.out.println("Number of Map Tasks = "+ numMapTasks);
@@ -95,14 +92,12 @@ implements Tool {
       return -1;
     }
 
-    launch(inputDirPath, testDirPath, testGroundTruthDirPath, workDirPath, mem, batchSize, numMapTasks, numThreadsPerWorker);
+    launch(inputDirPath, workDirPath, mem, numMapTasks, numThreadsPerWorker);
     return 0;
 }
 
 private void launch(String inputDirPath, 
-  String testDirPath, 
-  String testGroundTruthDirPath, 
-  String workDirPath, int mem, int batchSize, 
+  String workDirPath, int mem,  
   int numMapTasks, int numThreadsPerWorker) throws IOException,
 URISyntaxException, InterruptedException,
 ExecutionException, ClassNotFoundException {
@@ -121,7 +116,7 @@ ExecutionException, ClassNotFoundException {
   Path outputDir = new Path(workDirPath, "output");
   long startTime = System.currentTimeMillis();
 
-  runCOV(inputDir, testDirPath, testGroundTruthDirPath, mem, batchSize, numMapTasks,
+  runCOV(inputDir, mem, numMapTasks,
       numThreadsPerWorker, modelDir,
       outputDir, configuration);
 
@@ -131,7 +126,7 @@ ExecutionException, ClassNotFoundException {
         + (endTime - startTime));
 }
 
-private void runCOV(Path inputDir, String testDirPath, String testGroundTruthDirPath, int mem, int batchSize,  
+private void runCOV(Path inputDir, int mem,   
     int numMapTasks, int numThreadsPerWorker,
      Path modelDir, Path outputDir,
     Configuration configuration)
@@ -148,7 +143,7 @@ private void runCOV(Path inputDir, String testDirPath, String testGroundTruthDir
           Calendar.getInstance().getTime()));
 
     Job covJob =
-      configureCOVJob(inputDir, testDirPath, testGroundTruthDirPath, mem, batchSize,
+      configureCOVJob(inputDir, mem, 
         numMapTasks, numThreadsPerWorker,
         modelDir, outputDir, configuration);
 
@@ -175,17 +170,16 @@ private void runCOV(Path inputDir, String testDirPath, String testGroundTruthDir
   }
 
   private Job configureCOVJob(Path inputDir,
-    String testDirPath, String testGroundTruthDirPath,
-    int mem, int batchSize, int numMapTasks, int numThreadsPerWorker,
+    int mem,  int numMapTasks, int numThreadsPerWorker,
     Path modelDir, Path outputDir,
     Configuration configuration)
     throws IOException, URISyntaxException {
 
-    configuration.set(Constants.TEST_FILE_PATH, testDirPath);
-    configuration.set(Constants.TEST_TRUTH_PATH, testGroundTruthDirPath);
+    // configuration.set(Constants.TEST_FILE_PATH, testDirPath);
+    // configuration.set(Constants.TEST_TRUTH_PATH, testGroundTruthDirPath);
     configuration.setInt(Constants.NUM_MAPPERS, numMapTasks);
     configuration.setInt(Constants.NUM_THREADS, numThreadsPerWorker);
-    configuration.setInt(Constants.BATCH_SIZE, batchSize);
+    // configuration.setInt(Constants.BATCH_SIZE, batchSize);
 
     Job job = Job.getInstance(configuration, "cov_job");
     JobConf jobConf = (JobConf) job.getConfiguration();
