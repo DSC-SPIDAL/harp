@@ -4,7 +4,7 @@ Arch=hsw
 
 cp ../target/harp-daal-app-1.0-SNAPSHOT.jar ${HADOOP_HOME}
 
-source /N/u/mayank/daal/__release_lnx/daal/bin/daalvars.sh intel64
+source /N/u/lc37/Lib/DAAL2018_Beta/__release_lnx/daal/bin/daalvars.sh intel64
 echo "${DAALROOT}"
 
 cd ${HADOOP_HOME}
@@ -21,7 +21,7 @@ hdfs dfs -put ${TBBROOT}/lib/intel64_lin/gcc4.4/libtbb* /Hadoop/Libraries/
 hdfs dfs -put ${DAALROOT}/../../omp/lib/libiomp5.so /Hadoop/Libraries/
 
 # use the path at account lc37
-logDir=/N/u/mayank/HADOOP/Test_longs/logs
+logDir=/N/u/lc37/HADOOP/Test_longs/logs
 export LIBJARS=${DAALROOT}/lib/daal.jar
 
 Dataset=daal_naive
@@ -30,7 +30,7 @@ Batch=50
 # num of mappers (nodes)
 Node=2
 # num of threads on each mapper(node)
-Thd=8
+Thd=24
 
 echo "Test-$Arch-daal-naive-$Dataset-N$Node-T$Thd-B$Batch Start" 
 hadoop jar harp-daal-app-1.0-SNAPSHOT.jar edu.iu.daal_naive.NaiveDaalLauncher -libjars ${LIBJARS}  /Hadoop/naive-input/$Dataset/train /Hadoop/naive-input/$Dataset/test /Hadoop/naive-input/$Dataset/groundTruth /naive/work $Mem $Batch $Node $Thd 2>$logDir/Test-$Arch-daal-naive-$Dataset-N$Node-T$Thd-B$Batch.log 
