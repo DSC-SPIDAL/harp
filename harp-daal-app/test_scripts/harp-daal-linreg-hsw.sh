@@ -4,7 +4,7 @@ Arch=hsw
 
 cp ../target/harp-daal-app-1.0-SNAPSHOT.jar ${HADOOP_HOME}
 
-source /N/u/mayank/daal/__release_lnx/daal/bin/daalvars.sh intel64
+source /N/u/lc37/Lib/DAAL2018_Beta/__release_lnx/daal/bin/daalvars.sh intel64
 echo "${DAALROOT}"
 
 cd ${HADOOP_HOME}
@@ -21,10 +21,10 @@ hdfs dfs -put ${TBBROOT}/lib/intel64_lin/gcc4.4/libtbb* /Hadoop/Libraries/
 hdfs dfs -put ${DAALROOT}/../../omp/lib/libiomp5.so /Hadoop/Libraries/
 
 # use the path at account lc37
-logDir=/N/u/mayank/HADOOP/Test_longs/logs
+logDir=/N/u/lc37/HADOOP/Test_longs/logs
 export LIBJARS=${DAALROOT}/lib/daal.jar
 
-Dataset=daal_linreg
+Dataset=daal_reg
 Mem=110000
 Batch=50
 # num of mappers (nodes)
@@ -33,5 +33,5 @@ Node=2
 Thd=8
 
 echo "Test-$Arch-daal-linreg-$Dataset-N$Node-T$Thd-B$Batch Start" 
-hadoop jar harp-daal-app-1.0-SNAPSHOT.jar edu.iu.daal_linreg.LinRegDaalLauncher -libjars ${LIBJARS}  /Hadoop/linreg-input/$Dataset/train /Hadoop/linreg-input/$Dataset/test /Hadoop/linreg-input/$Dataset/groundTruth /linreg/work $Mem $Batch $Node $Thd 2>$logDir/Test-$Arch-daal-linreg-$Dataset-N$Node-T$Thd-B$Batch.log 
+hadoop jar harp-daal-app-1.0-SNAPSHOT.jar edu.iu.daal_linreg.LinRegDaalLauncher -libjars ${LIBJARS}  /Hadoop/reg-input/$Dataset/train /Hadoop/reg-input/$Dataset/test /Hadoop/reg-input/$Dataset/groundTruth /linreg/work $Mem $Batch $Node $Thd 2>$logDir/Test-$Arch-daal-linreg-$Dataset-N$Node-T$Thd-B$Batch.log 
 echo "Test-$Arch-daal-linreg-$Dataset-N$Node-T$Thd-B$Batch End" 
