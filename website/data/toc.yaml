@@ -71,6 +71,16 @@ sections:
         url: /docs/harpdaal/nn
       - name: QR Decomposition (QR) 
         url: /docs/harpdaal/qr
+      - name: Covariance 
+        url: /docs/harpdaal/covariance
+      - name: Low Order Moments
+        url: /docs/harpdaal/moments 
+      - name: Naive Bayes
+        url: /docs/harpdaal/naive_bayes
+      - name: Linear Regression
+        url: /docs/harpdaal/linear_regression
+      - name: Ridge Regression
+        url: /docs/harpdaal/ridge_regression
   - name: Harp Resources
     sublinks:
       - name: Harp Resources
