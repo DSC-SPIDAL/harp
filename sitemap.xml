@@ -83,11 +83,27 @@
   </url>
   
   <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/covariance/</loc>
+  </url>
+  
+  <url>
     <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/kmeans/</loc>
   </url>
   
   <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/linear_regression/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/moments/</loc>
+  </url>
+  
+  <url>
     <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/nn/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/naive_bayes/</loc>
   </url>
   
   <url>
@@ -96,6 +112,10 @@
   
   <url>
     <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/qr/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/ridge_regression/</loc>
   </url>
   
   <url>
