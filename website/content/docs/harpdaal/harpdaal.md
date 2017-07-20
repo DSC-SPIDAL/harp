@@ -12,7 +12,7 @@ title: Harp-DAAL Framework
 <br />
 <img src="/img/6-1-2/6-1-2-5-1.png" width="7.08%"><img src="/img/6-1-2/6-1-2-5-2.png" width="55.54%"><img src="/img/6-1-2/6-1-2-5-3.png" width="7.38%">
 
-Figure 1 shows the position of Harp-DAAL within the whole HPC-Big Data software stack. 
+Figure 1 shows the architecture of Harp-DAAL within the whole HPC-Big Data software stack. 
 
 ## What is Harp-DAAL? 
 
