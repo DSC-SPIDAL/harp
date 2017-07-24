@@ -2,6 +2,8 @@
 title: Harp-DAAL-NN
 ---
 
+<img src="/img/nn.png" width="60%"  >
+
 ## Overview 
 Neural Networks are a beautiful biologically-inspired programming paradigm which enable a computer to learn from observational data.
 The motivation for the development of neural network technology stemmed from the desire to develop an artificial system that could perform "intelligent" tasks similar to those performed by the human brain.
