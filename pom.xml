@@ -12,7 +12,7 @@
         <module>harp-project</module>
         <module>harp-tutorial-app</module>
         <module>harp-app</module>
-        <module>harp-daal-app</module>
+        <!-- <module>harp-daal-app</module> -->
     </modules>
 
     <dependencyManagement>
@@ -106,6 +106,14 @@
 
         </dependencies>
     </dependencyManagement>
+    
+    <repositories>
+        <repository>
+            <id>rice-habanero</id>
+            <name>Habanero Repository - Rice University</name>
+            <url>http://www.cs.rice.edu/~vs3/hjlib/code/maven-repo</url>
+        </repository>
+    </repositories>
 
     <build>
         <plugins>
