@@ -16,9 +16,21 @@
 package edu.iu.subgraph;
 
 import org.apache.log4j.Logger;
+import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.Arrays;
 import java.util.Random;
+
+import edu.iu.harp.example.IntArrPlus;
+import edu.iu.harp.partition.Partition;
+import edu.iu.harp.partition.Table;
+import edu.iu.harp.resource.IntArray;
+
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.ints.IntArrays;
+import it.unimi.dsi.fastutil.ints.IntAVLTreeSet;
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
 
 // using HJlib 
 import static edu.rice.hj.Module0.launchHabaneroApp;
@@ -38,6 +50,7 @@ import net.openhft.affinity.Affinity;
 // for triggering vtune 
 import java.nio.file.*;
 import java.io.IOException;
+
 
 /**
  * @brief A colorcount method that implements 
@@ -68,7 +81,6 @@ public class colorcount_HJ {
     int num_iter;
     int cur_iter;
 
-    //for dynamic programming ?
     dynamic_table_array dt;
     //for partitioning a template
     partitioner part;
@@ -119,6 +131,13 @@ public class colorcount_HJ {
     private float full_count_ato = 0;
     private double count_ato = 0;
 
+    //for comm send/recv vertex abs id
+    private Set<Integer>[] comm_mapper_vertex;
+    private Table<IntArray> recv_vertex_table;
+    private Table<IntArray> send_vertex_table;
+    private Table<IntArray> comm_vertex_table;
+
+    private SCCollectiveMapper mapper;
     //hardcode cores per node on Juliet low-end node
     // private int cpn = 24;  
 
@@ -140,6 +159,68 @@ public class colorcount_HJ {
         if( do_graphlet_freq || do_vert_output){
             //Skipped
         }
+    }
+
+    void init_comm(int[] mapper_id_vertex, SCCollectiveMapper mapper) {
+
+        this.mapper = mapper;
+        int n_mapper = mapper.getNumWorkers();
+        comm_mapper_vertex = new HashSet[n_mapper];
+        for(int p=0; p<n_mapper; p++)
+            comm_mapper_vertex[p] = new HashSet<>(); 
+
+        //loop over all the adj of graph
+        int[] adj_array = g.adjacencies();
+        for(int p=0;p<adj_array.length;p++)
+        {
+            int adj_abs_id = adj_array[p];
+            int mapper_id = mapper_id_vertex[adj_abs_id];
+            comm_mapper_vertex[mapper_id].add(new Integer(adj_abs_id));
+        }
+
+        //convert set to arraylist
+        comm_vertex_table = new Table<>(0, new IntArrPlus());
+        recv_vertex_table = new Table<>(0, new IntArrPlus());
+        send_vertex_table = new Table<>(0, new IntArrPlus());
+
+        int localID = mapper.getSelfID();
+
+        for(int p=0;p<n_mapper;p++)
+        {
+            //create partition id, the upper 16 bits stores receiver id
+            //the lower 16 bits stores sender id
+            if ( (p != localID) &&  comm_mapper_vertex[p].size() > 0 )
+            {
+                int comm_id = ( (p << 16) | localID );
+                //set to arraylist
+                ArrayList<Integer> temp_array = new ArrayList<>(comm_mapper_vertex[p]);
+                //arraylist to int[]
+                int[] temp_array_primitive = ArrayUtils.toPrimitive(temp_array.toArray(new Integer[temp_array.size()]));
+                IntArray comm_array = new IntArray(temp_array_primitive, 0, temp_array_primitive.length);
+
+                //list of partitions to be recieved from other mappers
+                recv_vertex_table.addPartition(new Partition<>(p, comm_array));
+                //table to communicate with other mappers
+                comm_vertex_table.addPartition(new Partition<>(comm_id, comm_array));
+            }
+
+        }
+
+        LOG.info("Start regroup comm table");
+        mapper.regroup("sc", "regroup-send-recv-vertex", comm_vertex_table, new SCPartitioner(mapper.getNumWorkers()));
+        LOG.info("Finish regroup comm table");
+
+        //check the communicated table content
+        for(int comm_id : comm_vertex_table.getPartitionIDs())
+        {
+            LOG.info("Worker ID: " + localID + "; sender id: " + (comm_id >>> 16) + "; receiver id: " + ( comm_id & ( (1 << 16) -1 ) ));
+            LOG.info("Partition Size: " + comm_vertex_table.getPartition(comm_id).get().get().length);
+            //create send table
+            send_vertex_table.addPartition(new Partition(( comm_id & ( (1 << 16) -1 ) ), comm_vertex_table.getPartition(comm_id).get()));
+        }
+
+        //finish
+        LOG.info("Finish comm table: Recv Partitoin num: " + recv_vertex_table.getNumPartitions() + "; Send Partition num: " + send_vertex_table.getNumPartitions());
     }
 
     // the outer iteration
@@ -339,6 +420,17 @@ public class colorcount_HJ {
                                 dt.clear_sub(p);
                         }
 
+                        //start communication part single thread 
+                        if (threadIdx == 0)
+                        {
+                            if (num_verts_sub_ato > 1)
+                            {
+                                //prepare the sending partitions
+
+                            }
+
+                        }
+
                     }
 
                     if(verbose && threadIdx == 0)
@@ -422,19 +514,6 @@ public class colorcount_HJ {
 
         }));
 
-        // for(cur_iter = 0; cur_iter < N; cur_iter++){
-        //
-        //     long elt = 0;
-        //     if(verbose){
-        //         elt = System.currentTimeMillis();
-        //     }
-        //     //get template counts
-        //     count += template_count();
-        //     if(verbose){
-        //         elt = System.currentTimeMillis() - elt;
-        //         LOG.info("Time for count: "+ elt +" ms");
-        //     }
-        // }
 
         //----------------------- end of color_counting -----------------
 
@@ -483,196 +562,188 @@ public class colorcount_HJ {
 
     // This does a single counting for a given templates
     //Return the full scaled count for the template on the whole graph
-    private double template_count(){
-        //do random coloring for full graph
-        Random rand = new Random();
-
-        //vertice num of the full graph, huge
-        int num_verts = g.num_vertices();
-        colors_g = new int[num_verts];
-
-
-        //coloring the graph. (replaced by multi-threading code below)
-        /*
-        for(int v = 0; v < num_verts; ++v){
-            colors_g[v] = rand.nextInt(num_colors) ;
-        }
-        */
-
-        //multi-threading
-        //recording the start and end index
-        //num_verts assigned to each thread
-        int[] chunks = divide_chunks(num_verts, Constants.THREAD_NUM);
-
-        //coloring the full graph (all the vertices)
-        Thread[] threads = new Thread[Constants.THREAD_NUM];
-        for(int t = 0; t < Constants.THREAD_NUM; ++t){
-            final int index = t;
-            threads[t] = new Thread(){
-                public void run(){
-                    for (int v = chunks[index]; v < chunks[index+1]; ++v){
-                        colors_g[v] = rand.nextInt(num_colors) ;
-                    }
-                }
-            };
-            threads[t].start();
-        }
-
-        //waiting for threads to die
-        for(int t =0 ; t < Constants.THREAD_NUM; ++t){
-            try {
-                threads[t].join();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-
-
-        //start doing the counting, starting at bottom of partition tree
-        // then go through all of the subtemplates except for the primary
-        // since that's handled a bt differently
-        for( int s = subtemplate_count -1; s > 0; --s){
-            set_count = 0;
-            total_count = 0;
-            read_count = 0;
-            int num_verts_sub = num_verts_table[s];
-
-            if(verbose)
-                LOG.info("Initing with sub "+ s + ", verts: " + num_verts_sub );
-
-            int a = part.get_active_index(s);
-            int p = part.get_passive_index(s);
-
-            dt.init_sub(s, a, p);
-
-            long elt = 0;
-            //hit the bottom
-            if( num_verts_sub == 1){
-                if(verbose){
-                    elt = System.currentTimeMillis();
-                }
-                init_table_node(s);
-                if(verbose){
-                    elt = System.currentTimeMillis() - elt;
-                    LOG.info("s " + s +", init_table_node "+ elt + " ms");
-                }
-            }else{
-                if(verbose){
-                    elt = System.currentTimeMillis();
-                }
-                colorful_count(s);
-
-                if(verbose){
-                    elt = System.currentTimeMillis() - elt;
-                    LOG.info("s " + s +", array time "+ elt + " ms");
-                }
-            }
-
-            if(verbose){
-                 if( num_verts != 0){
-                     double ratio1  =(double) set_count / (double) num_verts;
-                     double ratio2 = (double) read_count /(double) num_verts;
-                     LOG.info("  Sets: "+ set_count + " Total: "+num_verts + "  Ratio: " + ratio1);
-                     LOG.info("  Reads: "+read_count + " Total: "+num_verts + "  Ratio: " + ratio2);
-                }else{
-                    LOG.info("  Sets: "+ set_count + " Total: "+num_verts );
-                    LOG.info("  Reads: "+read_count + " Total: "+num_verts);
-                }
-            }
-            if( a != Constants.NULL_VAL)
-                dt.clear_sub(a);
-            if(p != Constants.NULL_VAL)
-                dt.clear_sub(p);
-        }
-
-        if(verbose)
-            LOG.info("Done with initialization. Doing full count");
-
-        // do the count for the full template
-        float full_count = 0;
-        set_count = 0;
-        total_count = 0;
-        read_count = 0;
-        long elt = 0;
-
-        int a = part.get_active_index(0);
-        int p = part.get_passive_index(0);
-        dt.init_sub(0, a, p);
-
-        if(verbose) elt= System.currentTimeMillis();
-        full_count = colorful_count(0);
-
-        if(verbose){
-            elt = System.currentTimeMillis() - elt;
-            LOG.info("s 0, array time " + elt + "ms");
-        }
-        colors_g = null;
-        dt.clear_sub(a);
-        dt.clear_sub(p);
-
-        if(verbose){
-            if( num_verts != 0){
-                double ratio1  =(double) set_count / (double) num_verts;
-                double ratio2 = (double) read_count /(double) num_verts;
-                LOG.info("  Non-zero: "+ set_count + " Total: "+num_verts + "  Ratio: " + ratio1);
-                LOG.info("  Reads: "+read_count + " Total: "+num_verts + "  Ratio: " + ratio2);
-            }else{
-                LOG.info("  Non-zero: "+ set_count + " Total: "+num_verts );
-                LOG.info("  Reads: "+read_count + " Total: "+num_verts);
-            }
-            LOG.info("Full count: " + full_count);
-        }
-
-        return (double)full_count;
-    }
+    // private double template_count(){
+    //     //do random coloring for full graph
+    //     Random rand = new Random();
+    //
+    //     //vertice num of the full graph, huge
+    //     int num_verts = g.num_vertices();
+    //     colors_g = new int[num_verts];
+    //
+    //     //multi-threading
+    //     //recording the start and end index
+    //     //num_verts assigned to each thread
+    //     int[] chunks = divide_chunks(num_verts, Constants.THREAD_NUM);
+    //
+    //     //coloring the full graph (all the vertices)
+    //     Thread[] threads = new Thread[Constants.THREAD_NUM];
+    //     for(int t = 0; t < Constants.THREAD_NUM; ++t){
+    //         final int index = t;
+    //         threads[t] = new Thread(){
+    //             public void run(){
+    //                 for (int v = chunks[index]; v < chunks[index+1]; ++v){
+    //                     colors_g[v] = rand.nextInt(num_colors) ;
+    //                 }
+    //             }
+    //         };
+    //         threads[t].start();
+    //     }
+    //
+    //     //waiting for threads to die
+    //     for(int t =0 ; t < Constants.THREAD_NUM; ++t){
+    //         try {
+    //             threads[t].join();
+    //         } catch (InterruptedException e) {
+    //             e.printStackTrace();
+    //         }
+    //     }
+    //
+    //
+    //     //start doing the counting, starting at bottom of partition tree
+    //     // then go through all of the subtemplates except for the primary
+    //     // since that's handled a bt differently
+    //     for( int s = subtemplate_count -1; s > 0; --s){
+    //         set_count = 0;
+    //         total_count = 0;
+    //         read_count = 0;
+    //         int num_verts_sub = num_verts_table[s];
+    //
+    //         if(verbose)
+    //             LOG.info("Initing with sub "+ s + ", verts: " + num_verts_sub );
+    //
+    //         int a = part.get_active_index(s);
+    //         int p = part.get_passive_index(s);
+    //
+    //         dt.init_sub(s, a, p);
+    //
+    //         long elt = 0;
+    //         //hit the bottom
+    //         if( num_verts_sub == 1){
+    //             if(verbose){
+    //                 elt = System.currentTimeMillis();
+    //             }
+    //             init_table_node(s);
+    //             if(verbose){
+    //                 elt = System.currentTimeMillis() - elt;
+    //                 LOG.info("s " + s +", init_table_node "+ elt + " ms");
+    //             }
+    //         }else{
+    //             if(verbose){
+    //                 elt = System.currentTimeMillis();
+    //             }
+    //             colorful_count(s);
+    //
+    //             if(verbose){
+    //                 elt = System.currentTimeMillis() - elt;
+    //                 LOG.info("s " + s +", array time "+ elt + " ms");
+    //             }
+    //         }
+    //
+    //         if(verbose){
+    //              if( num_verts != 0){
+    //                  double ratio1  =(double) set_count / (double) num_verts;
+    //                  double ratio2 = (double) read_count /(double) num_verts;
+    //                  LOG.info("  Sets: "+ set_count + " Total: "+num_verts + "  Ratio: " + ratio1);
+    //                  LOG.info("  Reads: "+read_count + " Total: "+num_verts + "  Ratio: " + ratio2);
+    //             }else{
+    //                 LOG.info("  Sets: "+ set_count + " Total: "+num_verts );
+    //                 LOG.info("  Reads: "+read_count + " Total: "+num_verts);
+    //             }
+    //         }
+    //         if( a != Constants.NULL_VAL)
+    //             dt.clear_sub(a);
+    //         if(p != Constants.NULL_VAL)
+    //             dt.clear_sub(p);
+    //     }
+    //
+    //     if(verbose)
+    //         LOG.info("Done with initialization. Doing full count");
+    //
+    //     // do the count for the full template
+    //     float full_count = 0;
+    //     set_count = 0;
+    //     total_count = 0;
+    //     read_count = 0;
+    //     long elt = 0;
+    //
+    //     int a = part.get_active_index(0);
+    //     int p = part.get_passive_index(0);
+    //     dt.init_sub(0, a, p);
+    //
+    //     if(verbose) elt= System.currentTimeMillis();
+    //     full_count = colorful_count(0);
+    //
+    //     if(verbose){
+    //         elt = System.currentTimeMillis() - elt;
+    //         LOG.info("s 0, array time " + elt + "ms");
+    //     }
+    //     colors_g = null;
+    //     dt.clear_sub(a);
+    //     dt.clear_sub(p);
+    //
+    //     if(verbose){
+    //         if( num_verts != 0){
+    //             double ratio1  =(double) set_count / (double) num_verts;
+    //             double ratio2 = (double) read_count /(double) num_verts;
+    //             LOG.info("  Non-zero: "+ set_count + " Total: "+num_verts + "  Ratio: " + ratio1);
+    //             LOG.info("  Reads: "+read_count + " Total: "+num_verts + "  Ratio: " + ratio2);
+    //         }else{
+    //             LOG.info("  Non-zero: "+ set_count + " Total: "+num_verts );
+    //             LOG.info("  Reads: "+read_count + " Total: "+num_verts);
+    //         }
+    //         LOG.info("Full count: " + full_count);
+    //     }
+    //
+    //     return (double)full_count;
+    // }
 
 
     //s is subtemplate index
-    private void init_table_node(int s){
-
-        //replace unlabeled implementation with multi-threading
-        if( !labeled) {
-            int[] chunks = divide_chunks(num_verts_graph, Constants.THREAD_NUM);
-            Thread[] threads = new Thread[Constants.THREAD_NUM];
-            for (int t = 0; t < Constants.THREAD_NUM; ++t) {
-                final int index = t;
-                threads[t] = new Thread() {
-                    public void run() {
-                        for (int v = chunks[index]; v < chunks[index + 1]; ++v) {
-                            //get the randomly assigned color value
-                            int n = colors_g[v];
-                            dt.set(v, comb_num_indexes_set[s][n], 1.0f);
-                        }
-                    }
-                };
-                threads[t].start();
-            }
-            //waiting for threads to die
-            for(int t =0 ; t < Constants.THREAD_NUM; ++t){
-                try {
-                    threads[t].join();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-            set_count = num_verts_graph;
-
-        }else{
-            int set_count_loop  = 0;
-            int[] labels_sub = part.get_labels(s);
-            int label_s = labels_sub[0];
-            for (int v = 0; v < num_verts_graph; ++v){
-                int n = colors_g[v];
-                int label_g = labels_g[v];
-                if (label_g == label_s) {
-                    dt.set(v, comb_num_indexes_set[s][n], 1.0f);
-                    set_count_loop++;
-                }
-            }
-            set_count = set_count_loop;
-        }
-
-    }
+    // private void init_table_node(int s){
+    //
+    //     //replace unlabeled implementation with multi-threading
+    //     if( !labeled) {
+    //         int[] chunks = divide_chunks(num_verts_graph, Constants.THREAD_NUM);
+    //         Thread[] threads = new Thread[Constants.THREAD_NUM];
+    //         for (int t = 0; t < Constants.THREAD_NUM; ++t) {
+    //             final int index = t;
+    //             threads[t] = new Thread() {
+    //                 public void run() {
+    //                     for (int v = chunks[index]; v < chunks[index + 1]; ++v) {
+    //                         //get the randomly assigned color value
+    //                         int n = colors_g[v];
+    //                         dt.set(v, comb_num_indexes_set[s][n], 1.0f);
+    //                     }
+    //                 }
+    //             };
+    //             threads[t].start();
+    //         }
+    //         //waiting for threads to die
+    //         for(int t =0 ; t < Constants.THREAD_NUM; ++t){
+    //             try {
+    //                 threads[t].join();
+    //             } catch (InterruptedException e) {
+    //                 e.printStackTrace();
+    //             }
+    //         }
+    //         set_count = num_verts_graph;
+    //
+    //     }else{
+    //         int set_count_loop  = 0;
+    //         int[] labels_sub = part.get_labels(s);
+    //         int label_s = labels_sub[0];
+    //         for (int v = 0; v < num_verts_graph; ++v){
+    //             int n = colors_g[v];
+    //             int label_g = labels_g[v];
+    //             if (label_g == label_s) {
+    //                 dt.set(v, comb_num_indexes_set[s][n], 1.0f);
+    //                 set_count_loop++;
+    //             }
+    //         }
+    //         set_count = set_count_loop;
+    //     }
+    //
+    // }
 
 
     private void init_table_node_HJ(int s, int threadIdx, int[] chunks) throws BrokenBarrierException, InterruptedException {
@@ -715,129 +786,131 @@ public class colorcount_HJ {
 
     }
 
-    private float colorful_count(int s){
-
-        //get vert num of subtemplate
-        int num_verts_sub = subtemplates[s].num_vertices();
-
-        //get vert num of active child 
-        int active_index = part.get_active_index(s);
-        int num_verts_a = num_verts_table[active_index];
-        // colorset combinations from active child
-        int num_combinations = choose_table[num_verts_sub][num_verts_a];
-
-
-        long elt = System.currentTimeMillis();
-
-        int[] chunks = divide_chunks(num_verts_graph, Constants.THREAD_NUM);
-
-        Thread[] threads = new Thread[Constants.THREAD_NUM];
-        final int[] set_count_loop = new int[Constants.THREAD_NUM];
-        final int[] total_count_loop = new int[Constants.THREAD_NUM];
-        final int[] read_count_loop = new int[Constants.THREAD_NUM];
-
-        final float[] cc = new float[Constants.THREAD_NUM];
-
-        for (int t = 0; t < Constants.THREAD_NUM; ++t) {
-            final int index = t;
-            threads[t] = new Thread() {
-                public void run() {
-
-                    int[] valid_nbrs = new int[max_degree];
-                    assert(valid_nbrs != null);
-                    int valid_nbrs_count = 0;
-
-                    // each thread for a chunk
-                    for (int v = chunks[index]; v < chunks[index + 1]; ++v) {
-
-                        valid_nbrs_count = 0;
-
-                        //table v must be initialized
-                        if( dt.is_vertex_init_active(v)){
-
-                            int[] adjs = g.adjacent_vertices(v);
-                            int end = g.out_degree(v);
-                            float[] counts_a = dt.get_active(v);
-
-                            ++read_count_loop[index];
-
-                            for(int i = 0; i < end; ++i){
-                                int adj_i = adjs[i];
-                                if(dt.is_vertex_init_passive(adj_i)){
-                                    valid_nbrs[valid_nbrs_count++] = adj_i;
-                                }
-                            }
-
-                            if(valid_nbrs_count != 0){
-
-                                int num_combinations_verts_sub = choose_table[num_colors][num_verts_sub];
-
-                                for(int n = 0; n < num_combinations_verts_sub; ++n){
-
-                                    float color_count = 0.0f;
-
-                                    int[] comb_indexes_a = comb_num_indexes[0][s][n];
-                                    int[] comb_indexes_p = comb_num_indexes[1][s][n];
-
-                                    int p = num_combinations -1;
-                                    for(int a = 0; a < num_combinations; ++a, --p){
-                                        float count_a = counts_a[comb_indexes_a[a]];
-                                        if( count_a > 0){
-                                            for(int i = 0; i < valid_nbrs_count; ++i){
-                                                color_count += count_a * dt.get_passive(valid_nbrs[i], comb_indexes_p[p]);
-                                                ++read_count_loop[index];
-                                            }
-                                        }
-                                    }
-
-                                    if( color_count > 0.0){
-                                        cc[index] += color_count;
-                                        ++set_count_loop[index];
-
-                                        if(s != 0)
-                                            dt.set(v, comb_num_indexes_set[s][n], color_count);
-                                        else if(do_graphlet_freq || do_vert_output)
-                                            final_vert_counts[v] += (double)color_count;
-                                    }
-                                    ++total_count_loop[index];
-                                }
-                            }
-                        }
-
-
-                    }
-                    valid_nbrs = null;
-                }
-            };
-
-            threads[t].start();
-        }
-        
-        //waiting for threads to die
-        for(int t =0 ; t < Constants.THREAD_NUM; ++t){
-            try {
-                threads[t].join();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-
-        set_count = 0;
-        total_count= 0;
-        read_count = 0;
-        float retval = 0;
-        //reduction
-        for(int i = 0; i < Constants.THREAD_NUM; ++i){
-            set_count += set_count_loop[i];
-            total_count += total_count_loop[i];
-            read_count += read_count_loop[i];
-            retval += cc[i];
-        }
-
-        elt = System.currentTimeMillis() - elt;
-        //System.out.println("time: "+ elt +"ms");
-        return retval;
-    }
+    // private float colorful_count(int s){
+    //
+    //     //get vert num of subtemplate
+    //     int num_verts_sub = subtemplates[s].num_vertices();
+    //
+    //     //get vert num of active child 
+    //     int active_index = part.get_active_index(s);
+    //     int num_verts_a = num_verts_table[active_index];
+    //     // colorset combinations from active child
+    //     int num_combinations = choose_table[num_verts_sub][num_verts_a];
+    //
+    //
+    //     long elt = System.currentTimeMillis();
+    //
+    //     int[] chunks = divide_chunks(num_verts_graph, Constants.THREAD_NUM);
+    //
+    //     Thread[] threads = new Thread[Constants.THREAD_NUM];
+    //     final int[] set_count_loop = new int[Constants.THREAD_NUM];
+    //     final int[] total_count_loop = new int[Constants.THREAD_NUM];
+    //     final int[] read_count_loop = new int[Constants.THREAD_NUM];
+    //
+    //     final float[] cc = new float[Constants.THREAD_NUM];
+    //
+    //     for (int t = 0; t < Constants.THREAD_NUM; ++t) {
+    //         final int index = t;
+    //         threads[t] = new Thread() {
+    //             public void run() {
+    //
+    //                 int[] valid_nbrs = new int[max_degree];
+    //                 assert(valid_nbrs != null);
+    //                 int valid_nbrs_count = 0;
+    //
+    //                 // each thread for a chunk
+    //                 for (int v = chunks[index]; v < chunks[index + 1]; ++v) {
+    //
+    //                     valid_nbrs_count = 0;
+    //
+    //                     //table v must be initialized
+    //                     if( dt.is_vertex_init_active(v)){
+    //
+    //                         int[] adjs = g.adjacent_vertices(v);
+    //                         int end = g.out_degree(v);
+    //                         float[] counts_a = dt.get_active(v);
+    //
+    //                         ++read_count_loop[index];
+    //
+    //                         for(int i = 0; i < end; ++i){
+    //                             int adj_i = adjs[i];
+    //                             if(dt.is_vertex_init_passive(adj_i)){
+    //                                 valid_nbrs[valid_nbrs_count++] = adj_i;
+    //                             }
+    //                         }
+    //
+    //                         if(valid_nbrs_count != 0){
+    //
+    //                             int num_combinations_verts_sub = choose_table[num_colors][num_verts_sub];
+    //
+    //                             for(int n = 0; n < num_combinations_verts_sub; ++n){
+    //
+    //                                 //maybe changed to double
+    //                                 float color_count = 0.0f;
+    //
+    //                                 int[] comb_indexes_a = comb_num_indexes[0][s][n];
+    //                                 int[] comb_indexes_p = comb_num_indexes[1][s][n];
+    //
+    //                                 int p = num_combinations -1;
+    //                                 for(int a = 0; a < num_combinations; ++a, --p){
+    //                                     //maybe changed to double
+    //                                     float count_a = counts_a[comb_indexes_a[a]];
+    //                                     if( count_a > 0){
+    //                                         for(int i = 0; i < valid_nbrs_count; ++i){
+    //                                             color_count += count_a * dt.get_passive(valid_nbrs[i], comb_indexes_p[p]);
+    //                                             ++read_count_loop[index];
+    //                                         }
+    //                                     }
+    //                                 }
+    //
+    //                                 if( color_count > 0.0){
+    //                                     cc[index] += color_count;
+    //                                     ++set_count_loop[index];
+    //
+    //                                     if(s != 0)
+    //                                         dt.set(v, comb_num_indexes_set[s][n], color_count);
+    //                                     else if(do_graphlet_freq || do_vert_output)
+    //                                         final_vert_counts[v] += (double)color_count;
+    //                                 }
+    //                                 ++total_count_loop[index];
+    //                             }
+    //                         }
+    //                     }
+    //
+    //
+    //                 }
+    //                 valid_nbrs = null;
+    //             }
+    //         };
+    //
+    //         threads[t].start();
+    //     }
+    //     
+    //     //waiting for threads to die
+    //     for(int t =0 ; t < Constants.THREAD_NUM; ++t){
+    //         try {
+    //             threads[t].join();
+    //         } catch (InterruptedException e) {
+    //             e.printStackTrace();
+    //         }
+    //     }
+    //
+    //     set_count = 0;
+    //     total_count= 0;
+    //     read_count = 0;
+    //     float retval = 0;
+    //     //reduction
+    //     for(int i = 0; i < Constants.THREAD_NUM; ++i){
+    //         set_count += set_count_loop[i];
+    //         total_count += total_count_loop[i];
+    //         read_count += read_count_loop[i];
+    //         retval += cc[i];
+    //     }
+    //
+    //     elt = System.currentTimeMillis() - elt;
+    //     //System.out.println("time: "+ elt +"ms");
+    //     return retval;
+    // }
 
     /**
      * @brief counting

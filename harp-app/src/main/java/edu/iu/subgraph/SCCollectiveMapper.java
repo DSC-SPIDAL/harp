@@ -58,6 +58,8 @@ public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object
     private int adj_len = 0;
     private int max_v_id = 0;
     private Graph t;
+    private Table<IntArray> abs_ids_table;
+    private int[] mapper_id_vertex; 
 
 	@Override
 	protected void setup(Context context) throws IOException, InterruptedException {
@@ -137,11 +139,17 @@ public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object
         LOG.info("Finish load templateFile, num_verts: " + t.num_vertices() + "; edges: " + t.num_edges());
 
 		// ---------------  main computation ----------------------------------
-		long computation_start = System.currentTimeMillis();
         colorcount_HJ graph_count = new colorcount_HJ();
         graph_count.init(g_part, false, false, false, true);
 
+        // ------------------- generate communication information -------------------
+        // send/recv num and verts 
+        graph_count.init_comm(mapper_id_vertex, this);
+        
         LOG.info("Finish graph_count initialization");
+
+        // --------------------- start counting ---------------------
+		long computation_start = System.currentTimeMillis();
 
         double full_count = 0.0;
         full_count = graph_count.do_full_count(t, numIteration);
@@ -272,6 +280,25 @@ public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object
 
             //initialize the Graph class
             g.initGraph(vert_num_count, max_v_id, adj_len, graphData);
+
+            //communication allgather to get all global ids
+            abs_ids_table = new Table<>(0, new IntArrPlus());
+            IntArray abs_ids_array = new IntArray(g.get_abs_v_ids(), 0, g.num_vertices());
+            abs_ids_table.addPartition(new Partition<>(this.getSelfID(), abs_ids_array));
+
+            this.allgather("sc", "collect all abs ids", abs_ids_table);
+
+            //create an label array to store mapper ids info
+            mapper_id_vertex = new int[max_v_id+1];
+            for(int p=0; p<this.getNumWorkers();p++)
+            {
+                int[] mapper_vertex_array = abs_ids_table.getPartition(p).get().get();
+                for(int q=0;q<mapper_vertex_array.length;q++)
+                    mapper_id_vertex[mapper_vertex_array[q]] = p;
+            }
+
+            LOG.info("Finish creating mapper-vertex mapping array");
+            abs_ids_table = null;
 
 	}
 
