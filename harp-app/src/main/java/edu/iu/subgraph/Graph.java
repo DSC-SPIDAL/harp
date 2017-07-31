@@ -218,6 +218,10 @@ public class Graph {
         return max_deg;
     }
 
+    int[] get_abs_v_ids() {
+        return vertex_ids;
+    }
+
     void clear(){
         adjacency_array = null;
         degree_list = null;
