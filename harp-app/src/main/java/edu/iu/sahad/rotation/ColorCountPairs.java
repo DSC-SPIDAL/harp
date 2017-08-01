@@ -16,7 +16,7 @@ public class ColorCountPairs  extends Value {
 			    .getLog(ColorCountPairs.class);
 	
 	private ArrayList<Integer> colors;
-	private ArrayList<Long> counts;	
+	private ArrayList<Double> counts;	
 	// the data structure is (color0, count0) (color1, count1) ...
 	
 	public ColorCountPairs(){
@@ -24,7 +24,7 @@ public class ColorCountPairs  extends Value {
 		counts = new ArrayList<>();
 	}
 	
-	public void addAPair(int color, long count){
+	public void addAPair(int color, double count){
 		colors.add(color);
 		counts.add(count);
 	}
@@ -40,17 +40,17 @@ public class ColorCountPairs  extends Value {
 		this.colors = colors;
 	}
 
-	public ArrayList<Long> getCounts() {
+	public ArrayList<Double> getCounts() {
 		return counts;
 	}
 
-	public void setCounts(ArrayList<Long> counts) {
+	public void setCounts(ArrayList<Double> counts) {
 		this.counts = counts;
 	}
 
 	public void copyTo(Value value){
 		ArrayList<Integer> othercolors = ((ColorCountPairs) value).getColors();
-		ArrayList<Long> othercounts = ((ColorCountPairs) value).getCounts();
+		ArrayList<Double> othercounts = ((ColorCountPairs) value).getCounts();
 
 		for(int i=0; i<this.colors.size(); i++){
 			othercolors.add(this.colors.get(i));
@@ -61,8 +61,8 @@ public class ColorCountPairs  extends Value {
 	@Override
 	public int getNumWriteBytes() {
 		// TODO Auto-generated method stub
-		// int type takes 4 bytes; long type takes 8 bytes
-		// size = 4;  arraylist consists of int(4) and long(8)
+		// int type takes 4 bytes; double type takes 8 bytes
+		// size = 4;  arraylist consists of int(4) and double(8)
 		return 4 + this.colors.size() * 12;
 	}
 
@@ -72,7 +72,7 @@ public class ColorCountPairs  extends Value {
 		 out.writeInt(this.colors.size());
 		 for(int i=0; i<this.colors.size(); i++) {
 		      out.writeInt(this.colors.get(i));
-		      out.writeLong(this.counts.get(i));
+		      out.writeDouble(this.counts.get(i));
 		   }
 	}
 
@@ -82,7 +82,7 @@ public class ColorCountPairs  extends Value {
 		int size = in.readInt();
 	    for (int i = 0; i < size; i++) {
 	      this.colors.add(in.readInt());
-	      this.counts.add(in.readLong());
+	      this.counts.add(in.readDouble());
 	    }
 	}
 	@Override

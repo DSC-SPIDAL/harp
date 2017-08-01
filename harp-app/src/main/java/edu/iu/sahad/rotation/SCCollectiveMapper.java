@@ -251,7 +251,7 @@ public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object
 						
 					 long wholetempbegintime = System.currentTimeMillis();
 
-					 long localCount = localAggregate(subMatchingTable);
+					 double localCount = localAggregate(subMatchingTable);
 					 //do allgather to aggregate the final counting
 					 ColorCountPairsKVTable localCountTable =  new ColorCountPairsKVTable(3);
 					 int key = -1;// -1 represents total counts, not a color.
@@ -280,7 +280,7 @@ public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object
 					 this.logMemUsage();
 					 
 					 //get the aggregate result and then compute the final result
-					 long finalCount=localCountTable.getVal(key).getCounts().get(0);
+					 double finalCount=localCountTable.getVal(key).getCounts().get(0);
 					 finalCount /= isom;
 					 finalCount /= SCUtils.Prob(numColor, sizeTemplate);
 					 
@@ -311,8 +311,8 @@ public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object
 	} 
 
 	//local aggregate the counts
-	private long localAggregate (ColorCountPairsKVTable subMatchingTable){
-		long count = 0;
+	private double localAggregate (ColorCountPairsKVTable subMatchingTable){
+		double count = 0;
 		for(int  parID: subMatchingTable.getPartitionIDs()){
 			ColorCountPairs ccp = subMatchingTable.getVal(parID);
 			for(int i = 0; i< ccp.getCounts().size(); i++){
@@ -361,7 +361,7 @@ public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object
 			activeChild = dataModelMap.get(subjob.getActiveChild());
 		}
 		
-		Map<Integer, Long> colorCountMap;
+		Map<Integer, Double> colorCountMap;
 		
 		int numWorkers = this.getNumWorkers();
 		LOG.info("numWorkers: "+numWorkers);
@@ -375,7 +375,7 @@ public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object
 			 //get valuepairlist from activeChild
 			 ColorCountPairs  activeValuelist = activeChild.getVal(key);
 			 ColorCountPairs passiveValuelist = null;
-			 colorCountMap = new HashMap<Integer, Long>();
+			 colorCountMap = new HashMap<Integer, Double>();
 			 
 			 for(int i = graphpar.get().start(); i<graphpar.get().size(); i++){
 				int neighbor = graphpar.get().get()[i];
@@ -392,11 +392,11 @@ public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object
 				for(int j = 0; j < activeValuelist.getColors().size(); j++){
 
 					int activeColor =activeValuelist.getColors().get(j);
-		            long activeCount = activeValuelist.getCounts().get(j);
+		            double activeCount = activeValuelist.getCounts().get(j);
 					for(int k = 0; k < passiveValuelist.getColors().size(); k++){
 
 						 int passiveColor =  passiveValuelist.getColors().get(k);
-		                 long passiveCount =passiveValuelist.getCounts().get(k);
+		                 double passiveCount =passiveValuelist.getCounts().get(k);
 		              //  LOG.info("color:"+activeColor +":"+activeCount+":"+passiveColor+":"+passiveCount);
 		                 if ((activeColor & passiveColor) == 0)
 		                  // color set intersection is empty
@@ -404,12 +404,12 @@ public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object
 		                	 int newColor = activeColor | passiveColor;
 		                     if (!colorCountMap.containsKey(newColor)) {
 		                            colorCountMap.put(new Integer(newColor), 
-		                            		new Long(activeCount * passiveCount));
+		                            		new Double(activeCount * passiveCount));
 		                     } else {
-		                            Long count = colorCountMap.get(newColor);
+		                            Double count = colorCountMap.get(newColor);
 		                            count += activeCount * passiveCount;
 		                            colorCountMap.put(new Integer(newColor),
-		                                    new Long(count));
+		                                    new Double(count));
 		                        }
 		                    }
 					}
@@ -418,7 +418,7 @@ public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object
 			 
 			 ColorCountPairs newccp = new ColorCountPairs();
 			 for (int color : colorCountMap.keySet()) {
-				 Long count = colorCountMap.get(color);
+				 Double count = colorCountMap.get(color);
 				 newccp.addAPair(color, count);
 			 }
 				 modelTable.addKeyVal(key, newccp);//combine
