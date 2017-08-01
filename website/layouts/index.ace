@@ -139,12 +139,36 @@ html lang={{.Site.LanguageCode}}
                   h4 Harp-DAAL
                   a href=docs/harpdaal/harpdaal/ Overview
                   br
-                  a href=docs/harpdaal/Example/ Matrix Factorization (SGD) 
+                  a href=docs/harpdaal/kmeans/ K-means 
+                  br
+                  a href=docs/harpdaal/mfsgd/ Matrix Factorization (SGD) 
+                  br
+                  a href=docs/harpdaal/als/ Recommender System (ALS) 
+                  br
+                  a href=docs/harpdaal/svd/ Single Value Decomposition (SVD) 
+                  br
+                  a href=docs/harpdaal/pca/ Principal Component Analysis (PCA) 
+                  br
+                  a href=docs/harpdaal/nn/ Neural Network 
+                  br
+                  a href=docs/harpdaal/qr/ QR Decomposition 
+                  br
+                  a href=docs/harpdaal/covariance/ Covariance 
+                  br
+                  a href=docs/harpdaal/moments/ Low Order Moments 
+                  br
+                  a href=docs/harpdaal/naive_bayes/ Naive Bayes 
+                  br
+                  a href=docs/harpdaal/linear_regression/ Linear Regression 
+                  br
+                  a href=docs/harpdaal/ridge_regression/ Ridge Regression 
                 .col-sm-2
                   h4 Contributors
                   a href=docs/contributors/community/ Community
                   br
                   a href=docs/contributors/contributors/ Contributors
+                  br
+                  a href=docs/survey/ User Feedback 
         .row.text-center
           p Copyright © {{.Now.Year}} Indiana Universty
    
