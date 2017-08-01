@@ -15,6 +15,15 @@
  */
 package edu.iu.subgraph;
 
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.ints.IntArrays;
+import it.unimi.dsi.fastutil.ints.IntAVLTreeSet;
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
+
+import org.apache.log4j.Logger;
+import java.util.*;
+
 public class dynamic_table_array extends dynamic_table{
     // subtemplate-vertex-colorset
     private float[][][] table;
@@ -25,7 +34,13 @@ public class dynamic_table_array extends dynamic_table{
     // vertex-colorset
     private float[][] cur_table_passive;
 
+    //indexed by relative v id
+    private Int2ObjectOpenHashMap<int[]> comm_colorset_idx;
+    private Int2ObjectOpenHashMap<float[]> comm_colorset_counts;
+
     int cur_sub;
+
+    final Logger LOG = Logger.getLogger(dynamic_table_array.class);
 
     @Override
     public void init(Graph[] subtemplates, int num_subtemplates, int num_vertices, int num_colors) {
@@ -34,6 +49,9 @@ public class dynamic_table_array extends dynamic_table{
         //num of vertices of full graph 
         this.num_verts = num_vertices;
         this.num_colors = num_colors;
+
+        this.comm_colorset_idx = new Int2ObjectOpenHashMap<>();
+        this.comm_colorset_counts = new Int2ObjectOpenHashMap<>();
 
         //obtain the table,choose j color from i color, the num of combinations
         init_choose_table();
@@ -194,6 +212,13 @@ public class dynamic_table_array extends dynamic_table{
         cur_table[vertex][comb_num_index] = count;
     }
 
+    public void update_comm(int vertex, int comb_num_index, float count){
+
+        if( cur_table[vertex] != null){
+            cur_table[vertex][comb_num_index] += count;
+        }
+    }
+
     @Override
     public boolean is_init() {
         return this.is_inited;
@@ -216,5 +241,107 @@ public class dynamic_table_array extends dynamic_table{
             return true;
         else
             return false;
+    }
+
+    public SCSet compress_send_data(int[] vert_list, int num_comb_max, Graph g) 
+    {
+
+        int v_num = vert_list.length;
+        int[] v_offset = new int[v_num + 1];
+
+        //to be trimed
+        int[] counts_idx_tmp = new int[num_comb_max*v_num];
+        float[] counts_data_tmp = new float[num_comb_max*v_num];
+
+        int count_num = 0;
+
+        // LOG.info("Start compressing send data v_num: " + v_num);
+        for(int p = 0; p< v_num; p++)
+        {
+            v_offset[p] = count_num;
+            //get the abs vert id
+            int comm_vert_id = vert_list[p];
+            int rel_vert_id = g.get_relative_v_id(comm_vert_id); 
+
+            //if comm_vert_id is not in local graph
+            if (rel_vert_id < 0 || (is_vertex_init_passive(rel_vert_id) == false))
+                continue;
+
+            int[] idx_arry = this.comm_colorset_idx.get(rel_vert_id); 
+            float[] counts_arry = this.comm_colorset_counts.get(rel_vert_id); 
+
+            if (idx_arry == null || counts_arry == null)
+            {
+                //create the entry and put it to table
+                //create tmp array which will be trimed later
+                int[] tmp_idx_arry = new int[num_comb_max];
+                float[] tmp_counts_arry = new float[num_comb_max];
+
+                int tmp_itr = 0;
+                for(int q = 0; q< num_comb_max; q++)
+                {
+                    // float count_v = get(cur_sub, rel_vert_id, q);
+                    float count_v = get_passive(rel_vert_id, q);
+                    // if (count_v > 0.0f)
+                    // {
+                        tmp_idx_arry[tmp_itr] = q;
+                        tmp_counts_arry[tmp_itr] = count_v;
+                        tmp_itr++;
+                    // }
+                }
+
+                //trim the tmp array
+                if (tmp_itr > 0)
+                {
+                    idx_arry = new int[tmp_itr];
+                    counts_arry = new float[tmp_itr];
+                    System.arraycopy(tmp_idx_arry, 0, idx_arry, 0, tmp_itr);
+                    System.arraycopy(tmp_counts_arry, 0, counts_arry, 0, tmp_itr);
+
+                    tmp_idx_arry = null;
+                    tmp_counts_arry = null;
+
+                    this.comm_colorset_idx.put(rel_vert_id, idx_arry);
+                    this.comm_colorset_counts.put(rel_vert_id, counts_arry);
+
+                }
+            }
+
+            if (idx_arry != null && counts_arry != null)
+            {
+                //combine the idx_arry 
+                System.arraycopy(idx_arry, 0, counts_idx_tmp, count_num, idx_arry.length);
+                System.arraycopy(counts_arry, 0, counts_data_tmp, count_num, counts_arry.length);
+                count_num += idx_arry.length;
+            }
+
+        }
+
+        // LOG.info("Finish compressing send data");
+
+        v_offset[v_num] = count_num;
+        //trim the tmp array
+        int[] counts_idx = new int[count_num];
+        float[] counts_data = new float[count_num];
+        System.arraycopy(counts_idx_tmp, 0, counts_idx, 0, count_num);
+        System.arraycopy(counts_data_tmp, 0, counts_data, 0, count_num);
+
+        counts_idx_tmp = null;
+        counts_data_tmp = null;
+
+        SCSet set = new SCSet(v_num, count_num, v_offset, counts_idx, counts_data);
+
+        return set;
+
+    }
+
+    public void clear_comm_counts() {
+        this.comm_colorset_idx.clear();
+        this.comm_colorset_counts.clear();
+    }
+
+    public void free_comm_counts() {
+        this.comm_colorset_idx = null;
+        this.comm_colorset_counts = null;
     }
 }
