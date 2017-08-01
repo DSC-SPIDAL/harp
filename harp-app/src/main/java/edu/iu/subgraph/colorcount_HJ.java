@@ -343,12 +343,19 @@ public class colorcount_HJ {
                         elt = System.currentTimeMillis();
                     }
 
-                    Random rand = new Random();
+                    if (threadIdx == 0)
+                    {
+                        Random rand = new Random(System.currentTimeMillis());
+                        //sampling all the local g graphs
+                        for(int p=0;p<num_verts; p++)
+                            colors_g[p] = rand.nextInt(num_colors) ;
+
+                    }
 
                     //sampling the vertices of full graph g
-                    for (int p = chunks[threadIdx]; p < chunks[threadIdx+1]; ++p){
-                        colors_g[p] = rand.nextInt(num_colors) ;
-                    }
+                    // for (int p = chunks[threadIdx]; p < chunks[threadIdx+1]; ++p){
+                    //     colors_g[p] = rand.nextInt(num_colors) ;
+                    // }
 
                     barrier.await();
                     // if (threadIdx == 0)
@@ -373,6 +380,8 @@ public class colorcount_HJ {
 
                             int a = part.get_active_index(s);
                             int p = part.get_passive_index(s);
+
+                            LOG.info("Subtemplate: " + s + "; active_idx: " + a + "; passive_idx: " + p);
 
                             dt.init_sub(s, a, p);
 
@@ -553,6 +562,8 @@ public class colorcount_HJ {
                         // num_verts_sub_ato = num_verts_table[0];
                         int a = part.get_active_index(0);
                         int p = part.get_passive_index(0);
+                        
+                        LOG.info("Subtemplate 0 ; active_idx: " + a + "; passive_idx: " + p);
                         dt.init_sub(0, a, p);
 
                     }
