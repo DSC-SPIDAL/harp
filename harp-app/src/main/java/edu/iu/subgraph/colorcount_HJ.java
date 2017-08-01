@@ -143,6 +143,8 @@ public class colorcount_HJ {
 
     private SCCollectiveMapper mapper;
 
+    private int workerNum;
+
     private Int2ObjectOpenHashMap<ArrayList<Integer>> update_map;
     private final ReentrantLock lock = new ReentrantLock();
     //hardcode cores per node on Juliet low-end node
@@ -193,6 +195,7 @@ public class colorcount_HJ {
         send_vertex_table = new Table<>(0, new IntArrPlus());
 
         int localID = mapper.getSelfID();
+        this.workerNum = mapper.getNumWorkers();
 
         for(int p=0;p<n_mapper;p++)
         {
@@ -547,7 +550,7 @@ public class colorcount_HJ {
                         total_count = 0;
                         read_count = 0;
 
-                        num_verts_sub_ato = num_verts_table[0];
+                        // num_verts_sub_ato = num_verts_table[0];
                         int a = part.get_active_index(0);
                         int p = part.get_passive_index(0);
                         dt.init_sub(0, a, p);
@@ -572,6 +575,8 @@ public class colorcount_HJ {
                     }
 
 
+
+                    float added_last = 0.0f;
 
                     //comm and add the communicated counts to full_count_ato
                     barrier.await();
@@ -619,8 +624,7 @@ public class colorcount_HJ {
                                 int num_combinations_verts_sub = choose_table[num_colors][num_verts_table[0]];
                                 LOG.info("update list len: " + update_vert_list.length );
 
-                                float added_counts = update_comm_data_full(update_vert_list, num_combinations_verts_sub, 0, comm_data_table.getPartition(comm_id).get());
-                                full_count_ato += added_counts;
+                                added_last += update_comm_data_full(update_vert_list, num_combinations_verts_sub, 0, comm_data_table.getPartition(comm_id).get());
                             }
 
                             LOG.info("Finish update comm counts for last subtemplate" 
@@ -642,6 +646,40 @@ public class colorcount_HJ {
                         colors_g = null;
                         dt.clear_sub(a);
                         dt.clear_sub(p);
+                    }
+
+                    //check last subtemplate counts
+                    if (threadIdx == 0)
+                    {
+                            //allreduce to get total counts for subtemplae s
+                            if ( mapper.getNumWorkers() > 1  )
+                            {
+                                //allreduce
+                                Table<DoubleArray> sub_count_table = new Table<>(0, new DoubleArrPlus());
+                                DoubleArray sub_count_array = DoubleArray.create(2, false);
+
+                                sub_count_array.get()[0] = full_count_ato;
+                                sub_count_array.get()[1] = added_last ;
+
+                                sub_count_table.addPartition(new Partition<>(0, sub_count_array));
+
+                                mapper.allreduce("sc", "get-sub-count", sub_count_table);
+                                double full_count_ato_all = sub_count_table.getPartition(0).get().get()[0];
+                                double added_last_all = sub_count_table.getPartition(0).get().get()[1];
+
+                                // LOG.info("Total count for subtemplate: " + s + " is: " + sub_count);
+                                LOG.info("For last subtemplate local count is: " +full_count_ato_all + "; remote count is: " + added_last_all
+                                            + "; total count is: " + (full_count_ato_all + added_last_all) );
+
+                            }
+                            else
+                            {    
+                                LOG.info("For last subtemplate local count is: " +full_count_ato + "; remote count is: " + added_last
+                                            + "; total count is: " + (full_count_ato + added_last) );
+                            }
+
+                            full_count_ato += added_last;
+                    
                     }
 
                     if(verbose && threadIdx == 0){
@@ -820,7 +858,7 @@ public class colorcount_HJ {
                         valid_nbrs[valid_nbrs_count++] = adj_i;
                     }
 
-                    if (adj_i < 0)
+                    if (workerNum > 1 && adj_i < 0)
                     {
                         lock.lock();
                         //put v to the request list of abjs_abs[i]
