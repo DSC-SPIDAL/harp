@@ -165,7 +165,7 @@ public class colorcount_HJ {
 
         //initialize dynamic table
         dt = new dynamic_table_array();
-        barrier = new CyclicBarrier(Constants.THREAD_NUM);
+        barrier = new CyclicBarrier(SCConstants.THREAD_NUM);
 
         if( do_graphlet_freq || do_vert_output){
             //Skipped
@@ -291,7 +291,7 @@ public class colorcount_HJ {
 
         //vertice num of the full graph, huge
         int num_verts = g.num_vertices();
-        int[] chunks = divide_chunks(num_verts, Constants.THREAD_NUM);   
+        int[] chunks = divide_chunks(num_verts, SCConstants.THREAD_NUM);   
 
         //triggering vtune profiling
         // java.nio.file.Path vtune_file = java.nio.file.Paths.get("vtune-flag.txt");
@@ -303,22 +303,25 @@ public class colorcount_HJ {
         //    LOG.info("Failed to create vtune trigger flag");
         // }
 
-        launchHabaneroApp( () -> forallChunked(0, Constants.THREAD_NUM-1, (threadIdx) -> {
+        launchHabaneroApp( () -> forallChunked(0, SCConstants.THREAD_NUM-1, (threadIdx) -> {
 
             //set Java threads affinity
-            BitSet bitSet = new BitSet(Constants.CORE_NUM);
+            BitSet bitSet = new BitSet(SCConstants.CORE_NUM);
             int thread_mask = 0;
 
-            if (Constants.THD_AFFINITY == "scatter")
+            LOG.info("Set up threads affinity: Core Num: " + SCConstants.CORE_NUM + 
+                "; Total Threads: " + SCConstants.THREAD_NUM + "; affinity: " + SCConstants.THD_AFFINITY);
+
+            if (SCConstants.THD_AFFINITY == "scatter")
             {
                 //implement threads bind by core round-robin
-                thread_mask = threadIdx%Constants.CORE_NUM; 
+                thread_mask = threadIdx%SCConstants.CORE_NUM; 
 
             }else
             {
                 //default affinity compact
                 //implement a compact bind, 2 threads a core
-                int tpn = 2*Constants.CORE_NUM;
+                int tpn = 2*SCConstants.CORE_NUM;
                 thread_mask = threadIdx%tpn;
                 thread_mask /= 2;
             }
@@ -541,9 +544,9 @@ public class colorcount_HJ {
                             int a = part.get_active_index(s);
                             int p = part.get_passive_index(s);
 
-                            if( a != Constants.NULL_VAL)
+                            if( a != SCConstants.NULL_VAL)
                                 dt.clear_sub(a);
-                            if(p != Constants.NULL_VAL)
+                            if(p != SCConstants.NULL_VAL)
                                 dt.clear_sub(p);
                         }
                     }
@@ -829,10 +832,10 @@ public class colorcount_HJ {
             // colorset combinations from active child
             num_combinations_ato = choose_table[num_verts_sub_ato][num_verts_a];
 
-            set_count_loop_ato = new int[Constants.THREAD_NUM];
-            total_count_loop_ato = new int[Constants.THREAD_NUM];
-            read_count_loop_ato = new int[Constants.THREAD_NUM];
-            cc_ato = new float[Constants.THREAD_NUM];
+            set_count_loop_ato = new int[SCConstants.THREAD_NUM];
+            total_count_loop_ato = new int[SCConstants.THREAD_NUM];
+            read_count_loop_ato = new int[SCConstants.THREAD_NUM];
+            cc_ato = new float[SCConstants.THREAD_NUM];
         }
 
         barrier.await();
@@ -950,7 +953,7 @@ public class colorcount_HJ {
             retval_ato = 0;
 
             //reduction
-            for(int i = 0; i < Constants.THREAD_NUM; ++i){
+            for(int i = 0; i < SCConstants.THREAD_NUM; ++i){
                 set_count += set_count_loop_ato[i];
                 total_count += total_count_loop_ato[i];
                 read_count += read_count_loop_ato[i];

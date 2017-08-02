@@ -51,7 +51,7 @@ public class partitioner {
         if(labeled){
             label_maps.add(label_map);
         }
-        parents.add(Constants.NULL_VAL);
+        parents.add(SCConstants.NULL_VAL);
 
         int root = 0;
 
@@ -87,16 +87,16 @@ public class partitioner {
                         temp_l = label_maps.get(i);
 
                     //if either have children, need to update their parents
-                    if( active_children.get(i) != Constants.NULL_VAL)
+                    if( active_children.get(i) != SCConstants.NULL_VAL)
                         parents.set( active_children.get(i), i-1 );
 
-                    if(active_children.get(i-1) != Constants.NULL_VAL)
+                    if(active_children.get(i-1) != SCConstants.NULL_VAL)
                         parents.set( active_children.get(i-1), i );
 
-                    if( passive_children.get(i) != Constants.NULL_VAL)
+                    if( passive_children.get(i) != SCConstants.NULL_VAL)
                         parents.set( passive_children.get(i), i-1 );
 
-                    if( passive_children.get(i-1) != Constants.NULL_VAL)
+                    if( passive_children.get(i-1) != SCConstants.NULL_VAL)
                         parents.set( passive_children.get(i-1), i );
 
                     // need to update their parents
@@ -176,15 +176,15 @@ public class partitioner {
             int activeRoot = roots[0];
             partition_recursive(a, activeRoot);
         }else{
-            set_active_child(a, Constants.NULL_VAL);
-            set_passive_child(a, Constants.NULL_VAL);
+            set_active_child(a, SCConstants.NULL_VAL);
+            set_passive_child(a, SCConstants.NULL_VAL);
         }
         if( num_verts_p > 1){
             int passiveRoot = roots[1];
             partition_recursive(p, passiveRoot);
         }else{
-            set_active_child(p, Constants.NULL_VAL);
-            set_passive_child(p, Constants.NULL_VAL);
+            set_active_child(p, SCConstants.NULL_VAL);
+            set_passive_child(p, SCConstants.NULL_VAL);
         }
 
     }
@@ -304,7 +304,7 @@ public class partitioner {
 
     // Initialize dynamic arrays and graph aray
     private void init_arrays(){
-        subtemplates_create = new Graph[Constants.CREATE_SIZE];
+        subtemplates_create = new Graph[SCConstants.CREATE_SIZE];
         for(int i = 0; i < subtemplates_create.length; ++i)
             subtemplates_create[i] = new Graph();
 
@@ -377,7 +377,7 @@ public class partitioner {
 
     private void set_active_child(int s, int a){
         while( active_children.size() <= s)
-            active_children.add(Constants.NULL_VAL);
+            active_children.add(SCConstants.NULL_VAL);
 
         active_children.set(s, a);
     }
@@ -385,14 +385,14 @@ public class partitioner {
 
     private void set_passive_child(int s, int p){
         while( passive_children.size() <= s)
-            passive_children.add(Constants.NULL_VAL);
+            passive_children.add(SCConstants.NULL_VAL);
 
         passive_children.set(s,p);
     }
 
     private void set_parent(int c, int p){
         while( parents.size() <= c )
-            parents.add(Constants.NULL_VAL);
+            parents.add(SCConstants.NULL_VAL);
 
         parents.set(c, p);
     }

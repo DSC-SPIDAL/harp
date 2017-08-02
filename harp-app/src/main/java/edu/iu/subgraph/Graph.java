@@ -81,10 +81,6 @@ public class Graph {
             //get out a vertex 
             int v_id = vertex_ids[p];
 
-            //debug
-            if (p < 20)
-                LOG.info("Local read in graph vertex id: " + v_id);
-
             //setup the mapping between global v id and local v id
             vertex_local_ids[v_id] = p;
 
