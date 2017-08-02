@@ -46,7 +46,7 @@ public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object
 	private int sizeTemplate;
 	private String templateFile;
 	private String wholeTemplateName;
-	private ArrayList<SCSubJob> subjoblist;
+	// private ArrayList<SCSubJob> subjoblist;
 	private Random rand = new Random();
 	private int numMaxThreads;
 	private int numThreads;
@@ -73,24 +73,19 @@ public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object
     	LOG.info("init templateFile");
     	LOG.info(templateFile);
 
-    	numMaxThreads = Runtime.getRuntime().availableProcessors();
-
     	numThreads =configuration.getInt(SCConstants.NUM_THREADS_PER_NODE, 10);
-
-        
-        if(numMaxThreads < numThreads){//if the numMaxThreads is less than numThreads, use numMaxThreads
-        	numThreads = numMaxThreads;
-        }
-
-    	numIteration =configuration.getInt(SCConstants.NUM_ITERATION, 10);
+        numIteration =configuration.getInt(SCConstants.NUM_ITERATION, 10);
         LOG.info("Subgraph Counting Iteration: " + numIteration);
 
-        LOG.info("numMaxTheads: "+numMaxThreads+";numThreads:"+numThreads);
+    	// numMaxThreads = Runtime.getRuntime().availableProcessors();
+        // if(numMaxThreads < numThreads){//if the numMaxThreads is less than numThreads, use numMaxThreads
+        	// numThreads = numMaxThreads;
+        // }
 
-        Constants.THREAD_NUM = numThreads;
-        Constants.CORE_NUM = 24;
-        Constants.THD_AFFINITY = "compact";
-
+        // LOG.info("numMaxTheads: "+numMaxThreads+";numThreads:"+numThreads);
+        // Constants.THREAD_NUM = numThreads;
+        // Constants.CORE_NUM = 24;
+        // Constants.THD_AFFINITY = "compact";
 		numModelSlices = 2;
 	}
 
@@ -382,261 +377,261 @@ public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object
 
     }
 
-	private int getModelSize(ColorCountPairsKVTable[] model){
-		int modelSize = 0;
-		for(int i = 0; i <model.length; i++){
-			modelSize += model[i].getNumPartitions();
-		}
-		return modelSize;
-	}
+	// private int getModelSize(ColorCountPairsKVTable[] model){
+	// 	int modelSize = 0;
+	// 	for(int i = 0; i <model.length; i++){
+	// 		modelSize += model[i].getNumPartitions();
+	// 	}
+	// 	return modelSize;
+	// }
 
 	//TODO: try to abolish tables which won't be used anymore. No effect?
-	private void tryAbolish(SCSubJob subjob, Map<String, ColorCountPairsKVTable[]> dataModelMap){
-		for(SCSubJob ssj: subjoblist){
-			if(ssj.getSubJobID().equals(subjob.getActiveChild())){
-				ssj.referedNum--;
-			}
-			if(ssj.getSubJobID().equals(subjob.getPassiveChild())){
-				ssj.referedNum--;
-			}
-			if(ssj.referedNum == 0 && dataModelMap.containsKey(ssj.getSubJobID())){//abolish
-				LOG.info("Before abolishing: Total Memory (bytes): " + " "
-						+ Runtime.getRuntime().totalMemory()
-						+ ", Free Memory (bytes): "
-						+ Runtime.getRuntime().freeMemory());
-
-				dataModelMap.remove(ssj.getSubJobID());
-				LOG.info("Abolished table "+ssj.getSubJobID());
-			}
-		}
-	}
+	// private void tryAbolish(SCSubJob subjob, Map<String, ColorCountPairsKVTable[]> dataModelMap){
+	// 	for(SCSubJob ssj: subjoblist){
+	// 		if(ssj.getSubJobID().equals(subjob.getActiveChild())){
+	// 			ssj.referedNum--;
+	// 		}
+	// 		if(ssj.getSubJobID().equals(subjob.getPassiveChild())){
+	// 			ssj.referedNum--;
+	// 		}
+	// 		if(ssj.referedNum == 0 && dataModelMap.containsKey(ssj.getSubJobID())){//abolish
+	// 			LOG.info("Before abolishing: Total Memory (bytes): " + " "
+	// 					+ Runtime.getRuntime().totalMemory()
+	// 					+ ", Free Memory (bytes): "
+	// 					+ Runtime.getRuntime().freeMemory());
+    //
+	// 			dataModelMap.remove(ssj.getSubJobID());
+	// 			LOG.info("Abolished table "+ssj.getSubJobID());
+	// 		}
+	// 	}
+	// }
 
 	//local aggregate the counts
-	private long localAggregate (ColorCountPairsKVTable[] subMatchingModel){
-		long count = 0;
-
-		List<AggregationTask> tasks = new LinkedList<>();
-		for (int i = 0; i < numThreads; i++) {
-			tasks.add(new AggregationTask());
-		}
-		// doTasks(cenPartitions, output, tasks);
-		DynamicScheduler<ColorCountPairs,  Long, AggregationTask>
-				compute = new DynamicScheduler<>(tasks);
-		compute.start();
-		for( int i = 0; i < subMatchingModel.length; i++) {
-			ColorCountPairsKVTable subMatchingTable = subMatchingModel[i];
-			for (int parID : subMatchingTable.getPartitionIDs()) {
-				ColorCountPairs ccp = subMatchingTable.getVal(parID);
-				compute.submit(ccp);
-			}
-
-		}
-		Long output=null;
-		while(compute.hasOutput()){
-			output = compute.waitForOutput();
-			if(output != null){
-				count += output;
-			}
-		}
-		compute.stop();
-		return count;
-	}
+	// private long localAggregate (ColorCountPairsKVTable[] subMatchingModel){
+	// 	long count = 0;
+    //
+	// 	List<AggregationTask> tasks = new LinkedList<>();
+	// 	for (int i = 0; i < numThreads; i++) {
+	// 		tasks.add(new AggregationTask());
+	// 	}
+	// 	// doTasks(cenPartitions, output, tasks);
+	// 	DynamicScheduler<ColorCountPairs,  Long, AggregationTask>
+	// 			compute = new DynamicScheduler<>(tasks);
+	// 	compute.start();
+	// 	for( int i = 0; i < subMatchingModel.length; i++) {
+	// 		ColorCountPairsKVTable subMatchingTable = subMatchingModel[i];
+	// 		for (int parID : subMatchingTable.getPartitionIDs()) {
+	// 			ColorCountPairs ccp = subMatchingTable.getVal(parID);
+	// 			compute.submit(ccp);
+	// 		}
+    //
+	// 	}
+	// 	Long output=null;
+	// 	while(compute.hasOutput()){
+	// 		output = compute.waitForOutput();
+	// 		if(output != null){
+	// 			count += output;
+	// 		}
+	// 	}
+	// 	compute.stop();
+	// 	return count;
+	// }
 
 	//clone table
-	private void cloneTable(ColorCountPairsKVTable[] curModel, ColorCountPairsKVTable[] newModel){
-		LOG.info("[BEGIN] clone table");
-
-		List<CloneTask> tasks = new LinkedList<>();
-		for (int i = 0; i < numThreads; i++) {
-			tasks.add(new CloneTask());
-		}
-		// doTasks(cenPartitions, output, tasks);
-		StaticScheduler<Partition<ColorCountPairsKVPartition>,  CloneTask.CloneTaskOutput, CloneTask>
-				compute = new StaticScheduler<>(tasks);
-		for(int i = 0; i < curModel.length; i++) {
-			ColorCountPairsKVTable curTable = curModel[i];
-			for (Partition<ColorCountPairsKVPartition> par : curTable.getPartitions()) {
-				compute.submit(i % numThreads, par);
-			}
-		}
-		compute.start();
-		int sliceId = 0;
-		int partitionPerSlice = getModelSize(curModel) / numModelSlices
-				+ ( getModelSize(curModel) % numModelSlices == 0? 0 : 1);
-		CloneTask.CloneTaskOutput output=null;
-		compute.pause();//wait for completion
-		for(int i = 0; i < numThreads; i++) {
-			while (compute.hasOutput(i)) {
-				output = compute.waitForOutput(i);
-				if (output != null) {
-					if (newModel[sliceId].getNumPartitions() >= partitionPerSlice) {
-						sliceId++;
-					}
-					newModel[sliceId].addKeyVal(output.key, output.colorCountPairs);
-				}
-			}
-		}
-		compute.stop();
-
-		LOG.info("[END] clone table");
-	}
+	// private void cloneTable(ColorCountPairsKVTable[] curModel, ColorCountPairsKVTable[] newModel){
+	// 	LOG.info("[BEGIN] clone table");
+    //
+	// 	List<CloneTask> tasks = new LinkedList<>();
+	// 	for (int i = 0; i < numThreads; i++) {
+	// 		tasks.add(new CloneTask());
+	// 	}
+	// 	// doTasks(cenPartitions, output, tasks);
+	// 	StaticScheduler<Partition<ColorCountPairsKVPartition>,  CloneTask.CloneTaskOutput, CloneTask>
+	// 			compute = new StaticScheduler<>(tasks);
+	// 	for(int i = 0; i < curModel.length; i++) {
+	// 		ColorCountPairsKVTable curTable = curModel[i];
+	// 		for (Partition<ColorCountPairsKVPartition> par : curTable.getPartitions()) {
+	// 			compute.submit(i % numThreads, par);
+	// 		}
+	// 	}
+	// 	compute.start();
+	// 	int sliceId = 0;
+	// 	int partitionPerSlice = getModelSize(curModel) / numModelSlices
+	// 			+ ( getModelSize(curModel) % numModelSlices == 0? 0 : 1);
+	// 	CloneTask.CloneTaskOutput output=null;
+	// 	compute.pause();//wait for completion
+	// 	for(int i = 0; i < numThreads; i++) {
+	// 		while (compute.hasOutput(i)) {
+	// 			output = compute.waitForOutput(i);
+	// 			if (output != null) {
+	// 				if (newModel[sliceId].getNumPartitions() >= partitionPerSlice) {
+	// 					sliceId++;
+	// 				}
+	// 				newModel[sliceId].addKeyVal(output.key, output.colorCountPairs);
+	// 			}
+	// 		}
+	// 	}
+	// 	compute.stop();
+    //
+	// 	LOG.info("[END] clone table");
+	// }
 
 	//subtemplate matching in MultiThread way
-	private ColorCountPairsKVTable[] matchSubTemplateMultiThread(Table<IntArray> graphData, Map<String, ColorCountPairsKVTable[]> dataModelMap, SCSubJob subjob){
-		LOG.info("[BEGIN] SCCollectiveMapper.matchSubTemplateMultiThread" );
-
-		ColorCountPairsKVTable[] modelTable = new ColorCountPairsKVTable[numModelSlices];
-		for(int i = 0; i < numModelSlices; i++){
-			modelTable[i] = new ColorCountPairsKVTable(10*(i+1));//ensure different ids
-		}
-
-		ColorCountPairsKVTable[] passiveChild = dataModelMap.get(subjob.getPassiveChild());
-		ColorCountPairsKVTable[] activeChild;
-		if(subjob.getActiveChild().equals(subjob.getPassiveChild())){
-			//if the active and passive children are the same one
-			//clone an activeChild
-			activeChild = new ColorCountPairsKVTable[numModelSlices];
-			for(int i = 0; i < numModelSlices; i++){
-				activeChild[i] = new ColorCountPairsKVTable(11*(i+1));//ensure different ids
-			}
-			cloneTable(dataModelMap.get(subjob.getPassiveChild()),activeChild);
-			//this activeChild won't do rotation
-		}else{
-			activeChild = dataModelMap.get(subjob.getActiveChild());
-		}
-		LOG.info("active child = "+ subjob.getActiveChild()+"; size="+getModelSize(activeChild)
-				+"; passiveChild ="+subjob.getPassiveChild()+";size="+getModelSize(passiveChild));
-
-		int numWorkers = this.getNumWorkers();
-		LOG.info("numWorkers: "+numWorkers+"; numMaxTheads: "+numMaxThreads+";numThreads:"+numThreads);
-		int numColSplits = 1;
-
-		LOG.info("[BEGIN] SCCollectiveMapper.matchSubTemplateMultiThread.Rotator." );
-		Rotator<ColorCountPairsKVPartition> rotator =
-				new Rotator<>(passiveChild, numColSplits,
-						false, this, null, "subgraph-" + subjob.getSubJobID());
-		rotator.start();
-
-		//compose
-		List<SubMatchingTask> tasks = new LinkedList<>();
-		for (int i = 0; i < numThreads; i++) {
-	        	tasks.add(new SubMatchingTask(graphData,passiveChild[0]));
-		}
-		DynamicScheduler<Partition<ColorCountPairsKVPartition>, SubMatchingTask.SubMatchingTaskOutput, SubMatchingTask>
-		compute = new DynamicScheduler<>(tasks);
-
-		long computeTime = 0;
-		long rotatorBegin = System.currentTimeMillis();
-		for(int j = 0; j < numWorkers; j++){
-			LOG.info("[BEGIN] SCCollectiveMapper.matchSubTemplateMultiThread. Round " +j);
-			for(int k = 0; k < numModelSlices; k++){
-				LOG.info("try to get partition");
-				List<Partition<ColorCountPairsKVPartition>>[] receivedPassiveChild =
-						rotator.getSplitMap(k);
-				LOG.info("get partition");
-
-				long computateBegin = System.currentTimeMillis();
-				//update tasks
-				for (int i = 0; i < numThreads; i++) {
-					compute.getTasks().get(i).setPassiveChild(passiveChild[k]);
-				}
-				LOG.info("task updated");
-				//compute.start();
-				//submit
-				LOG.info("submitting tasks");
-				for(int i = 0; i < activeChild.length; i++) {
-					compute.submitAll(activeChild[i].getPartitions());
-				}
-				LOG.info("submitted; Start tasks");
-				//start tasks here
-				compute.start();
-				SubMatchingTask.SubMatchingTaskOutput output=null;
-				while(compute.hasOutput()){
-					output = compute.waitForOutput();
-					if(output != null){
-						modelTable[k].addKeyVal(output.key, output.colorCountPairs);
-					}
-				}
-				compute.pause();
-				LOG.info("tasks finished");
-				long computateEnd = System.currentTimeMillis();
-				computeTime += computateEnd - computateBegin;
-				rotator.rotate(k);
-			}
-			LOG.info("[END] SCCollectiveMapper.matchSubTemplateMultiThread. Round " +j);
-		}
-		compute.stop();
-		rotator.stop();
-		long rotatorEnd = System.currentTimeMillis();
-		long rotatorTotal = rotatorEnd - rotatorBegin;
-
-		LOG.info("[END] SCCollectiveMapper.matchSubTemplateMultiThread.Rotator: "
-				+"computation: " + computeTime + "ms; communication:" + (rotatorTotal - computeTime) + "ms" );
-
-		LOG.info("[END] SCCollectiveMapper.matchSubTemplateMultiThread" );
-		return modelTable;
-	}
+	// private ColorCountPairsKVTable[] matchSubTemplateMultiThread(Table<IntArray> graphData, Map<String, ColorCountPairsKVTable[]> dataModelMap, SCSubJob subjob){
+	// 	LOG.info("[BEGIN] SCCollectiveMapper.matchSubTemplateMultiThread" );
+    //
+	// 	ColorCountPairsKVTable[] modelTable = new ColorCountPairsKVTable[numModelSlices];
+	// 	for(int i = 0; i < numModelSlices; i++){
+	// 		modelTable[i] = new ColorCountPairsKVTable(10*(i+1));//ensure different ids
+	// 	}
+    //
+	// 	ColorCountPairsKVTable[] passiveChild = dataModelMap.get(subjob.getPassiveChild());
+	// 	ColorCountPairsKVTable[] activeChild;
+	// 	if(subjob.getActiveChild().equals(subjob.getPassiveChild())){
+	// 		//if the active and passive children are the same one
+	// 		//clone an activeChild
+	// 		activeChild = new ColorCountPairsKVTable[numModelSlices];
+	// 		for(int i = 0; i < numModelSlices; i++){
+	// 			activeChild[i] = new ColorCountPairsKVTable(11*(i+1));//ensure different ids
+	// 		}
+	// 		cloneTable(dataModelMap.get(subjob.getPassiveChild()),activeChild);
+	// 		//this activeChild won't do rotation
+	// 	}else{
+	// 		activeChild = dataModelMap.get(subjob.getActiveChild());
+	// 	}
+	// 	LOG.info("active child = "+ subjob.getActiveChild()+"; size="+getModelSize(activeChild)
+	// 			+"; passiveChild ="+subjob.getPassiveChild()+";size="+getModelSize(passiveChild));
+    //
+	// 	int numWorkers = this.getNumWorkers();
+	// 	LOG.info("numWorkers: "+numWorkers+"; numMaxTheads: "+numMaxThreads+";numThreads:"+numThreads);
+	// 	int numColSplits = 1;
+    //
+	// 	LOG.info("[BEGIN] SCCollectiveMapper.matchSubTemplateMultiThread.Rotator." );
+	// 	Rotator<ColorCountPairsKVPartition> rotator =
+	// 			new Rotator<>(passiveChild, numColSplits,
+	// 					false, this, null, "subgraph-" + subjob.getSubJobID());
+	// 	rotator.start();
+    //
+	// 	//compose
+	// 	List<SubMatchingTask> tasks = new LinkedList<>();
+	// 	for (int i = 0; i < numThreads; i++) {
+	//         	tasks.add(new SubMatchingTask(graphData,passiveChild[0]));
+	// 	}
+	// 	DynamicScheduler<Partition<ColorCountPairsKVPartition>, SubMatchingTask.SubMatchingTaskOutput, SubMatchingTask>
+	// 	compute = new DynamicScheduler<>(tasks);
+    //
+	// 	long computeTime = 0;
+	// 	long rotatorBegin = System.currentTimeMillis();
+	// 	for(int j = 0; j < numWorkers; j++){
+	// 		LOG.info("[BEGIN] SCCollectiveMapper.matchSubTemplateMultiThread. Round " +j);
+	// 		for(int k = 0; k < numModelSlices; k++){
+	// 			LOG.info("try to get partition");
+	// 			List<Partition<ColorCountPairsKVPartition>>[] receivedPassiveChild =
+	// 					rotator.getSplitMap(k);
+	// 			LOG.info("get partition");
+    //
+	// 			long computateBegin = System.currentTimeMillis();
+	// 			//update tasks
+	// 			for (int i = 0; i < numThreads; i++) {
+	// 				compute.getTasks().get(i).setPassiveChild(passiveChild[k]);
+	// 			}
+	// 			LOG.info("task updated");
+	// 			//compute.start();
+	// 			//submit
+	// 			LOG.info("submitting tasks");
+	// 			for(int i = 0; i < activeChild.length; i++) {
+	// 				compute.submitAll(activeChild[i].getPartitions());
+	// 			}
+	// 			LOG.info("submitted; Start tasks");
+	// 			//start tasks here
+	// 			compute.start();
+	// 			SubMatchingTask.SubMatchingTaskOutput output=null;
+	// 			while(compute.hasOutput()){
+	// 				output = compute.waitForOutput();
+	// 				if(output != null){
+	// 					modelTable[k].addKeyVal(output.key, output.colorCountPairs);
+	// 				}
+	// 			}
+	// 			compute.pause();
+	// 			LOG.info("tasks finished");
+	// 			long computateEnd = System.currentTimeMillis();
+	// 			computeTime += computateEnd - computateBegin;
+	// 			rotator.rotate(k);
+	// 		}
+	// 		LOG.info("[END] SCCollectiveMapper.matchSubTemplateMultiThread. Round " +j);
+	// 	}
+	// 	compute.stop();
+	// 	rotator.stop();
+	// 	long rotatorEnd = System.currentTimeMillis();
+	// 	long rotatorTotal = rotatorEnd - rotatorBegin;
+    //
+	// 	LOG.info("[END] SCCollectiveMapper.matchSubTemplateMultiThread.Rotator: "
+	// 			+"computation: " + computeTime + "ms; communication:" + (rotatorTotal - computeTime) + "ms" );
+    //
+	// 	LOG.info("[END] SCCollectiveMapper.matchSubTemplateMultiThread" );
+	// 	return modelTable;
+	// }
 
 
 	//color the graph in MultiThread way
-	private ColorCountPairsKVTable[] colorGraphMultiThread(Table<IntArray> graphData ){
-		LOG.info("[BEGIN] SCCollectiveMapper.colorGraphMultiThread " );
-
-		ColorCountPairsKVTable[] colorTable =  new ColorCountPairsKVTable[numModelSlices];
-		for(int i = 0; i < numModelSlices; i++){
-			colorTable[i] = new ColorCountPairsKVTable(9*(i+1));
-		}
-
-		Collection<Partition<IntArray>> graphPartitions = graphData.getPartitions();
-	    List<ColorTask> tasks = new LinkedList<>();
-	    for (int i = 0; i < numThreads; i++) {
-	    	tasks.add(new ColorTask(numColor, rand));
-	    }
-	    // doTasks(cenPartitions, output, tasks);
-	    DynamicScheduler<Partition<IntArray>,  ColorTask.ColorTaskOutput, ColorTask>
-	    	compute = new DynamicScheduler<>(tasks);
-	    compute.start();
-
-	    for (Partition<IntArray> partition : graphPartitions) {
-	    	compute.submit(partition);
-	    }
-		int modelSliceId = 0;
-	    int partitionPerSlice = graphData.getNumPartitions() / numModelSlices
-								+ ( graphData.getNumPartitions() % numModelSlices == 0? 0 : 1);
-		ColorTask.ColorTaskOutput output=null;
-	    while(compute.hasOutput()){
-	    	output = compute.waitForOutput();
-	    	if(output != null){
-	    		if( colorTable[modelSliceId].getNumPartitions() >= partitionPerSlice){
-	    			modelSliceId++;
-				}
-				colorTable[modelSliceId].addKeyVal(output.partitionId, output.colorCountPairs);
-	    	}
-	    }
-	    compute.stop();
-
-	    for(int i = 0; i < numModelSlices; i++){
-		LOG.info("model slice id: "+i+"; mode size: " + colorTable[i].getNumPartitions());
-	    }
-
-	    LOG.info("[END] SCCollectiveMapper.colorGraphMultiThread");
-
-		return colorTable;
-	}
+	// private ColorCountPairsKVTable[] colorGraphMultiThread(Table<IntArray> graphData ){
+	// 	LOG.info("[BEGIN] SCCollectiveMapper.colorGraphMultiThread " );
+    //
+	// 	ColorCountPairsKVTable[] colorTable =  new ColorCountPairsKVTable[numModelSlices];
+	// 	for(int i = 0; i < numModelSlices; i++){
+	// 		colorTable[i] = new ColorCountPairsKVTable(9*(i+1));
+	// 	}
+    //
+	// 	Collection<Partition<IntArray>> graphPartitions = graphData.getPartitions();
+	//     List<ColorTask> tasks = new LinkedList<>();
+	//     for (int i = 0; i < numThreads; i++) {
+	//     	tasks.add(new ColorTask(numColor, rand));
+	//     }
+	//     // doTasks(cenPartitions, output, tasks);
+	//     DynamicScheduler<Partition<IntArray>,  ColorTask.ColorTaskOutput, ColorTask>
+	//     	compute = new DynamicScheduler<>(tasks);
+	//     compute.start();
+    //
+	//     for (Partition<IntArray> partition : graphPartitions) {
+	//     	compute.submit(partition);
+	//     }
+	// 	int modelSliceId = 0;
+	//     int partitionPerSlice = graphData.getNumPartitions() / numModelSlices
+	// 							+ ( graphData.getNumPartitions() % numModelSlices == 0? 0 : 1);
+	// 	ColorTask.ColorTaskOutput output=null;
+	//     while(compute.hasOutput()){
+	//     	output = compute.waitForOutput();
+	//     	if(output != null){
+	//     		if( colorTable[modelSliceId].getNumPartitions() >= partitionPerSlice){
+	//     			modelSliceId++;
+	// 			}
+	// 			colorTable[modelSliceId].addKeyVal(output.partitionId, output.colorCountPairs);
+	//     	}
+	//     }
+	//     compute.stop();
+    //
+	//     for(int i = 0; i < numModelSlices; i++){
+	// 	LOG.info("model slice id: "+i+"; mode size: " + colorTable[i].getNumPartitions());
+	//     }
+    //
+	//     LOG.info("[END] SCCollectiveMapper.colorGraphMultiThread");
+    //
+	// 	return colorTable;
+	// }
 
 	//color the graph
-	private ColorCountPairsKVTable colorGraph(Table<IntArray> graphData ){
-		ColorCountPairsKVTable table = new ColorCountPairsKVTable(8);
-		for(int ID: graphData.getPartitionIDs()){
-			//LOG.info("for ID:=" + ID);
-			//int colorBit = SCUtils.power(2, rand.nextInt(numColor));
-			int colorBit = SCUtils.power(2, ID % numColor );
-			ColorCountPairs ccp = new ColorCountPairs();
-			ccp.addAPair(colorBit, 1);
-			table.addKeyVal(ID, ccp);
-		}
-		return table;
-	}
+	// private ColorCountPairsKVTable colorGraph(Table<IntArray> graphData ){
+	// 	ColorCountPairsKVTable table = new ColorCountPairsKVTable(8);
+	// 	for(int ID: graphData.getPartitionIDs()){
+	// 		//LOG.info("for ID:=" + ID);
+	// 		//int colorBit = SCUtils.power(2, rand.nextInt(numColor));
+	// 		int colorBit = SCUtils.power(2, ID % numColor );
+	// 		ColorCountPairs ccp = new ColorCountPairs();
+	// 		ccp.addAPair(colorBit, 1);
+	// 		table.addKeyVal(ID, ccp);
+	// 	}
+	// 	return table;
+	// }
 
 	//load template
 	// private void init(String template){
@@ -763,52 +758,52 @@ public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object
     //     }
 	// }
 
-	private ArrayList<SCSubJob> topologySort(ArrayList<SCSubJob> subjoblist){
-		ArrayList<SCSubJob> res = new ArrayList<SCSubJob>();
-		Set<String> uniqueSet = new HashSet<String>();
-		int size =  subjoblist.size();
-		for(int j=0; j<size; j++){
-			for(int i = 0; i < size; i++){
-				SCSubJob scsjob = subjoblist.get(i);
-				if(!uniqueSet.contains(scsjob.getSubJobID())){
-					if( (scsjob.getActiveChild() == null || uniqueSet.contains(scsjob.getActiveChild()))
-							&& 
-						((scsjob.getPassiveChild() == null) ||  uniqueSet.contains(scsjob.getPassiveChild())) ) {
-						res.add(scsjob);
-						uniqueSet.add(scsjob.getSubJobID());
-					}
-				}
-			}
-		}
-		return res;
-	}
+	// private ArrayList<SCSubJob> topologySort(ArrayList<SCSubJob> subjoblist){
+	// 	ArrayList<SCSubJob> res = new ArrayList<SCSubJob>();
+	// 	Set<String> uniqueSet = new HashSet<String>();
+	// 	int size =  subjoblist.size();
+	// 	for(int j=0; j<size; j++){
+	// 		for(int i = 0; i < size; i++){
+	// 			SCSubJob scsjob = subjoblist.get(i);
+	// 			if(!uniqueSet.contains(scsjob.getSubJobID())){
+	// 				if( (scsjob.getActiveChild() == null || uniqueSet.contains(scsjob.getActiveChild()))
+	// 						&& 
+	// 					((scsjob.getPassiveChild() == null) ||  uniqueSet.contains(scsjob.getPassiveChild())) ) {
+	// 					res.add(scsjob);
+	// 					uniqueSet.add(scsjob.getSubJobID());
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+	// 	return res;
+	// }
 
 	//final counting
-	private int finalCounting(Table<IntArray> wholeMatchingTable){
-		int count = 0;
-		for(Partition<IntArray> parWholeMatching: wholeMatchingTable.getPartitions()){
-			for(int i = parWholeMatching.get().start()+1; i<parWholeMatching.get().size(); i+=2){
-				count += parWholeMatching.get().get()[i];
-			}
-		}
-
-		count /= isom;
-		count /= SCUtils.Prob(numColor, sizeTemplate);
-		
-		
-		return count;
-	}
+	// private int finalCounting(Table<IntArray> wholeMatchingTable){
+	// 	int count = 0;
+	// 	for(Partition<IntArray> parWholeMatching: wholeMatchingTable.getPartitions()){
+	// 		for(int i = parWholeMatching.get().start()+1; i<parWholeMatching.get().size(); i+=2){
+	// 			count += parWholeMatching.get().get()[i];
+	// 		}
+	// 	}
+    //
+	// 	count /= isom;
+	// 	count /= SCUtils.Prob(numColor, sizeTemplate);
+	// 	
+	// 	
+	// 	return count;
+	// }
 	
 	//print for debugging
-	private void printTable( ColorCountPairsKVTable table){
-		for(Partition<ColorCountPairsKVPartition> par: table.getPartitions())
-		 {
-			int key = par.id();
-			 ColorCountPairs ccp = par.get().getVal(key);
-			 System.out.print(key+"\t");
-			 for(int i = 0; i<ccp.getColors().size(); i++)
-				 System.out.print(ccp.getColors().get(i)+","+ccp.getCounts().get(i)+",");
-			 System.out.println();
-		}
-	}
+	// private void printTable( ColorCountPairsKVTable table){
+	// 	for(Partition<ColorCountPairsKVPartition> par: table.getPartitions())
+	// 	 {
+	// 		int key = par.id();
+	// 		 ColorCountPairs ccp = par.get().getVal(key);
+	// 		 System.out.print(key+"\t");
+	// 		 for(int i = 0; i<ccp.getColors().size(); i++)
+	// 			 System.out.print(ccp.getColors().get(i)+","+ccp.getCounts().get(i)+",");
+	// 		 System.out.println();
+	// 	}
+	// }
 }

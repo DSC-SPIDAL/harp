@@ -53,7 +53,7 @@ public class SCLauncher extends Configured implements Tool {
 	 */
     @Override
 	public int run(String[] args) throws Exception {
-		if (args.length < 8) {
+		if (args.length < 10) {
 			System.err.println("Usage: edu.iu.subgraph.SCLauncher" +
                     " <number of map tasks> "+
                     "<useLocalMultiThread> "+
@@ -61,6 +61,8 @@ public class SCLauncher extends Configured implements Tool {
                     "<graphDir> "+
                     " <outDir> "+
                     "<num threads per node> "+
+                    "<num cores per node> "+
+                    "<thread affinity> "+
                     "<mem per mapper>"+
                     "<num iteration>");
 
@@ -74,32 +76,36 @@ public class SCLauncher extends Configured implements Tool {
 		String graphDir = args[3];
 		String outDir = args[4];
 		int numThreads = Integer.parseInt(args[5]);
-        int mem = Integer.parseInt(args[6]);
-        int numIteration = Integer.parseInt(args[7]);
+		int numCores = Integer.parseInt(args[6]);
+        String affinity = args[7];
+        int mem = Integer.parseInt(args[8]);
+        int numIteration = Integer.parseInt(args[9]);
 
 		System.out.println("use Local MultiThread? "+useLocalMultiThread);
 		System.out.println("set Number of Map Tasks = " + numMapTasks);
 		System.out.println("set number of threads: "+numThreads);
+		System.out.println("set threads affinity: "+affinity);
+		System.out.println("set number of cores per node: "+numCores);
 
-		launch(graphDir, template, outDir, numMapTasks, useLocalMultiThread, numThreads, mem, numIteration);
+		launch(graphDir, template, outDir, numMapTasks, useLocalMultiThread, numThreads, numCores, affinity,  mem, numIteration);
 		return 0;
 	}
 
     public void launch(String graphDir, String template, String outDir, int numMapTasks, 
-            boolean useLocalMultiThread, int numThreads, int mem, int numIteration) 
+            boolean useLocalMultiThread, int numThreads, int numCores, String affinity, int mem, int numIteration) 
         throws ClassNotFoundException, IOException, InterruptedException{
 
 		boolean jobSuccess = true;
 		int jobRetryCount = 0;
 		Job scJob = configureSCJob(graphDir, template, outDir, 
-                numMapTasks, useLocalMultiThread, numThreads, mem, numIteration);
+                numMapTasks, useLocalMultiThread, numThreads, numCores, affinity, mem, numIteration);
 		// ----------------------------------------------------------
 		jobSuccess =scJob.waitForCompletion(true);
 		// ----------------------------------------------------------
 	}
 
 	private Job configureSCJob(String graphDir, String template, String outDir, int numMapTasks, 
-            boolean useLocalMultiThread, int numThreads, int mem, int numIteration) throws IOException  
+            boolean useLocalMultiThread, int numThreads, int numCores, String affinity, int mem, int numIteration) throws IOException  
     {
 
 		Configuration configuration = getConf();
@@ -150,6 +156,13 @@ public class SCLauncher extends Configured implements Tool {
 		jobConfig.setBoolean(SCConstants.USE_LOCAL_MULTITHREAD, useLocalMultiThread);
 
 		jobConfig.setInt(SCConstants.NUM_THREADS_PER_NODE,numThreads);
+
+		// jobConfig.setInt(SCConstants.THREAD_NUM,numThreads);
+		// jobConfig.setInt(SCConstants.CORE_NUM, numCores);
+		// jobConfig.set(SCConstants.THD_AFFINITY,affinity);
+        SCConstants.THREAD_NUM = numThreads;
+        SCConstants.CORE_NUM = numCores;
+        SCConstants.THD_AFFINITY = affinity;
 
 		jobConfig.setInt(SCConstants.NUM_ITERATION, numIteration);
 

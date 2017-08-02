@@ -97,7 +97,7 @@ public class dynamic_table_array extends dynamic_table{
     }
 
     public void init_sub(int subtemplate, int active_child, int passive_child){
-        if( active_child != Constants.NULL_VAL && passive_child != Constants.NULL_VAL){
+        if( active_child != SCConstants.NULL_VAL && passive_child != SCConstants.NULL_VAL){
             cur_table_active = table[active_child];
             cur_table_passive = table[passive_child];
         }else{
