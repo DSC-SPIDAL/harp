@@ -8,7 +8,7 @@ public class Constants {
 
     public static int THREAD_NUM = 1;
 
-    public static int CORE_NUM = 12;
+    public static int CORE_NUM = 64;
 
     public static String THD_AFFINITY = "compact";
 
