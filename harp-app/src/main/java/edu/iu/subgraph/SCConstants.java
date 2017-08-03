@@ -8,9 +8,9 @@ public class SCConstants {
   public static final String OUTPUT_PATH = "output_path";
   public static final String USE_LOCAL_MULTITHREAD = "use_local_multithread";
   public static final String NUM_THREADS_PER_NODE="num_threads_per_node";
-  public static int CORE_NUM = 24;
-  public static int THREAD_NUM = 64;
-  public static String THD_AFFINITY = "compact";
+  public static final String CORE_NUM = "24";
+  public static final String THREAD_NUM = "24";
+  public static final String THD_AFFINITY = "compact or scatter";
   public static final String NUM_ITERATION="num_itr";
   public static final int ARR_LEN = 16;
 

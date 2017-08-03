@@ -28,9 +28,9 @@ public class SCSet extends Writable {
   private int counts_num;
 
   // array to hold colorset ids for counts
-  private int[] v_offset;
-  private int[] counts_idx;
-  private float[] counts_data;
+  private int[] v_offset; //size == v_num + 1
+  private int[] counts_idx; //size == counts_num
+  private float[] counts_data; //size == counts_num
 
 
   public SCSet() {

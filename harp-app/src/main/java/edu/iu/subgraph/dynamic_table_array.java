@@ -35,6 +35,7 @@ public class dynamic_table_array extends dynamic_table{
     private float[][] cur_table_passive;
 
     //indexed by relative v id
+    //can be replaced by int[max_rel_id][]
     private Int2ObjectOpenHashMap<int[]> comm_colorset_idx;
     private Int2ObjectOpenHashMap<float[]> comm_colorset_counts;
 
@@ -184,10 +185,11 @@ public class dynamic_table_array extends dynamic_table{
     //float* get_passive(int vertex) return cur_table_passive[vertex];
 
     public void set(int subtemplate, int vertex, int comb_num_index, float count){
-        if( table[subtemplate][vertex] != null){
+
+        if( table[subtemplate][vertex] == null){
 
             table[subtemplate][vertex] = new float[ num_colorsets[subtemplate] ];
-            assert(cur_table[vertex] != null);
+            assert(table[subtemplate][vertex] != null);
 
             for(int c = 0; c < num_colorsets[subtemplate]; ++c){
                 table[subtemplate][vertex][c] = 0.0f;
@@ -243,6 +245,7 @@ public class dynamic_table_array extends dynamic_table{
             return false;
     }
 
+    //send local v comb counts data to remote mappers
     public SCSet compress_send_data(int[] vert_list, int num_comb_max, Graph g) 
     {
 
@@ -250,6 +253,7 @@ public class dynamic_table_array extends dynamic_table{
         int[] v_offset = new int[v_num + 1];
 
         //to be trimed
+        //counts_idx_tmp is not required, can be removed
         int[] counts_idx_tmp = new int[num_comb_max*v_num];
         float[] counts_data_tmp = new float[num_comb_max*v_num];
 
@@ -278,16 +282,14 @@ public class dynamic_table_array extends dynamic_table{
                 float[] tmp_counts_arry = new float[num_comb_max];
 
                 int tmp_itr = 0;
+                //this can be replaced by system.arraycopy
+                //get all the comb numbers 
                 for(int q = 0; q< num_comb_max; q++)
                 {
-                    // float count_v = get(cur_sub, rel_vert_id, q);
                     float count_v = get_passive(rel_vert_id, q);
-                    // if (count_v > 0.0f)
-                    // {
-                        tmp_idx_arry[tmp_itr] = q;
-                        tmp_counts_arry[tmp_itr] = count_v;
-                        tmp_itr++;
-                    // }
+                    tmp_idx_arry[tmp_itr] = q;
+                    tmp_counts_arry[tmp_itr] = count_v;
+                    tmp_itr++;
                 }
 
                 //trim the tmp array
@@ -333,6 +335,14 @@ public class dynamic_table_array extends dynamic_table{
 
         return set;
 
+    }
+
+    public int get_num_color_set(int s) 
+    {
+        if (num_colorsets != null )
+            return num_colorsets[s];
+        else
+            return 0;
     }
 
     public void clear_comm_counts() {
