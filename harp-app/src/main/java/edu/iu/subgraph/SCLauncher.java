@@ -157,12 +157,12 @@ public class SCLauncher extends Configured implements Tool {
 
 		jobConfig.setInt(SCConstants.NUM_THREADS_PER_NODE,numThreads);
 
-		// jobConfig.setInt(SCConstants.THREAD_NUM,numThreads);
-		// jobConfig.setInt(SCConstants.CORE_NUM, numCores);
-		// jobConfig.set(SCConstants.THD_AFFINITY,affinity);
-        SCConstants.THREAD_NUM = numThreads;
-        SCConstants.CORE_NUM = numCores;
-        SCConstants.THD_AFFINITY = affinity;
+		jobConfig.setInt(SCConstants.THREAD_NUM,numThreads);
+		jobConfig.setInt(SCConstants.CORE_NUM, numCores);
+		jobConfig.set(SCConstants.THD_AFFINITY,affinity);
+        // SCConstants.THREAD_NUM = numThreads;
+        // SCConstants.CORE_NUM = numCores;
+        // SCConstants.THD_AFFINITY = affinity;
 
 		jobConfig.setInt(SCConstants.NUM_ITERATION, numIteration);
 

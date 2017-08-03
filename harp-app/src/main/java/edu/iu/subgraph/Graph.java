@@ -176,8 +176,10 @@ public class Graph {
         //this doesn't return original array.
         //Be aware of the difference
         int local_id = this.vertex_local_ids[v];
-        return Arrays.copyOfRange(adjacency_array, degree_list[local_id], degree_list[local_id+1]);
-
+        if (local_id >= 0)
+            return Arrays.copyOfRange(adjacency_array, degree_list[local_id], degree_list[local_id+1]);
+        else
+            return null;
     }
 
     int get_relative_v_id(int v_abs) {
@@ -185,14 +187,19 @@ public class Graph {
         return vertex_local_ids[v_abs]; 
     }
 
+    // v is rel id
     // v start from 0
     int out_degree(int v){
         return degree_list[v + 1] - degree_list[v];
     }
 
+    // v is abs id
     int out_degree_abs(int v){
         int local_id = this.vertex_local_ids[v];
-        return degree_list[local_id + 1] - degree_list[local_id];
+        if (local_id >= 0)
+            return degree_list[local_id + 1] - degree_list[local_id];
+        else
+            return 0;
     }
 
     int[] adjacencies(){

@@ -101,7 +101,7 @@ public class colorcount_HJ {
     int[] num_verts_table;
     // what is this ?
     int num_verts_graph;
-    int max_degree;
+    // int max_degree;
 
     // what is this ?
     double[] final_vert_counts;
@@ -113,11 +113,6 @@ public class colorcount_HJ {
     int set_count;
     int total_count;
     int read_count;
-
-    //thread bindings
-    //cps is core per socket
-    // int cps = 12; 
-    // int cps = 18; 
 
     //thread barrier
     // private AtomicInteger barrierCounter = new AtomicInteger(0);
@@ -144,14 +139,30 @@ public class colorcount_HJ {
     private SCCollectiveMapper mapper;
 
     private int workerNum;
+    private int max_abs_id;
 
-    private Int2ObjectOpenHashMap<ArrayList<Integer>> update_map;
+    //comm abs_adj id for each local rel v
+    private int[][] update_map;
+    // the size of comm abs_adj for each local rel_v 
+    private int[] update_map_size; 
+    // mapping an arbitary abs_v_id to its belonged mapper id
+    private int[] abs_v_to_mapper;
+    // mapping an arbitary abs_v_id to the relative position in updating queues 
+    private int[] abs_v_to_queue;
+    //update counts from communicated data 
+    private int[][] update_queue_pos;
+    private float[][] update_queue_counts;
+
     private final ReentrantLock lock = new ReentrantLock();
-    //hardcode cores per node on Juliet low-end node
-    // private int cpn = 24;  
+
+    private int thread_num = 24;
+    private int core_num = 24;
+    private String affinity = "compact";
+
 
     //inovoked in Fascia.java
-    void init(Graph full_graph, boolean calc_auto, boolean do_gdd, boolean do_vert, boolean verb){
+    void init(Graph full_graph, int max_v_id, int thread_num, int core_num, String affinity, boolean calc_auto, boolean do_gdd, boolean do_vert, boolean verb){
+
         g = full_graph;
         num_verts_graph = g.num_vertices();
         labels_g = g.labels;
@@ -161,11 +172,14 @@ public class colorcount_HJ {
         calculate_automorphisms = calc_auto;
         verbose = verb;
 
-        update_map = new Int2ObjectOpenHashMap<>();
+        this.max_abs_id = max_v_id;
+        this.thread_num = thread_num;
+        this.core_num = core_num;
+        this.affinity = affinity;
 
         //initialize dynamic table
         dt = new dynamic_table_array();
-        barrier = new CyclicBarrier(SCConstants.THREAD_NUM);
+        barrier = new CyclicBarrier(this.thread_num);
 
         if( do_graphlet_freq || do_vert_output){
             //Skipped
@@ -175,12 +189,29 @@ public class colorcount_HJ {
     void init_comm(int[] mapper_id_vertex, SCCollectiveMapper mapper) {
 
         this.mapper = mapper;
+        
         int n_mapper = mapper.getNumWorkers();
         comm_mapper_vertex = new HashSet[n_mapper];
         for(int p=0; p<n_mapper; p++)
             comm_mapper_vertex[p] = new HashSet<>(); 
 
-        //loop over all the adj of graph
+        //create abs mapping structure
+        this.abs_v_to_mapper = mapper_id_vertex;
+        abs_v_to_queue = new int[this.max_abs_id + 1];
+
+        //create update structure
+        update_map = new int[g.num_vertices()][];
+        // int max_deg = g.max_degree();
+        for(int p=0;p<g.num_vertices();p++)
+            update_map[p] = new int[g.out_degree(p)];
+
+        update_map_size = new int[g.num_vertices()];
+
+        this.update_queue_pos = new int[mapper.getNumWorkers()][];
+        this.update_queue_counts = new float[mapper.getNumWorkers()][];
+        
+        //loop over all the adj of local graph verts
+        //adj_array stores abs id 
         int[] adj_array = g.adjacencies();
         for(int p=0;p<adj_array.length;p++)
         {
@@ -208,12 +239,18 @@ public class colorcount_HJ {
                 ArrayList<Integer> temp_array = new ArrayList<>(comm_mapper_vertex[p]);
                 //arraylist to int[]
                 int[] temp_array_primitive = ArrayUtils.toPrimitive(temp_array.toArray(new Integer[temp_array.size()]));
+
+                //create mapping from adj_abs_id to relative t in update offset queue
+                for(int t = 0; t< temp_array_primitive.length; t++)
+                    this.abs_v_to_queue[temp_array_primitive[t]] = t;
+
                 int[] temp_array_primitive_copy = temp_array_primitive.clone();
                 IntArray comm_array = new IntArray(temp_array_primitive, 0, temp_array_primitive.length);
                 IntArray comm_array_copy = new IntArray(temp_array_primitive_copy, 0, temp_array_primitive_copy.length);
 
                 //list of partitions to be recieved from other mappers
                 recv_vertex_table.addPartition(new Partition<>(p, comm_array_copy));
+
                 //table to communicate with other mappers
                 comm_vertex_table.addPartition(new Partition<>(comm_id, comm_array));
             }
@@ -272,18 +309,18 @@ public class colorcount_HJ {
         dt.init(subtemplates, subtemplate_count, g.num_vertices(), num_colors);
 
         //determine max out degree for the data graph
-        int max_out_degree = 0;
-        for(int i =0; i < num_verts_graph; i++){
-            int out_degree_i = g.out_degree(i);
-            if(out_degree_i > max_out_degree){
-                max_out_degree = out_degree_i;
-            }
-        }
-        max_degree = max_out_degree;
+        // int max_out_degree = 0;
+        // for(int i =0; i < num_verts_graph; i++){
+        //     int out_degree_i = g.out_degree(i);
+        //     if(out_degree_i > max_out_degree){
+        //         max_out_degree = out_degree_i;
+        //     }
+        // }
+        // max_degree = max_out_degree;
 
-        if(verbose){
-            LOG.info("n "+ num_verts_graph + ", max degree " + max_out_degree);
-        }
+        // if(verbose){
+            // LOG.info("n "+ num_verts_graph + ", max degree " + max_out_degree);
+        // }
 
         //begin the counting 
         //launch LRT threads
@@ -291,7 +328,7 @@ public class colorcount_HJ {
 
         //vertice num of the full graph, huge
         int num_verts = g.num_vertices();
-        int[] chunks = divide_chunks(num_verts, SCConstants.THREAD_NUM);   
+        int[] chunks = divide_chunks(num_verts, this.thread_num);   
 
         //triggering vtune profiling
         // java.nio.file.Path vtune_file = java.nio.file.Paths.get("vtune-flag.txt");
@@ -303,302 +340,163 @@ public class colorcount_HJ {
         //    LOG.info("Failed to create vtune trigger flag");
         // }
 
-        launchHabaneroApp( () -> forallChunked(0, SCConstants.THREAD_NUM-1, (threadIdx) -> {
+        launchHabaneroApp( () -> forallChunked(0, this.thread_num-1, (threadIdx) -> {
 
             //set Java threads affinity
-            BitSet bitSet = new BitSet(SCConstants.CORE_NUM);
+            BitSet bitSet = new BitSet(this.core_num);
             int thread_mask = 0;
 
-            LOG.info("Set up threads affinity: Core Num: " + SCConstants.CORE_NUM + 
-                "; Total Threads: " + SCConstants.THREAD_NUM + "; affinity: " + SCConstants.THD_AFFINITY);
+        if (threadIdx == 0)
+        {
+            LOG.info("Set up threads affinity: Core Num: " + this.core_num + 
+                "; Total Threads: " + this.thread_num + "; affinity: " + this.affinity);
+        }
 
-            if (SCConstants.THD_AFFINITY == "scatter")
+        if (this.affinity == "scatter")
+        {
+            //implement threads bind by core round-robin
+            thread_mask = threadIdx%this.core_num; 
+
+        }else
+        {
+            //default affinity compact
+            //implement a compact bind, 2 threads a core
+            int tpn = 2*this.core_num;
+            thread_mask = threadIdx%tpn;
+            thread_mask /= 2;
+        }
+
+        bitSet.set(thread_mask);
+        Affinity.setAffinity(bitSet);
+
+        try{
+
+            for(int cur_itr = 0; cur_itr < N; cur_itr++)
             {
-                //implement threads bind by core round-robin
-                thread_mask = threadIdx%SCConstants.CORE_NUM; 
-
-            }else
-            {
-                //default affinity compact
-                //implement a compact bind, 2 threads a core
-                int tpn = 2*SCConstants.CORE_NUM;
-                thread_mask = threadIdx%tpn;
-                thread_mask /= 2;
-            }
-
-            bitSet.set(thread_mask);
-            Affinity.setAffinity(bitSet);
-
-            try{
-
-                for(int cur_itr = 0; cur_itr < N; cur_itr++)
+                if (threadIdx == 0)
                 {
+                    colors_g = new int[num_verts];
+                }
+
+                barrier.await();
+
+                //start sampling colors
+                long elt = 0;
+                if(verbose && threadIdx == 0){
+                    elt = System.currentTimeMillis();
+                }
+
+                if (threadIdx == 0)
+                {
+                    Random rand = new Random(System.currentTimeMillis());
+                    //sampling all the local g graphs
+                    for(int p=0;p<num_verts; p++)
+                        colors_g[p] = rand.nextInt(num_colors) ;
+
+                }
+
+                //sampling the vertices of full graph g
+                // for (int p = chunks[threadIdx]; p < chunks[threadIdx+1]; ++p){
+                //     colors_g[p] = rand.nextInt(num_colors) ;
+                // }
+
+                barrier.await();
+                // if (threadIdx == 0)
+                //     LOG.info("Itr "+cur_itr + " Finish sampling");
+
+                // start doing counting
+                for( int s = subtemplate_count -1; s > 0; --s){
+
+                    //debug
+                    float local_count_de = 0.0f;
+                    float comm_count_de = 0.0f;
+
                     if (threadIdx == 0)
                     {
-                        colors_g = new int[num_verts];
-                    }
-
-                    barrier.await();
-
-                    //start sampling colors
-                    long elt = 0;
-                    if(verbose && threadIdx == 0){
-                        elt = System.currentTimeMillis();
-                    }
-
-                    if (threadIdx == 0)
-                    {
-                        Random rand = new Random(System.currentTimeMillis());
-                        //sampling all the local g graphs
-                        for(int p=0;p<num_verts; p++)
-                            colors_g[p] = rand.nextInt(num_colors) ;
-
-                    }
-
-                    //sampling the vertices of full graph g
-                    // for (int p = chunks[threadIdx]; p < chunks[threadIdx+1]; ++p){
-                    //     colors_g[p] = rand.nextInt(num_colors) ;
-                    // }
-
-                    barrier.await();
-                    // if (threadIdx == 0)
-                    //     LOG.info("Itr "+cur_itr + " Finish sampling");
-
-                    // start doing counting
-                    for( int s = subtemplate_count -1; s > 0; --s){
-
-                        //debug
-                        float local_count_de = 0.0f;
-                        float comm_count_de = 0.0f;
-
-                        if (threadIdx == 0)
-                        {
-                            set_count = 0;
-                            total_count = 0;
-                            read_count = 0;
-                            num_verts_sub_ato = num_verts_table[s];
-
-                            if(verbose && threadIdx == 0)
-                                LOG.info("Initing with sub "+ s + ", verts: " + num_verts_sub_ato );
-
-                            int a = part.get_active_index(s);
-                            int p = part.get_passive_index(s);
-
-                            LOG.info("Subtemplate: " + s + "; active_idx: " + a + "; passive_idx: " + p);
-
-                            dt.init_sub(s, a, p);
-
-                        }
-
-                        barrier.await();
-
-                        elt = 0;
-                        //hit the bottom
-                        if( num_verts_sub_ato == 1){
-
-                            if(verbose && threadIdx == 0){
-                                elt = System.currentTimeMillis();
-                            }
-
-                            //counting the bottom
-                            //using relative v_ids
-                            init_table_node_HJ(s, threadIdx, chunks);
-                            barrier.await();
-
-                            if(verbose && threadIdx == 0){
-                                elt = System.currentTimeMillis() - elt;
-                                LOG.info("s " + s +", init_table_node "+ elt + " ms");
-                            }
-
-                        }else{
-
-                            if(verbose && threadIdx == 0){
-                                elt = System.currentTimeMillis();
-                            }
-
-                            //counting non-bottom subtemplates
-                            //using absolute v_ids
-                            local_count_de = colorful_count_HJ(s, threadIdx, chunks);
-
-                            barrier.await();
-
-                            if(verbose && threadIdx == 0){
-                                elt = System.currentTimeMillis() - elt;
-                                LOG.info("s " + s +", array time "+ elt + " ms");
-                            }
-                        }
-
-                        if(verbose && threadIdx == 0){
-                            if( num_verts != 0){
-                                double ratio1  =(double) set_count / (double) num_verts;
-                                double ratio2 = (double) read_count /(double) num_verts;
-                                LOG.info("  Sets: "+ set_count + " Total: "+num_verts + "  Ratio: " + ratio1);
-                                LOG.info("  Reads: "+read_count + " Total: "+num_verts + "  Ratio: " + ratio2);
-                            }else{
-                                LOG.info("  Sets: "+ set_count + " Total: "+num_verts );
-                                LOG.info("  Reads: "+read_count + " Total: "+num_verts);
-                            }
-                        }
-
-                        
-
-                        //start communication part single thread 
-                        barrier.await();
-
-                        if (threadIdx == 0)
-                        {
-                            if (num_verts_sub_ato > 1 && mapper.getNumWorkers() > 1)
-                            {
-                                LOG.info("Start prepare regroup comm for subtemplate: " + s);
-                                long reg_prep_start = System.currentTimeMillis();
-
-                                //prepare the sending partitions
-                                comm_data_table = new Table<>(0, new SCSetCombiner());
-                                //pack colorset_idx and count into a 64 bits double
-                                int localID = mapper.getSelfID();
-                                //send_vertex_table
-                                for(int send_id : send_vertex_table.getPartitionIDs())
-                                {
-                                    int comm_id = ( (send_id << 16) | localID );
-                                    int[] comm_vert_list = send_vertex_table.getPartition(send_id).get().get();
-                                    //for each vert find the colorsets and counts in methods of dynamic_table_array
-                                    int num_combinations_verts_compress = choose_table[num_colors][num_verts_table[part.get_passive_index(s)]];
-                                    SCSet comm_data = dt.compress_send_data(comm_vert_list, num_combinations_verts_compress, g);
-                                    comm_data_table.addPartition(new Partition<>(comm_id, comm_data));
-                                }
-
-                                LOG.info("Finish prepare regroup comm for subtemplate: " + s + 
-                                        "; time used: " + (System.currentTimeMillis() - reg_prep_start));
-
-                                LOG.info("Start regroup comm for subtemplate: " + s);
-                                long reg_start = System.currentTimeMillis();
-                                //start the regroup communication
-                                mapper.regroup("sc", "regroup counts data", comm_data_table, new SCPartitioner(mapper.getNumWorkers()));
-                                LOG.info("Finish regroup comm for subtemplate: " 
-                                        + s + "; time used: " + (System.currentTimeMillis() - reg_start));
-
-                                //start append comm counts to local dt data structure
-                                LOG.info("Start update comm counts for subtemplate: " + s);
-                                long update_start = System.currentTimeMillis();
-
-                                for(int comm_id : comm_data_table.getPartitionIDs())
-                                {
-                                    int update_id = ( comm_id & ( (1 << 16) -1 ) );
-                                    LOG.info("Worker ID: " + localID + "; Recv from worker id: " + update_id);
-                                    int[] update_vert_list = recv_vertex_table.getPartition(update_id).get().get();
-                                    int num_combinations_verts_sub = choose_table[num_colors][num_verts_table[s]];
-                                    LOG.info("update list len: " + update_vert_list.length );
-
-                                    comm_count_de += update_comm_data(update_vert_list, num_combinations_verts_sub, s, comm_data_table.getPartition(comm_id).get());
-                                }
-
-                                LOG.info("Finish update comm counts for subtemplate: " 
-                                        + s + "; time used: " + (System.currentTimeMillis() - update_start));
-
-                                dt.clear_comm_counts();
-                                update_map.clear();
-
-                                comm_data_table = null;
-
-                            }
-
-                        }
-
-                        barrier.await();
-
-                        //print out the total counts for subtemplate s from all mappers
-                        if (num_verts_sub_ato > 1 && threadIdx == 0)
-                        {
-                            //allreduce to get total counts for subtemplae s
-                            if ( mapper.getNumWorkers() > 1  )
-                            {
-                                //allreduce
-                                Table<DoubleArray> sub_count_table = new Table<>(0, new DoubleArrPlus());
-                                DoubleArray sub_count_array = DoubleArray.create(2, false);
-
-                                sub_count_array.get()[0] = local_count_de ;
-                                sub_count_array.get()[1] = comm_count_de ;
-
-                                sub_count_table.addPartition(new Partition<>(0, sub_count_array));
-
-                                mapper.allreduce("sc", "get-sub-count", sub_count_table);
-                                double sub_count_local = sub_count_table.getPartition(0).get().get()[0];
-                                double sub_count_remote = sub_count_table.getPartition(0).get().get()[1];
-
-                                // LOG.info("Total count for subtemplate: " + s + " is: " + sub_count);
-                                LOG.info("For subtemplate: " + s + " local count is: " +sub_count_local + "; remote count is: " + sub_count_remote
-                                            + "; total count is: " + (sub_count_local + sub_count_remote) );
-
-                            }
-                            else
-                            {
-                                LOG.info("For subtemplate: " + s + " local count is: " +local_count_de + "; remote count is: " + comm_count_de
-                                            + "; total count is: " + (local_count_de + comm_count_de) );
-                            }
-
-                        }
-
-
-                        if (threadIdx == 0)
-                        {
-                            int a = part.get_active_index(s);
-                            int p = part.get_passive_index(s);
-
-                            if( a != SCConstants.NULL_VAL)
-                                dt.clear_sub(a);
-                            if(p != SCConstants.NULL_VAL)
-                                dt.clear_sub(p);
-                        }
-                    }
-
-                    if(verbose && threadIdx == 0)
-                        LOG.info("Done with initialization. Doing full count");
-
-                    // do the count for the full template
-                    if (threadIdx == 0)
-                    {
-                        full_count_ato = 0;
                         set_count = 0;
                         total_count = 0;
                         read_count = 0;
 
-                        // num_verts_sub_ato = num_verts_table[0];
-                        int a = part.get_active_index(0);
-                        int p = part.get_passive_index(0);
-                        
-                        LOG.info("Subtemplate 0 ; active_idx: " + a + "; passive_idx: " + p);
-                        dt.init_sub(0, a, p);
+                        //get num_vert of subtemplate s
+                        num_verts_sub_ato = num_verts_table[s];
+
+                        if(verbose && threadIdx == 0)
+                            LOG.info("Initing with sub "+ s + ", verts: " + num_verts_sub_ato );
+
+                        int a = part.get_active_index(s);
+                        int p = part.get_passive_index(s);
+
+                        LOG.info("Subtemplate: " + s + "; active_idx: " + a + "; passive_idx: " + p);
+
+                        //assign active and passive subtemplates to 
+                        //s and create the table[s] for g verts
+                        dt.init_sub(s, a, p);
 
                     }
 
                     barrier.await();
 
                     elt = 0;
+                    //hit the bottom
+                    if( num_verts_sub_ato == 1){
 
-                    if(verbose && threadIdx == 0) 
-                        elt= System.currentTimeMillis();
+                        if(verbose && threadIdx == 0){
+                            elt = System.currentTimeMillis();
+                        }
 
-                    full_count_ato = colorful_count_HJ(0, threadIdx, chunks);
+                        //counting the bottom
+                        //using relative v_ids
+                        init_table_node_HJ(s, threadIdx, chunks);
+                        barrier.await();
 
-                    barrier.await();
+                        if(verbose && threadIdx == 0){
+                            elt = System.currentTimeMillis() - elt;
+                            LOG.info("s " + s +", init_table_node "+ elt + " ms");
+                        }
 
-                    if(verbose && threadIdx == 0)
-                    {
-                        elt = System.currentTimeMillis() - elt;
-                        LOG.info("s 0, array time " + elt + "ms");
+                    }else{
+
+                        if(verbose && threadIdx == 0){
+                            elt = System.currentTimeMillis();
+                        }
+
+                        //counting non-bottom subtemplates
+                        //using rel v_ids
+                        local_count_de = colorful_count_HJ(s, threadIdx, chunks);
+
+                        barrier.await();
+
+                        if(verbose && threadIdx == 0){
+                            elt = System.currentTimeMillis() - elt;
+                            LOG.info("s " + s +", array time "+ elt + " ms");
+                        }
+                    }
+
+                    if(verbose && threadIdx == 0){
+                        if( num_verts != 0){
+                            double ratio1  =(double) set_count / (double) num_verts;
+                            double ratio2 = (double) read_count /(double) num_verts;
+                            LOG.info("  Sets: "+ set_count + " Total: "+num_verts + "  Ratio: " + ratio1);
+                            LOG.info("  Reads: "+read_count + " Total: "+num_verts + "  Ratio: " + ratio2);
+                        }else{
+                            LOG.info("  Sets: "+ set_count + " Total: "+num_verts );
+                            LOG.info("  Reads: "+read_count + " Total: "+num_verts);
+                        }
                     }
 
 
 
-                    float added_last = 0.0f;
-
-                    //comm and add the communicated counts to full_count_ato
+                    //start communication part single thread 
                     barrier.await();
+
+                    //single thread for comm
                     if (threadIdx == 0)
                     {
-                        if (num_verts_table[0] > 1 && mapper.getNumWorkers() > 1)
+                        // only for subtemplates size > 1, having neighbours on other mappers
+                        // only if more than one mapper, otherwise all g verts are local
+                        if (num_verts_sub_ato > 1 && mapper.getNumWorkers() > 1)
                         {
-                            LOG.info("Start prepare regroup comm for last subtemplate");
+                            LOG.info("Start prepare regroup comm for subtemplate: " + s);
                             long reg_prep_start = System.currentTimeMillis();
 
                             //prepare the sending partitions
@@ -609,127 +507,364 @@ public class colorcount_HJ {
                             for(int send_id : send_vertex_table.getPartitionIDs())
                             {
                                 int comm_id = ( (send_id << 16) | localID );
+
+                                //not all of vert in the comm_vert_list required
                                 int[] comm_vert_list = send_vertex_table.getPartition(send_id).get().get();
                                 //for each vert find the colorsets and counts in methods of dynamic_table_array
-                                int num_combinations_verts_compress = choose_table[num_colors][num_verts_table[part.get_passive_index(0)]];
-                                SCSet comm_data = dt.compress_send_data(comm_vert_list, num_combinations_verts_compress, g);
+                                int comb_len = dt.get_num_color_set(part.get_passive_index(s)); 
+                                // int num_combinations_verts_compress = choose_table[num_colors][num_verts_table[part.get_passive_index(s)]];
+                                SCSet comm_data = dt.compress_send_data(comm_vert_list, comb_len, g);
                                 comm_data_table.addPartition(new Partition<>(comm_id, comm_data));
                             }
 
-                            LOG.info("Finish prepare regroup comm for last subtemplate " + 
+                            LOG.info("Finish prepare regroup comm for subtemplate: " + s + 
                                     "; time used: " + (System.currentTimeMillis() - reg_prep_start));
-                            //
-                            LOG.info("Start regroup comm for last subtemplate");
+
+                            LOG.info("Start regroup comm for subtemplate: " + s);
                             long reg_start = System.currentTimeMillis();
                             //start the regroup communication
                             mapper.regroup("sc", "regroup counts data", comm_data_table, new SCPartitioner(mapper.getNumWorkers()));
-                            LOG.info("Finish regroup comm for last subtemplate" 
-                                     + "; time used: " + (System.currentTimeMillis() - reg_start));
+                            LOG.info("Finish regroup comm for subtemplate: " 
+                                    + s + "; time used: " + (System.currentTimeMillis() - reg_start));
 
                             //start append comm counts to local dt data structure
-                            LOG.info("Start update comm counts for last subtemplate");
+                            LOG.info("Start update comm counts for subtemplate: " + s);
                             long update_start = System.currentTimeMillis();
 
+                            //update local g counts by adj from each other mapper
                             for(int comm_id : comm_data_table.getPartitionIDs())
                             {
                                 int update_id = ( comm_id & ( (1 << 16) -1 ) );
                                 LOG.info("Worker ID: " + localID + "; Recv from worker id: " + update_id);
-                                int[] update_vert_list = recv_vertex_table.getPartition(update_id).get().get();
-                                int num_combinations_verts_sub = choose_table[num_colors][num_verts_table[0]];
-                                LOG.info("update list len: " + update_vert_list.length );
-
-                                added_last += update_comm_data_full(update_vert_list, num_combinations_verts_sub, 0, comm_data_table.getPartition(comm_id).get());
+                                // update vert list accounts for the adj vert may be used to update local v
+                                // int[] update_vert_list = recv_vertex_table.getPartition(update_id).get().get();
+                                SCSet scset = comm_data_table.getPartition(comm_id).get();
+                                this.update_queue_pos[update_id] = scset.get_v_offset();
+                                this.update_queue_counts[update_id] = scset.get_counts_data();
+                                // ??? comb_num of the cur subtemplate or active child one ?
+                                // LOG.info("update list len: " + update_vert_list.length );
                             }
 
-                            LOG.info("Finish update comm counts for last subtemplate" 
-                                    + "; time used: " + (System.currentTimeMillis() - update_start));
+                            // int num_combinations_verts_sub = choose_table[num_colors][num_verts_table[s]];
+                            comm_count_de = update_comm(s);
 
+                            LOG.info("Finish update comm counts for subtemplate: " 
+                                    + s + "; time used: " + (System.currentTimeMillis() - update_start));
+
+                            // clean up memory
                             dt.clear_comm_counts();
-                            update_map.clear();
-                            // dt.free_comm_counts();
+                            for(int k = 0; k< mapper.getNumWorkers();k++)
+                            {
+                                this.update_queue_pos[k] = null;
+                                this.update_queue_counts[k] = null;
+                            }
+
+                            comm_data_table = null;
+
                         }
 
                     }
 
                     barrier.await();
 
-                    if (threadIdx == 0)
+                    //print out the total counts for subtemplate s from all mappers
+                    if (num_verts_sub_ato > 1 && threadIdx == 0)
                     {
-                        int a = part.get_active_index(0);
-                        int p = part.get_passive_index(0);
-                        colors_g = null;
-                        dt.clear_sub(a);
-                        dt.clear_sub(p);
-                    }
+                        //allreduce to get total counts for subtemplae s
+                        if ( mapper.getNumWorkers() > 1  )
+                        {
+                            //allreduce
+                            Table<DoubleArray> sub_count_table = new Table<>(0, new DoubleArrPlus());
+                            DoubleArray sub_count_array = DoubleArray.create(2, false);
 
-                    //check last subtemplate counts
-                    if (threadIdx == 0)
-                    {
-                            //allreduce to get total counts for subtemplae s
-                            if ( mapper.getNumWorkers() > 1  )
-                            {
-                                //allreduce
-                                Table<DoubleArray> sub_count_table = new Table<>(0, new DoubleArrPlus());
-                                DoubleArray sub_count_array = DoubleArray.create(2, false);
+                            sub_count_array.get()[0] = local_count_de ;
+                            sub_count_array.get()[1] = comm_count_de ;
 
-                                sub_count_array.get()[0] = full_count_ato;
-                                sub_count_array.get()[1] = added_last ;
+                            sub_count_table.addPartition(new Partition<>(0, sub_count_array));
 
-                                sub_count_table.addPartition(new Partition<>(0, sub_count_array));
+                            mapper.allreduce("sc", "get-sub-count", sub_count_table);
+                            double sub_count_local = sub_count_table.getPartition(0).get().get()[0];
+                            double sub_count_remote = sub_count_table.getPartition(0).get().get()[1];
 
-                                mapper.allreduce("sc", "get-sub-count", sub_count_table);
-                                double full_count_ato_all = sub_count_table.getPartition(0).get().get()[0];
-                                double added_last_all = sub_count_table.getPartition(0).get().get()[1];
+                            // LOG.info("Total count for subtemplate: " + s + " is: " + sub_count);
+                            LOG.info("For subtemplate: " + s + " local count is: " +sub_count_local + "; remote count is: " + sub_count_remote
+                                    + "; total count is: " + (sub_count_local + sub_count_remote) );
 
-                                // LOG.info("Total count for subtemplate: " + s + " is: " + sub_count);
-                                LOG.info("For last subtemplate local count is: " +full_count_ato_all + "; remote count is: " + added_last_all
-                                            + "; total count is: " + (full_count_ato_all + added_last_all) );
-
-                            }
-                            else
-                            {    
-                                LOG.info("For last subtemplate local count is: " +full_count_ato + "; remote count is: " + added_last
-                                            + "; total count is: " + (full_count_ato + added_last) );
-                            }
-
-                            full_count_ato += added_last;
-                    
-                    }
-
-                    if(verbose && threadIdx == 0){
-                        if( num_verts != 0){
-                            double ratio1  =(double) set_count / (double) num_verts;
-                            double ratio2 = (double) read_count /(double) num_verts;
-                            LOG.info("  Non-zero: "+ set_count + " Total: "+num_verts + "  Ratio: " + ratio1);
-                            LOG.info("  Reads: "+read_count + " Total: "+num_verts + "  Ratio: " + ratio2);
-                        }else{
-                            LOG.info("  Non-zero: "+ set_count + " Total: "+num_verts );
-                            LOG.info("  Reads: "+read_count + " Total: "+num_verts);
+                        }
+                        else
+                        {
+                            LOG.info("For subtemplate: " + s + " local count is: " +local_count_de + "; remote count is: " + comm_count_de
+                                    + "; total count is: " + (local_count_de + comm_count_de) );
                         }
 
-                        LOG.info("Full count: " + full_count_ato);
-
                     }
 
-                    //add counts from every iteration
+
                     if (threadIdx == 0)
                     {
-                        count_ato += full_count_ato;
-                    }
+                        int a = part.get_active_index(s);
+                        int p = part.get_passive_index(s);
 
-                    //finish one iteration
-                    if(verbose && threadIdx == 0){
-                        elt = System.currentTimeMillis() - elt;
-                        LOG.info("Itr "+cur_itr + " Time for count: "+ elt +" ms");
+                        if( a != SCConstants.NULL_VAL)
+                            dt.clear_sub(a);
+                        if(p != SCConstants.NULL_VAL)
+                            dt.clear_sub(p);
                     }
+                }
+
+                if(verbose && threadIdx == 0)
+                    LOG.info("Done with initialization. Doing full count");
+
+                // do the count for the full template
+                if (threadIdx == 0)
+                {
+                    full_count_ato = 0;
+                    set_count = 0;
+                    total_count = 0;
+                    read_count = 0;
+
+                    // num_verts_sub_ato = num_verts_table[0];
+                    int a = part.get_active_index(0);
+                    int p = part.get_passive_index(0);
+
+                    LOG.info("Subtemplate 0 ; active_idx: " + a + "; passive_idx: " + p);
+                    dt.init_sub(0, a, p);
 
                 }
 
+                barrier.await();
 
-            } catch (InterruptedException | BrokenBarrierException e) {
-                LOG.info("Catch barrier exception in itr: " + cur_iter);
-                e.printStackTrace();
+                elt = 0;
+
+                if(verbose && threadIdx == 0) 
+                    elt= System.currentTimeMillis();
+
+                full_count_ato = colorful_count_HJ(0, threadIdx, chunks);
+
+                barrier.await();
+
+                if(verbose && threadIdx == 0)
+                {
+                    elt = System.currentTimeMillis() - elt;
+                    LOG.info("s 0, array time " + elt + "ms");
+                }
+
+                float added_last = 0.0f;
+
+                //comm and add the communicated counts to full_count_ato
+                barrier.await();
+                
+                num_verts_sub_ato = num_verts_table[0];
+
+                if (threadIdx == 0)
+                {
+                    // only for subtemplates size > 1, having neighbours on other mappers
+                    // only if more than one mapper, otherwise all g verts are local
+                    if (num_verts_sub_ato > 1 && mapper.getNumWorkers() > 1)
+                    {
+                        LOG.info("Start prepare regroup comm for last subtemplate");
+                        long reg_prep_start = System.currentTimeMillis();
+
+                        //prepare the sending partitions
+                        comm_data_table = new Table<>(0, new SCSetCombiner());
+                        //pack colorset_idx and count into a 64 bits double
+                        int localID = mapper.getSelfID();
+                        //send_vertex_table
+                        for(int send_id : send_vertex_table.getPartitionIDs())
+                        {
+                            int comm_id = ( (send_id << 16) | localID );
+
+                            //not all of vert in the comm_vert_list required
+                            int[] comm_vert_list = send_vertex_table.getPartition(send_id).get().get();
+                            //for each vert find the colorsets and counts in methods of dynamic_table_array
+                            int comb_len = dt.get_num_color_set(part.get_passive_index(0)); 
+                            // int num_combinations_verts_compress = choose_table[num_colors][num_verts_table[part.get_passive_index(s)]];
+                            SCSet comm_data = dt.compress_send_data(comm_vert_list, comb_len, g);
+                            comm_data_table.addPartition(new Partition<>(comm_id, comm_data));
+                        }
+
+                        LOG.info("Finish prepare regroup comm for last subtemplate; time used: " + (System.currentTimeMillis() - reg_prep_start));
+
+                        LOG.info("Start regroup comm for last subtemplate");
+                        long reg_start = System.currentTimeMillis();
+                        //start the regroup communication
+                        mapper.regroup("sc", "regroup counts data", comm_data_table, new SCPartitioner(mapper.getNumWorkers()));
+                        LOG.info("Finish regroup comm for last subtemplate: " 
+                                + "; time used: " + (System.currentTimeMillis() - reg_start));
+
+                        //start append comm counts to local dt data structure
+                        LOG.info("Start update comm counts for subtemplate:");
+                        long update_start = System.currentTimeMillis();
+
+                        //update local g counts by adj from each other mapper
+                        for(int comm_id : comm_data_table.getPartitionIDs())
+                        {
+                            int update_id = ( comm_id & ( (1 << 16) -1 ) );
+                            LOG.info("Worker ID: " + localID + "; Recv from worker id: " + update_id);
+                            // update vert list accounts for the adj vert may be used to update local v
+                            // int[] update_vert_list = recv_vertex_table.getPartition(update_id).get().get();
+                            SCSet scset = comm_data_table.getPartition(comm_id).get();
+                            this.update_queue_pos[update_id] = scset.get_v_offset();
+                            this.update_queue_counts[update_id] = scset.get_counts_data();
+                            // ??? comb_num of the cur subtemplate or active child one ?
+                            // LOG.info("update list len: " + update_vert_list.length );
+                        }
+
+                        // int num_combinations_verts_sub = choose_table[num_colors][num_verts_table[s]];
+                        added_last = update_comm(0);
+
+                        LOG.info("Finish update comm counts for last subtemplate: " 
+                                + "; time used: " + (System.currentTimeMillis() - update_start));
+
+                        // clean up memory
+                        dt.clear_comm_counts();
+                        for(int k = 0; k< mapper.getNumWorkers();k++)
+                        {
+                            this.update_queue_pos[k] = null;
+                            this.update_queue_counts[k] = null;
+                        }
+
+                        comm_data_table = null;
+
+                    }
+
+                }
+                // if (threadIdx == 0)
+                // {
+                //     if (num_verts_table[0] > 1 && mapper.getNumWorkers() > 1)
+                //     {
+                //         LOG.info("Start prepare regroup comm for last subtemplate");
+                //         long reg_prep_start = System.currentTimeMillis();
+                //
+                //         //prepare the sending partitions
+                //         comm_data_table = new Table<>(0, new SCSetCombiner());
+                //         //pack colorset_idx and count into a 64 bits double
+                //         int localID = mapper.getSelfID();
+                //         //send_vertex_table
+                //         for(int send_id : send_vertex_table.getPartitionIDs())
+                //         {
+                //             int comm_id = ( (send_id << 16) | localID );
+                //             int[] comm_vert_list = send_vertex_table.getPartition(send_id).get().get();
+                //             //for each vert find the colorsets and counts in methods of dynamic_table_array
+                //             int num_combinations_verts_compress = choose_table[num_colors][num_verts_table[part.get_passive_index(0)]];
+                //             SCSet comm_data = dt.compress_send_data(comm_vert_list, num_combinations_verts_compress, g);
+                //             comm_data_table.addPartition(new Partition<>(comm_id, comm_data));
+                //         }
+                //
+                //         LOG.info("Finish prepare regroup comm for last subtemplate " + 
+                //                 "; time used: " + (System.currentTimeMillis() - reg_prep_start));
+                //         //
+                //         LOG.info("Start regroup comm for last subtemplate");
+                //         long reg_start = System.currentTimeMillis();
+                //         //start the regroup communication
+                //         mapper.regroup("sc", "regroup counts data", comm_data_table, new SCPartitioner(mapper.getNumWorkers()));
+                //         LOG.info("Finish regroup comm for last subtemplate" 
+                //                 + "; time used: " + (System.currentTimeMillis() - reg_start));
+                //
+                //         //start append comm counts to local dt data structure
+                //         LOG.info("Start update comm counts for last subtemplate");
+                //         long update_start = System.currentTimeMillis();
+                //
+                //         for(int comm_id : comm_data_table.getPartitionIDs())
+                //         {
+                //             int update_id = ( comm_id & ( (1 << 16) -1 ) );
+                //             LOG.info("Worker ID: " + localID + "; Recv from worker id: " + update_id);
+                //             int[] update_vert_list = recv_vertex_table.getPartition(update_id).get().get();
+                //             int num_combinations_verts_sub = choose_table[num_colors][num_verts_table[0]];
+                //             LOG.info("update list len: " + update_vert_list.length );
+                //
+                //             added_last += update_comm_data(update_vert_list, num_combinations_verts_sub, 0, comm_data_table.getPartition(comm_id).get());
+                //         }
+                //
+                //         LOG.info("Finish update comm counts for last subtemplate" 
+                //                 + "; time used: " + (System.currentTimeMillis() - update_start));
+                //
+                //         dt.clear_comm_counts();
+                //         // update_map.clear();
+                //         // dt.free_comm_counts();
+                //     }
+                //
+                // }
+
+                barrier.await();
+
+                if (threadIdx == 0)
+                {
+                    int a = part.get_active_index(0);
+                    int p = part.get_passive_index(0);
+                    colors_g = null;
+                    dt.clear_sub(a);
+                    dt.clear_sub(p);
+                }
+
+                //check last subtemplate counts
+                if (threadIdx == 0)
+                {
+                    //allreduce to get total counts for subtemplae s
+                    if ( mapper.getNumWorkers() > 1  )
+                    {
+                        //allreduce
+                        Table<DoubleArray> sub_count_table = new Table<>(0, new DoubleArrPlus());
+                        DoubleArray sub_count_array = DoubleArray.create(2, false);
+
+                        sub_count_array.get()[0] = full_count_ato;
+                        sub_count_array.get()[1] = added_last ;
+
+                        sub_count_table.addPartition(new Partition<>(0, sub_count_array));
+
+                        mapper.allreduce("sc", "get-sub-count", sub_count_table);
+                        double full_count_ato_all = sub_count_table.getPartition(0).get().get()[0];
+                        double added_last_all = sub_count_table.getPartition(0).get().get()[1];
+
+                        // LOG.info("Total count for subtemplate: " + s + " is: " + sub_count);
+                        LOG.info("For last subtemplate local count is: " +full_count_ato_all + "; remote count is: " + added_last_all
+                                + "; total count is: " + (full_count_ato_all + added_last_all) );
+
+                    }
+                    else
+                    {    
+                        LOG.info("For last subtemplate local count is: " +full_count_ato + "; remote count is: " + added_last
+                                + "; total count is: " + (full_count_ato + added_last) );
+                    }
+
+                    full_count_ato += added_last;
+
+                }
+
+                if(verbose && threadIdx == 0){
+                    if( num_verts != 0){
+                        double ratio1  =(double) set_count / (double) num_verts;
+                        double ratio2 = (double) read_count /(double) num_verts;
+                        LOG.info("  Non-zero: "+ set_count + " Total: "+num_verts + "  Ratio: " + ratio1);
+                        LOG.info("  Reads: "+read_count + " Total: "+num_verts + "  Ratio: " + ratio2);
+                    }else{
+                        LOG.info("  Non-zero: "+ set_count + " Total: "+num_verts );
+                        LOG.info("  Reads: "+read_count + " Total: "+num_verts);
+                    }
+
+                    LOG.info("Full count: " + full_count_ato);
+
+                }
+
+                //add counts from every iteration
+                if (threadIdx == 0)
+                {
+                    count_ato += full_count_ato;
+                }
+
+                //finish one iteration
+                if(verbose && threadIdx == 0){
+                    elt = System.currentTimeMillis() - elt;
+                    LOG.info("Itr "+cur_itr + " Time for count: "+ elt +" ms");
+                }
+
             }
+
+
+        } catch (InterruptedException | BrokenBarrierException e) {
+            LOG.info("Catch barrier exception in itr: " + cur_iter);
+            e.printStackTrace();
+        }
 
         }));
 
@@ -778,13 +913,15 @@ public class colorcount_HJ {
             for (int v = chunks[threadIdx]; v < chunks[threadIdx + 1]; ++v) {
                 //get the randomly assigned color value
                 int n = colors_g[v];
+                //put counts into curTable for rel v id 
+                //template s and color n
                 dt.set(v, comb_num_indexes_set[s][n], 1.0f);
             }
 
             barrier.await();
 
-            if (threadIdx == 0)
-                set_count = num_verts_graph;
+            // if (threadIdx == 0)
+                // set_count = num_verts_graph;
 
         }else{
 
@@ -820,9 +957,9 @@ public class colorcount_HJ {
      */
     private float colorful_count_HJ(int s, int threadIdx, int[] chunks) throws BrokenBarrierException, InterruptedException {
 
-        //get vert num of subtemplate
         if (threadIdx == 0)
         {
+            //get vert num of subtemplate
             num_verts_sub_ato = subtemplates[s].num_vertices();
 
             //get vert num of active child 
@@ -830,19 +967,20 @@ public class colorcount_HJ {
             int num_verts_a = num_verts_table[active_index];
 
             // colorset combinations from active child
+            // combination of colors for active child
             num_combinations_ato = choose_table[num_verts_sub_ato][num_verts_a];
 
-            set_count_loop_ato = new int[SCConstants.THREAD_NUM];
-            total_count_loop_ato = new int[SCConstants.THREAD_NUM];
-            read_count_loop_ato = new int[SCConstants.THREAD_NUM];
-            cc_ato = new float[SCConstants.THREAD_NUM];
+            set_count_loop_ato = new int[this.thread_num];
+            total_count_loop_ato = new int[this.thread_num];
+            read_count_loop_ato = new int[this.thread_num];
+            cc_ato = new float[this.thread_num];
         }
 
         barrier.await();
 
         long elt = System.currentTimeMillis();
 
-        int[] valid_nbrs = new int[max_degree];
+        int[] valid_nbrs = new int[g.max_degree()];
         assert(valid_nbrs != null);
         int valid_nbrs_count = 0;
 
@@ -853,64 +991,76 @@ public class colorcount_HJ {
             // v is relative v_id from 0 to num_verts -1 
             valid_nbrs_count = 0;
 
-            //table v must be initialized as active
+            // check vertex v is initialized in active child table
+            // all the local verts already initialized at the bottom of subtemplate chain
             if( dt.is_vertex_init_active(v)){
 
                 //adjs is absolute v_id
                 int[] adjs_abs = g.adjacent_vertices(v);
                 int end = g.out_degree(v);
+
+                //indexed by comb number
+                //counts of v at active child
                 float[] counts_a = dt.get_active(v);
 
                 ++read_count_loop_ato[threadIdx];
 
                 //loop overall its neighbours
-                for(int i = 0; i < end; ++i){
+                int nbr_comm_itr = 0;
+                for(int i = 0; i < end; ++i)
+                {
+
                     int adj_i = g.get_relative_v_id(adjs_abs[i]);
 
                     //how to determine whether adj_i is in the current passive table
                     if( adj_i >=0 && dt.is_vertex_init_passive(adj_i)){
+                        // if adj_i < 0, it is in other mappers, count them later
+                        // adj_i must be initialized in passive template
+                        // valid_nbrs stores rel neighbour ids at local mapper
                         valid_nbrs[valid_nbrs_count++] = adj_i;
                     }
 
+                    // preparation for communication 
+                    // replace this snippet with more efficient data structure
+                    // replace Int2ObjectMap with an array of ArrayList<Integer>
                     if (workerNum > 1 && adj_i < 0)
-                    {
-                        lock.lock();
-                        //put v to the request list of abjs_abs[i]
-                        //update_map is indexed by abs id of adj v
-                        //contains array of rel id of local v
-                        ArrayList<Integer> update_adj_arr = update_map.get(adjs_abs[i]);
-                        if (update_adj_arr == null)
-                        {
-                            update_adj_arr = new ArrayList<>();
-                            update_adj_arr.add(new Integer(v));
-                            update_map.put(adjs_abs[i], update_adj_arr);
-                        }
-                        else
-                        {
-                            update_adj_arr.add(new Integer(v));
-                        }
-
-                        lock.unlock();
-                    }
+                        this.update_map[v][nbr_comm_itr++] = adjs_abs[i];
                 }
+
+                this.update_map_size[v] = nbr_comm_itr;
 
                 if(valid_nbrs_count != 0){
 
+                    //add counts on local nbs
+
+                    //number of colors for template s
+                    //different from num_combinations_ato, which is for active child
                     int num_combinations_verts_sub = choose_table[num_colors][num_verts_sub_ato];
 
+                    // for a specific vertex v initialized on active child
+                    // first loop on different color_combs of cur subtemplate
                     for(int n = 0; n < num_combinations_verts_sub; ++n){
 
                         float color_count = 0.0f;
 
+                        // more details
                         int[] comb_indexes_a = comb_num_indexes[0][s][n];
                         int[] comb_indexes_p = comb_num_indexes[1][s][n];
 
                         int p = num_combinations_ato -1;
 
+                        // second loop on different color_combs of active/passive children
+                        // a+p == num_combinations_ato 
+                        // (total colorscombs for both of active child and pasive child)
                         for(int a = 0; a < num_combinations_ato; ++a, --p){
+
                             float count_a = counts_a[comb_indexes_a[a]];
+
                             if( count_a > 0){
+
+                                //third loop on different valid nbrs
                                 for(int i = 0; i < valid_nbrs_count; ++i){
+                                    //validated nbrs already checked to be on passive child
                                     color_count += count_a * dt.get_passive(valid_nbrs[i], comb_indexes_p[p]);
                                     ++read_count_loop_ato[threadIdx];
                                 }
@@ -921,7 +1071,7 @@ public class colorcount_HJ {
                             cc_ato[threadIdx] += color_count;
                             ++set_count_loop_ato[threadIdx];
 
-                            //also add counts to the last subtemplaes
+                            //also add counts to the current subtemplate s 
                             dt.set(v, comb_num_indexes_set[s][n], color_count);
 
                             if(do_graphlet_freq || do_vert_output)
@@ -932,6 +1082,7 @@ public class colorcount_HJ {
                             // else if(do_graphlet_freq || do_vert_output)
                             //     final_vert_counts[v] += (double)color_count;
                         }
+
                         ++total_count_loop_ato[threadIdx];
                     }
                 }
@@ -953,7 +1104,7 @@ public class colorcount_HJ {
             retval_ato = 0;
 
             //reduction
-            for(int i = 0; i < SCConstants.THREAD_NUM; ++i){
+            for(int i = 0; i < this.thread_num; ++i){
                 set_count += set_count_loop_ato[i];
                 total_count += total_count_loop_ato[i];
                 read_count += read_count_loop_ato[i];
@@ -1240,153 +1391,176 @@ public class colorcount_HJ {
         index_sets = null;
     }
 
-    private float update_comm_data(int[] vert_list, int num_comb_max, int sub_id,  SCSet comm_set)
-    {//{{{
+    // is num_comb_max for current subtemplate ?
+    // vert_list contains adj abs id from a remote mapper
+    // vert_list shall match comm_set
+    // private float update_comm_data(int[] vert_list, int num_comb_max, int sub_id,  SCSet comm_set)
+    // {//{{{
+    //
+    //     float added_count = 0.0f;
+    //
+    //     int active_index = part.get_active_index(sub_id);
+    //     int num_verts_a = num_verts_table[active_index];
+    //
+    //     // colorset combinations from active child
+    //     // combination of colors for active child
+    //     num_combinations_ato = choose_table[num_verts_table[sub_id]][num_verts_a];
+    //
+    //     int v_num = vert_list.length;
+    //     if (comm_set.get_v_num() != v_num )
+    //     {
+    //         LOG.info("update vertex number not matched !!!");
+    //         return added_count;
+    //     }
+    //     else
+    //     {
+    //         LOG.info("Debug: remote v_num: " + v_num);
+    //     }
+    //
+    //     int[] update_offset_array = comm_set.get_v_offset();
+    //     int[] update_idx_array = comm_set.get_counts_idx();
+    //     float[] update_counts_array = comm_set.get_counts_data();
+    //
+    //     // first loop over all the incoming adj abs v ids
+    //     // they may apply to different local v
+    //     for(int p=0;p<v_num;p++)
+    //     {
+    //         //abs adj id
+    //         int update_abs_id = vert_list[p];
+    //
+    //         int start_pos = update_offset_array[p];
+    //         int end_pos = update_offset_array[p+1];
+    //
+    //         // check if the adj id valid
+    //         // if not initilized as passive_child on remote mapper, those adj ids 
+    //         // will not be included
+    //         if (end_pos != start_pos)
+    //         {
+    //             //get the active vertex list
+    //             ArrayList<Integer> update_v_arr = update_map.get(update_abs_id);
+    //             if (update_v_arr != null)
+    //             {
+    //                 for(int u = 0; u<update_v_arr.size(); u++)
+    //                 {
+    //
+    //                     int update_rel_id = update_v_arr.get(u); 
+    //                     float[] counts_active = dt.get_active(update_rel_id);
+    //
+    //                     for(int q = 0; q< num_comb_max; q++)
+    //                     {
+    //                         float update_count = 0.0f;
+    //
+    //                         int[] comb_indexes_a = comb_num_indexes[0][sub_id][q];
+    //                         int[] comb_indexes_p = comb_num_indexes[1][sub_id][q];
+    //                         //comb of active/passive child
+    //                         int s = num_combinations_ato -1;
+    //
+    //                         // third loop over active/passive children comb numbers
+    //                         for(int t = 0; t < num_combinations_ato; ++t, --s)
+    //                         {
+    //                             //fourth loop over local v on active child
+    //                             //move fourth loop to second
+    //                             // int update_rel_id = update_v_arr.get(u).intValue(); 
+    //                             float count_a = counts_active[comb_indexes_a[t]];
+    //                             if( count_a > 0.0f)
+    //                             {
+    //                                 //update count val
+    //                                 update_count += count_a*update_counts_array[start_pos + comb_indexes_p[s]];
+    //                                 //update the cur table
+    //                             }
+    //
+    //                         }
+    //
+    //                         dt.update_comm(update_rel_id, comb_num_indexes_set[sub_id][q], update_count);
+    //                         added_count += update_count;
+    //
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //
+    //     }
+    //
+    //     return added_count;
+    // }//}}}
 
+    private float update_comm(int sub_id)
+    {
         float added_count = 0.0f;
 
-        int v_num = vert_list.length;
-        if (comm_set.get_v_num() != v_num )
+        int num_combinations_verts_sub = choose_table[num_colors][num_verts_table[sub_id]];
+
+        int active_index = part.get_active_index(sub_id);
+        int num_verts_a = num_verts_table[active_index];
+
+        // colorset combinations from active child
+        // combination of colors for active child
+        int num_combinations_active_ato = choose_table[num_verts_table[sub_id]][num_verts_a];
+
+        // start update 
+        // first loop over local v
+        for(int v = 0; v < num_verts_graph; v++ )
         {
-            LOG.info("update vertex number not matched !!!");
-            return added_count;
-        }
-        else
-        {
-            LOG.info("Debug: remote v_num: " + v_num);
-        }
-
-        int[] update_offset_array = comm_set.get_v_offset();
-        int[] update_idx_array = comm_set.get_counts_idx();
-        float[] update_counts_array = comm_set.get_counts_data();
-
-        for(int p=0;p<v_num;p++)
-        {
-            //abs v id
-            int update_abs_id = vert_list[p];
-
-            int start_pos = update_offset_array[p];
-            int end_pos = update_offset_array[p+1];
-
-            if (end_pos != start_pos)
+            if (dt.is_vertex_init_active(v))
             {
+                int adj_list_size = this.update_map_size[v];
+                // store the abs adj id for v
+                int[] adj_list = this.update_map[v]; 
+                float[] counts_a = dt.get_active(v);
 
-                for(int q = 0; q< num_comb_max; q++)
+                //second loop over comb_num for cur subtemplate
+                for(int n = 0; n< num_combinations_verts_sub; n++)
                 {
+                    float color_count_local = 0.0f;
 
-                    int[] comb_indexes_a = comb_num_indexes[0][sub_id][q];
-                    int[] comb_indexes_p = comb_num_indexes[1][sub_id][q];
+                    // more details
+                    int[] comb_indexes_a = comb_num_indexes[0][sub_id][n];
+                    int[] comb_indexes_p = comb_num_indexes[1][sub_id][n];
 
-                    //num_combinations_ato is the same as that in colorful_count_HJ
-                    int s = num_combinations_ato -1;
+                    // for passive 
+                    int p = num_combinations_active_ato -1;
 
-                    for(int t = 0; t < num_combinations_ato; ++t, --s){
-
-                        //get the active vertex list
-                        ArrayList<Integer> update_v_arr = update_map.get(update_abs_id);
-
-                        if (update_v_arr != null)
+                    // third loop over comb_num for active/passive subtemplates
+                    for(int a = 0; a < num_combinations_active_ato; ++a, --p)
+                    {
+                        float count_a = counts_a[comb_indexes_a[a]];
+                        if (count_a > 0)
                         {
-                            for(int u = 0; u<update_v_arr.size(); u++)
+                            // fourth loop over nbrs
+                            for(int i = 0; i< adj_list_size; i++)
                             {
-                                int update_rel_id = update_v_arr.get(u).intValue(); 
-                                float[] counts_active = dt.get_active(update_rel_id);
-                        
-                                float count_a = counts_active[comb_indexes_a[t]];
-                                if( count_a > 0)
+                                int adj_id = adj_list[i]; 
+                                int adj_offset = this.abs_v_to_queue[adj_id];
+                                int[] adj_offset_list = this.update_queue_pos[this.abs_v_to_mapper[adj_id]];
+                                int start_pos = adj_offset_list[adj_offset];
+                                int end_pos = adj_offset_list[adj_offset + 1];
+
+                                float[] adj_counts_list = this.update_queue_counts[this.abs_v_to_mapper[adj_id]];
+                                //check if nbr on passive child 
+                                if (start_pos != end_pos)
                                 {
-                                    //update count val
-                                    float update_count = count_a*update_counts_array[start_pos + comb_indexes_p[s]];
-                                    dt.update_comm(update_rel_id, comb_num_indexes_set[sub_id][q], update_count);
-                                    added_count += update_count;
+                                    color_count_local += (count_a*adj_counts_list[start_pos + comb_indexes_p[p]]);
                                 }
 
                             }
 
                         }
-                        
+
                     }
+
+                    if (color_count_local > 0.0)
+                    {
+                        dt.update_comm(v, comb_num_indexes_set[sub_id][n], color_count_local);
+                        added_count += color_count_local;
+                    }
+
                 }
-                
+
             }
 
         }
 
         return added_count;
-    }//}}}
-    private float update_comm_data_full(int[] vert_list, int num_comb_max, int sub_id,  SCSet comm_set)
-    {//{{{
-
-        float added_count = 0.0f;
-
-        int v_num = vert_list.length;
-        if (comm_set.get_v_num() != v_num )
-        {
-            LOG.info("update vertex number not matched !!!");
-            return added_count;
-        }
-        else
-        {
-            LOG.info("Debug: remote v_num: " + v_num);
-        }
-
-        int[] update_offset_array = comm_set.get_v_offset();
-        int[] update_idx_array = comm_set.get_counts_idx();
-        float[] update_counts_array = comm_set.get_counts_data();
-
-        for(int p=0;p<v_num;p++)
-        {
-            //abs v id
-            int update_abs_id = vert_list[p];
-
-            int start_pos = update_offset_array[p];
-            int end_pos = update_offset_array[p+1];
-
-            if (end_pos != start_pos)
-            {
-
-                for(int q = 0; q< num_comb_max; q++)
-                {
-
-                    int[] comb_indexes_a = comb_num_indexes[0][sub_id][q];
-                    int[] comb_indexes_p = comb_num_indexes[1][sub_id][q];
-
-                    //num_combinations_ato is the same as that in colorful_count_HJ
-                    int s = num_combinations_ato -1;
-
-                    for(int t = 0; t < num_combinations_ato; ++t, --s){
-
-                        //get the active vertex list
-                        ArrayList<Integer> update_v_arr = update_map.get(update_abs_id);
-
-                        if (update_v_arr != null)
-                        {
-                            for(int u = 0; u<update_v_arr.size(); u++)
-                            {
-                                int update_rel_id = update_v_arr.get(u).intValue(); 
-                                float[] counts_active = dt.get_active(update_rel_id);
-                                //
-                                float count_a = counts_active[comb_indexes_a[t]];
-                                if( count_a > 0)
-                                {
-                                    //update count val
-                                    // if ((start_pos + comb_indexes_p[s]) < update_counts_array.length)
-                                        added_count += count_a*update_counts_array[start_pos + comb_indexes_p[s]];
-                                    // dt.update_comm(update_rel_id, comb_num_indexes_set[sub_id][q], update_count);
-                                }
-
-                            }
-
-                        }
-
-                    }
-                }
-                
-            }
-
-        }
-
-        return added_count;
-    }//}}}
+    }
 
 }
