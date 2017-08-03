@@ -36,23 +36,27 @@ public class dynamic_table_array extends dynamic_table{
 
     //indexed by relative v id
     //can be replaced by int[max_rel_id][]
-    private Int2ObjectOpenHashMap<int[]> comm_colorset_idx;
-    private Int2ObjectOpenHashMap<float[]> comm_colorset_counts;
+    // private Int2ObjectOpenHashMap<int[]> comm_colorset_idx;
+    // private Int2ObjectOpenHashMap<float[]> comm_colorset_counts;
+    private float[][] comm_colorset_counts;
+
+    private int max_abs_vid;
 
     int cur_sub;
 
     final Logger LOG = Logger.getLogger(dynamic_table_array.class);
 
     @Override
-    public void init(Graph[] subtemplates, int num_subtemplates, int num_vertices, int num_colors) {
+    public void init(Graph[] subtemplates, int num_subtemplates, int num_vertices, int num_colors, int max_abs_vid) {
         this.subtemplates = subtemplates;
         this.num_subs = num_subtemplates;
         //num of vertices of full graph 
         this.num_verts = num_vertices;
         this.num_colors = num_colors;
+        this.max_abs_vid = max_abs_vid;
 
-        this.comm_colorset_idx = new Int2ObjectOpenHashMap<>();
-        this.comm_colorset_counts = new Int2ObjectOpenHashMap<>();
+        // this.comm_colorset_idx = new Int2ObjectOpenHashMap<>();
+        this.comm_colorset_counts = new float[this.max_abs_vid+1][];
 
         //obtain the table,choose j color from i color, the num of combinations
         init_choose_table();
@@ -172,6 +176,10 @@ public class dynamic_table_array extends dynamic_table{
         return cur_table_active[vertex];
     }
 
+    public float[] get_passive(int vertex){
+        return cur_table_passive[vertex];
+    }
+
     public float get_passive(int vertex, int comb_num_index){
         if( cur_table_passive[vertex] != null){
             return cur_table_passive[vertex][comb_num_index];
@@ -254,7 +262,7 @@ public class dynamic_table_array extends dynamic_table{
 
         //to be trimed
         //counts_idx_tmp is not required, can be removed
-        int[] counts_idx_tmp = new int[num_comb_max*v_num];
+        // int[] counts_idx_tmp = new int[num_comb_max*v_num];
         float[] counts_data_tmp = new float[num_comb_max*v_num];
 
         int count_num = 0;
@@ -271,51 +279,69 @@ public class dynamic_table_array extends dynamic_table{
             if (rel_vert_id < 0 || (is_vertex_init_passive(rel_vert_id) == false))
                 continue;
 
-            int[] idx_arry = this.comm_colorset_idx.get(rel_vert_id); 
-            float[] counts_arry = this.comm_colorset_counts.get(rel_vert_id); 
+            // int[] idx_arry = this.comm_colorset_idx.get(rel_vert_id); 
+            // float[] counts_arry = this.comm_colorset_counts.get(rel_vert_id); 
+            float[] counts_arry = this.comm_colorset_counts[rel_vert_id]; 
 
-            if (idx_arry == null || counts_arry == null)
+            // if (idx_arry == null || counts_arry == null)
+            if (counts_arry == null)
             {
                 //create the entry and put it to table
                 //create tmp array which will be trimed later
-                int[] tmp_idx_arry = new int[num_comb_max];
-                float[] tmp_counts_arry = new float[num_comb_max];
+                // int[] tmp_idx_arry = new int[num_comb_max];
+                // float[] tmp_counts_arry = new float[num_comb_max];
+                // counts_arry = new float[num_comb_max];
 
-                int tmp_itr = 0;
+                // int tmp_itr = 0;
                 //this can be replaced by system.arraycopy
                 //get all the comb numbers 
-                for(int q = 0; q< num_comb_max; q++)
+                // for(int q = 0; q< num_comb_max; q++)
+                // {
+                    // float count_v = get_passive(rel_vert_id, q);
+                    // tmp_idx_arry[tmp_itr] = q;
+                    // ??? is this copy right 
+                    // counts_arry[q] = get_passive(rel_vert_id, q);
+                    // tmp_itr++;
+                // }
+                if (get_passive(rel_vert_id) != null)
+                    counts_arry = get_passive(rel_vert_id).clone();
+                else
                 {
-                    float count_v = get_passive(rel_vert_id, q);
-                    tmp_idx_arry[tmp_itr] = q;
-                    tmp_counts_arry[tmp_itr] = count_v;
-                    tmp_itr++;
+                    LOG.info("ERROR: null passive counts array");
+                    counts_arry = new float[num_comb_max];
                 }
+
+                //check length 
+                if (counts_arry.length != num_comb_max)
+                    LOG.info("ERROR: comb_max and passive counts len not matched");
+
+                // this.comm_colorset_counts.put(rel_vert_id, counts_arry);
+                this.comm_colorset_counts[rel_vert_id] = counts_arry;
 
                 //trim the tmp array
-                if (tmp_itr > 0)
-                {
-                    idx_arry = new int[tmp_itr];
-                    counts_arry = new float[tmp_itr];
-                    System.arraycopy(tmp_idx_arry, 0, idx_arry, 0, tmp_itr);
-                    System.arraycopy(tmp_counts_arry, 0, counts_arry, 0, tmp_itr);
-
-                    tmp_idx_arry = null;
-                    tmp_counts_arry = null;
-
-                    this.comm_colorset_idx.put(rel_vert_id, idx_arry);
-                    this.comm_colorset_counts.put(rel_vert_id, counts_arry);
-
-                }
+                // if (tmp_itr > 0)
+                // {
+                //     idx_arry = new int[tmp_itr];
+                //     counts_arry = new float[tmp_itr];
+                //     System.arraycopy(tmp_idx_arry, 0, idx_arry, 0, tmp_itr);
+                //     System.arraycopy(tmp_counts_arry, 0, counts_arry, 0, tmp_itr);
+                //
+                //     tmp_idx_arry = null;
+                //     tmp_counts_arry = null;
+                //
+                //     // this.comm_colorset_idx.put(rel_vert_id, idx_arry);
+                //     this.comm_colorset_counts.put(rel_vert_id, counts_arry);
+                //
+                // }
             }
 
-            if (idx_arry != null && counts_arry != null)
-            {
+            // if (idx_arry != null && counts_arry != null)
+            // {
                 //combine the idx_arry 
-                System.arraycopy(idx_arry, 0, counts_idx_tmp, count_num, idx_arry.length);
+                // System.arraycopy(idx_arry, 0, counts_idx_tmp, count_num, idx_arry.length);
                 System.arraycopy(counts_arry, 0, counts_data_tmp, count_num, counts_arry.length);
-                count_num += idx_arry.length;
-            }
+                count_num += counts_arry.length;
+            // }
 
         }
 
@@ -323,15 +349,16 @@ public class dynamic_table_array extends dynamic_table{
 
         v_offset[v_num] = count_num;
         //trim the tmp array
-        int[] counts_idx = new int[count_num];
+        // int[] counts_idx = new int[count_num];
         float[] counts_data = new float[count_num];
-        System.arraycopy(counts_idx_tmp, 0, counts_idx, 0, count_num);
+        // System.arraycopy(counts_idx_tmp, 0, counts_idx, 0, count_num);
         System.arraycopy(counts_data_tmp, 0, counts_data, 0, count_num);
 
-        counts_idx_tmp = null;
+        // counts_idx_tmp = null;
         counts_data_tmp = null;
 
-        SCSet set = new SCSet(v_num, count_num, v_offset, counts_idx, counts_data);
+        // SCSet set = new SCSet(v_num, count_num, v_offset, counts_idx, counts_data);
+        SCSet set = new SCSet(v_num, count_num, v_offset, counts_data);
 
         return set;
 
@@ -346,12 +373,14 @@ public class dynamic_table_array extends dynamic_table{
     }
 
     public void clear_comm_counts() {
-        this.comm_colorset_idx.clear();
-        this.comm_colorset_counts.clear();
+        // this.comm_colorset_idx.clear();
+        // this.comm_colorset_counts.clear();
+        for(int k=0;k<this.max_abs_vid+1;k++)
+            this.comm_colorset_counts[k] = null;
     }
 
     public void free_comm_counts() {
-        this.comm_colorset_idx = null;
+        // this.comm_colorset_idx = null;
         this.comm_colorset_counts = null;
     }
 }

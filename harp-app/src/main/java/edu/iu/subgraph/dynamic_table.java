@@ -45,7 +45,7 @@ public abstract class dynamic_table {
         choose_table = null;
     }
 
-    public abstract void init(Graph[] subtemplates, int num_subtemplates, int num_vertices, int num_colors);
+    public abstract void init(Graph[] subtemplates, int num_subtemplates, int num_vertices, int num_colors, int max_abs_vid);
 
     public abstract void init_sub(int subtemplate);
 
