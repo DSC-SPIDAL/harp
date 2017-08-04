@@ -53,6 +53,8 @@ sections:
         url: /docs/applications/lda-cgs
       - name: Matrix Factorization
         url: /docs/applications/mf
+      - name: Sub-graph Counting
+        url: /docs/applications/sahad
   - name: Harp-DAAL
     sublinks:
       - name: Overview
