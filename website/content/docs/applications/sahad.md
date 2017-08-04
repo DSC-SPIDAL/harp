@@ -74,7 +74,7 @@ In contrast, the Twitter [dataset](http://an.kaist.ac.kr/traces/WWW2010.html) is
 # Run Subgraph Counting Example
 
 ## Data
-   You can download public data or download any graph data and turn it in the format below. Here are some [datasets](https://github.com/DSC-SPIDAL/harp/datasets/subgraphcounting/graphs/) and [templates](https://github.com/DSC-SPIDAL/harp/datasets/subgraphcounting/templates/) for your reference.
+   You can download public data or download any graph data and turn it in the format below. Here are some [datasets](https://github.com/DSC-SPIDAL/harp/tree/master/datasets/subgraphcounting/graphs) and [templates](https://github.com/DSC-SPIDAL/harp/tree/master/datasets/subgraphcounting/templates) for your reference.
 ### Data Format
 The format for the data should an adjacency list where each row is a sample vertex, followed by its neighbor vertices ``v1        v2,v6,v9,v12,``. A practical example can be seen below where vertex 0
 has 179-962 as its neighbors, and vertex 1 has 37-975 as its neighbors.
