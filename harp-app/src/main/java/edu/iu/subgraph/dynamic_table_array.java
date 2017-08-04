@@ -164,6 +164,11 @@ public class dynamic_table_array extends dynamic_table{
         }
     }
 
+    public float[] get_table(int subtemplate, int vertex)
+    {
+        return table[subtemplate][vertex];
+    }
+
     public float get_active(int vertex, int comb_num_index){
         if( cur_table_active[vertex] != null){
             return cur_table_active[vertex][comb_num_index];
@@ -262,7 +267,6 @@ public class dynamic_table_array extends dynamic_table{
 
         //to be trimed
         //counts_idx_tmp is not required, can be removed
-        // int[] counts_idx_tmp = new int[num_comb_max*v_num];
         float[] counts_data_tmp = new float[num_comb_max*v_num];
 
         int count_num = 0;
@@ -279,30 +283,11 @@ public class dynamic_table_array extends dynamic_table{
             if (rel_vert_id < 0 || (is_vertex_init_passive(rel_vert_id) == false))
                 continue;
 
-            // int[] idx_arry = this.comm_colorset_idx.get(rel_vert_id); 
-            // float[] counts_arry = this.comm_colorset_counts.get(rel_vert_id); 
             float[] counts_arry = this.comm_colorset_counts[rel_vert_id]; 
 
-            // if (idx_arry == null || counts_arry == null)
             if (counts_arry == null)
             {
-                //create the entry and put it to table
-                //create tmp array which will be trimed later
-                // int[] tmp_idx_arry = new int[num_comb_max];
-                // float[] tmp_counts_arry = new float[num_comb_max];
-                // counts_arry = new float[num_comb_max];
-
-                // int tmp_itr = 0;
-                //this can be replaced by system.arraycopy
-                //get all the comb numbers 
-                // for(int q = 0; q< num_comb_max; q++)
-                // {
-                    // float count_v = get_passive(rel_vert_id, q);
-                    // tmp_idx_arry[tmp_itr] = q;
-                    // ??? is this copy right 
-                    // counts_arry[q] = get_passive(rel_vert_id, q);
-                    // tmp_itr++;
-                // }
+                
                 if (get_passive(rel_vert_id) != null)
                     counts_arry = get_passive(rel_vert_id).clone();
                 else
@@ -315,33 +300,12 @@ public class dynamic_table_array extends dynamic_table{
                 if (counts_arry.length != num_comb_max)
                     LOG.info("ERROR: comb_max and passive counts len not matched");
 
-                // this.comm_colorset_counts.put(rel_vert_id, counts_arry);
                 this.comm_colorset_counts[rel_vert_id] = counts_arry;
 
-                //trim the tmp array
-                // if (tmp_itr > 0)
-                // {
-                //     idx_arry = new int[tmp_itr];
-                //     counts_arry = new float[tmp_itr];
-                //     System.arraycopy(tmp_idx_arry, 0, idx_arry, 0, tmp_itr);
-                //     System.arraycopy(tmp_counts_arry, 0, counts_arry, 0, tmp_itr);
-                //
-                //     tmp_idx_arry = null;
-                //     tmp_counts_arry = null;
-                //
-                //     // this.comm_colorset_idx.put(rel_vert_id, idx_arry);
-                //     this.comm_colorset_counts.put(rel_vert_id, counts_arry);
-                //
-                // }
             }
 
-            // if (idx_arry != null && counts_arry != null)
-            // {
-                //combine the idx_arry 
-                // System.arraycopy(idx_arry, 0, counts_idx_tmp, count_num, idx_arry.length);
                 System.arraycopy(counts_arry, 0, counts_data_tmp, count_num, counts_arry.length);
                 count_num += counts_arry.length;
-            // }
 
         }
 
@@ -349,15 +313,11 @@ public class dynamic_table_array extends dynamic_table{
 
         v_offset[v_num] = count_num;
         //trim the tmp array
-        // int[] counts_idx = new int[count_num];
         float[] counts_data = new float[count_num];
-        // System.arraycopy(counts_idx_tmp, 0, counts_idx, 0, count_num);
         System.arraycopy(counts_data_tmp, 0, counts_data, 0, count_num);
 
-        // counts_idx_tmp = null;
         counts_data_tmp = null;
 
-        // SCSet set = new SCSet(v_num, count_num, v_offset, counts_idx, counts_data);
         SCSet set = new SCSet(v_num, count_num, v_offset, counts_data);
 
         return set;
@@ -382,5 +342,10 @@ public class dynamic_table_array extends dynamic_table{
     public void free_comm_counts() {
         // this.comm_colorset_idx = null;
         this.comm_colorset_counts = null;
+    }
+
+    public void set_to_table(int s, int d)
+    {
+        table[d] = table[s]; 
     }
 }
