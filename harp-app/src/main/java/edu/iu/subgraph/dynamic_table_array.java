@@ -110,9 +110,9 @@ public class dynamic_table_array extends dynamic_table{
             cur_table_passive = null;
         }
 
-        if(subtemplate != 0){
-            init_sub(subtemplate);
-        }
+        // if(subtemplate != 0){
+        init_sub(subtemplate);
+        // }
     }
 
     @Override
@@ -227,11 +227,24 @@ public class dynamic_table_array extends dynamic_table{
         cur_table[vertex][comb_num_index] = count;
     }
 
+    //shall deal with the uninit vertex in local
     public void update_comm(int vertex, int comb_num_index, float count){
 
-        if( cur_table[vertex] != null){
-            cur_table[vertex][comb_num_index] += count;
+        if( cur_table[vertex] == null){
+            cur_table[vertex] = new float[ num_colorsets[cur_sub] ];
+
+            assert(cur_table[vertex] != null );
+
+            for( int c = 0; c < num_colorsets[cur_sub]; ++c) {
+                cur_table[vertex][c] = 0.0f;
+            }
         }
+
+        cur_table[vertex][comb_num_index] += count;
+
+        // if( cur_table[vertex] != null){
+        //     cur_table[vertex][comb_num_index] += count;
+        // }
     }
 
     @Override
