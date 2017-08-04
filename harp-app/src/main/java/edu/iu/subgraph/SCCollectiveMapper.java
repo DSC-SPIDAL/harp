@@ -171,7 +171,7 @@ public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object
 
         //formula to compute the prob 
         int num_colors = t.num_vertices();
-        boolean calculate_automorphisms = false;
+        boolean calculate_automorphisms = true;
 
         double prob_colorful = Util.factorial(num_colors) /
                 ( Util.factorial(num_colors - t.num_vertices()) * Math.pow(num_colors, t.num_vertices()) );
