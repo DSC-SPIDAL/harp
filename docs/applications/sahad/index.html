@@ -1,0 +1,108 @@
+<!DOCTYPE html><html lang="en-us"><head><link rel="shortcut icon" type="image/png" sizes="16x16" href="https://dsc-spidal.github.io/harp/img/favicon-16x9.png"><link rel="shortcut icon" type="image/png" sizes="32x32" href="https://dsc-spidal.github.io/harp/img/favicon-32x18.png"><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="generator" content="Hugo 0.16-DEV" /><meta property="og:locale" content="en_US"><meta property="og:type" content="article"><meta property="og:title" content="harp"><meta property="og:image" content="/img/logo54x54.png"><meta property="og:url" content="https://dsc-spidal.github.io/harp/"><meta name="twitter:title" content="harp"><meta name="twitter:image" content=""><meta property="og:site_name" content="Sub-graph Counting Using Harp-Sahad"><meta property="og:url" content=""><meta property="og:description" content=""><meta name="twitter:description" content=""><title>harp Documentation - Sub-graph Counting Using Harp-Sahad</title><link rel="stylesheet" href="https://dsc-spidal.github.io/harp/css/style.min.css"><link rel="stylesheet" href="https://dsc-spidal.github.io/harp/css/font-awesome.min.css"><link rel="stylesheet" href="https://dsc-spidal.github.io/harp/css/pygments.css"></head><body><nav class="hn-top-navbar navbar navbar-inverse navbar-fixed-top" role="navigation"><div class="hn-navbar-container container-fluid"><div class="navbar-header"><button class="navbar-toggle collapsed" type="button" data-toggle="collapse" data-target="#hn-navbar" aria-controls="hn-navbar" aria-expanded="false"><span class="sr-only"><Toggle>navigation</Toggle></span><i class="hn-toggle-button fa fa-bars"></i></button><a class="hn-navbar-logo navbar-brand" href="https://dsc-spidal.github.io/harp/"><img class="pull-left" src="https://dsc-spidal.github.io/harp/img/0-1-2.png" width="76%"></a></div><div id="hn-navbar" class="navbar-collapse collapse"><ul class="nav navbar-nav navbar-right"><li><a href="https://dsc-spidal.github.io/harp/docs/getting-started">Docs</a></li><li><a href="https://dsc-spidal.github.io/harp/api">API</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/resources">Resources</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/contributors/community">Community</a></li><li><a href="https://github.com/DSC-SPIDAL/harp/">GitHub</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/survey">Feedback</a></li><li><a href="https://groups.google.com/forum/#!forum/harp-users">Mailing List</a></li></ul></div></div></nav><div class="hn-main"><div class="container"><div class="row"><aside class="hn-sidebar hidden-xs col-sm-4 col-md-3 col-lg-2 collapse"><nav class="hn-sidebar-nav"><div id="hn-accordion" class="panel-group" role="tablist" aria-multiselectable="true"><div class="panel panel-default"><section id="quick-start" class="panel-heading" role="tab"><h4 class="panel-title"><a role="button" data-toggle="collapse" data-parent="#hn-accordion" href="#collapse-quick-start" aria-labelledby="quick-start"><i class="fa fa-caret-right"></i>Quick Start</a></h4></section><div id="collapse-quick-start" class="panel-collapse collapse" aria-labelledby="quick-start"><div class="panel-body"><ul><li><a href="https://dsc-spidal.github.io/harp/docs/getting-started">Harp Installation (single)</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/getting-started-cluster">Harp Installation (cluster)</a></li></ul></div></div></div><div class="panel panel-default"><section id="programming-guides" class="panel-heading" role="tab"><h4 class="panel-title"><a role="button" data-toggle="collapse" data-parent="#hn-accordion" href="#collapse-programming-guides" aria-labelledby="programming-guides"><i class="fa fa-caret-right"></i>Programming Guides</a></h4></section><div id="collapse-programming-guides" class="panel-collapse collapse" aria-labelledby="programming-guides"><div class="panel-body"><ul><li><a href="https://dsc-spidal.github.io/harp/docs/programming/overview">Overview</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/programming/data-interface">Data Interfaces and Types</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/programming/scheduler">Schedulers</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/programming/computation-models">Computation Models</a></li></ul></div></div></div><div class="panel panel-default"><section id="collective-communication" class="panel-heading" role="tab"><h4 class="panel-title"><a role="button" data-toggle="collapse" data-parent="#hn-accordion" href="#collapse-collective-communication" aria-labelledby="collective-communication"><i class="fa fa-caret-right"></i>Collective Communication</a></h4></section><div id="collapse-collective-communication" class="panel-collapse collapse" aria-labelledby="collective-communication"><div class="panel-body"><ul><li><a href="https://dsc-spidal.github.io/harp/docs/communications/broadcast">broadcast</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/communications/reduce">reduce</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/communications/allgather">allgather</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/communications/allreduce">allreduce</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/communications/regroup">regroup</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/communications/pushandpull">push &amp; pull</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/communications/rotate">rotate</a></li></ul></div></div></div><div class="panel panel-default"><section id="examples" class="panel-heading" role="tab"><h4 class="panel-title"><a role="button" data-toggle="collapse" data-parent="#hn-accordion" href="#collapse-examples" aria-labelledby="examples"><i class="fa fa-caret-right"></i>Examples</a></h4></section><div id="collapse-examples" class="panel-collapse collapse" aria-labelledby="examples"><div class="panel-body"><ul><li><a href="https://dsc-spidal.github.io/harp/docs/examples/overview">Overview</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/examples/kmeans">K-Means</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/examples/mlrsgd">Multiclass Logistic Regression</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/examples/lda">Latent Dirichlet Allocation (CVB)</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/examples/svm">Support Vector Machine</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/examples/rf">Random Forests</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/examples/nn">Neural Network</a></li></ul></div></div></div><div class="panel panel-default"><section id="applications" class="panel-heading" role="tab"><h4 class="panel-title"><a role="button" data-toggle="collapse" data-parent="#hn-accordion" href="#collapse-applications" aria-labelledby="applications"><i class="fa fa-caret-right"></i>Applications</a></h4></section><div id="collapse-applications" class="panel-collapse collapse" aria-labelledby="applications"><div class="panel-body"><ul><li><a href="https://dsc-spidal.github.io/harp/docs/applications/lda-cgs">Latent Dirichlet Allocation (CGS)</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/applications/mf">Matrix Factorization</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/applications/sahad">Sub-graph Counting</a></li></ul></div></div></div><div class="panel panel-default"><section id="harp-daal" class="panel-heading" role="tab"><h4 class="panel-title"><a role="button" data-toggle="collapse" data-parent="#hn-accordion" href="#collapse-harp-daal" aria-labelledby="harp-daal"><i class="fa fa-caret-right"></i>Harp-DAAL</a></h4></section><div id="collapse-harp-daal" class="panel-collapse collapse" aria-labelledby="harp-daal"><div class="panel-body"><ul><li><a href="https://dsc-spidal.github.io/harp/docs/harpdaal/harpdaal">Overview</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/harpdaal/kmeans">K-means</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/harpdaal/mfsgd">Matrix Factorization (SGD)</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/harpdaal/als">Recommender System (ALS)</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/harpdaal/svd">Singular Value Decomposition (SVD)</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/harpdaal/pca">Principal Component Analysis (PCA)</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/harpdaal/nn">Neural Network</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/harpdaal/qr">QR Decomposition (QR)</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/harpdaal/covariance">Covariance</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/harpdaal/moments">Low Order Moments</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/harpdaal/naive_bayes">Naive Bayes</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/harpdaal/linear_regression">Linear Regression</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/harpdaal/ridge_regression">Ridge Regression</a></li></ul></div></div></div><div class="panel panel-default"><section id="harp-resources" class="panel-heading" role="tab"><h4 class="panel-title"><a role="button" data-toggle="collapse" data-parent="#hn-accordion" href="#collapse-harp-resources" aria-labelledby="harp-resources"><i class="fa fa-caret-right"></i>Harp Resources</a></h4></section><div id="collapse-harp-resources" class="panel-collapse collapse" aria-labelledby="harp-resources"><div class="panel-body"><ul><li><a href="https://dsc-spidal.github.io/harp/docs/resources">Harp Resources</a></li></ul></div></div></div><div class="panel panel-default"><section id="contributors" class="panel-heading" role="tab"><h4 class="panel-title"><a role="button" data-toggle="collapse" data-parent="#hn-accordion" href="#collapse-contributors" aria-labelledby="contributors"><i class="fa fa-caret-right"></i>Contributors</a></h4></section><div id="collapse-contributors" class="panel-collapse collapse" aria-labelledby="contributors"><div class="panel-body"><ul><li><a href="https://dsc-spidal.github.io/harp/docs/contributors/community">Community</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/contributors/contributors">Contributors</a></li></ul></div></div></div><div class="panel panel-default"><section id="user-feedback" class="panel-heading" role="tab"><h4 class="panel-title"><a role="button" data-toggle="collapse" data-parent="#hn-accordion" href="#collapse-user-feedback" aria-labelledby="user-feedback"><i class="fa fa-caret-right"></i>User Feedback</a></h4></section><div id="collapse-user-feedback" class="panel-collapse collapse" aria-labelledby="user-feedback"><div class="panel-body"><ul><li><a href="https://dsc-spidal.github.io/harp/docs/survey">Online Survey</a></li></ul></div></div></div></div></nav></aside><section class="hn-docs-main col-sm-8 col-md-9 col-lg-10 col-sm-offset-4 col-md-offset-3 col-lg-offset-2"><header class="hn-docs-header page-header"><h1>Sub-graph Counting Using Harp-Sahad</h1><div class="hn-docs-description"></div></header><article class="hn-docs-content">
+
+<p><img src="https://dsc-spidal.github.io/harp/img/sahad/subgraph-counting-illustration.png" width="50%"  ></p>
+
+<h1 id="what-is-sub-graph-counting:43c27c7c00f54929b8c1a6e9b5ec7f0a">What is Sub-graph Counting?</h1>
+
+<p>Sub-graph counting goes under many names such as template matching or motif counting, but they all generally refer to counting the amount
+of a template T, that are present in a graph G. Refering to our illustration above, we may imagine that the template T (Here T is
+split on T&rsquo; and T&rdquo;) on the right could fit in graph G in a few ways right? Well we would like to quantify just how many times T can fit
+in G. Such general problem manifests itself in many domains such as genomics, design of electronic circuits, and social network analysis.</p>
+
+<h1 id="how-do-we-solve-this-problem:43c27c7c00f54929b8c1a6e9b5ec7f0a">How do we solve this problem?</h1>
+
+<p>We use the Color-coding approximation formulated by (Alon et. al., 1995) which can be presented the following way:
+</br>
+1. Establish a group of k distinct colors, where k is the number of vertices in the template T
+</br>
+2. Randomly color each vertex of graph G with the k distinct colors
+</br>
+3. Count all colorful (meaning all vertices have a distinct color with no duplicates) copies of T in G rooted at every vertex v using
+    the following formula and diagram, where this is achieved by bottom-up dynamic programming. This means that we start by counting
+    the colorful copies of each one vertex tuple (this is trivial as they are all one distinct color), then we buid up to two vertex
+    tuples and use the counts of the previous one-tuple step where we have the notion of an active child p, and a passive child p&rsquo;.
+    Thus, we count all two-tuple embeddings where p is rooted at some vertex v in G, and p&rsquo; is its adjacent neighbor, then we multiply
+    their colorful combinations. We continue this process for 3-tuples by using the 2-tuple and 1-tuple counts, and finally we conclude
+    by finding the 5-tuple (final template count) by using the 3-tuple and 2-tuple counts. As a last counting step, we divide by d, where d is equal
+    to one plus the number of siblings of p&rsquo; which are roots of subtrees isomorphic to the subtemplate
+<img src="https://dsc-spidal.github.io/harp/img/sahad/t2pprime-illustration.png" width="5%">
+</br>
+<img src="https://dsc-spidal.github.io/harp/img/sahad/graph-template-illustration.png" width="50%">
+<img src="https://dsc-spidal.github.io/harp/img/sahad/color-counting-dynamic-prog-illustration.png" width="70%">
+</br>
+4. Sum up the template counts at all the vertices, then divide by q (which signifies the possibility of the template T being isomorphic to itself) as the following:
+</br>
+<img src="https://dsc-spidal.github.io/harp/img/sahad/sum-derandomization-illustration.png" width="20%">
+</br>
+5. Multiply the final sum N by the probability of any given template T to be colorful as the following:
+</br>
+<img src="https://dsc-spidal.github.io/harp/img/sahad/koverkk-illustration.png" width="8%">
+</br>
+6. If needed, repeat this process more times and average the count to obtain a more accurate measure (as this method yields an approximation)</p>
+
+<h1 id="parallelizing-the-color-coding-algorithm-via-harp-rotation:43c27c7c00f54929b8c1a6e9b5ec7f0a">Parallelizing the Color Coding algorithm via Harp Rotation:</h1>
+
+<p>In the initialization phase, each node in our distributed cluster will store a distinct part of the graph where we split the graph into p partitions, and we then use p nodes to do our computation.
+Each node is then responsible for the chunk of vertices attributed to it, performing the count of the vertices contained in its own graph partition. You may imagine that depending on how the partitions are created,
+the neighbors of certain vertices may be in other partitions, which makes it impossible for a node to locally do the count. This is where the rotation communication protocol comes in which is illustrated below.
+</br>
+<img src="https://dsc-spidal.github.io/harp/img/sahad/sahad-rotation-illustration.png" width="70%">
+</br>
+As seen from the illustration, we first load the data, then we compute the lowest level (single vertex of the template) of the dynamic programming color count which can be done on all of the partitions locally without the need for communication.
+Then, we move up to the next level (two vertices with a direct child and a passive child) and compute the counts for the nodes that have local neighbors. However, the neighbors that are stored
+on other partitions, must be rotated to that partition which have incident edges on those neighbors for the count to properly be computed. This repeats by rotating p times so that every partition
+will have been exposed to all of the other partitions, hence being able to compute the Color Count at all of the vertices, considering all of the vertex neighbors. Finally, we continue this process, for the
+rest of the template substructures (i.e. 3 vertices, 5 vertices, etc&hellip; all depending on the template used), where a template of u5-1 (5 consecutive vertices connected by one edge forming a line) will
+have a final template step of 5 vertices, by using the previous counts of 3 and 2. Where 3 is computed by 2 and 1, and 2 is computed by 1 and 1. This process is a bottom up dynamic programing scheme where
+rotation and computation is alternated until all of the partitions have seen their vertex neighbors. Furthermore, this rotation/comptuation pattern happens for each dynamic programming step, starting with
+the small sub-templates, and moving up to the final template at hand.</p>
+
+<h1 id="performance-and-results:43c27c7c00f54929b8c1a6e9b5ec7f0a">Performance and Results</h1>
+
+<p>We set up a 16 node distributed Hadoop cluster on the Intel Haswell architecture where each node has 2 sockets, 12 cores per socket, and 2 threads per core, yielding 48 possible CPUs.
+Furthermore, each processor has the following model: Intel&reg; Xeon&reg; CPU E5-2670 v3 @ 2.30GHz. All the nodes have 128 GB memory and are connected by QDR InfiniBand. For our tests,
+JVM memory is set to “-Xmx73728m -Xms173728m”, and IPoIB is used for communication. Finally, we execute experiments on a 16 node cluster using 40 threads for each node, on templates 3-1, 5-1, and 7-1 (see Figure 1)
+for the following graphs (see Table 1) of which Miami and NYC have been generated via the <a href="http://www.pnas.org/content/99/25/15879.abstract">(Chung and Lu, 2002)</a> random graph generation process.
+In contrast, the Twitter <a href="http://an.kaist.ac.kr/traces/WWW2010.html">dataset</a> is a real dataset covering the follower network of 41 million users over a 7 month period in 2009.</p>
+
+<h2 id="graphs:43c27c7c00f54929b8c1a6e9b5ec7f0a">Graphs</h2>
+
+<p><img src="https://dsc-spidal.github.io/harp/img/sahad/graphs-illustration.png" width="70%"></p>
+
+<h2 id="templates-used:43c27c7c00f54929b8c1a6e9b5ec7f0a">Templates Used</h2>
+
+<p><img src="https://dsc-spidal.github.io/harp/img/sahad/templates-illustration.png" width="40%"></p>
+
+<h2 id="results:43c27c7c00f54929b8c1a6e9b5ec7f0a">Results</h2>
+
+<p><img src="https://dsc-spidal.github.io/harp/img/sahad/miaminyctwitter-experiment-illustration.png" width="90%"></p>
+
+<h1 id="run-subgraph-counting-example:43c27c7c00f54929b8c1a6e9b5ec7f0a">Run Subgraph Counting Example</h1>
+
+<h2 id="data:43c27c7c00f54929b8c1a6e9b5ec7f0a">Data</h2>
+
+<p>You can download public data or download any graph data and turn it in the format below. Here are some <a href="https://github.com/DSC-SPIDAL/harp/datasets/subgraphcounting/graphs/">datasets</a> and <a href="https://github.com/DSC-SPIDAL/harp/datasets/subgraphcounting/templates/">templates</a> for your reference.</p>
+
+<h3 id="data-format:43c27c7c00f54929b8c1a6e9b5ec7f0a">Data Format</h3>
+
+<p>The format for the data should an adjacency list where each row is a sample vertex, followed by its neighbor vertices <code>v1\tv2,v6,v9,v12,</code>. A practical example can be seen below where vertex 0
+has 179-962 as its neighbors, and vertex 1 has 37-975 as its neighbors.</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>0	179,182,202,321,325,343,361,429,480,534,544,634,644,680,757,962, 
+1	37,71,201,341,354,369,416,426,439,459,509,510,597,624,719,813,823,858,901,975, 
+...
+</pre></div>
+
+<h2 id="usage:43c27c7c00f54929b8c1a6e9b5ec7f0a">Usage</h2>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>hadoop jar harp-app-1.0-SNAPSHOT.jar edu.iu.sahad.rotation.SCMapCollective &lt;number of map tasks&gt; &lt;useLocalMultiThread&gt; &lt;template&gt; &lt;graphDir&gt; &lt;outDir&gt; &lt;num threads per node&gt;
+</pre></div>
+
+<h3 id="concrete-usage-example:43c27c7c00f54929b8c1a6e9b5ec7f0a">Concrete Usage Example</h3>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>hadoop jar harp-app-1.0-SNAPSHOT.jar edu.iu.sahad.rotation.SCMapCollective <span style="color: #ae81ff">2</span> <span style="color: #ae81ff">1</span> templates/u5-1.t ./inputgraphfileloc ./outputharpsahad 5
+</pre></div>
+
+<p>Assuming that you are using 2 compute nodes, have placed the template in the same location from which you are running this command, and have split the input file in half.
+One way to split the file is by using the <code>wc -l &lt;inputfile&gt;</code> to get the total amount of lines where each line is a vertex. Then the <code>split -l &lt;total_amt_lines/2&gt;</code> which
+will split this file into two  files each having an equal amount of vertices. Note that if the files cannot be split evenly and the contents will overflow into a third file,
+simply append the contents of this file to any of the other more &ldquo;full&rdquo; files using the linux <code>cat file1 &gt;&gt; file2</code> command. Both of these files must then be placed in /inputgraphfileloc in HDFS. Finally,
+here each node uses 5 threads and the output of the computation when it completes will be present at /outputharpsahad in HDFS.</p>
+</article></section></div></div></div><script src="https://code.jquery.com/jquery-2.2.1.min.js"></script><script src="https://dsc-spidal.github.io/harp/js/app.min.js"></script></body></html>
