@@ -110,9 +110,9 @@ public class dynamic_table_array extends dynamic_table{
             cur_table_passive = null;
         }
 
-        // if(subtemplate != 0){
+        if(subtemplate != 0){
         init_sub(subtemplate);
-        // }
+        }
     }
 
     @Override
