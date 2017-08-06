@@ -34,15 +34,10 @@ public class dynamic_table_array extends dynamic_table{
     // vertex-colorset
     private float[][] cur_table_passive;
 
-    //indexed by relative v id
-    //can be replaced by int[max_rel_id][]
-    // private Int2ObjectOpenHashMap<int[]> comm_colorset_idx;
-    // private Int2ObjectOpenHashMap<float[]> comm_colorset_counts;
-    private float[][] comm_colorset_counts;
-
     private int max_abs_vid;
 
     int cur_sub;
+    // float[][] comm_colorset_counts;
 
     final Logger LOG = Logger.getLogger(dynamic_table_array.class);
 
@@ -56,7 +51,7 @@ public class dynamic_table_array extends dynamic_table{
         this.max_abs_vid = max_abs_vid;
 
         // this.comm_colorset_idx = new Int2ObjectOpenHashMap<>();
-        this.comm_colorset_counts = new float[this.max_abs_vid+1][];
+        // this.comm_colorset_counts = new float[this.max_abs_vid+1][];
 
         //obtain the table,choose j color from i color, the num of combinations
         init_choose_table();
@@ -271,71 +266,6 @@ public class dynamic_table_array extends dynamic_table{
             return false;
     }
 
-    //send local v comb counts data to remote mappers
-    public SCSet compress_send_data(int[] vert_list, int num_comb_max, Graph g) 
-    {
-
-        int v_num = vert_list.length;
-        int[] v_offset = new int[v_num + 1];
-
-        //to be trimed
-        //counts_idx_tmp is not required, can be removed
-        float[] counts_data_tmp = new float[num_comb_max*v_num];
-
-        int count_num = 0;
-
-        // LOG.info("Start compressing send data v_num: " + v_num);
-        for(int p = 0; p< v_num; p++)
-        {
-            v_offset[p] = count_num;
-            //get the abs vert id
-            int comm_vert_id = vert_list[p];
-            int rel_vert_id = g.get_relative_v_id(comm_vert_id); 
-
-            //if comm_vert_id is not in local graph
-            if (rel_vert_id < 0 || (is_vertex_init_passive(rel_vert_id) == false))
-                continue;
-
-            float[] counts_arry = this.comm_colorset_counts[rel_vert_id]; 
-
-            if (counts_arry == null)
-            {
-                
-                if (get_passive(rel_vert_id) != null)
-                    counts_arry = get_passive(rel_vert_id).clone();
-                else
-                {
-                    LOG.info("ERROR: null passive counts array");
-                    counts_arry = new float[num_comb_max];
-                }
-
-                //check length 
-                if (counts_arry.length != num_comb_max)
-                    LOG.info("ERROR: comb_max and passive counts len not matched");
-
-                this.comm_colorset_counts[rel_vert_id] = counts_arry;
-
-            }
-
-                System.arraycopy(counts_arry, 0, counts_data_tmp, count_num, counts_arry.length);
-                count_num += counts_arry.length;
-
-        }
-
-        // LOG.info("Finish compressing send data");
-
-        v_offset[v_num] = count_num;
-        //trim the tmp array
-        float[] counts_data = new float[count_num];
-        System.arraycopy(counts_data_tmp, 0, counts_data, 0, count_num);
-
-        counts_data_tmp = null;
-
-        SCSet set = new SCSet(v_num, count_num, v_offset, counts_data);
-
-        return set;
-
-    }
 
     public int get_num_color_set(int s) 
     {
@@ -345,17 +275,17 @@ public class dynamic_table_array extends dynamic_table{
             return 0;
     }
 
-    public void clear_comm_counts() {
-        // this.comm_colorset_idx.clear();
-        // this.comm_colorset_counts.clear();
-        for(int k=0;k<this.max_abs_vid+1;k++)
-            this.comm_colorset_counts[k] = null;
-    }
+    // public void clear_comm_counts() {
+    //     // this.comm_colorset_idx.clear();
+    //     // this.comm_colorset_counts.clear();
+    //     for(int k=0;k<this.max_abs_vid+1;k++)
+    //         this.comm_colorset_counts[k] = null;
+    // }
 
-    public void free_comm_counts() {
-        // this.comm_colorset_idx = null;
-        this.comm_colorset_counts = null;
-    }
+    // public void free_comm_counts() {
+    //     // this.comm_colorset_idx = null;
+    //     this.comm_colorset_counts = null;
+    // }
 
     public void set_to_table(int s, int d)
     {
