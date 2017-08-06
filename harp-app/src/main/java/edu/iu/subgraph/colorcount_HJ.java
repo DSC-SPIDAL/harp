@@ -27,6 +27,8 @@ import edu.iu.harp.partition.Partition;
 import edu.iu.harp.partition.Table;
 import edu.iu.harp.resource.IntArray;
 import edu.iu.harp.resource.DoubleArray;
+import edu.iu.harp.io.ConnPool;
+import edu.iu.harp.resource.ResourcePool;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -545,6 +547,8 @@ public class colorcount_HJ {
                                 this.update_queue_counts[k] = null;
                             }
 
+                            this.comm_data_table.release();
+                            this.comm_data_table.free();
                             this.comm_data_table = null;
                         }
 
@@ -620,7 +624,9 @@ public class colorcount_HJ {
                             this.update_queue_counts[k] = null;
                         }
 
-                        this.comm_data_table = null;
+                           this.comm_data_table.release();
+                           this.comm_data_table.free();
+                           this.comm_data_table = null;
                     }
                 }
 
@@ -665,6 +671,18 @@ public class colorcount_HJ {
 
             }
 
+            // free comm data
+            if (threadIdx == 0)
+            {
+                if (this.mapper_num > 1)  
+                {
+                    ResourcePool.get().clean();
+                    ConnPool.get().clean();
+                }
+                System.gc();
+            }
+
+            this.barrier.await();
 
         } catch (InterruptedException | BrokenBarrierException e) {
             LOG.info("Catch barrier exception in itr: " + this.cur_iter);
@@ -1303,7 +1321,7 @@ public class colorcount_HJ {
             passive_child = part.get_passive_index(sub_id);
             // LOG.info("Active Child: " + active_child + "; Passive Child: " + passive_child + " for sub: " + sub_id);
             LOG.info("Start updating remote counts on local vertex");
-            this.start_comm = System.currentTimeMillis();
+            // this.start_comm = System.currentTimeMillis();
         }
 
         count_comm_root[threadIdx] = 0.0f;
@@ -1391,7 +1409,7 @@ public class colorcount_HJ {
         if (verbose && threadIdx == 0)
         {
             LOG.info("Finish updating remote counts on local vertex");
-            this.time_comm += (System.currentTimeMillis() - this.start_comm);
+            // this.time_comm += (System.currentTimeMillis() - this.start_comm);
         }
     }
 
