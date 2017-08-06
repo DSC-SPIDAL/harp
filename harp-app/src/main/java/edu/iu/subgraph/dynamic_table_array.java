@@ -37,7 +37,6 @@ public class dynamic_table_array extends dynamic_table{
     private int max_abs_vid;
 
     int cur_sub;
-    // float[][] comm_colorset_counts;
 
     final Logger LOG = Logger.getLogger(dynamic_table_array.class);
 
@@ -49,9 +48,6 @@ public class dynamic_table_array extends dynamic_table{
         this.num_verts = num_vertices;
         this.num_colors = num_colors;
         this.max_abs_vid = max_abs_vid;
-
-        // this.comm_colorset_idx = new Int2ObjectOpenHashMap<>();
-        // this.comm_colorset_counts = new float[this.max_abs_vid+1][];
 
         //obtain the table,choose j color from i color, the num of combinations
         init_choose_table();
@@ -236,10 +232,6 @@ public class dynamic_table_array extends dynamic_table{
         }
 
         cur_table[vertex][comb_num_index] += count;
-
-        // if( cur_table[vertex] != null){
-        //     cur_table[vertex][comb_num_index] += count;
-        // }
     }
 
     @Override
@@ -274,18 +266,6 @@ public class dynamic_table_array extends dynamic_table{
         else
             return 0;
     }
-
-    // public void clear_comm_counts() {
-    //     // this.comm_colorset_idx.clear();
-    //     // this.comm_colorset_counts.clear();
-    //     for(int k=0;k<this.max_abs_vid+1;k++)
-    //         this.comm_colorset_counts[k] = null;
-    // }
-
-    // public void free_comm_counts() {
-    //     // this.comm_colorset_idx = null;
-    //     this.comm_colorset_counts = null;
-    // }
 
     public void set_to_table(int s, int d)
     {

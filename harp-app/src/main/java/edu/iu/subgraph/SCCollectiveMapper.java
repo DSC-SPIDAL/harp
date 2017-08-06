@@ -144,9 +144,11 @@ public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object
 
         // ------------------- generate communication information -------------------
         // send/recv num and verts 
-        graph_count.init_comm(mapper_id_vertex, this);
-        
-        LOG.info("Finish graph_count initialization");
+        if (this.getNumWorkers() > 1)
+        {
+            graph_count.init_comm(mapper_id_vertex, this);
+            LOG.info("Finish graph_count initialization");
+        }
 
         // --------------------- start counting ---------------------
 		long computation_start = System.currentTimeMillis();
@@ -155,7 +157,13 @@ public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object
         full_count = graph_count.do_full_count(t, numIteration);
 
 		long computation_end = System.currentTimeMillis();
-        LOG.info("Computation time: " + (computation_end - computation_start) + " ms");
+        LOG.info("Total Counting time: " + (computation_end - computation_start) + "ms" + "; Avg per itr: " + 
+                ((computation_end - computation_start)/(double)numIteration) + "ms");
+
+        LOG.info("Total comm time: " + graph_count.get_comm_time() + "ms" + "; Avg per itr: "
+                + (graph_count.get_comm_time()/(double)numIteration) + "ms" + "; Comm Ratio: " + 
+                (graph_count.get_comm_time()/(double)(computation_end - computation_start)*100.0f) + "%");
+        
 
         // --------------- allreduce the final count from all mappers ---------------
         //

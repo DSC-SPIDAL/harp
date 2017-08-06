@@ -144,7 +144,7 @@ public class colorcount_HJ {
     //harp communicator
     private SCCollectiveMapper mapper;
 
-    private int mapper_num;
+    private int mapper_num = 1;
     private int local_mapper_id;
     // adding adj_abs_v to each mapper
     private Set<Integer>[] comm_mapper_vertex;
@@ -449,7 +449,7 @@ public class colorcount_HJ {
 
                 if(verbose && threadIdx == 0){
                     LOG.info("Start Sampling Graph for Itr: " + cur_itr);
-                    this.start_comp = System.currentTimeMillis();
+                    // this.start_comp = System.currentTimeMillis();
                     this.start_misc = System.currentTimeMillis();
                 }
 
@@ -462,7 +462,7 @@ public class colorcount_HJ {
                 this.barrier.await();
                 if(this.verbose && threadIdx == 0){
                     LOG.info("Finish Sampling Graph for Itr: " + cur_itr + "; use time: " + (System.currentTimeMillis() - this.start_misc) + "ms");
-                    this.time_comp += (System.currentTimeMillis() - this.start_comp);
+                    // this.time_comp += (System.currentTimeMillis() - this.start_comp);
                 }
 
                 // start doing counting
@@ -491,7 +491,7 @@ public class colorcount_HJ {
                     if(this.verbose && threadIdx == 0)
                     {
                         LOG.info("Start Counting Local Graph Subtemplate "+ s);
-                        this.start_comp = System.currentTimeMillis();
+                        // this.start_comp = System.currentTimeMillis();
                     }
 
                     //hit the bottom of subtemplate chain, dangling template node
@@ -516,7 +516,7 @@ public class colorcount_HJ {
                     if(this.verbose && threadIdx == 0)
                     {
                         LOG.info("Finish Counting Local Graph Subtemplate "+ s);
-                        this.time_comp += (System.currentTimeMillis() - this.start_comp);
+                        // this.time_comp += (System.currentTimeMillis() - this.start_comp);
                     }
 
                     //start communication part single thread 
@@ -679,15 +679,13 @@ public class colorcount_HJ {
         double final_count = cumulate_count_ato / (double) this.num_iter;
 
         //free memory
-        // dt.free_comm_counts();
-        // recv_vertex_table = null;
-        send_vertex_table = null;
-        comm_vertex_table = null;
-        update_map = null;
-        colors_g = null;
+        this.send_vertex_table = null;
+        this.comm_vertex_table = null;
+        this.update_map = null;
+        this.colors_g = null;
 
         delete_tables();
-        part.clear_temparrays();
+        this.part.clear_temparrays();
 
         return final_count;
 
@@ -827,11 +825,12 @@ public class colorcount_HJ {
                     // preparation for communication 
                     // replace this snippet with more efficient data structure
                     // replace Int2ObjectMap with an array of ArrayList<Integer>
-                    if (mapper_num > 1 && adj_i < 0)
+                    if (this.mapper_num > 1 && adj_i < 0)
                         this.update_map[v][nbr_comm_itr++] = adjs_abs[i];
                 }
 
-                this.update_map_size[v] = nbr_comm_itr;
+                if (this.mapper_num > 1)
+                    this.update_map_size[v] = nbr_comm_itr;
 
                 if(valid_nbrs_count != 0){
 
@@ -1208,6 +1207,15 @@ public class colorcount_HJ {
         this.index_sets = null;
     }
 
+    /**
+     * @brief regroup communication
+     * single threaded
+     * TODO: parallelize the sending partition
+     *
+     * @param sub_id
+     *
+     * @return 
+     */
     private void regroup_comm_single(int sub_id)
     {
         if (this.verbose)
@@ -1228,7 +1236,6 @@ public class colorcount_HJ {
             //for each vert find the colorsets and counts in methods of dynamic_table_array
             int comb_len = this.dt.get_num_color_set(this.part.get_passive_index(sub_id)); 
 
-            // SCSet comm_data = this.dt.compress_send_data(comm_vert_list, comb_len, this.g);
             SCSet comm_data = compress_send_data(comm_vert_list, comb_len);
             this.comm_data_table.addPartition(new Partition<>(comm_id, comm_data));
         }
@@ -1270,8 +1277,23 @@ public class colorcount_HJ {
             this.update_queue_counts[update_id] = scset.get_counts_data();
         }
 
+        if (this.verbose)
+        {
+            this.time_comm += (System.currentTimeMillis() - this.start_comm);
+        }
     }
 
+
+    /**
+     * @brief upate received comm adj counts on local graph 
+     * multi-threaded 
+     *
+     * @param sub_id
+     * @param threadIdx
+     * @param chunks
+     *
+     * @return 
+     */
     private void update_comm(int sub_id, int threadIdx, int[] chunks) throws BrokenBarrierException, InterruptedException
     {
 
@@ -1279,7 +1301,9 @@ public class colorcount_HJ {
         {
             active_child = part.get_active_index(sub_id);
             passive_child = part.get_passive_index(sub_id);
-            LOG.info("Active Child: " + active_child + "; Passive Child: " + passive_child + " for sub: " + sub_id);
+            // LOG.info("Active Child: " + active_child + "; Passive Child: " + passive_child + " for sub: " + sub_id);
+            LOG.info("Start updating remote counts on local vertex");
+            this.start_comm = System.currentTimeMillis();
         }
 
         count_comm_root[threadIdx] = 0.0f;
@@ -1363,10 +1387,17 @@ public class colorcount_HJ {
 
 
         barrier.await();
+
+        if (verbose && threadIdx == 0)
+        {
+            LOG.info("Finish updating remote counts on local vertex");
+            this.time_comm += (System.currentTimeMillis() - this.start_comm);
+        }
     }
 
     /**
      * @brief compress local vert data for remote mappers
+     * single thread
      *
      * @param vert_list
      * @param num_comb_max
@@ -1375,6 +1406,12 @@ public class colorcount_HJ {
      */
     public SCSet compress_send_data(int[] vert_list, int num_comb_max) 
     {
+
+        if (this.verbose)
+        {
+            // LOG.info("Start compressing local vertices counts for remote mappers");
+            this.start_comm = System.currentTimeMillis();
+        }
 
         int v_num = vert_list.length;
         int[] v_offset = new int[v_num + 1];
@@ -1395,29 +1432,22 @@ public class colorcount_HJ {
             if (rel_vert_id < 0 || (this.dt.is_vertex_init_passive(rel_vert_id) == false))
                 continue;
 
-            // float[] counts_arry = this.dt.comm_colorset_counts[rel_vert_id]; 
             float[] counts_arry = null; 
 
             // not retrieved
-            // if (counts_arry == null)
-            // {
-                if (this.dt.get_passive(rel_vert_id) != null)
-                {
-                    counts_arry = this.dt.get_passive(rel_vert_id);
-                }
-                else
-                {
-                    LOG.info("ERROR: null passive counts array");
-                    counts_arry = new float[num_comb_max];
-                }
+            if (this.dt.get_passive(rel_vert_id) != null)
+            {
+                counts_arry = this.dt.get_passive(rel_vert_id);
+            }
+            else
+            {
+                LOG.info("ERROR: null passive counts array");
+                counts_arry = new float[num_comb_max];
+            }
 
-                //check length 
-                if (counts_arry.length != num_comb_max)
-                    LOG.info("ERROR: comb_max and passive counts len not matched");
-
-                // this.dt.comm_colorset_counts[rel_vert_id] = counts_arry;
-
-            // }
+            //check length 
+            if (counts_arry.length != num_comb_max)
+                LOG.info("ERROR: comb_max and passive counts len not matched");
 
             System.arraycopy(counts_arry, 0, counts_data_tmp, count_num, counts_arry.length);
             count_num += counts_arry.length;
@@ -1430,6 +1460,12 @@ public class colorcount_HJ {
 
         counts_data_tmp = null;
         SCSet set = new SCSet(v_num, count_num, v_offset, counts_data);
+
+        if (this.verbose)
+        {
+            // LOG.info("Finish compressing local vertices counts for remote mappers");
+            this.time_comm += (System.currentTimeMillis() - this.start_comm);
+        }
 
         return set;
     }
@@ -1449,6 +1485,11 @@ public class colorcount_HJ {
             }
         }
 
+    }
+
+    public long get_comm_time()
+    {
+        return this.time_comm;
     }
     
 }
