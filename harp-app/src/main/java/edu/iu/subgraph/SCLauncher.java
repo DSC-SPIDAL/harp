@@ -145,6 +145,9 @@ public class SCLauncher extends Configured implements Tool {
 
         jobConf.setNumMapTasks(numMapTasks);
 		jobConf.setInt("mapreduce.job.max.split.locations", 10000);
+
+        jobConf.setInt("mapreduce.task.timeout", 60000000);
+
 		job.setNumReduceTasks(0);
 
 		jobConfig.setInt(SCConstants.NUM_MAPPERS, numMapTasks);
