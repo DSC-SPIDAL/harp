@@ -20,16 +20,16 @@
 <h1 id="run-example:74e9cddd2386af6f7eda94d3dd58288c">Run example</h1>
 
 <h3 id="put-data-on-hdfs:74e9cddd2386af6f7eda94d3dd58288c">Put data on hdfs</h3>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>hdfs dfs -put <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/data/tutorial/lda-cvb/sample-sparse-data/sample-sparse-metadata .
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>hdfs dfs -put <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/datasets/tutorial/lda-cvb/sample-sparse-data/sample-sparse-metadata .
 hdfs dfs -mkdir sample-sparse-data
-hdfs dfs -put <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/data/tutorial/lda-cvb/sample-sparse-data/sample-sparse-data-part-1.txt sample-sparse-data
-hdfs dfs -put <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/data/tutorial/lda-cvb/sample-sparse-data/sample-sparse-data-part-0.txt sample-sparse-data
+hdfs dfs -put <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/datasets/tutorial/lda-cvb/sample-sparse-data/sample-sparse-data-part-1.txt sample-sparse-data
+hdfs dfs -put <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/datasets/tutorial/lda-cvb/sample-sparse-data/sample-sparse-data-part-0.txt sample-sparse-data
 </pre></div>
 
 <h3 id="compile:74e9cddd2386af6f7eda94d3dd58288c">Compile</h3>
 <div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">cd</span> <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>
 mvn clean package
-cp <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/harp-tutorial-app/target/harp-tutorial-app-1.0.SNAPSHOT.jar <span style="color: #f8f8f2">$HADOOP_HOME</span>
+cp <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/harp-tutorial-app/target/harp-tutorial-app-2.0.SNAPSHOT.jar <span style="color: #f8f8f2">$HADOOP_HOME</span>
 cp <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/third_parity/cloud9-1.4.17.jar <span style="color: #f8f8f2">$HADOOP_HOME</span>/share/hadoop/mapreduce
 </pre></div>
 
