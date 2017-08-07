@@ -10,10 +10,10 @@ The dataset is used is sampled from [wikipedia](https://dumps.wikimedia.org/enwi
 
 Put data on hdfs
 ```bash
-hdfs dfs -put $HARP_ROOT_DIR/data/tutorial/lda-cvb/sample-sparse-data/sample-sparse-metadata .
+hdfs dfs -put $HARP_ROOT_DIR/datasets/tutorial/lda-cvb/sample-sparse-data/sample-sparse-metadata .
 hdfs dfs -mkdir sample-sparse-data
-hdfs dfs -put $HARP_ROOT_DIR/data/tutorial/lda-cvb/sample-sparse-data/sample-sparse-data-part-1.txt sample-sparse-data
-hdfs dfs -put $HARP_ROOT_DIR/data/tutorial/lda-cvb/sample-sparse-data/sample-sparse-data-part-0.txt sample-sparse-data
+hdfs dfs -put $HARP_ROOT_DIR/datasets/tutorial/lda-cvb/sample-sparse-data/sample-sparse-data-part-1.txt sample-sparse-data
+hdfs dfs -put $HARP_ROOT_DIR/datasets/tutorial/lda-cvb/sample-sparse-data/sample-sparse-data-part-0.txt sample-sparse-data
 ```
 
 Compile

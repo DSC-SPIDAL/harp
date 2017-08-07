@@ -26,17 +26,17 @@ The dataset used is sampled from [wikipedia](https://dumps.wikimedia.org/enwiki/
 
 ### Put data on hdfs
 ```bash
-hdfs dfs -put $HARP_ROOT_DIR/data/tutorial/lda-cvb/sample-sparse-data/sample-sparse-metadata .
+hdfs dfs -put $HARP_ROOT_DIR/datasets/tutorial/lda-cvb/sample-sparse-data/sample-sparse-metadata .
 hdfs dfs -mkdir sample-sparse-data
-hdfs dfs -put $HARP_ROOT_DIR/data/tutorial/lda-cvb/sample-sparse-data/sample-sparse-data-part-1.txt sample-sparse-data
-hdfs dfs -put $HARP_ROOT_DIR/data/tutorial/lda-cvb/sample-sparse-data/sample-sparse-data-part-0.txt sample-sparse-data
+hdfs dfs -put $HARP_ROOT_DIR/datasets/tutorial/lda-cvb/sample-sparse-data/sample-sparse-data-part-1.txt sample-sparse-data
+hdfs dfs -put $HARP_ROOT_DIR/datasets/tutorial/lda-cvb/sample-sparse-data/sample-sparse-data-part-0.txt sample-sparse-data
 ```
 
 ### Compile
 ```bash
 cd $HARP_ROOT_DIR
 mvn clean package
-cp $HARP_ROOT_DIR/harp-tutorial-app/target/harp-tutorial-app-1.0.SNAPSHOT.jar $HADOOP_HOME
+cp $HARP_ROOT_DIR/harp-tutorial-app/target/harp-tutorial-app-2.0.SNAPSHOT.jar $HADOOP_HOME
 cp $HARP_ROOT_DIR/third_parity/cloud9-1.4.17.jar $HADOOP_HOME/share/hadoop/mapreduce
 ```
 
