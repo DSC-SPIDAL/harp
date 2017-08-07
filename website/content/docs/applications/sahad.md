@@ -69,7 +69,7 @@ In contrast, the Twitter [dataset](http://an.kaist.ac.kr/traces/WWW2010.html) is
 <img src="/img/sahad/templates-illustration.png" width="40%">
 
 ## Results
-<img src="/img/sahad/miaminyctwitter-experiment-illustration.png" width="90%">
+<img src="/img/sahad/miaminyctwitter-experiment-illustration.png" width="70%">
 
 # Run Subgraph Counting Example
 
