@@ -574,6 +574,8 @@ public class colorcount_HJ {
                             if (this.num_verts_table[p] > 1)
                                 this.dt.clear_sub(p);
                         }
+
+                        // System.gc();
                     }
 
                     this.barrier.await();
@@ -669,18 +671,21 @@ public class colorcount_HJ {
                     this.cumulate_count_ato += this.full_count_ato;
                 }
 
+
+                // free comm data
+                if (threadIdx == 0)
+                {
+                    if (this.mapper_num > 1)  
+                    {
+                        ResourcePool.get().clean();
+                        ConnPool.get().clean();
+                    }
+                    System.gc();
+                }
+
             }
 
-            // free comm data
-            if (threadIdx == 0)
-            {
-                if (this.mapper_num > 1)  
-                {
-                    ResourcePool.get().clean();
-                    ConnPool.get().clean();
-                }
-                System.gc();
-            }
+            
 
             this.barrier.await();
 
