@@ -36,6 +36,10 @@ import it.unimi.dsi.fastutil.ints.IntArrays;
 import it.unimi.dsi.fastutil.ints.IntAVLTreeSet;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 
+// import org.apache.hadoop.conf.Configuration;
+// import org.apache.hadoop.mapred.CollectiveMapper;
+import org.apache.hadoop.mapreduce.Mapper.Context;
+
 // using HJlib 
 import static edu.rice.hj.Module0.launchHabaneroApp;
 import static edu.rice.hj.Module1.forallChunked;
@@ -192,6 +196,8 @@ public class colorcount_HJ {
     private long time_comm = 0;
     private long start_misc = 0;
 
+    private Context context;
+
     //number of iteration
     int num_iter;
     int cur_iter;
@@ -212,9 +218,10 @@ public class colorcount_HJ {
      * @param do_vert
      * @param verb
      */
-    void init(Graph local_graph, int global_max_v_id, int thread_num, int core_num, String affinity, boolean do_gdd, boolean do_vert, boolean verb){
+    void init(Context context, Graph local_graph, int global_max_v_id, int thread_num, int core_num, String affinity, boolean do_gdd, boolean do_vert, boolean verb){
 
         // assign params
+        this.context = context;
         this.g = local_graph;
         this.max_abs_id = global_max_v_id;
         this.thread_num = thread_num;
@@ -681,8 +688,10 @@ public class colorcount_HJ {
                         ConnPool.get().clean();
                     }
                     System.gc();
-                }
 
+                    this.context.progress();
+                }
+                
             }
 
             
