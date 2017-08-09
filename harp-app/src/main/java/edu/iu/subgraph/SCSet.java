@@ -32,6 +32,8 @@ public class SCSet extends Writable {
   // private int[] counts_idx; //size == counts_num
   private float[] counts_data; //size == counts_num
 
+  private short[] counts_index; //size == counts_num
+
 
   public SCSet() {
 
@@ -41,22 +43,25 @@ public class SCSet extends Writable {
       v_offset = new int[SCConstants.ARR_LEN];
       // counts_idx = new int[SCConstants.ARR_LEN] ;
       counts_data = new float[SCConstants.ARR_LEN];
+      counts_index = new short[SCConstants.ARR_LEN];
   }
 
   public SCSet(int v_num, int counts_num, 
           int[] v_offset, 
-          float[] counts_data) {
+          float[] counts_data, short[] counts_index) 
+  {
 
       this.v_num = v_num;
       this.counts_num = counts_num;
       this.v_offset = v_offset;
       // this.counts_idx = counts_idx;
       this.counts_data = counts_data;
+      this.counts_index = counts_index;
   }
 
   @Override
   public int getNumWriteBytes() {
-    return 8 + 4*(v_num+1) + 4*counts_num;
+    return 8 + 4*(v_num+1) + 6*counts_num;
   }
 
   @Override
@@ -68,11 +73,13 @@ public class SCSet extends Writable {
     for (int i = 0; i < v_num+1; i++) {
       out.writeInt(v_offset[i]);
     }
-    // for (int i = 0; i < counts_num; i++) {
-    //     out.writeInt(counts_idx[i]);
-    // }
+    
     for (int i = 0; i < counts_num; i++) {
       out.writeFloat(counts_data[i]);
+    }
+
+    for (int i = 0; i < counts_num; i++) {
+      out.writeShort(counts_index[i]);
     }
 
   }
@@ -84,22 +91,30 @@ public class SCSet extends Writable {
     counts_num = in.readInt();
 
     if (v_offset.length < (v_num + 1))
+    {
+        v_offset = null;
         v_offset = new int[v_num+1];
+    }
 
     if (counts_data.length < counts_num)
     {
-        // counts_idx = new int[counts_num];
+        counts_data = null;
         counts_data = new float[counts_num];
+
+        counts_index = null;
+        counts_index = new short[counts_num];
     }
 
     for (int i = 0; i < v_num+1; i++) {
       v_offset[i] = in.readInt();
     }
-    // for (int i = 0; i < counts_num; i++) {
-    //   counts_idx[i] = in.readInt();
-    // }
+    
     for (int i = 0; i < counts_num; i++) {
       counts_data[i] = in.readFloat();
+    }
+
+    for (int i = 0; i < counts_num; i++) {
+      counts_index[i] = in.readShort();
     }
 
   }
@@ -122,11 +137,12 @@ public class SCSet extends Writable {
       return v_offset;
   }
 
-  // public int[] get_counts_idx(){
-  //     return counts_idx;
-  // }
-
   public float[] get_counts_data(){
       return counts_data;
   }
+
+  public short[] get_counts_index(){
+      return counts_index;
+  }
+
 }
