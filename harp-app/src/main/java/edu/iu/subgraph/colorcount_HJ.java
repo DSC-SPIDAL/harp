@@ -177,6 +177,7 @@ public class colorcount_HJ {
     private int[][][] update_queue_pos;
     // adj_v_id counts on each mapper
     private float[][][] update_queue_counts;
+    private short[][][] update_queue_index;
 
     private long send_array_limit; 
 
@@ -295,6 +296,7 @@ public class colorcount_HJ {
         this.update_map_size = new int[this.num_verts_graph];
         this.update_queue_pos = new int[this.mapper_num][][];
         this.update_queue_counts = new float[this.mapper_num][][];
+        this.update_queue_index = new short[this.mapper_num][][];
         this.update_mapper_len = new int[this.mapper_num];
 
         //convert set to arraylist
@@ -578,6 +580,14 @@ public class colorcount_HJ {
                                                                 
                                 this.update_queue_counts[k] = null;
 
+                                if (this.update_queue_index[k] != null)
+                                {
+                                    for(int x = 0; x<this.update_queue_index[k].length; x++)
+                                        this.update_queue_index[k][x] = null;
+                                }
+                                                                
+                                this.update_queue_index[k] = null;
+
                             }
 
                             this.comm_data_table.release();
@@ -672,6 +682,14 @@ public class colorcount_HJ {
                             }
 
                             this.update_queue_counts[k] = null;
+
+                            if (this.update_queue_index[k] != null)
+                            {
+                                for(int x = 0; x<this.update_queue_index[k].length; x++)
+                                    this.update_queue_index[k][x] = null;
+                            }
+
+                            this.update_queue_index[k] = null;
 
                         }
                         this.comm_data_table.release();
@@ -1497,6 +1515,7 @@ public class colorcount_HJ {
                 long recv_divid_num = (this.update_mapper_len[update_id]*((long)comb_len)+ this.send_array_limit - 1)/this.send_array_limit;
                 this.update_queue_pos[update_id] = new int[(int)recv_divid_num][];
                 this.update_queue_counts[update_id] = new float[(int)recv_divid_num][];
+                this.update_queue_index[update_id] = new short[(int)recv_divid_num][];
             }
 
             if (this.verbose)
@@ -1510,6 +1529,7 @@ public class colorcount_HJ {
 
             this.update_queue_pos[update_id][chunk_id] = scset.get_v_offset();
             this.update_queue_counts[update_id][chunk_id] = scset.get_counts_data();
+            this.update_queue_index[update_id][chunk_id] = scset.get_counts_index();
         }
 
         if (this.verbose)
@@ -1671,6 +1691,11 @@ public class colorcount_HJ {
             LOG.info(" Comb len: " + comb_len);
         }
 
+        // this decompress counts will be reused
+        float[] decompress_counts = new float[comb_len];
+        // accumulate the updates on a n position, then writes to the dt table
+        float[] update_at_n = new float[num_combinations_verts_sub];
+
         barrier.await();
         // start update 
         // first loop over local v
@@ -1678,6 +1703,10 @@ public class colorcount_HJ {
         {
             if (dt.is_vertex_init_active(v))
             {
+                //clear the update_at_n array
+                for(int x = 0; x<num_combinations_verts_sub; x++ )
+                    update_at_n[x] = 0.0f;
+                
                 int adj_list_size = this.update_map_size[v];
                 // store the abs adj id for v
                 int[] adj_list = this.update_map[v]; 
@@ -1698,6 +1727,8 @@ public class colorcount_HJ {
 
                 int chunk_id = 0;
                 int chunk_internal_offset = 0;
+
+                int compress_interval = 0;
 
                 for(int j=0; j<adj_list_size; j++)
                 {
@@ -1728,97 +1759,81 @@ public class colorcount_HJ {
 
                 }
 
-                //second loop over comb_num for cur subtemplate
-                for(int n = 0; n< num_combinations_verts_sub; n++)
+                //second loop over nbrs, decompress adj from Scset
+                for(int i = 0; i< adj_list_size; i++)
                 {
-                    float color_count_local = 0.0f;
+                    int[] adj_offset_list = this.update_queue_pos[map_ids[i]][chunk_ids[i]];
 
-                    // more details
-                    int[] comb_indexes_a = comb_num_indexes[0][sub_id][n];
-                    int[] comb_indexes_p = comb_num_indexes[1][sub_id][n];
+                    // get the offset pos
+                    int start_pos = adj_offset_list[chunk_internal_offsets[i]];
+                    int end_pos = adj_offset_list[chunk_internal_offsets[i] + 1];
 
-                    // for passive 
-                    int p = num_combinations_active_ato -1;
-
-                    // third loop over comb_num for active/passive subtemplates
-                    for(int a = 0; a < num_combinations_active_ato; ++a, --p)
+                    if (start_pos != end_pos)
                     {
-                        float count_a = counts_a[comb_indexes_a[a]];
-                        if (count_a > 0)
+                        
+                        // the num of compressed counts
+                        compress_interval = end_pos - start_pos;
+
+                        // get the compressed counts list, all nonzero elements
+                        float[] adj_counts_list = this.update_queue_counts[map_ids[i]][chunk_ids[i]];
+                        short[] adj_index_list = this.update_queue_index[map_ids[i]][chunk_ids[i]];
+
+                        // ----------- start decompress process -----------
+                        for(int x = 0; x<comb_len; x++ )
+                            decompress_counts[x] = 0.0f;
+
+                        for(int x = 0; x< compress_interval; x++)
+                            decompress_counts[(int)adj_index_list[start_pos + x]] = adj_counts_list[start_pos + x];
+
+                        // ----------- Finish decompress process -----------
+
+                        //third loop over comb_num for cur subtemplate
+                        for(int n = 0; n< num_combinations_verts_sub; n++)
                         {
-                            // fourth loop over nbrs
-                            for(int i = 0; i< adj_list_size; i++)
+                            // more details
+                            int[] comb_indexes_a = comb_num_indexes[0][sub_id][n];
+                            int[] comb_indexes_p = comb_num_indexes[1][sub_id][n];
+
+                            // for passive 
+                            int p = num_combinations_active_ato -1;
+
+                            // fourth loop over comb_num for active/passive subtemplates
+                            for(int a = 0; a < num_combinations_active_ato; ++a, --p)
                             {
-                                // int adj_id = adj_list[i]; 
-
-                                // int adj_offset = this.abs_v_to_queue[adj_id];
-                                // int map_id = this.abs_v_to_mapper[adj_id];
-                                // int adj_list_len = this.update_mapper_len[map_id]; 
-
-                                //calculate chunk id 
-                                // int chunk_size = (adj_list_len*comb_len + this.send_array_limit - 1)/this.send_array_limit;
-                                // int chunk_len = adj_list_len/chunk_size;
-
-                                // from 0 to chunk_size - 1
-                                // int chunk_id = adj_offset/chunk_len; 
-                                // int chunk_internal_offset = adj_offset%chunk_len;  
-
-                                // assertTrue("chunk id non zero: ", (chunk_id == 0));
-
-                                // reminder
-                                // if (chunk_id > chunk_size - 1)
-                                // {
-                                //     chunk_id = chunk_size - 1;
-                                //     chunk_internal_offset += chunk_len;
-                                // }
-
-                                // assertNotNull("update_queue_pos[mapid] null",this.update_queue_pos[map_id]);
-                                // assertNotNull("update_queue_pos[mapid][chunk_id] null",this.update_queue_pos[map_id][chunk_id]);
-
-                                int[] adj_offset_list = this.update_queue_pos[map_ids[i]][chunk_ids[i]];
-
-                                // assertTrue("chunk_internal_offset outout bound", (chunk_internal_offset+1 < adj_offset_list.length) );
-
-                                int start_pos = adj_offset_list[chunk_internal_offsets[i]];
-                                int end_pos = adj_offset_list[chunk_internal_offsets[i] + 1];
-
-                                // assertNotNull("update_queue_counts[mapid] null",this.update_queue_counts[map_id]);
-                                // assertNotNull("update_queue_counts[mapid][chunk_id] null",this.update_queue_counts[map_id][chunk_id]);
-                                float[] adj_counts_list = this.update_queue_counts[map_ids[i]][chunk_ids[i]];
-
-                                // assertTrue("counts index outout bound", ( (start_pos + comb_indexes_p[p]) < adj_counts_list.length ) );
-                                
-                                //check if nbr on passive child 
-                                if (start_pos != end_pos)
+                                float count_a = counts_a[comb_indexes_a[a]];
+                                if (count_a > 0)
                                 {
-                                    color_count_local += (count_a*adj_counts_list[start_pos + comb_indexes_p[p]]);
+                                    update_at_n[n] += (count_a*decompress_counts[comb_indexes_p[p]]);
                                 }
 
                             }
 
-                        }
+                        } // finish all combination sets for cur template
 
-                    }
+                    } // finish all nonzero adj
 
-                    if (color_count_local > 0.0)
-                    {
-                        if (sub_id != 0)
-                            dt.update_comm(v, comb_num_indexes_set[sub_id][n], color_count_local);
-                        else
-                            count_comm_root[threadIdx] += color_count_local;
-                    }
+                } // finish all adj of a v
 
+                //write upated value 
+                for(int n = 0; n< num_combinations_verts_sub; n++)
+                {
+                    if (sub_id != 0)
+                        dt.update_comm(v, comb_num_indexes_set[sub_id][n], update_at_n[n]);
+                    else
+                        count_comm_root[threadIdx] += update_at_n[n];
                 }
-
-
+                
                 map_ids = null;
                 chunk_ids = null; 
                 chunk_internal_offsets = null;
 
-            }
+                
+            } // finishe an active v
 
-        }
+        } // finish all the v on thread
 
+        decompress_counts = null;
+        update_at_n = null;
 
         barrier.await();
 
@@ -1852,8 +1867,15 @@ public class colorcount_HJ {
         //to be trimed
         //counts_idx_tmp is not required, can be removed
         float[] counts_data_tmp = new float[num_comb_max*v_num];
+        float[] compress_array = new float[num_comb_max];
+
+        // compress index uses short to save memory, support up to 32767 as max_comb_len
+        short[] counts_index_tmp = new short[num_comb_max*v_num];
+        short[] compress_index = new short[num_comb_max];
 
         int count_num = 0;
+        int effective_v = 0;
+
         for(int i = 0; i< v_num; i++)
         {
             v_offset[i] = count_num;
@@ -1882,21 +1904,49 @@ public class colorcount_HJ {
             if (counts_arry.length != num_comb_max)
                 LOG.info("ERROR: comb_max and passive counts len not matched");
 
-            System.arraycopy(counts_arry, 0, counts_data_tmp, count_num, counts_arry.length);
-            count_num += counts_arry.length;
+            // further compress nonzero values
+            effective_v++;
+            
+            int compress_itr = 0;
+            for(int j=0; j<counts_arry.length; j++)
+            {
+                if (counts_arry[j] > 0.0f)
+                {
+                    compress_array[compress_itr] = counts_arry[j];
+                    compress_index[compress_itr] = (short)j;
+                    compress_itr++;
+                }
+            }
+
+            // System.arraycopy(counts_arry, 0, counts_data_tmp, count_num, counts_arry.length);
+            System.arraycopy(compress_array, 0, counts_data_tmp, count_num, compress_itr);
+            System.arraycopy(compress_index, 0, counts_index_tmp, count_num, compress_itr);
+            // count_num += counts_arry.length;
+            count_num += compress_itr;
         }
 
         v_offset[v_num] = count_num;
         //trim the tmp array
         float[] counts_data = new float[count_num];
+        short[] counts_index = new short[count_num];
+
         System.arraycopy(counts_data_tmp, 0, counts_data, 0, count_num);
+        System.arraycopy(counts_index_tmp, 0, counts_index, 0, count_num);
 
         counts_data_tmp = null;
-        SCSet set = new SCSet(v_num, count_num, v_offset, counts_data);
+        compress_array = null;
+        compress_index = null;
+
+        SCSet set = new SCSet(v_num, count_num, v_offset, counts_data, counts_index);
 
         if (this.verbose)
         {
-            // LOG.info("Finish compressing local vertices counts for remote mappers");
+            long effective_size = ((long)effective_v*num_comb_max);
+            LOG.info("Estimated counts size w/o compression: " + effective_size + "; mem usage: " 
+                    + (effective_size*4));
+            LOG.info("Actual counts array size after compression: " + count_num + "; mem usage: " +
+                    ((long)count_num*6));
+            LOG.info("Save memory " + ((effective_size*4 - (long)count_num*6)/(double)(effective_size*4))*100.0f + "%");
             this.time_comm += (System.currentTimeMillis() - this.start_comm);
         }
 
