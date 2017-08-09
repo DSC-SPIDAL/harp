@@ -867,9 +867,10 @@ public class colorcount_HJ {
             // combination of colors for active child
             num_combinations_ato = this.choose_table[num_verts_sub_ato][num_verts_a];
 
-            //check the maximum p id 
+            //check actual comm volume
             // int cur_comb_len = this.choose_table[num_colors][num_verts_sub_ato];
             // int comb_len_p = this.choose_table[num_colors][num_verts_sub_ato - num_verts_a];
+            // int[] comb_len_p_array = new int[comb_len_p];
             // int max_p_id = 0;
             //
             // for(int n=0;n<cur_comb_len;n++)
@@ -879,11 +880,19 @@ public class colorcount_HJ {
             //     {
             //         if (comb_indexes_p_test[x] > max_p_id)
             //             max_p_id = comb_indexes_p_test[x];
+            //
+            //         comb_len_p_array[comb_indexes_p_test[x]] = 1;
             //     }
             // }
             //
+            // //sum up non-zero entry in comb_len_p_array
+            // int nonzero_len = 0;
+            // for(int x=0; x< comb_len_p; x++)
+            //     nonzero_len += comb_len_p_array[x];
+            //
             // if (this.verbose)
-            //     LOG.info("Maximal Comm index id for Passive Child of sub: " + s + " : " + max_p_id + "; P Comb Len: "+ comb_len_p);
+            //     LOG.info("Maximal Comm index id for Passive Child of sub: " + s + " : " + max_p_id + "; P Comb Len: "+ comb_len_p 
+            //             + "; nonzero len: " + nonzero_len);
         }
 
         count_local_root[threadIdx] = 0.0f;
