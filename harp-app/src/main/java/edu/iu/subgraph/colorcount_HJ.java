@@ -36,8 +36,6 @@ import it.unimi.dsi.fastutil.ints.IntArrays;
 import it.unimi.dsi.fastutil.ints.IntAVLTreeSet;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 
-// import org.apache.hadoop.conf.Configuration;
-// import org.apache.hadoop.mapred.CollectiveMapper;
 import org.apache.hadoop.mapreduce.Mapper.Context;
 
 // using HJlib 
@@ -69,8 +67,6 @@ import static org.junit.Assert.*;
 public class colorcount_HJ {
 
 
-    
-    
     // ----------------------------- for graph  -----------------------------
 
     //local graph 
@@ -134,7 +130,11 @@ public class colorcount_HJ {
     private int core_num = 24;
     private String affinity = "compact";
 
+    // chunks of local vertices of graph for each thread
     private int[] chunks;
+    // chunks of mappers for each thread
+    private int[] chunks_mapper;
+
     private float[] cc_ato; 
     //store the local counts for last template
     private float[] count_local_root; 
@@ -171,10 +171,14 @@ public class colorcount_HJ {
     private int[] abs_v_to_mapper;
     // mapping an arbitary abs_v_id to the relative position in updating queues 
     private int[] abs_v_to_queue;
+    private int[] update_mapper_len;
+
     // start/end counts pos of each adj_v_id counts on each mapper
-    private int[][] update_queue_pos;
+    private int[][][] update_queue_pos;
     // adj_v_id counts on each mapper
-    private float[][] update_queue_counts;
+    private float[][][] update_queue_counts;
+
+    private long send_array_limit; 
 
     // ---------------------------- for label and other func ----------------------------
     int[] labels_g;
@@ -267,7 +271,8 @@ public class colorcount_HJ {
         this.mapper_num = this.mapper.getNumWorkers();
         this.local_mapper_id = this.mapper.getSelfID();
         this.abs_v_to_queue = new int[this.max_abs_id + 1];
-               
+        // this.chunks_mapper = divide_chunks(this.mapper_num, this.thread_num);
+
         // init comm mappers
         this.comm_mapper_vertex = new HashSet[this.mapper_num];
         for(int i=0; i<this.mapper_num; i++)
@@ -288,13 +293,15 @@ public class colorcount_HJ {
             this.update_map[i] = new int[this.g.out_degree(i)];
 
         this.update_map_size = new int[this.num_verts_graph];
-        this.update_queue_pos = new int[this.mapper_num][];
-        this.update_queue_counts = new float[this.mapper_num][];
+        this.update_queue_pos = new int[this.mapper_num][][];
+        this.update_queue_counts = new float[this.mapper_num][][];
+        this.update_mapper_len = new int[this.mapper_num];
 
         //convert set to arraylist
         this.comm_vertex_table = new Table<>(0, new IntArrPlus());
         this.send_vertex_table = new Table<>(0, new IntArrPlus());
 
+        this.send_array_limit = 250L*1024L*1024L;
 
         // prepareing send/recv information
         // the requested adj_abs_v queues will be sent to each mapper
@@ -312,6 +319,9 @@ public class colorcount_HJ {
                 // retrieve communicated adj_abs_id
                 ArrayList<Integer> temp_array = new ArrayList<>(comm_mapper_vertex[i]);
                 int[] temp_array_primitive = ArrayUtils.toPrimitive(temp_array.toArray(new Integer[temp_array.size()]));
+
+                // recored the length of total vertices array received from other mappers
+                this.update_mapper_len[i] = temp_array_primitive.length;
 
                 //create mapping from adj_abs_id to relative t in update offset queue
                 for(int j = 0; j< temp_array_primitive.length; j++)
@@ -535,12 +545,14 @@ public class colorcount_HJ {
                     {
                         //single thread communication
                         if (threadIdx == 0)
-                            regroup_comm_single(s);
+                            regroup_comm_multi(s);
+                            // regroup_comm_single(s);
 
                         this.barrier.await();
 
                         // multi-threaded updates comm data
-                        update_comm(s, threadIdx, this.chunks);
+                        // update_comm(s, threadIdx, this.chunks);
+                        update_comm_multi(s, threadIdx, this.chunks);
 
                         this.barrier.await();
 
@@ -550,8 +562,22 @@ public class colorcount_HJ {
                             // this.dt.clear_comm_counts();
                             for(int k = 0; k< this.mapper_num;k++)
                             {
+                                if (this.update_queue_pos[k] != null)
+                                {
+                                    for(int x = 0; x<this.update_queue_pos[k].length; x++)
+                                        this.update_queue_pos[k][x] = null;
+                                }
+                                                                
                                 this.update_queue_pos[k] = null;
+
+                                if (this.update_queue_counts[k] != null)
+                                {
+                                    for(int x = 0; x<this.update_queue_counts[k].length; x++)
+                                        this.update_queue_counts[k][x] = null;
+                                }
+                                                                
                                 this.update_queue_counts[k] = null;
+
                             }
 
                             this.comm_data_table.release();
@@ -617,25 +643,40 @@ public class colorcount_HJ {
 
                     //single thread communication
                     if (threadIdx == 0)
-                        regroup_comm_single(0);
+                        regroup_comm_multi(0);
+                        // regroup_comm_single(0);
 
                     this.barrier.await();
-                    update_comm(0, threadIdx, this.chunks);
+                    // update_comm(0, threadIdx, this.chunks);
+                    update_comm_multi(0, threadIdx, this.chunks);
                     this.barrier.await();
 
                     if (threadIdx == 0)
                     {
                         // clean up memory
                         // this.dt.clear_comm_counts();
-                        for(int k = 0; k< this.mapper_num ;k++)
+                        for(int k = 0; k< this.mapper_num;k++)
                         {
-                            this.update_queue_pos[k] = null;
-                            this.update_queue_counts[k] = null;
-                        }
+                            if (this.update_queue_pos[k] != null)
+                            {
+                                for(int x = 0; x<this.update_queue_pos[k].length; x++)
+                                    this.update_queue_pos[k][x] = null;
+                            }
 
-                           this.comm_data_table.release();
-                           this.comm_data_table.free();
-                           this.comm_data_table = null;
+                            this.update_queue_pos[k] = null;
+
+                            if (this.update_queue_counts[k] != null)
+                            {
+                                for(int x = 0; x<this.update_queue_counts[k].length; x++)
+                                    this.update_queue_counts[k][x] = null;
+                            }
+
+                            this.update_queue_counts[k] = null;
+
+                        }
+                        this.comm_data_table.release();
+                        this.comm_data_table.free();
+                        this.comm_data_table = null;
                     }
                 }
 
@@ -744,6 +785,21 @@ public class colorcount_HJ {
         return chunks;
     }
 
+    int[] divide_chunks_comm(int total, int partition){
+        int chunks[] = new int[partition+1];
+        chunks[0] = 0;
+        int remainder = total % partition;
+        int basic_size = total / partition;
+
+        for(int i = 1; i <= partition-1; ++i) {
+            chunks[i] = chunks[i - 1] + basic_size;
+        }
+
+        // for last chunk
+        chunks[partition] = chunks[partition - 1] + basic_size + remainder;
+        return chunks;
+    }
+
     double[] get_vert_counts(){
         return final_vert_counts;
     }
@@ -811,6 +867,23 @@ public class colorcount_HJ {
             // combination of colors for active child
             num_combinations_ato = this.choose_table[num_verts_sub_ato][num_verts_a];
 
+            //check the maximum p id 
+            // int cur_comb_len = this.choose_table[num_colors][num_verts_sub_ato];
+            // int comb_len_p = this.choose_table[num_colors][num_verts_sub_ato - num_verts_a];
+            // int max_p_id = 0;
+            //
+            // for(int n=0;n<cur_comb_len;n++)
+            // {    
+            //     int[] comb_indexes_p_test = comb_num_indexes[1][s][n];
+            //     for(int x = 0; x<num_combinations_ato; x++)
+            //     {
+            //         if (comb_indexes_p_test[x] > max_p_id)
+            //             max_p_id = comb_indexes_p_test[x];
+            //     }
+            // }
+            //
+            // if (this.verbose)
+            //     LOG.info("Maximal Comm index id for Passive Child of sub: " + s + " : " + max_p_id + "; P Comb Len: "+ comb_len_p);
         }
 
         count_local_root[threadIdx] = 0.0f;
@@ -1241,14 +1314,96 @@ public class colorcount_HJ {
 
     /**
      * @brief regroup communication
-     * single threaded
+     * single threaded version
      * TODO: parallelize the sending partition
      *
      * @param sub_id
      *
      * @return 
      */
-    private void regroup_comm_single(int sub_id)
+    // private void regroup_comm_single(int sub_id)
+    // {
+    //     if (this.verbose)
+    //     {
+    //         LOG.info("Start prepare comm for subtemplate: " + sub_id);
+    //         this.start_comm = System.currentTimeMillis();
+    //         this.start_misc = System.currentTimeMillis();
+    //     }
+    //
+    //     //prepare the sending partitions
+    //     this.comm_data_table = new Table<>(0, new SCSetCombiner());
+    //
+    //     int comb_len = this.dt.get_num_color_set(this.part.get_passive_index(sub_id)); 
+    //
+    //     if (this.verbose)
+    //         LOG.info("prepare sub " + sub_id + "; comb_len: " + comb_len);
+    //
+    //     for(int send_id : this.send_vertex_table.getPartitionIDs())
+    //     {
+    //         //pack colorset_idx and count into a 64 bits double
+    //         int comm_id = ( (send_id << 16) | this.local_mapper_id );
+    //         int[] comm_vert_list = this.send_vertex_table.getPartition(send_id).get().get();
+    //         SCSet comm_data = compress_send_data(comm_vert_list, comb_len);
+    //         this.comm_data_table.addPartition(new Partition<>(comm_id, comm_data));
+    //     }
+    //
+    //     if (this.verbose)
+    //     {
+    //         LOG.info("Finish prepare comm for subtemplate: " + sub_id + "; use time: " +
+    //                 (System.currentTimeMillis() - this.start_misc) + "ms");
+    //     }
+    //
+    //     //start the regroup communication
+    //     if (this.verbose)
+    //     {
+    //         LOG.info("Start regroup comm for subtemplate: " + sub_id);
+    //         this.start_misc = System.currentTimeMillis();
+    //     }
+    //
+    //     this.mapper.regroup("sc", "regroup counts data", this.comm_data_table, new SCPartitioner(this.mapper_num));
+    //
+    //     if (this.verbose)
+    //     {
+    //         LOG.info("Finish regroup comm for subtemplate: " + sub_id + "; use time: " +
+    //                 (System.currentTimeMillis() - this.start_misc) + "ms");
+    //     }
+    //
+    //     //update local g counts by adj from each other mapper
+    //     for(int comm_id : this.comm_data_table.getPartitionIDs())
+    //     {
+    //         int update_id = ( comm_id & ( (1 << 16) -1 ) );
+    //
+    //         if (this.verbose)
+    //         {
+    //             LOG.info("Local Mapper: " + this.local_mapper_id + " recv from remote mapper id: " + update_id);
+    //         }
+    //
+    //         // update vert list accounts for the adj vert may be used to update local v
+    //         SCSet scset = this.comm_data_table.getPartition(comm_id).get();
+    //         this.update_queue_pos[update_id] = scset.get_v_offset();
+    //         this.update_queue_counts[update_id] = scset.get_counts_data();
+    //     }
+    //
+    //     if (this.verbose)
+    //     {
+    //         this.time_comm += (System.currentTimeMillis() - this.start_comm);
+    //     }
+    // }
+
+    /**
+     * @brief divided comm_vert_list on each node into small parcels of vertices
+     * partition num within comm_data_table is far more than the num of mappers
+     * break int[] comm_vert_list into segments, each segment is a partition
+     * chunk size is the total num of partitions divided by threads num
+     *
+     * @param sub_id
+     * @param threadIdx
+     * @param chunks
+     *
+     * @return 
+     */
+    // private void regroup_comm_multi(int sub_id, int threadIdx, int[] chunks) throws BrokenBarrierException, InterruptedException
+    private void regroup_comm_multi(int sub_id) 
     {
         if (this.verbose)
         {
@@ -1259,17 +1414,44 @@ public class colorcount_HJ {
 
         //prepare the sending partitions
         this.comm_data_table = new Table<>(0, new SCSetCombiner());
+        int comb_len = this.dt.get_num_color_set(this.part.get_passive_index(sub_id)); 
+
+        //prevent the single comm_data array exceeds the limitation of heap allocation 8GB
+        //we manually setup the limitation of sending array to be 1 GB
+        // int send_array_limit = 1024*1024*1024;
+        // send_divid_num = (comm_vert_list.length * comb_len)/send_array_limit
+
         for(int send_id : this.send_vertex_table.getPartitionIDs())
         {
-            //pack colorset_idx and count into a 64 bits double
-            int comm_id = ( (send_id << 16) | this.local_mapper_id );
-
             int[] comm_vert_list = this.send_vertex_table.getPartition(send_id).get().get();
-            //for each vert find the colorsets and counts in methods of dynamic_table_array
-            int comb_len = this.dt.get_num_color_set(this.part.get_passive_index(sub_id)); 
+            long send_divid_num = (comm_vert_list.length*((long)comb_len)+ this.send_array_limit - 1)/this.send_array_limit;
 
-            SCSet comm_data = compress_send_data(comm_vert_list, comb_len);
-            this.comm_data_table.addPartition(new Partition<>(comm_id, comm_data));
+            if(this.verbose)
+            {
+                LOG.info("Send id: " + send_id + "; send_divid_num: " + send_divid_num + "; comb len: " + comb_len + "; Total vertices num: " 
+                        + comm_vert_list.length + "; mul: " + comm_vert_list.length*(long)comb_len);
+            }
+
+            // send_chunks.length == send_divid_num + 1
+            int[] send_chunks = divide_chunks_comm(comm_vert_list.length, (int)send_divid_num);
+
+            // store send_chunks 
+            for(int j=0;j<send_divid_num;j++)
+            {
+                int chunk_len = send_chunks[j+1] - send_chunks[j];
+
+                if(this.verbose)
+                    LOG.info("Chunk id: " + j + "; chunk size: " + chunk_len);
+
+                int[] send_chunk_list = new int[chunk_len];
+                System.arraycopy(comm_vert_list, send_chunks[j], send_chunk_list, 0, chunk_len);
+
+                //comm_id (32 bits) consists of three parts: 1) send_id (12 bits); 2) local mapper_id (12 bits) 3) array_parcel id (8 bits)
+                int comm_id =  ((send_id << 20) | (this.local_mapper_id << 8) | j );
+                SCSet comm_data = compress_send_data(send_chunk_list, comb_len);
+                this.comm_data_table.addPartition(new Partition<>(comm_id, comm_data));
+            }
+
         }
 
         if (this.verbose)
@@ -1285,7 +1467,7 @@ public class colorcount_HJ {
             this.start_misc = System.currentTimeMillis();
         }
 
-        this.mapper.regroup("sc", "regroup counts data", this.comm_data_table, new SCPartitioner(this.mapper_num));
+        this.mapper.regroup("sc", "regroup counts data", this.comm_data_table, new SCPartitioner2(this.mapper_num));
 
         if (this.verbose)
         {
@@ -1296,25 +1478,46 @@ public class colorcount_HJ {
         //update local g counts by adj from each other mapper
         for(int comm_id : this.comm_data_table.getPartitionIDs())
         {
-            int update_id = ( comm_id & ( (1 << 16) -1 ) );
+            int update_id_tmp = ( comm_id & ( (1 << 20) -1 ) );
+            int update_id =  (update_id_tmp >>> 8);
+            int chunk_id = ( update_id_tmp & ( (1 << 8) -1 ) );
+
+            // create update_queue 
+            if (this.update_queue_pos[update_id] == null)
+            {
+                long recv_divid_num = (this.update_mapper_len[update_id]*((long)comb_len)+ this.send_array_limit - 1)/this.send_array_limit;
+                this.update_queue_pos[update_id] = new int[(int)recv_divid_num][];
+                this.update_queue_counts[update_id] = new float[(int)recv_divid_num][];
+            }
 
             if (this.verbose)
             {
-                LOG.info("Local Mapper: " + this.local_mapper_id + " recv from remote mapper id: " + update_id);
+                LOG.info("Local Mapper: " + this.local_mapper_id + " recv from remote mapper id: " + update_id 
+                        + " chunk id: " + chunk_id);
             }
 
             // update vert list accounts for the adj vert may be used to update local v
             SCSet scset = this.comm_data_table.getPartition(comm_id).get();
-            this.update_queue_pos[update_id] = scset.get_v_offset();
-            this.update_queue_counts[update_id] = scset.get_counts_data();
+
+            this.update_queue_pos[update_id][chunk_id] = scset.get_v_offset();
+            this.update_queue_counts[update_id][chunk_id] = scset.get_counts_data();
         }
 
         if (this.verbose)
         {
             this.time_comm += (System.currentTimeMillis() - this.start_comm);
         }
-    }
 
+
+        if (this.mapper_num > 1)  
+        {
+            ResourcePool.get().clean();
+            ConnPool.get().clean();
+        }
+
+        System.gc();
+
+    }
 
     /**
      * @brief upate received comm adj counts on local graph 
@@ -1326,7 +1529,108 @@ public class colorcount_HJ {
      *
      * @return 
      */
-    private void update_comm(int sub_id, int threadIdx, int[] chunks) throws BrokenBarrierException, InterruptedException
+    // private void update_comm(int sub_id, int threadIdx, int[] chunks) throws BrokenBarrierException, InterruptedException
+    // {
+    //
+    //     if (verbose && threadIdx == 0)
+    //     {
+    //         active_child = part.get_active_index(sub_id);
+    //         passive_child = part.get_passive_index(sub_id);
+    //         // LOG.info("Active Child: " + active_child + "; Passive Child: " + passive_child + " for sub: " + sub_id);
+    //         LOG.info("Start updating remote counts on local vertex");
+    //         // this.start_comm = System.currentTimeMillis();
+    //     }
+    //
+    //     count_comm_root[threadIdx] = 0.0f;
+    //
+    //     barrier.await();
+    //
+    //     int num_combinations_verts_sub = this.choose_table[num_colors][num_verts_table[sub_id]];
+    //     int active_index = part.get_active_index(sub_id);
+    //     int num_verts_a = num_verts_table[active_index];
+    //
+    //     // colorset combinations from active child
+    //     // combination of colors for active child
+    //     int num_combinations_active_ato = this.choose_table[num_verts_table[sub_id]][num_verts_a];
+    //
+    //     barrier.await();
+    //     // start update 
+    //     // first loop over local v
+    //     for (int v = chunks[threadIdx]; v < chunks[threadIdx + 1]; ++v) 
+    //     {
+    //         if (dt.is_vertex_init_active(v))
+    //         {
+    //             int adj_list_size = this.update_map_size[v];
+    //             // store the abs adj id for v
+    //             int[] adj_list = this.update_map[v]; 
+    //             float[] counts_a = dt.get_active(v);
+    //
+    //             //second loop over comb_num for cur subtemplate
+    //             for(int n = 0; n< num_combinations_verts_sub; n++)
+    //             {
+    //                 float color_count_local = 0.0f;
+    //
+    //                 // more details
+    //                 int[] comb_indexes_a = comb_num_indexes[0][sub_id][n];
+    //                 int[] comb_indexes_p = comb_num_indexes[1][sub_id][n];
+    //
+    //                 // for passive 
+    //                 int p = num_combinations_active_ato -1;
+    //
+    //                 // third loop over comb_num for active/passive subtemplates
+    //                 for(int a = 0; a < num_combinations_active_ato; ++a, --p)
+    //                 {
+    //                     float count_a = counts_a[comb_indexes_a[a]];
+    //                     if (count_a > 0)
+    //                     {
+    //                         // fourth loop over nbrs
+    //                         for(int i = 0; i< adj_list_size; i++)
+    //                         {
+    //                             int adj_id = adj_list[i]; 
+    //                             int adj_offset = this.abs_v_to_queue[adj_id];
+    //                             int[] adj_offset_list = this.update_queue_pos[this.abs_v_to_mapper[adj_id]];
+    //                             int start_pos = adj_offset_list[adj_offset];
+    //                             int end_pos = adj_offset_list[adj_offset + 1];
+    //
+    //                             float[] adj_counts_list = this.update_queue_counts[this.abs_v_to_mapper[adj_id]];
+    //
+    //                             //check if nbr on passive child 
+    //                             if (start_pos != end_pos)
+    //                             {
+    //                                 color_count_local += (count_a*adj_counts_list[start_pos + comb_indexes_p[p]]);
+    //                             }
+    //
+    //                         }
+    //
+    //                     }
+    //
+    //                 }
+    //
+    //                 if (color_count_local > 0.0)
+    //                 {
+    //                     if (sub_id != 0)
+    //                         dt.update_comm(v, comb_num_indexes_set[sub_id][n], color_count_local);
+    //                     else
+    //                         count_comm_root[threadIdx] += color_count_local;
+    //                 }
+    //
+    //             }
+    //
+    //         }
+    //
+    //     }
+    //
+    //
+    //     barrier.await();
+    //
+    //     if (verbose && threadIdx == 0)
+    //     {
+    //         LOG.info("Finish updating remote counts on local vertex");
+    //         // this.time_comm += (System.currentTimeMillis() - this.start_comm);
+    //     }
+    // }
+
+    private void update_comm_multi(int sub_id, int threadIdx, int[] chunks) throws BrokenBarrierException, InterruptedException
     {
 
         if (verbose && threadIdx == 0)
@@ -1350,6 +1654,14 @@ public class colorcount_HJ {
         // combination of colors for active child
         int num_combinations_active_ato = this.choose_table[num_verts_table[sub_id]][num_verts_a];
 
+        // to calculate chunk size
+        int comb_len = this.dt.get_num_color_set(this.part.get_passive_index(sub_id)); 
+
+        if (verbose && threadIdx == 0)
+        {
+            LOG.info(" Comb len: " + comb_len);
+        }
+
         barrier.await();
         // start update 
         // first loop over local v
@@ -1361,6 +1673,51 @@ public class colorcount_HJ {
                 // store the abs adj id for v
                 int[] adj_list = this.update_map[v]; 
                 float[] counts_a = dt.get_active(v);
+
+                // retrieve map_id and chunk id for each adj in adj_list
+                int[] map_ids = new int[adj_list_size];
+                int[] chunk_ids = new int[adj_list_size]; 
+                int[] chunk_internal_offsets = new int[adj_list_size];
+
+                int adj_id = 0;
+                int adj_offset = 0;
+                int map_id = 0;
+                int adj_list_len = 0;
+                
+                int chunk_size = 0;
+                int chunk_len = 0;
+
+                int chunk_id = 0;
+                int chunk_internal_offset = 0;
+
+                for(int j=0; j<adj_list_size; j++)
+                {
+                    adj_id = adj_list[j]; 
+                    adj_offset = this.abs_v_to_queue[adj_id];
+                    map_id = this.abs_v_to_mapper[adj_id];
+                    adj_list_len = this.update_mapper_len[map_id]; 
+
+                    //calculate chunk id 
+                    chunk_size =(int) ((adj_list_len*(long)comb_len + this.send_array_limit - 1)/this.send_array_limit);
+                    chunk_len = adj_list_len/(int)chunk_size;
+
+                    // from 0 to chunk_size - 1
+                    chunk_id = adj_offset/chunk_len; 
+                    chunk_internal_offset = adj_offset%chunk_len;  
+
+                    // assertTrue("chunk id non zero: ", (chunk_id == 0));
+                    // reminder
+                    if (chunk_id > chunk_size - 1)
+                    {
+                        chunk_id = chunk_size - 1;
+                        chunk_internal_offset += chunk_len;
+                    }
+
+                    map_ids[j] = map_id;
+                    chunk_ids[j] = chunk_id;
+                    chunk_internal_offsets[j] = chunk_internal_offset;
+
+                }
 
                 //second loop over comb_num for cur subtemplate
                 for(int n = 0; n< num_combinations_verts_sub; n++)
@@ -1383,14 +1740,45 @@ public class colorcount_HJ {
                             // fourth loop over nbrs
                             for(int i = 0; i< adj_list_size; i++)
                             {
-                                int adj_id = adj_list[i]; 
-                                int adj_offset = this.abs_v_to_queue[adj_id];
-                                int[] adj_offset_list = this.update_queue_pos[this.abs_v_to_mapper[adj_id]];
-                                int start_pos = adj_offset_list[adj_offset];
-                                int end_pos = adj_offset_list[adj_offset + 1];
+                                // int adj_id = adj_list[i]; 
 
-                                float[] adj_counts_list = this.update_queue_counts[this.abs_v_to_mapper[adj_id]];
+                                // int adj_offset = this.abs_v_to_queue[adj_id];
+                                // int map_id = this.abs_v_to_mapper[adj_id];
+                                // int adj_list_len = this.update_mapper_len[map_id]; 
 
+                                //calculate chunk id 
+                                // int chunk_size = (adj_list_len*comb_len + this.send_array_limit - 1)/this.send_array_limit;
+                                // int chunk_len = adj_list_len/chunk_size;
+
+                                // from 0 to chunk_size - 1
+                                // int chunk_id = adj_offset/chunk_len; 
+                                // int chunk_internal_offset = adj_offset%chunk_len;  
+
+                                // assertTrue("chunk id non zero: ", (chunk_id == 0));
+
+                                // reminder
+                                // if (chunk_id > chunk_size - 1)
+                                // {
+                                //     chunk_id = chunk_size - 1;
+                                //     chunk_internal_offset += chunk_len;
+                                // }
+
+                                // assertNotNull("update_queue_pos[mapid] null",this.update_queue_pos[map_id]);
+                                // assertNotNull("update_queue_pos[mapid][chunk_id] null",this.update_queue_pos[map_id][chunk_id]);
+
+                                int[] adj_offset_list = this.update_queue_pos[map_ids[i]][chunk_ids[i]];
+
+                                // assertTrue("chunk_internal_offset outout bound", (chunk_internal_offset+1 < adj_offset_list.length) );
+
+                                int start_pos = adj_offset_list[chunk_internal_offsets[i]];
+                                int end_pos = adj_offset_list[chunk_internal_offsets[i] + 1];
+
+                                // assertNotNull("update_queue_counts[mapid] null",this.update_queue_counts[map_id]);
+                                // assertNotNull("update_queue_counts[mapid][chunk_id] null",this.update_queue_counts[map_id][chunk_id]);
+                                float[] adj_counts_list = this.update_queue_counts[map_ids[i]][chunk_ids[i]];
+
+                                // assertTrue("counts index outout bound", ( (start_pos + comb_indexes_p[p]) < adj_counts_list.length ) );
+                                
                                 //check if nbr on passive child 
                                 if (start_pos != end_pos)
                                 {
@@ -1413,6 +1801,11 @@ public class colorcount_HJ {
 
                 }
 
+
+                map_ids = null;
+                chunk_ids = null; 
+                chunk_internal_offsets = null;
+
             }
 
         }
@@ -1426,7 +1819,6 @@ public class colorcount_HJ {
             // this.time_comm += (System.currentTimeMillis() - this.start_comm);
         }
     }
-
     /**
      * @brief compress local vert data for remote mappers
      * single thread
