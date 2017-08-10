@@ -104,6 +104,9 @@ public class colorcount_HJ {
     private int active_child;
     private int passive_child;
 
+    //hold all the nonzero position in updating 
+    //comm data in passive child of each subtemplate
+    // private int[][] comm_nonzero_index;
     
     // ----------------------------- for combination colorset index  -----------------------------
 
@@ -223,9 +226,10 @@ public class colorcount_HJ {
      * @param do_vert
      * @param verb
      */
-    void init(Context context, Graph local_graph, int global_max_v_id, int thread_num, int core_num, String affinity, boolean do_gdd, boolean do_vert, boolean verb){
+    void init(SCCollectiveMapper mapper, Context context, Graph local_graph, int global_max_v_id, int thread_num, int core_num, String affinity, boolean do_gdd, boolean do_vert, boolean verb){
 
         // assign params
+        this.mapper = mapper;
         this.context = context;
         this.g = local_graph;
         this.max_abs_id = global_max_v_id;
@@ -261,10 +265,9 @@ public class colorcount_HJ {
      * @param mapper_id_vertex
      * @param mapper
      */
-    void init_comm(int[] mapper_id_vertex, SCCollectiveMapper mapper) {
+    void init_comm(int[] mapper_id_vertex) {
 
-        // assign params
-        this.mapper = mapper;
+        
         //create abs mapping structure
         this.abs_v_to_mapper = mapper_id_vertex;
 
@@ -298,6 +301,7 @@ public class colorcount_HJ {
         this.update_queue_counts = new float[this.mapper_num][][];
         this.update_queue_index = new short[this.mapper_num][][];
         this.update_mapper_len = new int[this.mapper_num];
+
 
         //convert set to arraylist
         this.comm_vertex_table = new Table<>(0, new IntArrPlus());
@@ -414,6 +418,8 @@ public class colorcount_HJ {
         //vertice num of the full graph, huge
         this.chunks = divide_chunks(this.num_verts_graph, this.thread_num);   
 
+        // this.comm_nonzero_index = new int[this.subtemplate_count][];
+
         //triggering vtune profiling add command option for vtune 
         // java.nio.file.Path vtune_file = java.nio.file.Paths.get("vtune-flag.txt");
         // String flag_trigger = "Start training process and trigger vtune profiling.";
@@ -490,13 +496,17 @@ public class colorcount_HJ {
                 for( int s = this.subtemplate_count -1; s > 0; --s)
                 {
 
+
                     if (threadIdx == 0)
                     {
+
                         //get num_vert of subtemplate s
                         this.num_verts_sub_ato = this.num_verts_table[s];
 
                         if(this.verbose)
+                        {
                             LOG.info("Initing Subtemplate "+ s + ", t verts: " + num_verts_sub_ato);
+                        }
 
                         int a = this.part.get_active_index(s);
                         int p = this.part.get_passive_index(s);
@@ -505,6 +515,15 @@ public class colorcount_HJ {
                             LOG.info("Subtemplate: " + s + "; active_idx: " + a + "; passive_idx: " + p);
 
                         this.dt.init_sub(s, a, p);
+
+                        // if (this.mapper_num > 1 && this.comm_nonzero_index[s] == null)
+                        // {
+                        //     //create the nonzero index for comm data
+                        //     int cur_sub_len = this.choose_table[this.num_colors][this.num_verts_sub_ato];
+                        //     this.comm_nonzero_index[s] = new int[cur_sub_len];
+                        //     //loop over 
+                        //
+                        // }
                     }
 
                     this.barrier.await();
@@ -602,6 +621,9 @@ public class colorcount_HJ {
 
                     if (threadIdx == 0)
                     {
+
+		                LOG.info("JVM Memory Used in subtemplate: " + s + " is: "+ (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()));
+
                         int a = this.part.get_active_index(s);
                         int p = this.part.get_passive_index(s);
 
@@ -719,6 +741,8 @@ public class colorcount_HJ {
 
                 if (threadIdx == 0)
                 {
+
+		            LOG.info("JVM Memory Used in Last subtemplate is: "+ (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()));
                     int a = this.part.get_active_index(0);
                     int p = this.part.get_passive_index(0);
 
@@ -882,7 +906,6 @@ public class colorcount_HJ {
             int num_verts_a = num_verts_table[active_index];
 
             // colorset combinations from active child
-            // combination of colors for active child
             num_combinations_ato = this.choose_table[num_verts_sub_ato][num_verts_a];
 
             //check actual comm volume

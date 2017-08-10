@@ -140,13 +140,13 @@ public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object
 
 		// ---------------  main computation ----------------------------------
         colorcount_HJ graph_count = new colorcount_HJ();
-        graph_count.init(context, g_part, max_v_id, numThreads, numCores, affinity, false, false, true);
+        graph_count.init(this, context, g_part, max_v_id, numThreads, numCores, affinity, false, false, true);
 
         // ------------------- generate communication information -------------------
         // send/recv num and verts 
         if (this.getNumWorkers() > 1)
         {
-            graph_count.init_comm(mapper_id_vertex, this);
+            graph_count.init_comm(mapper_id_vertex);
             LOG.info("Finish graph_count initialization");
         }
 
