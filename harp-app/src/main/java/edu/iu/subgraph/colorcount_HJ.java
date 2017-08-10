@@ -138,14 +138,14 @@ public class colorcount_HJ {
     // chunks of mappers for each thread
     private int[] chunks_mapper;
 
-    private float[] cc_ato; 
+    private double[] cc_ato; 
     //store the local counts for last template
-    private float[] count_local_root; 
+    private double[] count_local_root; 
     //store the local counts for last template
-    private float[] count_comm_root; 
+    private double[] count_comm_root; 
 
     // total counts on local graph
-    private float full_count_ato = 0;
+    private double full_count_ato = 0;
     // cumulated total counts from all iterations
     private double cumulate_count_ato = 0;
 
@@ -246,9 +246,9 @@ public class colorcount_HJ {
         this.num_verts_graph = this.g.num_vertices();
         this.colors_g = new int[this.num_verts_graph];
 
-        this.cc_ato = new float[this.thread_num];
-        this.count_local_root = new float[this.thread_num];
-        this.count_comm_root = new float[this.thread_num];
+        this.cc_ato = new double[this.thread_num];
+        this.count_local_root = new double[this.thread_num];
+        this.count_comm_root = new double[this.thread_num];
 
         this.dt = new dynamic_table_array();
         this.barrier = new CyclicBarrier(this.thread_num);
@@ -644,7 +644,23 @@ public class colorcount_HJ {
                     }
 
                     this.barrier.await();
-                }
+                    
+                    //print out counts for this subtemplate 
+                    print_counts(s, threadIdx, this.chunks);
+
+                    this.barrier.await();
+                    if (threadIdx == 0)
+                    {
+                        double sub_total_counts = 0;
+                        for(int x = 0; x<this.thread_num;x++)
+                            sub_total_counts += cc_ato[x];
+
+                        LOG.info("Total counts for sub-temp: " + s + " is: " + sub_total_counts);
+                    }
+
+                    this.barrier.await();
+
+                } // end of a subtemplate
 
                 if(verbose && threadIdx == 0)
                     LOG.info("Done with initialization. Doing full count");
@@ -724,7 +740,7 @@ public class colorcount_HJ {
                 // printout results for last sub 
                 if (threadIdx == 0 )
                 {
-                    float sum_count = 0.0f;
+                    double sum_count = 0.0;
                     for(int k = 0; k< this.thread_num; k++)
                     {
                         sum_count += this.count_local_root[k];
@@ -936,7 +952,7 @@ public class colorcount_HJ {
             //             + "; nonzero len: " + nonzero_len);
         }
 
-        count_local_root[threadIdx] = 0.0f;
+        count_local_root[threadIdx] = 0.0d;
 
         barrier.await();
 
@@ -998,7 +1014,7 @@ public class colorcount_HJ {
                     // first loop on different color_combs of cur subtemplate
                     for(int n = 0; n < num_combinations_verts_sub; ++n){
 
-                        float color_count = 0.0f;
+                        double color_count = 0.0f;
 
                         // more details
                         int[] comb_indexes_a = comb_num_indexes[0][s][n];
@@ -1016,18 +1032,18 @@ public class colorcount_HJ {
                                 //third loop on different valid nbrs
                                 for(int i = 0; i < valid_nbrs_count; ++i){
                                     //validated nbrs already checked to be on passive child
-                                    color_count += count_a * dt.get_passive(valid_nbrs[i], comb_indexes_p[p]);
+                                    color_count += (double)count_a * dt.get_passive(valid_nbrs[i], comb_indexes_p[p]);
                                 }
                             }
                         }
 
                         if( color_count > 0.0){
                         
-                            if(do_graphlet_freq || do_vert_output)
-                                final_vert_counts[v] += (double)color_count;
+                            // if(do_graphlet_freq || do_vert_output)
+                            //     final_vert_counts[v] += (double)color_count;
 
                             if(s != 0)
-                                dt.set(v, comb_num_indexes_set[s][n], color_count);
+                                dt.set(v, comb_num_indexes_set[s][n], (float)color_count);
                             else
                             {
                                 //last template store counts into count_local_root
@@ -1694,7 +1710,7 @@ public class colorcount_HJ {
             // this.start_comm = System.currentTimeMillis();
         }
 
-        count_comm_root[threadIdx] = 0.0f;
+        count_comm_root[threadIdx] = 0.0d;
 
         barrier.await();
 
@@ -1717,7 +1733,7 @@ public class colorcount_HJ {
         // this decompress counts will be reused
         float[] decompress_counts = new float[comb_len];
         // accumulate the updates on a n position, then writes to the dt table
-        float[] update_at_n = new float[num_combinations_verts_sub];
+        double[] update_at_n = new double[num_combinations_verts_sub];
 
         barrier.await();
         // start update 
@@ -1728,7 +1744,7 @@ public class colorcount_HJ {
             {
                 //clear the update_at_n array
                 for(int x = 0; x<num_combinations_verts_sub; x++ )
-                    update_at_n[x] = 0.0f;
+                    update_at_n[x] = 0.0d;
                 
                 int adj_list_size = this.update_map_size[v];
                 // store the abs adj id for v
@@ -1826,7 +1842,7 @@ public class colorcount_HJ {
                                 float count_a = counts_a[comb_indexes_a[a]];
                                 if (count_a > 0)
                                 {
-                                    update_at_n[n] += (count_a*decompress_counts[comb_indexes_p[p]]);
+                                    update_at_n[n] += ((double)count_a*decompress_counts[comb_indexes_p[p]]);
                                 }
 
                             }
@@ -1841,7 +1857,7 @@ public class colorcount_HJ {
                 for(int n = 0; n< num_combinations_verts_sub; n++)
                 {
                     if (sub_id != 0)
-                        dt.update_comm(v, comb_num_indexes_set[sub_id][n], update_at_n[n]);
+                        dt.update_comm(v, comb_num_indexes_set[sub_id][n], (float)update_at_n[n]);
                     else
                         count_comm_root[threadIdx] += update_at_n[n];
                 }
@@ -1979,7 +1995,7 @@ public class colorcount_HJ {
     private void print_counts(int sub_id, int threadIdx, int[] chunks) throws BrokenBarrierException, InterruptedException
     {
 
-        cc_ato[threadIdx] = 0.0f;
+        cc_ato[threadIdx] = 0.0;
         
         for (int v = chunks[threadIdx]; v < chunks[threadIdx + 1]; ++v) 
         {
@@ -1987,7 +2003,7 @@ public class colorcount_HJ {
             if (counts_a_test_cur != null)
             {
                 for(int x = 0; x< counts_a_test_cur.length; x++)
-                    cc_ato[threadIdx] += counts_a_test_cur[x];
+                    cc_ato[threadIdx] += (double)counts_a_test_cur[x];
             }
         }
 
