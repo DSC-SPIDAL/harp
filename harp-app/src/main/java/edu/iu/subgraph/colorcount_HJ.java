@@ -131,6 +131,8 @@ public class colorcount_HJ {
 
     private int thread_num = 24;
     private int core_num = 24;
+    // physical threads per core
+    private int tpc = 2;
     private String affinity = "compact";
 
     // chunks of local vertices of graph for each thread
@@ -182,7 +184,8 @@ public class colorcount_HJ {
     private float[][][] update_queue_counts;
     private short[][][] update_queue_index;
 
-    private long send_array_limit; 
+    // by default send array size 250MB
+    private long send_array_limit = 250L*1024L*1024L; 
 
     // ---------------------------- for label and other func ----------------------------
     int[] labels_g;
@@ -226,7 +229,7 @@ public class colorcount_HJ {
      * @param do_vert
      * @param verb
      */
-    void init(SCCollectiveMapper mapper, Context context, Graph local_graph, int global_max_v_id, int thread_num, int core_num, String affinity, boolean do_gdd, boolean do_vert, boolean verb){
+    void init(SCCollectiveMapper mapper, Context context, Graph local_graph, int global_max_v_id, int thread_num, int core_num, int tpc, String affinity, boolean do_gdd, boolean do_vert, boolean verb){
 
         // assign params
         this.mapper = mapper;
@@ -235,6 +238,7 @@ public class colorcount_HJ {
         this.max_abs_id = global_max_v_id;
         this.thread_num = thread_num;
         this.core_num = core_num;
+        this.tpc = tpc;
         this.affinity = affinity;
         this.do_graphlet_freq = do_gdd;
         this.do_vert_output = do_vert;
@@ -265,11 +269,12 @@ public class colorcount_HJ {
      * @param mapper_id_vertex
      * @param mapper
      */
-    void init_comm(int[] mapper_id_vertex) {
+    void init_comm(int[] mapper_id_vertex, long send_array_limit) {
 
         
         //create abs mapping structure
         this.abs_v_to_mapper = mapper_id_vertex;
+        this.send_array_limit = send_array_limit;
 
         // init members
         this.mapper_num = this.mapper.getNumWorkers();
@@ -307,7 +312,7 @@ public class colorcount_HJ {
         this.comm_vertex_table = new Table<>(0, new IntArrPlus());
         this.send_vertex_table = new Table<>(0, new IntArrPlus());
 
-        this.send_array_limit = 250L*1024L*1024L;
+        // this.send_array_limit = 250L*1024L*1024L;
 
         // prepareing send/recv information
         // the requested adj_abs_v queues will be sent to each mapper
@@ -443,7 +448,7 @@ public class colorcount_HJ {
         if (this.verbose && threadIdx == 0)
         {
             LOG.info("Set up threads affinity: Core Num: " + this.core_num + 
-                "; Total Threads: " + this.thread_num + "; affinity: " + this.affinity);
+                "; Total Threads: " + this.thread_num + "; thd per core: " + this.tpc + "; affinity: " + this.affinity);
         }
 
         if (this.affinity == "scatter")
@@ -455,9 +460,9 @@ public class colorcount_HJ {
         {
             //default affinity compact
             //implement a compact bind, 2 threads a core
-            int tpn = 2*this.core_num;
+            int tpn = this.tpc*this.core_num;
             thread_mask = threadIdx%tpn;
-            thread_mask /= 2;
+            thread_mask /= this.tpc;
         }
 
         bitSet.set(thread_mask);

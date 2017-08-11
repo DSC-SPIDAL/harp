@@ -52,6 +52,8 @@ public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object
 	private int numThreads;
 	private int numIteration;
     private int numCores;
+    private int tpc;
+    private long send_array_limit;
     private String affinity;
 	boolean useLocalMultiThread;
 	int numModelSlices; // number of slices for pipeline optimization
@@ -78,6 +80,9 @@ public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object
     	numThreads =configuration.getInt(SCConstants.THREAD_NUM, 10);
         numCores = configuration.getInt(SCConstants.CORE_NUM, 24);
         affinity = configuration.get(SCConstants.THD_AFFINITY);
+        tpc = configuration.getInt(SCConstants.TPC, 2);
+
+        send_array_limit = (configuration.getInt(SCConstants.SENDLIMIT, 250))*1024L*1024L;
 
         numIteration =configuration.getInt(SCConstants.NUM_ITERATION, 10);
         LOG.info("Subgraph Counting Iteration: " + numIteration);
@@ -140,13 +145,13 @@ public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object
 
 		// ---------------  main computation ----------------------------------
         colorcount_HJ graph_count = new colorcount_HJ();
-        graph_count.init(this, context, g_part, max_v_id, numThreads, numCores, affinity, false, false, true);
+        graph_count.init(this, context, g_part, max_v_id, numThreads, numCores, tpc, affinity, false, false, true);
 
         // ------------------- generate communication information -------------------
         // send/recv num and verts 
         if (this.getNumWorkers() > 1)
         {
-            graph_count.init_comm(mapper_id_vertex);
+            graph_count.init_comm(mapper_id_vertex, send_array_limit);
             LOG.info("Finish graph_count initialization");
         }
 

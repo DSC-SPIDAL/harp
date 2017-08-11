@@ -53,7 +53,7 @@ public class SCLauncher extends Configured implements Tool {
 	 */
     @Override
 	public int run(String[] args) throws Exception {
-		if (args.length < 10) {
+		if (args.length < 12) {
 			System.err.println("Usage: edu.iu.subgraph.SCLauncher" +
                     " <number of map tasks> "+
                     "<useLocalMultiThread> "+
@@ -63,7 +63,9 @@ public class SCLauncher extends Configured implements Tool {
                     "<num threads per node> "+
                     "<num cores per node> "+
                     "<thread affinity> "+
+                    "<thread per core> "+
                     "<mem per mapper>"+
+                    "<mem per regroup array (MB)>"+
                     "<num iteration>");
 
 			ToolRunner.printGenericCommandUsage(System.err);
@@ -78,34 +80,38 @@ public class SCLauncher extends Configured implements Tool {
 		int numThreads = Integer.parseInt(args[5]);
 		int numCores = Integer.parseInt(args[6]);
         String affinity = args[7];
-        int mem = Integer.parseInt(args[8]);
-        int numIteration = Integer.parseInt(args[9]);
+        int tpc = Integer.parseInt(args[8]);
+        int mem = Integer.parseInt(args[9]);
+        int send_array_limit = Integer.parseInt(args[10]);
+        int numIteration = Integer.parseInt(args[11]);
 
 		System.out.println("use Local MultiThread? "+useLocalMultiThread);
 		System.out.println("set Number of Map Tasks = " + numMapTasks);
 		System.out.println("set number of threads: "+numThreads);
 		System.out.println("set threads affinity: "+affinity);
 		System.out.println("set number of cores per node: "+numCores);
+		System.out.println("set number of thd per core: "+ tpc);
+		System.out.println("set mem size per regroup array (MB): "+ send_array_limit);
 
-		launch(graphDir, template, outDir, numMapTasks, useLocalMultiThread, numThreads, numCores, affinity,  mem, numIteration);
+		launch(graphDir, template, outDir, numMapTasks, useLocalMultiThread, numThreads, numCores, affinity, tpc,  mem, send_array_limit, numIteration);
 		return 0;
 	}
 
     public void launch(String graphDir, String template, String outDir, int numMapTasks, 
-            boolean useLocalMultiThread, int numThreads, int numCores, String affinity, int mem, int numIteration) 
+            boolean useLocalMultiThread, int numThreads, int numCores, String affinity, int tpc, int mem, int send_array_limit, int numIteration) 
         throws ClassNotFoundException, IOException, InterruptedException{
 
 		boolean jobSuccess = true;
 		int jobRetryCount = 0;
 		Job scJob = configureSCJob(graphDir, template, outDir, 
-                numMapTasks, useLocalMultiThread, numThreads, numCores, affinity, mem, numIteration);
+                numMapTasks, useLocalMultiThread, numThreads, numCores, affinity, tpc, mem, send_array_limit, numIteration);
 		// ----------------------------------------------------------
 		jobSuccess =scJob.waitForCompletion(true);
 		// ----------------------------------------------------------
 	}
 
 	private Job configureSCJob(String graphDir, String template, String outDir, int numMapTasks, 
-            boolean useLocalMultiThread, int numThreads, int numCores, String affinity, int mem, int numIteration) throws IOException  
+            boolean useLocalMultiThread, int numThreads, int numCores, String affinity, int tpc, int mem, int send_array_limit, int numIteration) throws IOException  
     {
 
 		Configuration configuration = getConf();
@@ -163,9 +169,8 @@ public class SCLauncher extends Configured implements Tool {
 		jobConfig.setInt(SCConstants.THREAD_NUM,numThreads);
 		jobConfig.setInt(SCConstants.CORE_NUM, numCores);
 		jobConfig.set(SCConstants.THD_AFFINITY,affinity);
-        // SCConstants.THREAD_NUM = numThreads;
-        // SCConstants.CORE_NUM = numCores;
-        // SCConstants.THD_AFFINITY = affinity;
+		jobConfig.setInt(SCConstants.TPC, tpc);
+		jobConfig.setInt(SCConstants.SENDLIMIT, send_array_limit);
 
 		jobConfig.setInt(SCConstants.NUM_ITERATION, numIteration);
 
