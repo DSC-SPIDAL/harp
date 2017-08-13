@@ -137,6 +137,7 @@ public class colorcount_HJ {
 
     // chunks of local vertices of graph for each thread
     private int[] chunks;
+    private int[] chunks_pipeline;
     // chunks of mappers for each thread
     private int[] chunks_mapper;
 
@@ -186,6 +187,10 @@ public class colorcount_HJ {
 
     // by default send array size 250MB
     private long send_array_limit = 250L*1024L*1024L; 
+
+    private int pipeline_update_id = 0;
+    private int pipeline_send_id = 0;
+    private int pipeline_recv_id = 0;
 
     // ---------------------------- for label and other func ----------------------------
     int[] labels_g;
@@ -422,6 +427,8 @@ public class colorcount_HJ {
 
         //vertice num of the full graph, huge
         this.chunks = divide_chunks(this.num_verts_graph, this.thread_num);   
+        // in pipeline regroup-update, thread 0 is doing communication
+        this.chunks_pipeline = divide_chunks(this.num_verts_graph, this.thread_num - 1);
 
         // this.comm_nonzero_index = new int[this.subtemplate_count][];
 
@@ -501,7 +508,6 @@ public class colorcount_HJ {
                 for( int s = this.subtemplate_count -1; s > 0; --s)
                 {
 
-
                     if (threadIdx == 0)
                     {
 
@@ -520,15 +526,6 @@ public class colorcount_HJ {
                             LOG.info("Subtemplate: " + s + "; active_idx: " + a + "; passive_idx: " + p);
 
                         this.dt.init_sub(s, a, p);
-
-                        // if (this.mapper_num > 1 && this.comm_nonzero_index[s] == null)
-                        // {
-                        //     //create the nonzero index for comm data
-                        //     int cur_sub_len = this.choose_table[this.num_colors][this.num_verts_sub_ato];
-                        //     this.comm_nonzero_index[s] = new int[cur_sub_len];
-                        //     //loop over 
-                        //
-                        // }
                     }
 
                     this.barrier.await();
@@ -569,56 +566,8 @@ public class colorcount_HJ {
                     // only if more than one mapper, otherwise all g verts are local
                     if (this.mapper_num > 1 && this.num_verts_sub_ato > 1)
                     {
-                        //single thread communication
-                        if (threadIdx == 0)
-                            regroup_comm_multi(s);
-                            // regroup_comm_single(s);
-
-                        this.barrier.await();
-
-                        // multi-threaded updates comm data
-                        // update_comm(s, threadIdx, this.chunks);
-                        update_comm_multi(s, threadIdx, this.chunks);
-
-                        this.barrier.await();
-
-                        if (threadIdx == 0)
-                        {
-                            // clean up memory
-                            // this.dt.clear_comm_counts();
-                            for(int k = 0; k< this.mapper_num;k++)
-                            {
-                                if (this.update_queue_pos[k] != null)
-                                {
-                                    for(int x = 0; x<this.update_queue_pos[k].length; x++)
-                                        this.update_queue_pos[k][x] = null;
-                                }
-                                                                
-                                this.update_queue_pos[k] = null;
-
-                                if (this.update_queue_counts[k] != null)
-                                {
-                                    for(int x = 0; x<this.update_queue_counts[k].length; x++)
-                                        this.update_queue_counts[k][x] = null;
-                                }
-                                                                
-                                this.update_queue_counts[k] = null;
-
-                                if (this.update_queue_index[k] != null)
-                                {
-                                    for(int x = 0; x<this.update_queue_index[k].length; x++)
-                                        this.update_queue_index[k][x] = null;
-                                }
-                                                                
-                                this.update_queue_index[k] = null;
-
-                            }
-
-                            this.comm_data_table.release();
-                            this.comm_data_table.free();
-                            this.comm_data_table = null;
-                        }
-
+                        regroup_update_pipeline(s, threadIdx);
+                        // regroup_update_all(s, threadIdx, this.chunks);
                     }
 
                     // printout results for sub s
@@ -665,6 +614,9 @@ public class colorcount_HJ {
 
                     this.barrier.await();
 
+                    if (threadIdx == 0)
+                        this.context.progress();
+
                 } // end of a subtemplate
 
                 if(verbose && threadIdx == 0)
@@ -693,52 +645,8 @@ public class colorcount_HJ {
                 // only if more than one mapper, otherwise all g verts are local
                 if (this.num_verts_sub_ato > 1 && this.mapper_num > 1)
                 {
-
-                    //single thread communication
-                    if (threadIdx == 0)
-                        regroup_comm_multi(0);
-                        // regroup_comm_single(0);
-
-                    this.barrier.await();
-                    // update_comm(0, threadIdx, this.chunks);
-                    update_comm_multi(0, threadIdx, this.chunks);
-                    this.barrier.await();
-
-                    if (threadIdx == 0)
-                    {
-                        // clean up memory
-                        // this.dt.clear_comm_counts();
-                        for(int k = 0; k< this.mapper_num;k++)
-                        {
-                            if (this.update_queue_pos[k] != null)
-                            {
-                                for(int x = 0; x<this.update_queue_pos[k].length; x++)
-                                    this.update_queue_pos[k][x] = null;
-                            }
-
-                            this.update_queue_pos[k] = null;
-
-                            if (this.update_queue_counts[k] != null)
-                            {
-                                for(int x = 0; x<this.update_queue_counts[k].length; x++)
-                                    this.update_queue_counts[k][x] = null;
-                            }
-
-                            this.update_queue_counts[k] = null;
-
-                            if (this.update_queue_index[k] != null)
-                            {
-                                for(int x = 0; x<this.update_queue_index[k].length; x++)
-                                    this.update_queue_index[k][x] = null;
-                            }
-
-                            this.update_queue_index[k] = null;
-
-                        }
-                        this.comm_data_table.release();
-                        this.comm_data_table.free();
-                        this.comm_data_table = null;
-                    }
+                    // regroup_update_all(0, threadIdx, this.chunks);
+                    regroup_update_pipeline(0, threadIdx);
                 }
 
                 this.barrier.await();
@@ -1384,84 +1292,6 @@ public class colorcount_HJ {
     }
 
     /**
-     * @brief regroup communication
-     * single threaded version
-     * TODO: parallelize the sending partition
-     *
-     * @param sub_id
-     *
-     * @return 
-     */
-    // private void regroup_comm_single(int sub_id)
-    // {
-    //     if (this.verbose)
-    //     {
-    //         LOG.info("Start prepare comm for subtemplate: " + sub_id);
-    //         this.start_comm = System.currentTimeMillis();
-    //         this.start_misc = System.currentTimeMillis();
-    //     }
-    //
-    //     //prepare the sending partitions
-    //     this.comm_data_table = new Table<>(0, new SCSetCombiner());
-    //
-    //     int comb_len = this.dt.get_num_color_set(this.part.get_passive_index(sub_id)); 
-    //
-    //     if (this.verbose)
-    //         LOG.info("prepare sub " + sub_id + "; comb_len: " + comb_len);
-    //
-    //     for(int send_id : this.send_vertex_table.getPartitionIDs())
-    //     {
-    //         //pack colorset_idx and count into a 64 bits double
-    //         int comm_id = ( (send_id << 16) | this.local_mapper_id );
-    //         int[] comm_vert_list = this.send_vertex_table.getPartition(send_id).get().get();
-    //         SCSet comm_data = compress_send_data(comm_vert_list, comb_len);
-    //         this.comm_data_table.addPartition(new Partition<>(comm_id, comm_data));
-    //     }
-    //
-    //     if (this.verbose)
-    //     {
-    //         LOG.info("Finish prepare comm for subtemplate: " + sub_id + "; use time: " +
-    //                 (System.currentTimeMillis() - this.start_misc) + "ms");
-    //     }
-    //
-    //     //start the regroup communication
-    //     if (this.verbose)
-    //     {
-    //         LOG.info("Start regroup comm for subtemplate: " + sub_id);
-    //         this.start_misc = System.currentTimeMillis();
-    //     }
-    //
-    //     this.mapper.regroup("sc", "regroup counts data", this.comm_data_table, new SCPartitioner(this.mapper_num));
-    //
-    //     if (this.verbose)
-    //     {
-    //         LOG.info("Finish regroup comm for subtemplate: " + sub_id + "; use time: " +
-    //                 (System.currentTimeMillis() - this.start_misc) + "ms");
-    //     }
-    //
-    //     //update local g counts by adj from each other mapper
-    //     for(int comm_id : this.comm_data_table.getPartitionIDs())
-    //     {
-    //         int update_id = ( comm_id & ( (1 << 16) -1 ) );
-    //
-    //         if (this.verbose)
-    //         {
-    //             LOG.info("Local Mapper: " + this.local_mapper_id + " recv from remote mapper id: " + update_id);
-    //         }
-    //
-    //         // update vert list accounts for the adj vert may be used to update local v
-    //         SCSet scset = this.comm_data_table.getPartition(comm_id).get();
-    //         this.update_queue_pos[update_id] = scset.get_v_offset();
-    //         this.update_queue_counts[update_id] = scset.get_counts_data();
-    //     }
-    //
-    //     if (this.verbose)
-    //     {
-    //         this.time_comm += (System.currentTimeMillis() - this.start_comm);
-    //     }
-    // }
-
-    /**
      * @brief divided comm_vert_list on each node into small parcels of vertices
      * partition num within comm_data_table is far more than the num of mappers
      * break int[] comm_vert_list into segments, each segment is a partition
@@ -1474,7 +1304,7 @@ public class colorcount_HJ {
      * @return 
      */
     // private void regroup_comm_multi(int sub_id, int threadIdx, int[] chunks) throws BrokenBarrierException, InterruptedException
-    private void regroup_comm_multi(int sub_id) 
+    private void regroup_comm_all(int sub_id) 
     {
         if (this.verbose)
         {
@@ -1592,118 +1422,131 @@ public class colorcount_HJ {
 
     }
 
-    /**
-     * @brief upate received comm adj counts on local graph 
-     * multi-threaded 
-     *
-     * @param sub_id
-     * @param threadIdx
-     * @param chunks
-     *
-     * @return 
-     */
-    // private void update_comm(int sub_id, int threadIdx, int[] chunks) throws BrokenBarrierException, InterruptedException
-    // {
-    //
-    //     if (verbose && threadIdx == 0)
-    //     {
-    //         active_child = part.get_active_index(sub_id);
-    //         passive_child = part.get_passive_index(sub_id);
-    //         // LOG.info("Active Child: " + active_child + "; Passive Child: " + passive_child + " for sub: " + sub_id);
-    //         LOG.info("Start updating remote counts on local vertex");
-    //         // this.start_comm = System.currentTimeMillis();
-    //     }
-    //
-    //     count_comm_root[threadIdx] = 0.0f;
-    //
-    //     barrier.await();
-    //
-    //     int num_combinations_verts_sub = this.choose_table[num_colors][num_verts_table[sub_id]];
-    //     int active_index = part.get_active_index(sub_id);
-    //     int num_verts_a = num_verts_table[active_index];
-    //
-    //     // colorset combinations from active child
-    //     // combination of colors for active child
-    //     int num_combinations_active_ato = this.choose_table[num_verts_table[sub_id]][num_verts_a];
-    //
-    //     barrier.await();
-    //     // start update 
-    //     // first loop over local v
-    //     for (int v = chunks[threadIdx]; v < chunks[threadIdx + 1]; ++v) 
-    //     {
-    //         if (dt.is_vertex_init_active(v))
-    //         {
-    //             int adj_list_size = this.update_map_size[v];
-    //             // store the abs adj id for v
-    //             int[] adj_list = this.update_map[v]; 
-    //             float[] counts_a = dt.get_active(v);
-    //
-    //             //second loop over comb_num for cur subtemplate
-    //             for(int n = 0; n< num_combinations_verts_sub; n++)
-    //             {
-    //                 float color_count_local = 0.0f;
-    //
-    //                 // more details
-    //                 int[] comb_indexes_a = comb_num_indexes[0][sub_id][n];
-    //                 int[] comb_indexes_p = comb_num_indexes[1][sub_id][n];
-    //
-    //                 // for passive 
-    //                 int p = num_combinations_active_ato -1;
-    //
-    //                 // third loop over comb_num for active/passive subtemplates
-    //                 for(int a = 0; a < num_combinations_active_ato; ++a, --p)
-    //                 {
-    //                     float count_a = counts_a[comb_indexes_a[a]];
-    //                     if (count_a > 0)
-    //                     {
-    //                         // fourth loop over nbrs
-    //                         for(int i = 0; i< adj_list_size; i++)
-    //                         {
-    //                             int adj_id = adj_list[i]; 
-    //                             int adj_offset = this.abs_v_to_queue[adj_id];
-    //                             int[] adj_offset_list = this.update_queue_pos[this.abs_v_to_mapper[adj_id]];
-    //                             int start_pos = adj_offset_list[adj_offset];
-    //                             int end_pos = adj_offset_list[adj_offset + 1];
-    //
-    //                             float[] adj_counts_list = this.update_queue_counts[this.abs_v_to_mapper[adj_id]];
-    //
-    //                             //check if nbr on passive child 
-    //                             if (start_pos != end_pos)
-    //                             {
-    //                                 color_count_local += (count_a*adj_counts_list[start_pos + comb_indexes_p[p]]);
-    //                             }
-    //
-    //                         }
-    //
-    //                     }
-    //
-    //                 }
-    //
-    //                 if (color_count_local > 0.0)
-    //                 {
-    //                     if (sub_id != 0)
-    //                         dt.update_comm(v, comb_num_indexes_set[sub_id][n], color_count_local);
-    //                     else
-    //                         count_comm_root[threadIdx] += color_count_local;
-    //                 }
-    //
-    //             }
-    //
-    //         }
-    //
-    //     }
-    //
-    //
-    //     barrier.await();
-    //
-    //     if (verbose && threadIdx == 0)
-    //     {
-    //         LOG.info("Finish updating remote counts on local vertex");
-    //         // this.time_comm += (System.currentTimeMillis() - this.start_comm);
-    //     }
-    // }
+    private int regroup_comm_atomic(int sub_id, int send_id) 
+    {
+        int update_id_pipeline = 0;
 
-    private void update_comm_multi(int sub_id, int threadIdx, int[] chunks) throws BrokenBarrierException, InterruptedException
+        if (this.verbose)
+        {
+            LOG.info("Pipeline Start prepare comm for subtemplate: " + sub_id + "; send to mapper: " + send_id);
+            this.start_comm = System.currentTimeMillis();
+            this.start_misc = System.currentTimeMillis();
+        }
+
+        //prepare the sending partitions
+        this.comm_data_table = new Table<>(0, new SCSetCombiner());
+        int comb_len = this.dt.get_num_color_set(this.part.get_passive_index(sub_id)); 
+
+        //prevent the single comm_data array exceeds the limitation of heap allocation 8GB
+        //we manually setup the limitation of sending array to be 1 GB
+        // int send_array_limit = 1024*1024*1024;
+        // send_divid_num = (comm_vert_list.length * comb_len)/send_array_limit
+        int[] comm_vert_list = this.send_vertex_table.getPartition(send_id).get().get();
+        if (comm_vert_list != null)
+        {
+
+            long send_divid_num = (comm_vert_list.length*((long)comb_len)+ this.send_array_limit - 1)/this.send_array_limit;
+
+            if(this.verbose)
+            {
+                LOG.info("Pipeline Send id: " + send_id + "; send_divid_num: " + send_divid_num + "; comb len: " + comb_len + "; Total vertices num: " 
+                        + comm_vert_list.length + "; mul: " + comm_vert_list.length*(long)comb_len);
+            }
+
+            // send_chunks.length == send_divid_num + 1
+            int[] send_chunks = divide_chunks_comm(comm_vert_list.length, (int)send_divid_num);
+
+            // store send_chunks 
+            for(int j=0;j<send_divid_num;j++)
+            {
+                int chunk_len = send_chunks[j+1] - send_chunks[j];
+
+                if(this.verbose)
+                    LOG.info("Chunk id: " + j + "; chunk size: " + chunk_len);
+
+                int[] send_chunk_list = new int[chunk_len];
+                System.arraycopy(comm_vert_list, send_chunks[j], send_chunk_list, 0, chunk_len);
+
+                //comm_id (32 bits) consists of three parts: 1) send_id (12 bits); 2) local mapper_id (12 bits) 3) array_parcel id (8 bits)
+                int comm_id =  ((send_id << 20) | (this.local_mapper_id << 8) | j );
+                SCSet comm_data = compress_send_data(send_chunk_list, comb_len);
+                this.comm_data_table.addPartition(new Partition<>(comm_id, comm_data));
+            }
+
+        }
+
+        if (this.verbose)
+        {
+            LOG.info("Pipeline Finish prepare comm for subtemplate: " + sub_id + "; send to mapper: " + send_id + "; use time: " +
+                    (System.currentTimeMillis() - this.start_misc) + "ms");
+        }
+
+        //start the regroup communication
+        if (this.verbose)
+        {
+            LOG.info("Pipeline Start regroup comm for subtemplate: " + sub_id);
+            this.start_misc = System.currentTimeMillis();
+        }
+
+        this.mapper.regroup("sc", "regroup counts data", this.comm_data_table, new SCPartitioner2(this.mapper_num));
+
+        if (this.verbose)
+        {
+            LOG.info("Pipeline Finish regroup comm for subtemplate: " + sub_id + "; use time: " +
+                    (System.currentTimeMillis() - this.start_misc) + "ms");
+        }
+
+        for(int comm_id : this.comm_data_table.getPartitionIDs())
+        {
+            int update_id_tmp = ( comm_id & ( (1 << 20) -1 ) );
+            int update_id =  (update_id_tmp >>> 8);
+            int chunk_id = ( update_id_tmp & ( (1 << 8) -1 ) );
+
+            // create update_queue 
+            if (this.update_queue_pos[update_id] == null)
+            {
+                long recv_divid_num = (this.update_mapper_len[update_id]*((long)comb_len)+ this.send_array_limit - 1)/this.send_array_limit;
+                this.update_queue_pos[update_id] = new int[(int)recv_divid_num][];
+                this.update_queue_counts[update_id] = new float[(int)recv_divid_num][];
+                this.update_queue_index[update_id] = new short[(int)recv_divid_num][];
+            }
+
+            if (this.verbose)
+            {
+                LOG.info("Pipeline Local Mapper: " + this.local_mapper_id + " recv from remote mapper id: " + update_id 
+                        + " chunk id: " + chunk_id);
+            }
+
+            // update vert list accounts for the adj vert may be used to update local v
+            SCSet scset = this.comm_data_table.getPartition(comm_id).get();
+
+            this.update_queue_pos[update_id][chunk_id] = scset.get_v_offset();
+            this.update_queue_counts[update_id][chunk_id] = scset.get_counts_data();
+            this.update_queue_index[update_id][chunk_id] = scset.get_counts_index();
+
+            // there shall be only one update_id sent from one mapper
+            update_id_pipeline = update_id;
+        }
+
+        if (this.verbose)
+        {
+            this.time_comm += (System.currentTimeMillis() - this.start_comm);
+        }
+
+
+        if (this.mapper_num > 1)  
+        {
+            ResourcePool.get().clean();
+            ConnPool.get().clean();
+        }
+
+        System.gc();
+
+        return update_id_pipeline;
+
+    }
+
+    private void update_comm_all(int sub_id, int threadIdx, int[] chunks) throws BrokenBarrierException, InterruptedException
     {
 
         if (verbose && threadIdx == 0)
@@ -1887,6 +1730,203 @@ public class colorcount_HJ {
             // this.time_comm += (System.currentTimeMillis() - this.start_comm);
         }
     }
+
+    /**
+     * @brief Used in a pipeline regroup-update 
+     *
+     * @param sub_id
+     * @param threadIdx exclude thread 0
+     * @param chunks chunks not included thread 0 
+     *
+     * @return 
+     */
+    private void update_comm_atomic(int sub_id, int update_mapper_id, int threadIdx, int[] chunks) throws BrokenBarrierException, InterruptedException
+    {
+
+        if (verbose && threadIdx == 1)
+        {
+            active_child = part.get_active_index(sub_id);
+            passive_child = part.get_passive_index(sub_id);
+            // LOG.info("Active Child: " + active_child + "; Passive Child: " + passive_child + " for sub: " + sub_id);
+            LOG.info("Start updating remote counts on local vertex");
+            // this.start_comm = System.currentTimeMillis();
+        }
+
+        // count_comm_root[threadIdx] = 0.0d;
+
+        int num_combinations_verts_sub = this.choose_table[num_colors][num_verts_table[sub_id]];
+        int active_index = part.get_active_index(sub_id);
+        int num_verts_a = num_verts_table[active_index];
+
+        // colorset combinations from active child
+        // combination of colors for active child
+        int num_combinations_active_ato = this.choose_table[num_verts_table[sub_id]][num_verts_a];
+
+        // to calculate chunk size
+        int comb_len = this.dt.get_num_color_set(this.part.get_passive_index(sub_id)); 
+
+        if (verbose && threadIdx == 1)
+        {
+            LOG.info(" Comb len: " + comb_len);
+        }
+
+        // this decompress counts will be reused
+        float[] decompress_counts = new float[comb_len];
+        // accumulate the updates on a n position, then writes to the dt table
+        double[] update_at_n = new double[num_combinations_verts_sub];
+
+        // start update 
+        // first loop over local v
+        for (int v = chunks[threadIdx-1]; v < chunks[threadIdx]; ++v) 
+        {
+            if (dt.is_vertex_init_active(v))
+            {
+                //clear the update_at_n array
+                for(int x = 0; x<num_combinations_verts_sub; x++ )
+                    update_at_n[x] = 0.0d;
+                
+                int adj_list_size = this.update_map_size[v];
+                // store the abs adj id for v
+                int[] adj_list = this.update_map[v]; 
+                float[] counts_a = dt.get_active(v);
+
+                // retrieve map_id and chunk id for each adj in adj_list
+                int[] map_ids = new int[adj_list_size];
+                int[] chunk_ids = new int[adj_list_size]; 
+                int[] chunk_internal_offsets = new int[adj_list_size];
+
+                int adj_id = 0;
+                int adj_offset = 0;
+                int map_id = 0;
+                int adj_list_len = 0;
+                
+                int chunk_size = 0;
+                int chunk_len = 0;
+
+                int chunk_id = 0;
+                int chunk_internal_offset = 0;
+
+                int compress_interval = 0;
+
+                //calculate map_ids, chunk_ids, and chunk_internal_offset
+                for(int j=0; j<adj_list_size; j++)
+                {
+                    adj_id = adj_list[j]; 
+                    adj_offset = this.abs_v_to_queue[adj_id];
+                    map_id = this.abs_v_to_mapper[adj_id];
+                    adj_list_len = this.update_mapper_len[map_id]; 
+
+                    //calculate chunk id 
+                    chunk_size =(int) ((adj_list_len*(long)comb_len + this.send_array_limit - 1)/this.send_array_limit);
+                    chunk_len = adj_list_len/(int)chunk_size;
+
+                    // from 0 to chunk_size - 1
+                    chunk_id = adj_offset/chunk_len; 
+                    chunk_internal_offset = adj_offset%chunk_len;  
+
+                    // assertTrue("chunk id non zero: ", (chunk_id == 0));
+                    // reminder
+                    if (chunk_id > chunk_size - 1)
+                    {
+                        chunk_id = chunk_size - 1;
+                        chunk_internal_offset += chunk_len;
+                    }
+
+                    map_ids[j] = map_id;
+                    chunk_ids[j] = chunk_id;
+                    chunk_internal_offsets[j] = chunk_internal_offset;
+
+                }
+
+                //second loop over nbrs, decompress adj from Scset
+                for(int i = 0; i< adj_list_size; i++)
+                {
+                    if (map_ids[i] != update_mapper_id || this.update_queue_pos[map_ids[i]] == null || this.update_queue_pos[map_ids[i]][chunk_ids[i]] == null)
+                    {
+                        continue;
+                    }
+
+                    
+                    //get a non-null adj, received by pipeline comm in last turn
+                    int[] adj_offset_list = this.update_queue_pos[map_ids[i]][chunk_ids[i]];
+
+                    // get the offset pos
+                    int start_pos = adj_offset_list[chunk_internal_offsets[i]];
+                    int end_pos = adj_offset_list[chunk_internal_offsets[i] + 1];
+
+                    if (start_pos != end_pos)
+                    {
+                        
+                        // the num of compressed counts
+                        compress_interval = end_pos - start_pos;
+
+                        // get the compressed counts list, all nonzero elements
+                        float[] adj_counts_list = this.update_queue_counts[map_ids[i]][chunk_ids[i]];
+                        short[] adj_index_list = this.update_queue_index[map_ids[i]][chunk_ids[i]];
+
+                        // ----------- start decompress process -----------
+                        for(int x = 0; x<comb_len; x++ )
+                            decompress_counts[x] = 0.0f;
+
+                        for(int x = 0; x< compress_interval; x++)
+                            decompress_counts[(int)adj_index_list[start_pos + x]] = adj_counts_list[start_pos + x];
+
+                        // ----------- Finish decompress process -----------
+
+                        //third loop over comb_num for cur subtemplate
+                        for(int n = 0; n< num_combinations_verts_sub; n++)
+                        {
+                            // more details
+                            int[] comb_indexes_a = comb_num_indexes[0][sub_id][n];
+                            int[] comb_indexes_p = comb_num_indexes[1][sub_id][n];
+
+                            // for passive 
+                            int p = num_combinations_active_ato -1;
+
+                            // fourth loop over comb_num for active/passive subtemplates
+                            for(int a = 0; a < num_combinations_active_ato; ++a, --p)
+                            {
+                                float count_a = counts_a[comb_indexes_a[a]];
+                                if (count_a > 0)
+                                {
+                                    update_at_n[n] += ((double)count_a*decompress_counts[comb_indexes_p[p]]);
+                                }
+
+                            }
+
+                        } // finish all combination sets for cur template
+
+                    } // finish all nonzero adj
+
+                } // finish all adj of a v
+
+                //write upated value 
+                for(int n = 0; n< num_combinations_verts_sub; n++)
+                {
+                    if (sub_id != 0)
+                        dt.update_comm(v, comb_num_indexes_set[sub_id][n], (float)update_at_n[n]);
+                    else
+                        count_comm_root[threadIdx] += update_at_n[n];
+                }
+                
+                map_ids = null;
+                chunk_ids = null; 
+                chunk_internal_offsets = null;
+
+                
+            } // finishe an active v
+
+        } // finish all the v on thread
+
+        decompress_counts = null;
+        update_at_n = null;
+
+        if (verbose && threadIdx == 1)
+        {
+            LOG.info("Finish updating remote counts on local vertex");
+        }
+    }
+
     /**
      * @brief compress local vert data for remote mappers
      * single thread
@@ -2018,5 +2058,260 @@ public class colorcount_HJ {
     {
         return this.time_comm;
     }
-    
+
+    private void regroup_update_all(int sub_id, int threadIdx, int[] chunks) throws BrokenBarrierException, InterruptedException
+    {
+        // single thread communication
+        if (threadIdx == 0)
+            regroup_comm_all(sub_id);
+
+        this.barrier.await();
+
+        try{
+
+            update_comm_all(sub_id, threadIdx, chunks);
+
+        } catch (InterruptedException | BrokenBarrierException e) {
+            // LOG.info("Catch barrier exception in itr: " + this.cur_iter);
+            e.printStackTrace();
+        }
+
+        this.barrier.await();
+
+        if (threadIdx == 0)
+        {
+            // clean up memory
+            for(int k = 0; k< this.mapper_num;k++)
+            {
+                if (this.update_queue_pos[k] != null)
+                {
+                    for(int x = 0; x<this.update_queue_pos[k].length; x++)
+                        this.update_queue_pos[k][x] = null;
+                }
+
+                this.update_queue_pos[k] = null;
+
+                if (this.update_queue_counts[k] != null)
+                {
+                    for(int x = 0; x<this.update_queue_counts[k].length; x++)
+                        this.update_queue_counts[k][x] = null;
+                }
+
+                this.update_queue_counts[k] = null;
+
+                if (this.update_queue_index[k] != null)
+                {
+                    for(int x = 0; x<this.update_queue_index[k].length; x++)
+                        this.update_queue_index[k][x] = null;
+                }
+
+                this.update_queue_index[k] = null;
+
+            }
+
+            this.comm_data_table.release();
+            this.comm_data_table.free();
+            this.comm_data_table = null;
+        }
+    }   
+
+    /**
+     * @brief regourp and updates cross-partition counts in a pipelined way.
+     * The original AlltoAll like regroup is decomposed into this.mapper_num times
+     * Each turn, thread 0 sends/receives partitions to/from a certain mapper while the 
+     * other threads update the local counts by received data in previous turn. The send/recive 
+     * sequence is predefined.
+     *
+     * pipeline version requires at least two Java threads
+     *
+     * @param sub_id
+     * @param threadIdx
+     * @param chunks
+     *
+     * @return 
+     */
+    private void regroup_update_pipeline(int sub_id, int threadIdx) throws BrokenBarrierException, InterruptedException
+    {
+
+        // first turn of regroup data send to its neighbour mapper id 
+        // get the update id as the received mapper id 
+        if (threadIdx == 0)
+        {
+            this.pipeline_send_id = (this.local_mapper_id + 1)%this.mapper_num;
+            this.pipeline_recv_id = regroup_comm_atomic(sub_id, this.pipeline_send_id);
+            this.pipeline_update_id = this.pipeline_recv_id;
+        }
+
+        this.barrier.await();
+
+        // start update
+        if (this.mapper_num == 2)
+        {
+            //no need of pipeline all the data transferred
+            update_comm_all(sub_id, threadIdx, this.chunks);
+            this.barrier.await();
+
+            if (threadIdx == 0)
+            {
+                recycleMem();
+            }
+
+            this.barrier.await();
+
+        }
+        else
+        {
+            //start pipelined comm and update
+            //mapper num > 2
+            this.count_comm_root[threadIdx] = 0.0d;
+
+            for(int i=0;i<this.mapper_num -2; i++)
+            {
+                if (threadIdx == 0)
+                {
+                    
+                    this.pipeline_send_id++;
+                    this.pipeline_send_id = this.pipeline_send_id%this.mapper_num;
+                    this.pipeline_recv_id = regroup_comm_atomic(sub_id, this.pipeline_send_id);
+
+                    if (this.verbose)
+                    {
+                        LOG.info("Start Pipeline send id: " + this.pipeline_send_id + "; recv id: " + this.pipeline_recv_id 
+                                + "; update id: " + this.pipeline_update_id);
+                    }
+                        
+                }
+                else
+                {
+                    //update local received data from previous turn
+                    update_comm_atomic(sub_id, this.pipeline_update_id,  threadIdx, this.chunks_pipeline);
+
+                }
+
+                // sync and wait for the finish of comm and update
+                this.barrier.await();
+
+                if (threadIdx == 0)
+                {
+                    recycleMemPipeline(this.pipeline_update_id);
+                    this.pipeline_update_id = this.pipeline_recv_id;
+                }
+
+                this.barrier.await();
+            }
+
+            // finish the udpating of comm data in the last pipeline step
+            if (threadIdx == 0 && this.verbose)
+                LOG.info("Update Last remain of pipeline");
+
+            if (threadIdx != 0)
+                update_comm_atomic(sub_id, this.pipeline_update_id, threadIdx, this.chunks_pipeline);
+
+            this.barrier.await();
+
+            if (threadIdx == 0)
+            {
+        
+                recycleMemPipeline(this.pipeline_update_id);
+            }
+
+            this.barrier.await();
+
+        }
+     
+        if (threadIdx == 0 && this.verbose)
+            LOG.info("Finish pipeline for sub: " + sub_id);
+   
+    }
+
+
+    /**
+     * @brief release the JVM memory 
+     *
+     * @return 
+     */
+    private void recycleMem()
+    {
+        // clean up memory
+        for(int k = 0; k< this.mapper_num;k++)
+        {
+            if (this.update_queue_pos[k] != null)
+            {
+                for(int x = 0; x<this.update_queue_pos[k].length; x++)
+                    this.update_queue_pos[k][x] = null;
+            }
+
+            this.update_queue_pos[k] = null;
+
+            if (this.update_queue_counts[k] != null)
+            {
+                for(int x = 0; x<this.update_queue_counts[k].length; x++)
+                    this.update_queue_counts[k][x] = null;
+            }
+
+            this.update_queue_counts[k] = null;
+
+            if (this.update_queue_index[k] != null)
+            {
+                for(int x = 0; x<this.update_queue_index[k].length; x++)
+                    this.update_queue_index[k][x] = null;
+            }
+
+            this.update_queue_index[k] = null;
+
+        }
+
+        if (this.comm_data_table != null)
+        {
+            this.comm_data_table.release();
+            this.comm_data_table.free();
+            this.comm_data_table = null;
+        }
+        
+        
+        System.gc();
+    }
+
+    private void recycleMemPipeline(int k)
+    {
+        // only clean up memory associated with clear_id (mapper)
+        // for(int k = 0; k< this.mapper_num;k++)
+        // {
+            if (this.update_queue_pos[k] != null)
+            {
+                for(int x = 0; x<this.update_queue_pos[k].length; x++)
+                    this.update_queue_pos[k][x] = null;
+            }
+
+            this.update_queue_pos[k] = null;
+
+            if (this.update_queue_counts[k] != null)
+            {
+                for(int x = 0; x<this.update_queue_counts[k].length; x++)
+                    this.update_queue_counts[k][x] = null;
+            }
+
+            this.update_queue_counts[k] = null;
+
+            if (this.update_queue_index[k] != null)
+            {
+                for(int x = 0; x<this.update_queue_index[k].length; x++)
+                    this.update_queue_index[k][x] = null;
+            }
+
+            this.update_queue_index[k] = null;
+
+        // }
+
+        if (this.comm_data_table != null)
+        {
+            this.comm_data_table.release();
+            this.comm_data_table.free();
+            this.comm_data_table = null;
+        }
+        
+        System.gc();
+    }
 }
+
+
