@@ -121,8 +121,8 @@ public class SCSet extends Writable {
 
   @Override
   public void clear() {
-      v_num = -1;
-      counts_num = -1;
+      // v_num = -1;
+      // counts_num = -1;
   }
 
   public int get_v_num() {
