@@ -189,6 +189,11 @@ public class colorcount_HJ {
     private float[][] compress_cache_array; 
     private short[][] compress_cache_index; 
 
+    // cache the rel pos of adj for each local v in pipeline rotation
+    private int[][] map_ids_cache_pip;
+    private int[][] chunk_ids_cache_pip;
+    private int[][] chunk_internal_offsets_cache_pip;
+
     // by default send array size 250MB
     private long send_array_limit = 250L*1024L*1024L; 
     private boolean rotation_pipeline = true;
@@ -325,6 +330,10 @@ public class colorcount_HJ {
 
         this.compress_cache_array = new float[this.num_verts_graph][];
         this.compress_cache_index = new short[this.num_verts_graph][];
+
+        this.map_ids_cache_pip = new int[this.num_verts_graph][];
+        this.chunk_ids_cache_pip = new int[this.num_verts_graph][];
+        this.chunk_internal_offsets_cache_pip = new int[this.num_verts_graph][];
 
         // this.send_array_limit = 250L*1024L*1024L;
 
@@ -744,6 +753,10 @@ public class colorcount_HJ {
 
         this.compress_cache_array = null;
         this.compress_cache_index = null;
+
+        this.map_ids_cache_pip = null;
+        this.chunk_ids_cache_pip = null;
+        this.chunk_internal_offsets_cache_pip = null;
 
         delete_tables();
         this.part.clear_temparrays();
@@ -1617,7 +1630,6 @@ public class colorcount_HJ {
                     update_at_n[x] = 0.0d;
                 
                 int adj_list_size = this.update_map_size[v];
-
                 if (adj_list_size == 0)
                     continue;
 
@@ -1626,51 +1638,57 @@ public class colorcount_HJ {
                 float[] counts_a = dt.get_active(v);
 
                 // retrieve map_id and chunk id for each adj in adj_list
-                int[] map_ids = new int[adj_list_size];
-                int[] chunk_ids = new int[adj_list_size]; 
-                int[] chunk_internal_offsets = new int[adj_list_size];
-
-                int adj_id = 0;
-                int adj_offset = 0;
-                int map_id = 0;
-                int adj_list_len = 0;
-                
-                int chunk_size = 0;
-                int chunk_len = 0;
-
-                int chunk_id = 0;
-                int chunk_internal_offset = 0;
-
+                int[] map_ids = this.map_ids_cache_pip[v];
+                int[] chunk_ids = this.chunk_ids_cache_pip[v]; 
+                int[] chunk_internal_offsets = this.chunk_internal_offsets_cache_pip[v];
                 int compress_interval = 0;
 
-                for(int j=0; j<adj_list_size; j++)
-                {
-                    adj_id = adj_list[j]; 
-                    adj_offset = this.abs_v_to_queue[adj_id];
-                    map_id = this.abs_v_to_mapper[adj_id];
-                    adj_list_len = this.update_mapper_len[map_id]; 
-
-                    //calculate chunk id 
-                    chunk_size =(int) ((adj_list_len*(long)comb_len + this.send_array_limit - 1)/this.send_array_limit);
-                    chunk_len = adj_list_len/(int)chunk_size;
-
-                    // from 0 to chunk_size - 1
-                    chunk_id = adj_offset/chunk_len; 
-                    chunk_internal_offset = adj_offset%chunk_len;  
-
-                    // assertTrue("chunk id non zero: ", (chunk_id == 0));
-                    // reminder
-                    if (chunk_id > chunk_size - 1)
-                    {
-                        chunk_id = chunk_size - 1;
-                        chunk_internal_offset += chunk_len;
-                    }
-
-                    map_ids[j] = map_id;
-                    chunk_ids[j] = chunk_id;
-                    chunk_internal_offsets[j] = chunk_internal_offset;
-
-                }
+                // // retrieve map_id and chunk id for each adj in adj_list
+                // int[] map_ids = new int[adj_list_size];
+                // int[] chunk_ids = new int[adj_list_size]; 
+                // int[] chunk_internal_offsets = new int[adj_list_size];
+                //
+                // int adj_id = 0;
+                // int adj_offset = 0;
+                // int map_id = 0;
+                // int adj_list_len = 0;
+                //
+                // int chunk_size = 0;
+                // int chunk_len = 0;
+                //
+                // int chunk_id = 0;
+                // int chunk_internal_offset = 0;
+                //
+                // int compress_interval = 0;
+                //
+                // for(int j=0; j<adj_list_size; j++)
+                // {
+                //     adj_id = adj_list[j]; 
+                //     adj_offset = this.abs_v_to_queue[adj_id];
+                //     map_id = this.abs_v_to_mapper[adj_id];
+                //     adj_list_len = this.update_mapper_len[map_id]; 
+                //
+                //     //calculate chunk id 
+                //     chunk_size =(int) ((adj_list_len*(long)comb_len + this.send_array_limit - 1)/this.send_array_limit);
+                //     chunk_len = adj_list_len/(int)chunk_size;
+                //
+                //     // from 0 to chunk_size - 1
+                //     chunk_id = adj_offset/chunk_len; 
+                //     chunk_internal_offset = adj_offset%chunk_len;  
+                //
+                //     // assertTrue("chunk id non zero: ", (chunk_id == 0));
+                //     // reminder
+                //     if (chunk_id > chunk_size - 1)
+                //     {
+                //         chunk_id = chunk_size - 1;
+                //         chunk_internal_offset += chunk_len;
+                //     }
+                //
+                //     map_ids[j] = map_id;
+                //     chunk_ids[j] = chunk_id;
+                //     chunk_internal_offsets[j] = chunk_internal_offset;
+                //
+                // }
 
                 //second loop over nbrs, decompress adj from Scset
                 for(int i = 0; i< adj_list_size; i++)
@@ -1736,10 +1754,9 @@ public class colorcount_HJ {
                         count_comm_root[threadIdx] += update_at_n[n];
                 }
                 
-                map_ids = null;
-                chunk_ids = null; 
-                chunk_internal_offsets = null;
-
+                // map_ids = null;
+                // chunk_ids = null; 
+                // chunk_internal_offsets = null;
                 
             } // finishe an active v
 
@@ -1810,69 +1827,74 @@ public class colorcount_HJ {
                     update_at_n[x] = 0.0d;
                 
                 int adj_list_size = this.update_map_size[v];
-
                 if (adj_list_size == 0)
                     continue;
 
+                // ----------------- cache and re-use the map_ids, chunk_ids, and chunk_internal_offsets in each rotation -----------------
+                //
                 // assertTrue("adj_list_size 0", (adj_list_size > 0));
                 // store the abs adj id for v
                 int[] adj_list = this.update_map[v]; 
-
                 // assertTrue("adj_list null", (adj_list != null));
-
                 float[] counts_a = dt.get_active(v);
-
                 // assertTrue("counts_a null", (counts_a != null));
-
-                // retrieve map_id and chunk id for each adj in adj_list
-                int[] map_ids = new int[adj_list_size];
-                int[] chunk_ids = new int[adj_list_size]; 
-                int[] chunk_internal_offsets = new int[adj_list_size];
-
-                int adj_id = 0;
-                int adj_offset = 0;
-                int map_id = 0;
-                int adj_list_len = 0;
-                
-                int chunk_size = 0;
-                int chunk_len = 0;
-
-                int chunk_id = 0;
-                int chunk_internal_offset = 0;
 
                 int compress_interval = 0;
 
-                //calculate map_ids, chunk_ids, and chunk_internal_offset
-                for(int j=0; j<adj_list_size; j++)
-                {
-                    adj_id = adj_list[j]; 
-                    adj_offset = this.abs_v_to_queue[adj_id];
-                    map_id = this.abs_v_to_mapper[adj_id];
-                    adj_list_len = this.update_mapper_len[map_id]; 
+                // retrieve map_id and chunk id for each adj in adj_list
+                int[] map_ids = this.map_ids_cache_pip[v];
+                int[] chunk_ids = this.chunk_ids_cache_pip[v]; 
+                int[] chunk_internal_offsets = this.chunk_internal_offsets_cache_pip[v];
 
-                    // assertTrue("adj_list_len < 1", (adj_list_len > 0));
-
-                    //calculate chunk id 
-                    chunk_size =(int) ((adj_list_len*(long)comb_len + this.send_array_limit - 1)/this.send_array_limit);
-                    chunk_len = adj_list_len/(int)chunk_size;
-
-                    // from 0 to chunk_size - 1
-                    chunk_id = adj_offset/chunk_len; 
-                    chunk_internal_offset = adj_offset%chunk_len;  
-
-                    // assertTrue("chunk id non zero: ", (chunk_id == 0));
-                    // reminder
-                    if (chunk_id > chunk_size - 1)
-                    {
-                        chunk_id = chunk_size - 1;
-                        chunk_internal_offset += chunk_len;
-                    }
-
-                    map_ids[j] = map_id;
-                    chunk_ids[j] = chunk_id;
-                    chunk_internal_offsets[j] = chunk_internal_offset;
-
-                }
+                // // retrieve map_id and chunk id for each adj in adj_list
+                // int[] map_ids = new int[adj_list_size];
+                // int[] chunk_ids = new int[adj_list_size]; 
+                // int[] chunk_internal_offsets = new int[adj_list_size];
+                //
+                // int adj_id = 0;
+                // int adj_offset = 0;
+                // int map_id = 0;
+                // int adj_list_len = 0;
+                //
+                // int chunk_size = 0;
+                // int chunk_len = 0;
+                //
+                // int chunk_id = 0;
+                // int chunk_internal_offset = 0;
+                //
+                // int compress_interval = 0;
+                //
+                // //calculate map_ids, chunk_ids, and chunk_internal_offset
+                // for(int j=0; j<adj_list_size; j++)
+                // {
+                //     adj_id = adj_list[j]; 
+                //     adj_offset = this.abs_v_to_queue[adj_id];
+                //     map_id = this.abs_v_to_mapper[adj_id];
+                //     adj_list_len = this.update_mapper_len[map_id]; 
+                //
+                //     // assertTrue("adj_list_len < 1", (adj_list_len > 0));
+                //
+                //     //calculate chunk id 
+                //     chunk_size =(int) ((adj_list_len*(long)comb_len + this.send_array_limit - 1)/this.send_array_limit);
+                //     chunk_len = adj_list_len/(int)chunk_size;
+                //
+                //     // from 0 to chunk_size - 1
+                //     chunk_id = adj_offset/chunk_len; 
+                //     chunk_internal_offset = adj_offset%chunk_len;  
+                //
+                //     // assertTrue("chunk id non zero: ", (chunk_id == 0));
+                //     // reminder
+                //     if (chunk_id > chunk_size - 1)
+                //     {
+                //         chunk_id = chunk_size - 1;
+                //         chunk_internal_offset += chunk_len;
+                //     }
+                //
+                //     map_ids[j] = map_id;
+                //     chunk_ids[j] = chunk_id;
+                //     chunk_internal_offsets[j] = chunk_internal_offset;
+                //
+                // }
 
                 // to create an adj_list_size index random sorted sequence to avoid collision
                 // List<Integer> adj_random_seq = new ArrayList<>();
@@ -1971,10 +1993,9 @@ public class colorcount_HJ {
                 }
 
                 // adj_random_seq = null;
-                map_ids = null;
-                chunk_ids = null; 
-                chunk_internal_offsets = null;
-
+                // map_ids = null;
+                // chunk_ids = null; 
+                // chunk_internal_offsets = null;
                 
             } // finishe an active v
 
@@ -2157,6 +2178,9 @@ public class colorcount_HJ {
         }
 
         this.barrier.await();
+        // precompute the maperids, chunkids, and offsets for adjlist of each local v
+        calculate_update_ids(sub_id, threadIdx);
+        this.barrier.await();
 
         try{
 
@@ -2167,10 +2191,100 @@ public class colorcount_HJ {
         }
 
         this.barrier.await();
+        //release precomputed ids
+        release_update_ids(threadIdx);
+        this.barrier.await();
 
         if (threadIdx == 0)
             recycleMem();
     }   
+
+    private void calculate_update_ids(int sub_id, int threadIdx) throws BrokenBarrierException, InterruptedException
+    {
+
+        int comb_len = this.dt.get_num_color_set(this.part.get_passive_index(sub_id)); 
+
+        for (int v = this.chunks[threadIdx]; v < this.chunks[threadIdx+1]; ++v) 
+        {
+            if (dt.is_vertex_init_active(v))
+            {
+                int adj_list_size = this.update_map_size[v];
+                if (adj_list_size == 0)
+                    continue;
+
+                // ----------------- cache and re-use the map_ids, chunk_ids, and chunk_internal_offsets in each rotation -----------------
+                // assertTrue("adj_list_size 0", (adj_list_size > 0));
+                // store the abs adj id for v
+                int[] adj_list = this.update_map[v]; 
+                // assertTrue("adj_list null", (adj_list != null));
+                // retrieve map_id and chunk id for each adj in adj_list
+                int[] map_ids = new int[adj_list_size];
+                int[] chunk_ids = new int[adj_list_size]; 
+                int[] chunk_internal_offsets = new int[adj_list_size];
+
+                int adj_id = 0;
+                int adj_offset = 0;
+                int map_id = 0;
+                int adj_list_len = 0;
+                
+                int chunk_size = 0;
+                int chunk_len = 0;
+
+                int chunk_id = 0;
+                int chunk_internal_offset = 0;
+
+                int compress_interval = 0;
+
+                //calculate map_ids, chunk_ids, and chunk_internal_offset
+                for(int j=0; j<adj_list_size; j++)
+                {
+                    adj_id = adj_list[j]; 
+                    adj_offset = this.abs_v_to_queue[adj_id];
+                    map_id = this.abs_v_to_mapper[adj_id];
+                    adj_list_len = this.update_mapper_len[map_id]; 
+
+                    // assertTrue("adj_list_len < 1", (adj_list_len > 0));
+                    //calculate chunk id 
+                    chunk_size =(int) ((adj_list_len*(long)comb_len + this.send_array_limit - 1)/this.send_array_limit);
+                    chunk_len = adj_list_len/(int)chunk_size;
+
+                    // from 0 to chunk_size - 1
+                    chunk_id = adj_offset/chunk_len; 
+                    chunk_internal_offset = adj_offset%chunk_len;  
+
+                    // assertTrue("chunk id non zero: ", (chunk_id == 0));
+                    // reminder
+                    if (chunk_id > chunk_size - 1)
+                    {
+                        chunk_id = chunk_size - 1;
+                        chunk_internal_offset += chunk_len;
+                    }
+
+                    map_ids[j] = map_id;
+                    chunk_ids[j] = chunk_id;
+                    chunk_internal_offsets[j] = chunk_internal_offset;
+                }
+
+                // store ids for this v
+                this.map_ids_cache_pip[v] = map_ids;
+                this.chunk_ids_cache_pip[v] = chunk_ids;
+                this.chunk_internal_offsets_cache_pip[v] = chunk_internal_offsets;
+                
+            } // finishe an active v
+
+        }
+
+    }
+
+    private void release_update_ids(int threadIdx)
+    {
+        for (int v = this.chunks[threadIdx]; v < this.chunks[threadIdx+1]; ++v) 
+        {
+            this.map_ids_cache_pip[v] = null;
+            this.chunk_ids_cache_pip[v] = null;
+            this.chunk_internal_offsets_cache_pip[v] = null;
+        }
+    }
 
     /**
      * @brief regourp and updates cross-partition counts in a pipelined way.
@@ -2200,6 +2314,9 @@ public class colorcount_HJ {
         }
 
         this.barrier.await();
+        // precompute the maperids, chunkids, and offsets for adjlist of each local v
+        calculate_update_ids(sub_id, threadIdx);
+        this.barrier.await();
 
         // start update
         if (this.mapper_num == 2)
@@ -2209,9 +2326,7 @@ public class colorcount_HJ {
             this.barrier.await();
 
             if (threadIdx == 0)
-            {
                 recycleMem();
-            }
 
             this.barrier.await();
 
@@ -2273,10 +2388,7 @@ public class colorcount_HJ {
             this.barrier.await();
 
             if (threadIdx == 0)
-            {
-                // recycleMem();
                 recycleMemPipeline(this.pipeline_update_id);
-            }
 
             this.barrier.await();
 
@@ -2292,6 +2404,9 @@ public class colorcount_HJ {
             }
         }
      
+        this.barrier.await();
+        //release precomputed ids
+        release_update_ids(threadIdx);
         this.barrier.await();
 
         if (threadIdx == 0 && this.verbose)
