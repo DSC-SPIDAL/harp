@@ -185,8 +185,13 @@ public class colorcount_HJ {
     private float[][][] update_queue_counts;
     private short[][][] update_queue_index;
 
+    //cache the compressed sending data
+    private float[][] compress_cache_array; 
+    private short[][] compress_cache_index; 
+
     // by default send array size 250MB
     private long send_array_limit = 250L*1024L*1024L; 
+    private boolean rotation_pipeline = true;
 
     private int pipeline_update_id = 0;
     private int pipeline_send_id = 0;
@@ -274,12 +279,13 @@ public class colorcount_HJ {
      * @param mapper_id_vertex
      * @param mapper
      */
-    void init_comm(int[] mapper_id_vertex, long send_array_limit) {
+    void init_comm(int[] mapper_id_vertex, long send_array_limit, boolean rotation_pipeline) {
 
         
         //create abs mapping structure
         this.abs_v_to_mapper = mapper_id_vertex;
         this.send_array_limit = send_array_limit;
+        this.rotation_pipeline = rotation_pipeline;
 
         // init members
         this.mapper_num = this.mapper.getNumWorkers();
@@ -316,6 +322,9 @@ public class colorcount_HJ {
         //convert set to arraylist
         this.comm_vertex_table = new Table<>(0, new IntArrPlus());
         this.send_vertex_table = new Table<>(0, new IntArrPlus());
+
+        this.compress_cache_array = new float[this.num_verts_graph][];
+        this.compress_cache_index = new short[this.num_verts_graph][];
 
         // this.send_array_limit = 250L*1024L*1024L;
 
@@ -392,7 +401,8 @@ public class colorcount_HJ {
      *
      * @return 
      */
-    public double do_full_count(Graph template, int N){
+    public double do_full_count(Graph template, int N)
+    {
 
         this.t = template;
         this.num_iter = N;
@@ -501,7 +511,6 @@ public class colorcount_HJ {
                 this.barrier.await();
                 if(this.verbose && threadIdx == 0){
                     LOG.info("Finish Sampling Graph for Itr: " + cur_itr + "; use time: " + (System.currentTimeMillis() - this.start_misc) + "ms");
-                    // this.time_comp += (System.currentTimeMillis() - this.start_comp);
                 }
 
                 // start doing counting
@@ -531,10 +540,7 @@ public class colorcount_HJ {
                     this.barrier.await();
 
                     if(this.verbose && threadIdx == 0)
-                    {
                         LOG.info("Start Counting Local Graph Subtemplate "+ s);
-                        // this.start_comp = System.currentTimeMillis();
-                    }
 
                     //hit the bottom of subtemplate chain, dangling template node
                     if( this.num_verts_sub_ato == 1){
@@ -566,8 +572,10 @@ public class colorcount_HJ {
                     // only if more than one mapper, otherwise all g verts are local
                     if (this.mapper_num > 1 && this.num_verts_sub_ato > 1)
                     {
-                        // regroup_update_pipeline(s, threadIdx);
-                        regroup_update_all(s, threadIdx, this.chunks);
+                        if (this.rotation_pipeline)
+                            regroup_update_pipeline(s, threadIdx);
+                        else
+                            regroup_update_all(s, threadIdx, this.chunks);
                     }
 
                     // printout results for sub s
@@ -645,8 +653,14 @@ public class colorcount_HJ {
                 // only if more than one mapper, otherwise all g verts are local
                 if (this.num_verts_sub_ato > 1 && this.mapper_num > 1)
                 {
-                    regroup_update_all(0, threadIdx, this.chunks);
+
+                    if (this.rotation_pipeline)
+                        regroup_update_pipeline(0, threadIdx);
+                    else
+                        regroup_update_all(0, threadIdx, this.chunks);
+
                     // regroup_update_pipeline(0, threadIdx);
+                    // regroup_update_all(0, threadIdx, this.chunks);
                 }
 
                 this.barrier.await();
@@ -727,6 +741,9 @@ public class colorcount_HJ {
         this.comm_vertex_table = null;
         this.update_map = null;
         this.colors_g = null;
+
+        this.compress_cache_array = null;
+        this.compress_cache_index = null;
 
         delete_tables();
         this.part.clear_temparrays();
@@ -1996,11 +2013,11 @@ public class colorcount_HJ {
         //to be trimed
         //counts_idx_tmp is not required, can be removed
         float[] counts_data_tmp = new float[num_comb_max*v_num];
-        float[] compress_array = new float[num_comb_max];
+        // float[] compress_array = new float[num_comb_max];
 
         // compress index uses short to save memory, support up to 32767 as max_comb_len
         short[] counts_index_tmp = new short[num_comb_max*v_num];
-        short[] compress_index = new short[num_comb_max];
+        // short[] compress_index = new short[num_comb_max];
 
         int count_num = 0;
         int effective_v = 0;
@@ -2016,42 +2033,60 @@ public class colorcount_HJ {
             if (rel_vert_id < 0 || (this.dt.is_vertex_init_passive(rel_vert_id) == false))
                 continue;
 
-            float[] counts_arry = null; 
+            // float[] counts_arry = null; 
+            float[] compress_counts = this.compress_cache_array[rel_vert_id];
+            short[] compress_index = this.compress_cache_index[rel_vert_id];
 
-            // not retrieved
-            if (this.dt.get_passive(rel_vert_id) != null)
+            if (compress_counts == null)
             {
-                counts_arry = this.dt.get_passive(rel_vert_id);
-            }
-            else
-            {
-                LOG.info("ERROR: null passive counts array");
-                counts_arry = new float[num_comb_max];
-            }
-
-            //check length 
-            if (counts_arry.length != num_comb_max)
-                LOG.info("ERROR: comb_max and passive counts len not matched");
-
-            // further compress nonzero values
-            effective_v++;
-            
-            int compress_itr = 0;
-            for(int j=0; j<counts_arry.length; j++)
-            {
-                if (counts_arry[j] > 0.0f)
+                //compress the sending counts and index
+                float[] counts_raw = this.dt.get_passive(rel_vert_id);
+                if (counts_raw == null)
                 {
-                    compress_array[compress_itr] = counts_arry[j];
-                    compress_index[compress_itr] = (short)j;
-                    compress_itr++;
+                    LOG.info("ERROR: null passive counts array");
+                    continue;
                 }
+            
+                //check length 
+                if (counts_raw.length != num_comb_max)
+                {
+                    LOG.info("ERROR: comb_max and passive counts len not matched");
+                    continue;
+                }
+
+                // further compress nonzero values
+                float[] compress_counts_tmp = new float[num_comb_max];
+                short[] compress_index_tmp = new short[num_comb_max];
+                int compress_itr = 0;
+                for(int j=0; j<counts_raw.length; j++)
+                {
+                    if (counts_raw[j] > 0.0f)
+                    {
+                        compress_counts_tmp[compress_itr] = counts_raw[j];
+                        compress_index_tmp[compress_itr] = (short)j;
+                        compress_itr++;
+                    }
+                }
+                // trim the tmp arrays
+                compress_counts = new float[compress_itr];
+                compress_index = new short[compress_itr];
+                System.arraycopy(compress_counts_tmp, 0, compress_counts, 0, compress_itr);
+                System.arraycopy(compress_index_tmp, 0, compress_index, 0, compress_itr);
+
+                //store compress data in the table
+                this.compress_cache_array[rel_vert_id] = compress_counts;
+                this.compress_cache_index[rel_vert_id] = compress_index;
+
+                compress_counts_tmp = null;
+                compress_index_tmp = null;
             }
 
-            // System.arraycopy(counts_arry, 0, counts_data_tmp, count_num, counts_arry.length);
-            System.arraycopy(compress_array, 0, counts_data_tmp, count_num, compress_itr);
-            System.arraycopy(compress_index, 0, counts_index_tmp, count_num, compress_itr);
-            // count_num += counts_arry.length;
-            count_num += compress_itr;
+            effective_v++;
+
+            System.arraycopy(compress_counts, 0, counts_data_tmp, count_num, compress_counts.length);
+            System.arraycopy(compress_index, 0, counts_index_tmp, count_num, compress_index.length);
+            count_num += compress_counts.length;
+
         }
 
         v_offset[v_num] = count_num;
@@ -2063,8 +2098,7 @@ public class colorcount_HJ {
         System.arraycopy(counts_index_tmp, 0, counts_index, 0, count_num);
 
         counts_data_tmp = null;
-        compress_array = null;
-        compress_index = null;
+        counts_index_tmp = null;
 
         SCSet set = new SCSet(v_num, count_num, v_offset, counts_data, counts_index);
 
@@ -2111,53 +2145,31 @@ public class colorcount_HJ {
             regroup_comm_all(sub_id);
 
         this.barrier.await();
+        //release the cached sending data
+        //after regroup update for one subtemplate
+        if (threadIdx == 0)
+        {
+            for(int i=0; i<this.num_verts_graph; i++)
+            {
+                this.compress_cache_array[i] = null;
+                this.compress_cache_index[i] = null;
+            }
+        }
+
+        this.barrier.await();
 
         try{
 
             update_comm_all(sub_id, threadIdx, chunks);
 
         } catch (InterruptedException | BrokenBarrierException e) {
-            // LOG.info("Catch barrier exception in itr: " + this.cur_iter);
             e.printStackTrace();
         }
 
         this.barrier.await();
 
         if (threadIdx == 0)
-        {
             recycleMem();
-            // clean up memory
-            // for(int k = 0; k< this.mapper_num;k++)
-            // {
-            //     if (this.update_queue_pos[k] != null)
-            //     {
-            //         for(int x = 0; x<this.update_queue_pos[k].length; x++)
-            //             this.update_queue_pos[k][x] = null;
-            //     }
-            //
-            //     this.update_queue_pos[k] = null;
-            //
-            //     if (this.update_queue_counts[k] != null)
-            //     {
-            //         for(int x = 0; x<this.update_queue_counts[k].length; x++)
-            //             this.update_queue_counts[k][x] = null;
-            //     }
-            //
-            //     this.update_queue_counts[k] = null;
-            //
-            //     if (this.update_queue_index[k] != null)
-            //     {
-            //         for(int x = 0; x<this.update_queue_index[k].length; x++)
-            //             this.update_queue_index[k][x] = null;
-            //     }
-            //
-            //     this.update_queue_index[k] = null;
-            //
-            // }
-            //
-            // this.comm_data_table.free();
-            // this.comm_data_table = null;
-        }
     }   
 
     /**
@@ -2269,7 +2281,19 @@ public class colorcount_HJ {
             this.barrier.await();
 
         }
+
+        //release the compressed sending data
+        if (threadIdx == 0)
+        {
+            for(int i=0; i<this.num_verts_graph; i++)
+            {
+                this.compress_cache_array[i] = null;
+                this.compress_cache_index[i] = null;
+            }
+        }
      
+        this.barrier.await();
+
         if (threadIdx == 0 && this.verbose)
             LOG.info("Finish pipeline for sub: " + sub_id);
    

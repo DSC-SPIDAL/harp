@@ -13,6 +13,7 @@ public class SCConstants {
   public static final String THD_AFFINITY = "compact or scatter";
   public static final String TPC = "threads per core";
   public static final String SENDLIMIT = "mem per regroup array";
+  public static final String ROTATION_PIPELINE = "use rotation-pipelined regroup";
   public static final String NUM_ITERATION="num_itr";
   public static final int ARR_LEN = 16;
 
