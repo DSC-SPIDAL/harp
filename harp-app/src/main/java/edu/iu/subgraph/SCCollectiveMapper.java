@@ -54,6 +54,7 @@ public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object
     private int numCores;
     private int tpc;
     private long send_array_limit;
+    private boolean rotation_pipeline;
     private String affinity;
 	boolean useLocalMultiThread;
 	int numModelSlices; // number of slices for pipeline optimization
@@ -74,6 +75,8 @@ public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object
     	numMappers = configuration.getInt(SCConstants.NUM_MAPPERS, 10);
     	templateFile = configuration.get(SCConstants.TEMPLATE_PATH);
     	useLocalMultiThread = configuration.getBoolean(SCConstants.USE_LOCAL_MULTITHREAD, true);
+    	rotation_pipeline = configuration.getBoolean(SCConstants.ROTATION_PIPELINE, true);
+
     	LOG.info("init templateFile");
     	LOG.info(templateFile);
 
@@ -151,7 +154,7 @@ public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object
         // send/recv num and verts 
         if (this.getNumWorkers() > 1)
         {
-            graph_count.init_comm(mapper_id_vertex, send_array_limit);
+            graph_count.init_comm(mapper_id_vertex, send_array_limit, rotation_pipeline);
             LOG.info("Finish graph_count initialization");
         }
 
