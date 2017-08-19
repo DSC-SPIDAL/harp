@@ -188,6 +188,7 @@ public class colorcount_HJ {
     //cache the compressed sending data
     private float[][] compress_cache_array; 
     private short[][] compress_cache_index; 
+    private int[] compress_cache_len;
 
     // cache the rel pos of adj for each local v in pipeline rotation
     private int[][] map_ids_cache_pip;
@@ -330,6 +331,7 @@ public class colorcount_HJ {
 
         this.compress_cache_array = new float[this.num_verts_graph][];
         this.compress_cache_index = new short[this.num_verts_graph][];
+        this.compress_cache_len = new int[this.num_verts_graph];
 
         this.map_ids_cache_pip = new int[this.num_verts_graph][];
         this.chunk_ids_cache_pip = new int[this.num_verts_graph][];
@@ -2012,6 +2014,8 @@ public class colorcount_HJ {
 
     /**
      * @brief compress local vert data for remote mappers
+     * cache the compressed data of each local v into a global lookup table
+     * this will consume more memory space
      * single thread
      *
      * @param vert_list
@@ -2019,7 +2023,7 @@ public class colorcount_HJ {
      *
      * @return 
      */
-    public SCSet compress_send_data(int[] vert_list, int num_comb_max) 
+    public SCSet compress_send_data_cached(int[] vert_list, int num_comb_max) 
     {
 
         if (this.verbose)
@@ -2076,37 +2080,59 @@ public class colorcount_HJ {
                 }
 
                 // further compress nonzero values
-                float[] compress_counts_tmp = new float[num_comb_max];
-                short[] compress_index_tmp = new short[num_comb_max];
+                // float[] compress_counts_tmp = new float[num_comb_max];
+                // short[] compress_index_tmp = new short[num_comb_max];
+                // int compress_itr = 0;
+                // for(int j=0; j<counts_raw.length; j++)
+                // {
+                //     if (counts_raw[j] > 0.0f)
+                //     {
+                //         compress_counts_tmp[compress_itr] = counts_raw[j];
+                //         compress_index_tmp[compress_itr] = (short)j;
+                //         compress_itr++;
+                //     }
+                // }
+                // // trim the tmp arrays
+                // compress_counts = new float[compress_itr];
+                // compress_index = new short[compress_itr];
+                // System.arraycopy(compress_counts_tmp, 0, compress_counts, 0, compress_itr);
+                // System.arraycopy(compress_index_tmp, 0, compress_index, 0, compress_itr);
+
+                // further compress nonzero values
+                compress_counts = new float[num_comb_max];
+                compress_index = new short[num_comb_max];
+
                 int compress_itr = 0;
                 for(int j=0; j<counts_raw.length; j++)
                 {
                     if (counts_raw[j] > 0.0f)
                     {
-                        compress_counts_tmp[compress_itr] = counts_raw[j];
-                        compress_index_tmp[compress_itr] = (short)j;
+                        compress_counts[compress_itr] = counts_raw[j];
+                        compress_index[compress_itr] = (short)j;
                         compress_itr++;
                     }
                 }
-                // trim the tmp arrays
-                compress_counts = new float[compress_itr];
-                compress_index = new short[compress_itr];
-                System.arraycopy(compress_counts_tmp, 0, compress_counts, 0, compress_itr);
-                System.arraycopy(compress_index_tmp, 0, compress_index, 0, compress_itr);
-
+                
                 //store compress data in the table
                 this.compress_cache_array[rel_vert_id] = compress_counts;
                 this.compress_cache_index[rel_vert_id] = compress_index;
+                this.compress_cache_len[rel_vert_id] = compress_itr;
 
-                compress_counts_tmp = null;
-                compress_index_tmp = null;
+                // compress_counts_tmp = null;
+                // compress_index_tmp = null;
             }
+
+            int compress_len = this.compress_cache_len[rel_vert_id];
 
             effective_v++;
 
-            System.arraycopy(compress_counts, 0, counts_data_tmp, count_num, compress_counts.length);
-            System.arraycopy(compress_index, 0, counts_index_tmp, count_num, compress_index.length);
-            count_num += compress_counts.length;
+            // System.arraycopy(compress_counts, 0, counts_data_tmp, count_num, compress_counts.length);
+            // System.arraycopy(compress_index, 0, counts_index_tmp, count_num, compress_index.length);
+            // count_num += compress_counts.length;
+
+            System.arraycopy(compress_counts, 0, counts_data_tmp, count_num, compress_len);
+            System.arraycopy(compress_index, 0, counts_index_tmp, count_num, compress_len);
+            count_num += compress_len;
 
         }
 
@@ -2137,6 +2163,105 @@ public class colorcount_HJ {
         return set;
     }
 
+    public SCSet compress_send_data(int[] vert_list, int num_comb_max) 
+    {
+
+        if (this.verbose)
+        {
+            // LOG.info("Start compressing local vertices counts for remote mappers");
+            this.start_comm = System.currentTimeMillis();
+        }
+
+        int v_num = vert_list.length;
+        int[] v_offset = new int[v_num + 1];
+
+        //to be trimed
+        //counts_idx_tmp is not required, can be removed
+        float[] counts_data_tmp = new float[num_comb_max*v_num];
+        float[] compress_array = new float[num_comb_max];
+
+        // compress index uses short to save memory, support up to 32767 as max_comb_len
+        short[] counts_index_tmp = new short[num_comb_max*v_num];
+        short[] compress_index = new short[num_comb_max];
+
+        int count_num = 0;
+        int effective_v = 0;
+
+        for(int i = 0; i< v_num; i++)
+        {
+            v_offset[i] = count_num;
+            //get the abs vert id
+            int comm_vert_id = vert_list[i];
+            int rel_vert_id = this.g.get_relative_v_id(comm_vert_id); 
+
+            //if comm_vert_id is not in local graph
+            if (rel_vert_id < 0 || (this.dt.is_vertex_init_passive(rel_vert_id) == false))
+                continue;
+
+            //compress the sending counts and index
+            float[] counts_raw = this.dt.get_passive(rel_vert_id);
+            if (counts_raw == null)
+            {
+                LOG.info("ERROR: null passive counts array");
+                continue;
+            }
+
+            //check length 
+            if (counts_raw.length != num_comb_max)
+            {
+                LOG.info("ERROR: comb_max and passive counts len not matched");
+                continue;
+            }
+
+            int compress_itr = 0;
+            for(int j=0; j<counts_raw.length; j++)
+            {
+                if (counts_raw[j] > 0.0f)
+                {
+                    compress_array[compress_itr] = counts_raw[j];
+                    compress_index[compress_itr] = (short)j;
+                    compress_itr++;
+                }
+            }
+
+            effective_v++;
+
+            System.arraycopy(compress_array, 0, counts_data_tmp, count_num, compress_itr);
+            System.arraycopy(compress_index, 0, counts_index_tmp, count_num, compress_itr);
+            count_num += compress_itr;
+
+        }
+
+        v_offset[v_num] = count_num;
+        //trim the tmp array
+        float[] counts_data = new float[count_num];
+        short[] counts_index = new short[count_num];
+
+        System.arraycopy(counts_data_tmp, 0, counts_data, 0, count_num);
+        System.arraycopy(counts_index_tmp, 0, counts_index, 0, count_num);
+
+        counts_data_tmp = null;
+        counts_index_tmp = null;
+        compress_array = null;
+        compress_index = null;
+
+        SCSet set = new SCSet(v_num, count_num, v_offset, counts_data, counts_index);
+
+        if (this.verbose)
+        {
+            long effective_size = ((long)effective_v*num_comb_max);
+            LOG.info("Estimated counts size w/o compression: " + effective_size + "; mem usage: " 
+                    + (effective_size*4));
+            LOG.info("Actual counts array size after compression: " + count_num + "; mem usage: " +
+                    ((long)count_num*6));
+            LOG.info("Save memory " + ((effective_size*4 - (long)count_num*6)/(double)(effective_size*4))*100.0f + "%");
+            this.time_comm += (System.currentTimeMillis() - this.start_comm);
+        }
+
+        return set;
+    }
+    
+    
     private void print_counts(int sub_id, int threadIdx, int[] chunks) throws BrokenBarrierException, InterruptedException
     {
 
