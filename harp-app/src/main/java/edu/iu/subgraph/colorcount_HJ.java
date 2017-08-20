@@ -1382,6 +1382,7 @@ public class colorcount_HJ {
                 //comm_id (32 bits) consists of three parts: 1) send_id (12 bits); 2) local mapper_id (12 bits) 3) array_parcel id (8 bits)
                 int comm_id =  ((send_id << 20) | (this.local_mapper_id << 8) | j );
                 SCSet comm_data = compress_send_data(send_chunk_list, comb_len);
+                // SCSet comm_data = compress_send_data_cached(send_chunk_list, comb_len);
                 this.comm_data_table.addPartition(new Partition<>(comm_id, comm_data));
             }
 
@@ -1502,6 +1503,7 @@ public class colorcount_HJ {
                 //comm_id (32 bits) consists of three parts: 1) send_id (12 bits); 2) local mapper_id (12 bits) 3) array_parcel id (8 bits)
                 int comm_id =  ((send_id << 20) | (this.local_mapper_id << 8) | j );
                 SCSet comm_data = compress_send_data(send_chunk_list, comb_len);
+                // SCSet comm_data = compress_send_data_cached(send_chunk_list, comb_len);
                 this.comm_data_table.addPartition(new Partition<>(comm_id, comm_data));
             }
 
@@ -1640,9 +1642,14 @@ public class colorcount_HJ {
                 float[] counts_a = dt.get_active(v);
 
                 // retrieve map_id and chunk id for each adj in adj_list
+                // int[] map_ids = this.map_ids_cache_pip[v].clone();
+                // int[] chunk_ids = this.chunk_ids_cache_pip[v].clone(); 
+                // int[] chunk_internal_offsets = this.chunk_internal_offsets_cache_pip[v].clone();
+
                 int[] map_ids = this.map_ids_cache_pip[v];
                 int[] chunk_ids = this.chunk_ids_cache_pip[v]; 
                 int[] chunk_internal_offsets = this.chunk_internal_offsets_cache_pip[v];
+
                 int compress_interval = 0;
 
                 // // retrieve map_id and chunk id for each adj in adj_list
@@ -1848,6 +1855,10 @@ public class colorcount_HJ {
                 int[] chunk_ids = this.chunk_ids_cache_pip[v]; 
                 int[] chunk_internal_offsets = this.chunk_internal_offsets_cache_pip[v];
 
+                // int[] map_ids = this.map_ids_cache_pip[v].clone();
+                // int[] chunk_ids = this.chunk_ids_cache_pip[v].clone(); 
+                // int[] chunk_internal_offsets = this.chunk_internal_offsets_cache_pip[v].clone();
+
                 // // retrieve map_id and chunk id for each adj in adj_list
                 // int[] map_ids = new int[adj_list_size];
                 // int[] chunk_ids = new int[adj_list_size]; 
@@ -1994,7 +2005,6 @@ public class colorcount_HJ {
                         count_comm_root[threadIdx] += update_at_n[n];
                 }
 
-                // adj_random_seq = null;
                 // map_ids = null;
                 // chunk_ids = null; 
                 // chunk_internal_offsets = null;
