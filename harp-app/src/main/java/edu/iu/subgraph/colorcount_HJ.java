@@ -1402,6 +1402,7 @@ public class colorcount_HJ {
         }
 
         this.mapper.regroup("sc", "regroup counts data", this.comm_data_table, new SCPartitioner2(this.mapper_num));
+        this.mapper.barrier("sc", "all regroup sync");
 
         if (this.verbose)
         {
@@ -1529,6 +1530,8 @@ public class colorcount_HJ {
 
         this.mapper.regroup("sc", "regroup counts data", this.comm_data_table, new SCPartitioner2(this.mapper_num));
 
+        this.mapper.barrier("sc", "atomic regroup sync");
+
         if (this.verbose)
         {
             LOG.info("Pipeline Finish regroup comm for subtemplate: " + sub_id + "; use time: " +
@@ -1573,13 +1576,13 @@ public class colorcount_HJ {
         }
 
 
-        if (this.mapper_num > 1)  
-        {
-            // ResourcePool.get().clean();
-            ConnPool.get().clean();
-        }
-
-        System.gc();
+        // if (this.mapper_num > 1)  
+        // {
+        //     // ResourcePool.get().clean();
+        //     ConnPool.get().clean();
+        // }
+        //
+        // System.gc();
 
         return update_id_pipeline;
 
@@ -1625,6 +1628,8 @@ public class colorcount_HJ {
         barrier.await();
         // start update 
         // first loop over local v
+        // debug
+        int effect_count = 0;
         for (int v = chunks[threadIdx]; v < chunks[threadIdx + 1]; ++v) 
         {
             if (dt.is_vertex_init_active(v))
@@ -1762,14 +1767,23 @@ public class colorcount_HJ {
                     else
                         count_comm_root[threadIdx] += update_at_n[n];
                 }
-                
+
+                effect_count++;
+                if (threadIdx == 0 && (effect_count%1000 == 0) )
+                    LOG.info("Thd 0 proceesed: " + effect_count+" vertices");
+
                 // map_ids = null;
                 // chunk_ids = null; 
                 // chunk_internal_offsets = null;
                 
             } // finishe an active v
 
+            
         } // finish all the v on thread
+
+        //debug
+        if (threadIdx == 0 && this.verbose)
+            LOG.info("Thd 0 finished all the vertices");
 
         decompress_counts = null;
         update_at_n = null;
@@ -1827,6 +1841,7 @@ public class colorcount_HJ {
 
         // start update 
         // first loop over local v
+        int effect_count = 0;
         for (int v = chunks[threadIdx-1]; v < chunks[threadIdx]; ++v) 
         {
             if (dt.is_vertex_init_active(v))
@@ -2008,10 +2023,17 @@ public class colorcount_HJ {
                 // map_ids = null;
                 // chunk_ids = null; 
                 // chunk_internal_offsets = null;
+                effect_count++;
+                if (threadIdx == 1 && (effect_count%1000 == 0))
+                    LOG.info("Trace update counts for Thd 1: " + effect_count);
                 
             } // finishe an active v
 
         } // finish all the v on thread
+
+        //debug
+        if (threadIdx == 1 && this.verbose)
+            LOG.info("Trace update counts for Thd 1 Finished");
 
         decompress_counts = null;
         update_at_n = null;
@@ -2523,7 +2545,8 @@ public class colorcount_HJ {
             this.barrier.await();
 
             if (threadIdx == 0)
-                recycleMemPipeline(this.pipeline_update_id);
+                recycleMem();
+                // recycleMemPipeline(this.pipeline_update_id);
 
             this.barrier.await();
 
@@ -2592,6 +2615,7 @@ public class colorcount_HJ {
 
         }
         
+        ConnPool.get().clean();
         System.gc();
     }
 
@@ -2630,6 +2654,7 @@ public class colorcount_HJ {
 
         this.update_queue_index[k] = null;
 
+        ConnPool.get().clean();
         System.gc();
     }
 }
