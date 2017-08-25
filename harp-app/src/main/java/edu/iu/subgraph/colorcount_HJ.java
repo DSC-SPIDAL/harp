@@ -124,7 +124,6 @@ public class colorcount_HJ {
     // ----------------------------- for multi-threading counting -----------------------------
 
     //thread barrier
-    // private AtomicInteger barrierCounter = new AtomicInteger(0);
     private CyclicBarrier barrier;
     // for mutual locking
     private ReentrantLock lock; 
@@ -245,8 +244,8 @@ public class colorcount_HJ {
      * @param do_vert
      * @param verb
      */
-    void init(SCCollectiveMapper mapper, Context context, Graph local_graph, int global_max_v_id, int thread_num, int core_num, int tpc, String affinity, boolean do_gdd, boolean do_vert, boolean verb){
-
+    void init(SCCollectiveMapper mapper, Context context, Graph local_graph, int global_max_v_id, int thread_num, int core_num, int tpc, String affinity, boolean do_gdd, boolean do_vert, boolean verb)
+    {
         // assign params
         this.mapper = mapper;
         this.context = context;
@@ -285,8 +284,8 @@ public class colorcount_HJ {
      * @param mapper_id_vertex
      * @param mapper
      */
-    void init_comm(int[] mapper_id_vertex, long send_array_limit, boolean rotation_pipeline) {
-
+    void init_comm(int[] mapper_id_vertex, long send_array_limit, boolean rotation_pipeline) 
+    {
         
         //create abs mapping structure
         this.abs_v_to_mapper = mapper_id_vertex;
@@ -337,11 +336,8 @@ public class colorcount_HJ {
         this.chunk_ids_cache_pip = new int[this.num_verts_graph][];
         this.chunk_internal_offsets_cache_pip = new int[this.num_verts_graph][];
 
-        // this.send_array_limit = 250L*1024L*1024L;
-
         // prepareing send/recv information
         // the requested adj_abs_v queues will be sent to each mapper
-        // ToDo: replace this by multi threading
         for(int i=0;i<this.mapper_num;i++)
         {
             // i is the mapper id from which local_mapper demands adj data
@@ -374,6 +370,9 @@ public class colorcount_HJ {
             LOG.info("Start regroup comm_vertex_table");
 
         this.mapper.regroup("sc", "regroup-send-recv-vertex", this.comm_vertex_table, new SCPartitioner(this.mapper_num));
+        // the name of barrier should not be the same as that of regroup
+        // otherwise may cause a deadlock
+        this.mapper.barrier("sc", "regroup-send-recv-sync");
 
         if (this.verbose)
             LOG.info("Finish regroup comm_vertex_table");
@@ -450,8 +449,6 @@ public class colorcount_HJ {
         this.chunks = divide_chunks(this.num_verts_graph, this.thread_num);   
         // in pipeline regroup-update, thread 0 is doing communication
         this.chunks_pipeline = divide_chunks(this.num_verts_graph, this.thread_num - 1);
-
-        // this.comm_nonzero_index = new int[this.subtemplate_count][];
 
         //triggering vtune profiling add command option for vtune 
         // java.nio.file.Path vtune_file = java.nio.file.Paths.get("vtune-flag.txt");
@@ -535,9 +532,7 @@ public class colorcount_HJ {
                         this.num_verts_sub_ato = this.num_verts_table[s];
 
                         if(this.verbose)
-                        {
                             LOG.info("Initing Subtemplate "+ s + ", t verts: " + num_verts_sub_ato);
-                        }
 
                         int a = this.part.get_active_index(s);
                         int p = this.part.get_passive_index(s);
@@ -573,10 +568,7 @@ public class colorcount_HJ {
                     this.barrier.await();
 
                     if(this.verbose && threadIdx == 0)
-                    {
                         LOG.info("Finish Counting Local Graph Subtemplate "+ s);
-                        // this.time_comp += (System.currentTimeMillis() - this.start_comp);
-                    }
 
                     //start communication part single thread 
                     // only for subtemplates size > 1, having neighbours on other mappers
@@ -595,7 +587,8 @@ public class colorcount_HJ {
                     if (threadIdx == 0)
                     {
 
-		                LOG.info("JVM Memory Used in subtemplate: " + s + " is: "+ (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()));
+                        if (this.verbose)
+		                    LOG.info("JVM Memory Used in subtemplate: " + s + " is: "+ (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()));
 
                         int a = this.part.get_active_index(s);
                         int p = this.part.get_passive_index(s);
@@ -613,25 +606,26 @@ public class colorcount_HJ {
                                 this.dt.clear_sub(p);
                         }
 
-                        // System.gc();
                     }
 
                     this.barrier.await();
                     
                     //print out counts for this subtemplate 
-                    print_counts(s, threadIdx, this.chunks);
-
-                    this.barrier.await();
-                    if (threadIdx == 0)
+                    if (this.verbose)
                     {
-                        double sub_total_counts = 0;
-                        for(int x = 0; x<this.thread_num;x++)
-                            sub_total_counts += cc_ato[x];
+                        print_counts(s, threadIdx, this.chunks);
+                        this.barrier.await();
+                        if (threadIdx == 0)
+                        {
+                            double sub_total_counts = 0;
+                            for(int x = 0; x<this.thread_num;x++)
+                                sub_total_counts += cc_ato[x];
 
-                        LOG.info("Total counts for sub-temp: " + s + " is: " + sub_total_counts);
+                            LOG.info("Total counts for sub-temp: " + s + " is: " + sub_total_counts);
+                        }
+
+                        this.barrier.await();
                     }
-
-                    this.barrier.await();
 
                     if (threadIdx == 0)
                         this.context.progress();
@@ -669,9 +663,6 @@ public class colorcount_HJ {
                         regroup_update_pipeline(0, threadIdx);
                     else
                         regroup_update_all(0, threadIdx, this.chunks);
-
-                    // regroup_update_pipeline(0, threadIdx);
-                    // regroup_update_all(0, threadIdx, this.chunks);
                 }
 
                 this.barrier.await();
@@ -686,7 +677,6 @@ public class colorcount_HJ {
                     }
 
                     this.full_count_ato = sum_count;
-
                     LOG.info("Finish update comm counts for last subtemplate: " 
                             +  "; total counts: " + sum_count);
                 }
@@ -695,8 +685,9 @@ public class colorcount_HJ {
 
                 if (threadIdx == 0)
                 {
+                    if (this.verbose)
+		                LOG.info("JVM Memory Used in Last subtemplate is: "+ (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()));
 
-		            LOG.info("JVM Memory Used in Last subtemplate is: "+ (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()));
                     int a = this.part.get_active_index(0);
                     int p = this.part.get_passive_index(0);
 
@@ -725,13 +716,10 @@ public class colorcount_HJ {
                         ConnPool.get().clean();
                     }
                     System.gc();
-
                     this.context.progress();
                 }
                 
-            }
-
-            
+            } // end of an iteration
 
             this.barrier.await();
 
@@ -775,7 +763,8 @@ public class colorcount_HJ {
      *
      * @return 
      */
-    int[] divide_chunks(int total, int partition){
+    int[] divide_chunks(int total, int partition)
+    {
         int chunks[] = new int[partition+1];
         chunks[0] = 0;
         int remainder = total % partition;
@@ -788,7 +777,16 @@ public class colorcount_HJ {
         return chunks;
     }
 
-    int[] divide_chunks_comm(int total, int partition){
+    /**
+     * @brief divide chunks in preparing sending/receiving packets
+     *
+     * @param total
+     * @param partition
+     *
+     * @return 
+     */
+    int[] divide_chunks_comm(int total, int partition)
+    {
         int chunks[] = new int[partition+1];
         chunks[0] = 0;
         int remainder = total % partition;
@@ -803,12 +801,9 @@ public class colorcount_HJ {
         return chunks;
     }
 
-    double[] get_vert_counts(){
-        return final_vert_counts;
-    }
 
-    private void init_table_node_HJ(int s, int threadIdx, int[] chunks) throws BrokenBarrierException, InterruptedException {
-
+    private void init_table_node_HJ(int s, int threadIdx, int[] chunks) throws BrokenBarrierException, InterruptedException 
+    {
         //replace unlabeled implementation with multi-threading
         if( !labeled) {
 
@@ -855,7 +850,8 @@ public class colorcount_HJ {
      *
      * @return 
      */
-    private void colorful_count_HJ(int s, int threadIdx, int[] chunks) throws BrokenBarrierException, InterruptedException {
+    private void colorful_count_HJ(int s, int threadIdx, int[] chunks) throws BrokenBarrierException, InterruptedException 
+    {
 
         if (threadIdx == 0)
         {
@@ -868,37 +864,10 @@ public class colorcount_HJ {
 
             // colorset combinations from active child
             num_combinations_ato = this.choose_table[num_verts_sub_ato][num_verts_a];
-
-            //check actual comm volume
-            // int cur_comb_len = this.choose_table[num_colors][num_verts_sub_ato];
-            // int comb_len_p = this.choose_table[num_colors][num_verts_sub_ato - num_verts_a];
-            // int[] comb_len_p_array = new int[comb_len_p];
-            // int max_p_id = 0;
-            //
-            // for(int n=0;n<cur_comb_len;n++)
-            // {    
-            //     int[] comb_indexes_p_test = comb_num_indexes[1][s][n];
-            //     for(int x = 0; x<num_combinations_ato; x++)
-            //     {
-            //         if (comb_indexes_p_test[x] > max_p_id)
-            //             max_p_id = comb_indexes_p_test[x];
-            //
-            //         comb_len_p_array[comb_indexes_p_test[x]] = 1;
-            //     }
-            // }
-            //
-            // //sum up non-zero entry in comb_len_p_array
-            // int nonzero_len = 0;
-            // for(int x=0; x< comb_len_p; x++)
-            //     nonzero_len += comb_len_p_array[x];
-            //
-            // if (this.verbose)
-            //     LOG.info("Maximal Comm index id for Passive Child of sub: " + s + " : " + max_p_id + "; P Comb Len: "+ comb_len_p 
-            //             + "; nonzero len: " + nonzero_len);
         }
 
+        //clear counts
         count_local_root[threadIdx] = 0.0d;
-
         barrier.await();
 
         int[] valid_nbrs = new int[g.max_degree()];
@@ -930,17 +899,12 @@ public class colorcount_HJ {
                 int nbr_comm_itr = 0;
                 for(int i = 0; i < end; ++i)
                 {
-
                     int adj_i = g.get_relative_v_id(adjs_abs[i]);
-
                     //how to determine whether adj_i is in the current passive table
                     if( adj_i >=0 && dt.is_vertex_init_passive(adj_i)){
                         valid_nbrs[valid_nbrs_count++] = adj_i;
                     }
 
-                    // preparation for communication 
-                    // replace this snippet with more efficient data structure
-                    // replace Int2ObjectMap with an array of ArrayList<Integer>
                     if (this.mapper_num > 1 && adj_i < 0)
                         this.update_map[v][nbr_comm_itr++] = adjs_abs[i];
                 }
@@ -986,7 +950,6 @@ public class colorcount_HJ {
                         
                             // if(do_graphlet_freq || do_vert_output)
                             //     final_vert_counts[v] += (double)color_count;
-
                             if(s != 0)
                                 dt.set(v, comb_num_indexes_set[s][n], (float)color_count);
                             else
@@ -1004,19 +967,6 @@ public class colorcount_HJ {
         }
 
         valid_nbrs = null;
-
-        barrier.await();
-
-        if (threadIdx == 0)
-        {
-
-            //reduction
-            for(int i = 0; i < this.thread_num; ++i){
-            }
-
-
-        }
-
         barrier.await();
     }
 
@@ -1025,7 +975,8 @@ public class colorcount_HJ {
      *
      * @return 
      */
-    private void create_tables(){
+    private void create_tables()
+    {
         //C_n^k compute the unique number of color set choices 
         //two dimensional
         this.choose_table = Util.init_choose_table(this.num_colors);
@@ -1043,7 +994,8 @@ public class colorcount_HJ {
         delete_all_index_sets();
     }
 
-    private void delete_tables(){
+    private void delete_tables()
+    {
         for(int i = 0; i <= num_colors; ++i)
             this.choose_table[i] = null;
         this.choose_table = null;
@@ -1057,7 +1009,8 @@ public class colorcount_HJ {
      *
      * @return 
      */
-    private void create_num_verts_table(){
+    private void create_num_verts_table()
+    {
         this.num_verts_table = new int[this.subtemplate_count];
         for(int s = 0; s < this.subtemplate_count; ++s){
             this.num_verts_table[s] = this.subtemplates[s].num_vertices();
@@ -1069,7 +1022,8 @@ public class colorcount_HJ {
      *
      * @return 
      */
-    private void create_all_index_sets(){
+    private void create_all_index_sets()
+    {
 
         //first dim (up to) how many colors
         this.index_sets = new int[this.num_colors][][][];
@@ -1116,7 +1070,8 @@ public class colorcount_HJ {
      *
      * @return 
      */
-    private void create_all_color_sets(){
+    private void create_all_color_sets()
+    {
 
         //first dim, num of subtemplates
         this.color_sets = new int[this.subtemplate_count][][][][];
@@ -1178,7 +1133,8 @@ public class colorcount_HJ {
      *
      * @return 
      */
-    private void create_comb_num_system_indexes(){
+    private void create_comb_num_system_indexes()
+    {
 
         this.comb_num_indexes = new int[2][this.subtemplate_count][][];
         this.comb_num_indexes_set = new int[this.subtemplate_count][];
@@ -1243,7 +1199,8 @@ public class colorcount_HJ {
         }
     }
 
-    private void delete_comb_num_system_indexes(){
+    private void delete_comb_num_system_indexes()
+    {
         for(int s = 0; s < subtemplate_count; ++s){
             int num_verts_sub = subtemplates[s].num_vertices();
             int num_combinations_s = Util.choose(num_colors, num_verts_sub);
@@ -1275,7 +1232,8 @@ public class colorcount_HJ {
      *
      * @return 
      */
-    private void delete_all_color_sets(){
+    private void delete_all_color_sets()
+    {
 
         for(int s = 0; s < this.subtemplate_count; ++s){
             int num_verts_sub = this.subtemplates[s].num_vertices();
@@ -1306,7 +1264,8 @@ public class colorcount_HJ {
      *
      * @return 
      */
-    private void delete_all_index_sets(){
+    private void delete_all_index_sets()
+    {
 
         for (int i = 0; i < (this.num_colors-1); ++i) {
             int num_vals = i + 2;
@@ -1330,30 +1289,22 @@ public class colorcount_HJ {
      * chunk size is the total num of partitions divided by threads num
      *
      * @param sub_id
-     * @param threadIdx
-     * @param chunks
      *
      * @return 
      */
-    // private void regroup_comm_multi(int sub_id, int threadIdx, int[] chunks) throws BrokenBarrierException, InterruptedException
     private void regroup_comm_all(int sub_id) 
     {
         if (this.verbose)
-        {
             LOG.info("Start prepare comm for subtemplate: " + sub_id);
-            this.start_comm = System.currentTimeMillis();
-            this.start_misc = System.currentTimeMillis();
-        }
+
+        this.start_comm = System.currentTimeMillis();
+        this.start_misc = System.currentTimeMillis();
 
         //prepare the sending partitions
         this.comm_data_table = new Table<>(0, new SCSetCombiner());
         int comb_len = this.dt.get_num_color_set(this.part.get_passive_index(sub_id)); 
 
         //prevent the single comm_data array exceeds the limitation of heap allocation 8GB
-        //we manually setup the limitation of sending array to be 1 GB
-        // int send_array_limit = 1024*1024*1024;
-        // send_divid_num = (comm_vert_list.length * comb_len)/send_array_limit
-
         for(int send_id : this.send_vertex_table.getPartitionIDs())
         {
             int[] comm_vert_list = this.send_vertex_table.getPartition(send_id).get().get();
@@ -1382,7 +1333,6 @@ public class colorcount_HJ {
                 //comm_id (32 bits) consists of three parts: 1) send_id (12 bits); 2) local mapper_id (12 bits) 3) array_parcel id (8 bits)
                 int comm_id =  ((send_id << 20) | (this.local_mapper_id << 8) | j );
                 SCSet comm_data = compress_send_data(send_chunk_list, comb_len);
-                // SCSet comm_data = compress_send_data_cached(send_chunk_list, comb_len);
                 this.comm_data_table.addPartition(new Partition<>(comm_id, comm_data));
             }
 
@@ -1396,10 +1346,9 @@ public class colorcount_HJ {
 
         //start the regroup communication
         if (this.verbose)
-        {
             LOG.info("Start regroup comm for subtemplate: " + sub_id);
-            this.start_misc = System.currentTimeMillis();
-        }
+
+        this.start_misc = System.currentTimeMillis();
 
         this.mapper.regroup("sc", "regroup counts data", this.comm_data_table, new SCPartitioner2(this.mapper_num));
         this.mapper.barrier("sc", "all regroup sync");
@@ -1440,11 +1389,7 @@ public class colorcount_HJ {
             this.update_queue_index[update_id][chunk_id] = scset.get_counts_index();
         }
 
-        if (this.verbose)
-        {
-            this.time_comm += (System.currentTimeMillis() - this.start_comm);
-        }
-
+        this.time_comm += (System.currentTimeMillis() - this.start_comm);
 
         if (this.mapper_num > 1)  
         {
@@ -1456,25 +1401,30 @@ public class colorcount_HJ {
 
     }
 
+    /**
+     * @brief used in pipelined ring-regroup 
+     * operation
+     *
+     * @param sub_id
+     * @param send_id
+     *
+     * @return 
+     */
     private int regroup_comm_atomic(int sub_id, int send_id) 
     {
         int update_id_pipeline = 0;
 
         if (this.verbose)
-        {
             LOG.info("Pipeline Start prepare comm for subtemplate: " + sub_id + "; send to mapper: " + send_id);
-            this.start_comm = System.currentTimeMillis();
-            this.start_misc = System.currentTimeMillis();
-        }
+
+        this.start_comm = System.currentTimeMillis();
+        this.start_misc = System.currentTimeMillis();
 
         //prepare the sending partitions
         this.comm_data_table = new Table<>(0, new SCSetCombiner());
         int comb_len = this.dt.get_num_color_set(this.part.get_passive_index(sub_id)); 
 
         //prevent the single comm_data array exceeds the limitation of heap allocation 8GB
-        //we manually setup the limitation of sending array to be 1 GB
-        // int send_array_limit = 1024*1024*1024;
-        // send_divid_num = (comm_vert_list.length * comb_len)/send_array_limit
         int[] comm_vert_list = this.send_vertex_table.getPartition(send_id).get().get();
         if (comm_vert_list != null)
         {
@@ -1518,18 +1468,14 @@ public class colorcount_HJ {
 
         //start the regroup communication
         if (this.verbose)
-        {
             LOG.info("Pipeline Start regroup comm for subtemplate: " + sub_id);
-            this.start_misc = System.currentTimeMillis();
-        }
 
-        // assertNotNull("comm_data_table null", this.comm_data_table);
+        this.start_misc = System.currentTimeMillis();
 
         if (this.verbose)
             LOG.info("Pipeline table partitions: " + this.comm_data_table.getNumPartitions());
 
         this.mapper.regroup("sc", "regroup counts data", this.comm_data_table, new SCPartitioner2(this.mapper_num));
-
         this.mapper.barrier("sc", "atomic regroup sync");
 
         if (this.verbose)
@@ -1570,34 +1516,30 @@ public class colorcount_HJ {
             update_id_pipeline = update_id;
         }
 
-        if (this.verbose)
-        {
-            this.time_comm += (System.currentTimeMillis() - this.start_comm);
-        }
-
-
-        // if (this.mapper_num > 1)  
-        // {
-        //     // ResourcePool.get().clean();
-        //     ConnPool.get().clean();
-        // }
-        //
-        // System.gc();
-
+        this.time_comm += (System.currentTimeMillis() - this.start_comm);
         return update_id_pipeline;
-
     }
 
+    /**
+     * @brief update the received count arrays 
+     * in standard regroup version
+     *
+     * @param sub_id
+     * @param threadIdx
+     * @param chunks
+     *
+     * @return 
+     */
     private void update_comm_all(int sub_id, int threadIdx, int[] chunks) throws BrokenBarrierException, InterruptedException
     {
 
-        if (verbose && threadIdx == 0)
+        if (threadIdx == 0)
         {
             active_child = part.get_active_index(sub_id);
             passive_child = part.get_passive_index(sub_id);
-            // LOG.info("Active Child: " + active_child + "; Passive Child: " + passive_child + " for sub: " + sub_id);
-            LOG.info("Start updating remote counts on local vertex");
-            // this.start_comm = System.currentTimeMillis();
+
+            if (this.verbose)
+                LOG.info("Start updating remote counts on local vertex");
         }
 
         count_comm_root[threadIdx] = 0.0d;
@@ -1646,63 +1588,11 @@ public class colorcount_HJ {
                 int[] adj_list = this.update_map[v]; 
                 float[] counts_a = dt.get_active(v);
 
-                // retrieve map_id and chunk id for each adj in adj_list
-                // int[] map_ids = this.map_ids_cache_pip[v].clone();
-                // int[] chunk_ids = this.chunk_ids_cache_pip[v].clone(); 
-                // int[] chunk_internal_offsets = this.chunk_internal_offsets_cache_pip[v].clone();
-
                 int[] map_ids = this.map_ids_cache_pip[v];
                 int[] chunk_ids = this.chunk_ids_cache_pip[v]; 
                 int[] chunk_internal_offsets = this.chunk_internal_offsets_cache_pip[v];
 
                 int compress_interval = 0;
-
-                // // retrieve map_id and chunk id for each adj in adj_list
-                // int[] map_ids = new int[adj_list_size];
-                // int[] chunk_ids = new int[adj_list_size]; 
-                // int[] chunk_internal_offsets = new int[adj_list_size];
-                //
-                // int adj_id = 0;
-                // int adj_offset = 0;
-                // int map_id = 0;
-                // int adj_list_len = 0;
-                //
-                // int chunk_size = 0;
-                // int chunk_len = 0;
-                //
-                // int chunk_id = 0;
-                // int chunk_internal_offset = 0;
-                //
-                // int compress_interval = 0;
-                //
-                // for(int j=0; j<adj_list_size; j++)
-                // {
-                //     adj_id = adj_list[j]; 
-                //     adj_offset = this.abs_v_to_queue[adj_id];
-                //     map_id = this.abs_v_to_mapper[adj_id];
-                //     adj_list_len = this.update_mapper_len[map_id]; 
-                //
-                //     //calculate chunk id 
-                //     chunk_size =(int) ((adj_list_len*(long)comb_len + this.send_array_limit - 1)/this.send_array_limit);
-                //     chunk_len = adj_list_len/(int)chunk_size;
-                //
-                //     // from 0 to chunk_size - 1
-                //     chunk_id = adj_offset/chunk_len; 
-                //     chunk_internal_offset = adj_offset%chunk_len;  
-                //
-                //     // assertTrue("chunk id non zero: ", (chunk_id == 0));
-                //     // reminder
-                //     if (chunk_id > chunk_size - 1)
-                //     {
-                //         chunk_id = chunk_size - 1;
-                //         chunk_internal_offset += chunk_len;
-                //     }
-                //
-                //     map_ids[j] = map_id;
-                //     chunk_ids[j] = chunk_id;
-                //     chunk_internal_offsets[j] = chunk_internal_offset;
-                //
-                // }
 
                 //second loop over nbrs, decompress adj from Scset
                 for(int i = 0; i< adj_list_size; i++)
@@ -1769,20 +1659,15 @@ public class colorcount_HJ {
                 }
 
                 effect_count++;
-                if (threadIdx == 0 && (effect_count%1000 == 0) )
+                if (this.verbose && threadIdx == 0 && (effect_count%1000 == 0) )
                     LOG.info("Thd 0 proceesed: " + effect_count+" vertices");
-
-                // map_ids = null;
-                // chunk_ids = null; 
-                // chunk_internal_offsets = null;
                 
             } // finishe an active v
-
             
         } // finish all the v on thread
 
         //debug
-        if (threadIdx == 0 && this.verbose)
+        if (this.verbose && threadIdx == 0)
             LOG.info("Thd 0 finished all the vertices");
 
         decompress_counts = null;
@@ -1791,10 +1676,7 @@ public class colorcount_HJ {
         barrier.await();
 
         if (verbose && threadIdx == 0)
-        {
             LOG.info("Finish updating remote counts on local vertex");
-            // this.time_comm += (System.currentTimeMillis() - this.start_comm);
-        }
     }
 
     /**
@@ -1809,13 +1691,12 @@ public class colorcount_HJ {
     private void update_comm_atomic(int sub_id, int update_mapper_id, int threadIdx, int[] chunks) throws BrokenBarrierException, InterruptedException
     {
 
-        if (verbose && threadIdx == 1)
+        if (threadIdx == 1)
         {
             active_child = part.get_active_index(sub_id);
             passive_child = part.get_passive_index(sub_id);
-            // LOG.info("Active Child: " + active_child + "; Passive Child: " + passive_child + " for sub: " + sub_id);
-            LOG.info("Start updating remote counts from mapper: "+update_mapper_id + " on local vertex");
-            // this.start_comm = System.currentTimeMillis();
+            if (this.verbose)
+                LOG.info("Start updating remote counts from mapper: "+update_mapper_id + " on local vertex");
         }
 
         int num_combinations_verts_sub = this.choose_table[num_colors][num_verts_table[sub_id]];
@@ -1830,9 +1711,7 @@ public class colorcount_HJ {
         int comb_len = this.dt.get_num_color_set(this.part.get_passive_index(sub_id)); 
 
         if (verbose && threadIdx == 1)
-        {
             LOG.info(" Comb len: " + comb_len);
-        }
 
         // this decompress counts will be reused
         float[] decompress_counts = new float[comb_len];
@@ -1870,72 +1749,9 @@ public class colorcount_HJ {
                 int[] chunk_ids = this.chunk_ids_cache_pip[v]; 
                 int[] chunk_internal_offsets = this.chunk_internal_offsets_cache_pip[v];
 
-                // int[] map_ids = this.map_ids_cache_pip[v].clone();
-                // int[] chunk_ids = this.chunk_ids_cache_pip[v].clone(); 
-                // int[] chunk_internal_offsets = this.chunk_internal_offsets_cache_pip[v].clone();
-
-                // // retrieve map_id and chunk id for each adj in adj_list
-                // int[] map_ids = new int[adj_list_size];
-                // int[] chunk_ids = new int[adj_list_size]; 
-                // int[] chunk_internal_offsets = new int[adj_list_size];
-                //
-                // int adj_id = 0;
-                // int adj_offset = 0;
-                // int map_id = 0;
-                // int adj_list_len = 0;
-                //
-                // int chunk_size = 0;
-                // int chunk_len = 0;
-                //
-                // int chunk_id = 0;
-                // int chunk_internal_offset = 0;
-                //
-                // int compress_interval = 0;
-                //
-                // //calculate map_ids, chunk_ids, and chunk_internal_offset
-                // for(int j=0; j<adj_list_size; j++)
-                // {
-                //     adj_id = adj_list[j]; 
-                //     adj_offset = this.abs_v_to_queue[adj_id];
-                //     map_id = this.abs_v_to_mapper[adj_id];
-                //     adj_list_len = this.update_mapper_len[map_id]; 
-                //
-                //     // assertTrue("adj_list_len < 1", (adj_list_len > 0));
-                //
-                //     //calculate chunk id 
-                //     chunk_size =(int) ((adj_list_len*(long)comb_len + this.send_array_limit - 1)/this.send_array_limit);
-                //     chunk_len = adj_list_len/(int)chunk_size;
-                //
-                //     // from 0 to chunk_size - 1
-                //     chunk_id = adj_offset/chunk_len; 
-                //     chunk_internal_offset = adj_offset%chunk_len;  
-                //
-                //     // assertTrue("chunk id non zero: ", (chunk_id == 0));
-                //     // reminder
-                //     if (chunk_id > chunk_size - 1)
-                //     {
-                //         chunk_id = chunk_size - 1;
-                //         chunk_internal_offset += chunk_len;
-                //     }
-                //
-                //     map_ids[j] = map_id;
-                //     chunk_ids[j] = chunk_id;
-                //     chunk_internal_offsets[j] = chunk_internal_offset;
-                //
-                // }
-
-                // to create an adj_list_size index random sorted sequence to avoid collision
-                // List<Integer> adj_random_seq = new ArrayList<>();
-                // for(int i=0; i<adj_list_size; i++)
-                    // adj_random_seq.add(i);
-
-                // Collections.shuffle(adj_random_seq, new Random(System.currentTimeMillis()));
-
                 //second loop over nbrs, decompress adj from Scset
-                // for(int i = 0; i< adj_list_size; i++)
                 for(int rand_i = 0; rand_i< adj_list_size; rand_i++)
                 {
-                    // int rand_i = adj_random_seq.get(i);
 
                     if (map_ids[rand_i] != update_mapper_id || this.update_queue_pos[map_ids[rand_i]] == null || this.update_queue_pos[map_ids[rand_i]][chunk_ids[rand_i]] == null)
                     {
@@ -2020,11 +1836,8 @@ public class colorcount_HJ {
                         count_comm_root[threadIdx] += update_at_n[n];
                 }
 
-                // map_ids = null;
-                // chunk_ids = null; 
-                // chunk_internal_offsets = null;
                 effect_count++;
-                if (threadIdx == 1 && (effect_count%1000 == 0))
+                if (this.verbose && threadIdx == 1 && (effect_count%1000 == 0))
                     LOG.info("Trace update counts for Thd 1: " + effect_count);
                 
             } // finishe an active v
@@ -2032,16 +1845,14 @@ public class colorcount_HJ {
         } // finish all the v on thread
 
         //debug
-        if (threadIdx == 1 && this.verbose)
+        if (this.verbose && threadIdx == 1)
             LOG.info("Trace update counts for Thd 1 Finished");
 
         decompress_counts = null;
         update_at_n = null;
 
         if (verbose && threadIdx == 1)
-        {
             LOG.info("Finish updating remote counts from mapper: "+update_mapper_id + " on local vertex");
-        }
     }
 
     /**
@@ -2058,11 +1869,7 @@ public class colorcount_HJ {
     public SCSet compress_send_data_cached(int[] vert_list, int num_comb_max) 
     {
 
-        if (this.verbose)
-        {
-            // LOG.info("Start compressing local vertices counts for remote mappers");
-            this.start_comm = System.currentTimeMillis();
-        }
+        this.start_comm = System.currentTimeMillis();
 
         int v_num = vert_list.length;
         int[] v_offset = new int[v_num + 1];
@@ -2189,20 +1996,16 @@ public class colorcount_HJ {
             LOG.info("Actual counts array size after compression: " + count_num + "; mem usage: " +
                     ((long)count_num*6));
             LOG.info("Save memory " + ((effective_size*4 - (long)count_num*6)/(double)(effective_size*4))*100.0f + "%");
-            this.time_comm += (System.currentTimeMillis() - this.start_comm);
         }
 
+        this.time_comm += (System.currentTimeMillis() - this.start_comm);
         return set;
     }
 
     public SCSet compress_send_data(int[] vert_list, int num_comb_max) 
     {
 
-        if (this.verbose)
-        {
-            // LOG.info("Start compressing local vertices counts for remote mappers");
-            this.start_comm = System.currentTimeMillis();
-        }
+        this.start_comm = System.currentTimeMillis();
 
         int v_num = vert_list.length;
         int[] v_offset = new int[v_num + 1];
@@ -2287,13 +2090,22 @@ public class colorcount_HJ {
             LOG.info("Actual counts array size after compression: " + count_num + "; mem usage: " +
                     ((long)count_num*6));
             LOG.info("Save memory " + ((effective_size*4 - (long)count_num*6)/(double)(effective_size*4))*100.0f + "%");
-            this.time_comm += (System.currentTimeMillis() - this.start_comm);
         }
 
+        this.time_comm += (System.currentTimeMillis() - this.start_comm);
         return set;
     }
     
     
+    /**
+     * @brief calculate and printout counts number for each intermediate subtemplates
+     *
+     * @param sub_id
+     * @param threadIdx
+     * @param chunks
+     *
+     * @return 
+     */
     private void print_counts(int sub_id, int threadIdx, int[] chunks) throws BrokenBarrierException, InterruptedException
     {
 
@@ -2316,6 +2128,15 @@ public class colorcount_HJ {
         return this.time_comm;
     }
 
+    /**
+     * @brief update the received counts for each local vertex
+     *
+     * @param sub_id
+     * @param threadIdx
+     * @param chunks
+     *
+     * @return 
+     */
     private void regroup_update_all(int sub_id, int threadIdx, int[] chunks) throws BrokenBarrierException, InterruptedException
     {
         // single thread communication
@@ -2356,6 +2177,14 @@ public class colorcount_HJ {
             recycleMem();
     }   
 
+    /**
+     * @brief pre-computing the chunk ids and offsets in communication packets
+     *
+     * @param sub_id
+     * @param threadIdx
+     *
+     * @return 
+     */
     private void calculate_update_ids(int sub_id, int threadIdx) throws BrokenBarrierException, InterruptedException
     {
 
@@ -2511,7 +2340,7 @@ public class colorcount_HJ {
                     //update local received data from previous turn
                     update_comm_atomic(sub_id, this.pipeline_update_id,  threadIdx, this.chunks_pipeline);
 
-                    if (threadIdx== 1 && this.verbose)
+                    if (this.verbose && threadIdx== 1)
                         LOG.info("Pipeline "+i+" finish compute on data from mapper " + this.pipeline_update_id);
 
                 }
@@ -2525,7 +2354,6 @@ public class colorcount_HJ {
                         LOG.info("Start Pipeline Mem Recycle");
 
                     recycleMemPipeline(this.pipeline_update_id);
-
                     this.pipeline_update_id = this.pipeline_recv_id;
 
                     if (this.verbose)
@@ -2536,7 +2364,7 @@ public class colorcount_HJ {
             }
 
             // finish the udpating of comm data in the last pipeline step
-            if (threadIdx == 0 && this.verbose)
+            if (this.verbose && threadIdx == 0)
                 LOG.info("Update Last remain of pipeline");
 
             if (threadIdx != 0)
@@ -2546,7 +2374,6 @@ public class colorcount_HJ {
 
             if (threadIdx == 0)
                 recycleMem();
-                // recycleMemPipeline(this.pipeline_update_id);
 
             this.barrier.await();
 
@@ -2567,14 +2394,14 @@ public class colorcount_HJ {
         release_update_ids(threadIdx);
         this.barrier.await();
 
-        if (threadIdx == 0 && this.verbose)
+        if (this.verbose && threadIdx == 0)
             LOG.info("Finish pipeline for sub: " + sub_id);
    
     }
 
 
     /**
-     * @brief release the JVM memory 
+     * @brief release the JVM memory and harp comm table 
      *
      * @return 
      */
@@ -2619,6 +2446,12 @@ public class colorcount_HJ {
         System.gc();
     }
 
+    /**
+     * @brief release the JVM memory and harp comm table 
+     * after a pipeline step
+     *
+     * @return 
+     */
     private void recycleMemPipeline(int k)
     {
 
