@@ -27,6 +27,7 @@ import edu.iu.harp.partition.Partition;
 import edu.iu.harp.partition.Table;
 import edu.iu.harp.resource.IntArray;
 import edu.iu.harp.resource.DoubleArray;
+import edu.iu.harp.resource.LongArray;
 import edu.iu.harp.io.ConnPool;
 import edu.iu.harp.resource.ResourcePool;
 
@@ -216,10 +217,17 @@ public class colorcount_HJ {
     private long start_comp = 0;
     // avg computation time of all iterations
     private long time_comp = 0;
-    // record communication time, including time to prepare comm queues 
+
+    //global comm time, excluding the waiting time on local 
+    //computation
     private long start_comm = 0;
-    // avg communication time of all iterations
     private long time_comm = 0;
+
+    //local sync time, including comm time and waiting time because of 
+    //load imbalance
+    private long start_sync = 0;
+    private long time_sync = 0;
+
     private long start_misc = 0;
 
     private Context context;
@@ -1297,7 +1305,7 @@ public class colorcount_HJ {
         if (this.verbose)
             LOG.info("Start prepare comm for subtemplate: " + sub_id);
 
-        this.start_comm = System.currentTimeMillis();
+        this.start_sync = System.currentTimeMillis();
         this.start_misc = System.currentTimeMillis();
 
         //prepare the sending partitions
@@ -1389,7 +1397,19 @@ public class colorcount_HJ {
             this.update_queue_index[update_id][chunk_id] = scset.get_counts_index();
         }
 
-        this.time_comm += (System.currentTimeMillis() - this.start_comm);
+        // get the local sync time 
+        long cur_sync_time = (System.currentTimeMillis() - this.start_sync);
+        this.time_sync += cur_sync_time;
+        // all reduce to get the miminal sync time from all the mappers, set that to the comm time
+        Table<LongArray> comm_time_table = new Table<>(0, new LongArrMin());
+        LongArray comm_time_array = LongArray.create(1, false);
+        comm_time_array.get()[0] = cur_sync_time;
+        comm_time_table.addPartition(new Partition<>(0, comm_time_array));
+        this.mapper.allreduce("sc", "get-global-comm-time", comm_time_table);
+        this.time_comm += (comm_time_table.getPartition(0).get().get()[0]);
+
+        comm_time_array = null;
+        comm_time_table = null;
 
         if (this.mapper_num > 1)  
         {
@@ -1417,7 +1437,7 @@ public class colorcount_HJ {
         if (this.verbose)
             LOG.info("Pipeline Start prepare comm for subtemplate: " + sub_id + "; send to mapper: " + send_id);
 
-        this.start_comm = System.currentTimeMillis();
+        this.start_sync = System.currentTimeMillis();
         this.start_misc = System.currentTimeMillis();
 
         //prepare the sending partitions
@@ -1516,7 +1536,20 @@ public class colorcount_HJ {
             update_id_pipeline = update_id;
         }
 
-        this.time_comm += (System.currentTimeMillis() - this.start_comm);
+        // get the local sync time 
+        long cur_sync_time = (System.currentTimeMillis() - this.start_sync);
+        this.time_sync += cur_sync_time;
+        // all reduce to get the miminal sync time from all the mappers, set that to the comm time
+        Table<LongArray> comm_time_table = new Table<>(0, new LongArrMin());
+        LongArray comm_time_array = LongArray.create(1, false);
+        comm_time_array.get()[0] = cur_sync_time;
+        comm_time_table.addPartition(new Partition<>(0, comm_time_array));
+        this.mapper.allreduce("sc", "get-global-comm-time-atomic", comm_time_table);
+        this.time_comm += (comm_time_table.getPartition(0).get().get()[0]);
+
+        comm_time_array = null;
+        comm_time_table = null;
+
         return update_id_pipeline;
     }
 
@@ -2126,6 +2159,11 @@ public class colorcount_HJ {
     public long get_comm_time()
     {
         return this.time_comm;
+    }
+
+    public long get_sync_time()
+    {
+        return this.time_sync;
     }
 
     /**

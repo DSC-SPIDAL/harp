@@ -165,13 +165,38 @@ public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object
         full_count = graph_count.do_full_count(t, numIteration);
 
 		long computation_end = System.currentTimeMillis();
-        LOG.info("Total Counting time: " + (computation_end - computation_start) + "ms" + "; Avg per itr: " + 
-                ((computation_end - computation_start)/(double)numIteration) + "ms");
+        long local_count_time = (computation_end - computation_start);
+        long local_comm_time = graph_count.get_comm_time();
+        long local_sync_time = graph_count.get_sync_time();
 
-        LOG.info("Total comm time: " + graph_count.get_comm_time() + "ms" + "; Avg per itr: "
-                + (graph_count.get_comm_time()/(double)numIteration) + "ms" + "; Comm Ratio: " + 
-                (graph_count.get_comm_time()/(double)(computation_end - computation_start)*100.0f) + "%");
+        Table<DoubleArray> time_table = new Table<>(0, new DoubleArrPlus());
+        DoubleArray time_array = DoubleArray.create(3, false);
+        time_array.get()[0] = (double)local_count_time;
+        time_array.get()[1] = (double)local_comm_time;
+        time_array.get()[2] = (double)local_sync_time;
+
+        time_table.addPartition(new Partition<>(0, time_array));
+
+        this.allreduce("sc", "get-time", time_table);
+
+        double global_count_time = time_table.getPartition(0).get().get()[0]/this.getNumWorkers(); 
+        double global_comm_time = time_table.getPartition(0).get().get()[1]/this.getNumWorkers(); 
+        double global_sync_time = time_table.getPartition(0).get().get()[2]/this.getNumWorkers(); 
+
+        LOG.info("Total Counting time: " + global_count_time + " ms" + "; Avg per itr: " + 
+                (global_count_time/(double)numIteration) + " ms");
+         
+               
+        LOG.info("Total comm time: " + global_comm_time + " ms" + "; Avg per itr: "
+                + (global_comm_time/(double)numIteration) + " ms");
         
+        LOG.info("Total sync time: " + global_sync_time + " ms" + "; Avg per itr: "
+                + (global_sync_time/(double)numIteration) + " ms");
+
+        LOG.info("Time Ratio: Comm: " + (global_comm_time/global_count_time)*100 + " %; Waiting: " 
+                + (global_sync_time - global_comm_time)/global_count_time*100 + " %; Local Computation: "
+                + (global_count_time - global_sync_time)/global_count_time*100 + " %");
+
 
         // --------------- allreduce the final count from all mappers ---------------
         //
