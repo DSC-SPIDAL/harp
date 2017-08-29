@@ -71,6 +71,7 @@ CollectiveMapper<String, String, Object, Object>{
   private int vectorSize = 10;
   private int numMappers;
   private int numThreads;
+  private int harpThreads; 
 
     //to measure the time
   private long load_time = 0;
@@ -98,8 +99,13 @@ CollectiveMapper<String, String, Object, Object>{
       numThreads = configuration
       .getInt(Constants.NUM_THREADS, 10);
 
+      //always use the maximum hardware threads to load in data and convert data 
+      harpThreads = Runtime.getRuntime().availableProcessors();
+
       LOG.info("Num Mappers " + numMappers);
       LOG.info("Num Threads " + numThreads);
+      LOG.info("Num harp load data threads " + harpThreads);
+
       long endTime = System.currentTimeMillis();
       LOG.info(
         "config (ms) :" + (endTime - startTime));
@@ -153,7 +159,7 @@ CollectiveMapper<String, String, Object, Object>{
         ts1 = System.currentTimeMillis();
         // extracting points from csv files
         List<double[]> pointArrays = MOMUtil.loadPoints(trainingDataFiles, pointsPerFile,
-                vectorSize, conf, numThreads);
+                vectorSize, conf, harpThreads);
         ts2 = System.currentTimeMillis();
         load_time += (ts2 - ts1);
 

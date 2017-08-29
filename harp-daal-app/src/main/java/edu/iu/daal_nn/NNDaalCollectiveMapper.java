@@ -83,6 +83,7 @@ CollectiveMapper<String, String, Object, Object>{
     private int groundTruthvectorSize = 1;
     private int numMappers;
     private int numThreads;
+    private int harpThreads; 
     private Tensor featureTensorInit;
     private Tensor labelTensorInit;
     private int numWbPars;
@@ -133,8 +134,12 @@ CollectiveMapper<String, String, Object, Object>{
             testGroundTruthPath =
             configuration.get(Constants.TEST_TRUTH_PATH,"");
 
+            //always use the maximum hardware threads to load in data and convert data 
+            harpThreads = Runtime.getRuntime().availableProcessors();
+
             LOG.info("Num Mappers " + numMappers);
             LOG.info("Num Threads " + numThreads);
+            LOG.info("Num harp load data threads " + harpThreads);
             LOG.info("BatchSize " + batchSizeLocal);
             long endTime = System.currentTimeMillis();
             LOG.info(
@@ -188,7 +193,7 @@ CollectiveMapper<String, String, Object, Object>{
 
             // extracting points from csv files
             List<List<double[]>> pointArrays = NNUtil.loadPoints(trainingDataFiles, pointsPerFile,
-                vectorSize, conf, numThreads);
+                vectorSize, conf, harpThreads);
             List<double[]> featurePoints = new LinkedList<>();
             for(int i = 0; i<pointArrays.size(); i++){
                 featurePoints.add(pointArrays.get(i).get(0));

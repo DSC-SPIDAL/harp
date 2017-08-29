@@ -1,0 +1,43 @@
+/*
+ * Copyright 2013-2017 Indiana University
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package edu.iu.daal_subgraph;
+
+import edu.iu.harp.partition.PartitionCombiner;
+import edu.iu.harp.partition.PartitionStatus;
+import edu.iu.harp.resource.IntArray;
+
+public class IntArrMax
+  extends PartitionCombiner<IntArray> {
+
+  @Override
+  public PartitionStatus combine(IntArray curPar,
+    IntArray newPar) {
+    int[] longs1 = curPar.get();
+    int size1 = curPar.size();
+    int[] longs2 = newPar.get();
+    int size2 = newPar.size();
+    if (size1 != size2) {
+      return PartitionStatus.COMBINE_FAILED;
+    }
+    for (int i = 0; i < size1; i++) {
+      if (longs1[i] < longs2[i]) {
+        longs1[i] = longs2[i];
+      }
+    }
+    return PartitionStatus.COMBINED;
+  }
+}

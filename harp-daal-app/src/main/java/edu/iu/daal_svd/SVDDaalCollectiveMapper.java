@@ -82,6 +82,7 @@ public class SVDDaalCollectiveMapper
         private int vectorSize;
         private int numMappers;
         private int numThreads;
+        private int harpThreads; 
 
         //to measure the time
         private long load_time = 0;
@@ -136,11 +137,16 @@ public class SVDDaalCollectiveMapper
             configuration.getInt(Constants.NUM_THREADS,
                     10);
 
+        //always use the maximum hardware threads to load in data and convert data 
+        harpThreads = Runtime.getRuntime().availableProcessors();
+
         LOG.info("Points Per File " + pointsPerFile);
         // LOG.info("Num Centroids " + numCentroids);
         LOG.info("Vector Size " + vectorSize);
         LOG.info("Num Mappers " + numMappers);
         LOG.info("Num Threads " + numThreads);
+        LOG.info("Num harp load data threads " + harpThreads);
+
         long endTime = System.currentTimeMillis();
         LOG.info("config (ms) :"
                 + (endTime - startTime));
@@ -196,7 +202,7 @@ public class SVDDaalCollectiveMapper
             // Collect data on slave nodes
             List<double[]> pointArrays =
                 SVDUtil.loadPoints(fileNames, pointsPerFile,
-                        vectorSize, conf, numThreads);
+                        vectorSize, conf, harpThreads);
 
             ts2 = System.currentTimeMillis();
             load_time += (ts2 - ts1);
