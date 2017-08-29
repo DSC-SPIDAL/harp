@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.iu.subgraph;
+package edu.iu.daal_subgraph;
 
 import org.apache.log4j.Logger;
 import org.apache.commons.lang3.ArrayUtils;
@@ -154,7 +154,7 @@ public class colorcount_HJ {
 
     // ----------------------------- for communication  -----------------------------
     //harp communicator
-    private SCCollectiveMapper mapper;
+    private SCDaalCollectiveMapper mapper;
 
     private int mapper_num = 1;
     private int local_mapper_id;
@@ -252,7 +252,7 @@ public class colorcount_HJ {
      * @param do_vert
      * @param verb
      */
-    void init(SCCollectiveMapper mapper, Context context, Graph local_graph, int global_max_v_id, int thread_num, int core_num, int tpc, String affinity, boolean do_gdd, boolean do_vert, boolean verb)
+    void init(SCDaalCollectiveMapper mapper, Context context, Graph local_graph, int global_max_v_id, int thread_num, int core_num, int tpc, String affinity, boolean do_gdd, boolean do_vert, boolean verb)
     {
         // assign params
         this.mapper = mapper;
@@ -1397,17 +1397,16 @@ public class colorcount_HJ {
             this.update_queue_index[update_id][chunk_id] = scset.get_counts_index();
         }
 
-        // all reduce to get the miminal sync time from all the mappers, set that to the comm time
+        // get the local sync time 
         long cur_sync_time = (System.currentTimeMillis() - this.start_sync);
+        this.time_sync += cur_sync_time;
+        // all reduce to get the miminal sync time from all the mappers, set that to the comm time
         Table<LongArray> comm_time_table = new Table<>(0, new LongArrMin());
         LongArray comm_time_array = LongArray.create(1, false);
         comm_time_array.get()[0] = cur_sync_time;
         comm_time_table.addPartition(new Partition<>(0, comm_time_array));
         this.mapper.allreduce("sc", "get-global-comm-time", comm_time_table);
         this.time_comm += (comm_time_table.getPartition(0).get().get()[0]);
-
-        // get the local sync time 
-        this.time_sync += (cur_sync_time - comm_time_table.getPartition(0).get().get()[0]);
 
         comm_time_array = null;
         comm_time_table = null;
@@ -1537,17 +1536,16 @@ public class colorcount_HJ {
             update_id_pipeline = update_id;
         }
 
-        // all reduce to get the miminal sync time from all the mappers, set that to the comm time
+        // get the local sync time 
         long cur_sync_time = (System.currentTimeMillis() - this.start_sync);
+        this.time_sync += cur_sync_time;
+        // all reduce to get the miminal sync time from all the mappers, set that to the comm time
         Table<LongArray> comm_time_table = new Table<>(0, new LongArrMin());
         LongArray comm_time_array = LongArray.create(1, false);
         comm_time_array.get()[0] = cur_sync_time;
         comm_time_table.addPartition(new Partition<>(0, comm_time_array));
         this.mapper.allreduce("sc", "get-global-comm-time-atomic", comm_time_table);
         this.time_comm += (comm_time_table.getPartition(0).get().get()[0]);
-
-        // get the local sync time 
-        this.time_sync += (cur_sync_time - comm_time_table.getPartition(0).get().get()[0]);
 
         comm_time_array = null;
         comm_time_table = null;

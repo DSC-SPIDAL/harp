@@ -14,7 +14,15 @@
  * limitations under the License.
  */
 
-package edu.iu.subgraph;
+package edu.iu.daal_subgraph;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapred.CollectiveMapper;
+import java.io.*;
+import java.util.*;
 
 import edu.iu.dymoro.Rotator;
 import edu.iu.harp.example.IntArrPlus;
@@ -26,27 +34,28 @@ import edu.iu.harp.resource.DoubleArray;
 import edu.iu.harp.resource.LongArray;
 import edu.iu.harp.schdynamic.DynamicScheduler;
 import edu.iu.harp.schstatic.StaticScheduler;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FSDataInputStream;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapred.CollectiveMapper;
+import edu.iu.daal.*;
 
-import java.io.*;
-import java.util.*;
+// packages from Daal 
+import com.intel.daal.data_management.data.NumericTable;
+import com.intel.daal.data_management.data.HomogenNumericTable;
+// import com.intel.daal.data_management.data.HomogenBMNumericTable;
+import com.intel.daal.data_management.data.SOANumericTable;
+import com.intel.daal.data_management.data_source.DataSource;
+import com.intel.daal.data_management.data_source.FileDataSource;
+import com.intel.daal.services.DaalContext;
 
 /*
  * use key-object; in-memory
  * Instead of using allgather, using rotation
  */
-public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object, Object> {
+public class SCDaalCollectiveMapper  extends CollectiveMapper<String, String, Object, Object> {
 	private int numMappers;
 	private int numColor;
 	private int isom;
 	private int sizeTemplate;
 	private String templateFile;
 	private String wholeTemplateName;
-	// private ArrayList<SCSubJob> subjoblist;
 	private Random rand = new Random();
 	private int numMaxThreads;
 	private int numThreads;
@@ -58,7 +67,6 @@ public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object
     private boolean rotation_pipeline;
     private String affinity;
 	boolean useLocalMultiThread;
-	int numModelSlices; // number of slices for pipeline optimization
     private int vert_num_count =0;
     private int vert_num_count_total = 0;
     private int adj_len = 0;
@@ -82,24 +90,24 @@ public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object
     	LOG.info(templateFile);
 
     	numThreads =configuration.getInt(SCConstants.THREAD_NUM, 10);
-        numCores = configuration.getInt(SCConstants.CORE_NUM, 24);
-        affinity = configuration.get(SCConstants.THD_AFFINITY);
-        tpc = configuration.getInt(SCConstants.TPC, 2);
 
         //always use the maximum hardware threads to load in data and convert data 
         harpThreads = Runtime.getRuntime().availableProcessors();
         LOG.info("Num Threads " + numThreads);
         LOG.info("Num harp load data threads " + harpThreads);
 
+        numCores = configuration.getInt(SCConstants.CORE_NUM, 24);
+        affinity = configuration.get(SCConstants.THD_AFFINITY);
+        tpc = configuration.getInt(SCConstants.TPC, 2);
+
         send_array_limit = (configuration.getInt(SCConstants.SENDLIMIT, 250))*1024L*1024L;
-
         numIteration =configuration.getInt(SCConstants.NUM_ITERATION, 10);
-        LOG.info("Subgraph Counting Iteration: " + numIteration);
+        LOG.info("Harp-DAAL Subgraph Counting Iteration: " + numIteration);
 
-		numModelSlices = 2;
 	}
 
     protected void mapCollective( KeyValReader reader, Context context) throws IOException, InterruptedException {
+
 		LOG.info("Start collective mapper" );
 		this.logMemUsage();
 		LOG.info("Memory Used: "+ (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()));
@@ -116,8 +124,6 @@ public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object
 		
 	}
 
-    
-
     private void runSC(final LinkedList<String> vFilePaths,
             final Configuration configuration,
             final Context context) throws Exception {
@@ -125,23 +131,26 @@ public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object
 		Configuration conf = context.getConfiguration();
 
         // ------------------------- read in graph data -------------------------
+        // from HDFS to cpp data structure by using libhdfs
         //
 		LOG.info("Start read Graph Data");
 		long readGraphbegintime = System.currentTimeMillis();
 
+        // create graph data structure at daal side
         Graph g_part = new Graph();
 		readGraphDataMultiThread(conf, vFilePaths, g_part);
 
 		long readGraphendtime=System.currentTimeMillis();
 		LOG.info("Loaded local graph verts: " + g_part.num_vertices()+"; takes time: " + (readGraphendtime- readGraphbegintime)+"ms");
 
-		// this.logMemUsage();
-		// LOG.info("Memory Used: "+ (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()));
-		// logGCTime();
         // ------------------------- read in template data -------------------------
+        // from HDFS to cpp data structure by using libhdfs
+        // create graph data structure at daal side
         Graph t = new Graph();
         readTemplate(templateFile, context, t);
         LOG.info("Finish load templateFile, num_verts: " + t.num_vertices() + "; edges: " + t.num_edges());
+
+        // ------------------------- convert harp data to daal -------------------------
 
 		// ---------------  main computation ----------------------------------
         colorcount_HJ graph_count = new colorcount_HJ();
@@ -187,12 +196,12 @@ public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object
         LOG.info("Total comm time: " + global_comm_time + " ms" + "; Avg per itr: "
                 + (global_comm_time/(double)numIteration) + " ms");
         
-        LOG.info("Total sync waiting time: " + global_sync_time + " ms" + "; Avg per itr: "
+        LOG.info("Total sync time: " + global_sync_time + " ms" + "; Avg per itr: "
                 + (global_sync_time/(double)numIteration) + " ms");
 
         LOG.info("Time Ratio: Comm: " + (global_comm_time/global_count_time)*100 + " %; Waiting: " 
-                + (global_sync_time)/global_count_time*100 + " %; Local Computation: "
-                + (global_count_time - global_sync_time - global_comm_time)/global_count_time*100 + " %");
+                + (global_sync_time - global_comm_time)/global_count_time*100 + " %; Local Computation: "
+                + (global_count_time - global_sync_time)/global_count_time*100 + " %");
 
 
         // --------------- allreduce the final count from all mappers ---------------
@@ -247,7 +256,7 @@ public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object
      */
 	private void readGraphDataMultiThread( Configuration conf, List<String> vFilePaths, Graph g){
 
-			LOG.info("[BEGIN] SCCollectiveMapper.readGraphDataMultiThread" );
+			LOG.info("[BEGIN] SCDaalCollectiveMapper.readGraphDataMultiThread" );
 
 			Table<IntArray> graphData = new Table<>(0, new IntArrPlus());
 		    List<GraphLoadTask> tasks = new LinkedList<>();
@@ -278,7 +287,7 @@ public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object
 		    }
 
 		    compute.stop();
-		    LOG.info("[END] SCCollectiveMapper.readGraphDataMultiThread" );
+		    LOG.info("[END] SCDaalCollectiveMapper.readGraphDataMultiThread" );
 
             //get num vert and size of adjacent array
             vert_num_count = 0;
