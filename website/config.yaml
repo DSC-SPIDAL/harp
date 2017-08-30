@@ -26,6 +26,7 @@ params:
       small: /img/favicon-16x9.png
       large: /img/favicon-32x18.png
     logo: /img/logo54x54.png #logo.png
+    spn: /img/logo/harp-sponsor-log.jpg
     textlogo: /img/0-1-1.png #logo.png
     textLogoSmall: /img/0-1-2.png #logo.png
     tilekm: /img/tile_km.png
