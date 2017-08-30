@@ -20,6 +20,13 @@ html lang={{.Site.LanguageCode}}
         .row
           .col-xs-12.col-sm-12.col-md-12.col-lg-12
             .landing-feature-2.text-center
+              h1 Sponsors
+              br
+              img src={{.Site.Params.assets.spn}} width="20%"
+              br
+        .row
+          .col-xs-12.col-sm-12.col-md-12.col-lg-12
+            .landing-feature-2.text-center
               h1 Why Harp?
               br
               .row
