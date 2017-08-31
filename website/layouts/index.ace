@@ -20,13 +20,6 @@ html lang={{.Site.LanguageCode}}
         .row
           .col-xs-12.col-sm-12.col-md-12.col-lg-12
             .landing-feature-2.text-center
-              h1 Sponsors
-              br
-              img src={{.Site.Params.assets.spn}} width="20%"
-              br
-        .row
-          .col-xs-12.col-sm-12.col-md-12.col-lg-12
-            .landing-feature-2.text-center
               h1 Why Harp?
               br
               .row
@@ -142,6 +135,8 @@ html lang={{.Site.LanguageCode}}
                   a href=docs/applications/lda-cgs/ Latent Dirichlet Allocation (CGS)
                   br
                   a href=docs/applications/mf/ Matrix Factorization
+                  br
+                  a href=docs/applications/sahad/ Subgraph Counting 
                 .col-sm-2
                   h4 Harp-DAAL
                   a href=docs/harpdaal/harpdaal/ Overview
