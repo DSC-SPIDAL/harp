@@ -75,6 +75,8 @@ public class SCDaalLauncher extends Configured implements Tool {
         DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbbmalloc.so.2#libtbbmalloc.so.2"), configuration);
         DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbbmalloc.so#libtbbmalloc.so"), configuration);
         DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libiomp5.so#libiomp5.so"), configuration);
+        DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libhdfs.so#libhdfs.so"), configuration);
+        DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libhdfs.so.0.0.0#libhdfs.so.0.0.0"), configuration);
 
 		if (args.length < 13) {
 			System.err.println("Usage: edu.iu.subgraph.SCDaalLauncher" +
@@ -169,7 +171,7 @@ public class SCDaalLauncher extends Configured implements Tool {
         // mapreduce.map.collective.java.opts
         // -Xmx120000m -Xms120000m
         int xmx = (mem - 5000) > (mem * 0.9)
-            ? (mem - 5000) : (int) Math.ceil(mem * 0.9);
+            ? (mem - 5000) : (int) Math.ceil(mem * 0.5);
         int xmn = (int) Math.ceil(0.25 * xmx);
         jobConf.set(
                 "mapreduce.map.collective.java.opts",
