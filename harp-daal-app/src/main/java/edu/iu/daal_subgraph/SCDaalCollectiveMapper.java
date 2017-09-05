@@ -37,6 +37,7 @@ import edu.iu.harp.schstatic.StaticScheduler;
 import edu.iu.daal.*;
 
 // packages from Daal 
+import com.intel.daal.algorithms.subgraph.*;
 import com.intel.daal.data_management.data.NumericTable;
 import com.intel.daal.data_management.data.HomogenNumericTable;
 // import com.intel.daal.data_management.data.HomogenBMNumericTable;
@@ -74,6 +75,9 @@ public class SCDaalCollectiveMapper  extends CollectiveMapper<String, String, Ob
     private Graph t;
     private Table<IntArray> abs_ids_table;
     private int[] mapper_id_vertex; 
+
+    //DAAL related
+    private static DaalContext daal_Context = new DaalContext();
 
 	@Override
 	protected void setup(Context context) throws IOException, InterruptedException {
@@ -132,101 +136,113 @@ public class SCDaalCollectiveMapper  extends CollectiveMapper<String, String, Ob
 
         // ------------------------- read in graph data -------------------------
         // from HDFS to cpp data structure by using libhdfs
-        //
 		LOG.info("Start read Graph Data");
+
+        // Step 1: convert List<String> to int[] and pack them into HomogenNumericTable
+        // pass Homogen into input object and trigger input to load in data
+        HomogenNumericTable[] file_tables = convert_file_names(vFilePaths);
+        
+        Distri scAlgorithm = new Distri(daal_Context, Double.class, Method.defaultSC);
+        scAlgorithm.input.set(InputId.filenames, file_tables[0]);
+        scAlgorithm.input.set(InputId.fileoffset, file_tables[1]);
+
+        scAlgorithm.input.readGraph();
+
 		long readGraphbegintime = System.currentTimeMillis();
+		LOG.info("Finish convert file names file num: " + vFilePaths.size());
+
 
         // create graph data structure at daal side
-        Graph g_part = new Graph();
-		readGraphDataMultiThread(conf, vFilePaths, g_part);
+        // Graph g_part = new Graph();
+		// readGraphDataMultiThread(conf, vFilePaths, g_part);
 
 		long readGraphendtime=System.currentTimeMillis();
-		LOG.info("Loaded local graph verts: " + g_part.num_vertices()+"; takes time: " + (readGraphendtime- readGraphbegintime)+"ms");
+		// LOG.info("Loaded local graph verts: " + g_part.num_vertices()+"; takes time: " + (readGraphendtime- readGraphbegintime)+"ms");
 
         // ------------------------- read in template data -------------------------
         // from HDFS to cpp data structure by using libhdfs
         // create graph data structure at daal side
-        Graph t = new Graph();
-        readTemplate(templateFile, context, t);
-        LOG.info("Finish load templateFile, num_verts: " + t.num_vertices() + "; edges: " + t.num_edges());
-
-        // ------------------------- convert harp data to daal -------------------------
+		LOG.info("Start read Template Data");
+        // Graph t = new Graph();
+        // readTemplate(templateFile, context, t);
+        //
+        // LOG.info("Finish load templateFile, num_verts: " + t.num_vertices() + "; edges: " + t.num_edges());
 
 		// ---------------  main computation ----------------------------------
-        colorcount_HJ graph_count = new colorcount_HJ();
-        graph_count.init(this, context, g_part, max_v_id, numThreads, numCores, tpc, affinity, false, false, true);
+        // colorcount_HJ graph_count = new colorcount_HJ();
+        // graph_count.init(this, context, g_part, max_v_id, numThreads, numCores, tpc, affinity, false, false, true);
 
-        // ------------------- generate communication information -------------------
-        // send/recv num and verts 
-        if (this.getNumWorkers() > 1)
-        {
-            graph_count.init_comm(mapper_id_vertex, send_array_limit, rotation_pipeline);
-            LOG.info("Finish graph_count initialization");
-        }
-
-        // --------------------- start counting ---------------------
-		long computation_start = System.currentTimeMillis();
-
-        double full_count = 0.0;
-        full_count = graph_count.do_full_count(t, numIteration);
-
-		long computation_end = System.currentTimeMillis();
-        long local_count_time = (computation_end - computation_start);
-        long local_comm_time = graph_count.get_comm_time();
-        long local_sync_time = graph_count.get_sync_time();
-
-        Table<DoubleArray> time_table = new Table<>(0, new DoubleArrPlus());
-        DoubleArray time_array = DoubleArray.create(3, false);
-        time_array.get()[0] = (double)local_count_time;
-        time_array.get()[1] = (double)local_comm_time;
-        time_array.get()[2] = (double)local_sync_time;
-
-        time_table.addPartition(new Partition<>(0, time_array));
-
-        this.allreduce("sc", "get-time", time_table);
-
-        double global_count_time = time_table.getPartition(0).get().get()[0]/this.getNumWorkers(); 
-        double global_comm_time = time_table.getPartition(0).get().get()[1]/this.getNumWorkers(); 
-        double global_sync_time = time_table.getPartition(0).get().get()[2]/this.getNumWorkers(); 
-
-        LOG.info("Total Counting time: " + global_count_time + " ms" + "; Avg per itr: " + 
-                (global_count_time/(double)numIteration) + " ms");
-         
-               
-        LOG.info("Total comm time: " + global_comm_time + " ms" + "; Avg per itr: "
-                + (global_comm_time/(double)numIteration) + " ms");
-        
-        LOG.info("Total sync time: " + global_sync_time + " ms" + "; Avg per itr: "
-                + (global_sync_time/(double)numIteration) + " ms");
-
-        LOG.info("Time Ratio: Comm: " + (global_comm_time/global_count_time)*100 + " %; Waiting: " 
-                + (global_sync_time - global_comm_time)/global_count_time*100 + " %; Local Computation: "
-                + (global_count_time - global_sync_time)/global_count_time*100 + " %");
-
-
-        // --------------- allreduce the final count from all mappers ---------------
+        // // ------------------- generate communication information -------------------
+        // // send/recv num and verts 
+        // if (this.getNumWorkers() > 1)
+        // {
+        //     graph_count.init_comm(mapper_id_vertex, send_array_limit, rotation_pipeline);
+        //     LOG.info("Finish graph_count initialization");
+        // }
         //
-        Table<DoubleArray> final_count_table = new Table<>(0, new DoubleArrPlus());
-        DoubleArray final_count_array = DoubleArray.create(1, false);
-    
-        final_count_array.get()[0] = full_count;
-        final_count_table.addPartition(new Partition<>(0, final_count_array));
-    
-        this.allreduce("sc", "get-final-count", final_count_table);
-
-        full_count = final_count_table.getPartition(0).get().get()[0];
-
-        //formula to compute the prob 
-        int num_colors = t.num_vertices();
-        boolean calculate_automorphisms = true;
-
-        double prob_colorful = Util.factorial(num_colors) /
-                ( Util.factorial(num_colors - t.num_vertices()) * Math.pow(num_colors, t.num_vertices()) );
-
-        int num_auto = calculate_automorphisms ? Util.count_automorphisms(t): 1;
-        double final_count = Math.floor(full_count / (prob_colorful * num_auto) + 0.5);
-
-        LOG.info("Finish counting local color count: " + full_count + "; final alll count: " + final_count);
+        // // --------------------- start counting ---------------------
+		// long computation_start = System.currentTimeMillis();
+        //
+        // double full_count = 0.0;
+        // full_count = graph_count.do_full_count(t, numIteration);
+        //
+		// long computation_end = System.currentTimeMillis();
+        // long local_count_time = (computation_end - computation_start);
+        // long local_comm_time = graph_count.get_comm_time();
+        // long local_sync_time = graph_count.get_sync_time();
+        //
+        // Table<DoubleArray> time_table = new Table<>(0, new DoubleArrPlus());
+        // DoubleArray time_array = DoubleArray.create(3, false);
+        // time_array.get()[0] = (double)local_count_time;
+        // time_array.get()[1] = (double)local_comm_time;
+        // time_array.get()[2] = (double)local_sync_time;
+        //
+        // time_table.addPartition(new Partition<>(0, time_array));
+        //
+        // this.allreduce("sc", "get-time", time_table);
+        //
+        // double global_count_time = time_table.getPartition(0).get().get()[0]/this.getNumWorkers(); 
+        // double global_comm_time = time_table.getPartition(0).get().get()[1]/this.getNumWorkers(); 
+        // double global_sync_time = time_table.getPartition(0).get().get()[2]/this.getNumWorkers(); 
+        //
+        // LOG.info("Total Counting time: " + global_count_time + " ms" + "; Avg per itr: " + 
+        //         (global_count_time/(double)numIteration) + " ms");
+        //  
+        //        
+        // LOG.info("Total comm time: " + global_comm_time + " ms" + "; Avg per itr: "
+        //         + (global_comm_time/(double)numIteration) + " ms");
+        //
+        // LOG.info("Total sync time: " + global_sync_time + " ms" + "; Avg per itr: "
+        //         + (global_sync_time/(double)numIteration) + " ms");
+        //
+        // LOG.info("Time Ratio: Comm: " + (global_comm_time/global_count_time)*100 + " %; Waiting: " 
+        //         + (global_sync_time - global_comm_time)/global_count_time*100 + " %; Local Computation: "
+        //         + (global_count_time - global_sync_time)/global_count_time*100 + " %");
+        //
+        //
+        // // --------------- allreduce the final count from all mappers ---------------
+        // //
+        // Table<DoubleArray> final_count_table = new Table<>(0, new DoubleArrPlus());
+        // DoubleArray final_count_array = DoubleArray.create(1, false);
+        //
+        // final_count_array.get()[0] = full_count;
+        // final_count_table.addPartition(new Partition<>(0, final_count_array));
+        //
+        // this.allreduce("sc", "get-final-count", final_count_table);
+        //
+        // full_count = final_count_table.getPartition(0).get().get()[0];
+        //
+        // //formula to compute the prob 
+        // int num_colors = t.num_vertices();
+        // boolean calculate_automorphisms = true;
+        //
+        // double prob_colorful = Util.factorial(num_colors) /
+        //         ( Util.factorial(num_colors - t.num_vertices()) * Math.pow(num_colors, t.num_vertices()) );
+        //
+        // int num_auto = calculate_automorphisms ? Util.count_automorphisms(t): 1;
+        // double final_count = Math.floor(full_count / (prob_colorful * num_auto) + 0.5);
+        //
+        // LOG.info("Finish counting local color count: " + full_count + "; final alll count: " + final_count);
 
 		//-------------------------------------------------------------------
         //
@@ -357,7 +373,8 @@ public class SCDaalCollectiveMapper  extends CollectiveMapper<String, String, Ob
      *
      * @return 
      */
-    private void readTemplate(String templateFile, Context context, Graph t) {
+    private void readTemplate(String templateFile, Context context, Graph t) 
+    {
 
         FSDataInputStream in = null;
         BufferedReader fReader = null;
@@ -430,5 +447,55 @@ public class SCDaalCollectiveMapper  extends CollectiveMapper<String, String, Ob
 
     }
 
+    /**
+     * @brief convert vertice partitioned filenames into DAAL numericTable
+     * First HomogenNumericTable stores the chars of file names
+     * Second HomogenNumericTable stores the offset of filenames in the 
+     * first HomogenNumericTable
+     *
+     * @param vFilePaths
+     *
+     * @return 
+     */
+    private HomogenNumericTable[] convert_file_names(LinkedList<String> vFilePaths)
+    {
+        LOG.info("Create file array");
+        int[][] file_int = new int[vFilePaths.size()][];
+        int[] file_offset = new int[vFilePaths.size()+1];
+
+        int itr = 0;
+        file_offset[itr] = 0;
+        for (String filename : vFilePaths) 
+        {
+            // LOG.info("FileName: " + filename);
+            char[] file_char = filename.toCharArray();
+            int[] ascii_val_array = new int[file_char.length];
+            for(int i=0;i<file_char.length;i++)
+            {
+                ascii_val_array[i] = (int)(file_char[i]);
+                // System.out.print(ascii_val_array[i]+" ");  
+            }
+
+            // System.out.println(" ");  
+
+            file_int[itr] = ascii_val_array;
+            file_offset[itr+1] = file_offset[itr] + file_char.length;
+            itr++;
+        }
+
+        int[] ascii_array_total = new int[file_offset[vFilePaths.size()]];
+        for(int i=0;i<vFilePaths.size();i++)
+           System.arraycopy(file_int[i], 0, ascii_array_total, file_offset[i], file_offset[i+1]-file_offset[i]); 
+
+        LOG.info("Finish file array convert");
+
+        HomogenNumericTable[] file_tables = new HomogenNumericTable[2];
+        file_tables[0] = new HomogenNumericTable(daal_Context, ascii_array_total, ascii_array_total.length, 1);
+        file_tables[1] = new HomogenNumericTable(daal_Context, file_offset, file_offset.length, 1);
+
+        LOG.info("Finish filename daal table creation");
+        return file_tables;
+
+    }
 	
 }
