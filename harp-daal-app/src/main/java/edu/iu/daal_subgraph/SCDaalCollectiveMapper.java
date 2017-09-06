@@ -141,21 +141,73 @@ public class SCDaalCollectiveMapper  extends CollectiveMapper<String, String, Ob
         // Step 1: convert List<String> to int[] and pack them into HomogenNumericTable
         // pass Homogen into input object and trigger input to load in data
         HomogenNumericTable[] file_tables = convert_file_names(vFilePaths);
-        
         Distri scAlgorithm = new Distri(daal_Context, Double.class, Method.defaultSC);
         scAlgorithm.input.set(InputId.filenames, file_tables[0]);
         scAlgorithm.input.set(InputId.fileoffset, file_tables[1]);
 
         scAlgorithm.input.readGraph();
 
-		long readGraphbegintime = System.currentTimeMillis();
+        int localVNum = scAlgorithm.input.getLocalVNum();
+        int localMaxV = scAlgorithm.input.getLocalMaxV();
+        int localADJlen = scAlgorithm.input.getLocalADJLen(); 
+
+        LOG.info("vert num count local: " + localVNum + "; local max v id: " + localMaxV + "; total local nbrs num: " + localADJlen);
+
+        //allreduce to get the global max v_id 
+        Table<IntArray> table_max_id = new Table<>(0, new IntArrMax());
+        IntArray array_max_id = IntArray.create(1, false);
+        array_max_id.get()[0] = localMaxV;
+        table_max_id.addPartition(new Partition<>(0, array_max_id));
+        this.allreduce("sc", "get-max-v-id", table_max_id);
+        max_v_id = table_max_id.getPartition(0).get().get()[0];
+        //load MaxV into daal obj
+        scAlgorithm.input.setGlobalMaxV(max_v_id);
+        LOG.info("Max vertex id of full graph: " + max_v_id);
+        table_max_id.release();
+        table_max_id = null;
+
+        int[] local_abs_ids = new int[localVNum];
+        HomogenNumericTable local_abs_ids_daal = new HomogenNumericTable(daal_Context, local_abs_ids, localVNum, 1);
+        scAlgorithm.input.set(InputId.localV, local_abs_ids_daal);
+
+        //debug test daal table vals
+        // for(int i=0;i<10;i++)
+            // LOG.info("Test table before: " + local_abs_ids[i]);
+
+        //start init daal graph structure
+        scAlgorithm.input.initGraph();
+
+        // for(int i=0;i<10;i++)
+            // LOG.info("Test table after: " + local_abs_ids[i]);
+
+        //communication allgather to get all global ids
+        abs_ids_table = new Table<>(0, new IntArrPlus());
+        IntArray abs_ids_array = new IntArray(local_abs_ids, 0, localVNum);
+        abs_ids_table.addPartition(new Partition<>(this.getSelfID(), abs_ids_array));
+
+        this.allgather("sc", "collect all abs ids", abs_ids_table);
+
+        //create an label array to store mapper ids info
+        mapper_id_vertex = new int[max_v_id+1];
+        for(int p=0; p<this.getNumWorkers();p++)
+        {
+            // mapper_vertex_array stores abs ids from each mapper
+            int[] mapper_vertex_array = abs_ids_table.getPartition(p).get().get();
+            for(int q=0;q<mapper_vertex_array.length;q++)
+                mapper_id_vertex[mapper_vertex_array[q]] = p;
+        }
+
+        LOG.info("Finish creating mapper-vertex mapping array");
+        abs_ids_table = null;
+
+        long readGraphbegintime = System.currentTimeMillis();
 		LOG.info("Finish convert file names file num: " + vFilePaths.size());
 
-
+        //clear and free allocated mem
+        scAlgorithm.input.freeInput();
         // create graph data structure at daal side
         // Graph g_part = new Graph();
 		// readGraphDataMultiThread(conf, vFilePaths, g_part);
-
 		long readGraphendtime=System.currentTimeMillis();
 		// LOG.info("Loaded local graph verts: " + g_part.num_vertices()+"; takes time: " + (readGraphendtime- readGraphbegintime)+"ms");
 

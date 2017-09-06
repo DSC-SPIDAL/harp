@@ -73,6 +73,10 @@ public class Graph {
         //increase order
         IntArrays.quickSort(vertex_ids, 0, this.num_verts);
 
+        //debug
+        // for(int i=this.num_verts-1;i>this.num_verts-11;i--)
+            // LOG.info("vert ids sort: " + vertex_ids[i]);
+
         int[] temp_deg_list = new int[this.num_verts];
         max_deg = 0;
 
