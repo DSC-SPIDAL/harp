@@ -61,6 +61,16 @@ import java.io.IOException;
 // for hadoop assert
 import static org.junit.Assert.*; 
 
+// packages from Daal 
+import com.intel.daal.algorithms.subgraph.*;
+import com.intel.daal.data_management.data.NumericTable;
+import com.intel.daal.data_management.data.HomogenNumericTable;
+// import com.intel.daal.data_management.data.HomogenBMNumericTable;
+import com.intel.daal.data_management.data.SOANumericTable;
+import com.intel.daal.data_management.data_source.DataSource;
+import com.intel.daal.data_management.data_source.FileDataSource;
+import com.intel.daal.services.DaalContext;
+
 /**
  * @brief A colorcount method that implements 
  * a BSP-LRT style 
@@ -211,6 +221,11 @@ public class colorcount_HJ {
     boolean do_graphlet_freq = false;
     boolean do_vert_output = false;
 
+    // -------------------------------- for daal --------------------------------
+    private Distri scAlgorithm;
+    private PartialResult model_data;
+    private static DaalContext daal_Context = new DaalContext();
+
     // -------------------------------- Misc --------------------------------
     
     // record computation time 
@@ -252,12 +267,13 @@ public class colorcount_HJ {
      * @param do_vert
      * @param verb
      */
-    void init(SCDaalCollectiveMapper mapper, Context context, Graph local_graph, int global_max_v_id, int thread_num, int core_num, int tpc, String affinity, boolean do_gdd, boolean do_vert, boolean verb)
+    void init(SCDaalCollectiveMapper mapper, Context context, Distri scAlgorithm, int global_max_v_id, int thread_num, int core_num, int tpc, String affinity, boolean do_gdd, boolean do_vert, boolean verb)
     {
         // assign params
         this.mapper = mapper;
         this.context = context;
-        this.g = local_graph;
+        // this.g = local_graph;
+        this.scAlgorithm = scAlgorithm;
         this.max_abs_id = global_max_v_id;
         this.thread_num = thread_num;
         this.core_num = core_num;
@@ -268,22 +284,23 @@ public class colorcount_HJ {
         this.verbose = verb;
 
         // init members 
-        this.labels_g = this.g.labels;
-        this.labeled = this.g.labeled;
-        this.num_verts_graph = this.g.num_vertices();
+        // this.labels_g = this.g.labels;
+        // this.labeled = this.g.labeled;
+        // this.num_verts_graph = this.g.num_vertices();
+        this.num_verts_graph = this.scAlgorithm.input.getLocalVNum();
         this.colors_g = new int[this.num_verts_graph];
 
-        this.cc_ato = new double[this.thread_num];
-        this.count_local_root = new double[this.thread_num];
-        this.count_comm_root = new double[this.thread_num];
+        // init model data (dynamic table, count table, etc)
+        this.model_data = new PartialResult(daal_Context);
+        // put codes to init model data
+        this.scAlgorithm.setPartialResult(this.model_data);
 
-        this.dt = new dynamic_table_array();
-        this.barrier = new CyclicBarrier(this.thread_num);
+        // this.cc_ato = new double[this.thread_num];
+        // this.count_local_root = new double[this.thread_num];
+        // this.count_comm_root = new double[this.thread_num];
 
-        if( do_graphlet_freq || do_vert_output){
-            //ToDo for graphlet freq and vert output
-        }
-
+        // this.dt = new dynamic_table_array();
+        // this.barrier = new CyclicBarrier(this.thread_num);
     }
 
     /**

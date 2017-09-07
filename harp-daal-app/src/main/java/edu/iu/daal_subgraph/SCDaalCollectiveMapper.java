@@ -137,10 +137,11 @@ public class SCDaalCollectiveMapper  extends CollectiveMapper<String, String, Ob
         // ------------------------- read in graph data -------------------------
         // from HDFS to cpp data structure by using libhdfs
 		LOG.info("Start read Graph Data");
+        long readGraphbegintime = System.currentTimeMillis();
 
         // Step 1: convert List<String> to int[] and pack them into HomogenNumericTable
         // pass Homogen into input object and trigger input to load in data
-        HomogenNumericTable[] file_tables = convert_file_names(vFilePaths);
+        HomogenNumericTable[] file_tables = load_data_names(vFilePaths);
         Distri scAlgorithm = new Distri(daal_Context, Double.class, Method.defaultSC);
         scAlgorithm.input.set(InputId.filenames, file_tables[0]);
         scAlgorithm.input.set(InputId.fileoffset, file_tables[1]);
@@ -197,32 +198,32 @@ public class SCDaalCollectiveMapper  extends CollectiveMapper<String, String, Ob
                 mapper_id_vertex[mapper_vertex_array[q]] = p;
         }
 
-        LOG.info("Finish creating mapper-vertex mapping array");
+        // LOG.info("Finish creating mapper-vertex mapping array");
         abs_ids_table = null;
 
-        long readGraphbegintime = System.currentTimeMillis();
-		LOG.info("Finish convert file names file num: " + vFilePaths.size());
-
         //clear and free allocated mem
-        scAlgorithm.input.freeInput();
-        // create graph data structure at daal side
-        // Graph g_part = new Graph();
-		// readGraphDataMultiThread(conf, vFilePaths, g_part);
 		long readGraphendtime=System.currentTimeMillis();
-		// LOG.info("Loaded local graph verts: " + g_part.num_vertices()+"; takes time: " + (readGraphendtime- readGraphbegintime)+"ms");
+        LOG.info("Read in Graph Data with time: " + (readGraphendtime - readGraphbegintime) + " ms");
 
         // ------------------------- read in template data -------------------------
         // from HDFS to cpp data structure by using libhdfs
         // create graph data structure at daal side
 		LOG.info("Start read Template Data");
-        // Graph t = new Graph();
-        // readTemplate(templateFile, context, t);
-        //
-        // LOG.info("Finish load templateFile, num_verts: " + t.num_vertices() + "; edges: " + t.num_edges());
+        LinkedList<String> tFilesPaths = new LinkedList<>();
+        tFilesPaths.add(templateFile);
+
+        HomogenNumericTable[] t_tables = load_data_names(tFilesPaths);
+        scAlgorithm.input.set(InputId.tfilenames, t_tables[0]);
+        scAlgorithm.input.set(InputId.tfileoffset, t_tables[1]);
+
+        scAlgorithm.input.readTemplate();
+        scAlgorithm.input.initTemplate();
+
+        LOG.info("Finish load templateFile, num_verts: " + scAlgorithm.input.getTVNum() + "; edges: " + scAlgorithm.input.getTENum());
 
 		// ---------------  main computation ----------------------------------
-        // colorcount_HJ graph_count = new colorcount_HJ();
-        // graph_count.init(this, context, g_part, max_v_id, numThreads, numCores, tpc, affinity, false, false, true);
+        colorcount_HJ graph_count = new colorcount_HJ();
+        graph_count.init(this, context, scAlgorithm, max_v_id, numThreads, numCores, tpc, affinity, false, false, true);
 
         // // ------------------- generate communication information -------------------
         // // send/recv num and verts 
@@ -297,7 +298,7 @@ public class SCDaalCollectiveMapper  extends CollectiveMapper<String, String, Ob
         // LOG.info("Finish counting local color count: " + full_count + "; final alll count: " + final_count);
 
 		//-------------------------------------------------------------------
-        //
+        scAlgorithm.input.freeInput();
     }
 
     private LinkedList<String>
@@ -436,8 +437,10 @@ public class SCDaalCollectiveMapper  extends CollectiveMapper<String, String, Ob
 		    Configuration conf = context.getConfiguration();
 
 
+            LOG.info("Raw Template url: " + templateFile);
             Path path = new Path(templateFile);
             String template_file = path.toUri().toString();
+            LOG.info("Template url: " + template_file);
 
             Path template_input = new Path(template_file);
 
@@ -509,9 +512,9 @@ public class SCDaalCollectiveMapper  extends CollectiveMapper<String, String, Ob
      *
      * @return 
      */
-    private HomogenNumericTable[] convert_file_names(LinkedList<String> vFilePaths)
+    private HomogenNumericTable[] load_data_names(LinkedList<String> vFilePaths)
     {
-        LOG.info("Create file array");
+        // LOG.info("Create file array");
         int[][] file_int = new int[vFilePaths.size()][];
         int[] file_offset = new int[vFilePaths.size()+1];
 
@@ -519,7 +522,7 @@ public class SCDaalCollectiveMapper  extends CollectiveMapper<String, String, Ob
         file_offset[itr] = 0;
         for (String filename : vFilePaths) 
         {
-            // LOG.info("FileName: " + filename);
+            LOG.info("FileName: " + filename);
             char[] file_char = filename.toCharArray();
             int[] ascii_val_array = new int[file_char.length];
             for(int i=0;i<file_char.length;i++)
@@ -550,4 +553,5 @@ public class SCDaalCollectiveMapper  extends CollectiveMapper<String, String, Ob
 
     }
 	
+    
 }
