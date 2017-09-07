@@ -133,6 +133,7 @@ public class partitioner {
     }
 
     boolean sub_count_needed(int s){ return count_needed[s];}
+
     Graph[] get_subtemplates(){return subtemplates; }
     int get_subtemplate_count(){ return subtemplate_count; }
     int[] get_labels(int s){
