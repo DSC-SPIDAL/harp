@@ -233,11 +233,10 @@ public class SCDaalCollectiveMapper  extends CollectiveMapper<String, String, Ob
         //     LOG.info("Finish graph_count initialization");
         // }
         //
-        // // --------------------- start counting ---------------------
-		// long computation_start = System.currentTimeMillis();
-        //
-        // double full_count = 0.0;
-        // full_count = graph_count.do_full_count(t, numIteration);
+        // --------------------- start counting ---------------------
+		long computation_start = System.currentTimeMillis();
+        double full_count = 0.0;
+        full_count = graph_count.do_full_count(numIteration);
         //
 		// long computation_end = System.currentTimeMillis();
         // long local_count_time = (computation_end - computation_start);

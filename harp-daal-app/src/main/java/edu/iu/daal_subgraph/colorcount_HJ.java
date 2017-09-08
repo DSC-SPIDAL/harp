@@ -295,10 +295,13 @@ public class colorcount_HJ {
         // put codes to init model data
         this.scAlgorithm.setPartialResult(this.model_data);
 
+        // initialized in daal side PartialResult model data
         // this.cc_ato = new double[this.thread_num];
         // this.count_local_root = new double[this.thread_num];
         // this.count_comm_root = new double[this.thread_num];
-
+        //
+        
+        // dt initialized at daal side input 
         // this.dt = new dynamic_table_array();
         // this.barrier = new CyclicBarrier(this.thread_num);
     }
@@ -309,124 +312,124 @@ public class colorcount_HJ {
      * @param mapper_id_vertex
      * @param mapper
      */
-    void init_comm(int[] mapper_id_vertex, long send_array_limit, boolean rotation_pipeline) 
-    {
-        
-        //create abs mapping structure
-        this.abs_v_to_mapper = mapper_id_vertex;
-        this.send_array_limit = send_array_limit;
-        this.rotation_pipeline = rotation_pipeline;
-
-        // init members
-        this.mapper_num = this.mapper.getNumWorkers();
-        this.local_mapper_id = this.mapper.getSelfID();
-        this.abs_v_to_queue = new int[this.max_abs_id + 1];
-        // this.chunks_mapper = divide_chunks(this.mapper_num, this.thread_num);
-
-        // init comm mappers
-        this.comm_mapper_vertex = new HashSet[this.mapper_num];
-        for(int i=0; i<this.mapper_num; i++)
-            this.comm_mapper_vertex[i] = new HashSet<>(); 
-
-        //loop over all the adj of local graph verts
-        //adj_array stores abs id 
-        int[] adj_array = this.g.adjacencies();
-        for(int i=0;i<adj_array.length;i++)
-        {
-            int adj_abs_id = adj_array[i];
-            int mapper_id = this.abs_v_to_mapper[adj_abs_id];
-            this.comm_mapper_vertex[mapper_id].add(new Integer(adj_abs_id));
-        }
-
-        this.update_map = new int[this.num_verts_graph][];
-        for(int i=0;i<this.num_verts_graph;i++)
-            this.update_map[i] = new int[this.g.out_degree(i)];
-
-        this.update_map_size = new int[this.num_verts_graph];
-        this.update_queue_pos = new int[this.mapper_num][][];
-        this.update_queue_counts = new float[this.mapper_num][][];
-        this.update_queue_index = new short[this.mapper_num][][];
-        this.update_mapper_len = new int[this.mapper_num];
-
-
-        //convert set to arraylist
-        this.comm_vertex_table = new Table<>(0, new IntArrPlus());
-        this.send_vertex_table = new Table<>(0, new IntArrPlus());
-
-        this.compress_cache_array = new float[this.num_verts_graph][];
-        this.compress_cache_index = new short[this.num_verts_graph][];
-        this.compress_cache_len = new int[this.num_verts_graph];
-
-        this.map_ids_cache_pip = new int[this.num_verts_graph][];
-        this.chunk_ids_cache_pip = new int[this.num_verts_graph][];
-        this.chunk_internal_offsets_cache_pip = new int[this.num_verts_graph][];
-
-        // prepareing send/recv information
-        // the requested adj_abs_v queues will be sent to each mapper
-        for(int i=0;i<this.mapper_num;i++)
-        {
-            // i is the mapper id from which local_mapper demands adj data
-            if ( (i != this.local_mapper_id)  &&  this.comm_mapper_vertex[i].size() > 0 )
-            {
-
-                //create partition id, the upper 16 bits stores requested id
-                //the lower 16 bits stores sender id (local id)
-                int comm_id = ( (i << 16) | this.local_mapper_id );
-
-                // retrieve communicated adj_abs_id
-                ArrayList<Integer> temp_array = new ArrayList<>(comm_mapper_vertex[i]);
-                int[] temp_array_primitive = ArrayUtils.toPrimitive(temp_array.toArray(new Integer[temp_array.size()]));
-
-                // recored the length of total vertices array received from other mappers
-                this.update_mapper_len[i] = temp_array_primitive.length;
-
-                //create mapping from adj_abs_id to relative t in update offset queue
-                for(int j = 0; j< temp_array_primitive.length; j++)
-                    this.abs_v_to_queue[temp_array_primitive[j]] = j;
-
-                IntArray comm_array = new IntArray(temp_array_primitive, 0, temp_array_primitive.length);
-                //table to communicate with other mappers
-                this.comm_vertex_table.addPartition(new Partition<>(comm_id, comm_array));
-            }
-
-        }
-
-        if (this.verbose)
-            LOG.info("Start regroup comm_vertex_table");
-
-        this.mapper.regroup("sc", "regroup-send-recv-vertex", this.comm_vertex_table, new SCPartitioner(this.mapper_num));
-        // the name of barrier should not be the same as that of regroup
-        // otherwise may cause a deadlock
-        this.mapper.barrier("sc", "regroup-send-recv-sync");
-
-        if (this.verbose)
-            LOG.info("Finish regroup comm_vertex_table");
-
-        // pack the received requested adj_v_id information into send queues
-        for(int comm_id : this.comm_vertex_table.getPartitionIDs())
-        {
-            int dst_mapper_id = comm_id & ( (1 << 16) -1 );
-            // this shall equal to local_mapper_id
-            int src_mapper_id = comm_id >>> 16;
-            //create send table
-            send_vertex_table.addPartition(new Partition(dst_mapper_id, comm_vertex_table.getPartition(comm_id).get()));
-
-            if (this.verbose)
-            {
-                //check src id add assertion
-                assertEquals("comm_vertex_table sender not matched ", this.local_mapper_id, src_mapper_id);
-                LOG.info("Send from mapper: " + src_mapper_id + " to mapper: " + dst_mapper_id + "; partition size: " +
-                        comm_vertex_table.getPartition(comm_id).get().get().length);
-            }
-            
-        }
-
-        //release memory
-        for(int i=0; i<this.mapper_num; i++)
-            this.comm_mapper_vertex[i] = null; 
-
-        this.comm_mapper_vertex = null;
-    }
+    // void init_comm(int[] mapper_id_vertex, long send_array_limit, boolean rotation_pipeline) 
+    // {
+    //     
+    //     //create abs mapping structure
+    //     this.abs_v_to_mapper = mapper_id_vertex;
+    //     this.send_array_limit = send_array_limit;
+    //     this.rotation_pipeline = rotation_pipeline;
+    //
+    //     // init members
+    //     this.mapper_num = this.mapper.getNumWorkers();
+    //     this.local_mapper_id = this.mapper.getSelfID();
+    //     this.abs_v_to_queue = new int[this.max_abs_id + 1];
+    //     // this.chunks_mapper = divide_chunks(this.mapper_num, this.thread_num);
+    //
+    //     // init comm mappers
+    //     this.comm_mapper_vertex = new HashSet[this.mapper_num];
+    //     for(int i=0; i<this.mapper_num; i++)
+    //         this.comm_mapper_vertex[i] = new HashSet<>(); 
+    //
+    //     //loop over all the adj of local graph verts
+    //     //adj_array stores abs id 
+    //     int[] adj_array = this.g.adjacencies();
+    //     for(int i=0;i<adj_array.length;i++)
+    //     {
+    //         int adj_abs_id = adj_array[i];
+    //         int mapper_id = this.abs_v_to_mapper[adj_abs_id];
+    //         this.comm_mapper_vertex[mapper_id].add(new Integer(adj_abs_id));
+    //     }
+    //
+    //     this.update_map = new int[this.num_verts_graph][];
+    //     for(int i=0;i<this.num_verts_graph;i++)
+    //         this.update_map[i] = new int[this.g.out_degree(i)];
+    //
+    //     this.update_map_size = new int[this.num_verts_graph];
+    //     this.update_queue_pos = new int[this.mapper_num][][];
+    //     this.update_queue_counts = new float[this.mapper_num][][];
+    //     this.update_queue_index = new short[this.mapper_num][][];
+    //     this.update_mapper_len = new int[this.mapper_num];
+    //
+    //
+    //     //convert set to arraylist
+    //     this.comm_vertex_table = new Table<>(0, new IntArrPlus());
+    //     this.send_vertex_table = new Table<>(0, new IntArrPlus());
+    //
+    //     this.compress_cache_array = new float[this.num_verts_graph][];
+    //     this.compress_cache_index = new short[this.num_verts_graph][];
+    //     this.compress_cache_len = new int[this.num_verts_graph];
+    //
+    //     this.map_ids_cache_pip = new int[this.num_verts_graph][];
+    //     this.chunk_ids_cache_pip = new int[this.num_verts_graph][];
+    //     this.chunk_internal_offsets_cache_pip = new int[this.num_verts_graph][];
+    //
+    //     // prepareing send/recv information
+    //     // the requested adj_abs_v queues will be sent to each mapper
+    //     for(int i=0;i<this.mapper_num;i++)
+    //     {
+    //         // i is the mapper id from which local_mapper demands adj data
+    //         if ( (i != this.local_mapper_id)  &&  this.comm_mapper_vertex[i].size() > 0 )
+    //         {
+    //
+    //             //create partition id, the upper 16 bits stores requested id
+    //             //the lower 16 bits stores sender id (local id)
+    //             int comm_id = ( (i << 16) | this.local_mapper_id );
+    //
+    //             // retrieve communicated adj_abs_id
+    //             ArrayList<Integer> temp_array = new ArrayList<>(comm_mapper_vertex[i]);
+    //             int[] temp_array_primitive = ArrayUtils.toPrimitive(temp_array.toArray(new Integer[temp_array.size()]));
+    //
+    //             // recored the length of total vertices array received from other mappers
+    //             this.update_mapper_len[i] = temp_array_primitive.length;
+    //
+    //             //create mapping from adj_abs_id to relative t in update offset queue
+    //             for(int j = 0; j< temp_array_primitive.length; j++)
+    //                 this.abs_v_to_queue[temp_array_primitive[j]] = j;
+    //
+    //             IntArray comm_array = new IntArray(temp_array_primitive, 0, temp_array_primitive.length);
+    //             //table to communicate with other mappers
+    //             this.comm_vertex_table.addPartition(new Partition<>(comm_id, comm_array));
+    //         }
+    //
+    //     }
+    //
+    //     if (this.verbose)
+    //         LOG.info("Start regroup comm_vertex_table");
+    //
+    //     this.mapper.regroup("sc", "regroup-send-recv-vertex", this.comm_vertex_table, new SCPartitioner(this.mapper_num));
+    //     // the name of barrier should not be the same as that of regroup
+    //     // otherwise may cause a deadlock
+    //     this.mapper.barrier("sc", "regroup-send-recv-sync");
+    //
+    //     if (this.verbose)
+    //         LOG.info("Finish regroup comm_vertex_table");
+    //
+    //     // pack the received requested adj_v_id information into send queues
+    //     for(int comm_id : this.comm_vertex_table.getPartitionIDs())
+    //     {
+    //         int dst_mapper_id = comm_id & ( (1 << 16) -1 );
+    //         // this shall equal to local_mapper_id
+    //         int src_mapper_id = comm_id >>> 16;
+    //         //create send table
+    //         send_vertex_table.addPartition(new Partition(dst_mapper_id, comm_vertex_table.getPartition(comm_id).get()));
+    //
+    //         if (this.verbose)
+    //         {
+    //             //check src id add assertion
+    //             assertEquals("comm_vertex_table sender not matched ", this.local_mapper_id, src_mapper_id);
+    //             LOG.info("Send from mapper: " + src_mapper_id + " to mapper: " + dst_mapper_id + "; partition size: " +
+    //                     comm_vertex_table.getPartition(comm_id).get().get().length);
+    //         }
+    //         
+    //     }
+    //
+    //     //release memory
+    //     for(int i=0; i<this.mapper_num; i++)
+    //         this.comm_mapper_vertex[i] = null; 
+    //
+    //     this.comm_mapper_vertex = null;
+    // }
 
     /**
      * @brief compute color counting in N iterations 
@@ -436,348 +439,340 @@ public class colorcount_HJ {
      *
      * @return 
      */
-    public double do_full_count(Graph template, int N)
+    public double do_full_count(int N)
     {
 
-        this.t = template;
+        // this.t = template;
         this.num_iter = N;
-        this.labels_t = t.labels;
+        // this.labels_t = t.labels;
 
         // --------------------------- creating subtemplates and comb number index system --------------------------- 
-
         if(this.verbose){
             LOG.info("Begining partition...");
         }
 
         //partition the template into subtemplates 
-        this.part = new partitioner(this.t, this.labeled, this.labels_t);
-        this.part.sort_subtemplates();
+        this.scAlgorithm.input.initPartitioner();
 
         if(this.verbose){
             LOG.info("done partitioning");
         }
 
         //colors equals the num of vertices
-        this.num_colors = this.t.num_vertices();
+        this.num_colors = this.scAlgorithm.input.getTVNum();
+        LOG.info("Num colors: " + this.num_colors);
+
         //get array of subtemplates
-        this.subtemplates = this.part.get_subtemplates();
+        // this.subtemplates = this.part.get_subtemplates();
         //subtemplates num
-        this.subtemplate_count = this.part.get_subtemplate_count();
+        this.subtemplate_count = this.scAlgorithm.input.getSubtemplateCount();
+        LOG.info("Sub templates counts: " + this.subtemplate_count);
 
         //obtain the hash values table for each subtemplate and a combination of color sets
-        create_tables();
+        // create_tables();
+        this.scAlgorithm.input.initNumTable();
 
         //initialize dynamic prog table, with subtemplate-vertices-color array
-        this.dt.init(this.subtemplates, this.subtemplate_count, this.num_verts_graph, this.num_colors, this.max_abs_id);
+        // this.dt.init(this.subtemplates, this.subtemplate_count, this.num_verts_graph, this.num_colors, this.max_abs_id);
+        this.scAlgorithm.input.initDTTable();
 
         //vertice num of the full graph, huge
-        this.chunks = divide_chunks(this.num_verts_graph, this.thread_num);   
+        // this.chunks = divide_chunks(this.num_verts_graph, this.thread_num);   
         // in pipeline regroup-update, thread 0 is doing communication
-        this.chunks_pipeline = divide_chunks(this.num_verts_graph, this.thread_num - 1);
-
-        //triggering vtune profiling add command option for vtune 
-        // java.nio.file.Path vtune_file = java.nio.file.Paths.get("vtune-flag.txt");
-        // String flag_trigger = "Start training process and trigger vtune profiling.";
-        // try{
-        //     java.nio.file.Files.write(vtune_file, flag_trigger.getBytes());
-        // }catch (IOException e)
-        // {
-        //    LOG.info("Failed to create vtune trigger flag");
-        // }
+        // this.chunks_pipeline = divide_chunks(this.num_verts_graph, this.thread_num - 1);
 
         if(this.verbose){
             LOG.info("Starting Multi-threading Counting Iterations");
         }
 
-        launchHabaneroApp( () -> forallChunked(0, this.thread_num-1, (threadIdx) -> {
-
-        //set Java threads affinity
-        BitSet bitSet = new BitSet(this.core_num);
-        int thread_mask = 0;
-
-        if (this.verbose && threadIdx == 0)
-        {
-            LOG.info("Set up threads affinity: Core Num: " + this.core_num + 
-                "; Total Threads: " + this.thread_num + "; thd per core: " + this.tpc + "; affinity: " + this.affinity);
-        }
-
-        if (this.affinity == "scatter")
-        {
-            //implement threads bind by core round-robin
-            thread_mask = threadIdx%this.core_num; 
-
-        }else
-        {
-            //default affinity compact
-            //implement a compact bind, 2 threads a core
-            int tpn = this.tpc*this.core_num;
-            thread_mask = threadIdx%tpn;
-            thread_mask /= this.tpc;
-        }
-
-        bitSet.set(thread_mask);
-        Affinity.setAffinity(bitSet);
-
-        try{
-
-            // start the main loop of iterations
-            for(int cur_itr = 0; cur_itr < this.num_iter; cur_itr++)
-            {
-                if (threadIdx == 0)
-                    this.cur_iter = cur_itr;
-
-                //start sampling colors
-                this.barrier.await();
-
-                if(verbose && threadIdx == 0){
-                    LOG.info("Start Sampling Graph for Itr: " + cur_itr);
-                    // this.start_comp = System.currentTimeMillis();
-                    this.start_misc = System.currentTimeMillis();
-                }
-
-                Random rand = new Random(System.currentTimeMillis());
-                //sampling the vertices of full graph g
-                for (int i = this.chunks[threadIdx]; i < this.chunks[threadIdx+1]; ++i){
-                    this.colors_g[i] = rand.nextInt(this.num_colors) ;
-                }
-
-                this.barrier.await();
-                if(this.verbose && threadIdx == 0){
-                    LOG.info("Finish Sampling Graph for Itr: " + cur_itr + "; use time: " + (System.currentTimeMillis() - this.start_misc) + "ms");
-                }
-
-                // start doing counting
-                for( int s = this.subtemplate_count -1; s > 0; --s)
-                {
-
-                    if (threadIdx == 0)
-                    {
-
-                        //get num_vert of subtemplate s
-                        this.num_verts_sub_ato = this.num_verts_table[s];
-
-                        if(this.verbose)
-                            LOG.info("Initing Subtemplate "+ s + ", t verts: " + num_verts_sub_ato);
-
-                        int a = this.part.get_active_index(s);
-                        int p = this.part.get_passive_index(s);
-
-                        if(this.verbose)
-                            LOG.info("Subtemplate: " + s + "; active_idx: " + a + "; passive_idx: " + p);
-
-                        this.dt.init_sub(s, a, p);
-                    }
-
-                    this.barrier.await();
-
-                    if(this.verbose && threadIdx == 0)
-                        LOG.info("Start Counting Local Graph Subtemplate "+ s);
-
-                    //hit the bottom of subtemplate chain, dangling template node
-                    if( this.num_verts_sub_ato == 1){
-
-                        if ( s == this.subtemplate_count - 1)
-                        {
-                            init_table_node_HJ(s, threadIdx, this.chunks);
-                        }
-                        else
-                        {
-                            if (threadIdx == 0)
-                                dt.set_to_table(this.subtemplate_count - 1, s);
-                        }
-
-                    }else{
-                        colorful_count_HJ(s, threadIdx, this.chunks);
-                    }
-
-                    this.barrier.await();
-
-                    if(this.verbose && threadIdx == 0)
-                        LOG.info("Finish Counting Local Graph Subtemplate "+ s);
-
-                    //start communication part single thread 
-                    // only for subtemplates size > 1, having neighbours on other mappers
-                    // only if more than one mapper, otherwise all g verts are local
-                    if (this.mapper_num > 1 && this.num_verts_sub_ato > 1)
-                    {
-                        if (this.rotation_pipeline)
-                            regroup_update_pipeline(s, threadIdx);
-                        else
-                            regroup_update_all(s, threadIdx, this.chunks);
-                    }
-
-                    // printout results for sub s
-                    this.barrier.await();
-
-                    if (threadIdx == 0)
-                    {
-
-                        if (this.verbose)
-		                    LOG.info("JVM Memory Used in subtemplate: " + s + " is: "+ (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()));
-
-                        int a = this.part.get_active_index(s);
-                        int p = this.part.get_passive_index(s);
-
-                        //release the template with size > 1
-                        if( a != SCConstants.NULL_VAL)
-                        {
-                            // do not free the dangling template node
-                            if (this.num_verts_table[a] > 1)
-                                this.dt.clear_sub(a);
-                        }
-                        if(p != SCConstants.NULL_VAL)
-                        {
-                            if (this.num_verts_table[p] > 1)
-                                this.dt.clear_sub(p);
-                        }
-
-                    }
-
-                    this.barrier.await();
-                    
-                    //print out counts for this subtemplate 
-                    if (this.verbose)
-                    {
-                        print_counts(s, threadIdx, this.chunks);
-                        this.barrier.await();
-                        if (threadIdx == 0)
-                        {
-                            double sub_total_counts = 0;
-                            for(int x = 0; x<this.thread_num;x++)
-                                sub_total_counts += cc_ato[x];
-
-                            LOG.info("Total counts for sub-temp: " + s + " is: " + sub_total_counts);
-                        }
-
-                        this.barrier.await();
-                    }
-
-                    if (threadIdx == 0)
-                        this.context.progress();
-
-                } // end of a subtemplate
-
-                if(verbose && threadIdx == 0)
-                    LOG.info("Done with initialization. Doing full count");
-
-                // do the count for the full template
-                if (threadIdx == 0)
-                {
-                    this.num_verts_sub_ato = this.num_verts_table[0];
-                    int a = this.part.get_active_index(0);
-                    int p = this.part.get_passive_index(0);
-
-                    if (this.verbose)
-                        LOG.info("Subtemplate 0 ; active_idx: " + a + "; passive_idx: " + p);
-
-                    dt.init_sub(0, a, p);
-
-                }
-
-                this.barrier.await();
-                colorful_count_HJ(0, threadIdx, chunks);
-                this.barrier.await();
-
-                //comm and add the communicated counts to full_count_ato
-                // only for subtemplates size > 1, having neighbours on other mappers
-                // only if more than one mapper, otherwise all g verts are local
-                if (this.num_verts_sub_ato > 1 && this.mapper_num > 1)
-                {
-
-                    if (this.rotation_pipeline)
-                        regroup_update_pipeline(0, threadIdx);
-                    else
-                        regroup_update_all(0, threadIdx, this.chunks);
-                }
-
-                this.barrier.await();
-                // printout results for last sub 
-                if (threadIdx == 0 )
-                {
-                    double sum_count = 0.0;
-                    for(int k = 0; k< this.thread_num; k++)
-                    {
-                        sum_count += this.count_local_root[k];
-                        sum_count += this.count_comm_root[k];
-                    }
-
-                    this.full_count_ato = sum_count;
-                    LOG.info("Finish update comm counts for last subtemplate: " 
-                            +  "; total counts: " + sum_count);
-                }
-
-                this.barrier.await();
-
-                if (threadIdx == 0)
-                {
-                    if (this.verbose)
-		                LOG.info("JVM Memory Used in Last subtemplate is: "+ (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()));
-
-                    int a = this.part.get_active_index(0);
-                    int p = this.part.get_passive_index(0);
-
-                    if (a != SCConstants.NULL_VAL)
-                        this.dt.clear_sub(a);
-                    if (p != SCConstants.NULL_VAL)
-                        this.dt.clear_sub(p);
-
-                    //free the first dangling template node
-                    this.dt.clear_sub(subtemplate_count - 1);
-                }
-
-                //add counts from every iteration
-                if (threadIdx == 0)
-                {
-                    this.cumulate_count_ato += this.full_count_ato;
-                }
-
-
-                // free comm data
-                if (threadIdx == 0)
-                {
-                    if (this.mapper_num > 1)  
-                    {
-                        ResourcePool.get().clean();
-                        ConnPool.get().clean();
-                    }
-                    System.gc();
-                    this.context.progress();
-                }
-                
-            } // end of an iteration
-
-            this.barrier.await();
-
-        } catch (InterruptedException | BrokenBarrierException e) {
-            LOG.info("Catch barrier exception in itr: " + this.cur_iter);
-            e.printStackTrace();
-        }
-
-        }));
+        // launchHabaneroApp( () -> forallChunked(0, this.thread_num-1, (threadIdx) -> {
+        //
+        // //set Java threads affinity
+        // BitSet bitSet = new BitSet(this.core_num);
+        // int thread_mask = 0;
+        //
+        // if (this.verbose && threadIdx == 0)
+        // {
+        //     LOG.info("Set up threads affinity: Core Num: " + this.core_num + 
+        //         "; Total Threads: " + this.thread_num + "; thd per core: " + this.tpc + "; affinity: " + this.affinity);
+        // }
+        //
+        // if (this.affinity == "scatter")
+        // {
+        //     //implement threads bind by core round-robin
+        //     thread_mask = threadIdx%this.core_num; 
+        //
+        // }else
+        // {
+        //     //default affinity compact
+        //     //implement a compact bind, 2 threads a core
+        //     int tpn = this.tpc*this.core_num;
+        //     thread_mask = threadIdx%tpn;
+        //     thread_mask /= this.tpc;
+        // }
+        //
+        // bitSet.set(thread_mask);
+        // Affinity.setAffinity(bitSet);
+        //
+        // try{
+        //
+        //     // start the main loop of iterations
+        //     for(int cur_itr = 0; cur_itr < this.num_iter; cur_itr++)
+        //     {
+        //         if (threadIdx == 0)
+        //             this.cur_iter = cur_itr;
+        //
+        //         //start sampling colors
+        //         this.barrier.await();
+        //
+        //         if(verbose && threadIdx == 0){
+        //             LOG.info("Start Sampling Graph for Itr: " + cur_itr);
+        //             // this.start_comp = System.currentTimeMillis();
+        //             this.start_misc = System.currentTimeMillis();
+        //         }
+        //
+        //         Random rand = new Random(System.currentTimeMillis());
+        //         //sampling the vertices of full graph g
+        //         for (int i = this.chunks[threadIdx]; i < this.chunks[threadIdx+1]; ++i){
+        //             this.colors_g[i] = rand.nextInt(this.num_colors) ;
+        //         }
+        //
+        //         this.barrier.await();
+        //         if(this.verbose && threadIdx == 0){
+        //             LOG.info("Finish Sampling Graph for Itr: " + cur_itr + "; use time: " + (System.currentTimeMillis() - this.start_misc) + "ms");
+        //         }
+        //
+        //         // start doing counting
+        //         for( int s = this.subtemplate_count -1; s > 0; --s)
+        //         {
+        //
+        //             if (threadIdx == 0)
+        //             {
+        //
+        //                 //get num_vert of subtemplate s
+        //                 this.num_verts_sub_ato = this.num_verts_table[s];
+        //
+        //                 if(this.verbose)
+        //                     LOG.info("Initing Subtemplate "+ s + ", t verts: " + num_verts_sub_ato);
+        //
+        //                 int a = this.part.get_active_index(s);
+        //                 int p = this.part.get_passive_index(s);
+        //
+        //                 if(this.verbose)
+        //                     LOG.info("Subtemplate: " + s + "; active_idx: " + a + "; passive_idx: " + p);
+        //
+        //                 this.dt.init_sub(s, a, p);
+        //             }
+        //
+        //             this.barrier.await();
+        //
+        //             if(this.verbose && threadIdx == 0)
+        //                 LOG.info("Start Counting Local Graph Subtemplate "+ s);
+        //
+        //             //hit the bottom of subtemplate chain, dangling template node
+        //             if( this.num_verts_sub_ato == 1){
+        //
+        //                 if ( s == this.subtemplate_count - 1)
+        //                 {
+        //                     init_table_node_HJ(s, threadIdx, this.chunks);
+        //                 }
+        //                 else
+        //                 {
+        //                     if (threadIdx == 0)
+        //                         dt.set_to_table(this.subtemplate_count - 1, s);
+        //                 }
+        //
+        //             }else{
+        //                 colorful_count_HJ(s, threadIdx, this.chunks);
+        //             }
+        //
+        //             this.barrier.await();
+        //
+        //             if(this.verbose && threadIdx == 0)
+        //                 LOG.info("Finish Counting Local Graph Subtemplate "+ s);
+        //
+        //             //start communication part single thread 
+        //             // only for subtemplates size > 1, having neighbours on other mappers
+        //             // only if more than one mapper, otherwise all g verts are local
+        //             if (this.mapper_num > 1 && this.num_verts_sub_ato > 1)
+        //             {
+        //                 if (this.rotation_pipeline)
+        //                     regroup_update_pipeline(s, threadIdx);
+        //                 else
+        //                     regroup_update_all(s, threadIdx, this.chunks);
+        //             }
+        //
+        //             // printout results for sub s
+        //             this.barrier.await();
+        //
+        //             if (threadIdx == 0)
+        //             {
+        //
+        //                 if (this.verbose)
+		//                     LOG.info("JVM Memory Used in subtemplate: " + s + " is: "+ (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()));
+        //
+        //                 int a = this.part.get_active_index(s);
+        //                 int p = this.part.get_passive_index(s);
+        //
+        //                 //release the template with size > 1
+        //                 if( a != SCConstants.NULL_VAL)
+        //                 {
+        //                     // do not free the dangling template node
+        //                     if (this.num_verts_table[a] > 1)
+        //                         this.dt.clear_sub(a);
+        //                 }
+        //                 if(p != SCConstants.NULL_VAL)
+        //                 {
+        //                     if (this.num_verts_table[p] > 1)
+        //                         this.dt.clear_sub(p);
+        //                 }
+        //
+        //             }
+        //
+        //             this.barrier.await();
+        //             
+        //             //print out counts for this subtemplate 
+        //             if (this.verbose)
+        //             {
+        //                 print_counts(s, threadIdx, this.chunks);
+        //                 this.barrier.await();
+        //                 if (threadIdx == 0)
+        //                 {
+        //                     double sub_total_counts = 0;
+        //                     for(int x = 0; x<this.thread_num;x++)
+        //                         sub_total_counts += cc_ato[x];
+        //
+        //                     LOG.info("Total counts for sub-temp: " + s + " is: " + sub_total_counts);
+        //                 }
+        //
+        //                 this.barrier.await();
+        //             }
+        //
+        //             if (threadIdx == 0)
+        //                 this.context.progress();
+        //
+        //         } // end of a subtemplate
+        //
+        //         if(verbose && threadIdx == 0)
+        //             LOG.info("Done with initialization. Doing full count");
+        //
+        //         // do the count for the full template
+        //         if (threadIdx == 0)
+        //         {
+        //             this.num_verts_sub_ato = this.num_verts_table[0];
+        //             int a = this.part.get_active_index(0);
+        //             int p = this.part.get_passive_index(0);
+        //
+        //             if (this.verbose)
+        //                 LOG.info("Subtemplate 0 ; active_idx: " + a + "; passive_idx: " + p);
+        //
+        //             dt.init_sub(0, a, p);
+        //
+        //         }
+        //
+        //         this.barrier.await();
+        //         colorful_count_HJ(0, threadIdx, chunks);
+        //         this.barrier.await();
+        //
+        //         //comm and add the communicated counts to full_count_ato
+        //         // only for subtemplates size > 1, having neighbours on other mappers
+        //         // only if more than one mapper, otherwise all g verts are local
+        //         if (this.num_verts_sub_ato > 1 && this.mapper_num > 1)
+        //         {
+        //
+        //             if (this.rotation_pipeline)
+        //                 regroup_update_pipeline(0, threadIdx);
+        //             else
+        //                 regroup_update_all(0, threadIdx, this.chunks);
+        //         }
+        //
+        //         this.barrier.await();
+        //         // printout results for last sub 
+        //         if (threadIdx == 0 )
+        //         {
+        //             double sum_count = 0.0;
+        //             for(int k = 0; k< this.thread_num; k++)
+        //             {
+        //                 sum_count += this.count_local_root[k];
+        //                 sum_count += this.count_comm_root[k];
+        //             }
+        //
+        //             this.full_count_ato = sum_count;
+        //             LOG.info("Finish update comm counts for last subtemplate: " 
+        //                     +  "; total counts: " + sum_count);
+        //         }
+        //
+        //         this.barrier.await();
+        //
+        //         if (threadIdx == 0)
+        //         {
+        //             if (this.verbose)
+		//                 LOG.info("JVM Memory Used in Last subtemplate is: "+ (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()));
+        //
+        //             int a = this.part.get_active_index(0);
+        //             int p = this.part.get_passive_index(0);
+        //
+        //             if (a != SCConstants.NULL_VAL)
+        //                 this.dt.clear_sub(a);
+        //             if (p != SCConstants.NULL_VAL)
+        //                 this.dt.clear_sub(p);
+        //
+        //             //free the first dangling template node
+        //             this.dt.clear_sub(subtemplate_count - 1);
+        //         }
+        //
+        //         //add counts from every iteration
+        //         if (threadIdx == 0)
+        //         {
+        //             this.cumulate_count_ato += this.full_count_ato;
+        //         }
+        //
+        //
+        //         // free comm data
+        //         if (threadIdx == 0)
+        //         {
+        //             if (this.mapper_num > 1)  
+        //             {
+        //                 ResourcePool.get().clean();
+        //                 ConnPool.get().clean();
+        //             }
+        //             System.gc();
+        //             this.context.progress();
+        //         }
+        //         
+        //     } // end of an iteration
+        //
+        //     this.barrier.await();
+        //
+        // } catch (InterruptedException | BrokenBarrierException e) {
+        //     LOG.info("Catch barrier exception in itr: " + this.cur_iter);
+        //     e.printStackTrace();
+        // }
+        //
+        // }));
 
 
         //----------------------- end of color_counting -----------------
+        // double final_count = cumulate_count_ato / (double) this.num_iter;
+        //
+        // //free memory
+        // this.send_vertex_table = null;
+        // this.comm_vertex_table = null;
+        // this.update_map = null;
+        // this.colors_g = null;
+        //
+        // this.compress_cache_array = null;
+        // this.compress_cache_index = null;
+        //
+        // this.map_ids_cache_pip = null;
+        // this.chunk_ids_cache_pip = null;
+        // this.chunk_internal_offsets_cache_pip = null;
+        //
+        // delete_tables();
+        // this.part.clear_temparrays();
 
-        double final_count = cumulate_count_ato / (double) this.num_iter;
-
-        //free memory
-        this.send_vertex_table = null;
-        this.comm_vertex_table = null;
-        this.update_map = null;
-        this.colors_g = null;
-
-        this.compress_cache_array = null;
-        this.compress_cache_index = null;
-
-        this.map_ids_cache_pip = null;
-        this.chunk_ids_cache_pip = null;
-        this.chunk_internal_offsets_cache_pip = null;
-
-        delete_tables();
-        this.part.clear_temparrays();
-
-        return final_count;
-
+        // return final_count;
+        return 0.0f;
     }
 
     /**
