@@ -272,9 +272,11 @@ public class colorcount_HJ {
         // assign params
         this.mapper = mapper;
         this.context = context;
-        // this.g = local_graph;
+
         this.scAlgorithm = scAlgorithm;
         this.max_abs_id = global_max_v_id;
+
+        // to daal parameter
         this.thread_num = thread_num;
         this.core_num = core_num;
         this.tpc = tpc;
@@ -288,12 +290,26 @@ public class colorcount_HJ {
         // this.labeled = this.g.labeled;
         // this.num_verts_graph = this.g.num_vertices();
         this.num_verts_graph = this.scAlgorithm.input.getLocalVNum();
-        this.colors_g = new int[this.num_verts_graph];
+
+        // colors_g also member of input 
+        // this.colors_g = new int[this.num_verts_graph];
 
         // init model data (dynamic table, count table, etc)
         this.model_data = new PartialResult(daal_Context);
         // put codes to init model data
         this.scAlgorithm.setPartialResult(this.model_data);
+
+        int affinity_daal = 0;
+        if (this.affinity == "compact")
+            affinity_daal = 0;
+        else
+            affinity_daal = 1;
+
+        int verbose_daal = 0;
+        if (this.verbose == true)
+            verbose_daal = 1;
+
+        this.scAlgorithm.parameter.setParameters(this.thread_num, this.core_num, this.tpc, affinity_daal, verbose_daal);
 
         // initialized in daal side PartialResult model data
         // this.cc_ato = new double[this.thread_num];
@@ -442,9 +458,7 @@ public class colorcount_HJ {
     public double do_full_count(int N)
     {
 
-        // this.t = template;
         this.num_iter = N;
-        // this.labels_t = t.labels;
 
         // --------------------------- creating subtemplates and comb number index system --------------------------- 
         if(this.verbose){
@@ -481,285 +495,124 @@ public class colorcount_HJ {
         // in pipeline regroup-update, thread 0 is doing communication
         // this.chunks_pipeline = divide_chunks(this.num_verts_graph, this.thread_num - 1);
 
+        //load params to daal object
         if(this.verbose){
             LOG.info("Starting Multi-threading Counting Iterations");
         }
 
-        // launchHabaneroApp( () -> forallChunked(0, this.thread_num-1, (threadIdx) -> {
-        //
-        // //set Java threads affinity
-        // BitSet bitSet = new BitSet(this.core_num);
-        // int thread_mask = 0;
-        //
-        // if (this.verbose && threadIdx == 0)
-        // {
-        //     LOG.info("Set up threads affinity: Core Num: " + this.core_num + 
-        //         "; Total Threads: " + this.thread_num + "; thd per core: " + this.tpc + "; affinity: " + this.affinity);
-        // }
-        //
-        // if (this.affinity == "scatter")
-        // {
-        //     //implement threads bind by core round-robin
-        //     thread_mask = threadIdx%this.core_num; 
-        //
-        // }else
-        // {
-        //     //default affinity compact
-        //     //implement a compact bind, 2 threads a core
-        //     int tpn = this.tpc*this.core_num;
-        //     thread_mask = threadIdx%tpn;
-        //     thread_mask /= this.tpc;
-        // }
-        //
-        // bitSet.set(thread_mask);
-        // Affinity.setAffinity(bitSet);
-        //
-        // try{
-        //
-        //     // start the main loop of iterations
-        //     for(int cur_itr = 0; cur_itr < this.num_iter; cur_itr++)
-        //     {
-        //         if (threadIdx == 0)
-        //             this.cur_iter = cur_itr;
-        //
-        //         //start sampling colors
-        //         this.barrier.await();
-        //
-        //         if(verbose && threadIdx == 0){
-        //             LOG.info("Start Sampling Graph for Itr: " + cur_itr);
-        //             // this.start_comp = System.currentTimeMillis();
-        //             this.start_misc = System.currentTimeMillis();
-        //         }
-        //
-        //         Random rand = new Random(System.currentTimeMillis());
-        //         //sampling the vertices of full graph g
-        //         for (int i = this.chunks[threadIdx]; i < this.chunks[threadIdx+1]; ++i){
-        //             this.colors_g[i] = rand.nextInt(this.num_colors) ;
-        //         }
-        //
-        //         this.barrier.await();
-        //         if(this.verbose && threadIdx == 0){
-        //             LOG.info("Finish Sampling Graph for Itr: " + cur_itr + "; use time: " + (System.currentTimeMillis() - this.start_misc) + "ms");
-        //         }
-        //
-        //         // start doing counting
-        //         for( int s = this.subtemplate_count -1; s > 0; --s)
-        //         {
-        //
-        //             if (threadIdx == 0)
-        //             {
-        //
-        //                 //get num_vert of subtemplate s
-        //                 this.num_verts_sub_ato = this.num_verts_table[s];
-        //
-        //                 if(this.verbose)
-        //                     LOG.info("Initing Subtemplate "+ s + ", t verts: " + num_verts_sub_ato);
-        //
-        //                 int a = this.part.get_active_index(s);
-        //                 int p = this.part.get_passive_index(s);
-        //
-        //                 if(this.verbose)
-        //                     LOG.info("Subtemplate: " + s + "; active_idx: " + a + "; passive_idx: " + p);
-        //
-        //                 this.dt.init_sub(s, a, p);
-        //             }
-        //
-        //             this.barrier.await();
-        //
-        //             if(this.verbose && threadIdx == 0)
-        //                 LOG.info("Start Counting Local Graph Subtemplate "+ s);
-        //
-        //             //hit the bottom of subtemplate chain, dangling template node
-        //             if( this.num_verts_sub_ato == 1){
-        //
-        //                 if ( s == this.subtemplate_count - 1)
-        //                 {
-        //                     init_table_node_HJ(s, threadIdx, this.chunks);
-        //                 }
-        //                 else
-        //                 {
-        //                     if (threadIdx == 0)
-        //                         dt.set_to_table(this.subtemplate_count - 1, s);
-        //                 }
-        //
-        //             }else{
-        //                 colorful_count_HJ(s, threadIdx, this.chunks);
-        //             }
-        //
-        //             this.barrier.await();
-        //
-        //             if(this.verbose && threadIdx == 0)
-        //                 LOG.info("Finish Counting Local Graph Subtemplate "+ s);
-        //
-        //             //start communication part single thread 
-        //             // only for subtemplates size > 1, having neighbours on other mappers
-        //             // only if more than one mapper, otherwise all g verts are local
-        //             if (this.mapper_num > 1 && this.num_verts_sub_ato > 1)
-        //             {
-        //                 if (this.rotation_pipeline)
-        //                     regroup_update_pipeline(s, threadIdx);
-        //                 else
-        //                     regroup_update_all(s, threadIdx, this.chunks);
-        //             }
-        //
-        //             // printout results for sub s
-        //             this.barrier.await();
-        //
-        //             if (threadIdx == 0)
-        //             {
-        //
-        //                 if (this.verbose)
-		//                     LOG.info("JVM Memory Used in subtemplate: " + s + " is: "+ (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()));
-        //
-        //                 int a = this.part.get_active_index(s);
-        //                 int p = this.part.get_passive_index(s);
-        //
-        //                 //release the template with size > 1
-        //                 if( a != SCConstants.NULL_VAL)
-        //                 {
-        //                     // do not free the dangling template node
-        //                     if (this.num_verts_table[a] > 1)
-        //                         this.dt.clear_sub(a);
-        //                 }
-        //                 if(p != SCConstants.NULL_VAL)
-        //                 {
-        //                     if (this.num_verts_table[p] > 1)
-        //                         this.dt.clear_sub(p);
-        //                 }
-        //
-        //             }
-        //
-        //             this.barrier.await();
-        //             
-        //             //print out counts for this subtemplate 
-        //             if (this.verbose)
-        //             {
-        //                 print_counts(s, threadIdx, this.chunks);
-        //                 this.barrier.await();
-        //                 if (threadIdx == 0)
-        //                 {
-        //                     double sub_total_counts = 0;
-        //                     for(int x = 0; x<this.thread_num;x++)
-        //                         sub_total_counts += cc_ato[x];
-        //
-        //                     LOG.info("Total counts for sub-temp: " + s + " is: " + sub_total_counts);
-        //                 }
-        //
-        //                 this.barrier.await();
-        //             }
-        //
-        //             if (threadIdx == 0)
-        //                 this.context.progress();
-        //
-        //         } // end of a subtemplate
-        //
-        //         if(verbose && threadIdx == 0)
-        //             LOG.info("Done with initialization. Doing full count");
-        //
-        //         // do the count for the full template
-        //         if (threadIdx == 0)
-        //         {
-        //             this.num_verts_sub_ato = this.num_verts_table[0];
-        //             int a = this.part.get_active_index(0);
-        //             int p = this.part.get_passive_index(0);
-        //
-        //             if (this.verbose)
-        //                 LOG.info("Subtemplate 0 ; active_idx: " + a + "; passive_idx: " + p);
-        //
-        //             dt.init_sub(0, a, p);
-        //
-        //         }
-        //
-        //         this.barrier.await();
-        //         colorful_count_HJ(0, threadIdx, chunks);
-        //         this.barrier.await();
-        //
-        //         //comm and add the communicated counts to full_count_ato
-        //         // only for subtemplates size > 1, having neighbours on other mappers
-        //         // only if more than one mapper, otherwise all g verts are local
-        //         if (this.num_verts_sub_ato > 1 && this.mapper_num > 1)
-        //         {
-        //
-        //             if (this.rotation_pipeline)
-        //                 regroup_update_pipeline(0, threadIdx);
-        //             else
-        //                 regroup_update_all(0, threadIdx, this.chunks);
-        //         }
-        //
-        //         this.barrier.await();
-        //         // printout results for last sub 
-        //         if (threadIdx == 0 )
-        //         {
-        //             double sum_count = 0.0;
-        //             for(int k = 0; k< this.thread_num; k++)
-        //             {
-        //                 sum_count += this.count_local_root[k];
-        //                 sum_count += this.count_comm_root[k];
-        //             }
-        //
-        //             this.full_count_ato = sum_count;
-        //             LOG.info("Finish update comm counts for last subtemplate: " 
-        //                     +  "; total counts: " + sum_count);
-        //         }
-        //
-        //         this.barrier.await();
-        //
-        //         if (threadIdx == 0)
-        //         {
-        //             if (this.verbose)
-		//                 LOG.info("JVM Memory Used in Last subtemplate is: "+ (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()));
-        //
-        //             int a = this.part.get_active_index(0);
-        //             int p = this.part.get_passive_index(0);
-        //
-        //             if (a != SCConstants.NULL_VAL)
-        //                 this.dt.clear_sub(a);
-        //             if (p != SCConstants.NULL_VAL)
-        //                 this.dt.clear_sub(p);
-        //
-        //             //free the first dangling template node
-        //             this.dt.clear_sub(subtemplate_count - 1);
-        //         }
-        //
-        //         //add counts from every iteration
-        //         if (threadIdx == 0)
-        //         {
-        //             this.cumulate_count_ato += this.full_count_ato;
-        //         }
-        //
-        //
-        //         // free comm data
-        //         if (threadIdx == 0)
-        //         {
-        //             if (this.mapper_num > 1)  
-        //             {
-        //                 ResourcePool.get().clean();
-        //                 ConnPool.get().clean();
-        //             }
-        //             System.gc();
-        //             this.context.progress();
-        //         }
-        //         
-        //     } // end of an iteration
-        //
-        //     this.barrier.await();
-        //
-        // } catch (InterruptedException | BrokenBarrierException e) {
-        //     LOG.info("Catch barrier exception in itr: " + this.cur_iter);
-        //     e.printStackTrace();
-        // }
-        //
-        // }));
+        // start the main loop of iterations
+        for(int cur_itr = 0; cur_itr < this.num_iter; cur_itr++)
+        {
+            // if (threadIdx == 0)
+            this.cur_iter = cur_itr;
 
+            //start sampling colors
+            if(verbose){
+                LOG.info("Start Sampling Graph for Itr: " + cur_itr);
+                this.start_misc = System.currentTimeMillis();
+            }
+
+            // --------- daal kernel for sampling ---------
+            scAlgorithm.input.sampleColors();
+
+            // this.barrier.await();
+            if(this.verbose){
+                LOG.info("Finish Sampling Graph for Itr: " + cur_itr + "; use time: " + (System.currentTimeMillis() - this.start_misc) + "ms");
+            }
+
+            // start doing counting
+            for( int s = this.subtemplate_count -1; s > 0; --s)
+            {
+                // TODO: daa kernel to do local computation for subtemplate s 
+                //get num_vert of subtemplate s
+                this.num_verts_sub_ato = scAlgorithm.input.getSubVertN(s);
+                if(this.verbose)
+                    LOG.info("Initing Subtemplate "+ s + ", t verts: " + num_verts_sub_ato);
+
+
+                //hit the bottom of subtemplate chain, dangling template node
+                if( this.num_verts_sub_ato == 1){
+
+                    if ( s == this.subtemplate_count - 1)
+                    {
+                        this.scAlgorithm.input.initDTSub(s);
+                        this.scAlgorithm.computeBottom(s);
+                    }
+                    else
+                        this.scAlgorithm.input.setToTable(this.subtemplate_count - 1, s);
+
+                }else{
+
+                    this.scAlgorithm.input.initDTSub(s);
+                    scAlgorithm.computeNonBottom(s);
+                }
+
+                if(this.verbose)
+                    LOG.info("Finish Counting Local Graph Subtemplate "+ s);
+
+                //start communication part single thread  at daal side
+                //TODO daal side kernel to do comm
+                // only for subtemplates size > 1, having neighbours on other mappers
+                // only if more than one mapper, otherwise all g verts are local
+                if (this.mapper_num > 1 && this.num_verts_sub_ato > 1)
+                {
+                    // if (this.rotation_pipeline)
+                    //     regroup_update_pipeline(s, threadIdx);
+                    // else
+                    //     regroup_update_all(s, threadIdx, this.chunks);
+                }
+
+                this.scAlgorithm.input.clearDTSub(s);
+                this.context.progress();
+
+            } // end of a subtemplate
+
+            if(verbose)
+                LOG.info("Done with initialization. Doing full count");
+
+            this.scAlgorithm.input.initDTSub(0);
+            scAlgorithm.computeNonBottom(0);
+
+            //comm and add the communicated counts to full_count_ato
+            // only for subtemplates size > 1, having neighbours on other mappers
+            // only if more than one mapper, otherwise all g verts are local
+            // TODO: daal kernel to do comm for last subtemplate
+            if (this.num_verts_sub_ato > 1 && this.mapper_num > 1)
+            {
+
+                // if (this.rotation_pipeline)
+                //     regroup_update_pipeline(0, threadIdx);
+                // else
+                //     regroup_update_all(0, threadIdx, this.chunks);
+
+            }
+
+            this.scAlgorithm.input.clearDTSub(0);
+            //add counts from every iteration
+            this.cumulate_count_ato += this.scAlgorithm.parameter.getTotalCounts();
+
+            //TODO harp kernel to release comm data
+            // free comm data
+            // if (threadIdx == 0)
+            // {
+            //     if (this.mapper_num > 1)  
+            //     {
+            //         ResourcePool.get().clean();
+            //         ConnPool.get().clean();
+            //     }
+            //     System.gc();
+            //     this.context.progress();
+            // }
+
+        } // end of an iteration
 
         //----------------------- end of color_counting -----------------
-        // double final_count = cumulate_count_ato / (double) this.num_iter;
+        double final_count = cumulate_count_ato / (double) this.num_iter;
         //
         // //free memory
         // this.send_vertex_table = null;
         // this.comm_vertex_table = null;
         // this.update_map = null;
-        // this.colors_g = null;
         //
         // this.compress_cache_array = null;
         // this.compress_cache_index = null;
@@ -767,12 +620,7 @@ public class colorcount_HJ {
         // this.map_ids_cache_pip = null;
         // this.chunk_ids_cache_pip = null;
         // this.chunk_internal_offsets_cache_pip = null;
-        //
-        // delete_tables();
-        // this.part.clear_temparrays();
-
-        // return final_count;
-        return 0.0f;
+        return final_count;
     }
 
     /**
@@ -2282,7 +2130,7 @@ public class colorcount_HJ {
                     // assertTrue("adj_list_len < 1", (adj_list_len > 0));
                     //calculate chunk id 
                     chunk_size =(int) ((adj_list_len*(long)comb_len + this.send_array_limit - 1)/this.send_array_limit);
-                    chunk_len = adj_list_len/(int)chunk_size;
+                    chunk_len = adj_list_len/chunk_size;
 
                     // from 0 to chunk_size - 1
                     chunk_id = adj_offset/chunk_len; 

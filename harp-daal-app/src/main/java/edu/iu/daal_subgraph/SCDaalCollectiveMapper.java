@@ -238,63 +238,63 @@ public class SCDaalCollectiveMapper  extends CollectiveMapper<String, String, Ob
         double full_count = 0.0;
         full_count = graph_count.do_full_count(numIteration);
         //
-		// long computation_end = System.currentTimeMillis();
-        // long local_count_time = (computation_end - computation_start);
-        // long local_comm_time = graph_count.get_comm_time();
-        // long local_sync_time = graph_count.get_sync_time();
+		long computation_end = System.currentTimeMillis();
+        long local_count_time = (computation_end - computation_start);
+        long local_comm_time = graph_count.get_comm_time();
+        long local_sync_time = graph_count.get_sync_time();
         //
-        // Table<DoubleArray> time_table = new Table<>(0, new DoubleArrPlus());
-        // DoubleArray time_array = DoubleArray.create(3, false);
-        // time_array.get()[0] = (double)local_count_time;
-        // time_array.get()[1] = (double)local_comm_time;
-        // time_array.get()[2] = (double)local_sync_time;
+        Table<DoubleArray> time_table = new Table<>(0, new DoubleArrPlus());
+        DoubleArray time_array = DoubleArray.create(3, false);
+        time_array.get()[0] = (double)local_count_time;
+        time_array.get()[1] = (double)local_comm_time;
+        time_array.get()[2] = (double)local_sync_time;
         //
-        // time_table.addPartition(new Partition<>(0, time_array));
+        time_table.addPartition(new Partition<>(0, time_array));
         //
-        // this.allreduce("sc", "get-time", time_table);
+        this.allreduce("sc", "get-time", time_table);
         //
-        // double global_count_time = time_table.getPartition(0).get().get()[0]/this.getNumWorkers(); 
-        // double global_comm_time = time_table.getPartition(0).get().get()[1]/this.getNumWorkers(); 
-        // double global_sync_time = time_table.getPartition(0).get().get()[2]/this.getNumWorkers(); 
+        double global_count_time = time_table.getPartition(0).get().get()[0]/this.getNumWorkers(); 
+        double global_comm_time = time_table.getPartition(0).get().get()[1]/this.getNumWorkers(); 
+        double global_sync_time = time_table.getPartition(0).get().get()[2]/this.getNumWorkers(); 
         //
-        // LOG.info("Total Counting time: " + global_count_time + " ms" + "; Avg per itr: " + 
-        //         (global_count_time/(double)numIteration) + " ms");
+        LOG.info("Total Counting time: " + global_count_time + " ms" + "; Avg per itr: " + 
+                (global_count_time/(double)numIteration) + " ms");
         //  
         //        
-        // LOG.info("Total comm time: " + global_comm_time + " ms" + "; Avg per itr: "
-        //         + (global_comm_time/(double)numIteration) + " ms");
+        LOG.info("Total comm time: " + global_comm_time + " ms" + "; Avg per itr: "
+                + (global_comm_time/(double)numIteration) + " ms");
         //
-        // LOG.info("Total sync time: " + global_sync_time + " ms" + "; Avg per itr: "
-        //         + (global_sync_time/(double)numIteration) + " ms");
+        LOG.info("Total sync time: " + global_sync_time + " ms" + "; Avg per itr: "
+                + (global_sync_time/(double)numIteration) + " ms");
         //
-        // LOG.info("Time Ratio: Comm: " + (global_comm_time/global_count_time)*100 + " %; Waiting: " 
-        //         + (global_sync_time - global_comm_time)/global_count_time*100 + " %; Local Computation: "
-        //         + (global_count_time - global_sync_time)/global_count_time*100 + " %");
-        //
-        //
+        LOG.info("Time Ratio: Comm: " + (global_comm_time/global_count_time)*100 + " %; Waiting: " 
+                + (global_sync_time - global_comm_time)/global_count_time*100 + " %; Local Computation: "
+                + (global_count_time - global_sync_time)/global_count_time*100 + " %");
+
         // // --------------- allreduce the final count from all mappers ---------------
         // //
-        // Table<DoubleArray> final_count_table = new Table<>(0, new DoubleArrPlus());
-        // DoubleArray final_count_array = DoubleArray.create(1, false);
+        Table<DoubleArray> final_count_table = new Table<>(0, new DoubleArrPlus());
+        DoubleArray final_count_array = DoubleArray.create(1, false);
         //
-        // final_count_array.get()[0] = full_count;
-        // final_count_table.addPartition(new Partition<>(0, final_count_array));
+        final_count_array.get()[0] = full_count;
+        final_count_table.addPartition(new Partition<>(0, final_count_array));
         //
-        // this.allreduce("sc", "get-final-count", final_count_table);
+        this.allreduce("sc", "get-final-count", final_count_table);
         //
-        // full_count = final_count_table.getPartition(0).get().get()[0];
+        full_count = final_count_table.getPartition(0).get().get()[0];
         //
-        // //formula to compute the prob 
-        // int num_colors = t.num_vertices();
-        // boolean calculate_automorphisms = true;
+        //formula to compute the prob 
+        int t_num_vert = scAlgorithm.input.getTVNum();
+        int num_colors = t_num_vert;
+        boolean calculate_automorphisms = true;
         //
-        // double prob_colorful = Util.factorial(num_colors) /
-        //         ( Util.factorial(num_colors - t.num_vertices()) * Math.pow(num_colors, t.num_vertices()) );
+        double prob_colorful = Util.factorial(num_colors) /
+                ( Util.factorial(num_colors - t_num_vert) * Math.pow(num_colors, t_num_vert) );
         //
-        // int num_auto = calculate_automorphisms ? Util.count_automorphisms(t): 1;
-        // double final_count = Math.floor(full_count / (prob_colorful * num_auto) + 0.5);
+        int num_auto = calculate_automorphisms ? scAlgorithm.input.getMorphism() : 1;
+        double final_count = Math.floor(full_count / (prob_colorful * num_auto) + 0.5);
         //
-        // LOG.info("Finish counting local color count: " + full_count + "; final alll count: " + final_count);
+        LOG.info("Finish counting local color count: " + full_count + "; final alll count: " + final_count);
 
 		//-------------------------------------------------------------------
         scAlgorithm.input.freeInput();

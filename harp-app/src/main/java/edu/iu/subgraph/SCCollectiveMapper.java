@@ -148,76 +148,76 @@ public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object
         graph_count.init(this, context, g_part, max_v_id, numThreads, numCores, tpc, affinity, false, false, true);
 
         // ------------------- generate communication information -------------------
-        // // send/recv num and verts 
-        // if (this.getNumWorkers() > 1)
-        // {
-        //     graph_count.init_comm(mapper_id_vertex, send_array_limit, rotation_pipeline);
-        //     LOG.info("Finish graph_count initialization");
-        // }
+        // send/recv num and verts 
+        if (this.getNumWorkers() > 1)
+        {
+            graph_count.init_comm(mapper_id_vertex, send_array_limit, rotation_pipeline);
+            LOG.info("Finish graph_count initialization");
+        }
 
         // --------------------- start counting ---------------------
-		// long computation_start = System.currentTimeMillis();
+		long computation_start = System.currentTimeMillis();
+
+        double full_count = 0.0;
+        full_count = graph_count.do_full_count(t, numIteration);
+
+		long computation_end = System.currentTimeMillis();
+        long local_count_time = (computation_end - computation_start);
+        long local_comm_time = graph_count.get_comm_time();
+        long local_sync_time = graph_count.get_sync_time();
+
+        Table<DoubleArray> time_table = new Table<>(0, new DoubleArrPlus());
+        DoubleArray time_array = DoubleArray.create(3, false);
+        time_array.get()[0] = (double)local_count_time;
+        time_array.get()[1] = (double)local_comm_time;
+        time_array.get()[2] = (double)local_sync_time;
+
+        time_table.addPartition(new Partition<>(0, time_array));
+
+        this.allreduce("sc", "get-time", time_table);
+
+        double global_count_time = time_table.getPartition(0).get().get()[0]/this.getNumWorkers(); 
+        double global_comm_time = time_table.getPartition(0).get().get()[1]/this.getNumWorkers(); 
+        double global_sync_time = time_table.getPartition(0).get().get()[2]/this.getNumWorkers(); 
+
+        LOG.info("Total Counting time: " + global_count_time + " ms" + "; Avg per itr: " + 
+                (global_count_time/(double)numIteration) + " ms");
+
+
+        LOG.info("Total comm time: " + global_comm_time + " ms" + "; Avg per itr: "
+                + (global_comm_time/(double)numIteration) + " ms");
+
+        LOG.info("Total sync waiting time: " + global_sync_time + " ms" + "; Avg per itr: "
+                + (global_sync_time/(double)numIteration) + " ms");
+
+        LOG.info("Time Ratio: Comm: " + (global_comm_time/global_count_time)*100 + " %; Waiting: " 
+                + (global_sync_time)/global_count_time*100 + " %; Local Computation: "
+                + (global_count_time - global_sync_time - global_comm_time)/global_count_time*100 + " %");
+
+
+        // --------------- allreduce the final count from all mappers ---------------
         //
-        // double full_count = 0.0;
-        // full_count = graph_count.do_full_count(t, numIteration);
-        //
-		// long computation_end = System.currentTimeMillis();
-        // long local_count_time = (computation_end - computation_start);
-        // long local_comm_time = graph_count.get_comm_time();
-        // long local_sync_time = graph_count.get_sync_time();
-        //
-        // Table<DoubleArray> time_table = new Table<>(0, new DoubleArrPlus());
-        // DoubleArray time_array = DoubleArray.create(3, false);
-        // time_array.get()[0] = (double)local_count_time;
-        // time_array.get()[1] = (double)local_comm_time;
-        // time_array.get()[2] = (double)local_sync_time;
-        //
-        // time_table.addPartition(new Partition<>(0, time_array));
-        //
-        // this.allreduce("sc", "get-time", time_table);
-        //
-        // double global_count_time = time_table.getPartition(0).get().get()[0]/this.getNumWorkers(); 
-        // double global_comm_time = time_table.getPartition(0).get().get()[1]/this.getNumWorkers(); 
-        // double global_sync_time = time_table.getPartition(0).get().get()[2]/this.getNumWorkers(); 
-        //
-        // LOG.info("Total Counting time: " + global_count_time + " ms" + "; Avg per itr: " + 
-        //         (global_count_time/(double)numIteration) + " ms");
-        //
-        //
-        // LOG.info("Total comm time: " + global_comm_time + " ms" + "; Avg per itr: "
-        //         + (global_comm_time/(double)numIteration) + " ms");
-        //
-        // LOG.info("Total sync waiting time: " + global_sync_time + " ms" + "; Avg per itr: "
-        //         + (global_sync_time/(double)numIteration) + " ms");
-        //
-        // LOG.info("Time Ratio: Comm: " + (global_comm_time/global_count_time)*100 + " %; Waiting: " 
-        //         + (global_sync_time)/global_count_time*100 + " %; Local Computation: "
-        //         + (global_count_time - global_sync_time - global_comm_time)/global_count_time*100 + " %");
-        //
-        //
-        // // --------------- allreduce the final count from all mappers ---------------
-        // //
-        // Table<DoubleArray> final_count_table = new Table<>(0, new DoubleArrPlus());
-        // DoubleArray final_count_array = DoubleArray.create(1, false);
-        //
-        // final_count_array.get()[0] = full_count;
-        // final_count_table.addPartition(new Partition<>(0, final_count_array));
-        //
-        // this.allreduce("sc", "get-final-count", final_count_table);
-        //
-        // full_count = final_count_table.getPartition(0).get().get()[0];
-        //
-        // //formula to compute the prob 
-        // int num_colors = t.num_vertices();
-        // boolean calculate_automorphisms = true;
-        //
-        // double prob_colorful = Util.factorial(num_colors) /
-        //         ( Util.factorial(num_colors - t.num_vertices()) * Math.pow(num_colors, t.num_vertices()) );
-        //
-        // int num_auto = calculate_automorphisms ? Util.count_automorphisms(t): 1;
-        // double final_count = Math.floor(full_count / (prob_colorful * num_auto) + 0.5);
-        //
-        // LOG.info("Finish counting local color count: " + full_count + "; final alll count: " + final_count);
+        Table<DoubleArray> final_count_table = new Table<>(0, new DoubleArrPlus());
+        DoubleArray final_count_array = DoubleArray.create(1, false);
+
+        final_count_array.get()[0] = full_count;
+        final_count_table.addPartition(new Partition<>(0, final_count_array));
+
+        this.allreduce("sc", "get-final-count", final_count_table);
+
+        full_count = final_count_table.getPartition(0).get().get()[0];
+
+        //formula to compute the prob 
+        int num_colors = t.num_vertices();
+        boolean calculate_automorphisms = true;
+
+        double prob_colorful = Util.factorial(num_colors) /
+                ( Util.factorial(num_colors - t.num_vertices()) * Math.pow(num_colors, t.num_vertices()) );
+
+        int num_auto = calculate_automorphisms ? Util.count_automorphisms(t): 1;
+        double final_count = Math.floor(full_count / (prob_colorful * num_auto) + 0.5);
+
+        LOG.info("Finish counting local color count: " + full_count + "; final alll count: " + final_count);
 
 		//-------------------------------------------------------------------
         //

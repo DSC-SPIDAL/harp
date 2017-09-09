@@ -67,7 +67,7 @@ public class dynamic_table_array extends dynamic_table{
             is_sub_inited[s] = false;
         }
 
-        is_inited = false;
+        is_inited = true;
 
     }
 
