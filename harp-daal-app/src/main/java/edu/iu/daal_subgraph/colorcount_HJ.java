@@ -176,6 +176,8 @@ public class colorcount_HJ {
     private Table<IntArray> send_vertex_table;
     // harp table that regroups send/recv abs_v_id 
     private Table<IntArray> comm_vertex_table;
+    // record send ids 
+    private ArrayList<Integer> send_vertex_array;
     // harp table that regroups send/recv color counts  
     private Table<SCSet> comm_data_table;
 
@@ -286,13 +288,7 @@ public class colorcount_HJ {
         this.verbose = verb;
 
         // init members 
-        // this.labels_g = this.g.labels;
-        // this.labeled = this.g.labeled;
-        // this.num_verts_graph = this.g.num_vertices();
         this.num_verts_graph = this.scAlgorithm.input.getLocalVNum();
-
-        // colors_g also member of input 
-        // this.colors_g = new int[this.num_verts_graph];
 
         // init model data (dynamic table, count table, etc)
         this.model_data = new PartialResult(daal_Context);
@@ -311,15 +307,6 @@ public class colorcount_HJ {
 
         this.scAlgorithm.parameter.setParameters(this.thread_num, this.core_num, this.tpc, affinity_daal, verbose_daal);
 
-        // initialized in daal side PartialResult model data
-        // this.cc_ato = new double[this.thread_num];
-        // this.count_local_root = new double[this.thread_num];
-        // this.count_comm_root = new double[this.thread_num];
-        //
-        
-        // dt initialized at daal side input 
-        // this.dt = new dynamic_table_array();
-        // this.barrier = new CyclicBarrier(this.thread_num);
     }
 
     /**
@@ -328,124 +315,165 @@ public class colorcount_HJ {
      * @param mapper_id_vertex
      * @param mapper
      */
-    // void init_comm(int[] mapper_id_vertex, long send_array_limit, boolean rotation_pipeline) 
-    // {
-    //     
-    //     //create abs mapping structure
-    //     this.abs_v_to_mapper = mapper_id_vertex;
-    //     this.send_array_limit = send_array_limit;
-    //     this.rotation_pipeline = rotation_pipeline;
-    //
-    //     // init members
-    //     this.mapper_num = this.mapper.getNumWorkers();
-    //     this.local_mapper_id = this.mapper.getSelfID();
-    //     this.abs_v_to_queue = new int[this.max_abs_id + 1];
-    //     // this.chunks_mapper = divide_chunks(this.mapper_num, this.thread_num);
-    //
-    //     // init comm mappers
-    //     this.comm_mapper_vertex = new HashSet[this.mapper_num];
-    //     for(int i=0; i<this.mapper_num; i++)
-    //         this.comm_mapper_vertex[i] = new HashSet<>(); 
-    //
-    //     //loop over all the adj of local graph verts
-    //     //adj_array stores abs id 
-    //     int[] adj_array = this.g.adjacencies();
-    //     for(int i=0;i<adj_array.length;i++)
-    //     {
-    //         int adj_abs_id = adj_array[i];
-    //         int mapper_id = this.abs_v_to_mapper[adj_abs_id];
-    //         this.comm_mapper_vertex[mapper_id].add(new Integer(adj_abs_id));
-    //     }
-    //
-    //     this.update_map = new int[this.num_verts_graph][];
-    //     for(int i=0;i<this.num_verts_graph;i++)
-    //         this.update_map[i] = new int[this.g.out_degree(i)];
-    //
-    //     this.update_map_size = new int[this.num_verts_graph];
-    //     this.update_queue_pos = new int[this.mapper_num][][];
-    //     this.update_queue_counts = new float[this.mapper_num][][];
-    //     this.update_queue_index = new short[this.mapper_num][][];
-    //     this.update_mapper_len = new int[this.mapper_num];
-    //
-    //
-    //     //convert set to arraylist
-    //     this.comm_vertex_table = new Table<>(0, new IntArrPlus());
-    //     this.send_vertex_table = new Table<>(0, new IntArrPlus());
-    //
-    //     this.compress_cache_array = new float[this.num_verts_graph][];
-    //     this.compress_cache_index = new short[this.num_verts_graph][];
-    //     this.compress_cache_len = new int[this.num_verts_graph];
-    //
-    //     this.map_ids_cache_pip = new int[this.num_verts_graph][];
-    //     this.chunk_ids_cache_pip = new int[this.num_verts_graph][];
-    //     this.chunk_internal_offsets_cache_pip = new int[this.num_verts_graph][];
-    //
-    //     // prepareing send/recv information
-    //     // the requested adj_abs_v queues will be sent to each mapper
-    //     for(int i=0;i<this.mapper_num;i++)
-    //     {
-    //         // i is the mapper id from which local_mapper demands adj data
-    //         if ( (i != this.local_mapper_id)  &&  this.comm_mapper_vertex[i].size() > 0 )
-    //         {
-    //
-    //             //create partition id, the upper 16 bits stores requested id
-    //             //the lower 16 bits stores sender id (local id)
-    //             int comm_id = ( (i << 16) | this.local_mapper_id );
-    //
-    //             // retrieve communicated adj_abs_id
-    //             ArrayList<Integer> temp_array = new ArrayList<>(comm_mapper_vertex[i]);
-    //             int[] temp_array_primitive = ArrayUtils.toPrimitive(temp_array.toArray(new Integer[temp_array.size()]));
-    //
-    //             // recored the length of total vertices array received from other mappers
-    //             this.update_mapper_len[i] = temp_array_primitive.length;
-    //
-    //             //create mapping from adj_abs_id to relative t in update offset queue
-    //             for(int j = 0; j< temp_array_primitive.length; j++)
-    //                 this.abs_v_to_queue[temp_array_primitive[j]] = j;
-    //
-    //             IntArray comm_array = new IntArray(temp_array_primitive, 0, temp_array_primitive.length);
-    //             //table to communicate with other mappers
-    //             this.comm_vertex_table.addPartition(new Partition<>(comm_id, comm_array));
-    //         }
-    //
-    //     }
-    //
-    //     if (this.verbose)
-    //         LOG.info("Start regroup comm_vertex_table");
-    //
-    //     this.mapper.regroup("sc", "regroup-send-recv-vertex", this.comm_vertex_table, new SCPartitioner(this.mapper_num));
-    //     // the name of barrier should not be the same as that of regroup
-    //     // otherwise may cause a deadlock
-    //     this.mapper.barrier("sc", "regroup-send-recv-sync");
-    //
-    //     if (this.verbose)
-    //         LOG.info("Finish regroup comm_vertex_table");
-    //
-    //     // pack the received requested adj_v_id information into send queues
-    //     for(int comm_id : this.comm_vertex_table.getPartitionIDs())
-    //     {
-    //         int dst_mapper_id = comm_id & ( (1 << 16) -1 );
-    //         // this shall equal to local_mapper_id
-    //         int src_mapper_id = comm_id >>> 16;
-    //         //create send table
-    //         send_vertex_table.addPartition(new Partition(dst_mapper_id, comm_vertex_table.getPartition(comm_id).get()));
-    //
-    //         if (this.verbose)
-    //         {
-    //             //check src id add assertion
-    //             assertEquals("comm_vertex_table sender not matched ", this.local_mapper_id, src_mapper_id);
-    //             LOG.info("Send from mapper: " + src_mapper_id + " to mapper: " + dst_mapper_id + "; partition size: " +
-    //                     comm_vertex_table.getPartition(comm_id).get().get().length);
-    //         }
-    //         
-    //     }
-    //
-    //     //release memory
-    //     for(int i=0; i<this.mapper_num; i++)
-    //         this.comm_mapper_vertex[i] = null; 
-    //
-    //     this.comm_mapper_vertex = null;
-    // }
+    void init_comm(int[] mapper_id_vertex, long send_array_limit, boolean rotation_pipeline) 
+    {
+
+        //create abs mapping structure
+        //copy this to daal side
+        this.abs_v_to_mapper = mapper_id_vertex;
+        this.send_array_limit = send_array_limit;
+        this.rotation_pipeline = rotation_pipeline;
+
+        this.mapper_num = this.mapper.getNumWorkers();
+        this.local_mapper_id = this.mapper.getSelfID();
+
+        // copy to daal
+        HomogenNumericTable abs_v_to_mapper_daal_table = new HomogenNumericTable(daal_Context, this.abs_v_to_mapper, 1, this.abs_v_to_mapper.length);
+        this.scAlgorithm.input.set(InputId.vMapper, abs_v_to_mapper_daal_table);
+
+        long init_comm_start = System.currentTimeMillis();
+        this.scAlgorithm.input.initComm(this.mapper_num, this.local_mapper_id, this.send_array_limit, this.rotation_pipeline);
+
+        //move this to daal side
+        // this.abs_v_to_queue = new int[this.max_abs_id + 1];
+        // this.chunks_mapper = divide_chunks(this.mapper_num, this.thread_num);
+
+        // init comm mappers
+        // move this to daal side
+        // this.comm_mapper_vertex = new HashSet[this.mapper_num];
+        // for(int i=0; i<this.mapper_num; i++)
+            // this.comm_mapper_vertex[i] = new HashSet<>(); 
+
+        //loop over all the adj of local graph verts
+        //adj_array stores abs id 
+        // int[] adj_array = this.g.adjacencies();
+        // for(int i=0;i<adj_array.length;i++)
+        // {
+        //     int adj_abs_id = adj_array[i];
+        //     int mapper_id = this.abs_v_to_mapper[adj_abs_id];
+        //     this.comm_mapper_vertex[mapper_id].add(new Integer(adj_abs_id));
+        // }
+
+        // this.update_map = new int[this.num_verts_graph][];
+        // for(int i=0;i<this.num_verts_graph;i++)
+        //     this.update_map[i] = new int[this.g.out_degree(i)];
+        //
+        // this.update_map_size = new int[this.num_verts_graph];
+        // this.update_queue_pos = new int[this.mapper_num][][];
+        // this.update_queue_counts = new float[this.mapper_num][][];
+        // this.update_queue_index = new short[this.mapper_num][][];
+        // this.update_mapper_len = new int[this.mapper_num];
+
+        //convert set to arraylist
+        this.comm_vertex_table = new Table<>(0, new IntArrPlus());
+        this.send_vertex_table = new Table<>(0, new IntArrPlus());
+        this.send_vertex_array = new ArrayList<>();
+
+        //only used in cached compress
+        // this.compress_cache_array = new float[this.num_verts_graph][];
+        // this.compress_cache_index = new short[this.num_verts_graph][];
+        // this.compress_cache_len = new int[this.num_verts_graph];
+
+        // this.map_ids_cache_pip = new int[this.num_verts_graph][];
+        // this.chunk_ids_cache_pip = new int[this.num_verts_graph][];
+        // this.chunk_internal_offsets_cache_pip = new int[this.num_verts_graph][];
+
+        // prepareing send/recv information
+        // the requested adj_abs_v queues will be sent to each mapper
+        for(int i=0;i<this.mapper_num;i++)
+        {
+            //move this to daal side
+            // i is the mapper id from which local_mapper demands adj data
+            // if ( (i != this.local_mapper_id)  &&  this.comm_mapper_vertex[i].size() > 0 )
+            // {
+            //
+            //     //create partition id, the upper 16 bits stores requested id
+            //     //the lower 16 bits stores sender id (local id)
+            //     int comm_id = ( (i << 16) | this.local_mapper_id );
+            //
+            //     // retrieve communicated adj_abs_id
+            //     ArrayList<Integer> temp_array = new ArrayList<>(comm_mapper_vertex[i]);
+            //     int[] temp_array_primitive = ArrayUtils.toPrimitive(temp_array.toArray(new Integer[temp_array.size()]));
+            //
+            //     // recored the length of total vertices array received from other mappers
+            //     this.update_mapper_len[i] = temp_array_primitive.length;
+            //
+            //     //create mapping from adj_abs_id to relative t in update offset queue
+            //     for(int j = 0; j< temp_array_primitive.length; j++)
+            //         this.abs_v_to_queue[temp_array_primitive[j]] = j;
+            //
+            //     IntArray comm_array = new IntArray(temp_array_primitive, 0, temp_array_primitive.length);
+            //     //table to communicate with other mappers
+            //     this.comm_vertex_table.addPartition(new Partition<>(comm_id, comm_array));
+            // }
+            this.scAlgorithm.input.initCommPrepare(i);
+            long prep_table_size = this.scAlgorithm.input.getDaalTableSize();
+            LOG.info("For mapper: " + i + " prep table size: " + prep_table_size);
+
+            if (prep_table_size > 0)
+            {
+                int[] prep_comm_array = new int[(int)prep_table_size];
+                HomogenNumericTable prep_daal_table = new HomogenNumericTable(daal_Context, prep_comm_array, 1, prep_table_size);
+                this.scAlgorithm.input.set(InputId.commData, prep_daal_table);
+                this.scAlgorithm.input.uploadCommPrepare();
+
+                //debug check prep_comm_array
+                for(int j=0;j<10;j++)
+                    LOG.info("Check prep table: " + prep_comm_array[j]);
+
+                int comm_id = ( (i << 16) | this.local_mapper_id );
+                IntArray comm_array = new IntArray(prep_comm_array, 0, prep_comm_array.length);
+                this.comm_vertex_table.addPartition(new Partition<>(comm_id, comm_array));
+
+            }
+
+        }
+
+        if (this.verbose)
+            LOG.info("Start regroup comm_vertex_table");
+        //
+        this.mapper.regroup("sc", "regroup-send-recv-vertex", this.comm_vertex_table, new SCPartitioner(this.mapper_num));
+        // the name of barrier should not be the same as that of regroup
+        // otherwise may cause a deadlock
+        this.mapper.barrier("sc", "regroup-send-recv-sync");
+        //
+        if (this.verbose)
+            LOG.info("Finish regroup comm_vertex_table");
+        
+        LOG.info("Finish comm init in: " + (System.currentTimeMillis() - init_comm_start) + " ms");
+        // // pack the received requested adj_v_id information into send queues
+        for(int comm_id : this.comm_vertex_table.getPartitionIDs())
+        {
+            int dst_mapper_id = comm_id & ( (1 << 16) -1 );
+            // this shall equal to local_mapper_id
+            int src_mapper_id = comm_id >>> 16;
+            //create send table
+            this.send_vertex_array.add(dst_mapper_id);
+
+            // move received daal table to daal side
+            // send_vertex_table.addPartition(new Partition(dst_mapper_id, comm_vertex_table.getPartition(comm_id).get()));
+            int[] recv_prep_comm_data =  comm_vertex_table.getPartition(comm_id).get().get();
+            int recv_prep_comm_size = recv_prep_comm_data.length;
+            HomogenNumericTable recv_prep_comm_data = new HomogenNumericTable(daal_Context, recv_prep_comm_data, 1, recv_prep_comm_size);
+            this.scAlgorithm.input.set(InputId.commData, recv_prep_comm_data);
+
+            if (this.verbose)
+            {
+                //check src id add assertion
+                assertEquals("comm_vertex_table sender not matched ", this.local_mapper_id, src_mapper_id);
+                LOG.info("Send from mapper: " + src_mapper_id + " to mapper: " + dst_mapper_id + "; partition size: " +
+                        comm_vertex_table.getPartition(comm_id).get().get().length);
+            }
+
+        }
+
+        //release memory
+        //move to daal side
+        // for(int i=0; i<this.mapper_num; i++)
+        //     this.comm_mapper_vertex[i] = null; 
+        //
+        // this.comm_mapper_vertex = null;
+    }
 
     /**
      * @brief compute color counting in N iterations 
