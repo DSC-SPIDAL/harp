@@ -171,15 +171,8 @@ public class SCDaalCollectiveMapper  extends CollectiveMapper<String, String, Ob
         HomogenNumericTable local_abs_ids_daal = new HomogenNumericTable(daal_Context, local_abs_ids, localVNum, 1);
         scAlgorithm.input.set(InputId.localV, local_abs_ids_daal);
 
-        //debug test daal table vals
-        // for(int i=0;i<10;i++)
-            // LOG.info("Test table before: " + local_abs_ids[i]);
-
         //start init daal graph structure
         scAlgorithm.input.initGraph();
-
-        // for(int i=0;i<10;i++)
-            // LOG.info("Test table after: " + local_abs_ids[i]);
 
         //communication allgather to get all global ids
         abs_ids_table = new Table<>(0, new IntArrPlus());
@@ -227,16 +220,17 @@ public class SCDaalCollectiveMapper  extends CollectiveMapper<String, String, Ob
 
         // // ------------------- generate communication information -------------------
         // // send/recv num and verts 
-        // if (this.getNumWorkers() > 1)
-        // {
-        //     graph_count.init_comm(mapper_id_vertex, send_array_limit, rotation_pipeline);
-        //     LOG.info("Finish graph_count initialization");
-        // }
-        //
+        
+        if (this.getNumWorkers() > 1)
+        {
+            graph_count.init_comm(mapper_id_vertex, send_array_limit, rotation_pipeline);
+            LOG.info("Finish graph_count initialization");
+        }
+
         // --------------------- start counting ---------------------
 		long computation_start = System.currentTimeMillis();
         double full_count = 0.0;
-        full_count = graph_count.do_full_count(numIteration);
+        // full_count = graph_count.do_full_count(numIteration);
         //
 		long computation_end = System.currentTimeMillis();
         long local_count_time = (computation_end - computation_start);
