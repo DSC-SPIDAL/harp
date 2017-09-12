@@ -440,8 +440,12 @@ public class colorcount_HJ {
         if (this.verbose)
             LOG.info("Finish regroup comm_vertex_table");
         
-        LOG.info("Finish comm init in: " + (System.currentTimeMillis() - init_comm_start) + " ms");
+
         // // pack the received requested adj_v_id information into send queues
+
+        // int recv_part_size = this.comm_vertex_table.getNumPartitions();
+        // this.scAlgorithm.input.setSendVertexSize(recv_part_size);
+
         for(int comm_id : this.comm_vertex_table.getPartitionIDs())
         {
             int dst_mapper_id = comm_id & ( (1 << 16) -1 );
@@ -454,19 +458,21 @@ public class colorcount_HJ {
             // send_vertex_table.addPartition(new Partition(dst_mapper_id, comm_vertex_table.getPartition(comm_id).get()));
             int[] recv_prep_comm_data =  comm_vertex_table.getPartition(comm_id).get().get();
             int recv_prep_comm_size = recv_prep_comm_data.length;
-            HomogenNumericTable recv_prep_comm_data = new HomogenNumericTable(daal_Context, recv_prep_comm_data, 1, recv_prep_comm_size);
-            this.scAlgorithm.input.set(InputId.commData, recv_prep_comm_data);
+            HomogenNumericTable recv_prep_comm_data_table = new HomogenNumericTable(daal_Context, recv_prep_comm_data, 1, recv_prep_comm_size);
+            this.scAlgorithm.input.set(InputId.commData, recv_prep_comm_data_table);
+            this.scAlgorithm.input.setSendVertexArray(dst_mapper_id);
 
             if (this.verbose)
             {
                 //check src id add assertion
                 assertEquals("comm_vertex_table sender not matched ", this.local_mapper_id, src_mapper_id);
-                LOG.info("Send from mapper: " + src_mapper_id + " to mapper: " + dst_mapper_id + "; partition size: " +
-                        comm_vertex_table.getPartition(comm_id).get().get().length);
+                LOG.info("Send from mapper: " + src_mapper_id + " to mapper: " + dst_mapper_id + "; partition size: " + recv_prep_comm_size);
             }
 
         }
 
+        LOG.info("Finish comm init in: " + (System.currentTimeMillis() - init_comm_start) + " ms");
+        this.scAlgorithm.input.initCommFinal();
         //release memory
         //move to daal side
         // for(int i=0; i<this.mapper_num; i++)
@@ -588,6 +594,7 @@ public class colorcount_HJ {
                     //     regroup_update_pipeline(s, threadIdx);
                     // else
                     //     regroup_update_all(s, threadIdx, this.chunks);
+                    regroup_update_all(s);
                 }
 
                 this.scAlgorithm.input.clearDTSub(s);
@@ -1198,41 +1205,66 @@ public class colorcount_HJ {
 
         //prepare the sending partitions
         this.comm_data_table = new Table<>(0, new SCSetCombiner());
-        int comb_len = this.dt.get_num_color_set(this.part.get_passive_index(sub_id)); 
 
         //prevent the single comm_data array exceeds the limitation of heap allocation 8GB
-        for(int send_id : this.send_vertex_table.getPartitionIDs())
+        for(int send_id : this.send_vertex_array)
         {
-            int[] comm_vert_list = this.send_vertex_table.getPartition(send_id).get().get();
-            long send_divid_num = (comm_vert_list.length*((long)comb_len)+ this.send_array_limit - 1)/this.send_array_limit;
-
-            if(this.verbose)
-            {
-                LOG.info("Send id: " + send_id + "; send_divid_num: " + send_divid_num + "; comb len: " + comb_len + "; Total vertices num: " 
-                        + comm_vert_list.length + "; mul: " + comm_vert_list.length*(long)comb_len);
-            }
-
-            // send_chunks.length == send_divid_num + 1
-            int[] send_chunks = divide_chunks_comm(comm_vert_list.length, (int)send_divid_num);
+            // int[] comm_vert_list = this.send_vertex_table.getPartition(send_id).get().get();
+            // long send_divid_num = (comm_vert_list.length*((long)comb_len)+ this.send_array_limit - 1)/this.send_array_limit;
+            int send_parcel_num= this.scAlgorithm.input.sendCommParcelInit(sub_id, send_id);
+            LOG.info("send parcel num sub id: "+ sub_id+"; send_id: " + send_id + "; parcel num: " + send_parcel_num);
 
             // store send_chunks 
-            for(int j=0;j<send_divid_num;j++)
+            // move this to daal side
+            for(int j=0;j<send_parcel_num;j++)
             {
-                int chunk_len = send_chunks[j+1] - send_chunks[j];
-
-                if(this.verbose)
-                    LOG.info("Chunk id: " + j + "; chunk size: " + chunk_len);
-
-                int[] send_chunk_list = new int[chunk_len];
-                System.arraycopy(comm_vert_list, send_chunks[j], send_chunk_list, 0, chunk_len);
-
                 //comm_id (32 bits) consists of three parts: 1) send_id (12 bits); 2) local mapper_id (12 bits) 3) array_parcel id (8 bits)
                 int comm_id =  ((send_id << 20) | (this.local_mapper_id << 8) | j );
-                SCSet comm_data = compress_send_data(send_chunk_list, comb_len);
-                this.comm_data_table.addPartition(new Partition<>(comm_id, comm_data));
-            }
+                //daal side compress and prep scset data
+                this.scAlgorithm.input.sendCommParcelPrep(j);
+                
+                // get num_v and count_num
+                int parcel_v_num = this.scAlgorithm.input.getCommParcelPrepVNum();
+                int parcel_c_len = this.scAlgorithm.input.getCommParcelPrepCountLen();
 
-        }
+                // add three numerictables
+                int[] parcel_v_offset = new int[parcel_v_num+1];
+                HomogenNumericTable parcel_v_offset_table = new HomogenNumericTable(daal_Context, parcel_v_offset, 1, (parcel_v_num+1));
+                float[] parcel_v_data = new float[parcel_c_len];
+                HomogenNumericTable parcel_v_data_table = new HomogenNumericTable(daal_Context, parcel_v_data, 1, parcel_c_len);
+                int[] parcel_v_index = new int[parcel_c_len];
+                HomogenNumericTable parcel_v_index_table = new HomogenNumericTable(daal_Context, parcel_v_index, 1, parcel_c_len);
+                // set the table to daal side
+                this.scAlgorithm.input.set(InputId.ParcelOffset, parcel_v_offset_table);
+                this.scAlgorithm.input.set(InputId.ParcelData, parcel_v_data_table);
+                this.scAlgorithm.input.set(InputId.ParcelIdx, parcel_v_index_table);
+
+                //upload data from daal side to harp side
+                this.scAlgorithm.input.sendCommParcelLoad();
+
+                //debug check parcel offset, data and index
+                for(int i = 0; i<5; i++)
+                {
+                    LOG.info("Retrieved parcel v offset: " + parcel_v_offset[i]);
+                    LOG.info("Retrieved parcel v data: " + parcel_v_data[i]);
+                    LOG.info("Retrieved parcel v index: " + parcel_v_index[i]);
+                }
+
+                //convert parcel index data from int to short
+                short[] parcel_v_index_short = new short[parcel_c_len]; 
+                for(int i=0;i<parcel_c_len;i++)
+                    parcel_v_index_short[i] = (short)parcel_v_index[i];
+
+                // SCSet comm_data = compress_send_data(send_chunk_list, comb_len);
+                SCSet comm_data = new SCSet(parcel_v_num, parcel_c_len, parcel_v_offset, parcel_v_data, parcel_v_index_short);
+                //retrieve elements for assembling SCSet comm_data from daal side
+                this.comm_data_table.addPartition(new Partition<>(comm_id, comm_data));
+
+            } // end for parcels of a sender id
+
+            //release chunk/parcel id from daal side
+
+        } // end for all the send ids
 
         if (this.verbose)
         {
@@ -1256,33 +1288,32 @@ public class colorcount_HJ {
         }
 
         //update local g counts by adj from each other mapper
+        //move this to daal side
         for(int comm_id : this.comm_data_table.getPartitionIDs())
         {
-            int update_id_tmp = ( comm_id & ( (1 << 20) -1 ) );
-            int update_id =  (update_id_tmp >>> 8);
-            int chunk_id = ( update_id_tmp & ( (1 << 8) -1 ) );
-
-            // create update_queue 
-            if (this.update_queue_pos[update_id] == null)
-            {
-                long recv_divid_num = (this.update_mapper_len[update_id]*((long)comb_len)+ this.send_array_limit - 1)/this.send_array_limit;
-                this.update_queue_pos[update_id] = new int[(int)recv_divid_num][];
-                this.update_queue_counts[update_id] = new float[(int)recv_divid_num][];
-                this.update_queue_index[update_id] = new short[(int)recv_divid_num][];
-            }
-
-            if (this.verbose)
-            {
-                LOG.info("Local Mapper: " + this.local_mapper_id + " recv from remote mapper id: " + update_id 
-                        + " chunk id: " + chunk_id);
-            }
+            this.scAlgorithm.input.updateRecvParcelInit(comm_id);
 
             // update vert list accounts for the adj vert may be used to update local v
             SCSet scset = this.comm_data_table.getPartition(comm_id).get();
+            int[] recv_v_offset = scset.get_v_offset();
+            float[] recv_v_data = scset.get_counts_data();
+            short[] recv_v_index = scset.get_counts_index();
+            int[] recv_v_index_int = new int[recv_v_index.length];
+            for(int p= 0; p<recv_v_index.length;p++)
+                recv_v_index_int[p] = (int)recv_v_index[p];
+            
+            HomogenNumericTable recv_v_offset_table = new HomogenNumericTable(daal_Context, recv_v_offset, 1, recv_v_offset.length);
+            this.scAlgorithm.input.set(InputId.ParcelOffset, recv_v_offset_table);
 
-            this.update_queue_pos[update_id][chunk_id] = scset.get_v_offset();
-            this.update_queue_counts[update_id][chunk_id] = scset.get_counts_data();
-            this.update_queue_index[update_id][chunk_id] = scset.get_counts_index();
+            HomogenNumericTable recv_v_data_table = new HomogenNumericTable(daal_Context, recv_v_data, 1, recv_v_data.length);
+            this.scAlgorithm.input.set(InputId.ParcelData, recv_v_data_table);
+
+            HomogenNumericTable recv_v_index_table = new HomogenNumericTable(daal_Context, recv_v_index_int, 1, recv_v_index_int.length);
+            this.scAlgorithm.input.set(InputId.ParcelIdx, recv_v_index_table);
+
+            //daal side update
+            this.scAlgorithm.input.updateRecvParcel();
+        
         }
 
         // get the local sync time 
@@ -2063,44 +2094,39 @@ public class colorcount_HJ {
      *
      * @return 
      */
-    private void regroup_update_all(int sub_id, int threadIdx, int[] chunks) throws BrokenBarrierException, InterruptedException
+    private void regroup_update_all(int sub_id)
     {
         // single thread communication
-        if (threadIdx == 0)
-            regroup_comm_all(sub_id);
-
-        this.barrier.await();
+        regroup_comm_all(sub_id);
         //release the cached sending data
         //after regroup update for one subtemplate
-        if (threadIdx == 0)
-        {
-            for(int i=0; i<this.num_verts_graph; i++)
-            {
-                this.compress_cache_array[i] = null;
-                this.compress_cache_index[i] = null;
-            }
-        }
+        // if (threadIdx == 0)
+        // {
+        //     for(int i=0; i<this.num_verts_graph; i++)
+        //     {
+        //         this.compress_cache_array[i] = null;
+        //         this.compress_cache_index[i] = null;
+        //     }
+        // }
 
-        this.barrier.await();
         // precompute the maperids, chunkids, and offsets for adjlist of each local v
-        calculate_update_ids(sub_id, threadIdx);
-        this.barrier.await();
+        // move this to daal side
+        // calculate_update_ids(sub_id, threadIdx);
+        // calculate_update_ids(sub_id);
 
-        try{
+        // try{
+        //
+        //     update_comm_all(sub_id, threadIdx, chunks);
+        //
+        // } catch (InterruptedException | BrokenBarrierException e) {
+        //     e.printStackTrace();
+        // }
 
-            update_comm_all(sub_id, threadIdx, chunks);
-
-        } catch (InterruptedException | BrokenBarrierException e) {
-            e.printStackTrace();
-        }
-
-        this.barrier.await();
         //release precomputed ids
-        release_update_ids(threadIdx);
-        this.barrier.await();
-
-        if (threadIdx == 0)
-            recycleMem();
+        //move to daal side
+        // release_update_ids(threadIdx);
+        
+        recycleMem();
     }   
 
     /**
@@ -2227,7 +2253,7 @@ public class colorcount_HJ {
 
         this.barrier.await();
         // precompute the maperids, chunkids, and offsets for adjlist of each local v
-        calculate_update_ids(sub_id, threadIdx);
+        // calculate_update_ids(sub_id, threadIdx);
         this.barrier.await();
 
         // start update
@@ -2340,34 +2366,36 @@ public class colorcount_HJ {
             this.comm_data_table = null;
         }
 
-        for(int k = 0; k< this.mapper_num;k++)
-        {
-            if (this.update_queue_pos[k] != null)
-            {
-                for(int x = 0; x<this.update_queue_pos[k].length; x++)
-                    this.update_queue_pos[k][x] = null;
-            }
+        //move to daal side
+        // for(int k = 0; k< this.mapper_num;k++)
+        // {
+        //     if (this.update_queue_pos[k] != null)
+        //     {
+        //         for(int x = 0; x<this.update_queue_pos[k].length; x++)
+        //             this.update_queue_pos[k][x] = null;
+        //     }
+        //
+        //     this.update_queue_pos[k] = null;
+        //
+        //     if (this.update_queue_counts[k] != null)
+        //     {
+        //         for(int x = 0; x<this.update_queue_counts[k].length; x++)
+        //             this.update_queue_counts[k][x] = null;
+        //     }
+        //
+        //     this.update_queue_counts[k] = null;
+        //
+        //     if (this.update_queue_index[k] != null)
+        //     {
+        //         for(int x = 0; x<this.update_queue_index[k].length; x++)
+        //             this.update_queue_index[k][x] = null;
+        //     }
+        //
+        //     this.update_queue_index[k] = null;
+        //
+        // }
+        this.scAlgorithm.input.freeRecvParcel();
 
-            this.update_queue_pos[k] = null;
-
-            if (this.update_queue_counts[k] != null)
-            {
-                for(int x = 0; x<this.update_queue_counts[k].length; x++)
-                    this.update_queue_counts[k][x] = null;
-            }
-
-            this.update_queue_counts[k] = null;
-
-            if (this.update_queue_index[k] != null)
-            {
-                for(int x = 0; x<this.update_queue_index[k].length; x++)
-                    this.update_queue_index[k][x] = null;
-            }
-
-            this.update_queue_index[k] = null;
-
-        }
-        
         ConnPool.get().clean();
         System.gc();
     }

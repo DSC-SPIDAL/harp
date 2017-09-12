@@ -230,7 +230,7 @@ public class SCDaalCollectiveMapper  extends CollectiveMapper<String, String, Ob
         // --------------------- start counting ---------------------
 		long computation_start = System.currentTimeMillis();
         double full_count = 0.0;
-        // full_count = graph_count.do_full_count(numIteration);
+        full_count = graph_count.do_full_count(numIteration);
         //
 		long computation_end = System.currentTimeMillis();
         long local_count_time = (computation_end - computation_start);
