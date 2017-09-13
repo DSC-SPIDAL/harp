@@ -161,6 +161,7 @@ public class colorcount_HJ {
     private double full_count_ato = 0;
     // cumulated total counts from all iterations
     private double cumulate_count_ato = 0;
+    private double final_update_comm_counts = 0.0;
 
     // ----------------------------- for communication  -----------------------------
     //harp communicator
@@ -597,6 +598,9 @@ public class colorcount_HJ {
                     regroup_update_all(s);
                 }
 
+                if (this.verbose)
+                    LOG.info("sub id: " + s + " local counts: " + (this.scAlgorithm.parameter.getTotalCounts()) + " update remote counts: " + final_update_comm_counts);
+
                 this.scAlgorithm.input.clearDTSub(s);
                 this.context.progress();
 
@@ -619,12 +623,13 @@ public class colorcount_HJ {
                 //     regroup_update_pipeline(0, threadIdx);
                 // else
                 //     regroup_update_all(0, threadIdx, this.chunks);
-
+                regroup_update_all(0);
             }
 
             this.scAlgorithm.input.clearDTSub(0);
             //add counts from every iteration
             this.cumulate_count_ato += this.scAlgorithm.parameter.getTotalCounts();
+            this.cumulate_count_ato += final_update_comm_counts;
 
             //TODO harp kernel to release comm data
             // free comm data
@@ -1241,21 +1246,18 @@ public class colorcount_HJ {
 
                 //upload data from daal side to harp side
                 this.scAlgorithm.input.sendCommParcelLoad();
-
                 //debug check parcel offset, data and index
-                for(int i = 0; i<5; i++)
-                {
-                    LOG.info("Retrieved parcel v offset: " + parcel_v_offset[i]);
-                    LOG.info("Retrieved parcel v data: " + parcel_v_data[i]);
-                    LOG.info("Retrieved parcel v index: " + parcel_v_index[i]);
-                }
-
+                // for(int i = 0; i<5; i++)
+                // {
+                //     LOG.info("Retrieved parcel v offset: " + parcel_v_offset[i]);
+                //     LOG.info("Retrieved parcel v data: " + parcel_v_data[i]);
+                //     LOG.info("Retrieved parcel v index: " + parcel_v_index[i]);
+                // }
                 //convert parcel index data from int to short
                 short[] parcel_v_index_short = new short[parcel_c_len]; 
                 for(int i=0;i<parcel_c_len;i++)
                     parcel_v_index_short[i] = (short)parcel_v_index[i];
 
-                // SCSet comm_data = compress_send_data(send_chunk_list, comb_len);
                 SCSet comm_data = new SCSet(parcel_v_num, parcel_c_len, parcel_v_offset, parcel_v_data, parcel_v_index_short);
                 //retrieve elements for assembling SCSet comm_data from daal side
                 this.comm_data_table.addPartition(new Partition<>(comm_id, comm_data));
@@ -1313,7 +1315,17 @@ public class colorcount_HJ {
 
             //daal side update
             this.scAlgorithm.input.updateRecvParcel();
+
+            //release java side  
+            scset = null;
+            recv_v_offset = null;
+            recv_v_data = null;
+            recv_v_index = null;
+            recv_v_index_int = null;
         
+            recv_v_offset_table = null;
+            recv_v_data_table = null;
+            recv_v_index_table = null;
         }
 
         // get the local sync time 
@@ -1329,6 +1341,12 @@ public class colorcount_HJ {
 
         comm_time_array = null;
         comm_time_table = null;
+
+        if (this.comm_data_table != null)
+        {
+            this.comm_data_table.free();
+            this.comm_data_table = null;
+        }
 
         if (this.mapper_num > 1)  
         {
@@ -2098,34 +2116,22 @@ public class colorcount_HJ {
     {
         // single thread communication
         regroup_comm_all(sub_id);
-        //release the cached sending data
-        //after regroup update for one subtemplate
-        // if (threadIdx == 0)
-        // {
-        //     for(int i=0; i<this.num_verts_graph; i++)
-        //     {
-        //         this.compress_cache_array[i] = null;
-        //         this.compress_cache_index[i] = null;
-        //     }
-        // }
+
+        
+
+        // ConnPool.get().clean();
+        // System.gc();
 
         // precompute the maperids, chunkids, and offsets for adjlist of each local v
         // move this to daal side
-        // calculate_update_ids(sub_id, threadIdx);
-        // calculate_update_ids(sub_id);
+        this.scAlgorithm.input.calculateUpdateIds(sub_id);
 
-        // try{
-        //
-        //     update_comm_all(sub_id, threadIdx, chunks);
-        //
-        // } catch (InterruptedException | BrokenBarrierException e) {
-        //     e.printStackTrace();
-        // }
+        final_update_comm_counts = this.scAlgorithm.input.computeUpdateComm(sub_id);
+        LOG.info("updated counts at sub_id: " + sub_id + " is: " + final_update_comm_counts);
 
         //release precomputed ids
         //move to daal side
-        // release_update_ids(threadIdx);
-        
+        this.scAlgorithm.input.releaseUpdateIds();
         recycleMem();
     }   
 
@@ -2360,44 +2366,12 @@ public class colorcount_HJ {
     private void recycleMem()
     {
         // clean up memory
-        if (this.comm_data_table != null)
-        {
-            this.comm_data_table.free();
-            this.comm_data_table = null;
-        }
-
-        //move to daal side
-        // for(int k = 0; k< this.mapper_num;k++)
+        // if (this.comm_data_table != null)
         // {
-        //     if (this.update_queue_pos[k] != null)
-        //     {
-        //         for(int x = 0; x<this.update_queue_pos[k].length; x++)
-        //             this.update_queue_pos[k][x] = null;
-        //     }
-        //
-        //     this.update_queue_pos[k] = null;
-        //
-        //     if (this.update_queue_counts[k] != null)
-        //     {
-        //         for(int x = 0; x<this.update_queue_counts[k].length; x++)
-        //             this.update_queue_counts[k][x] = null;
-        //     }
-        //
-        //     this.update_queue_counts[k] = null;
-        //
-        //     if (this.update_queue_index[k] != null)
-        //     {
-        //         for(int x = 0; x<this.update_queue_index[k].length; x++)
-        //             this.update_queue_index[k][x] = null;
-        //     }
-        //
-        //     this.update_queue_index[k] = null;
-        //
+        //     this.comm_data_table.free();
+        //     this.comm_data_table = null;
         // }
         this.scAlgorithm.input.freeRecvParcel();
-
-        ConnPool.get().clean();
-        System.gc();
     }
 
     /**
