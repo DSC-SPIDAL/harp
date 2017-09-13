@@ -586,16 +586,25 @@ public class colorcount_HJ {
                     LOG.info("Finish Counting Local Graph Subtemplate "+ s);
 
                 //start communication part single thread  at daal side
-                //TODO daal side kernel to do comm
                 // only for subtemplates size > 1, having neighbours on other mappers
                 // only if more than one mapper, otherwise all g verts are local
                 if (this.mapper_num > 1 && this.num_verts_sub_ato > 1)
                 {
-                    // if (this.rotation_pipeline)
-                    //     regroup_update_pipeline(s, threadIdx);
-                    // else
-                    //     regroup_update_all(s, threadIdx, this.chunks);
-                    regroup_update_all(s);
+                    if (this.rotation_pipeline)
+                    {
+                        // try{
+
+                            regroup_update_pipeline(s);
+                        // }
+                        // catch (InterruptedException e) 
+                        // {
+                            // e.printStackTrace();
+                        // }
+
+                    }
+                    else
+                        regroup_update_all(s);
+
                 }
 
                 if (this.verbose)
@@ -619,11 +628,10 @@ public class colorcount_HJ {
             if (this.num_verts_sub_ato > 1 && this.mapper_num > 1)
             {
 
-                // if (this.rotation_pipeline)
-                //     regroup_update_pipeline(0, threadIdx);
-                // else
-                //     regroup_update_all(0, threadIdx, this.chunks);
-                regroup_update_all(0);
+                if (this.rotation_pipeline)
+                    regroup_update_pipeline(0);
+                else
+                    regroup_update_all(0);
             }
 
             this.scAlgorithm.input.clearDTSub(0);
@@ -2117,11 +2125,6 @@ public class colorcount_HJ {
         // single thread communication
         regroup_comm_all(sub_id);
 
-        
-
-        // ConnPool.get().clean();
-        // System.gc();
-
         // precompute the maperids, chunkids, and offsets for adjlist of each local v
         // move this to daal side
         this.scAlgorithm.input.calculateUpdateIds(sub_id);
@@ -2132,7 +2135,7 @@ public class colorcount_HJ {
         //release precomputed ids
         //move to daal side
         this.scAlgorithm.input.releaseUpdateIds();
-        recycleMem();
+        this.scAlgorithm.input.freeRecvParcel();
     }   
 
     /**
@@ -2245,116 +2248,192 @@ public class colorcount_HJ {
      *
      * @return 
      */
-    private void regroup_update_pipeline(int sub_id, int threadIdx) throws BrokenBarrierException, InterruptedException
+    // private void regroup_update_pipeline(int sub_id) throws BrokenBarrierException, InterruptedException
+    private void regroup_update_pipeline(int sub_id)
     {
+        if (this.verbose)
+            LOG.info("Start pipeline for sub: " + sub_id);
+
+        //launch two java threads,
+        //one is in charge of doing comm, the other doing computation
+        RotateTaskComm rotate_comm = new RotateTaskComm(this.local_mapper_id, this.mapper_num, sub_id, this.scAlgorithm, this.mapper);
+        RotateTaskUpdate rotate_update = new RotateTaskUpdate(sub_id, this.scAlgorithm);
+
+        Thread threadComm = new Thread(rotate_comm);
+        Thread threadUpdate = new Thread(rotate_update);
 
         // first turn of regroup data send to its neighbour mapper id 
         // get the update id as the received mapper id 
-        if (threadIdx == 0)
+        rotate_comm.calcIDInit();
+        threadComm.start();
+
+        try{
+            threadComm.join();
+            threadComm = null;
+        }
+        catch (InterruptedException e) 
         {
-            this.pipeline_send_id = (this.local_mapper_id + 1)%this.mapper_num;
-            this.pipeline_recv_id = regroup_comm_atomic(sub_id, this.pipeline_send_id);
-            this.pipeline_update_id = this.pipeline_recv_id;
+            e.printStackTrace();
         }
 
-        this.barrier.await();
+
+        //update send/recv/update ids
+        this.pipeline_send_id = rotate_comm.getSendID();
+        this.pipeline_recv_id = rotate_comm.getRecvID();
+        this.pipeline_update_id =  rotate_comm.getUpdateID();
+
+        // if (threadIdx == 0)
+        // {
+        //  //within rotate_comm task
+        // this.pipeline_send_id = (this.local_mapper_id + 1)%this.mapper_num;
+        // this.pipeline_recv_id = regroup_comm_atomic(sub_id, this.pipeline_send_id);
+        // this.pipeline_update_id = this.pipeline_recv_id;
+        // }
+
+        // this.barrier.await();
         // precompute the maperids, chunkids, and offsets for adjlist of each local v
+        this.scAlgorithm.input.calculateUpdateIds(sub_id);
         // calculate_update_ids(sub_id, threadIdx);
-        this.barrier.await();
+        // this.barrier.await();
 
         // start update
         if (this.mapper_num == 2)
         {
             //no need of pipeline all the data transferred
-            update_comm_all(sub_id, threadIdx, this.chunks);
-            this.barrier.await();
+            this.final_update_comm_counts = this.scAlgorithm.input.computeUpdateComm(sub_id);
+            LOG.info("updated counts at sub_id: " + sub_id + " is: " + final_update_comm_counts);
 
-            if (threadIdx == 0)
-                recycleMem();
-
-            this.barrier.await();
-
+            //release precomputed ids
+            this.scAlgorithm.input.freeRecvParcel();
+            this.scAlgorithm.input.releaseUpdateIds();
         }
         else
         {
             //start pipelined comm and update
             //mapper num > 2
-            this.count_comm_root[threadIdx] = 0.0d;
-
+            //     this.count_comm_root[threadIdx] = 0.0d;
+            //
+            this.final_update_comm_counts = 0.0;
             for(int i=0;i<this.mapper_num -2; i++)
             {
-                if (threadIdx == 0)
-                {
-                    
-                    this.pipeline_send_id++;
-                    this.pipeline_send_id = this.pipeline_send_id%this.mapper_num;
-                    this.pipeline_recv_id = regroup_comm_atomic(sub_id, this.pipeline_send_id);
+                // for comm
+                rotate_comm.setIDs(this.pipeline_send_id, this.pipeline_recv_id, this.pipeline_update_id);
+                rotate_comm.calcID();
 
-                    if (this.verbose)
-                        LOG.info("Pipeline "+ i + " finish comm send id: " + this.pipeline_send_id + "; recv id: " + this.pipeline_recv_id);
-                }
-                else
-                {
-                    //update local received data from previous turn
-                    update_comm_atomic(sub_id, this.pipeline_update_id,  threadIdx, this.chunks_pipeline);
+                if (threadComm == null)
+                    threadComm = new Thread(rotate_comm);
 
-                    if (this.verbose && threadIdx== 1)
-                        LOG.info("Pipeline "+i+" finish compute on data from mapper " + this.pipeline_update_id);
+                threadComm.start();
+                // for update
+                rotate_update.setIDs(this.pipeline_send_id, this.pipeline_recv_id, this.pipeline_update_id);
 
-                }
+                if (threadUpdate == null)
+                    threadUpdate = new Thread(rotate_update);
 
+                threadUpdate.start();
                 // sync and wait for the finish of comm and update
-                this.barrier.await();
+                try{
+                    threadComm.join();
+                    threadUpdate.join();
 
-                if (threadIdx == 0)
+                    threadComm = null;
+                    threadUpdate = null;
+                }
+                catch (InterruptedException e) 
                 {
-                    if (this.verbose)
-                        LOG.info("Start Pipeline Mem Recycle");
-
-                    recycleMemPipeline(this.pipeline_update_id);
-                    this.pipeline_update_id = this.pipeline_recv_id;
-
-                    if (this.verbose)
-                        LOG.info("Finish Pipeline Mem Recycle");
+                    e.printStackTrace();
                 }
 
-                this.barrier.await();
-            }
+                //         if (threadIdx == 0)
+                //         {
+                //             
+                //             this.pipeline_send_id++;
+                //             this.pipeline_send_id = this.pipeline_send_id%this.mapper_num;
+                //             this.pipeline_recv_id = regroup_comm_atomic(sub_id, this.pipeline_send_id);
+                //
+                //             if (this.verbose)
+                //                 LOG.info("Pipeline "+ i + " finish comm send id: " + this.pipeline_send_id + "; recv id: " + this.pipeline_recv_id);
+                //         }
+                //         else
+                //         {
+                //             //update local received data from previous turn
+                //             update_comm_atomic(sub_id, this.pipeline_update_id,  threadIdx, this.chunks_pipeline);
+                //
+                //             if (this.verbose)
+                //                 LOG.info("Pipeline "+i+" finish compute on data from mapper " + this.pipeline_update_id);
+                //
+                //         }
+                //
+                //         // this.barrier.await();
+                //
+                //         if (threadIdx == 0)
+                //         {
+                this.final_update_comm_counts += rotate_update.getUpdateCountsPip();   
 
-            // finish the udpating of comm data in the last pipeline step
-            if (this.verbose && threadIdx == 0)
+                if (this.verbose)
+                    LOG.info("Start Pipeline Mem Recycle");
+
+                this.scAlgorithm.input.freeRecvParcelPip(this.pipeline_update_id);
+                //update and get new update_pip id from rotate_comm
+                this.pipeline_send_id = rotate_comm.getSendID();
+                this.pipeline_recv_id = rotate_comm.getRecvID();
+                this.pipeline_update_id =  rotate_comm.getUpdateID();
+                //
+                //             recycleMemPipeline(this.pipeline_update_id);
+                //             this.pipeline_update_id = this.pipeline_recv_id;
+                //
+                //             if (this.verbose)
+                //                 LOG.info("Finish Pipeline Mem Recycle");
+                //         }
+                //
+                //         // this.barrier.await();
+            }
+            //
+            //     // finish the udpating of comm data in the last pipeline step
+            if (this.verbose)
                 LOG.info("Update Last remain of pipeline");
+            //
+            //     if (threadIdx != 0)
+            //         update_comm_atomic(sub_id, this.pipeline_update_id, threadIdx, this.chunks_pipeline);
+            //
+            rotate_update.setIDs(this.pipeline_send_id, this.pipeline_recv_id, this.pipeline_update_id);
 
-            if (threadIdx != 0)
-                update_comm_atomic(sub_id, this.pipeline_update_id, threadIdx, this.chunks_pipeline);
+            if (threadUpdate == null)
+                threadUpdate = new Thread(rotate_update);
 
-            this.barrier.await();
+            threadUpdate.start();
 
-            if (threadIdx == 0)
-                recycleMem();
-
-            this.barrier.await();
-
-        }
-
-        //release the compressed sending data
-        if (threadIdx == 0)
-        {
-            for(int i=0; i<this.num_verts_graph; i++)
-            {
-                this.compress_cache_array[i] = null;
-                this.compress_cache_index[i] = null;
+            try{
+                threadUpdate.join();
+                threadUpdate = null;
             }
-        }
-     
-        this.barrier.await();
-        //release precomputed ids
-        release_update_ids(threadIdx);
-        this.barrier.await();
+            catch (InterruptedException e) 
+            {
+                e.printStackTrace();
+            }
 
-        if (this.verbose && threadIdx == 0)
+            this.final_update_comm_counts += rotate_update.getUpdateCountsPip();   
+
+            this.scAlgorithm.input.freeRecvParcelPip(this.pipeline_update_id);
+            this.scAlgorithm.input.releaseUpdateIds();
+
+            //     // this.barrier.await();
+            //
+            //     // if (threadIdx == 0)
+            //         recycleMem();
+            //
+            //     // this.barrier.await();
+            //
+            LOG.info("updated counts at sub_id: " + sub_id + " is: " + final_update_comm_counts);
+        }
+
+        if (this.verbose)
             LOG.info("Finish pipeline for sub: " + sub_id);
-   
+
+        //add time to global timer
+        this.time_sync += rotate_comm.getSyncTime();
+        this.time_comm += rotate_comm.getCommTime();
+
     }
 
 
@@ -2365,12 +2444,6 @@ public class colorcount_HJ {
      */
     private void recycleMem()
     {
-        // clean up memory
-        // if (this.comm_data_table != null)
-        // {
-        //     this.comm_data_table.free();
-        //     this.comm_data_table = null;
-        // }
         this.scAlgorithm.input.freeRecvParcel();
     }
 
