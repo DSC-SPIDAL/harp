@@ -141,6 +141,22 @@ public class RotateTaskComm implements Runnable {
             //retrieve elements for assembling SCSet comm_data from daal side
             this.comm_data_table.addPartition(new Partition<>(comm_id, comm_data));
 
+            // release data 
+            parcel_v_offset = null;
+            parcel_v_data = null;
+            parcel_v_index = null;
+            parcel_v_index_short = null;
+
+            parcel_v_offset_table.freeDataMemory();
+            parcel_v_data_table.freeDataMemory();
+            parcel_v_index_table.freeDataMemory();
+
+            parcel_v_offset_table = null;
+            parcel_v_data_table = null;
+            parcel_v_index_table = null;
+
+            comm_data = null;
+
         } // end for parcels of a sender id
 
         LOG.info("Start rotate comm for subtemplate: " + this.sub_id + "; for pipeline send id: " + this.pipeline_send_id);
@@ -188,9 +204,15 @@ public class RotateTaskComm implements Runnable {
             recv_v_index = null;
             recv_v_index_int = null;
         
+            recv_v_offset_table.freeDataMemory();
+            recv_v_data_table.freeDataMemory();
+            recv_v_index_table.freeDataMemory();
+
             recv_v_offset_table = null;
             recv_v_data_table = null;
             recv_v_index_table = null;
+
+            System.gc();
 
             // there shall be only one update_id sent from one mapper
             update_id_pipeline = update_id;
@@ -208,14 +230,11 @@ public class RotateTaskComm implements Runnable {
         //
         comm_time_array = null;
         comm_time_table = null;
-        if (this.comm_data_table != null)
-        {
-            this.comm_data_table.free();
-            this.comm_data_table = null;
-        
-            ResourcePool.get().clean();
-            ConnPool.get().clean();
-        }
+        this.comm_data_table.free();
+        this.comm_data_table = null;
+
+        ResourcePool.get().clean();
+        ConnPool.get().clean();
 
         System.gc();
 

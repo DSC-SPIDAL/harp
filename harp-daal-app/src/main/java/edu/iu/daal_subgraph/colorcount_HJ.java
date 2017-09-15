@@ -1254,13 +1254,7 @@ public class colorcount_HJ {
 
                 //upload data from daal side to harp side
                 this.scAlgorithm.input.sendCommParcelLoad();
-                //debug check parcel offset, data and index
-                // for(int i = 0; i<5; i++)
-                // {
-                //     LOG.info("Retrieved parcel v offset: " + parcel_v_offset[i]);
-                //     LOG.info("Retrieved parcel v data: " + parcel_v_data[i]);
-                //     LOG.info("Retrieved parcel v index: " + parcel_v_index[i]);
-                // }
+                
                 //convert parcel index data from int to short
                 short[] parcel_v_index_short = new short[parcel_c_len]; 
                 for(int i=0;i<parcel_c_len;i++)
@@ -1269,6 +1263,22 @@ public class colorcount_HJ {
                 SCSet comm_data = new SCSet(parcel_v_num, parcel_c_len, parcel_v_offset, parcel_v_data, parcel_v_index_short);
                 //retrieve elements for assembling SCSet comm_data from daal side
                 this.comm_data_table.addPartition(new Partition<>(comm_id, comm_data));
+
+                //release data
+                parcel_v_offset = null;
+                parcel_v_data = null;
+                parcel_v_index = null;
+                parcel_v_index_short = null;
+
+                parcel_v_offset_table.freeDataMemory();
+                parcel_v_data_table.freeDataMemory();
+                parcel_v_index_table.freeDataMemory();
+
+                parcel_v_offset_table = null;
+                parcel_v_data_table = null;
+                parcel_v_index_table = null;
+
+                comm_data = null;
 
             } // end for parcels of a sender id
 
@@ -1331,9 +1341,15 @@ public class colorcount_HJ {
             recv_v_index = null;
             recv_v_index_int = null;
         
+            recv_v_offset_table.freeDataMemory();
+            recv_v_data_table.freeDataMemory();
+            recv_v_index_table.freeDataMemory();
+
             recv_v_offset_table = null;
             recv_v_data_table = null;
             recv_v_index_table = null;
+
+            System.gc();
         }
 
         // get the local sync time 
@@ -2136,6 +2152,9 @@ public class colorcount_HJ {
         //move to daal side
         this.scAlgorithm.input.releaseUpdateIds();
         this.scAlgorithm.input.freeRecvParcel();
+
+		LOG.info("JVM Memory in subtemplate: " + sub_id + ": Total is "+ Runtime.getRuntime().totalMemory()  + "; free is "  + Runtime.getRuntime().freeMemory() + 
+                "; used is " + (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()));
     }   
 
     /**
@@ -2387,6 +2406,10 @@ public class colorcount_HJ {
                 //         }
                 //
                 //         // this.barrier.await();
+
+                LOG.info("JVM Memory in subtemplate: " + sub_id + ", pip " + i + " : Total is "+ Runtime.getRuntime().totalMemory()  + "; free is "  + Runtime.getRuntime().freeMemory() + 
+                "; used is " + (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()));
+
             }
             //
             //     // finish the udpating of comm data in the last pipeline step
@@ -2433,6 +2456,9 @@ public class colorcount_HJ {
         //add time to global timer
         this.time_sync += rotate_comm.getSyncTime();
         this.time_comm += rotate_comm.getCommTime();
+
+        rotate_comm = null;
+        rotate_update = null;
 
     }
 
