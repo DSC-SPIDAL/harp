@@ -62,6 +62,11 @@ html lang={{.Site.LanguageCode}}
                 br
                 p &nbsp
                 br
+                a href=docs/harpdaal/qr/
+                  img src={{.Site.Params.assets.tileqr}} width="85%"
+                br
+                p &nbsp
+                br
               .col-sm-4
                 a href=docs/examples/kmeans/
                   img src={{.Site.Params.assets.tilekm}} width="85%"
@@ -73,6 +78,11 @@ html lang={{.Site.LanguageCode}}
                 br
                 p &nbsp
                 br
+                a href=docs/harpdaal/svd/
+                  img src={{.Site.Params.assets.tilesvd}} width="85%"
+                br
+                p &nbsp
+                br
               .col-sm-4
                 a href=docs/examples/mlrsgd/
                   img src={{.Site.Params.assets.tilemlr}} width="85%"
@@ -81,6 +91,11 @@ html lang={{.Site.LanguageCode}}
                 br
                 a href=docs/examples/nn/
                   img src={{.Site.Params.assets.tilenn}} width="85%"
+                br
+                p &nbsp
+                br
+                a href=docs/harpdaal/covariance/
+                  img src={{.Site.Params.assets.tilecov}} width="85%"
                 br
                 p &nbsp
                 br
