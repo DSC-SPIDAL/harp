@@ -18,6 +18,8 @@
 
 &lt;h1 id=&#34;harp-daal-singular-value-decomposition&#34;&gt;Harp - DAAL - Singular Value Decomposition&lt;/h1&gt;
 
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/harpdaal/SVD.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
+
 &lt;h2 id=&#34;overview&#34;&gt;Overview&lt;/h2&gt;
 
 &lt;p&gt;Singular Value Decomposition is a method which seeks to reduce the rank of a data matrix, thus finding the unique vectors, features, or characteristics of the data matrix at hand. This algorithm has been used in, but is not limited to signal processing, weather prediction, hotspot detection, and recommender systems.&lt;/p&gt;
