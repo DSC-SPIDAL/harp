@@ -36,6 +36,10 @@ params:
     tilemlr: /img/tile_mlr.png
     tilerf: /img/tile_rf.png
     tilenn: /img/tile_nn.png
+    tileqr: /img/front/qr_front.png
+    tilesvd: /img/front/svd_front.png
+    tilecov: /img/front/cov_front.png
+    tilelinear: /img/front/linear_reg_front.png
     css:
       - /css/style.min.css
       - /css/font-awesome.min.css
