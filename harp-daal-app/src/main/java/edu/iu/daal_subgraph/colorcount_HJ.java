@@ -2145,7 +2145,10 @@ public class colorcount_HJ {
         // move this to daal side
         this.scAlgorithm.input.calculateUpdateIds(sub_id);
 
-        final_update_comm_counts = this.scAlgorithm.input.computeUpdateComm(sub_id);
+        // final_update_comm_counts = this.scAlgorithm.input.computeUpdateComm(sub_id);
+        // move the update funcs to algorithm 
+        this.scAlgorithm.updateRemoteCounts(sub_id);
+        final_update_comm_counts = this.scAlgorithm.parameter.getUpdateCounts();
         LOG.info("updated counts at sub_id: " + sub_id + " is: " + final_update_comm_counts);
 
         //release precomputed ids
@@ -2319,7 +2322,9 @@ public class colorcount_HJ {
         if (this.mapper_num == 2)
         {
             //no need of pipeline all the data transferred
-            this.final_update_comm_counts = this.scAlgorithm.input.computeUpdateComm(sub_id);
+            // this.final_update_comm_counts = this.scAlgorithm.input.computeUpdateComm(sub_id);
+			this.scAlgorithm.updateRemoteCounts(sub_id);
+			this.final_update_comm_counts = this.scAlgorithm.parameter.getUpdateCounts();
             LOG.info("updated counts at sub_id: " + sub_id + " is: " + final_update_comm_counts);
 
             //release precomputed ids
@@ -2440,13 +2445,6 @@ public class colorcount_HJ {
             this.scAlgorithm.input.freeRecvParcelPip(this.pipeline_update_id);
             this.scAlgorithm.input.releaseUpdateIds();
 
-            //     // this.barrier.await();
-            //
-            //     // if (threadIdx == 0)
-            //         recycleMem();
-            //
-            //     // this.barrier.await();
-            //
             LOG.info("updated counts at sub_id: " + sub_id + " is: " + final_update_comm_counts);
         }
 
