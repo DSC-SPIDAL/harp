@@ -2444,6 +2444,7 @@ public class colorcount_HJ {
 
             this.scAlgorithm.input.freeRecvParcelPip(this.pipeline_update_id);
             this.scAlgorithm.input.releaseUpdateIds();
+            this.scAlgorithm.input.clearTaskUpdateList();
 
             LOG.info("updated counts at sub_id: " + sub_id + " is: " + final_update_comm_counts);
         }
