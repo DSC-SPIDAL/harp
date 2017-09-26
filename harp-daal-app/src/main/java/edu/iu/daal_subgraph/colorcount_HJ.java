@@ -270,7 +270,8 @@ public class colorcount_HJ {
      * @param do_vert
      * @param verb
      */
-    void init(SCDaalCollectiveMapper mapper, Context context, Distri scAlgorithm, int global_max_v_id, int thread_num, int core_num, int tpc, String affinity, boolean do_gdd, boolean do_vert, boolean verb)
+    void init(SCDaalCollectiveMapper mapper, Context context, Distri scAlgorithm, int global_max_v_id, int thread_num, int core_num, int tpc, String affinity, String omp_opt, int nbr_split_len, 
+            boolean do_gdd, boolean do_vert, boolean verb)
     {
         // assign params
         this.mapper = mapper;
@@ -306,7 +307,9 @@ public class colorcount_HJ {
         if (this.verbose == true)
             verbose_daal = 1;
 
-        this.scAlgorithm.parameter.setParameters(this.thread_num, this.core_num, this.tpc, affinity_daal, verbose_daal);
+        this.scAlgorithm.parameter.setParameters(this.thread_num, this.core_num, this.tpc, affinity_daal, nbr_split_len, verbose_daal);
+        // this.scAlgorithm.parameter.setOmpSchedule("static");
+        this.scAlgorithm.parameter.setOmpSchedule(omp_opt);
 
     }
 

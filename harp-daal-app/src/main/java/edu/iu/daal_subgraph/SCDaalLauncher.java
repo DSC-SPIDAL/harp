@@ -78,7 +78,7 @@ public class SCDaalLauncher extends Configured implements Tool {
         DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libhdfs.so#libhdfs.so"), configuration);
         DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libhdfs.so.0.0.0#libhdfs.so.0.0.0"), configuration);
 
-		if (args.length < 13) {
+		if (args.length < 15) {
 			System.err.println("Usage: edu.iu.subgraph.SCDaalLauncher" +
                     " <number of map tasks> "+
                     "<useLocalMultiThread> "+
@@ -88,9 +88,11 @@ public class SCDaalLauncher extends Configured implements Tool {
                     "<num threads per node> "+
                     "<num cores per node> "+
                     "<thread affinity> "+
+                    "<omp schedule>" +
                     "<thread per core> "+
                     "<mem per mapper>"+
                     "<mem per regroup array (MB)>"+
+                    "<len per nbr split task>"+
                     "<rotation-pipeline>" +
                     "<num iteration>");
 
@@ -106,39 +108,45 @@ public class SCDaalLauncher extends Configured implements Tool {
 		int numThreads = Integer.parseInt(args[5]);
 		int numCores = Integer.parseInt(args[6]);
         String affinity = args[7];
-        int tpc = Integer.parseInt(args[8]);
-        int mem = Integer.parseInt(args[9]);
-        int send_array_limit = Integer.parseInt(args[10]);
-        boolean rotation_pipeline = Boolean.parseBoolean(args[11]);
-        int numIteration = Integer.parseInt(args[12]);
+        String omp_opt = args[8];
+        int tpc = Integer.parseInt(args[9]);
+        int mem = Integer.parseInt(args[10]);
+        int send_array_limit = Integer.parseInt(args[11]);
+        int nbr_split_len = Integer.parseInt(args[12]);
+        boolean rotation_pipeline = Boolean.parseBoolean(args[13]);
+        int numIteration = Integer.parseInt(args[14]);
 
 		System.out.println("use Local MultiThread? "+useLocalMultiThread);
 		System.out.println("set Number of Map Tasks = " + numMapTasks);
 		System.out.println("set number of threads: "+numThreads);
 		System.out.println("set threads affinity: "+affinity);
+		System.out.println("set omp scheduler: "+omp_opt);
 		System.out.println("set number of cores per node: "+numCores);
 		System.out.println("set number of thd per core: "+ tpc);
 		System.out.println("set mem size per regroup array (MB): "+ send_array_limit);
+		System.out.println("set len of split nbr task: "+ nbr_split_len);
 
-		launch(graphDir, template, outDir, numMapTasks, useLocalMultiThread, numThreads, numCores, affinity, tpc,  mem, send_array_limit, rotation_pipeline, numIteration);
+		launch(graphDir, template, outDir, numMapTasks, useLocalMultiThread, numThreads, numCores, affinity, 
+                omp_opt, tpc,  mem, send_array_limit, nbr_split_len, rotation_pipeline, numIteration);
 		return 0;
 	}
 
     public void launch(String graphDir, String template, String outDir, int numMapTasks, 
-            boolean useLocalMultiThread, int numThreads, int numCores, String affinity, int tpc, int mem, int send_array_limit, boolean rotation_pipeline, int numIteration) 
+            boolean useLocalMultiThread, int numThreads, int numCores, String affinity, String omp_opt, int tpc, int mem, int send_array_limit, int nbr_split_len, boolean rotation_pipeline, int numIteration) 
         throws ClassNotFoundException, IOException, InterruptedException{
 
 		boolean jobSuccess = true;
 		int jobRetryCount = 0;
 		Job scJob = configureSCJob(graphDir, template, outDir, 
-                numMapTasks, useLocalMultiThread, numThreads, numCores, affinity, tpc, mem, send_array_limit, rotation_pipeline, numIteration);
+                numMapTasks, useLocalMultiThread, numThreads, numCores, affinity, omp_opt, tpc, mem, send_array_limit, nbr_split_len, rotation_pipeline, numIteration);
 		// ----------------------------------------------------------
 		jobSuccess =scJob.waitForCompletion(true);
 		// ----------------------------------------------------------
 	}
 
 	private Job configureSCJob(String graphDir, String template, String outDir, int numMapTasks, 
-            boolean useLocalMultiThread, int numThreads, int numCores, String affinity, int tpc, int mem, int send_array_limit, 
+            boolean useLocalMultiThread, int numThreads, int numCores, String affinity, 
+            String omp_opt, int tpc, int mem, int send_array_limit, int nbr_split_len, 
             boolean rotation_pipeline, int numIteration) throws IOException  
     {
 
@@ -172,7 +180,7 @@ public class SCDaalLauncher extends Configured implements Tool {
         // -Xmx120000m -Xms120000m
         // int xmx = (mem - 5000) > (mem * 0.9)
         //     ? (mem - 5000) : (int) Math.ceil(mem * 0.5);
-        int xmx = (int) Math.ceil((mem - 5000)*0.3);
+        int xmx = (int) Math.ceil((mem - 5000)*0.1);
         int xmn = (int) Math.ceil(0.25 * xmx);
         jobConf.set(
                 "mapreduce.map.collective.java.opts",
@@ -199,8 +207,10 @@ public class SCDaalLauncher extends Configured implements Tool {
 		jobConfig.setInt(SCConstants.THREAD_NUM,numThreads);
 		jobConfig.setInt(SCConstants.CORE_NUM, numCores);
 		jobConfig.set(SCConstants.THD_AFFINITY,affinity);
+		jobConfig.set(SCConstants.OMPSCHEDULE,omp_opt);
 		jobConfig.setInt(SCConstants.TPC, tpc);
 		jobConfig.setInt(SCConstants.SENDLIMIT, send_array_limit);
+		jobConfig.setInt(SCConstants.NBRTASKLEN, nbr_split_len);
 
 		jobConfig.setBoolean(SCConstants.ROTATION_PIPELINE, rotation_pipeline);
 		jobConfig.setInt(SCConstants.NUM_ITERATION, numIteration);

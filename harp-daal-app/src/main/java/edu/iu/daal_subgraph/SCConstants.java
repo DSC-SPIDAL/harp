@@ -27,8 +27,10 @@ public class SCConstants {
   public static final String CORE_NUM = "core_num";
   public static final String THREAD_NUM = "num_threads";
   public static final String THD_AFFINITY = "compact or scatter";
+  public static final String OMPSCHEDULE = "static dynamic or guided";
   public static final String TPC = "threads per core";
   public static final String SENDLIMIT = "mem per regroup array";
+  public static final String NBRTASKLEN = "len per nbr split task";
   public static final String ROTATION_PIPELINE = "use rotation-pipelined regroup";
   public static final String NUM_ITERATION="num_itr";
   public static final int ARR_LEN = 16;
