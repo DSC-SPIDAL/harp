@@ -65,8 +65,10 @@ public class SCDaalCollectiveMapper  extends CollectiveMapper<String, String, Ob
     private int numCores;
     private int tpc;
     private long send_array_limit;
+    private int nbr_split_len;
     private boolean rotation_pipeline;
     private String affinity;
+    private String omp_opt;
 	boolean useLocalMultiThread;
     private int vert_num_count =0;
     private int vert_num_count_total = 0;
@@ -102,9 +104,12 @@ public class SCDaalCollectiveMapper  extends CollectiveMapper<String, String, Ob
 
         numCores = configuration.getInt(SCConstants.CORE_NUM, 24);
         affinity = configuration.get(SCConstants.THD_AFFINITY);
+        omp_opt = configuration.get(SCConstants.OMPSCHEDULE);
         tpc = configuration.getInt(SCConstants.TPC, 2);
 
         send_array_limit = (configuration.getInt(SCConstants.SENDLIMIT, 250))*1024L*1024L;
+        nbr_split_len = configuration.getInt(SCConstants.NBRTASKLEN, 0);
+
         numIteration =configuration.getInt(SCConstants.NUM_ITERATION, 10);
         LOG.info("Harp-DAAL Subgraph Counting Iteration: " + numIteration);
 
@@ -216,7 +221,7 @@ public class SCDaalCollectiveMapper  extends CollectiveMapper<String, String, Ob
 
 		// ---------------  main computation ----------------------------------
         colorcount_HJ graph_count = new colorcount_HJ();
-        graph_count.init(this, context, scAlgorithm, max_v_id, numThreads, numCores, tpc, affinity, false, false, true);
+        graph_count.init(this, context, scAlgorithm, max_v_id, numThreads, numCores, tpc, affinity, omp_opt, nbr_split_len, false, false, true);
 
         // // ------------------- generate communication information -------------------
         // // send/recv num and verts 
