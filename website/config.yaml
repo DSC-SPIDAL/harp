@@ -39,7 +39,7 @@ params:
     tileqr: /img/front/qr_front.png
     tilesvd: /img/front/svd_front.png
     tilecov: /img/front/cov_front.png
-    tilelinear: /img/front/linear_reg_front.png
+    tilelinear: /img/front/linear_reg_front.jpg
     css:
       - /css/style.min.css
       - /css/font-awesome.min.css
