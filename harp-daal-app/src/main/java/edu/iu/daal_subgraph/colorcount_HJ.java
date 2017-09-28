@@ -322,6 +322,7 @@ public class colorcount_HJ {
     void init_comm(int[] mapper_id_vertex, long send_array_limit, boolean rotation_pipeline) 
     {
 
+        LOG.info("Start init comm");
         //create abs mapping structure
         //copy this to daal side
         this.abs_v_to_mapper = mapper_id_vertex;
@@ -335,81 +336,24 @@ public class colorcount_HJ {
         HomogenNumericTable abs_v_to_mapper_daal_table = new HomogenNumericTable(daal_Context, this.abs_v_to_mapper, 1, this.abs_v_to_mapper.length);
         this.scAlgorithm.input.set(InputId.vMapper, abs_v_to_mapper_daal_table);
 
+        //debug
+        LOG.info("Init comm copy abs_v_to_mapper table");
+
         long init_comm_start = System.currentTimeMillis();
         this.scAlgorithm.input.initComm(this.mapper_num, this.local_mapper_id, this.send_array_limit, this.rotation_pipeline);
 
-        //move this to daal side
-        // this.abs_v_to_queue = new int[this.max_abs_id + 1];
-        // this.chunks_mapper = divide_chunks(this.mapper_num, this.thread_num);
-
-        // init comm mappers
-        // move this to daal side
-        // this.comm_mapper_vertex = new HashSet[this.mapper_num];
-        // for(int i=0; i<this.mapper_num; i++)
-            // this.comm_mapper_vertex[i] = new HashSet<>(); 
-
-        //loop over all the adj of local graph verts
-        //adj_array stores abs id 
-        // int[] adj_array = this.g.adjacencies();
-        // for(int i=0;i<adj_array.length;i++)
-        // {
-        //     int adj_abs_id = adj_array[i];
-        //     int mapper_id = this.abs_v_to_mapper[adj_abs_id];
-        //     this.comm_mapper_vertex[mapper_id].add(new Integer(adj_abs_id));
-        // }
-
-        // this.update_map = new int[this.num_verts_graph][];
-        // for(int i=0;i<this.num_verts_graph;i++)
-        //     this.update_map[i] = new int[this.g.out_degree(i)];
-        //
-        // this.update_map_size = new int[this.num_verts_graph];
-        // this.update_queue_pos = new int[this.mapper_num][][];
-        // this.update_queue_counts = new float[this.mapper_num][][];
-        // this.update_queue_index = new short[this.mapper_num][][];
-        // this.update_mapper_len = new int[this.mapper_num];
+        LOG.info("Init comm initcomm at daal side");
 
         //convert set to arraylist
         this.comm_vertex_table = new Table<>(0, new IntArrPlus());
         this.send_vertex_table = new Table<>(0, new IntArrPlus());
         this.send_vertex_array = new ArrayList<>();
 
-        //only used in cached compress
-        // this.compress_cache_array = new float[this.num_verts_graph][];
-        // this.compress_cache_index = new short[this.num_verts_graph][];
-        // this.compress_cache_len = new int[this.num_verts_graph];
-
-        // this.map_ids_cache_pip = new int[this.num_verts_graph][];
-        // this.chunk_ids_cache_pip = new int[this.num_verts_graph][];
-        // this.chunk_internal_offsets_cache_pip = new int[this.num_verts_graph][];
-
         // prepareing send/recv information
         // the requested adj_abs_v queues will be sent to each mapper
         for(int i=0;i<this.mapper_num;i++)
         {
-            //move this to daal side
-            // i is the mapper id from which local_mapper demands adj data
-            // if ( (i != this.local_mapper_id)  &&  this.comm_mapper_vertex[i].size() > 0 )
-            // {
-            //
-            //     //create partition id, the upper 16 bits stores requested id
-            //     //the lower 16 bits stores sender id (local id)
-            //     int comm_id = ( (i << 16) | this.local_mapper_id );
-            //
-            //     // retrieve communicated adj_abs_id
-            //     ArrayList<Integer> temp_array = new ArrayList<>(comm_mapper_vertex[i]);
-            //     int[] temp_array_primitive = ArrayUtils.toPrimitive(temp_array.toArray(new Integer[temp_array.size()]));
-            //
-            //     // recored the length of total vertices array received from other mappers
-            //     this.update_mapper_len[i] = temp_array_primitive.length;
-            //
-            //     //create mapping from adj_abs_id to relative t in update offset queue
-            //     for(int j = 0; j< temp_array_primitive.length; j++)
-            //         this.abs_v_to_queue[temp_array_primitive[j]] = j;
-            //
-            //     IntArray comm_array = new IntArray(temp_array_primitive, 0, temp_array_primitive.length);
-            //     //table to communicate with other mappers
-            //     this.comm_vertex_table.addPartition(new Partition<>(comm_id, comm_array));
-            // }
+        
             this.scAlgorithm.input.initCommPrepare(i);
             long prep_table_size = this.scAlgorithm.input.getDaalTableSize();
             LOG.info("For mapper: " + i + " prep table size: " + prep_table_size);
@@ -430,7 +374,6 @@ public class colorcount_HJ {
                 this.comm_vertex_table.addPartition(new Partition<>(comm_id, comm_array));
 
             }
-
         }
 
         if (this.verbose)
@@ -446,10 +389,6 @@ public class colorcount_HJ {
         
 
         // // pack the received requested adj_v_id information into send queues
-
-        // int recv_part_size = this.comm_vertex_table.getNumPartitions();
-        // this.scAlgorithm.input.setSendVertexSize(recv_part_size);
-
         for(int comm_id : this.comm_vertex_table.getPartitionIDs())
         {
             int dst_mapper_id = comm_id & ( (1 << 16) -1 );
@@ -523,10 +462,12 @@ public class colorcount_HJ {
         //obtain the hash values table for each subtemplate and a combination of color sets
         // create_tables();
         this.scAlgorithm.input.initNumTable();
+        LOG.info("Finish Creating num hash table");
 
         //initialize dynamic prog table, with subtemplate-vertices-color array
         // this.dt.init(this.subtemplates, this.subtemplate_count, this.num_verts_graph, this.num_colors, this.max_abs_id);
         this.scAlgorithm.input.initDTTable();
+        LOG.info("Finish init dynamic_table_array");
 
         //vertice num of the full graph, huge
         // this.chunks = divide_chunks(this.num_verts_graph, this.thread_num);   
@@ -2273,7 +2214,6 @@ public class colorcount_HJ {
      *
      * @return 
      */
-    // private void regroup_update_pipeline(int sub_id) throws BrokenBarrierException, InterruptedException
     private void regroup_update_pipeline(int sub_id)
     {
         if (this.verbose)

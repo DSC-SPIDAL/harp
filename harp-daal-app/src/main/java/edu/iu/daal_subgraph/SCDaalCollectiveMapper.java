@@ -223,6 +223,8 @@ public class SCDaalCollectiveMapper  extends CollectiveMapper<String, String, Ob
         colorcount_HJ graph_count = new colorcount_HJ();
         graph_count.init(this, context, scAlgorithm, max_v_id, numThreads, numCores, tpc, affinity, omp_opt, nbr_split_len, false, false, true);
 
+        LOG.info("Finish colorcount_HJ init");
+
         // // ------------------- generate communication information -------------------
         // // send/recv num and verts 
         
@@ -286,9 +288,19 @@ public class SCDaalCollectiveMapper  extends CollectiveMapper<String, String, Ob
         int t_num_vert = scAlgorithm.input.getTVNum();
         int num_colors = t_num_vert;
         boolean calculate_automorphisms = true;
+        if (t_num_vert > 12)
+            calculate_automorphisms = false;
         //
-        double prob_colorful = Util.factorial(num_colors) /
-                ( Util.factorial(num_colors - t_num_vert) * Math.pow(num_colors, t_num_vert) );
+        // double prob_colorful = Util.factorial(num_colors) /
+        //         ( Util.factorial(num_colors - t_num_vert) * Math.pow(num_colors, t_num_vert) );
+        //do not use util.factorial for large value
+        
+        double factor_val = (double)num_colors;
+        for(int f = num_colors - 1; f > (num_colors - t_num_vert); f--)
+            factor_val *= f;
+
+        double prob_colorful = factor_val/(double)Math.pow(num_colors, t_num_vert);
+        
         //
         int num_auto = calculate_automorphisms ? scAlgorithm.input.getMorphism() : 1;
         double final_count = Math.floor(full_count / (prob_colorful * num_auto) + 0.5);
