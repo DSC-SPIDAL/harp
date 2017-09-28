@@ -117,6 +117,9 @@ public class RotateTaskComm implements Runnable {
             int parcel_v_num = this.scAlgorithm.input.getCommParcelPrepVNum();
             int parcel_c_len = this.scAlgorithm.input.getCommParcelPrepCountLen();
 
+            //debug
+            LOG.info("Parcel_c_len value debug: "+ parcel_c_len);
+
             // add three numerictables
             int[] parcel_v_offset = new int[parcel_v_num+1];
             HomogenNumericTable parcel_v_offset_table = new HomogenNumericTable(daal_Context, parcel_v_offset, 1, (parcel_v_num+1));

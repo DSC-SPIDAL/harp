@@ -74,8 +74,6 @@ public class RotateTaskUpdate implements Runnable {
         this.scAlgorithm.updateRemoteCountsPip(sub_id, this.pipeline_update_id);
         this.update_counts_pip = this.scAlgorithm.parameter.getUpdateCounts();
 
-        // this.update_counts_pip = this.scAlgorithm.input.computeUpdateCommPip(sub_id, this.pipeline_update_id);
-
     }
     
 }
