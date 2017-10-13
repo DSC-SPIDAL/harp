@@ -23,9 +23,11 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.CollectiveMapper;
 import java.io.*;
 import java.util.*;
+import java.nio.file.*;
 
 import edu.iu.dymoro.Rotator;
 import edu.iu.harp.example.IntArrPlus;
+import edu.iu.harp.example.LongArrPlus;
 import edu.iu.harp.example.DoubleArrPlus;
 import edu.iu.harp.partition.Partition;
 import edu.iu.harp.partition.Table;
@@ -74,6 +76,9 @@ public class SCDaalCollectiveMapper  extends CollectiveMapper<String, String, Ob
     private int vert_num_count_total = 0;
     private int adj_len = 0;
     private int max_v_id = 0;
+    private int max_v_deg = 0;
+    private long total_v_deg = 0;
+    private long total_v_num = 0;
     private Graph t;
     private Table<IntArray> abs_ids_table;
     private int[] mapper_id_vertex; 
@@ -157,20 +162,25 @@ public class SCDaalCollectiveMapper  extends CollectiveMapper<String, String, Ob
         int localMaxV = scAlgorithm.input.getLocalMaxV();
         int localADJlen = scAlgorithm.input.getLocalADJLen(); 
 
+
         LOG.info("vert num count local: " + localVNum + "; local max v id: " + localMaxV + "; total local nbrs num: " + localADJlen);
 
-        //allreduce to get the global max v_id 
-        Table<IntArray> table_max_id = new Table<>(0, new IntArrMax());
-        IntArray array_max_id = IntArray.create(1, false);
-        array_max_id.get()[0] = localMaxV;
-        table_max_id.addPartition(new Partition<>(0, array_max_id));
-        this.allreduce("sc", "get-max-v-id", table_max_id);
-        max_v_id = table_max_id.getPartition(0).get().get()[0];
+        //allreduce to get the global max v_id and max deg
+        Table<IntArray> table_max = new Table<>(0, new IntArrMax());
+        IntArray array_max = IntArray.create(1, false);
+        array_max.get()[0] = localMaxV;
+
+        table_max.addPartition(new Partition<>(0, array_max));
+        this.allreduce("sc", "get-max-v-value", table_max);
+
+        max_v_id = table_max.getPartition(0).get().get()[0];
+        LOG.info("Max vertex id of full graph: " + max_v_id);
+
+		
         //load MaxV into daal obj
         scAlgorithm.input.setGlobalMaxV(max_v_id);
-        LOG.info("Max vertex id of full graph: " + max_v_id);
-        table_max_id.release();
-        table_max_id = null;
+        table_max.release();
+        table_max = null;
 
         int[] local_abs_ids = new int[localVNum];
         HomogenNumericTable local_abs_ids_daal = new HomogenNumericTable(daal_Context, local_abs_ids, localVNum, 1);
@@ -178,6 +188,37 @@ public class SCDaalCollectiveMapper  extends CollectiveMapper<String, String, Ob
 
         //start init daal graph structure
         scAlgorithm.input.initGraph();
+
+		//get deg information
+		int localTotalDeg = scAlgorithm.input.getTotalDeg();
+		int localMaxDeg = scAlgorithm.input.getMaxDeg();
+
+		// get max deg from all mappers
+		Table<IntArray> table_max_deg = new Table<>(0, new IntArrPlus());
+        IntArray array_max_deg = IntArray.create(1, false);
+        array_max_deg.get()[0] = localMaxDeg;
+		table_max_deg.addPartition(new Partition<>(0, array_max_deg));
+        this.allreduce("sc", "get-max-deg-value", table_max_deg);
+		max_v_deg = table_max_deg.getPartition(0).get().get()[0];
+		LOG.info("Max vertex deg of full graph: " + max_v_deg);
+		table_max_deg.release();
+		table_max_deg = null;
+
+		// get total deg from all mappers
+		// calculate avg deg
+		Table<LongArray> table_total = new Table<>(0, new LongArrPlus());
+        LongArray array_total = LongArray.create(2, false);
+        array_total.get()[0] = localTotalDeg;
+		array_total.get()[1] = localVNum;
+		table_total.addPartition(new Partition<>(0, array_total));
+        this.allreduce("sc", "get-total-v-value", table_total);
+		total_v_deg = table_total.getPartition(0).get().get()[0];
+		total_v_num = table_total.getPartition(0).get().get()[1];
+
+		LOG.info("Total vertex deg of full graph: " + total_v_deg);
+		LOG.info("Avg vertex deg: " + (total_v_deg)/(double)total_v_num);
+		table_total.release();
+		table_total = null;
 
         //communication allgather to get all global ids
         abs_ids_table = new Table<>(0, new IntArrPlus());
@@ -227,7 +268,6 @@ public class SCDaalCollectiveMapper  extends CollectiveMapper<String, String, Ob
 
         // // ------------------- generate communication information -------------------
         // // send/recv num and verts 
-        
         if (this.getNumWorkers() > 1)
         {
             graph_count.init_comm(mapper_id_vertex, send_array_limit, rotation_pipeline);
@@ -235,20 +275,44 @@ public class SCDaalCollectiveMapper  extends CollectiveMapper<String, String, Ob
         }
 
         // --------------------- start counting ---------------------
+		// generate vtune trigger file if necessary
+
+		// write vtune flag files to disk
+		java.nio.file.Path vtune_file = java.nio.file.Paths.get("/N/u/lc37/WorkSpace/Hsw_Test/harp-2018/test_scripts/vtune-flag.txt");
+		String flag_trigger = "Start training process and trigger vtune profiling.";
+		try {
+			java.nio.file.Files.write(vtune_file, flag_trigger.getBytes());
+		}catch (IOException e)
+		{
+
+		}
+
 		long computation_start = System.currentTimeMillis();
-        double full_count = 0.0;
+		double full_count = 0.0;
         full_count = graph_count.do_full_count(numIteration);
         //
 		long computation_end = System.currentTimeMillis();
         long local_count_time = (computation_end - computation_start);
         long local_comm_time = graph_count.get_comm_time();
         long local_sync_time = graph_count.get_sync_time();
+		long local_comp_time = graph_count.get_comp_time();
+
+		long local_comm_time_pip = graph_count.get_comm_time_pip();
+        long local_sync_time_pip = graph_count.get_sync_time_pip();
+		long local_comp_time_pip = graph_count.get_comp_time_pip();
+
         //
         Table<DoubleArray> time_table = new Table<>(0, new DoubleArrPlus());
-        DoubleArray time_array = DoubleArray.create(3, false);
+        DoubleArray time_array = DoubleArray.create(7, false);
         time_array.get()[0] = (double)local_count_time;
         time_array.get()[1] = (double)local_comm_time;
         time_array.get()[2] = (double)local_sync_time;
+        time_array.get()[3] = (double)local_comp_time;
+
+		time_array.get()[4] = (double)local_comm_time_pip;
+        time_array.get()[5] = (double)local_sync_time_pip;
+        time_array.get()[6] = (double)local_comp_time_pip;
+
         //
         time_table.addPartition(new Partition<>(0, time_array));
         //
@@ -257,20 +321,37 @@ public class SCDaalCollectiveMapper  extends CollectiveMapper<String, String, Ob
         double global_count_time = time_table.getPartition(0).get().get()[0]/this.getNumWorkers(); 
         double global_comm_time = time_table.getPartition(0).get().get()[1]/this.getNumWorkers(); 
         double global_sync_time = time_table.getPartition(0).get().get()[2]/this.getNumWorkers(); 
+        double global_comp_time = time_table.getPartition(0).get().get()[3]/this.getNumWorkers(); 
+
+		double global_comm_time_pip = time_table.getPartition(0).get().get()[4]/this.getNumWorkers(); 
+        double global_sync_time_pip = time_table.getPartition(0).get().get()[5]/this.getNumWorkers(); 
+        double global_comp_time_pip = time_table.getPartition(0).get().get()[6]/this.getNumWorkers(); 
+
         //
         LOG.info("Total Counting time: " + global_count_time + " ms" + "; Avg per itr: " + 
                 (global_count_time/(double)numIteration) + " ms");
-        //  
         //        
         LOG.info("Total comm time: " + global_comm_time + " ms" + "; Avg per itr: "
                 + (global_comm_time/(double)numIteration) + " ms");
         //
         LOG.info("Total sync time: " + global_sync_time + " ms" + "; Avg per itr: "
                 + (global_sync_time/(double)numIteration) + " ms");
+
+        LOG.info("Total compute time: " + global_comp_time + " ms" + "; Avg per itr: "
+                + (global_comp_time/(double)numIteration) + " ms");
+
+		LOG.info("Pip comm time: " + global_comm_time_pip + " ms" + "; Avg per itr: "
+                + (global_comm_time_pip/(double)numIteration) + " ms");
         //
+        LOG.info("Pip sync time: " + global_sync_time_pip + " ms" + "; Avg per itr: "
+                + (global_sync_time_pip/(double)numIteration) + " ms");
+
+        LOG.info("Pip compute time: " + global_comp_time_pip + " ms" + "; Avg per itr: "
+                + (global_comp_time_pip/(double)numIteration) + " ms");
+
         LOG.info("Time Ratio: Comm: " + (global_comm_time/global_count_time)*100 + " %; Waiting: " 
                 + (global_sync_time - global_comm_time)/global_count_time*100 + " %; Local Computation: "
-                + (global_count_time - global_sync_time)/global_count_time*100 + " %");
+                + (global_comp_time)/global_count_time*100 + " %");
 
         // // --------------- allreduce the final count from all mappers ---------------
         // //
