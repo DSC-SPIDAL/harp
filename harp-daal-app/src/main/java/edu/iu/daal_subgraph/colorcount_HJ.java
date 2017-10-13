@@ -235,16 +235,19 @@ public class colorcount_HJ {
     private long start_comp = 0;
     // avg computation time of all iterations
     private long time_comp = 0;
+    private long time_comp_pip = 0; //within pipeline
 
     //global comm time, excluding the waiting time on local 
     //computation
     private long start_comm = 0;
     private long time_comm = 0;
+    private long time_comm_pip = 0; //within pipline
 
     //local sync time, including comm time and waiting time because of 
     //load imbalance
     private long start_sync = 0;
     private long time_sync = 0;
+    private long time_sync_pip = 0; //within pipeline
 
     private long start_misc = 0;
 
@@ -504,6 +507,10 @@ public class colorcount_HJ {
             {
                 // TODO: daa kernel to do local computation for subtemplate s 
                 //get num_vert of subtemplate s
+				
+				//record the local computation time 
+				this.start_comp = System.currentTimeMillis();
+
                 this.num_verts_sub_ato = scAlgorithm.input.getSubVertN(s);
                 if(this.verbose)
                     LOG.info("Initing Subtemplate "+ s + ", t verts: " + num_verts_sub_ato);
@@ -529,26 +536,17 @@ public class colorcount_HJ {
                 if(this.verbose)
                     LOG.info("Finish Counting Local Graph Subtemplate "+ s);
 
+				this.time_comp += (System.currentTimeMillis() - this.start_comp);
+
                 //start communication part single thread  at daal side
                 // only for subtemplates size > 1, having neighbours on other mappers
                 // only if more than one mapper, otherwise all g verts are local
                 if (this.mapper_num > 1 && this.num_verts_sub_ato > 1)
                 {
                     if (this.rotation_pipeline)
-                    {
-                        // try{
-
-                            regroup_update_pipeline(s);
-                        // }
-                        // catch (InterruptedException e) 
-                        // {
-                            // e.printStackTrace();
-                        // }
-
-                    }
+                        regroup_update_pipeline(s);
                     else
                         regroup_update_all(s);
-
                 }
 
                 if (this.verbose)
@@ -562,8 +560,13 @@ public class colorcount_HJ {
             if(verbose)
                 LOG.info("Done with initialization. Doing full count");
 
+			
+			this.start_comp = System.currentTimeMillis();
+
             this.scAlgorithm.input.initDTSub(0);
             scAlgorithm.computeNonBottom(0);
+
+			this.time_comp += (System.currentTimeMillis() - this.start_comp);
 
             //comm and add the communicated counts to full_count_ato
             // only for subtemplates size > 1, having neighbours on other mappers
@@ -2071,6 +2074,26 @@ public class colorcount_HJ {
         return this.time_sync;
     }
 
+	public long get_comp_time()
+    {
+        return this.time_comp;
+    }
+
+	public long get_comm_time_pip()
+    {
+        return this.time_comm_pip;
+    }
+
+    public long get_sync_time_pip()
+    {
+        return this.time_sync_pip;
+    }
+
+	public long get_comp_time_pip()
+    {
+        return this.time_comp_pip;
+    }
+
     /**
      * @brief update the received counts for each local vertex
      *
@@ -2083,8 +2106,11 @@ public class colorcount_HJ {
     private void regroup_update_all(int sub_id)
     {
         // single thread communication
+		long start_comm_local = System.currentTimeMillis();
         regroup_comm_all(sub_id);
+		this.time_comm += (System.currentTimeMillis() - start_comm_local);
 
+		long start_comp_local = System.currentTimeMillis();
         // precompute the maperids, chunkids, and offsets for adjlist of each local v
         // move this to daal side
         this.scAlgorithm.input.calculateUpdateIds(sub_id);
@@ -2094,6 +2120,8 @@ public class colorcount_HJ {
         this.scAlgorithm.updateRemoteCounts(sub_id);
         final_update_comm_counts = this.scAlgorithm.parameter.getUpdateCounts();
         LOG.info("updated counts at sub_id: " + sub_id + " is: " + final_update_comm_counts);
+
+		this.time_comp += (System.currentTimeMillis() - start_comp_local);
 
         //release precomputed ids
         //move to daal side
@@ -2241,7 +2269,6 @@ public class colorcount_HJ {
             e.printStackTrace();
         }
 
-
         //update send/recv/update ids
         this.pipeline_send_id = rotate_comm.getSendID();
         this.pipeline_recv_id = rotate_comm.getRecvID();
@@ -2277,9 +2304,10 @@ public class colorcount_HJ {
         else
         {
             //start pipelined comm and update
-            //mapper num > 2
-            //     this.count_comm_root[threadIdx] = 0.0d;
-            //
+            
+			rotate_comm.set_enter_pip(true);
+			rotate_update.set_enter_pip(true);
+
             this.final_update_comm_counts = 0.0;
             for(int i=0;i<this.mapper_num -2; i++)
             {
@@ -2311,30 +2339,6 @@ public class colorcount_HJ {
                     e.printStackTrace();
                 }
 
-                //         if (threadIdx == 0)
-                //         {
-                //             
-                //             this.pipeline_send_id++;
-                //             this.pipeline_send_id = this.pipeline_send_id%this.mapper_num;
-                //             this.pipeline_recv_id = regroup_comm_atomic(sub_id, this.pipeline_send_id);
-                //
-                //             if (this.verbose)
-                //                 LOG.info("Pipeline "+ i + " finish comm send id: " + this.pipeline_send_id + "; recv id: " + this.pipeline_recv_id);
-                //         }
-                //         else
-                //         {
-                //             //update local received data from previous turn
-                //             update_comm_atomic(sub_id, this.pipeline_update_id,  threadIdx, this.chunks_pipeline);
-                //
-                //             if (this.verbose)
-                //                 LOG.info("Pipeline "+i+" finish compute on data from mapper " + this.pipeline_update_id);
-                //
-                //         }
-                //
-                //         // this.barrier.await();
-                //
-                //         if (threadIdx == 0)
-                //         {
                 this.final_update_comm_counts += rotate_update.getUpdateCountsPip();   
 
                 if (this.verbose)
@@ -2345,27 +2349,18 @@ public class colorcount_HJ {
                 this.pipeline_send_id = rotate_comm.getSendID();
                 this.pipeline_recv_id = rotate_comm.getRecvID();
                 this.pipeline_update_id =  rotate_comm.getUpdateID();
-                //
-                //             recycleMemPipeline(this.pipeline_update_id);
-                //             this.pipeline_update_id = this.pipeline_recv_id;
-                //
-                //             if (this.verbose)
-                //                 LOG.info("Finish Pipeline Mem Recycle");
-                //         }
-                //
-                //         // this.barrier.await();
 
                 LOG.info("JVM Memory in subtemplate: " + sub_id + ", pip " + i + " : Total is "+ Runtime.getRuntime().totalMemory()  + "; free is "  + Runtime.getRuntime().freeMemory() + 
                 "; used is " + (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()));
 
             }
-            //
+
+			rotate_comm.set_enter_pip(false);
+			rotate_update.set_enter_pip(false);
+
             //     // finish the udpating of comm data in the last pipeline step
             if (this.verbose)
                 LOG.info("Update Last remain of pipeline");
-            //
-            //     if (threadIdx != 0)
-            //         update_comm_atomic(sub_id, this.pipeline_update_id, threadIdx, this.chunks_pipeline);
             //
             rotate_update.setIDs(this.pipeline_send_id, this.pipeline_recv_id, this.pipeline_update_id);
 
@@ -2398,6 +2393,11 @@ public class colorcount_HJ {
         //add time to global timer
         this.time_sync += rotate_comm.getSyncTime();
         this.time_comm += rotate_comm.getCommTime();
+		this.time_comp += rotate_update.getCompTime();
+
+		this.time_sync_pip += rotate_comm.getSyncTimePip();
+		this.time_comm_pip += rotate_comm.getCommTimePip();
+		this.time_comp_pip += rotate_update.getCompTimePip();
 
         rotate_comm = null;
         rotate_update = null;

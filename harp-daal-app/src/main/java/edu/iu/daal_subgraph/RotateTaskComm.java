@@ -37,6 +37,10 @@ public class RotateTaskComm implements Runnable {
     private int sub_id;
     private long time_sync;
     private long time_comm;
+    private long time_sync_pip;
+    private long time_comm_pip;
+
+    private boolean enter_pip;
 
     private Distri scAlgorithm;
 
@@ -55,12 +59,16 @@ public class RotateTaskComm implements Runnable {
         this.pipeline_update_id = -1;
         this.time_sync = 0;
         this.time_comm = 0;
+        this.time_sync_pip = 0;
+        this.time_comm_pip = 0;
+
         this.local_mapper_id = local_mapper_id;
         this.mapper_num = mapper_num;
         this.sub_id = sub_id;
         this.scAlgorithm = scAlgorithm;
         this.comm_data_table = null;
         this.mapper = mapper;
+        this.enter_pip = false;
     }
 
     void setIDs(int send_id, int recv_id, int update_id)
@@ -86,6 +94,11 @@ public class RotateTaskComm implements Runnable {
     int getUpdateID() {return this.pipeline_update_id;}
     long getSyncTime() {return this.time_sync; }
     long getCommTime() {return this.time_comm; }
+
+    long getSyncTimePip() {return this.time_sync_pip; }
+    long getCommTimePip() {return this.time_comm_pip; }
+
+    void set_enter_pip(boolean flag) { this.enter_pip = flag; }
 
     @Override
     public void run() {
@@ -223,6 +236,9 @@ public class RotateTaskComm implements Runnable {
 
         long cur_sync_time = (System.currentTimeMillis() - start_sync);
         this.time_sync += cur_sync_time;
+        if (this.enter_pip)
+            this.time_sync_pip += cur_sync_time;
+
         // all reduce to get the miminal sync time from all the mappers, set that to the comm time
         Table<LongArray> comm_time_table = new Table<>(0, new LongArrMin());
         LongArray comm_time_array = LongArray.create(1, false);
@@ -230,6 +246,10 @@ public class RotateTaskComm implements Runnable {
         comm_time_table.addPartition(new Partition<>(0, comm_time_array));
         this.mapper.allreduce("sc", "get-global-comm-time", comm_time_table);
         this.time_comm += (comm_time_table.getPartition(0).get().get()[0]);
+
+        if (this.enter_pip)
+            this.time_comm_pip += (comm_time_table.getPartition(0).get().get()[0]);
+
         //
         comm_time_array = null;
         comm_time_table = null;
