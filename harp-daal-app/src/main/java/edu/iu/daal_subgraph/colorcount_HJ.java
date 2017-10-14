@@ -543,7 +543,7 @@ public class colorcount_HJ {
                 // only if more than one mapper, otherwise all g verts are local
                 if (this.mapper_num > 1 && this.num_verts_sub_ato > 1)
                 {
-                    if (this.rotation_pipeline)
+                    if (this.rotation_pipeline && this.scAlgorithm.input.getCombLen(s) > 100)
                         regroup_update_pipeline(s);
                     else
                         regroup_update_all(s);
@@ -575,7 +575,7 @@ public class colorcount_HJ {
             if (this.num_verts_sub_ato > 1 && this.mapper_num > 1)
             {
 
-                if (this.rotation_pipeline)
+                if (this.rotation_pipeline && this.scAlgorithm.input.getCombLen(0) > 100)
                     regroup_update_pipeline(0);
                 else
                     regroup_update_all(0);
@@ -2106,9 +2106,9 @@ public class colorcount_HJ {
     private void regroup_update_all(int sub_id)
     {
         // single thread communication
-		long start_comm_local = System.currentTimeMillis();
+		// long start_comm_local = System.currentTimeMillis();
         regroup_comm_all(sub_id);
-		this.time_comm += (System.currentTimeMillis() - start_comm_local);
+		// this.time_comm += (System.currentTimeMillis() - start_comm_local);
 
 		long start_comp_local = System.currentTimeMillis();
         // precompute the maperids, chunkids, and offsets for adjlist of each local v
