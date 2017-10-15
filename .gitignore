@@ -102,3 +102,6 @@ website/static/
 run_ctags.sh
 tags
 srclist
+
+# custom
+dataset/
