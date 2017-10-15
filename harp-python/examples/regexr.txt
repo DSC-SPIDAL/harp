@@ -1,0 +1,3 @@
+/^([^A-Z]*)([A-Z].+?)Launcher/gm
+
+class $2Application(HarpDaalApplication):\n\tdef __init__(self, name):\n\t\tsuper($2Application, self).__init__(name)\n\t\tself.class_name = '$&'\n\n
