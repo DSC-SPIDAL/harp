@@ -1,3 +1,4 @@
+import os
 import subprocess
 import sys
 import numpy
@@ -11,6 +12,23 @@ class HarpApplication(object):
         self.harp_jar = ''
         self.class_name = ''
         self.cli = ''
+        self.__load_hadoop_env()
+        self.__load_harp_env()
+
+    def __load_hadoop_env(self):
+        try:
+            hadoop_home = os.environ['HADOOP_HOME']
+	    hadoop_path = hadoop_home + '/bin/hadoop'
+            self.config_hadoop_bin(hadoop_path)
+        except KeyError:
+            pass
+
+    def __load_harp_env(self):
+        try:
+            jar_path = os.environ['HARP_JAR']
+            self.config_harp_jar(jar_path)
+        except KeyError:
+            pass
 
     def log(self, message):
         print("[{0}] {1}".format(self.name, message))
