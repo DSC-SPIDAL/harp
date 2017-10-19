@@ -138,18 +138,21 @@ mvn clean package
 The generated harp-daal-app lib is at harp/harp-daal-app/target/harp-daal-app-1.0-SNAPSHOT.jar
 
 4. Run harp-daal-app frome NameNode of the launched Hadoop daemons 
+
 ```bash
+## setup additional env vars needed by DAAL native
+export HARP_DAAL_HOME=harp/harp-daal-app
+export TBBROOT=${HARP_DAAL_HOME}/daal-src/externals/tbb
 # copy harp-daal-app jar file to Hadoop directory
-cp ../target/harp-daal-app-1.0-SNAPSHOT.jar ${HADOOP_HOME}
+cp ${HARP_DAAL_HOME}/target/harp-daal-app-1.0-SNAPSHOT.jar ${HADOOP_HOME}
 # enter hadoop home directory
 cd ${HADOOP_HOME}
 # put daal and tbb, omp libs to hdfs, they will be loaded into the distributed cache of 
 # running harp mappers
 hdfs dfs -mkdir -p /Hadoop/Libraries
-hdfs dfs -rm /Hadoop/Libraries/*
 hdfs dfs -put ${DAALROOT}/lib/intel64_lin/libJavaAPI.so /Hadoop/Libraries/
-hdfs dfs -put ${TBBROOT}/lib/intel64_lin/gcc4.4/libtbb* /Hadoop/Libraries/
-hdfs dfs -put ${DAALROOT}/../../daal-misc/lib/libiomp5.so /Hadoop/Libraries/
+hdfs dfs -put ${TBBROOT}/lnx/lib/intel64/gcc4.4/libtbb* /Hadoop/Libraries/
+hdfs dfs -put ${HARP_DAAL_HOME}/external/omp/libiomp5.so /Hadoop/Libraries/
 # set up path to the DAAL Java APIs lib
 export LIBJARS=${DAALROOT}/lib/daal.jar
 # launch mappers, e.g., harp-daal-als 
