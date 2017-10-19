@@ -75,7 +75,7 @@ fetch the submodule source code of daal-src as follows.
 ```bash
 # enter the harp root directory
 cd harp
-# pull the daal src (as a submodule)
+# pull the daal src (as a submodule) for the first time
 git submodule update --init --recursive
 ```
 Compile and make the lib files
@@ -96,7 +96,7 @@ included to Intel DAAL repository, and users can only run them with installation
 In addition, our DAAL codes provide users of exclusive optimized data structures for machine learning algorithms 
 with big model. 
 
-3. Update daal-src submodule
+3. Update daal-src from harp-daal repository
 If users choose second option and install the submodule daal-src of DSC-SPIDAL/harp. The daal-src points to a 
 certain commit of our DAAL code version. If users would like to explore the latest updates of our DAAL code
 please make branch daal_2018_beta of repository https://github.com/DSC-SPIDAL/harp.git as a remote upstream and git pull daal_2018_beta 
@@ -108,7 +108,11 @@ git remote -v
 git remote rename origin upstream 
 git pull upstream daal_2018_beta:daal_2018_beta
 ```
-
+Another way to update daal-src by git submodule command 
+```bash
+cd harp
+git submodule update --recursive --remote
+```
 ## Compile and Run Harp-DAAL Applications
 1. add harp-daal-app module back to harp/pom.xml file
 ```xml
