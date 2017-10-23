@@ -2,6 +2,8 @@
 title: Harp-DAAL-QR
 ---
 
+<img src="/img/harpdaal/QR.png" width="80%" >
+
 ## Overview 
 The QR decomposition or QR factorization of a matrix is a decomposition of the matrix into an orthogonal matrix and a triangular matrix. A QR decomposition of a real square matrix A is a decomposition of A as
 A = QR,

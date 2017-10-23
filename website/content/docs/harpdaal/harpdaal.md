@@ -21,7 +21,7 @@ The framework consists of two layers: a communication layer and a computation la
 a communication library plug-in into Hadoop ecosystem, and a computation layer is handled by Intel's Data Analytics Acceleration Library (DAAL), 
 which is a library that provides the users of well optimized building blocks for data analytics and machine learning applications on Intel's architectures. 
 
-Compared to contemporary communication libraries, such as Hadoop and Spark, Harp has the following advantages:
+Compared to contemporary distributed data processing frameworks, such as Hadoop and Spark, Harp has the following advantages:
 
 1. MPI-like collective communication operations that are highly optimized for big data problems.
 2. Efficient and innovative computation models for different machine learning problems.
