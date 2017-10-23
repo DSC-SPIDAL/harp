@@ -75,7 +75,7 @@ fetch the submodule source code of daal-src as follows.
 ```bash
 # enter the harp root directory
 cd harp
-# pull the daal src (as a submodule)
+# pull the daal src (as a submodule) for the first time
 git submodule update --init --recursive
 ```
 Compile and make the lib files
@@ -96,7 +96,7 @@ included to Intel DAAL repository, and users can only run them with installation
 In addition, our DAAL codes provide users of exclusive optimized data structures for machine learning algorithms 
 with big model. 
 
-3. Update daal-src submodule
+3. Update daal-src from harp-daal repository
 If users choose second option and install the submodule daal-src of DSC-SPIDAL/harp. The daal-src points to a 
 certain commit of our DAAL code version. If users would like to explore the latest updates of our DAAL code
 please make branch daal_2018_beta of repository https://github.com/DSC-SPIDAL/harp.git as a remote upstream and git pull daal_2018_beta 
@@ -108,7 +108,11 @@ git remote -v
 git remote rename origin upstream 
 git pull upstream daal_2018_beta:daal_2018_beta
 ```
-
+Another way to update daal-src by git submodule command 
+```bash
+cd harp
+git submodule update --recursive --remote
+```
 ## Compile and Run Harp-DAAL Applications
 1. add harp-daal-app module back to harp/pom.xml file
 ```xml
@@ -138,18 +142,21 @@ mvn clean package
 The generated harp-daal-app lib is at harp/harp-daal-app/target/harp-daal-app-1.0-SNAPSHOT.jar
 
 4. Run harp-daal-app frome NameNode of the launched Hadoop daemons 
+
 ```bash
+## setup additional env vars needed by DAAL native
+export HARP_DAAL_HOME=harp/harp-daal-app
+export TBBROOT=${HARP_DAAL_HOME}/daal-src/externals/tbb
 # copy harp-daal-app jar file to Hadoop directory
-cp ../target/harp-daal-app-1.0-SNAPSHOT.jar ${HADOOP_HOME}
+cp ${HARP_DAAL_HOME}/target/harp-daal-app-1.0-SNAPSHOT.jar ${HADOOP_HOME}
 # enter hadoop home directory
 cd ${HADOOP_HOME}
 # put daal and tbb, omp libs to hdfs, they will be loaded into the distributed cache of 
 # running harp mappers
 hdfs dfs -mkdir -p /Hadoop/Libraries
-hdfs dfs -rm /Hadoop/Libraries/*
 hdfs dfs -put ${DAALROOT}/lib/intel64_lin/libJavaAPI.so /Hadoop/Libraries/
-hdfs dfs -put ${TBBROOT}/lib/intel64_lin/gcc4.4/libtbb* /Hadoop/Libraries/
-hdfs dfs -put ${DAALROOT}/../../daal-misc/lib/libiomp5.so /Hadoop/Libraries/
+hdfs dfs -put ${TBBROOT}/lnx/lib/intel64/gcc4.4/libtbb* /Hadoop/Libraries/
+hdfs dfs -put ${HARP_DAAL_HOME}/external/omp/libiomp5.so /Hadoop/Libraries/
 # set up path to the DAAL Java APIs lib
 export LIBJARS=${DAALROOT}/lib/daal.jar
 # launch mappers, e.g., harp-daal-als 

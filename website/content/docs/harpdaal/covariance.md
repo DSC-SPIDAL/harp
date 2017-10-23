@@ -2,6 +2,8 @@
 title: Harp-DAAL-Cov
 ---
 
+<img src="/img/harpdaal/Covariance.png" width="80%" >
+
 ## Overview 
 Covariance measures the extent to which variables "fluctuate together" (that is, co-vary). The correlation is the covariance normalized to be between -1 and +1. A positive correlation indicates the extent to which variables increase or decrease simultaneously. A negative correlation indicates the extent to which one variable increases while the other one decreases. Values close to +1 and -1 indicate a high degree of linear dependence between variables.
 

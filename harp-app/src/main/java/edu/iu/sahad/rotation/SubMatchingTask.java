@@ -23,7 +23,7 @@ public class SubMatchingTask implements Task<Partition<ColorCountPairsKVPartitio
 	@Override
 	public Map<Integer, ColorCountPairs> run(Partition<ColorCountPairsKVPartition> input) throws Exception {
 		// TODO Auto-generated method stub
-		Map<Integer, Long> colorCountMap;
+		Map<Integer, Double> colorCountMap;
 		Partition<ColorCountPairsKVPartition> activeChild =  input;
 		int key = activeChild.id();
 		//get valuepairlist from activeChild
@@ -31,7 +31,7 @@ public class SubMatchingTask implements Task<Partition<ColorCountPairsKVPartitio
 		ColorCountPairs activeValuelist = activeChild.get().getVal(key);
 		ColorCountPairs passiveValuelist = null;
 		
-		colorCountMap = new HashMap<Integer, Long>();
+		colorCountMap = new HashMap<Integer, Double>();
 		Partition<IntArray> graphpar= graphData.getPartition(key);
 		for(int i = graphpar.get().start(); i < graphpar.get().size(); i++){
 			int neighbor = graphpar.get().get()[i];
@@ -45,10 +45,10 @@ public class SubMatchingTask implements Task<Partition<ColorCountPairsKVPartitio
 			for(int j = 0; j < activeValuelist.getColors().size(); j++){
 
 				int activeColor =activeValuelist.getColors().get(j);
-				long activeCount = activeValuelist.getCounts().get(j);
+				double activeCount = activeValuelist.getCounts().get(j);
 				for(int k =0; k < passiveValuelist.getColors().size(); k++){
 					int passiveColor =  passiveValuelist.getColors().get(k);
-					long passiveCount =passiveValuelist.getCounts().get(k);
+					double passiveCount =passiveValuelist.getCounts().get(k);
 					//System.out.println("key:"+key+", neighbor"+neighbor+"; color:"+activeColor +":"+activeCount+":"+passiveColor+":"+passiveCount);
 					if ((activeColor & passiveColor) == 0)
 		                  // color set intersection is empty
@@ -56,12 +56,12 @@ public class SubMatchingTask implements Task<Partition<ColorCountPairsKVPartitio
 						int newColor = activeColor | passiveColor;
 						if (!colorCountMap.containsKey(newColor)) {
 							colorCountMap.put(new Integer(newColor), 
-									new Long(activeCount * passiveCount));
+									new Double(activeCount * passiveCount));
 		                } else {
-		                	long count = colorCountMap.get(newColor);
+		                	double count = colorCountMap.get(newColor);
 		                    count += activeCount * passiveCount;
 		                    colorCountMap.put(new Integer(newColor),
-		                                    new Long(count));
+		                                    new Double(count));
 		                    }
 		             }
 				}
@@ -76,7 +76,7 @@ public class SubMatchingTask implements Task<Partition<ColorCountPairsKVPartitio
 			ColorCountPairs ccp = new ColorCountPairs();
 			// System.out.println("key: "+key+":");
 	        for (int color : colorCountMap.keySet()) {
-	        	long count = colorCountMap.get(color);
+	        	double count = colorCountMap.get(color);
 	           // System.out.println(key+": "+color+":"+count+" ");
 	            ccp.addAPair(color, count);
 	        }

@@ -62,6 +62,11 @@ html lang={{.Site.LanguageCode}}
                 br
                 p &nbsp
                 br
+                a href=docs/harpdaal/qr/
+                  img src={{.Site.Params.assets.tileqr}} width="85%"
+                br
+                p &nbsp
+                br
               .col-sm-4
                 a href=docs/examples/kmeans/
                   img src={{.Site.Params.assets.tilekm}} width="85%"
@@ -73,6 +78,11 @@ html lang={{.Site.LanguageCode}}
                 br
                 p &nbsp
                 br
+                a href=docs/harpdaal/svd/
+                  img src={{.Site.Params.assets.tilesvd}} width="85%"
+                br
+                p &nbsp
+                br
               .col-sm-4
                 a href=docs/examples/mlrsgd/
                   img src={{.Site.Params.assets.tilemlr}} width="85%"
@@ -81,6 +91,11 @@ html lang={{.Site.LanguageCode}}
                 br
                 a href=docs/examples/nn/
                   img src={{.Site.Params.assets.tilenn}} width="85%"
+                br
+                p &nbsp
+                br
+                a href=docs/harpdaal/covariance/
+                  img src={{.Site.Params.assets.tilecov}} width="85%"
                 br
                 p &nbsp
                 br
@@ -135,16 +150,42 @@ html lang={{.Site.LanguageCode}}
                   a href=docs/applications/lda-cgs/ Latent Dirichlet Allocation (CGS)
                   br
                   a href=docs/applications/mf/ Matrix Factorization
+                  br
+                  a href=docs/applications/sahad/ Subgraph Counting 
                 .col-sm-2
                   h4 Harp-DAAL
                   a href=docs/harpdaal/harpdaal/ Overview
                   br
-                  a href=docs/harpdaal/Example/ Matrix Factorization (SGD) 
+                  a href=docs/harpdaal/kmeans/ K-means 
+                  br
+                  a href=docs/harpdaal/mfsgd/ Matrix Factorization (SGD) 
+                  br
+                  a href=docs/harpdaal/als/ Recommender System (ALS) 
+                  br
+                  a href=docs/harpdaal/svd/ Single Value Decomposition (SVD) 
+                  br
+                  a href=docs/harpdaal/pca/ Principal Component Analysis (PCA) 
+                  br
+                  a href=docs/harpdaal/nn/ Neural Network 
+                  br
+                  a href=docs/harpdaal/qr/ QR Decomposition 
+                  br
+                  a href=docs/harpdaal/covariance/ Covariance 
+                  br
+                  a href=docs/harpdaal/moments/ Low Order Moments 
+                  br
+                  a href=docs/harpdaal/naive_bayes/ Naive Bayes 
+                  br
+                  a href=docs/harpdaal/linear_regression/ Linear Regression 
+                  br
+                  a href=docs/harpdaal/ridge_regression/ Ridge Regression 
                 .col-sm-2
                   h4 Contributors
                   a href=docs/contributors/community/ Community
                   br
                   a href=docs/contributors/contributors/ Contributors
+                  br
+                  a href=docs/survey/ User Feedback 
         .row.text-center
           p Copyright © {{.Now.Year}} Indiana Universty
    
