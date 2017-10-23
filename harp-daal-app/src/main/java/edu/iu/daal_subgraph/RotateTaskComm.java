@@ -40,6 +40,8 @@ public class RotateTaskComm implements Runnable {
     private long time_sync_pip;
     private long time_comm_pip;
 
+    private double transfer_comm_data;
+    private double peak_data_comm;
     private boolean enter_pip;
 
     private Distri scAlgorithm;
@@ -61,6 +63,8 @@ public class RotateTaskComm implements Runnable {
         this.time_comm = 0;
         this.time_sync_pip = 0;
         this.time_comm_pip = 0;
+        this.transfer_comm_data = 0.0;
+        this.peak_data_comm = 0.0;
 
         this.local_mapper_id = local_mapper_id;
         this.mapper_num = mapper_num;
@@ -98,6 +102,9 @@ public class RotateTaskComm implements Runnable {
     long getSyncTimePip() {return this.time_sync_pip; }
     long getCommTimePip() {return this.time_comm_pip; }
 
+    double getTransferData() {return this.transfer_comm_data;}
+    double getPeakDataComm() {return this.peak_data_comm; }
+
     void set_enter_pip(boolean flag) { this.enter_pip = flag; }
 
     @Override
@@ -118,6 +125,9 @@ public class RotateTaskComm implements Runnable {
 
         //record time
         long start_sync = System.currentTimeMillis();
+
+        //record peak comm data
+        double peak_data_comm_count = 0.0;
 
         for(int j=0;j<send_parcel_num;j++)
         {
@@ -145,9 +155,14 @@ public class RotateTaskComm implements Runnable {
             this.scAlgorithm.input.set(InputId.ParcelData, parcel_v_data_table);
             this.scAlgorithm.input.set(InputId.ParcelIdx, parcel_v_index_table);
 
+            peak_data_comm_count += ((double)(parcel_v_num+1 + parcel_c_len*2)*4/(1024*1024*1024));
+
             //upload data from daal side to harp side
             this.scAlgorithm.input.sendCommParcelLoad();
             
+            //record transfer data in bytes 
+			this.transfer_comm_data += ((parcel_v_num+1 + parcel_c_len*2)*4);
+
             //convert parcel index data from int to short
             short[] parcel_v_index_short = new short[parcel_c_len]; 
             for(int i=0;i<parcel_c_len;i++)
@@ -210,6 +225,8 @@ public class RotateTaskComm implements Runnable {
             HomogenNumericTable recv_v_index_table = new HomogenNumericTable(daal_Context, recv_v_index_int, 1, recv_v_index_int.length);
             this.scAlgorithm.input.set(InputId.ParcelIdx, recv_v_index_table);
 
+            peak_data_comm_count += ((double)(recv_v_offset.length + recv_v_data.length + recv_v_index_int.length)*4/(1024*1024*1024));
+
             //daal side update
             this.scAlgorithm.input.updateRecvParcel();
 
@@ -250,7 +267,9 @@ public class RotateTaskComm implements Runnable {
         if (this.enter_pip)
             this.time_comm_pip += (comm_time_table.getPartition(0).get().get()[0]);
 
-        //
+        //record peak data mem usage
+        this.peak_data_comm = (peak_data_comm_count > this.peak_data_comm) ? peak_data_comm_count : this.peak_data_comm;  
+        
         comm_time_array = null;
         comm_time_table = null;
         this.comm_data_table.free();
