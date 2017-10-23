@@ -277,41 +277,80 @@ public class SCDaalCollectiveMapper  extends CollectiveMapper<String, String, Ob
         // --------------------- start counting ---------------------
 		// generate vtune trigger file if necessary
 
-		// write vtune flag files to disk
-		java.nio.file.Path vtune_file = java.nio.file.Paths.get("/N/u/lc37/WorkSpace/Hsw_Test/harp-2018/test_scripts/vtune-flag.txt");
-		String flag_trigger = "Start training process and trigger vtune profiling.";
-		try {
-			java.nio.file.Files.write(vtune_file, flag_trigger.getBytes());
-		}catch (IOException e)
-		{
-
-		}
+		// // write vtune flag files to disk
+		// java.nio.file.Path vtune_file = java.nio.file.Paths.get("/N/u/lc37/WorkSpace/Hsw_Test/harp-2018/test_scripts/vtune-flag.txt");
+		// String flag_trigger = "Start training process and trigger vtune profiling.";
+		// try {
+		// 	java.nio.file.Files.write(vtune_file, flag_trigger.getBytes());
+		// }catch (IOException e)
+		// {
+        //
+		// }
 
 		long computation_start = System.currentTimeMillis();
 		double full_count = 0.0;
         full_count = graph_count.do_full_count(numIteration);
         //
 		long computation_end = System.currentTimeMillis();
-        long local_count_time = (computation_end - computation_start);
-        long local_comm_time = graph_count.get_comm_time();
-        long local_sync_time = graph_count.get_sync_time();
-		long local_comp_time = graph_count.get_comp_time();
+        long local_count_time = (computation_end - computation_start)/1000;
+        long local_comm_time = graph_count.get_comm_time()/1000;
+        long local_sync_time = graph_count.get_sync_time()/1000;
+		long local_comp_time = graph_count.get_comp_time()/1000;
 
-		long local_comm_time_pip = graph_count.get_comm_time_pip();
-        long local_sync_time_pip = graph_count.get_sync_time_pip();
-		long local_comp_time_pip = graph_count.get_comp_time_pip();
+		// get the peak mem info
+		double local_peak_mem = graph_count.getPeakMem();
+		double local_peak_comm_mem = graph_count.getPeakCommMem();
 
-        //
+		double local_trans_data = graph_count.get_trans_data();
+		local_trans_data = local_trans_data / (1024*1024*1024);
+
+		double local_trans_throughput = local_trans_data/local_comm_time;
+
+		long local_comm_time_pip = graph_count.get_comm_time_pip()/1000;
+        long local_sync_time_pip = graph_count.get_sync_time_pip()/1000;
+		long local_comp_time_pip = graph_count.get_comp_time_pip()/1000;
+
+		//record local time on this mapper
+        LOG.info("Local Total Counting time: " + local_count_time + " s" + "; Avg per itr: " + 
+                (local_count_time/(double)numIteration) + " s");
+        LOG.info("Local comm time: " + local_comm_time + " s" + "; Avg per itr: "
+                + (local_comm_time/(double)numIteration) + " s");
+
+		LOG.info("Local trans data: " + local_trans_data + " GB" + "; Avg per itr: "
+                + (local_trans_data/(double)numIteration) + " GB");
+		LOG.info("Local trans throughput: " + local_trans_throughput + " GB/s" + "; Avg per itr: " +
+				(local_trans_throughput/(double)numIteration) + " GB/s");
+
+		LOG.info("Local peak memory: " + local_peak_mem + " GB");
+		LOG.info("Local peak Comm memory: " + local_peak_comm_mem + " GB");
+
+        LOG.info("Local sync time: " + local_sync_time + " s" + "; Avg per itr: "
+                + (local_sync_time/(double)numIteration) + " s");
+        LOG.info("Local compute time: " + local_comp_time + " s" + "; Avg per itr: "
+                + (local_comp_time/(double)numIteration) + " s");
+		LOG.info("Local Pip comm time: " + local_comm_time_pip + " s" + "; Avg per itr: "
+                + (local_comm_time_pip/(double)numIteration) + " s");
+        LOG.info("Local Pip sync time: " + local_sync_time_pip + " s" + "; Avg per itr: "
+                + (local_sync_time_pip/(double)numIteration) + " s");
+        LOG.info("Local Pip compute time: " + local_comp_time_pip + " s" + "; Avg per itr: "
+                + (local_comp_time_pip/(double)numIteration) + " s");
+        LOG.info("Local Time Ratio: Comm: " + (local_comm_time/local_count_time)*100 + " %; Waiting: " 
+                + (local_sync_time - local_comm_time)/local_count_time*100 + " %; Local Computation: "
+                + (local_comp_time)/local_count_time*100 + " %");
+
+
         Table<DoubleArray> time_table = new Table<>(0, new DoubleArrPlus());
-        DoubleArray time_array = DoubleArray.create(7, false);
+        DoubleArray time_array = DoubleArray.create(10, false);
         time_array.get()[0] = (double)local_count_time;
         time_array.get()[1] = (double)local_comm_time;
         time_array.get()[2] = (double)local_sync_time;
         time_array.get()[3] = (double)local_comp_time;
-
 		time_array.get()[4] = (double)local_comm_time_pip;
         time_array.get()[5] = (double)local_sync_time_pip;
         time_array.get()[6] = (double)local_comp_time_pip;
+		time_array.get()[7] = (double)local_trans_data;
+        time_array.get()[8] = (double)local_peak_mem;
+        time_array.get()[9] = (double)local_peak_comm_mem;
 
         //
         time_table.addPartition(new Partition<>(0, time_array));
@@ -327,29 +366,39 @@ public class SCDaalCollectiveMapper  extends CollectiveMapper<String, String, Ob
         double global_sync_time_pip = time_table.getPartition(0).get().get()[5]/this.getNumWorkers(); 
         double global_comp_time_pip = time_table.getPartition(0).get().get()[6]/this.getNumWorkers(); 
 
-        //
-        LOG.info("Total Counting time: " + global_count_time + " ms" + "; Avg per itr: " + 
-                (global_count_time/(double)numIteration) + " ms");
-        //        
-        LOG.info("Total comm time: " + global_comm_time + " ms" + "; Avg per itr: "
-                + (global_comm_time/(double)numIteration) + " ms");
-        //
-        LOG.info("Total sync time: " + global_sync_time + " ms" + "; Avg per itr: "
-                + (global_sync_time/(double)numIteration) + " ms");
+		double global_trans_data = time_table.getPartition(0).get().get()[7];
+		double global_trans_throughput = global_trans_data/global_comm_time;
+		double global_peak_mem = time_table.getPartition(0).get().get()[8]/this.getNumWorkers();
+		double global_peak_comm_mem = time_table.getPartition(0).get().get()[9]/this.getNumWorkers();
 
-        LOG.info("Total compute time: " + global_comp_time + " ms" + "; Avg per itr: "
-                + (global_comp_time/(double)numIteration) + " ms");
+        LOG.info("Total Counting time: " + global_count_time + " s" + "; Avg per itr: " + 
+                (global_count_time/(double)numIteration) + " s");
+        LOG.info("Total comm time: " + global_comm_time + " s" + "; Avg per itr: "
+                + (global_comm_time/(double)numIteration) + " s");
 
-		LOG.info("Pip comm time: " + global_comm_time_pip + " ms" + "; Avg per itr: "
-                + (global_comm_time_pip/(double)numIteration) + " ms");
-        //
-        LOG.info("Pip sync time: " + global_sync_time_pip + " ms" + "; Avg per itr: "
-                + (global_sync_time_pip/(double)numIteration) + " ms");
+		LOG.info("Total trans data: " + global_trans_data + " GB" + "; Avg per itr: "
+                + (global_trans_data/(double)numIteration) + " GB");
+		LOG.info("Total trans throughput: " + global_trans_throughput + " GB/s" + "; Avg per itr: "
+                + (global_trans_throughput/(double)numIteration) + " GB/s");
 
-        LOG.info("Pip compute time: " + global_comp_time_pip + " ms" + "; Avg per itr: "
-                + (global_comp_time_pip/(double)numIteration) + " ms");
+		LOG.info("Total peak memory: " + global_peak_mem + " GB");
+		LOG.info("Total peak Comm memory: " + global_peak_comm_mem + " GB");
 
-        LOG.info("Time Ratio: Comm: " + (global_comm_time/global_count_time)*100 + " %; Waiting: " 
+        LOG.info("Total sync time: " + global_sync_time + " s" + "; Avg per itr: "
+                + (global_sync_time/(double)numIteration) + " s");
+
+        LOG.info("Total compute time: " + global_comp_time + " s" + "; Avg per itr: "
+                + (global_comp_time/(double)numIteration) + " s");
+
+		LOG.info("Total Pip comm time: " + global_comm_time_pip + " s" + "; Avg per itr: "
+                + (global_comm_time_pip/(double)numIteration) + " s");
+        LOG.info("Total Pip sync time: " + global_sync_time_pip + " s" + "; Avg per itr: "
+                + (global_sync_time_pip/(double)numIteration) + " s");
+
+        LOG.info("Total Pip compute time: " + global_comp_time_pip + " s" + "; Avg per itr: "
+                + (global_comp_time_pip/(double)numIteration) + " s");
+
+        LOG.info("Total Time Ratio: Comm: " + (global_comm_time/global_count_time)*100 + " %; Waiting: " 
                 + (global_sync_time - global_comm_time)/global_count_time*100 + " %; Local Computation: "
                 + (global_comp_time)/global_count_time*100 + " %");
 

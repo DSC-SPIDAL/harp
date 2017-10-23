@@ -259,6 +259,12 @@ public class colorcount_HJ {
 
     final Logger LOG = Logger.getLogger(colorcount_HJ.class);
     boolean verbose = false;
+
+	//trace mem usage and comm data throughput
+	//in GB unit
+	private double peak_mem;
+	private double peak_mem_comm;
+	private double transfer_data;
     
     /**
      * @brief initialize local graph 
@@ -334,6 +340,10 @@ public class colorcount_HJ {
 
         this.mapper_num = this.mapper.getNumWorkers();
         this.local_mapper_id = this.mapper.getSelfID();
+
+		this.peak_mem = 0.0;
+		this.peak_mem_comm = 0.0;
+		this.transfer_data = 0.0;
 
         // copy to daal
         HomogenNumericTable abs_v_to_mapper_daal_table = new HomogenNumericTable(daal_Context, this.abs_v_to_mapper, 1, this.abs_v_to_mapper.length);
@@ -507,6 +517,19 @@ public class colorcount_HJ {
             {
                 // TODO: daa kernel to do local computation for subtemplate s 
                 //get num_vert of subtemplate s
+				//test sub itr 3 trace comb len 495
+				// write vtune flag files to disk
+				if (s == 3)
+				{
+					java.nio.file.Path vtune_file = java.nio.file.Paths.get("/N/u/lc37/WorkSpace/Hsw_Test/harp-2018/test_scripts/vtune-flag.txt");
+					String flag_trigger = "Start training process and trigger vtune profiling.";
+					try {
+						java.nio.file.Files.write(vtune_file, flag_trigger.getBytes());
+					}catch (IOException e)
+					{
+
+					}
+				}
 				
 				//record the local computation time 
 				this.start_comp = System.currentTimeMillis();
@@ -543,7 +566,8 @@ public class colorcount_HJ {
                 // only if more than one mapper, otherwise all g verts are local
                 if (this.mapper_num > 1 && this.num_verts_sub_ato > 1)
                 {
-                    if (this.rotation_pipeline && this.scAlgorithm.input.getCombLen(s) > 100)
+                    // if (this.rotation_pipeline && this.scAlgorithm.input.getCombLen(s) > 100)
+                    if (this.rotation_pipeline)
                         regroup_update_pipeline(s);
                     else
                         regroup_update_all(s);
@@ -575,7 +599,8 @@ public class colorcount_HJ {
             if (this.num_verts_sub_ato > 1 && this.mapper_num > 1)
             {
 
-                if (this.rotation_pipeline && this.scAlgorithm.input.getCombLen(0) > 100)
+                // if (this.rotation_pipeline && this.scAlgorithm.input.getCombLen(0) > 100)
+                if (this.rotation_pipeline)
                     regroup_update_pipeline(0);
                 else
                     regroup_update_all(0);
@@ -603,6 +628,9 @@ public class colorcount_HJ {
 
         //----------------------- end of color_counting -----------------
         double final_count = cumulate_count_ato / (double) this.num_iter;
+		//get the peak memory information
+		peak_mem = this.scAlgorithm.input.getPeakMem();
+		
         //
         // //free memory
         // this.send_vertex_table = null;
@@ -1163,6 +1191,8 @@ public class colorcount_HJ {
         this.start_sync = System.currentTimeMillis();
         this.start_misc = System.currentTimeMillis();
 
+		double peak_data_comm = 0.0;
+
         //prepare the sending partitions
         this.comm_data_table = new Table<>(0, new SCSetCombiner());
 
@@ -1199,8 +1229,13 @@ public class colorcount_HJ {
                 this.scAlgorithm.input.set(InputId.ParcelData, parcel_v_data_table);
                 this.scAlgorithm.input.set(InputId.ParcelIdx, parcel_v_index_table);
 
+				peak_data_comm += ((double)(parcel_v_num+1 + parcel_c_len*2)*4/(1024*1024*1024));
+
                 //upload data from daal side to harp side
                 this.scAlgorithm.input.sendCommParcelLoad();
+
+				//record transfer data size
+				transfer_data += ((parcel_v_num+1 + parcel_c_len*2)*4);
                 
                 //convert parcel index data from int to short
                 short[] parcel_v_index_short = new short[parcel_c_len]; 
@@ -1278,6 +1313,8 @@ public class colorcount_HJ {
             HomogenNumericTable recv_v_index_table = new HomogenNumericTable(daal_Context, recv_v_index_int, 1, recv_v_index_int.length);
             this.scAlgorithm.input.set(InputId.ParcelIdx, recv_v_index_table);
 
+			peak_data_comm += ((double)(recv_v_offset.length + recv_v_data.length + recv_v_index_int.length)*4/(1024*1024*1024));
+
             //daal side update
             this.scAlgorithm.input.updateRecvParcel();
 
@@ -1298,6 +1335,9 @@ public class colorcount_HJ {
 
             System.gc();
         }
+
+		//record peak memory usage
+		this.peak_mem_comm = (peak_data_comm > this.peak_mem_comm ) ? peak_data_comm : this.peak_mem_comm;
 
         // get the local sync time 
         long cur_sync_time = (System.currentTimeMillis() - this.start_sync);
@@ -2069,6 +2109,16 @@ public class colorcount_HJ {
         return this.time_comm;
     }
 
+	public double getPeakMem()
+	{
+		return this.peak_mem;
+	}
+
+	public double getPeakCommMem()
+	{
+		return this.peak_mem_comm;
+	}
+
     public long get_sync_time()
     {
         return this.time_sync;
@@ -2078,6 +2128,11 @@ public class colorcount_HJ {
     {
         return this.time_comp;
     }
+
+	public double get_trans_data()
+	{
+		return this.transfer_data;
+	}
 
 	public long get_comm_time_pip()
     {
@@ -2274,6 +2329,7 @@ public class colorcount_HJ {
         this.pipeline_recv_id = rotate_comm.getRecvID();
         this.pipeline_update_id =  rotate_comm.getUpdateID();
 
+
         // if (threadIdx == 0)
         // {
         //  //within rotate_comm task
@@ -2398,6 +2454,9 @@ public class colorcount_HJ {
 		this.time_sync_pip += rotate_comm.getSyncTimePip();
 		this.time_comm_pip += rotate_comm.getCommTimePip();
 		this.time_comp_pip += rotate_update.getCompTimePip();
+
+		this.transfer_data += rotate_comm.getTransferData();
+		this.peak_mem_comm = (rotate_comm.getPeakDataComm() > this.peak_mem_comm ) ? rotate_comm.getPeakDataComm() : this.peak_mem_comm;
 
         rotate_comm = null;
         rotate_update = null;
