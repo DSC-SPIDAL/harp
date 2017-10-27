@@ -42,6 +42,8 @@ from sklearn.decomposition import PCA
 from sklearn.preprocessing import scale
 import struct
 
+from harp.daal.applications import KMeansDaalApplication
+
 np.random.seed(42)
 
 ##############################################################################
@@ -72,13 +74,18 @@ class DAALKMeans():
         #
         #call DAAL KMeans here, replace np.loadtxt by call_daal_kmeans
         #
-        self.centroids_ = np.loadtxt('output')
+        # self.centroids_ = np.loadtxt('output')
         #self.centroids_ = Call_DAAL_KMEANS(self.n_clusters, self.n_iter)a
 
-        #get all centroids other than labels
+        harp_kmeans = KMeansDaalApplication("Image clustering with Harp-Daal")
+        harp_kmeans.set_workdir("/15scene-work")
+        harp_kmeans.load_array("data/input.data", data)
+        harp_kmeans.args(4485, 15, 1000, 1, 1, 8, 1, 10, harp_kmeans.get_workdir(), "/tmp/15scene", "false")
+        harp_kmeans.run()
+        self.centroids_ = harp_kmeans.result_to_array(harp_kmeans.get_workdir() + "/centroids/out/output")
         #patch here
         self.predict(data)
-        
+
     def predict(self, data):
         distmat = np.dot(data, np.transpose(self.centroids_))
         self.labels_ = np.argmin(distmat, axis=1)
