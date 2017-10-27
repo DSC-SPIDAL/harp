@@ -24,7 +24,7 @@ After the code have been checked out and dependencies installed, please `export`
 export HADOOP_HOME=<path to hadoop home folder>
 
 # Harp
-export HARP_JR=<path to>/harp-app-1.0-SNAPSHOT.jar
+export HARP_JAR=<path to>/harp-app-1.0-SNAPSHOT.jar
 export HARP_DAAL_JAR=<path to>/harp-daal-app-1.0-SNAPSHOT.jar
 export DAALROOT=<path to your compiled daal folder>
 export PYTHONPATH=<path to>/harp-python
