@@ -18,7 +18,7 @@ class HarpApplication(object):
     def __load_hadoop_env(self):
         try:
             hadoop_home = os.environ['HADOOP_HOME']
-	    hadoop_path = hadoop_home + '/bin/hadoop'
+            hadoop_path = hadoop_home + '/bin/hadoop'
             self.config_hadoop_bin(hadoop_path)
         except KeyError:
             pass
@@ -29,6 +29,12 @@ class HarpApplication(object):
             self.config_harp_jar(jar_path)
         except KeyError:
             pass
+
+    def set_workdir(self, workdir):
+        self.workdir = workdir
+
+    def get_workdir(self):
+        return self.workdir
 
     def log(self, message):
         print("[{0}] {1}".format(self.name, message))
@@ -59,6 +65,10 @@ class HarpApplication(object):
                 print >> sys.stderr, "Child was terminated by signal", -return_code
         except OSError as e:
             print >> sys.stderr, "Execution failed:", e
+
+    def load_array(self, relative_path, data):
+        full_path = self.get_workdir() + relative_path
+        print("put data into " + full_path)
 
     def print_result(self, file_path):
         fs_cmd = self.hadoop_path + ' fs -cat ' + file_path
