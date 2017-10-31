@@ -67,18 +67,22 @@ class HarpApplication(object):
         except OSError as e:
             print >> sys.stderr, "Execution failed:", e
 
+    def put_file(self, local_file, hdfs_file):
+        msg = "put {0} into {1}".format(local_file, hdfs_file)
+        self.log(msg)
+        dir_name = os.path.dirname(hdfs_file)
+        fs_cmd = self.hadoop_path + ' fs -mkdir -p ' + dir_name
+        self.sub_call(fs_cmd)
+        fs_cmd = self.hadoop_path + ' fs -put -f ' + local_file + ' ' + hdfs_file
+        self.sub_call(fs_cmd)
+
     def load_array(self, relative_path, data):
         full_path = self.get_workdir() + '/' + relative_path
         with tempfile.NamedTemporaryFile(delete=False) as tf:
             for row in data:
                 for cell in row:
                     tf.write("%f\n"%cell)
-        print("put data into " + full_path)
-        dir_name = os.path.dirname(full_path)
-        fs_cmd = self.hadoop_path + ' fs -mkdir -p ' + dir_name
-        self.sub_call(fs_cmd)
-        fs_cmd = self.hadoop_path + ' fs -put -f ' + tf.name + ' ' + full_path
-        self.sub_call(fs_cmd)
+        self.put_file(tf.name, full_path)
 
     def print_result(self, file_path):
         fs_cmd = self.hadoop_path + ' fs -cat ' + file_path
