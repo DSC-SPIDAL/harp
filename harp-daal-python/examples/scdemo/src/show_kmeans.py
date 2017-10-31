@@ -15,6 +15,8 @@ from time import time
 import sys, os
 import numpy as np
 from PIL import Image
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 from matplotlib.artist import setp

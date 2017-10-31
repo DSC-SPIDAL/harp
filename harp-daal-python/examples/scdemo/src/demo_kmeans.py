@@ -80,10 +80,19 @@ class DAALKMeans():
         harp_kmeans = KMeansDaalApplication("Image clustering with Harp-Daal")
         harp_kmeans.set_workdir("/15scene-work")
         harp_kmeans.load_array("data/input.data", data)
-        harp_kmeans.init_centroids(data)
-        harp_kmeans.args(4485, 15, 1000, 1, 1, 8, 1, 10240, harp_kmeans.get_workdir(), "/tmp/15scene", "false")
+
+        # random select centroids
+        centroids = np.random.permutation(data.shape[0])[:self.n_clusters]
+        centroids = data[centroids]
+
+        harp_kmeans.init_centroids(centroids)
+        harp_kmeans.args(4485, 15, 1000, 1, 1, 8, self.n_iter, 10240, harp_kmeans.get_workdir(), "/tmp/15scene", "false")
         harp_kmeans.run()
         self.centroids_ = harp_kmeans.result_to_array(harp_kmeans.get_workdir() + "/centroids/out/output")
+
+        #self.centroids_ = self.centroids_.reshape((15,1000))
+        #print('return centroids shape=%s'%(self.centroids_.shape))
+
         #patch here
         self.predict(data)
 
