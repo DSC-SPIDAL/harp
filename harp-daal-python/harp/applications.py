@@ -91,10 +91,7 @@ class HarpApplication(object):
 
     def result_to_array(self, file_path):
         cat = subprocess.Popen([self.hadoop_path, "fs", "-cat", file_path], stdout=subprocess.PIPE)
-        result = ''
-        for line in cat.stdout:
-            result = result + line
-        return numpy.fromstring(result, dtype=float, sep=' ')
+        return numpy.loadtxt(cat.stdout)
 
 
 class KMeansApplication(HarpApplication):
