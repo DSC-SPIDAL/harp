@@ -1,4 +1,6 @@
 import os
+import tempfile
+import numpy
 from harp.applications import HarpApplication
 
 
@@ -38,6 +40,7 @@ class HarpDaalApplication(HarpApplication):
         self.cli = "{0} {1} {2} {3} {4}".format(self.hadoop_cmd, self.harp_daal_jar, self.class_name, self.libjars, self.cmd)
         self.log("Command: " + self.cli)
 
+
 class ALSDaalApplication(HarpDaalApplication):
     def __init__(self, name):
         super(ALSDaalApplication, self).__init__(name)
@@ -54,6 +57,12 @@ class KMeansDaalApplication(HarpDaalApplication):
     def __init__(self, name):
         super(KMeansDaalApplication, self).__init__(name)
         self.class_name = 'edu.iu.daal_kmeans.regroupallgather.KMeansDaalLauncher'
+
+    def init_centroids(self, data):
+        file_path = self.get_workdir() + '/centroids/init_centroids'
+        with tempfile.NamedTemporaryFile(delete=False) as tf:
+            numpy.savetxt(tf, data, fmt="%f")
+        self.put_file(tf.name, file_path)
 
 
 class LinRegDaalApplication(HarpDaalApplication):
