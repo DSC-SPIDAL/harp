@@ -27,14 +27,14 @@ export HADOOP_HOME=<path to hadoop home folder>
 export HARP_JAR=<path to>/harp-app-1.0-SNAPSHOT.jar
 export HARP_DAAL_JAR=<path to>/harp-daal-app-1.0-SNAPSHOT.jar
 export DAALROOT=<path to your compiled daal folder>
-export PYTHONPATH=<path to>/harp-python
+export PYTHONPATH=<path to>/harp-daal-python
 ```
 
 ## Example Code
 Example code can be found under folder `examples`. For instance, to run KMeans with Harp-Daal, please run the following command:
 
 ```
-cd harp-python
+cd harp-daal-python
 python examples/daal/run_harp_daal_KMeansDaal.py
 ```
 
