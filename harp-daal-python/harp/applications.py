@@ -2,6 +2,7 @@ import os
 import subprocess
 import sys
 import numpy
+import tempfile
 
 
 class HarpApplication(object):
@@ -67,8 +68,17 @@ class HarpApplication(object):
             print >> sys.stderr, "Execution failed:", e
 
     def load_array(self, relative_path, data):
-        full_path = self.get_workdir() + relative_path
+        full_path = self.get_workdir() + '/' + relative_path
+        with tempfile.NamedTemporaryFile(delete=False) as tf:
+            for row in data:
+                for cell in row:
+                    tf.write("%f\n"%cell)
         print("put data into " + full_path)
+        dir_name = os.path.dirname(full_path)
+        fs_cmd = self.hadoop_path + ' fs -mkdir -p ' + dir_name
+        self.sub_call(fs_cmd)
+        fs_cmd = self.hadoop_path + ' fs -put -f ' + tf.name + ' ' + full_path
+        self.sub_call(fs_cmd)
 
     def print_result(self, file_path):
         fs_cmd = self.hadoop_path + ' fs -cat ' + file_path
