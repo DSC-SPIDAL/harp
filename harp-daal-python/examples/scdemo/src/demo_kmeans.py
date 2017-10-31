@@ -80,7 +80,7 @@ class DAALKMeans():
         harp_kmeans = KMeansDaalApplication("Image clustering with Harp-Daal")
         harp_kmeans.set_workdir("/15scene-work")
         harp_kmeans.load_array("data/input.data", data)
-        harp_kmeans.args(4485, 15, 1000, 1, 1, 8, 1, 10, harp_kmeans.get_workdir(), "/tmp/15scene", "false")
+        harp_kmeans.args(4485, 15, 1000, 1, 1, 8, 1, 10240, harp_kmeans.get_workdir(), "/tmp/15scene", "false")
         harp_kmeans.run()
         self.centroids_ = harp_kmeans.result_to_array(harp_kmeans.get_workdir() + "/centroids/out/output")
         #patch here
