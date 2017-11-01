@@ -86,7 +86,8 @@ class DAALKMeans():
         centroids = data[centroids]
 
         harp_kmeans.init_centroids(centroids)
-        harp_kmeans.args(4485, 15, 1000, 1, 1, 8, self.n_iter, 10240, harp_kmeans.get_workdir(), "/tmp/15scene", "false")
+        #harp_kmeans.args(4485, self.n_clusters, 1000, 1, 1, 8, self.n_iter, 10240, harp_kmeans.get_workdir(), "/tmp/15scene", "false")
+        harp_kmeans.args(data.shape[0], self.n_clusters, data.shape[1], 1, 1, 8, self.n_iter, 10240, harp_kmeans.get_workdir(), "/tmp/15scene", "false")
         harp_kmeans.run()
         self.centroids_ = harp_kmeans.result_to_array(harp_kmeans.get_workdir() + "/centroids/out/output")
 
@@ -97,7 +98,17 @@ class DAALKMeans():
         self.predict(data)
 
     def predict(self, data):
-        distmat = np.dot(data, np.transpose(self.centroids_))
+        """
+        # hardcoded: minimize euclidean distance to cluster center:
+        # ||a - b||^2 = ||a||^2 + ||b||^2 -2 <a, b>
+        """
+        a = data
+        b = self.centroids_
+        a2 = np.sum(a * a, axis =1)
+        b2 = np.sum(b * b, axis =1)
+        distmat = a2.reshape((a.shape[0],1)) - 2*np.dot(a, b.T)
+        distmat = b2.T.reshape((1,b.shape[0])) + distmat
+
         self.labels_ = np.argmin(distmat, axis=1)
 
 
@@ -181,9 +192,9 @@ def bench_k_means(estimator, name, data):
 #
 #savedata('input.data', data)
 if rundaal:
-    bench_k_means(DAALKMeans(n_clusters=n_digits, n_iter=10), name="random", data=data)
+    bench_k_means(DAALKMeans(n_clusters=n_digits, n_iter=50), name="random", data=data)
 else:
-    bench_k_means(KMeans(init='random', n_clusters=n_digits, n_init=10), name="random", data=data)
+    bench_k_means(KMeans(init='random', n_clusters=n_digits, n_init=50), name="random", data=data)
 
 # #############################################################################
 print(82 * '_')
