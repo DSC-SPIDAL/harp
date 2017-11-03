@@ -3,7 +3,7 @@ import numpy
 
 my_app = KMeansDaalApplication('My KMeansDaal with Harp')
 
-my_app.args('5000 100 100 5 2 4 10 10240 /daal-kmeans-work /tmp/kmeans true')
+my_app.args('50 10 10 1 1 4 10 5120 /daal-kmeans-work /tmp/kmeans true')
 
 my_app.run()
 
