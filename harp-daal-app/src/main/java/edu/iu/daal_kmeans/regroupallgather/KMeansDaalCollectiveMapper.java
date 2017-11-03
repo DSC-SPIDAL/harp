@@ -495,11 +495,12 @@ public class KMeansDaalCollectiveMapper
 			}
 		}
 
-		private void calculateAvgCenTable(Table<DoubleArray> cenTable)
+		private void calculateAvgCenTable_old(Table<DoubleArray> cenTable)
 		{
 			//calculate the average value in multi-threading
 			int num_partition = cenTable.getNumPartitions();
 			Thread[] threads_avg = new Thread[num_partition];
+			// Thread[] threads_avg = new Thread[numThreads];
 
 			int thread_id = 0;
 			for (Partition<DoubleArray> partition : cenTable.getPartitions()) 
@@ -524,6 +525,48 @@ public class KMeansDaalCollectiveMapper
 
 		}
 
+
+		private void calculateAvgCenTable(Table<DoubleArray> cenTable)
+		{
+			//calculate the average value in multi-threading
+			// int num_partition = cenTable.getNumPartitions();
+			// Thread[] threads_avg = new Thread[num_partition];
+			// Thread[] threads_avg = new Thread[numThreads];
+
+			// int thread_id = 0;
+			for (Partition<DoubleArray> partition : cenTable.getPartitions()) 
+			{
+				DoubleArray array = partition.get();
+				// threads_avg[thread_id] = new Thread(new TaskAvgCalc(cenVecSize, array));
+				// threads_avg[thread_id].start();
+				// thread_id++;
+				double[] doubles = array.get();
+				// int size = array.size();
+
+				for (int j = 0; j < doubles.length; j += cenVecSize) 
+				{
+					if (doubles[j] != 0) 
+					{
+						for (int k = 1; k < cenVecSize; k++) {
+							doubles[j + k] /= doubles[j];
+						}
+					}
+				}
+			}
+
+			// for (int q = 0; q< num_partition; q++) {
+            //
+			// 	try
+			// 	{
+			// 		threads_avg[q].join();
+            //
+			// 	}catch(InterruptedException e)
+			// 	{
+			// 		System.out.println("Thread interrupted.");
+			// 	}
+			// }
+
+		}
 
 		private void comm_regroup_allgather(Table<DoubleArray> cenTable, long[] timer, int itr)
 		{
@@ -562,18 +605,21 @@ public class KMeansDaalCollectiveMapper
 			// clean contents in the table.
 			globalTable.release();
 
-			System.out.print("Cen table before push");
+			System.out.println("Cen table before push is: ");
+			System.out.flush();
+
 			printTableRow(cenTable, 0, 10);
 			push("main", "push_" + itr, cenTable, globalTable, new Partitioner(this.getNumWorkers()));
-			System.out.print("Global table after push");
-			printTableRow(globalTable, 0, 10);
+			// System.out.print("Global table after push");
+			// printTableRow(globalTable, 0, 10);
 			// we can calculate new centroids
 			timer[0] = System.currentTimeMillis();
 			calculateAvgCenTable(globalTable);
 			timer[1] = System.currentTimeMillis();
 
-			// System.out.print("Global table after avg calc");
-			// printTableRow(globalTable, 0, 10);
+			System.out.println("Global table after avg calc is: ");
+			System.out.flush();
+			printTableRow(globalTable, 0, 10);
 
 			pull("main", "pull_" + itr, cenTable, globalTable, true);
 			// calculateAvgCenTable(cenTable);
@@ -593,7 +639,8 @@ public class KMeansDaalCollectiveMapper
 				if (row_count < row)
 				{
 					double res[] = ap.get().get();
-					System.out.print("ID: " + ap.id() + ":");
+					System.out.print("ID: " + ap.id() + ": ");
+					System.out.flush();
 					col_print = (dim < res.length) ? dim : res.length;
 					for (int i = 0; i < col_print; i++)
 						System.out.print(res[i] + "\t");
