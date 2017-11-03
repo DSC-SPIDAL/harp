@@ -54,7 +54,8 @@ ITR=10
 # Mem=185000
 Mem=110000
 # generate training data or not (once generated, data file /kmeans-P$Pts-C$Ced-D$Dim-N$Node is in hdfs, you could reuse them next time)
-GenData=true
+# GenData=true
+GenData=false
 # num of mappers (nodes)
 Node=4
 # num of threads on each mapper(node)
