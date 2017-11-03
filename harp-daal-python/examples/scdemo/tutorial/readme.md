@@ -26,7 +26,7 @@ git clone git@github.iu.edu:pengb/scdemo.git
 
 ```sh
 cd scdemo/test
-../bin/run_kmeans.sh
+../tutorial/run_kmeans.sh
 ```
 
 This script run image clustering application on the 15scene(Fifteen Scene Categories) dataset.
@@ -34,7 +34,7 @@ This script run image clustering application on the 15scene(Fifteen Scene Catego
 There are two output files:
 
 + draw plot of clusters on 2D dimension, save as kmeans_2d.png
-+ draw samples of the result clusters, save as random.pdf with each line a cluster
++ draw samples of the result clusters, save as local.pdf/daal.pdf with each line a cluster
 
 
 
