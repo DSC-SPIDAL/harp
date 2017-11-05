@@ -154,10 +154,6 @@ public class KMUtil {
     List<Future<?>> futures =
       new LinkedList<Future<?>>();
     for (int k = 0; k < numPointFiles; k++) {
-      // Future<?> f =
-      //   service.submit(new DataGenRunnable(
-      //     pointsPerFile, localInputDir, Integer
-      //       .toString(k), vectorSize));
       Future<?> f = 
           service.submit(new DataGenMMDense(pointsPerFile, 
         localInputDir, Integer.toString(k), vectorSize));
