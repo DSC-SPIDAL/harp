@@ -13,14 +13,23 @@ class DAALKMeans():
     """
     interface to daal-kmeans call
     """
-    def __init__(self, n_clusters=10, n_iter=10, init = 'random',
-            n_node = 1, n_thread = 8, n_mem = 10240, workdir = "/kmeans-work"
+    def __init__(self, n_clusters=10, max_iter=10, init = 'random', n_init = 1,
+            n_node = 1, n_thread = 8, n_mem = 6000, workdir = "/kmeans-work"
             ):
+        """
+            n_clusters  ; set number of clusters
+            max_iter    ; set maximum iteration number
+            n_node      ; set mapper number
+            n_thread    ; set thread number in each mapper
+            init        ; set the centroid initialization method, 'random' by default
+            n_init      ; set the number of runs to select the best model, 1 by default
+        """
         self.labels_ = None
         self.centroids_ = None
         self.inertia_ = 0.
-        self.n_iter = n_iter
+        self.max_iter = max_iter
         self.n_clusters = n_clusters
+        self.n_init = n_init
 
         #daal init parameters
         self.n_node = n_node
@@ -46,7 +55,7 @@ class DAALKMeans():
         # call run harpdaal kmeans
         # args: <$Pts $Ced $Dim $File $Node $Thd $ITR $Mem $workdir $tmpdir $gendata>
         harp_kmeans.args(data.shape[0], self.n_clusters, data.shape[1], 
-                1, self.n_node, self.n_thread, self.n_iter, self.n_mem, 
+                1, self.n_node, self.n_thread, self.max_iter, self.n_mem, 
                 harp_kmeans.get_workdir(), "/tmp/" + self.workdir, "false")
         harp_kmeans.run()
 
