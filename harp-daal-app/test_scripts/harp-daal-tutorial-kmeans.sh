@@ -41,8 +41,7 @@ logDir=${HADOOP_HOME}/Harp-DAAL-LOG
 export LIBJARS=${DAALROOT}/lib/daal.jar
 
 # num of training data points
-# Pts=5000
-Pts=10000
+Pts=5000
 # num of training data centroids
 Ced=100
 # feature vector dimension
@@ -55,14 +54,13 @@ ITR=100
 Mem=6000
 # generate training data or not (once generated, data file /kmeans-P$Pts-C$Ced-D$Dim-N$Node is in hdfs, you could reuse them next time)
 GenData=true
-# GenData=false
 # num of mappers (nodes)
 Node=2
 # num of threads on each mapper(node)
 Thd=4
 
 echo "Test-daal-kmeans-P$Pts-C$Ced-D$Dim-F$File-ITR$ITR-N$Node-Thd$Thd Start" 
-hadoop jar harp-daal-app-1.0-SNAPSHOT.jar edu.iu.daal_kmeans.regroupallgather.KMeansDaalLauncher -libjars ${LIBJARS} $Pts $Ced $Dim $File $Node $Thd $ITR $Mem /kmeans-P$Pts-C$Ced-D$Dim-F$File-N$Node /tmp/kmeans $GenData 2>&1 | tee $logDir/Test-daal-kmeans-P$Pts-C$Ced-D$Dim-F$File-ITR$ITR-N$Node-Thd$Thd.log  
+hadoop jar harp-daal-app-1.0-SNAPSHOT.jar edu.iu.daal_tutorial.daal_kmeans.KMeansDaalLauncher -libjars ${LIBJARS} $Pts $Ced $Dim $File $Node $Thd $ITR $Mem /kmeans-P$Pts-C$Ced-D$Dim-F$File-N$Node /tmp/kmeans $GenData 2>&1 | tee $logDir/Test-daal-kmeans-P$Pts-C$Ced-D$Dim-F$File-ITR$ITR-N$Node-Thd$Thd.log  
 echo "Test-daal-kmeans-P$Pts-C$Ced-D$Dim-F$File-ITR$ITR-N$Node-Thd$Thd End" 
 
 
