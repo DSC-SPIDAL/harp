@@ -1,0 +1,408 @@
+/* div, p, ul, li, ol, img {border: 1px solid red ;} */
+html, body, div, img {
+    margin: 0px ;
+    padding: 0px ;    
+}
+table {
+    font: inherit ;
+    color: inherit ;
+}
+html {
+    background-color: #ddd ;
+}
+body {
+    border-bottom: 1px #aaa solid ;
+    border-left:   1px #aaa solid ;
+    border-right:  1px #aaa solid ;
+    margin-left: auto ;
+    margin-right: auto ;
+    margin-bottom: 0.5em ;
+    width: 65em ;
+    background-color: #184860;
+    font-family: Lucida, Helvetica, sans-serif ;
+    font-size: 14px ;
+}
+h1, h2, h3, h4, h5, h6 { 
+    font-family: Lucida, Helvetica, sans-serif ;
+    font-weight: normal ;
+    color: #184860;
+}
+a {	
+    color: #004fdc;
+}
+b {
+    color: rgb(40,40,40) ; 
+}
+pre, code { 
+    font-family: 'Andale Mono', monospaced ; 
+    color: #ff6f00;
+}
+#pagebody {
+    background-color: white ;
+    padding-bottom: 1px ;
+}
+#content {
+    overflow: hidden ;
+    float: right ;
+    width: 53em ;
+    line-height: 1.3em ;
+    padding-right: 1em ;
+}
+#sidebar {
+    float: left ;
+    width: 10em ;
+    padding: 0em ;
+}
+#sidebar ul {
+    margin: 0 ;
+    padding: 0 ;
+    margin-left: .5em ;
+    margin-top: 1em ;
+    margin-bottom: 0em ;
+}
+#sidebar ul ul {
+    margin-top: .3em ;
+    margin-bottom: .3em ;
+}
+#sidebar li {
+    list-style: none ; /* for buggy IE */
+    display: block ;
+    margin: 0px ;
+    margin-bottom: 0.5em ;
+    padding: .2em ;
+    font-size: 1em ;
+    font-weight: bold ;
+}
+#sidebar li li {
+    font-weight: normal ;
+    text-transform: none ;
+    margin-bottom: 0em ;
+}
+#sidebar li .active {
+    background: #e4e4cf;
+}
+#sidebar li a {
+    color: rgb(40,40,40) ;    
+    text-decoration: none ;
+    padding: .2em;
+}
+#sidebar li .active a {
+    text-decoration: none ;
+    padding: .2em;
+}
+#header {
+    padding-top: 1px ;
+    padding-left: 10px ;
+    padding-bottom: 10px ;
+    padding-top: 10px ;
+}
+#header #cse-search-box {
+    float: right ;
+    margin-right: 1em ;
+}
+#headbanner {
+    background-color: #e4e4cf;
+    padding: .2em .7em ;
+    border-bottom: 1px solid gray ;
+    border-style: none;
+	font: bold 1.1em Lucida, Helvetica, sans-serif;
+	color: #333;
+} 
+#header h1 {
+    margin: 0 ;
+    color:  white ;
+    font-family: Lucida, Helvetica, sans-serif ;
+}
+#footer {
+    clear: both ;
+    text-align: center ;
+    color: white ;
+    padding: 0.5em ;
+    font-size: 0.9em ;
+}
+.clear {
+    clear: both ;
+    margin: 0px ;
+    padding: 0px ;
+    font-size: 1px; 
+}
+
+.standout {
+    margin: 1em ! important ;
+    font-family: Lucida, Helvetica, sans-serif ;
+    font-style: italic ;
+    color: red ! important ;
+}
+
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+/*                                               Main content style */
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+#content h1,
+#content h2,
+#content h3,
+#content h4,
+#content h5,
+#content h6 {
+    margin: 1em 0 ;
+    margin-top: 1.5em ;
+}
+#content h1 {font-size:1.7em; margin-bottom: 0.59em;}
+#content h2 {font-size:1.5em; margin-bottom: 0.67em;}
+#content h3 {font-size:1.3em; margin-bottom: 0.77em;}
+#content h4 {font-size:1.2em; margin-bottom: 0.83em;}
+#content h5 {font-size:1.0em; margin-bottom: 1.00em;}
+#content h6 {font-size:0.8em; margin-bottom: 1.15em;}
+#content p,
+#content blockquote,
+#content div.figure {
+    margin: 1em 0 ;
+    padding: 0 ;
+    padding-right: 10em ;
+}
+#content blockquote {
+    margin: 1em ;
+    font-family: Lucida, Helvetica, sans-serif ;
+    font-style: italic ;
+}
+#content pre {
+    margin: 1em 0 ;
+    padding: 0 ;
+}
+#content ul,
+#content ol {
+    margin-left: 0; 
+    padding-left: 0 ;
+}
+#content li {
+    margin-left: 1.2em ;
+    padding-left: 0 ;
+}
+#content ol li { 
+    margin-left: 2em ;
+}
+#content dt {
+    /*display: block ;
+    float: left ;*/
+    font-weight: bold ;
+    width: auto ;
+    margin-right: 1em ;
+    padding: 0 ;
+    text-align: left; 
+}
+#content dd {
+    display: block ;
+    margin: 0.1em  0 ;    
+    padding-left: 2em ;
+}
+#content dd p,
+#content dd ul {
+    margin-top: 0 ;
+}
+#content .centered {
+    display: block ;
+    margin-left: 2em ;
+}
+#content div.figure {
+    margin-top: 1em ;
+    margin-bottom: 1em ;
+    text-align: center ;
+}
+#content div.caption {
+    font-family: Lucida, Helvetica, sans-serif ;
+    font-style: italic ;
+}
+/* for buggy IE 6 */
+#content div.caption span.content {
+    display: inline ;
+    zoom: 1 ;
+}
+#content div.caption span.content {
+    display: inline-block ;
+    text-align: left ;
+    max-width: 40em ;
+}
+#content img.image-right {
+    float: right ;
+}
+#content div.box {
+    float: left ;
+    border: 1px solid #aaa ;
+    background-color: #f8f8ee ;
+    padding: 0.5em ;
+    width: 24em ;
+    margin-right: 1em ;
+    margin-bottom: 1em ;
+}
+#content div.box h1 {
+    font-size: 1.2em ;
+    text-align: center ;
+    margin: 0px ;
+}
+#content table.checker {
+    border-collapse: collapse ;
+    margin-left: auto ;
+    margin-right: auto ;
+}
+#content table.checker td {
+    border: 1px solid black ;
+    padding: .2em ;
+}
+
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+/*                                                             Mdoc */
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+#content div.mdoc ul.breadcrumb  {
+    float: right ;
+    width: 100% ;
+    margin: 1em 0 ;
+    padding: 0 ;
+    border-bottom: 1px solid #aaa ;
+}
+#content div.mdoc ul.breadcrumb:after  {
+    content: "." ;
+    display: block ;
+    height: 0 ;
+    clear: right ;
+    visibility: hidden ;
+}
+#content div.mdoc ul.breadcrumb li {
+    display: block ;
+    float: left ;
+    width: 4em ;
+    margin: 0 0.5em ;
+    padding: .2em ;
+    font-size: .9em ;
+    font-weight: bold ;
+    border-top:   2px solid #aaa ;
+    border-left:  2px solid #aaa ;
+    border-right: 2px solid #aaa ;
+    text-align: center ;
+}
+#content div.mdoc ul.breadcrumb a {
+    text-decoration : none ;
+    color: black ;
+}
+
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+/*                                                          Doxygen */
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+#content div.doxygen {
+    margin-right: 6em ;
+}
+#content div.doxygen li {
+    margin-top: 0.1em ;
+    margin-bottom: 0.1em; 
+}
+#content div.doxygen p  {
+    margin-right: 0 ;
+    padding-right: 0 ;
+}
+#content div.doxygen div.groupHeader {
+    font-weight: bold ;
+}
+#content div.doxygen td.memItemLeft {
+}
+#content div.doxygen div.memitem {
+}
+#content div.doxygen div.memproto {
+    background-color: #e4e4cf;
+    border: 1px solid #aaa ;
+    padding: 0.5em ;
+}
+#content div.doxygen td.memname {
+}
+#content div.doxygen td.paramkey {
+    color: blue ;
+}
+#content div.doxygen td.paramtype {
+}
+#content div.doxygen td.paramname {
+    color: green ;
+}
+#content div.doxygen div.navigation {
+    padding: 0 ;
+    margin: 0 ;
+    border: 1px solid white ;
+}
+#content div.doxygen div.navigation div.tabs {
+    padding: 0 ;
+    margin: 0 ;
+}
+#content div.doxygen div.navigation ul {
+    float: right ;
+    width: 100% ;
+    margin: 0.5em 0 ;
+    padding: 0 ;
+    border-bottom: 1px solid #aaa ;
+}
+#content div.doxygen div.navigation:after {
+    content: "." ;
+    display: block ;
+    height: 0 ;
+    clear: right ;
+    visibility: hidden ;
+}
+#content div.doxygen div.navigation li {
+    float: left ;
+    display: block ;
+    font-size: .9em ;
+    font-weight: bold ;
+    margin: 0 0.3em ;
+    padding: 0.2em ;
+    border-top: 2px solid #aaa ;
+    border-left: 2px solid #aaa ;
+    border-right: 2px solid #aaa ;
+    text-align: center ;
+}
+#content div.doxygen div.navigation li a {
+    text-decoration : none ;
+    color: black ;
+}
+#content div.doxygen div.navigation .current {
+    background-color: #e4e4cf;
+}
+#content div.doxygen p.formulaDsp {
+    text-align: center ;
+}
+#content div.doxygen img.formulaDsp {
+    margin: 0.5em auto ;
+}
+#content div.doxygen table {
+    margin: 1em 0 ;
+}
+#content div.doxygen table tr {
+    margin: 0 ;
+}
+#content div.doxygen table td {
+    margin: 0 ;
+}
+/* unfortunately doxygen uses compact hardoced attributes */
+#content div.doxygen dl,
+#content div.doxygen dl.note,
+#content div.doxygen dl.see,
+#content div.doxygen dl.remark {
+    display: block ;
+}
+#content div.doxygen dl dt,
+#content div.doxygen dl.note dt,
+#content div.doxygen dl.remark dt,
+#content div.doxygen dl.see dt {
+    width: auto ;
+    margin-right: 0.5em ;
+    padding: 0 ;
+    text-align: left ;
+}
+#content div.doxygen dl dd,
+#content div.doxygen dl.note dd,
+#content div.doxygen dl.remark dd,
+#content div.doxygen dl.see dd {
+    margin: 0 ;
+    padding: 0 ;
+    margin-left: 2em ;
+}
+#content div.doxygen a.anchor {
+    color: inherit ! important ;
+}

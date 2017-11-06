@@ -18,9 +18,7 @@ All these packages should be first installed properly. [Anaconda](https://anacon
 
 ## Installation
 
-```sh
-git clone git@github.iu.edu:pengb/scdemo.git
-```
+Setup the PYTHONPATH and HARP_DAAL_JAR path.
 
 ## Run Applications
 
@@ -33,7 +31,7 @@ This script run image clustering application on the 15scene(Fifteen Scene Catego
 
 There are two output files:
 
-+ draw plot of clusters on 2D dimension, save as kmeans_2d.png
++ draw plot of clusters on 2D dimension, save as kmeans_2d_{local}{daal}.png
 + draw samples of the result clusters, save as local.pdf/daal.pdf with each line a cluster
 
 
