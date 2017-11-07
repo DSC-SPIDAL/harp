@@ -52,16 +52,18 @@ np.random.seed(42)
 # loading the dataset
 # #############################################################################
 
+rundaal = True
+
 #set parameters
 if len(sys.argv) == 1:
     print(__doc__)
-    print('usage: demo_kmeans.py <dataset> <iternum> <runscale>')
+    print('usage: demo_kmeans.py <dataset> <iternum> [runscale] [replica]')
 else:
     resultfile = sys.argv[1] if len(sys.argv) > 1 else 'imagenet_10.npz'
     iternum = int(sys.argv[2]) if len(sys.argv) > 2 else 10
     runscale = True if len(sys.argv) <= 3 else False
-    rundaal = True
-    print('iternum: %d, result file: %s, runscale: %s'%(iternum, resultfile, runscale))
+    replica = 1 if len(sys.argv) <= 4 else int(sys.argv[4])
+    print('iternum: %d, result file: %s, runscale: %s, replica: %d'%(iternum, resultfile, runscale, replica))
 
 f = np.load(resultfile)
 if runscale:
@@ -71,6 +73,12 @@ else:
 labels_names = f['labels']
 rids = f['rids']
 
+#replica to test on larger dataset
+if replica>1:
+    replica = 20
+    data = np.tile(data,(replica,1))
+    labels_names = np.tile(labels_names,replica)
+    rids = np.tile(rids,replica)
 
 #mapping labels_names to id
 labelmap={}
@@ -116,7 +124,8 @@ def bench_k_means(estimator, name, data):
 # call kmeans 
 # ############################################################################
 #*******code snippet to insert**************************
-bench_k_means(DAALKMeans(n_clusters=n_digits, n_iter=50, workdir="/15scene-work"), name="daal", data=data)
+_kmeans = DAALKMeans(n_clusters=n_digits, max_iter=1000, n_init=1, workdir="/15scene-work")
+bench_k_means(_kmeans, name="daal", data=data)
 #*******************************************************
 
 # ############################################################################

@@ -49,20 +49,18 @@ Dim=100
 # file per mapper
 File=5
 # iteration times
-ITR=10
+ITR=100
 # memory allocated to each mapper (MB)
-# Mem=185000
-Mem=110000
+Mem=6000
 # generate training data or not (once generated, data file /kmeans-P$Pts-C$Ced-D$Dim-N$Node is in hdfs, you could reuse them next time)
-# GenData=true
-GenData=false
+GenData=true
 # num of mappers (nodes)
-Node=4
+Node=2
 # num of threads on each mapper(node)
-Thd=24
+Thd=4
 
 echo "Test-daal-kmeans-P$Pts-C$Ced-D$Dim-F$File-ITR$ITR-N$Node-Thd$Thd Start" 
-hadoop jar harp-daal-app-1.0-SNAPSHOT.jar edu.iu.daal_tutorial.daal_kmeans.KMeansDaalLauncher -libjars ${LIBJARS} $Pts $Ced $Dim $File $Node $Thd $ITR $Mem /kmeans-P$Pts-C$Ced-D$Dim-F$File-ITR$ITR-N$Node /tmp/kmeans $GenData 2>$logDir/Test-daal-kmeans-P$Pts-C$Ced-D$Dim-F$File-ITR$ITR-N$Node-Thd$Thd.log  
+hadoop jar harp-daal-app-1.0-SNAPSHOT.jar edu.iu.daal_tutorial.daal_kmeans.KMeansDaalLauncher -libjars ${LIBJARS} $Pts $Ced $Dim $File $Node $Thd $ITR $Mem /kmeans-P$Pts-C$Ced-D$Dim-F$File-N$Node /tmp/kmeans $GenData 2>&1 | tee $logDir/Test-daal-kmeans-P$Pts-C$Ced-D$Dim-F$File-ITR$ITR-N$Node-Thd$Thd.log  
 echo "Test-daal-kmeans-P$Pts-C$Ced-D$Dim-F$File-ITR$ITR-N$Node-Thd$Thd End" 
 
 

@@ -41,7 +41,8 @@ logDir=${HADOOP_HOME}/Harp-DAAL-LOG
 export LIBJARS=${DAALROOT}/lib/daal.jar
 
 # num of training data points
-Pts=5000
+# Pts=5000
+Pts=10000
 # num of training data centroids
 Ced=100
 # feature vector dimension
@@ -51,9 +52,7 @@ File=5
 # iteration times
 ITR=100
 # memory allocated to each mapper (MB)
-# Mem=185000
-# Mem=110000
-Mem=40000
+Mem=6000
 # generate training data or not (once generated, data file /kmeans-P$Pts-C$Ced-D$Dim-N$Node is in hdfs, you could reuse them next time)
 GenData=true
 # GenData=false
