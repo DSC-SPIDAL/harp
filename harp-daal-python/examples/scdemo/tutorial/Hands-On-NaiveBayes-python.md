@@ -1,13 +1,13 @@
-# Python part another version
+# Demo Application : Text Classification
 
-## Invoke Harp-DAAL K-means via Python Interface 
+## Invoke Harp-DAAL NaiveBayes via Python Interface 
 
 Besides, the Java programming API, Harp-DAAL currently provides another Python API, which interfaces 
 Harp-DAAL with other python written applications. By just adding several lines of python code, you 
 are able to deploy the original python application on Hadoop Cluster and boost the performance by 
 leveraging DAAL kernels. 
 
-The python codes for image clustering is located at the path
+The python codes for demo application is located at the path
 
 ```bash
 ${PYTHONPATH}/examples/scdemo/tutorial
@@ -21,7 +21,7 @@ Run the pipeline from feature extraction, training, evaluation and finally check
 cd ${PYTHONPATH}/examples/scdemo/test
 ../tutorial/run_nb.sh
 ```
-![screen shot of results](imgcluster_runlocal.png)
+![screen shot of results](nb_runlocal.png)
 
 
 ### Step.2 Modify to invokes Harp-DAAL

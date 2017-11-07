@@ -22,8 +22,8 @@ if [ $# -eq "1" ] ; then
     fi
 fi
 
-banner "Introduction"
-python $homedir/tutorial/demo_nb_${runver}.py --intro
+#banner "Introduction"
+#python $homedir/tutorial/demo_nb_${runver}.py --intro
 
 
 #
