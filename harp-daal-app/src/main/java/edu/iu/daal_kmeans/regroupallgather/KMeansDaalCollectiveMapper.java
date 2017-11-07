@@ -204,7 +204,14 @@ public class KMeansDaalCollectiveMapper
 			// free memory and record time
             cenTable_daal.freeDataMemory();
             trainingdata_daal.freeDataMemory();
-            cenTable.release();
+
+			// Write out centroids
+			if (this.isMaster()) {
+				KMUtil.storeCentroids(this.conf, this.cenDir,
+						cenTable, this.cenVecSize, "output");
+			}
+		
+			cenTable.release();
 			LOG.info("Execution Time: " + (System.currentTimeMillis() - start_execution));
 
         }
