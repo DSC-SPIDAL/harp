@@ -76,6 +76,8 @@ public class PointLoadTask implements
     int pointsPerFile, int cenVecSize,
     Configuration conf) throws Exception {
     System.out.println("filename: "+file );
+    LOG.info("LoadPoints: pointsPerFile=" + pointsPerFile + 
+            " cenVecSize=" + cenVecSize);
     List<double[]> points = new LinkedList<double[]>();
     double[] trainingData =
       new double[pointsPerFile * cenVecSize];
