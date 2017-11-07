@@ -134,9 +134,9 @@ private void runKmeans(List<String> fileNames, Configuration conf, Context conte
 	this.fileNames = fileNames;
 	this.conf = conf;
 
-	//************* Step 1: load in training data *********************
-	//************* Step 2: load in centroids (model) data *********************
-	//************* Step 3: convert training data fro harp to daal *********************
+	//************* Step 1: load training data *********************
+	//************* Step 2: load centroids (model) data *********************
+	//************* Step 3: convert training data from harp to daal *********************
 	//************* Step 4: Setup DAAL K-means kernel and cenTable at DAAL side *********************
 	// start the iteration
 	for (int i = 0; i < numIterations; i++) 
@@ -313,7 +313,7 @@ LOG.info("Execution Time: " + (System.currentTimeMillis() - start_execution));
 
 ## Invoke Harp-DAAL K-means via Python Interface 
 
-Besides, the Java programming API, Harp-DAAL currently provides another Python API, which interfaces 
+Harp-DAAL currently provides Python API, which interfaces 
 Harp-DAAL with other python written applications. By just adding several lines of python code, you 
 are able to deploy the original python application on Hadoop Cluster and boost the performance by 
 leveraging DAAL kernels. 
