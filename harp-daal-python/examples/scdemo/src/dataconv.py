@@ -146,7 +146,7 @@ def load_data(infile, ftype, labelfile = None):
 
     return None, None
 
-def convert2csv(infile, output, fromtype, labelfile, split = 0.2):
+def convert2csv(infile, output, fromtype, labelfile, split = 0.8):
     """
     convert 2 dense matrix csv file, the last column is label
     """
