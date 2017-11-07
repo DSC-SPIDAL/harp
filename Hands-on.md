@@ -371,15 +371,18 @@ diff ../tutorial/demo_kmeans_local.py ../tutorial/demo_kmeans_daal.py
 Download the result files.
 
 ```bash
+# Copy a file from the running container to the host server
+sudo docker cp <container-id>:/harp/harp-daal-python/examples/scdemo/test/local.pdf local.pdf
 
-TODO: need BoFeng's input here.
+# Copy a file from the server to local client
+scp <username>@<server-ip>:<path-to>/local.pdf local.pdf```
 
 ```
 
 ### Step.5 (Optional) Tune Harp-DAAL-Kmeans parameters
 
-*daal_kmeans.py* contains the python API to Harp-DAAL-Kmeans Java codes. 
-In the *__init__* function, tune the arguments (parameters) and compare the performance. 
+*daal_kmeans.py* contains the python API to Harp-DAAL-Kmeans Java codes.
+In the *__init__* function, tune the arguments (parameters) and compare the performance.
 
 ```python
     def __init__(self, n_clusters=10, max_iter=10, init = 'random', n_init = 1,
