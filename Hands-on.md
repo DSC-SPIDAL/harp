@@ -375,7 +375,7 @@ Download the result files.
 sudo docker cp <container-id>:/harp/harp-daal-python/examples/scdemo/test/local.pdf local.pdf
 
 # Copy a file from the server to local client
-scp <username>@<server-ip>:<path-to>/local.pdf local.pdf```
+scp <username>@<server-ip>:<path-to>/local.pdf local.pdf
 
 ```
 
