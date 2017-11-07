@@ -6,12 +6,14 @@ re-assigns the training point to new cluster and re-compute the new centroid of 
 
 This hands-on includes two tasks
 
-* Write a Harp-DAAL K-means program by using Java API
-* Run and tune Harp-DAAL K-means from an image clustering application via python API 
+* Write a Harp-DAAL K-means program by using Java API (8 steps)
+* Run and tune Harp-DAAL K-means from an image clustering application via python API (5 steps)
 
 Users are supposed to get an access to a machine with sudo permission and pre-installed docker environment. 
 
-## Environment Setups
+## Prerequisites
+
+### Download Docker Image and launch Container Instance
 
 Execute the two commands to load in docker image and launch a container instance.
 ```bash
@@ -34,6 +36,50 @@ sudo docker system prune
 
 If network is not available, a docker image in tar file is provided with the instructions to load. 
 https://docs.docker.com/engine/reference/commandline/load/
+
+### Dependencies and Environment Variables
+
+The hands-on codes have the dependencies as follow,
+
+* Python 2.7+
+* Python module Numpy 
+* Hadoop 2.6.0/Hadoop 2.6.5
+* DAAL 2018+ 
+
+The docker image already includes them and other tools, the image has the following contents
+
+```bash
+# List of HarpDaal applications (in harp-daal-<version>.jar)
+edu.iu.daal_als.ALSDaalLauncher
+edu.iu.daal_cov.COVDaalLauncher
+edu.iu.daal_kmeans.regroupallgather.KMeansDaalLauncher
+edu.iu.daal_linreg.LinRegDaalLauncher
+edu.iu.daal_mom.MOMDaalLauncher
+edu.iu.daal_naive.NaiveDaalLauncher
+edu.iu.daal_nn.NNDaalLauncher
+edu.iu.daal_pca.PCADaalLauncher
+edu.iu.daal_qr.QRDaalLauncher
+edu.iu.daal_ridgereg.RidgeRegDaalLauncher
+edu.iu.daal_sgd.SGDDaalLauncher
+edu.iu.daal_svd.SVDDaalLauncher
+
+# List of HarpDaal examples in Python (/harp/harp-daal-python/examples/daal/)
+run_harp_daal_ALSDaal.py
+run_harp_daal_COVDaal.py
+run_harp_daal_KMeansDaal.py
+run_harp_daal_LinRegDaal.py
+run_harp_daal_MOMDaal.py
+run_harp_daal_NNDaal.py
+run_harp_daal_NaiveDaal.py
+run_harp_daal_PCADaal.py
+run_harp_daal_QRDaal.py
+run_harp_daal_RidgeRegDaal.py
+run_harp_daal_SGDDaal.py
+run_harp_daal_SVDDaal.py
+
+# Image clustering example
+/harp/harp-daal-python/examples/scdemo/tutorial/
+```
 
 The *bootstrap* script shall launch a Hadoop Cluster and setup all the environment variables. 
 To verify the Hadoop status
@@ -116,7 +162,7 @@ and re-run the application on Hadoop cluster
 ./harp-daal-app/test_scripts/harp-daal-tutorial-kmeans.sh
 ```
 
-### Step 1: Load Training Data 
+### Step 1: Load training data 
 
 Use the following function to load in training data (vectors) from HDFS in parallel
 ```java
@@ -124,7 +170,7 @@ Use the following function to load in training data (vectors) from HDFS in paral
 List<double[]> pointArrays = LoadTrainingData();
 ```
 
-### Step 2: Load in Model Data (Centroids)
+### Step 2: Load in model data (centroids)
 
 Similarly, create a harp table object *cenTable* and load in centroid data from HDFS. 
 Because centroid data are requested by all the mappers, load them at master mapper and 
@@ -142,7 +188,7 @@ loadCentroids(cenTable);
 bcastCentroids(cenTable, this.getMasterID());
 ```
 
-### Step 3: Convert Training Data from Harp side to DAAL side
+### Step 3: Convert training data from Harp side to DAAL side
 
 The training data loaded from HDFS are stored at Java heap memory. To invoke DAAL kernel, convert them into 
 the DAAL *NumericTable* 
@@ -185,7 +231,7 @@ Finally, create another *NumericTable* to store centroids (model) data at DAAL s
 NumericTable cenTable_daal = createCenTableDAAL();
 ```
 
-### Step 5: Convert Centroids data from Harp to DAAL
+### Step 5: Convert centroids data from Harp to DAAL
 
 Centroids are stored in harp table *cenTable* for inter-mapper communication. Convert them 
 to DAAL within each iteration of local computation. 
@@ -194,7 +240,7 @@ to DAAL within each iteration of local computation.
 convertCenTableHarpToDAAL(cenTable, cenTable_daal);
 ```
 
-### Step 6: Local Computation by DAAL kernel
+### Step 6: Local computation by DAAL kernel
 
 Call DAAL K-means kernels of local computation at each iteration.
 
@@ -205,7 +251,7 @@ kmeansLocal.input.set(InputId.inputCentroids, cenTable_daal);
 PartialResult pres = kmeansLocal.compute();
 ```
 
-### Step 7: Inter-Mapper Communication  
+### Step 7: Inter-mapper communication  
 
 Harp-DAAL-Kmeans adopts an *allreduce* computation model, where each mapper keeps a local copy of the whole model data (centroids). 
 However, it provides different communication operations to synchronize model data among mappers. 
@@ -253,7 +299,7 @@ After finishing each iteration, call the *printTable* to check the centroids res
 printTable(cenTable, 10, 10, i); 
 ```
 
-### Step 8: Release Memory and Record execution time
+### Step 8: Release memory and record execution time
 
 After all of the iterations, release the allocated memory at DAAL side and for harp table object.
 Log the execution time for all the iterations
@@ -278,7 +324,7 @@ The python codes for image clustering is located at the path
 ${PYTHONPATH}/examples/scdemo/tutorial
 ```
 
-### Step.1 Run Imageclustering on 15Scenery Dataset with Python Scikit-Learn K-means 
+### Step.1 Run image clustering on 15 scenery dataset with Python Scikit-Learn K-means 
 
 Run the pipeline from feature extraction, training, evaluation and finally check the clusters results.
 
@@ -314,7 +360,7 @@ diff ../tutorial/demo_kmeans_local.py ../tutorial/demo_kmeans_daal.py
 ![code diff](https://raw.githubusercontent.com/DSC-SPIDAL/harp/master/harp-daal-python/examples/scdemo/tutorial/diffcode.png)
 
 
-### Step.3 Invokes Harp-DAAL
+### Step.3 Invoke Harp-DAAL
 
 ```bash
 ../tutorial/run_kmeans.sh daal
@@ -330,7 +376,7 @@ TODO: need BoFeng's input here.
 
 ```
 
-### Step.5 (Optional)Tune Harp-DAAL-Kmeans Parameters
+### Step.5 (Optional) Tune Harp-DAAL-Kmeans parameters
 
 *daal_kmeans.py* contains the python API to Harp-DAAL-Kmeans Java codes. 
 In the *__init__* function, tune the arguments (parameters) and compare the performance. 
