@@ -47,6 +47,11 @@ result = np.loadtxt(retfile).astype(int)
 rids = np.loadtxt('standard.rids', dtype=np.str)
 n_digits = len(np.unique(result))
 print('cluster number: %d, images number:%d'%(n_digits, rids.shape[0]))
+
+# match if there is 
+
+
+
 t1 = time()
 #make directories
 #os.system("mkdir -p result")
