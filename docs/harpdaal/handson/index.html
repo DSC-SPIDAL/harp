@@ -1,0 +1,372 @@
+<!DOCTYPE html><html lang="en-us"><head><link rel="shortcut icon" type="image/png" sizes="16x16" href="https://dsc-spidal.github.io/harp/img/favicon-16x9.png"><link rel="shortcut icon" type="image/png" sizes="32x32" href="https://dsc-spidal.github.io/harp/img/favicon-32x18.png"><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="generator" content="Hugo 0.18.1" /><meta property="og:locale" content="en_US"><meta property="og:type" content="article"><meta property="og:title" content="harp"><meta property="og:image" content="/img/logo54x54.png"><meta property="og:url" content="https://dsc-spidal.github.io/harp/"><meta name="twitter:title" content="harp"><meta name="twitter:image" content="/img/0-1-1.png"><meta property="og:site_name" content=""><meta property="og:url" content="/docs/harpdaal/handson/"><meta property="og:description" content=""><meta name="twitter:description" content=""><title>harp Documentation - </title><link rel="stylesheet" href="https://dsc-spidal.github.io/harp/css/style.min.css"><link rel="stylesheet" href="https://dsc-spidal.github.io/harp/css/font-awesome.min.css"><link rel="stylesheet" href="https://dsc-spidal.github.io/harp/css/pygments.css"></head><body><nav class="hn-top-navbar navbar navbar-inverse navbar-fixed-top" role="navigation"><div class="hn-navbar-container container-fluid"><div class="navbar-header"><button class="navbar-toggle collapsed" type="button" data-toggle="collapse" data-target="#hn-navbar" aria-controls="hn-navbar" aria-expanded="false"><span class="sr-only"><Toggle>navigation</Toggle></span><i class="hn-toggle-button fa fa-bars"></i></button><a class="hn-navbar-logo navbar-brand" href="https://dsc-spidal.github.io/harp/"><img class="pull-left" src="https://dsc-spidal.github.io/harp/img/0-1-2.png" width="76%"></a></div><div id="hn-navbar" class="navbar-collapse collapse"><ul class="nav navbar-nav navbar-right"><li><a href="https://dsc-spidal.github.io/harp/docs/getting-started">Docs</a></li><li><a href="https://dsc-spidal.github.io/harp/api">API</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/resources">Resources</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/contributors/community">Community</a></li><li><a href="https://github.com/DSC-SPIDAL/harp/">GitHub</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/survey">Feedback</a></li><li><a href="https://groups.google.com/forum/#!forum/harp-users">Mailing List</a></li></ul></div></div></nav><div class="hn-main"><div class="container"><div class="row"><aside class="hn-sidebar hidden-xs col-sm-4 col-md-3 col-lg-2 collapse"><nav class="hn-sidebar-nav"><div id="hn-accordion" class="panel-group" role="tablist" aria-multiselectable="true"><div class="panel panel-default"><section id="quick-start" class="panel-heading" role="tab"><h4 class="panel-title"><a role="button" data-toggle="collapse" data-parent="#hn-accordion" href="#collapse-quick-start" aria-labelledby="quick-start"><i class="fa fa-caret-right"></i>Quick Start</a></h4></section><div id="collapse-quick-start" class="panel-collapse collapse" aria-labelledby="quick-start"><div class="panel-body"><ul><li><a href="https://dsc-spidal.github.io/harp/docs/getting-started">Harp Installation (single)</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/getting-started-cluster">Harp Installation (cluster)</a></li></ul></div></div></div><div class="panel panel-default"><section id="programming-guides" class="panel-heading" role="tab"><h4 class="panel-title"><a role="button" data-toggle="collapse" data-parent="#hn-accordion" href="#collapse-programming-guides" aria-labelledby="programming-guides"><i class="fa fa-caret-right"></i>Programming Guides</a></h4></section><div id="collapse-programming-guides" class="panel-collapse collapse" aria-labelledby="programming-guides"><div class="panel-body"><ul><li><a href="https://dsc-spidal.github.io/harp/docs/programming/overview">Overview</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/programming/data-interface">Data Interfaces and Types</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/programming/scheduler">Schedulers</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/programming/computation-models">Computation Models</a></li></ul></div></div></div><div class="panel panel-default"><section id="collective-communication" class="panel-heading" role="tab"><h4 class="panel-title"><a role="button" data-toggle="collapse" data-parent="#hn-accordion" href="#collapse-collective-communication" aria-labelledby="collective-communication"><i class="fa fa-caret-right"></i>Collective Communication</a></h4></section><div id="collapse-collective-communication" class="panel-collapse collapse" aria-labelledby="collective-communication"><div class="panel-body"><ul><li><a href="https://dsc-spidal.github.io/harp/docs/communications/broadcast">broadcast</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/communications/reduce">reduce</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/communications/allgather">allgather</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/communications/allreduce">allreduce</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/communications/regroup">regroup</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/communications/pushandpull">push &amp; pull</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/communications/rotate">rotate</a></li></ul></div></div></div><div class="panel panel-default"><section id="examples" class="panel-heading" role="tab"><h4 class="panel-title"><a role="button" data-toggle="collapse" data-parent="#hn-accordion" href="#collapse-examples" aria-labelledby="examples"><i class="fa fa-caret-right"></i>Examples</a></h4></section><div id="collapse-examples" class="panel-collapse collapse" aria-labelledby="examples"><div class="panel-body"><ul><li><a href="https://dsc-spidal.github.io/harp/docs/examples/overview">Overview</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/examples/kmeans">K-Means</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/examples/mlrsgd">Multiclass Logistic Regression</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/examples/lda">Latent Dirichlet Allocation (CVB)</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/examples/svm">Support Vector Machine</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/examples/rf">Random Forests</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/examples/nn">Neural Network</a></li></ul></div></div></div><div class="panel panel-default"><section id="applications" class="panel-heading" role="tab"><h4 class="panel-title"><a role="button" data-toggle="collapse" data-parent="#hn-accordion" href="#collapse-applications" aria-labelledby="applications"><i class="fa fa-caret-right"></i>Applications</a></h4></section><div id="collapse-applications" class="panel-collapse collapse" aria-labelledby="applications"><div class="panel-body"><ul><li><a href="https://dsc-spidal.github.io/harp/docs/applications/lda-cgs">Latent Dirichlet Allocation (CGS)</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/applications/mf">Matrix Factorization</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/applications/sahad">Sub-graph Counting</a></li></ul></div></div></div><div class="panel panel-default"><section id="harp-daal" class="panel-heading" role="tab"><h4 class="panel-title"><a role="button" data-toggle="collapse" data-parent="#hn-accordion" href="#collapse-harp-daal" aria-labelledby="harp-daal"><i class="fa fa-caret-right"></i>Harp-DAAL</a></h4></section><div id="collapse-harp-daal" class="panel-collapse collapse" aria-labelledby="harp-daal"><div class="panel-body"><ul><li><a href="https://dsc-spidal.github.io/harp/docs/harpdaal/harpdaal">Overview</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/harpdaal/kmeans">K-means</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/harpdaal/mfsgd">Matrix Factorization (SGD)</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/harpdaal/als">Recommender System (ALS)</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/harpdaal/svd">Singular Value Decomposition (SVD)</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/harpdaal/pca">Principal Component Analysis (PCA)</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/harpdaal/nn">Neural Network</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/harpdaal/qr">QR Decomposition (QR)</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/harpdaal/covariance">Covariance</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/harpdaal/moments">Low Order Moments</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/harpdaal/naive_bayes">Naive Bayes</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/harpdaal/linear_regression">Linear Regression</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/harpdaal/ridge_regression">Ridge Regression</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/harpdaal/handson">Hands-on</a></li></ul></div></div></div><div class="panel panel-default"><section id="harp-resources" class="panel-heading" role="tab"><h4 class="panel-title"><a role="button" data-toggle="collapse" data-parent="#hn-accordion" href="#collapse-harp-resources" aria-labelledby="harp-resources"><i class="fa fa-caret-right"></i>Harp Resources</a></h4></section><div id="collapse-harp-resources" class="panel-collapse collapse" aria-labelledby="harp-resources"><div class="panel-body"><ul><li><a href="https://dsc-spidal.github.io/harp/docs/resources">Harp Resources</a></li></ul></div></div></div><div class="panel panel-default"><section id="contributors" class="panel-heading" role="tab"><h4 class="panel-title"><a role="button" data-toggle="collapse" data-parent="#hn-accordion" href="#collapse-contributors" aria-labelledby="contributors"><i class="fa fa-caret-right"></i>Contributors</a></h4></section><div id="collapse-contributors" class="panel-collapse collapse" aria-labelledby="contributors"><div class="panel-body"><ul><li><a href="https://dsc-spidal.github.io/harp/docs/contributors/community">Community</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/contributors/contributors">Contributors</a></li></ul></div></div></div><div class="panel panel-default"><section id="user-feedback" class="panel-heading" role="tab"><h4 class="panel-title"><a role="button" data-toggle="collapse" data-parent="#hn-accordion" href="#collapse-user-feedback" aria-labelledby="user-feedback"><i class="fa fa-caret-right"></i>User Feedback</a></h4></section><div id="collapse-user-feedback" class="panel-collapse collapse" aria-labelledby="user-feedback"><div class="panel-body"><ul><li><a href="https://dsc-spidal.github.io/harp/docs/survey">Online Survey</a></li></ul></div></div></div></div></nav></aside><section class="hn-docs-main col-sm-8 col-md-9 col-lg-10 col-sm-offset-4 col-md-offset-3 col-lg-offset-2"><header class="hn-docs-header page-header"><h1></h1><div class="hn-docs-description"></div></header><article class="hn-docs-content">
+
+<h1 id="choose-the-right-ml-tool-and-use-it-like-a-pro">Choose the right ML tool and use it like a pro!</h1>
+
+<p>K-means is a widely used clustering algorithm in machine learning community.
+It iteratively computes the distance between each training point to every centroids,
+re-assigns the training point to new cluster and re-compute the new centroid of each cluster.</p>
+
+<p>This hands-on includes two tasks</p>
+
+<ul>
+<li>Write a Harp-DAAL K-means program by using Java API (8 steps)</li>
+<li>Run and tune Harp-DAAL K-means from an image clustering application via python API (5 steps)</li>
+</ul>
+
+<p>Users are supposed to get an access to a machine with sudo permission and pre-installed docker environment.</p>
+
+<h2 id="prerequisites">Prerequisites</h2>
+
+<h3 id="download-docker-image-and-launch-container-instance">Download Docker Image and launch Container Instance</h3>
+
+<p>Execute the two commands to load in docker image and launch a container instance.</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #75715e"># Download an image</span>
+sudo docker pull lee212/harp-daal:icc_included
+<span style="color: #75715e"># Start a container</span>
+sudo docker run -it lee212/harp-daal:icc_included /etc/bootstrap.sh -bash
+</pre></div>
+
+<p>The container takes up to 20GB disk space, if the machine has more than 50GB disk space, there shall be no problem to
+launch the container instance. Otherwise, users could use the following commands to clean up the Docker space</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #75715e"># Remove useless docker images</span>
+sudo docker image rm &lt;useless-docker-image&gt;
+<span style="color: #75715e"># Remove exited containers</span>
+sudo docker rm <span style="color: #66d9ef">$(</span>sudo docker ps -a -f <span style="color: #f8f8f2">status</span><span style="color: #f92672">=</span>exited -q<span style="color: #66d9ef">)</span>
+<span style="color: #75715e"># Clean up all dangling cache</span>
+sudo docker system prune
+</pre></div>
+
+<p>If network is not available, a docker image in tar file is provided with the instructions to load.
+<a href="https://docs.docker.com/engine/reference/commandline/load/">https://docs.docker.com/engine/reference/commandline/load/</a></p>
+
+<h3 id="dependencies-and-environment-variables">Dependencies and Environment Variables</h3>
+
+<p>The hands-on codes have the dependencies as follow,</p>
+
+<ul>
+<li>Python 2.7+</li>
+<li>Python module Numpy</li>
+<li>Hadoop 2.6.0/Hadoop 2.6.5</li>
+<li>DAAL 2018+</li>
+</ul>
+
+<p>The docker image already includes them and other tools, the image has the following contents</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #75715e"># List of HarpDaal applications (in harp-daal-&lt;version&gt;.jar)</span>
+edu.iu.daal_als.ALSDaalLauncher
+edu.iu.daal_cov.COVDaalLauncher
+edu.iu.daal_kmeans.regroupallgather.KMeansDaalLauncher
+edu.iu.daal_linreg.LinRegDaalLauncher
+edu.iu.daal_mom.MOMDaalLauncher
+edu.iu.daal_naive.NaiveDaalLauncher
+edu.iu.daal_nn.NNDaalLauncher
+edu.iu.daal_pca.PCADaalLauncher
+edu.iu.daal_qr.QRDaalLauncher
+edu.iu.daal_ridgereg.RidgeRegDaalLauncher
+edu.iu.daal_sgd.SGDDaalLauncher
+edu.iu.daal_svd.SVDDaalLauncher
+
+<span style="color: #75715e"># List of HarpDaal examples in Python (/harp/harp-daal-python/examples/daal/)</span>
+run_harp_daal_ALSDaal.py
+run_harp_daal_COVDaal.py
+run_harp_daal_KMeansDaal.py
+run_harp_daal_LinRegDaal.py
+run_harp_daal_MOMDaal.py
+run_harp_daal_NNDaal.py
+run_harp_daal_NaiveDaal.py
+run_harp_daal_PCADaal.py
+run_harp_daal_QRDaal.py
+run_harp_daal_RidgeRegDaal.py
+run_harp_daal_SGDDaal.py
+run_harp_daal_SVDDaal.py
+
+<span style="color: #75715e"># Image clustering example</span>
+/harp/harp-daal-python/examples/scdemo/tutorial/
+</pre></div>
+
+<p>The <em>bootstrap</em> script shall launch a Hadoop Cluster and setup all the environment variables.
+To verify the Hadoop status</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #75715e">## To check the status of HDFS</span>
+bin/hdfs dfsadmin -report
+<span style="color: #75715e">## To check the status of Yarn </span>
+bin/yarn node -list
+</pre></div>
+
+<p>and the env vars</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">echo</span> <span style="color: #f8f8f2">$HADOOP_HOME</span>
+<span style="color: #f8f8f2">echo</span> <span style="color: #f8f8f2">$HARP_JAR</span>
+<span style="color: #f8f8f2">echo</span> <span style="color: #f8f8f2">$HARP_DAAL_JAR</span>
+<span style="color: #f8f8f2">echo</span> <span style="color: #f8f8f2">$DAALROOT</span>
+<span style="color: #f8f8f2">echo</span> <span style="color: #f8f8f2">$PYTHONPATH</span>
+</pre></div>
+
+<p>If the script fails to complete these steps, users could manually set them</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">export</span> <span style="color: #f8f8f2">HADOOP_HOME</span><span style="color: #f92672">=</span>&lt;path to hadoop home folder&gt;
+<span style="color: #f8f8f2">export</span> <span style="color: #f8f8f2">HARP_JAR</span><span style="color: #f92672">=</span>&lt;path to&gt;/harp-app-1.0-SNAPSHOT.jar
+<span style="color: #f8f8f2">export</span> <span style="color: #f8f8f2">HARP_DAAL_JAR</span><span style="color: #f92672">=</span>&lt;path to&gt;/harp-daal-app-1.0-SNAPSHOT.jar
+<span style="color: #f8f8f2">export</span> <span style="color: #f8f8f2">DAALROOT</span><span style="color: #f92672">=</span>&lt;path to your compiled daal folder&gt;
+<span style="color: #f8f8f2">export</span> <span style="color: #f8f8f2">PYTHONPATH</span><span style="color: #f92672">=</span>&lt;path to&gt;/harp-daal-python
+</pre></div>
+
+<p>and launch the hadoop daemons</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #75715e">## launch HDFS service</span>
+<span style="color: #e6db74">${</span><span style="color: #f8f8f2">HADOOP_HOME</span><span style="color: #e6db74">}</span>/sbin/start-dfs.sh
+<span style="color: #75715e">## launch yarn daemons</span>
+<span style="color: #e6db74">${</span><span style="color: #f8f8f2">HADOOP_HOME</span><span style="color: #e6db74">}</span>/sbin/start-yarn.sh
+</pre></div>
+
+<h2 id="program-k-means-via-java-apis">Program K-means via Java APIs</h2>
+
+<p>Harp-DAAL framework provides developers of Java API to implement inter-mapper communication patterns and invoke intra-node DAAL kernels.
+The K-means source files are located at
+<strong>harp-daal-app/src/main/java/edu/iu/daal_tutorial/daal_kmeans</strong></p>
+
+<p>Users shall edit the function <em>runKmeans</em> from source file <strong>KMeansDaalCollectiveMapper.java</strong>.
+Currently, the function *runKmeans*is only a skeleton, and users will go through 8 steps to finish
+a complete Harp-DAAL-Kmeans application as indicated in the following code snippet. Besides, the answers to
+<em>runKmeans</em> are located at function <em>runKmeans_Answer</em> of the same file.</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #66d9ef">private</span> <span style="color: #66d9ef">void</span> <span style="color: #a6e22e">runKmeans</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">List</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">String</span><span style="color: #f92672">&gt;</span> <span style="color: #f8f8f2">fileNames</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">Configuration</span> <span style="color: #f8f8f2">conf</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">Context</span> <span style="color: #f8f8f2">context</span><span style="color: #f92672">)</span>
+<span style="color: #f92672">{</span>
+	<span style="color: #66d9ef">long</span> <span style="color: #f8f8f2">start_execution</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">System</span><span style="color: #f92672">.</span><span style="color: #a6e22e">currentTimeMillis</span><span style="color: #f92672">();</span>
+	<span style="color: #66d9ef">this</span><span style="color: #f92672">.</span><span style="color: #a6e22e">fileNames</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">fileNames</span><span style="color: #f92672">;</span>
+	<span style="color: #66d9ef">this</span><span style="color: #f92672">.</span><span style="color: #a6e22e">conf</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">conf</span><span style="color: #f92672">;</span>
+
+	<span style="color: #75715e">//************* Step 1: load training data *********************</span>
+	<span style="color: #75715e">//************* Step 2: load centroids (model) data *********************</span>
+	<span style="color: #75715e">//************* Step 3: convert training data from harp to daal *********************</span>
+	<span style="color: #75715e">//************* Step 4: Setup DAAL K-means kernel and cenTable at DAAL side *********************</span>
+	<span style="color: #75715e">// start the iteration</span>
+	<span style="color: #66d9ef">for</span> <span style="color: #f92672">(</span><span style="color: #66d9ef">int</span> <span style="color: #f8f8f2">i</span> <span style="color: #f92672">=</span> <span style="color: #ae81ff">0</span><span style="color: #f92672">;</span> <span style="color: #f8f8f2">i</span> <span style="color: #f92672">&lt;</span> <span style="color: #f8f8f2">numIterations</span><span style="color: #f92672">;</span> <span style="color: #f8f8f2">i</span><span style="color: #f92672">++)</span> 
+	<span style="color: #f92672">{</span>
+		<span style="color: #75715e">//************* Step 5: Convert Centroids data from Harp to DAAL *********************</span>
+		<span style="color: #75715e">//************* Step 6: Local computation by DAAL to get partial result *********************</span>
+		<span style="color: #75715e">//************* Step 7: Inter-Mapper communication *********************</span>
+	<span style="color: #f92672">}</span>
+	<span style="color: #75715e">//************* Step 8: Release Memory and Store Centroids *********************</span>
+<span style="color: #f92672">}</span>
+</pre></div>
+
+<p>The codes of missing steps are already packaged into private member functions of <em>KMeansDaalCollectiveMapper.java</em>.
+Please refer to function definitions for all the implementation details.
+After adding codes at each step, re-compile the harp-daal-application by maven
+at the root harp directory (where the pom.xml resides)</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>mvn clean package
+</pre></div>
+
+<p>and re-run the application on Hadoop cluster</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">cd</span> ./harp-daal-app/test_scripts 
+./harp-daal-tutorial-kmeans.sh
+</pre></div>
+
+<h3 id="step-1-load-training-data">Step 1: Load training data</h3>
+
+<p>Use the following function to load in training data (vectors) from HDFS in parallel</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #75715e">// create a pointArray</span>
+<span style="color: #f8f8f2">List</span><span style="color: #f92672">&lt;</span><span style="color: #66d9ef">double</span><span style="color: #f92672">[]&gt;</span> <span style="color: #f8f8f2">pointArrays</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">LoadTrainingData</span><span style="color: #f92672">();</span>
+</pre></div>
+
+<h3 id="step-2-load-in-model-data-centroids">Step 2: Load in model data (centroids)</h3>
+
+<p>Similarly, create a harp table object <em>cenTable</em> and load in centroid data from HDFS.
+Because centroid data are requested by all the mappers, load them at master mapper and
+broadcast them to all the other mappers.</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #75715e">// create a table to hold centroids data</span>
+<span style="color: #f8f8f2">Table</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">DoubleArray</span><span style="color: #f92672">&gt;</span> <span style="color: #f8f8f2">cenTable</span> <span style="color: #f92672">=</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">Table</span><span style="color: #f92672">&lt;&gt;(</span><span style="color: #ae81ff">0</span><span style="color: #f92672">,</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">DoubleArrPlus</span><span style="color: #f92672">());</span>
+<span style="color: #75715e">//</span>
+<span style="color: #66d9ef">if</span> <span style="color: #f92672">(</span><span style="color: #66d9ef">this</span><span style="color: #f92672">.</span><span style="color: #a6e22e">isMaster</span><span style="color: #f92672">())</span> 
+<span style="color: #f92672">{</span>
+<span style="color: #f8f8f2">createCenTable</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">cenTable</span><span style="color: #f92672">);</span>
+<span style="color: #f8f8f2">loadCentroids</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">cenTable</span><span style="color: #f92672">);</span>
+<span style="color: #f92672">}</span>
+<span style="color: #75715e">// Bcast centroids to other mappers</span>
+<span style="color: #f8f8f2">bcastCentroids</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">cenTable</span><span style="color: #f92672">,</span> <span style="color: #66d9ef">this</span><span style="color: #f92672">.</span><span style="color: #a6e22e">getMasterID</span><span style="color: #f92672">());</span>
+</pre></div>
+
+<h3 id="step-3-convert-training-data-from-harp-side-to-daal-side">Step 3: Convert training data from Harp side to DAAL side</h3>
+
+<p>The training data loaded from HDFS are stored at Java heap memory. To invoke DAAL kernel, convert them into
+the DAAL <em>NumericTable</em></p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #75715e">// convert training data fro harp to daal</span>
+<span style="color: #f8f8f2">NumericTable</span> <span style="color: #f8f8f2">trainingdata_daal</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">convertTrainData</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">pointArrays</span><span style="color: #f92672">);</span>
+</pre></div>
+
+<p>It allocates native memory for <em>NumericTable</em> and copy data from <em>pointArrays</em> to <em>trainingdata_daal</em></p>
+
+<h3 id="step-4-create-and-setup-daal-k-means-kernel">Step 4: Create and setup DAAL K-means kernel</h3>
+
+<p>DAAL provides the following Java API for invoking their low-level native kernels written for K-means</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f92672">import</span> <span style="color: #f8f8f2">com.intel.daal.algorithms.kmeans.*</span><span style="color: #f92672">;</span>
+<span style="color: #f92672">import</span> <span style="color: #f8f8f2">com.intel.daal.algorithms.kmeans.init.*</span><span style="color: #f92672">;</span>
+<span style="color: #f92672">import</span> <span style="color: #f8f8f2">com.intel.daal.services.Environment</span><span style="color: #f92672">;</span>
+</pre></div>
+
+<p>Call them by specifying the input training data object and centroids number</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #75715e">// create a daal kmeans kernel object</span>
+<span style="color: #f8f8f2">DistributedStep1Local</span> <span style="color: #f8f8f2">kmeansLocal</span> <span style="color: #f92672">=</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">DistributedStep1Local</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">daal_Context</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">Double</span><span style="color: #f92672">.</span><span style="color: #a6e22e">class</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">Method</span><span style="color: #f92672">.</span><span style="color: #a6e22e">defaultDense</span><span style="color: #f92672">,</span> <span style="color: #66d9ef">this</span><span style="color: #f92672">.</span><span style="color: #a6e22e">numCentroids</span><span style="color: #f92672">);</span>
+<span style="color: #75715e">// set up input training data</span>
+<span style="color: #f8f8f2">kmeansLocal</span><span style="color: #f92672">.</span><span style="color: #a6e22e">input</span><span style="color: #f92672">.</span><span style="color: #a6e22e">set</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">InputId</span><span style="color: #f92672">.</span><span style="color: #a6e22e">data</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">trainingdata_daal</span><span style="color: #f92672">);</span>
+</pre></div>
+
+<p>As DAAL uses MKL and TBB at its implementation, specify the number of threads used by DAAL (by default a maximal available threads on processor)</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #75715e">// specify the threads used in DAAL kernel</span>
+<span style="color: #f8f8f2">Environment</span><span style="color: #f92672">.</span><span style="color: #a6e22e">setNumberOfThreads</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">numThreads</span><span style="color: #f92672">);</span>
+</pre></div>
+
+<p>Finally, create another <em>NumericTable</em> to store centroids (model) data at DAAL side</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #75715e">// create cenTable at daal side</span>
+<span style="color: #f8f8f2">NumericTable</span> <span style="color: #f8f8f2">cenTable_daal</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">createCenTableDAAL</span><span style="color: #f92672">();</span>
+</pre></div>
+
+<h3 id="step-5-convert-centroids-data-from-harp-to-daal">Step 5: Convert centroids data from Harp to DAAL</h3>
+
+<p>Centroids are stored in harp table <em>cenTable</em> for inter-mapper communication. Convert them
+to DAAL within each iteration of local computation.</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #75715e">//Convert Centroids data from Harp to DAAL</span>
+<span style="color: #f8f8f2">convertCenTableHarpToDAAL</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">cenTable</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">cenTable_daal</span><span style="color: #f92672">);</span>
+</pre></div>
+
+<h3 id="step-6-local-computation-by-daal-kernel">Step 6: Local computation by DAAL kernel</h3>
+
+<p>Call DAAL K-means kernels of local computation at each iteration.</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #75715e">// specify centroids data to daal kernel </span>
+<span style="color: #f8f8f2">kmeansLocal</span><span style="color: #f92672">.</span><span style="color: #a6e22e">input</span><span style="color: #f92672">.</span><span style="color: #a6e22e">set</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">InputId</span><span style="color: #f92672">.</span><span style="color: #a6e22e">inputCentroids</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">cenTable_daal</span><span style="color: #f92672">);</span>
+<span style="color: #75715e">// first step of local computation by using DAAL kernels to get partial result</span>
+<span style="color: #f8f8f2">PartialResult</span> <span style="color: #f8f8f2">pres</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">kmeansLocal</span><span style="color: #f92672">.</span><span style="color: #a6e22e">compute</span><span style="color: #f92672">();</span>
+</pre></div>
+
+<h3 id="step-7-inter-mapper-communication">Step 7: Inter-mapper communication</h3>
+
+<p>Harp-DAAL-Kmeans adopts an <em>allreduce</em> computation model, where each mapper keeps a local copy of the whole model data (centroids).
+However, it provides different communication operations to synchronize model data among mappers.</p>
+
+<ul>
+<li>Regroup &amp; Allgather (default)</li>
+<li>Allreduce</li>
+<li>Broadcast &amp; Reduce</li>
+<li>Push-Pull</li>
+</ul>
+
+<p>All of the operations will take in two arguments, 1) <em>cenTable</em> at harp side, 2) partial results computed from DAAL; Internally, the
+data is retrieved from DAAL partial results and communicated by Harp.</p>
+
+<p>In Regroup &amp; Allgather operation, it first combines the same centroid from different mappers and re-distribute them
+to mappers with a specified order. After average operation on the centroids, an allgather operation lets every mapper get
+a complete copy of the averaged centroids data.</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">comm_regroup_allgather</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">cenTable</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">pres</span><span style="color: #f92672">);</span>
+</pre></div>
+
+<p>In Allreduce operation, the centroids are reduced and copied to every mapper. Then an average operation apply to them on each mapper to
+get the results.</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">comm_allreduce</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">cenTable</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">pres</span><span style="color: #f92672">);</span>
+</pre></div>
+
+<p>In Broadcast &amp; Reduce, it first reduces centroids to a single mapper (master mapper), where the average operation applied. It then broadcasts
+the averaged centroids data to every other mapper.</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">comm_broadcastreduce</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">cenTable</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">pres</span><span style="color: #f92672">);</span>
+</pre></div>
+
+<p>In push-pull operation, it first pushes centroids data from <em>cenTable</em> of local mapper to a <em>globalTable</em>, which is consistent across all the mappers.
+It then applies the average operation on <em>globalTable</em> from each mapper, and finally, pull the results from <em>globalTable</em> to update the local <em>cenTable</em>.</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">Table</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">DoubleArray</span><span style="color: #f92672">&gt;</span> <span style="color: #f8f8f2">globalTable</span> <span style="color: #f92672">=</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">Table</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">DoubleArray</span><span style="color: #f92672">&gt;(</span><span style="color: #ae81ff">0</span><span style="color: #f92672">,</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">DoubleArrPlus</span><span style="color: #f92672">());</span>
+<span style="color: #f8f8f2">comm_push_pull</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">cenTable</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">globalTable</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">pres</span><span style="color: #f92672">);</span>
+</pre></div>
+
+<p>After finishing each iteration, call the <em>printTable</em> to check the centroids result</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #75715e">//for iteration i, check 10 first centroids, each </span>
+<span style="color: #75715e">//centroid prints out first 10 dimension</span>
+<span style="color: #f8f8f2">printTable</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">cenTable</span><span style="color: #f92672">,</span> <span style="color: #ae81ff">10</span><span style="color: #f92672">,</span> <span style="color: #ae81ff">10</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">i</span><span style="color: #f92672">);</span> 
+</pre></div>
+
+<h3 id="step-8-release-memory-and-store-centroids">Step 8: Release memory and store centroids</h3>
+
+<p>After all of the iterations, release the allocated memory at DAAL side and for harp table object.
+The centroids as output are stored at HDFS</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #75715e">// free memory and record time</span>
+<span style="color: #f8f8f2">cenTable_daal</span><span style="color: #f92672">.</span><span style="color: #a6e22e">freeDataMemory</span><span style="color: #f92672">();</span>
+<span style="color: #f8f8f2">trainingdata_daal</span><span style="color: #f92672">.</span><span style="color: #a6e22e">freeDataMemory</span><span style="color: #f92672">();</span>
+<span style="color: #75715e">// Write out centroids</span>
+<span style="color: #66d9ef">if</span> <span style="color: #f92672">(</span><span style="color: #66d9ef">this</span><span style="color: #f92672">.</span><span style="color: #a6e22e">isMaster</span><span style="color: #f92672">())</span> <span style="color: #f92672">{</span>
+	<span style="color: #f8f8f2">KMUtil</span><span style="color: #f92672">.</span><span style="color: #a6e22e">storeCentroids</span><span style="color: #f92672">(</span><span style="color: #66d9ef">this</span><span style="color: #f92672">.</span><span style="color: #a6e22e">conf</span><span style="color: #f92672">,</span> <span style="color: #66d9ef">this</span><span style="color: #f92672">.</span><span style="color: #a6e22e">cenDir</span><span style="color: #f92672">,</span>
+	<span style="color: #f8f8f2">cenTable</span><span style="color: #f92672">,</span> <span style="color: #66d9ef">this</span><span style="color: #f92672">.</span><span style="color: #a6e22e">cenVecSize</span><span style="color: #f92672">,</span> <span style="color: #e6db74">&quot;output&quot;</span><span style="color: #f92672">);</span>
+<span style="color: #f92672">}</span>
+<span style="color: #f8f8f2">cenTable</span><span style="color: #f92672">.</span><span style="color: #a6e22e">release</span><span style="color: #f92672">();</span>
+</pre></div>
+
+<h2 id="invoke-harp-daal-k-means-via-python-interface">Invoke Harp-DAAL K-means via Python Interface</h2>
+
+<p>Harp-DAAL currently provides Python API, which interfaces
+Harp-DAAL with other python written applications. By just adding several lines of python code, you
+are able to deploy the original python application on Hadoop Cluster and boost the performance by
+leveraging DAAL kernels.</p>
+
+<p>The python codes for image clustering is located at the path</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #e6db74">${</span><span style="color: #f8f8f2">PYTHONPATH</span><span style="color: #e6db74">}</span>/examples/scdemo/tutorial
+</pre></div>
+
+<h3 id="step-1-run-image-clustering-on-15-scenery-dataset-with-python-scikit-learn-k-means">Step.1 Run image clustering on 15 scenery dataset with Python Scikit-Learn K-means</h3>
+
+<p>Run the pipeline from feature extraction, training, evaluation and finally check the clusters results.</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">cd</span> <span style="color: #960050; background-color: #1e0010">$</span><span style="color: #f8f8f2">{PYTHONPATH}</span><span style="color: #f92672">/</span><span style="color: #f8f8f2">examples</span><span style="color: #f92672">/</span><span style="color: #f8f8f2">scdemo</span><span style="color: #f92672">/</span><span style="color: #f8f8f2">test</span>
+<span style="color: #f92672">../</span><span style="color: #f8f8f2">tutorial</span><span style="color: #f92672">/</span><span style="color: #f8f8f2">run_kmeans</span><span style="color: #f92672">.</span><span style="color: #f8f8f2">sh</span>
+</pre></div>
+
+<p><img src="https://raw.githubusercontent.com/DSC-SPIDAL/harp/master/harp-daal-python/examples/scdemo/tutorial/imgcluster_runlocal.png" alt="screen shot of results" /></p>
+
+<h3 id="step-2-modify-to-invokes-harp-daal">Step.2 Modify to invokes Harp-DAAL</h3>
+
+<p><em>demo_kmeans_local.py</em> is the original python codes of image clustering without Harp-DAAL.</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #75715e"># ############################################################################</span>
+<span style="color: #75715e"># call kmeans module </span>
+<span style="color: #75715e"># ############################################################################</span>
+<span style="color: #f8f8f2">KMeans(init</span><span style="color: #f92672">=</span><span style="color: #e6db74">&#39;random&#39;</span><span style="color: #f8f8f2">,</span> <span style="color: #f8f8f2">n_clusters</span><span style="color: #f92672">=</span><span style="color: #f8f8f2">n_digits,</span> <span style="color: #f8f8f2">max_iter</span><span style="color: #f92672">=</span><span style="color: #ae81ff">1000</span><span style="color: #f8f8f2">,</span> <span style="color: #f8f8f2">tol</span><span style="color: #f92672">=</span><span style="color: #ae81ff">0</span><span style="color: #f8f8f2">,</span> <span style="color: #f8f8f2">n_init</span><span style="color: #f92672">=</span><span style="color: #ae81ff">1</span><span style="color: #f8f8f2">,</span> <span style="color: #f8f8f2">n_jobs</span><span style="color: #f92672">=</span><span style="color: #ae81ff">1</span><span style="color: #f8f8f2">)</span>
+</pre></div>
+
+<p><em>demo_kmeans_daal.py</em> replaces the above K-means module by a Harp-DAAL invocation</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #75715e"># ############################################################################</span>
+<span style="color: #75715e"># call Harp-DAAL Kmeans module </span>
+<span style="color: #75715e"># ############################################################################</span>
+<span style="color: #f8f8f2">DAALKMeans(n_clusters</span><span style="color: #f92672">=</span><span style="color: #f8f8f2">n_digits,</span> <span style="color: #f8f8f2">max_iter</span><span style="color: #f92672">=</span><span style="color: #ae81ff">1000</span><span style="color: #f8f8f2">,</span> <span style="color: #f8f8f2">n_init</span><span style="color: #f92672">=</span><span style="color: #ae81ff">1</span><span style="color: #f8f8f2">,</span> <span style="color: #f8f8f2">workdir</span><span style="color: #f92672">=</span><span style="color: #e6db74">&quot;/15scene-work&quot;</span><span style="color: #f8f8f2">)</span>
+</pre></div>
+
+<p>View all the modifications by</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>diff ../tutorial/demo_kmeans_local.py ../tutorial/demo_kmeans_daal.py
+</pre></div>
+
+<p><img src="https://raw.githubusercontent.com/DSC-SPIDAL/harp/master/harp-daal-python/examples/scdemo/tutorial/diffcode.png" alt="code diff" /></p>
+
+<h3 id="step-3-invoke-harp-daal">Step.3 Invoke Harp-DAAL</h3>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>../tutorial/run_kmeans.sh daal
+</pre></div>
+
+<h3 id="step-4-check-the-results-of-clustering">Step.4 Check the results of clustering</h3>
+
+<p>Download the result files.</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #75715e"># Copy a file from the running container to the host server</span>
+sudo docker cp &lt;container-id&gt;:/harp/harp-daal-python/examples/scdemo/test/local.pdf local.pdf
+
+<span style="color: #75715e"># Copy a file from the server to local client</span>
+scp &lt;username&gt;@&lt;server-ip&gt;:&lt;path-to&gt;/local.pdf local.pdf
+</pre></div>
+
+<h3 id="step-5-optional-tune-harp-daal-kmeans-parameters">Step.5 (Optional) Tune Harp-DAAL-Kmeans parameters</h3>
+
+<p><em>daal_kmeans.py</em> contains the python API to Harp-DAAL-Kmeans Java codes.
+In the <em><strong>init</strong></em> function, tune the arguments (parameters) and compare the performance.</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>    <span style="color: #66d9ef">def</span> <span style="color: #a6e22e">__init__</span><span style="color: #f8f8f2">(self,</span> <span style="color: #f8f8f2">n_clusters</span><span style="color: #f92672">=</span><span style="color: #ae81ff">10</span><span style="color: #f8f8f2">,</span> <span style="color: #f8f8f2">max_iter</span><span style="color: #f92672">=</span><span style="color: #ae81ff">10</span><span style="color: #f8f8f2">,</span> <span style="color: #f8f8f2">init</span> <span style="color: #f92672">=</span> <span style="color: #e6db74">&#39;random&#39;</span><span style="color: #f8f8f2">,</span> <span style="color: #f8f8f2">n_init</span> <span style="color: #f92672">=</span> <span style="color: #ae81ff">1</span><span style="color: #f8f8f2">,</span>
+            <span style="color: #f8f8f2">n_node</span> <span style="color: #f92672">=</span> <span style="color: #ae81ff">1</span><span style="color: #f8f8f2">,</span> <span style="color: #f8f8f2">n_thread</span> <span style="color: #f92672">=</span> <span style="color: #ae81ff">8</span><span style="color: #f8f8f2">,</span> <span style="color: #f8f8f2">n_mem</span> <span style="color: #f92672">=</span> <span style="color: #ae81ff">10240</span><span style="color: #f8f8f2">,</span> <span style="color: #f8f8f2">workdir</span> <span style="color: #f92672">=</span> <span style="color: #e6db74">&quot;/kmeans-work&quot;</span>
+            <span style="color: #f8f8f2">):</span>
+        <span style="color: #e6db74">&quot;&quot;&quot;</span>
+<span style="color: #e6db74">        n_clusters  ; set number of clusters</span>
+<span style="color: #e6db74">        max_iter    ; set maximum iteration number</span>
+<span style="color: #e6db74">        n_node      ; set mapper number</span>
+<span style="color: #e6db74">        n_thread    ; set thread number in each mapper</span>
+<span style="color: #e6db74">        init        ; set the centroid initialization method, &#39;random&#39; by default</span>
+<span style="color: #e6db74">        n_init      ; set the number of runs to select the best model, 1 by default</span>
+<span style="color: #e6db74">        &quot;&quot;&quot;</span>
+</pre></div>
+
+<ul>
+<li>Increase iteration number <em>max_iter</em> to check the changes in results</li>
+<li>Increase the thread number <em>n_thread</em> to check the performance boost by multi-threading</li>
+<li>Increase the mapper number <em>n_node</em> to check benefits from node-level parallelism.</li>
+</ul>
+</article></section></div></div></div><script src="https://code.jquery.com/jquery-2.2.1.min.js"></script><script src="https://dsc-spidal.github.io/harp/js/app.min.js"></script></body></html>

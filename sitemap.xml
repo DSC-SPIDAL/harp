@@ -2,6 +2,10 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/handson/</loc>
+  </url>
+  
+  <url>
     <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/svd/</loc>
   </url>
   
