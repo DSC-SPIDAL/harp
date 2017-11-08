@@ -145,7 +145,7 @@ private void runKmeans(List<String> fileNames, Configuration conf, Context conte
 		//************* Step 6: Local computation by DAAL to get partial result *********************
 		//************* Step 7: Inter-Mapper communication *********************
 	}
-	//************* Step 8: Release Memory and Record time *********************
+	//************* Step 8: Release Memory and Store Centroids *********************
 }
 ```
 
@@ -159,7 +159,8 @@ mvn clean package
 
 and re-run the application on Hadoop cluster
 ```bash
-./harp-daal-app/test_scripts/harp-daal-tutorial-kmeans.sh
+cd ./harp-daal-app/test_scripts 
+./harp-daal-tutorial-kmeans.sh
 ```
 
 ### Step 1: Load training data 
@@ -299,16 +300,20 @@ After finishing each iteration, call the *printTable* to check the centroids res
 printTable(cenTable, 10, 10, i); 
 ```
 
-### Step 8: Release memory and record execution time
+### Step 8: Release memory and store centroids 
 
 After all of the iterations, release the allocated memory at DAAL side and for harp table object.
-Log the execution time for all the iterations
+The centroids as output are stored at HDFS 
 ```java
 // free memory and record time
 cenTable_daal.freeDataMemory();
 trainingdata_daal.freeDataMemory();
+// Write out centroids
+if (this.isMaster()) {
+	KMUtil.storeCentroids(this.conf, this.cenDir,
+	cenTable, this.cenVecSize, "output");
+}
 cenTable.release();
-LOG.info("Execution Time: " + (System.currentTimeMillis() - start_execution));
 ```
 
 ## Invoke Harp-DAAL K-means via Python Interface 
