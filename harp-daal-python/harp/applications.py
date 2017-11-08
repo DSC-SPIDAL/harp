@@ -84,6 +84,12 @@ class HarpApplication(object):
                     tf.write("%f\n"%cell)
         self.put_file(tf.name, full_path)
 
+    def load_matrix(self, relative_path, data):
+        file_path = self.get_workdir() + '/' + relative_path
+        with tempfile.NamedTemporaryFile(delete=False) as tf:
+            numpy.savetxt(tf, data, fmt="%f", delimiter=',')
+        self.put_file(tf.name, file_path)
+
     def print_result(self, file_path):
         fs_cmd = self.hadoop_path + ' fs -cat ' + file_path
         self.log("Command: " + fs_cmd)
