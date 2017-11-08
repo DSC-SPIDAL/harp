@@ -73,6 +73,8 @@ public class KMeansDaalCollectiveMapper
         private double[][] array_data_cen;
 
 		private double[] buffer_array_cen;
+		private Table<DoubleArray> pushpullGlobal = null;
+
 
         //to measure the time
         private long convert_time = 0;
@@ -198,6 +200,9 @@ public class KMeansDaalCollectiveMapper
 				PartialResult pres = kmeansLocal.compute();
 				// comm by regroup-allgather
 				comm_regroup_allgather(cenTable, pres);
+				// comm_allreduce(cenTable, pres);
+				// comm_broadcastreduce(cenTable, pres);
+				// comm_push_pull(cenTable, pres);
 				printTable(cenTable, 10, 10, i); 
 			}
             
@@ -521,6 +526,7 @@ public class KMeansDaalCollectiveMapper
 			regroup("main", "regroup", cenTable, new Partitioner(this.getNumWorkers()));
 			calculateAvgCenTable(cenTable);
 			allgather("main", "allgather", cenTable);
+			this.barrier("main", "regroupallgather-sync");
 		}
 
 		/**
@@ -535,6 +541,7 @@ public class KMeansDaalCollectiveMapper
 		{
 			convertCenTableDAALToHarp(cenTable, pres);
 			allreduce("main", "allreduce", cenTable);
+			this.barrier("main", "allreduce-sync");
 			calculateAvgCenTable(cenTable);
 		}
 
@@ -556,6 +563,20 @@ public class KMeansDaalCollectiveMapper
 				calculateAvgCenTable(cenTable);
 
 			broadcast("main", "bcast", cenTable, this.getMasterID(), false);
+			this.barrier("main", "braodcast-sync");
+		}
+
+		/**
+		 * @brief clean contents of dataTable
+		 * used in push-pull approach 
+		 * @param dataTable
+		 *
+		 * @return 
+		 */
+		private void cleanTableContent(Table<DoubleArray> dataTable)
+		{
+			for(Partition<DoubleArray> ap : dataTable.getPartitions())
+				Arrays.fill(ap.get().get(), 0);
 		}
 
 		/**
@@ -571,12 +592,30 @@ public class KMeansDaalCollectiveMapper
 		private void comm_push_pull(Table<DoubleArray> cenTable, PartialResult pres)
 		{
 			convertCenTableDAALToHarp(cenTable, pres);
-			Table<DoubleArray> globalTable = new Table<DoubleArray>(0, new DoubleArrPlus());
+			if (pushpullGlobal == null)
+			{
+				pushpullGlobal = new Table<>(0, new DoubleArrPlus());
+				for(Partition<DoubleArray> ap : cenTable.getPartitions())
+				{
+					if (ap.id() % this.numMappers == this.getSelfID())
+					{
+						DoubleArray dummy = DoubleArray.create(ap.get().get().length, false);
+						pushpullGlobal.addPartition(new Partition<>(ap.id(), dummy));
+					}
+				}
+			}
+			else
+				cleanTableContent(pushpullGlobal);
 
-			push("main", "push", cenTable, globalTable, new Partitioner(this.getNumWorkers()));
-			calculateAvgCenTable(globalTable);
+			push("main", "push", cenTable, pushpullGlobal, new Partitioner(this.getNumWorkers()));
 
-			pull("main", "pull", cenTable, globalTable, true);
+			calculateAvgCenTable(pushpullGlobal);
+
+			//clean centable befor pull
+			cleanTableContent(cenTable);
+			
+			pull("main", "pull", cenTable, pushpullGlobal, false);
+			this.barrier("main", "pullsync");
 
 		}
 
@@ -648,6 +687,26 @@ public class KMeansDaalCollectiveMapper
 			}
 		}
 
+		private void printTableAll(Table<DoubleArray> dataTable, int dim, int iter) 
+		{
+			// print header
+			System.out.println("Centroids values in iteration: " + iter);
+			int col_print = 0; 
+
+			// for(int i=0; i<row_print; i++)
+			// {
+				for (Partition<DoubleArray> ap : dataTable.getPartitions())
+				{
+					double res[] = ap.get().get();
+					System.out.print("ID: " + ap.id() + ": ");
+					System.out.flush();
+					col_print = (dim < res.length) ? dim : res.length;
+					for (int j = 0; j < col_print; j++)
+						System.out.print(res[j] + "\t");
+					System.out.println();
+				}
+			// }
+		}
 		/**
 		 * @brief print out a single row of centroids table (a single centroid)
 		 *
