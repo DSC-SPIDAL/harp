@@ -29,6 +29,10 @@ import numpy as np
 from optparse import OptionParser
 import sys
 from time import time
+import matplotlib
+# Force matplotlib to not use any Xwindows backend.
+matplotlib.use('Agg')
+
 import matplotlib.pyplot as plt
 
 from sklearn.datasets import fetch_20newsgroups
@@ -297,4 +301,5 @@ plt.subplots_adjust(bottom=.05)
 for i, c in zip(indices, clf_names):
     plt.text(-.3, i, c)
 
-plt.show()
+#plt.show()
+plt.savefig('naivebayes_perf.png')
