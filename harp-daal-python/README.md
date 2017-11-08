@@ -38,5 +38,8 @@ cd harp-daal-python
 python examples/daal/run_harp_daal_KMeansDaal.py
 ```
 
+## Arguments and Testing Results
+![Arguments and Testing Results for Harp-Daal Python](docs/Results.png)
+
 ## Maintainance
 Please raise issues in GitHub if you have any problems. Pull requests are very welcome.

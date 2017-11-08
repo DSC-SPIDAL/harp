@@ -238,30 +238,15 @@ public class KMeansDaalLauncher extends Configured
     jobConf.setInt(
       "mapreduce.job.max.split.locations", 10000);
 
-    // mapreduce.map.collective.memory.mb
-    // 125000
     jobConf.setInt(
       "mapreduce.map.collective.memory.mb", mem);
-    // mapreduce.map.collective.java.opts
-    // -Xmx120000m -Xms120000m
-    // int xmx = (mem - 5000) > (mem * 0.5) ? (mem - 5000) : (int) Math.ceil(mem * 0.5);
+
     int xmx = (int) Math.ceil((mem)*0.5);
-    // int xmn = (int) Math.ceil(0.25 * xmx);
     int xmn = (int) Math.ceil(0.25 * xmx);
     jobConf.set(
       "mapreduce.map.collective.java.opts",
       "-Xmx" + xmx + "m -Xms" + xmx + "m"
         + " -Xmn" + xmn + "m");
-
-    // //Configuration on Juliet
-    // jobConf.setInt("mapreduce.map.collective.memory.mb", 110000);
-    // jobConf.set("mapreduce.map.collective.java.opts",
-    //   "-Xmx50000m -Xms50000m");
-    //
-    // //Configuration on Tango
-    // // jobConf.setInt("mapreduce.map.collective.memory.mb", 185000);
-    // // jobConf.set("mapreduce.map.collective.java.opts",
-    // //   "-Xmx80000m -Xms80000m");
 
     job.setNumReduceTasks(0);
     Configuration jobConfig =

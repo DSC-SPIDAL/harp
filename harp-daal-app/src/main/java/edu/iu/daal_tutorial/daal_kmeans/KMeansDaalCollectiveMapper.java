@@ -73,6 +73,7 @@ public class KMeansDaalCollectiveMapper
         private double[][] array_data_cen;
 
 		private double[] buffer_array_cen;
+		private Table<DoubleArray> pushpullGlobal = null;
 
         //to measure the time
         private long convert_time = 0;
@@ -196,7 +197,7 @@ public class KMeansDaalCollectiveMapper
 			}
 
 			//*****************************************************************************
-			//************* Step 8: Release Memory and Record time *********************
+			//************* Step 8: Release Memory and store centroids *********************
 			//*****************************************************************************
 
         }
@@ -506,6 +507,7 @@ public class KMeansDaalCollectiveMapper
 			regroup("main", "regroup", cenTable, new Partitioner(this.getNumWorkers()));
 			calculateAvgCenTable(cenTable);
 			allgather("main", "allgather", cenTable);
+			this.barrier("main", "regroupallgather-sync");
 		}
 
 		/**
@@ -520,6 +522,7 @@ public class KMeansDaalCollectiveMapper
 		{
 			convertCenTableDAALToHarp(cenTable, pres);
 			allreduce("main", "allreduce", cenTable);
+			this.barrier("main", "allreduce-sync");
 			calculateAvgCenTable(cenTable);
 		}
 
@@ -541,6 +544,20 @@ public class KMeansDaalCollectiveMapper
 				calculateAvgCenTable(cenTable);
 
 			broadcast("main", "bcast", cenTable, this.getMasterID(), false);
+			this.barrier("main", "braodcast-sync");
+		}
+
+		/**
+		 * @brief clean contents of dataTable
+		 * used in push-pull approach 
+		 * @param dataTable
+		 *
+		 * @return 
+		 */
+		private void cleanTableContent(Table<DoubleArray> dataTable)
+		{
+			for(Partition<DoubleArray> ap : dataTable.getPartitions())
+				Arrays.fill(ap.get().get(), 0);
 		}
 
 		/**
@@ -556,12 +573,30 @@ public class KMeansDaalCollectiveMapper
 		private void comm_push_pull(Table<DoubleArray> cenTable, PartialResult pres)
 		{
 			convertCenTableDAALToHarp(cenTable, pres);
-			Table<DoubleArray> globalTable = new Table<DoubleArray>(0, new DoubleArrPlus());
+			if (pushpullGlobal == null)
+			{
+				pushpullGlobal = new Table<>(0, new DoubleArrPlus());
+				for(Partition<DoubleArray> ap : cenTable.getPartitions())
+				{
+					if (ap.id() % this.numMappers == this.getSelfID())
+					{
+						DoubleArray dummy = DoubleArray.create(ap.get().get().length, false);
+						pushpullGlobal.addPartition(new Partition<>(ap.id(), dummy));
+					}
+				}
+			}
+			else
+				cleanTableContent(pushpullGlobal);
 
-			push("main", "push", cenTable, globalTable, new Partitioner(this.getNumWorkers()));
-			calculateAvgCenTable(globalTable);
+			push("main", "push", cenTable, pushpullGlobal, new Partitioner(this.getNumWorkers()));
 
-			pull("main", "pull", cenTable, globalTable, true);
+			calculateAvgCenTable(pushpullGlobal);
+
+			//clean centable befor pull
+			cleanTableContent(cenTable);
+			
+			pull("main", "pull", cenTable, pushpullGlobal, false);
+			this.barrier("main", "pullsync");
 
 		}
 
@@ -705,19 +740,22 @@ public class KMeansDaalCollectiveMapper
 				PartialResult pres = kmeansLocal.compute();
 				// comm by regroup-allgather
 				comm_regroup_allgather(cenTable, pres);
-				// comm by allreduce
 				// comm_allreduce(cenTable, pres);
-				// comm by broadcast & reduce
 				// comm_broadcastreduce(cenTable, pres);
-				// comm by push and pull
 				// comm_push_pull(cenTable, pres);
-				// printTableRow(cenTable, 0, 10); 
 				printTable(cenTable, 10, 10, i); 
 			}
             
 			// free memory and record time
             cenTable_daal.freeDataMemory();
             trainingdata_daal.freeDataMemory();
+
+			// Write out centroids
+			if (this.isMaster()) {
+				KMUtil.storeCentroids(this.conf, this.cenDir,
+						cenTable, this.cenVecSize, "output");
+			}
+
             cenTable.release();
 			LOG.info("Execution Time: " + (System.currentTimeMillis() - start_execution));
 

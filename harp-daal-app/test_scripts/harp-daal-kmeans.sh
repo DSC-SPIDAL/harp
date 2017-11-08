@@ -44,9 +44,9 @@ export LIBJARS=${DAALROOT}/lib/daal.jar
 # Pts=5000
 Pts=10000
 # num of training data centroids
-Ced=100
+Ced=10
 # feature vector dimension
-Dim=100
+Dim=10
 # file per mapper
 File=5
 # iteration times
@@ -54,8 +54,8 @@ ITR=100
 # memory allocated to each mapper (MB)
 Mem=6000
 # generate training data or not (once generated, data file /kmeans-P$Pts-C$Ced-D$Dim-N$Node is in hdfs, you could reuse them next time)
-GenData=true
-# GenData=false
+# GenData=true
+GenData=false
 # num of mappers (nodes)
 Node=2
 # num of threads on each mapper(node)
@@ -65,5 +65,7 @@ echo "Test-daal-kmeans-P$Pts-C$Ced-D$Dim-F$File-ITR$ITR-N$Node-Thd$Thd Start"
 hadoop jar harp-daal-app-1.0-SNAPSHOT.jar edu.iu.daal_kmeans.regroupallgather.KMeansDaalLauncher -libjars ${LIBJARS} $Pts $Ced $Dim $File $Node $Thd $ITR $Mem /kmeans-P$Pts-C$Ced-D$Dim-F$File-N$Node /tmp/kmeans $GenData 2>&1 | tee $logDir/Test-daal-kmeans-P$Pts-C$Ced-D$Dim-F$File-ITR$ITR-N$Node-Thd$Thd.log  
 echo "Test-daal-kmeans-P$Pts-C$Ced-D$Dim-F$File-ITR$ITR-N$Node-Thd$Thd End" 
 
+hdfs dfs -ls /
+hdfs dfs -cat /kmeans-P$Pts-C$Ced-D$Dim-F$File-N$Node/centroids/out/*
 
 

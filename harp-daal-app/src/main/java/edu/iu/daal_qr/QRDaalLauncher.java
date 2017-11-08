@@ -181,11 +181,8 @@ private void runQR(Path inputDir, int mem,
     // 125000
     jobConf.setInt(
       "mapreduce.map.collective.memory.mb", mem);
-    // mapreduce.map.collective.java.opts
-    // -Xmx120000m -Xms120000m
-    // int xmx = (mem - 5000) > (mem * 0.5)
-    //   ? (mem - 5000) : (int) Math.ceil(mem * 0.5);
-    int xmx = (int) Math.ceil((mem - 5000)*0.5);
+
+    int xmx = (int) Math.ceil((mem - 2000)*0.5);
     int xmn = (int) Math.ceil(0.25 * xmx);
     jobConf.set(
       "mapreduce.map.collective.java.opts",
