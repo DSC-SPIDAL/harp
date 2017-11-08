@@ -90,15 +90,15 @@ public class KmeansMapCollective
     }
     fs.mkdirs(outDir);
 
-    // System.out.println("Generate data.");
-    // Utils.generateData(numOfDataPoints,
-    //   sizeOfVector, numMapTasks, fs, localDir,
-    //   dataDir);
+    System.out.println("Generate data.");
+    Utils.generateData(numOfDataPoints,
+      sizeOfVector, numMapTasks, fs, localDir,
+      dataDir);
 
     int JobID = 0;
-    // Utils.generateInitialCentroids(numCentroids,
-    //   sizeOfVector, configuration, cenDir, fs,
-    //   JobID);
+    Utils.generateInitialCentroids(numCentroids,
+      sizeOfVector, configuration, cenDir, fs,
+      JobID);
 
     long startTime = System.currentTimeMillis();
 
