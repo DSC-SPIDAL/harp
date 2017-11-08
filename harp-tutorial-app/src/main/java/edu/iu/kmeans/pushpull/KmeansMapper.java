@@ -7,6 +7,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Arrays;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -174,14 +175,17 @@ public class KmeansMapper extends
     // load data
     ArrayList<DoubleArray> dataPoints =
       loadData(fileNames, vectorSize, conf);
-    Table<DoubleArray> globalTable =
-      new Table<DoubleArray>(0,
-        new DoubleArrPlus());
+    // Table<DoubleArray> globalTable =
+    //   new Table<DoubleArray>(0,
+    //     new DoubleArrPlus());
+	
+    Table<DoubleArray> globalTable = null;
     Table<DoubleArray> previousCenTable = null;
     // iterations
     for (int iter = 0; iter < iteration; iter++) {
+
       // clean contents in the table.
-      globalTable.release();
+      // globalTable.release();
 
       previousCenTable = cenTable;
       cenTable =
@@ -195,6 +199,21 @@ public class KmeansMapper extends
         dataPoints);
 
       /****************************************/
+	  if (globalTable == null)
+	  {
+		  globalTable = new Table<>(0, new DoubleArrPlus());
+		  for(Partition<DoubleArray> ap : cenTable.getPartitions())
+		  {
+			  if (ap.id() % this.numMappers == this.getSelfID())
+			  {
+				  DoubleArray dummy = DoubleArray.create(ap.get().get().length, false);
+				  globalTable.addPartition(new Partition<>(ap.id(), dummy));
+			  }
+		  }
+	  }
+	  else
+		  cleanTableContent(globalTable);
+
       push("main", "push_" + iter, cenTable,
         globalTable,
         new Partitioner(this.getNumWorkers()));
@@ -202,8 +221,14 @@ public class KmeansMapper extends
       // we can calculate new centroids
       calculateCentroids(globalTable);
 
+	  //clean cenTable
+	  cleanTableContent(cenTable);
+
       pull("main", "pull_" + iter, cenTable,
         globalTable, true);
+
+	  this.barrier("main", "pull-sync");
+
       /****************************************/
 
       printTable(cenTable);
@@ -355,4 +380,18 @@ public class KmeansMapper extends
       System.out.println();
     }
   }
+
+  /**
+   * @brief clean contents of dataTable
+   * used in push-pull approach 
+   * @param dataTable
+   *
+   * @return 
+   */
+  private void cleanTableContent(Table<DoubleArray> dataTable)
+  {
+	  for(Partition<DoubleArray> ap : dataTable.getPartitions())
+		  Arrays.fill(ap.get().get(), 0);
+  }
+
 }

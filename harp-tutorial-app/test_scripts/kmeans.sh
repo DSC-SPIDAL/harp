@@ -26,7 +26,7 @@ cd $HADOOP_HOME
 	# 	[broadcast-reduce]: use broadcast and reduce operation to synchronize centroids
 	# 	[push-pull]: use push and pull operation to synchronize centroids
 
-hadoop jar harp-tutorial-app-1.0-SNAPSHOT.jar edu.iu.kmeans.common.KmeansMapCollective 1000 10 10 2 100 /kmeans /tmp/kmeans broadcast-reduce
+hadoop jar harp-tutorial-app-1.0-SNAPSHOT.jar edu.iu.kmeans.common.KmeansMapCollective 1000 10 10 2 100 /kmeans /tmp/kmeans allreduce
 
 hdfs dfs -ls /
 # hdfs dfs -cat /kmeans/centroids/output/*
