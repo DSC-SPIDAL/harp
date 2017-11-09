@@ -1,5 +1,19 @@
 # Python Interface to Harp and Harp-Daal
 
+## Introduction
+
+This work provides a pure Python programming experience of using Harp with Hadoop. Python developers can 1) setup Harp applications from the Python side, 2) run Harp applications, and 3) print results or convert results to native Python variables. In this manual, we take KMeans as an example.
+
+### API Usage:
+1.	In order to run the KMeans application with customized arguments, import the KMeansApplication API from the Harp Python package “harp.applications”.
+2.	Configure Hadoop, Harp, and arguments by calling some configuration funtions.
+3.	Run the application within Python.
+4.	Call print result function or conversion function to get the result. After the data conversion, the result variable can be used with any other Python packages, such as numpy or scipy.
+5.	A full source code of the usage will be provided later.
+
+### Process Communication Diagram:
+![Process Communication Diagram for Harp-Daal Python](docs/Overview.png)
+
 ## Installation
 
 Installation is as easy as checking out the latest code from the stable branch of `harp`.
