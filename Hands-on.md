@@ -61,13 +61,12 @@ The hands-on codes have the dependencies as follow,
 
 The following section describes where the important components of the Tutorial are
 
-| Harp Source Code         | /harp                                                                   |
-| Hadoop Installation      | /usr/local/hadoop                                                       | 
-| K-Means tutorial code    | /harp/harp-daal-app/src/main/java/edu/iu/daal_tutorial/daal_kmeans      |
-| Python Code              | /harp/harp-daal-python/examples/daal/                                   |
+1. Harp Source Code - /harp                                                                   
+2. Hadoop Installation - /usr/local/hadoop                                                        
+3. K-Means tutorial code - /harp/harp-daal-app/src/main/java/edu/iu/daal_tutorial/daal_kmeans      
+4. Python Code - /harp/harp-daal-python/examples/daal/                                   
 
-
-The docker image already includes them and other tools, the image has the following contents
+The docker image already includes them and other tools, the image has the following machine learning algorithms
 
 ```bash
 # List of HarpDaal applications (in harp-daal-<version>.jar)
