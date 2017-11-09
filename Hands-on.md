@@ -149,23 +149,29 @@ private void runKmeans(List<String> fileNames, Configuration conf, Context conte
 }
 ```
 
-The codes of missing steps are already packaged into private member functions of *KMeansDaalCollectiveMapper.java*. 
+The codes of missing steps are already packaged into private member function of *KMeansDaalCollectiveMapper.java* called runKmeans_Answer.  
 Please refer to function definitions for all the implementation details.
 After adding codes at each step, re-compile the harp-daal-application by maven
 at the root harp directory (where the pom.xml resides) 
+
 ```bash
+cd /harp
 mvn clean package
 ```
 
 and re-run the application on Hadoop cluster
 ```bash
-cd ./harp-daal-app/test_scripts 
+cd /harp/harp-daal-app/test_scripts
 ./harp-daal-tutorial-kmeans.sh
 ```
+### Solution Description
+
+The following sections describe each step of the algorithm that is left blank. 
 
 ### Step 1: Load training data 
 
 Use the following function to load in training data (vectors) from HDFS in parallel
+
 ```java
 // create a pointArray
 List<double[]> pointArrays = LoadTrainingData();
@@ -176,14 +182,14 @@ List<double[]> pointArrays = LoadTrainingData();
 Similarly, create a harp table object *cenTable* and load in centroid data from HDFS. 
 Because centroid data are requested by all the mappers, load them at master mapper and 
 broadcast them to all the other mappers. 
+
 ```java
 // create a table to hold centroids data
 Table<DoubleArray> cenTable = new Table<>(0, new DoubleArrPlus());
-//
-if (this.isMaster()) 
-{
-createCenTable(cenTable);
-loadCentroids(cenTable);
+
+if (this.isMaster()) {
+  createCenTable(cenTable);
+  loadCentroids(cenTable);
 }
 // Bcast centroids to other mappers
 bcastCentroids(cenTable, this.getMasterID());
@@ -218,7 +224,8 @@ DistributedStep1Local kmeansLocal = new DistributedStep1Local(daal_Context, Doub
 // set up input training data
 kmeansLocal.input.set(InputId.data, trainingdata_daal);
 ```
-As DAAL uses MKL and TBB at its implementation, specify the number of threads used by DAAL (by default a maximal available threads on processor)
+
+As DAAL uses MKL and TBB at its implementation, specify the number of threads used by DAAL (by default a maximum available threads on processor)
 
 ```java
 // specify the threads used in DAAL kernel
@@ -236,6 +243,7 @@ NumericTable cenTable_daal = createCenTableDAAL();
 
 Centroids are stored in harp table *cenTable* for inter-mapper communication. Convert them 
 to DAAL within each iteration of local computation. 
+
 ```java
 //Convert Centroids data from Harp to DAAL
 convertCenTableHarpToDAAL(cenTable, cenTable_daal);
@@ -262,8 +270,7 @@ However, it provides different communication operations to synchronize model dat
 * Broadcast & Reduce
 * Push-Pull
 
-All of the operations will take in two arguments, 1) *cenTable* at harp side, 2) partial results computed from DAAL; Internally, the 
-data is retrieved from DAAL partial results and communicated by Harp.
+All of the operations will take in two arguments, 1) *cenTable* at harp side, 2) partial results computed from DAAL; Internally, the data is retrieved from DAAL partial results and communicated by Harp.
 
 In Regroup & Allgather operation, it first combines the same centroid from different mappers and re-distribute them 
 to mappers with a specified order. After average operation on the centroids, an allgather operation lets every mapper get 
@@ -273,8 +280,8 @@ a complete copy of the averaged centroids data.
 comm_regroup_allgather(cenTable, pres);
 ```
 
-In Allreduce operation, the centroids are reduced and copied to every mapper. Then an average operation apply to them on each mapper to 
-get the results. 
+In Allreduce operation, the centroids are reduced and copied to every mapper. Then an average operation apply to them on each mapper to get the results. 
+
 ```java
 comm_allreduce(cenTable, pres);
 ```
@@ -288,12 +295,14 @@ comm_broadcastreduce(cenTable, pres);
 
 In push-pull operation, it first pushes centroids data from *cenTable* of local mapper to a *globalTable*, which is consistent across all the mappers. 
 It then applies the average operation on *globalTable* from each mapper, and finally, pull the results from *globalTable* to update the local *cenTable*.
+
 ```java
 Table<DoubleArray> globalTable = new Table<DoubleArray>(0, new DoubleArrPlus());
 comm_push_pull(cenTable, globalTable, pres);
 ```
 
 After finishing each iteration, call the *printTable* to check the centroids result
+
 ```java
 //for iteration i, check 10 first centroids, each 
 //centroid prints out first 10 dimension
@@ -304,6 +313,7 @@ printTable(cenTable, 10, 10, i);
 
 After all of the iterations, release the allocated memory at DAAL side and for harp table object.
 The centroids as output are stored at HDFS 
+
 ```java
 // free memory and record time
 cenTable_daal.freeDataMemory();
