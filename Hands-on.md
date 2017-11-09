@@ -36,12 +36,12 @@ sudo docker rm $(sudo docker ps -a -f status=exited -q)
 # Clean up all dangling cache
 sudo docker system prune
 ```
-Find the docker container ID by
+Find the docker container ID
 
 ```bash
 sudo docker ps
 ```
-and log into the docker by 
+and log into the docker 
 
 ```bash
 sudo docker exec -it <container_id> bash
