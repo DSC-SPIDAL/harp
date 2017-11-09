@@ -15,7 +15,7 @@ class DAALMFSGD():
     """
     def __init__(self, n_node = 1, n_thread = 8, 
             n_factors = 100, n_epochs = 20, lr_all = 0.005, reg_all = 0.02,
-            n_mem = 8000, workdir = "/daal-sgd"
+            n_mem = 6000, workdir = "/daal-sgd"
             ):
         """
             max_iter    ; set maximum iteration number

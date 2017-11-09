@@ -14,7 +14,7 @@ class DAALNavieBayes():
     """
     interface to daal-navie call
     """
-    def __init__(self, n_node = 1, n_thread = 8, n_mem = 8000, workdir = "/daal-naive/"
+    def __init__(self, n_node = 1, n_thread = 8, n_mem = 6000, workdir = "/daal-naive/"
             ):
         """
             max_iter    ; set maximum iteration number
@@ -61,7 +61,7 @@ class DAALNavieBayes():
         #    pred    ; prediction for x_test
         #    mode    ; coef_
         #get result
-        pred = harp_naivebayes.result_to_array(self.workdir + "/out/pred")
+        pred = harp_naivebayes.result_to_array(self.workdir + "work/out/pred")
         #self.coef_ = harp_naivebayes.result_to_array(self.workdir + "/out/coef")
         return pred
 
