@@ -15,14 +15,24 @@ Users are supposed to get an access to a machine with sudo permission and pre-in
 
 ### Download Docker Image and launch Container Instance
 
-Execute the two commands to load docker image and launch a container instance.
+If the machine already provides a docker image (tarball file), just import the image and launch the 
+container
+```bash
+sudo docker import /mnt/backup/harp-daal-docker-image.tar
+## check the container id
+sudo docker image ls
+## Start a container
+sudo docker run -it <container_id> /etc/bootstrap.sh -bash
+```
 
+Otherwise, download the image via network and launch the container
 ```bash
 # Download an image
 sudo docker pull lee212/harp-daal:icc_included
 # Start a container
 sudo docker run -it lee212/harp-daal:icc_included /etc/bootstrap.sh -bash
 ```
+
 After executing the last command you will be logged on to the docker image.
 
 The container takes up to 20GB disk space. If the machine has more than 50GB disk space, there shall be no problem to 
@@ -46,9 +56,6 @@ and log into the docker
 ```bash
 sudo docker exec -it <container_id> bash
 ```
-
-If network is not available, a docker image in tar file is provided with the instructions to load. 
-https://docs.docker.com/engine/reference/commandline/load/
 
 ### Dependencies and Environment Variables
 
