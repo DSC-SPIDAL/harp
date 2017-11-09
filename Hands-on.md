@@ -16,15 +16,18 @@ Users are supposed to get an access to a machine with sudo permission and pre-in
 ### Download Docker Image and launch Container Instance
 
 Execute the two commands to load in docker image and launch a container instance.
+
 ```bash
 # Download an image
 sudo docker pull lee212/harp-daal:icc_included
 # Start a container
 sudo docker run -it lee212/harp-daal:icc_included /etc/bootstrap.sh -bash
 ```
+After executing the last command you will be logged on to the docker image.
 
 The container takes up to 20GB disk space, if the machine has more than 50GB disk space, there shall be no problem to 
 launch the container instance. Otherwise, users could use the following commands to clean up the Docker space 
+
 ```bash
 # Remove useless docker images
 sudo docker image rm <useless-docker-image>
@@ -32,6 +35,16 @@ sudo docker image rm <useless-docker-image>
 sudo docker rm $(sudo docker ps -a -f status=exited -q)
 # Clean up all dangling cache
 sudo docker system prune
+```
+To log into the docker image from VM you can use the following commands
+
+```bash
+sudo docker ps
+```
+The above command will show the container ID and you can use it to log into the docker.
+
+```bash
+sudo docker exec -it <container_id> bash
 ```
 
 If network is not available, a docker image in tar file is provided with the instructions to load. 
