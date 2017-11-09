@@ -36,7 +36,7 @@ sudo docker rm $(sudo docker ps -a -f status=exited -q)
 # Clean up all dangling cache
 sudo docker system prune
 ```
-To log into the docker image from VM you can use the following commands
+If you like to open multiple terminals etc and need to log into the docker image, following commands can be used.
 
 ```bash
 sudo docker ps
@@ -98,9 +98,9 @@ The *bootstrap* script shall launch a Hadoop Cluster and setup all the environme
 To verify the Hadoop status
 ```bash
 ## To check the status of HDFS
-bin/hdfs dfsadmin -report
+${HADOOP_HOME}/bin/hdfs dfsadmin -report
 ## To check the status of Yarn 
-bin/yarn node -list
+${HADOOP_HOME}/bin/yarn node -list
 ```
 
 and the env vars
