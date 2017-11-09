@@ -1,7 +1,7 @@
 # Choose the right ML tool and use it like a pro!
 
 K-means is a widely used clustering algorithm in machine learning community. 
-It iteratively computes the distance between each training point to every centroids, 
+It iteratively computes the distance between each training point to every centroid, 
 re-assigns the training point to new cluster and re-compute the new centroid of each cluster. 
 
 This hands-on includes two tasks
@@ -15,7 +15,7 @@ Users are supposed to get an access to a machine with sudo permission and pre-in
 
 ### Download Docker Image and launch Container Instance
 
-Execute the two commands to load in docker image and launch a container instance.
+Execute the two commands to load docker image and launch a container instance.
 
 ```bash
 # Download an image
@@ -25,8 +25,8 @@ sudo docker run -it lee212/harp-daal:icc_included /etc/bootstrap.sh -bash
 ```
 After executing the last command you will be logged on to the docker image.
 
-The container takes up to 20GB disk space, if the machine has more than 50GB disk space, there shall be no problem to 
-launch the container instance. Otherwise, users could use the following commands to clean up the Docker space 
+The container takes up to 20GB disk space. If the machine has more than 50GB disk space, there shall be no problem to 
+launch the container instance. Otherwise, users could use the following commands to clean up the docker space 
 
 ```bash
 # Remove useless docker images
@@ -36,12 +36,12 @@ sudo docker rm $(sudo docker ps -a -f status=exited -q)
 # Clean up all dangling cache
 sudo docker system prune
 ```
-If you like to open multiple terminals etc and need to log into the docker image, following commands can be used.
+Find the docker container ID by
 
 ```bash
 sudo docker ps
 ```
-The above command will show the container ID and you can use it to log into the docker.
+and log into the docker by 
 
 ```bash
 sudo docker exec -it <container_id> bash
@@ -52,7 +52,7 @@ https://docs.docker.com/engine/reference/commandline/load/
 
 ### Dependencies and Environment Variables
 
-The hands-on codes have the dependencies as follow,
+The hands-on codes have the dependencies as follows,
 
 * Python 2.7+
 * Python module Numpy 
@@ -101,7 +101,7 @@ run_harp_daal_SVDDaal.py
 /harp/harp-daal-python/examples/scdemo/tutorial/
 ```
 
-The *bootstrap* script shall launch a Hadoop Cluster and setup all the environment variables. 
+The *bootstrap* script shall launch a Hadoop Cluster and set up all the environment variables. 
 To verify the Hadoop status
 ```bash
 ## To check the status of HDFS
@@ -137,7 +137,7 @@ export DAALROOT=<path to your compiled daal folder>
 export PYTHONPATH=<path to>/harp-daal-python
 ```
 
-In a situation where you would like to stop and restart Hadoop following commands can be used
+In a situation where you would like to stop and restart Hadoop, use the following commands
 
 ```bash
 ## stop all services
@@ -157,7 +157,7 @@ Harp-DAAL framework provides developers of Java API to implement inter-mapper co
 ```
 
 Users shall edit the function *runKmeans* from source file **KMeansDaalCollectiveMapper.java**. 
-Currently, the function *runKmeans*is only a skeleton, and users will go through 8 steps to finish 
+Currently, the function *runKmeans* is only a skeleton, and users will go through 8 steps to finish 
 a complete Harp-DAAL-Kmeans application as indicated in the following code snippet. Besides, the answers to 
 *runKmeans* are located at function *runKmeans_Answer* of the same file. 
 
