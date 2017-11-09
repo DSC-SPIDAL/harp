@@ -1,7 +1,7 @@
 # Choose the right ML tool and use it like a pro!
 
 K-means is a widely used clustering algorithm in machine learning community. 
-It iteratively computes the distance between each training point to every centroids, 
+It iteratively computes the distance between each training point to every centroid, 
 re-assigns the training point to new cluster and re-compute the new centroid of each cluster. 
 
 This hands-on includes two tasks
@@ -15,16 +15,19 @@ Users are supposed to get an access to a machine with sudo permission and pre-in
 
 ### Download Docker Image and launch Container Instance
 
-Execute the two commands to load in docker image and launch a container instance.
+Execute the two commands to load docker image and launch a container instance.
+
 ```bash
 # Download an image
 sudo docker pull lee212/harp-daal:icc_included
 # Start a container
 sudo docker run -it lee212/harp-daal:icc_included /etc/bootstrap.sh -bash
 ```
+After executing the last command you will be logged on to the docker image.
 
-The container takes up to 20GB disk space, if the machine has more than 50GB disk space, there shall be no problem to 
-launch the container instance. Otherwise, users could use the following commands to clean up the Docker space 
+The container takes up to 20GB disk space. If the machine has more than 50GB disk space, there shall be no problem to 
+launch the container instance. Otherwise, users could use the following commands to clean up the docker space 
+
 ```bash
 # Remove useless docker images
 sudo docker image rm <useless-docker-image>
@@ -33,20 +36,37 @@ sudo docker rm $(sudo docker ps -a -f status=exited -q)
 # Clean up all dangling cache
 sudo docker system prune
 ```
+Find the docker container ID
+
+```bash
+sudo docker ps
+```
+and log into the docker 
+
+```bash
+sudo docker exec -it <container_id> bash
+```
 
 If network is not available, a docker image in tar file is provided with the instructions to load. 
 https://docs.docker.com/engine/reference/commandline/load/
 
 ### Dependencies and Environment Variables
 
-The hands-on codes have the dependencies as follow,
+The hands-on codes have the dependencies as follows,
 
 * Python 2.7+
 * Python module Numpy 
 * Hadoop 2.6.0/Hadoop 2.6.5
 * DAAL 2018+ 
 
-The docker image already includes them and other tools, the image has the following contents
+The following section describes where the important components of the Tutorial are
+
+1. Harp Source Code - /harp                                                                   
+2. Hadoop Installation - /usr/local/hadoop                                                        
+3. K-Means tutorial code - /harp/harp-daal-app/src/main/java/edu/iu/daal_tutorial/daal_kmeans      
+4. Python Code - /harp/harp-daal-python/examples/daal/                                   
+
+The docker image already includes them and other tools, the image has the following machine learning algorithms
 
 ```bash
 # List of HarpDaal applications (in harp-daal-<version>.jar)
@@ -81,22 +101,31 @@ run_harp_daal_SVDDaal.py
 /harp/harp-daal-python/examples/scdemo/tutorial/
 ```
 
-The *bootstrap* script shall launch a Hadoop Cluster and setup all the environment variables. 
+The *bootstrap* script shall launch a Hadoop Cluster and set up all the environment variables. 
 To verify the Hadoop status
 ```bash
 ## To check the status of HDFS
-bin/hdfs dfsadmin -report
+${HADOOP_HOME}/bin/hdfs dfsadmin -report
 ## To check the status of Yarn 
-bin/yarn node -list
+${HADOOP_HOME}/bin/yarn node -list
 ```
 
-and the env vars
+Check out the environment variables to figure out the locations of the important files.
 ```bash
 echo $HADOOP_HOME
+/usr/local/hadoop
+
 echo $HARP_JAR
+/usr/local/hadoop/harp-app-1.0-SNAPSHOT.jar
+
 echo $HARP_DAAL_JAR
+/usr/local/hadoop/harp-daal-app-1.0-SNAPSHOT.jar
+
 echo $DAALROOT
+/harp/harp-daal-app/__release__lnx/daal
+
 echo $PYTHONPATH
+/harp/harp-daal-python
 ```
 
 If the script fails to complete these steps, users could manually set them 
@@ -108,8 +137,11 @@ export DAALROOT=<path to your compiled daal folder>
 export PYTHONPATH=<path to>/harp-daal-python
 ```
 
-and launch the hadoop daemons
+In a situation where you would like to stop and restart Hadoop, use the following commands
+
 ```bash
+## stop all services
+${HADOOP_HOME}/sbin/stop-all.sh
 ## launch HDFS service
 ${HADOOP_HOME}/sbin/start-dfs.sh
 ## launch yarn daemons
@@ -118,72 +150,83 @@ ${HADOOP_HOME}/sbin/start-yarn.sh
 
 ## Program K-means via Java APIs 
 
-Harp-DAAL framework provides developers of Java API to implement inter-mapper communication patterns and invoke intra-node DAAL kernels. 
-The K-means source files are located at 
-**harp-daal-app/src/main/java/edu/iu/daal_tutorial/daal_kmeans**
+Harp-DAAL framework provides developers of Java API to implement inter-mapper communication patterns and invoke intra-node DAAL kernels. The K-means source files are located at 
 
-Users shall edit the function *runKmeans* from source file **KMeansDaalCollectiveMapper.java**. 
-Currently, the function *runKmeans*is only a skeleton, and users will go through 8 steps to finish 
-a complete Harp-DAAL-Kmeans application as indicated in the following code snippet. Besides, the answers to 
-*runKmeans* are located at function *runKmeans_Answer* of the same file. 
+``` bash
+/harp/harp-daal-app/src/main/java/edu/iu/daal_tutorial/daal_kmeans/
+```
+
+Lets open the source file where K-Means is implemented.
+
+``` bash
+vi /harp/harp-daal-app/src/main/java/edu/iu/daal_tutorial/daal_kmeans/KMeansDaalCollectiveMapper.java
+```
+
+Users shall edit the function *runKmeans* from source file *KMeansDaalCollectiveMapper.java*. 
+Currently, the function *runKmeans* is only a skeleton, and users will go through 8 steps to finish 
+a complete Harp-DAAL-Kmeans application as indicated in the following code snippet.
 
 ```java
-private void runKmeans(List<String> fileNames, Configuration conf, Context context)
-{
-	long start_execution = System.currentTimeMillis();
-	this.fileNames = fileNames;
-	this.conf = conf;
+private void runKmeans(List<String> fileNames, Configuration conf, Context context) {
+  long start_execution = System.currentTimeMillis();
+  this.fileNames = fileNames;
+  this.conf = conf;
 
-	//************* Step 1: load training data *********************
-	//************* Step 2: load centroids (model) data *********************
-	//************* Step 3: convert training data from harp to daal *********************
-	//************* Step 4: Setup DAAL K-means kernel and cenTable at DAAL side *********************
-	// start the iteration
-	for (int i = 0; i < numIterations; i++) 
-	{
-		//************* Step 5: Convert Centroids data from Harp to DAAL *********************
-		//************* Step 6: Local computation by DAAL to get partial result *********************
-		//************* Step 7: Inter-Mapper communication *********************
-	}
-	//************* Step 8: Release Memory and Store Centroids *********************
+  //************* Step 1: load training data *********************
+  //************* Step 2: load centroids (model) data *********************
+  //************* Step 3: convert training data from harp to daal *********************
+  //************* Step 4: Setup DAAL K-means kernel and cenTable at DAAL side *********************
+  // start the iteration
+  for (int i = 0; i < numIterations; i++) {
+    //************* Step 5: Convert Centroids data from Harp to DAAL *********************
+    //************* Step 6: Local computation by DAAL to get partial result *********************
+    //************* Step 7: Inter-Mapper communication *********************
+  }
+  //************* Step 8: Release Memory and Store Centroids *********************
 }
 ```
 
-The codes of missing steps are already packaged into private member functions of *KMeansDaalCollectiveMapper.java*. 
-Please refer to function definitions for all the implementation details.
-After adding codes at each step, re-compile the harp-daal-application by maven
-at the root harp directory (where the pom.xml resides) 
+The codes of missing steps are already packaged into private member function of *KMeansDaalCollectiveMapper.java* named *runKmeans_Answer* and you can use it to get it to working quickly. Please refer to member function definition for 
+implementation details of each step. After adding codes at each step, re-compile the harp-daal-application 
+by maven at the root harp directory (where the pom.xml resides) 
+
 ```bash
+cd /harp
 mvn clean package
 ```
 
 and re-run the application on Hadoop cluster
 ```bash
-cd ./harp-daal-app/test_scripts 
+cd /harp/harp-daal-app/test_scripts
 ./harp-daal-tutorial-kmeans.sh
 ```
 
-### Step 1: Load training data 
+### Solution Description
 
-Use the following function to load in training data (vectors) from HDFS in parallel
+The following sections describe each step of the algorithm that is left blank. 
+
+### Step 1: Load training data (feature vectors)
+
+Use the following function to load training data from HDFS. 
+
 ```java
 // create a pointArray
 List<double[]> pointArrays = LoadTrainingData();
 ```
 
-### Step 2: Load in model data (centroids)
+### Step 2: Load model data (centroids)
 
-Similarly, create a harp table object *cenTable* and load in centroid data from HDFS. 
-Because centroid data are requested by all the mappers, load them at master mapper and 
+Similarly, create a harp table object *cenTable* and load centroids from HDFS. 
+Because centroids are requested by all the mappers, load them at master mapper and 
 broadcast them to all the other mappers. 
+
 ```java
 // create a table to hold centroids data
 Table<DoubleArray> cenTable = new Table<>(0, new DoubleArrPlus());
-//
-if (this.isMaster()) 
-{
-createCenTable(cenTable);
-loadCentroids(cenTable);
+
+if (this.isMaster()) {
+  createCenTable(cenTable);
+  loadCentroids(cenTable);
 }
 // Bcast centroids to other mappers
 bcastCentroids(cenTable, this.getMasterID());
@@ -191,8 +234,8 @@ bcastCentroids(cenTable, this.getMasterID());
 
 ### Step 3: Convert training data from Harp side to DAAL side
 
-The training data loaded from HDFS are stored at Java heap memory. To invoke DAAL kernel, convert them into 
-the DAAL *NumericTable* 
+The training data loaded from HDFS are stored at Java heap memory. To invoke DAAL kernel, convert them to 
+DAAL *NumericTable* 
 
 ```java
 // convert training data fro harp to daal
@@ -201,16 +244,16 @@ NumericTable trainingdata_daal = convertTrainData(pointArrays);
 
 It allocates native memory for *NumericTable* and copy data from *pointArrays* to *trainingdata_daal*
 
-### Step 4: Create and setup DAAL K-means kernel 
+### Step 4: Create and set up DAAL K-means kernel 
 
-DAAL provides the following Java API for invoking their low-level native kernels written for K-means
+DAAL provides the following Java API to invoke their low-level native kernels written for K-means
 ```java
 import com.intel.daal.algorithms.kmeans.*;
 import com.intel.daal.algorithms.kmeans.init.*;
 import com.intel.daal.services.Environment;
 ```
 
-Call them by specifying the input training data object and centroids number 
+Call them by specifying the input training data object and number of centroids 
 
 ```java
 // create a daal kmeans kernel object
@@ -218,24 +261,26 @@ DistributedStep1Local kmeansLocal = new DistributedStep1Local(daal_Context, Doub
 // set up input training data
 kmeansLocal.input.set(InputId.data, trainingdata_daal);
 ```
-As DAAL uses MKL and TBB at its implementation, specify the number of threads used by DAAL (by default a maximal available threads on processor)
+
+As DAAL uses MKL and TBB within its implementation, specify the number of threads used by DAAL (by default a maximum available threads on a processor)
 
 ```java
 // specify the threads used in DAAL kernel
 Environment.setNumberOfThreads(numThreads);
 ```
 
-Finally, create another *NumericTable* to store centroids (model) data at DAAL side
+Finally, create another *NumericTable* to store centroids at DAAL side
 
 ```java
 // create cenTable at daal side
 NumericTable cenTable_daal = createCenTableDAAL();
 ```
 
-### Step 5: Convert centroids data from Harp to DAAL
+### Step 5: Convert centroids from Harp to DAAL
 
 Centroids are stored in harp table *cenTable* for inter-mapper communication. Convert them 
 to DAAL within each iteration of local computation. 
+
 ```java
 //Convert Centroids data from Harp to DAAL
 convertCenTableHarpToDAAL(cenTable, cenTable_daal);
@@ -262,38 +307,37 @@ However, it provides different communication operations to synchronize model dat
 * Broadcast & Reduce
 * Push-Pull
 
-All of the operations will take in two arguments, 1) *cenTable* at harp side, 2) partial results computed from DAAL; Internally, the 
-data is retrieved from DAAL partial results and communicated by Harp.
+All of the operations will take in two arguments, 1) *cenTable* at harp side, 2) partial results obtained from DAAL; Internally, the data is retrieved from DAAL partial results and communicated by Harp.
 
-In Regroup & Allgather operation, it first combines the same centroid from different mappers and re-distribute them 
-to mappers with a specified order. After average operation on the centroids, an allgather operation lets every mapper get 
-a complete copy of the averaged centroids data. 
+In Regroup & Allgather operation, it first combines the same centroid from different mappers and re-distributes them 
+to mappers by a specified order. After averaging the centroids, an allgather operation makes every mapper get 
+a complete copy of the averaged centroids. 
 
 ```java
 comm_regroup_allgather(cenTable, pres);
 ```
 
-In Allreduce operation, the centroids are reduced and copied to every mapper. Then an average operation apply to them on each mapper to 
-get the results. 
+In Allreduce operation, the centroids are reduced and copied to every mapper. Then an average operation applies to them on each mapper. 
+
 ```java
 comm_allreduce(cenTable, pres);
 ```
 
-In Broadcast & Reduce, it first reduces centroids to a single mapper (master mapper), where the average operation applied. It then broadcasts
-the averaged centroids data to every other mapper. 
+In Broadcast & Reduce, it first reduces centroids to a single mapper (master mapper), where the average operation applies. It then broadcasts the averaged centroids data to every other mapper. 
 
 ```java
 comm_broadcastreduce(cenTable, pres);
 ```
 
-In push-pull operation, it first pushes centroids data from *cenTable* of local mapper to a *globalTable*, which is consistent across all the mappers. 
-It then applies the average operation on *globalTable* from each mapper, and finally, pull the results from *globalTable* to update the local *cenTable*.
+In push-pull, it first pushes centroids data from *cenTable* of local mapper to a *globalTable*, which is distributed across all the mappers. It then applies the average operation on *globalTable* from each mapper, and finally, pull the results from *globalTable* to update the local *cenTable*.
+
 ```java
 Table<DoubleArray> globalTable = new Table<DoubleArray>(0, new DoubleArrPlus());
 comm_push_pull(cenTable, globalTable, pres);
 ```
 
 After finishing each iteration, call the *printTable* to check the centroids result
+
 ```java
 //for iteration i, check 10 first centroids, each 
 //centroid prints out first 10 dimension
@@ -304,6 +348,7 @@ printTable(cenTable, 10, 10, i);
 
 After all of the iterations, release the allocated memory at DAAL side and for harp table object.
 The centroids as output are stored at HDFS 
+
 ```java
 // free memory and record time
 cenTable_daal.freeDataMemory();
