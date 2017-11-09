@@ -86,12 +86,14 @@ CollectiveMapper<String, String, Object, Object>{
   private int pointsPerFile = 15076;                             //change
   private int vectorSize = 2000;
   private long nClasses = 20;
+  private int testSize = 2000;
   private int numMappers;
   private int numThreads;
   private TrainingResult trainingResult;
   private PredictionResult predictionResult;
   private String testFilePath;
   private String testGroundTruth;
+  private String workDirPath;
 
     //to measure the time
   private long load_time = 0;
@@ -122,6 +124,16 @@ CollectiveMapper<String, String, Object, Object>{
             configuration.get(Constants.TEST_FILE_PATH,"");
       testGroundTruth =
       configuration.get(Constants.TEST_TRUTH_PATH,"");
+
+      nClasses = configuration
+      .getInt(Constants.NUM_CLASSES, 20);
+      vectorSize = configuration
+      .getInt(Constants.VECTOR_SIZE, 20);
+      pointsPerFile = configuration
+      .getInt(Constants.POINTS_PERFILE, 2000);
+      testSize = configuration.getInt(Constants.TEST_SIZE, 2000);
+      workDirPath = configuration.get(Constants.WORK_DIR, "/daal_naive/");
+
 
       LOG.info("Num Mappers " + numMappers);
       LOG.info("Num Threads " + numThreads);
@@ -334,7 +346,8 @@ CollectiveMapper<String, String, Object, Object>{
 
   private void testModel(String testFilePath, Configuration conf) throws java.io.FileNotFoundException, java.io.IOException {
     PredictionBatch algorithm = new PredictionBatch(daal_Context, Float.class, PredictionMethod.defaultDense, nClasses);
-    NumericTable testData = getNumericTableHDFS(daal_Context, conf, testFilePath, 2000, 3770);
+
+    NumericTable testData = getNumericTableHDFS(daal_Context, conf, testFilePath, vectorSize, testSize);
     algorithm.input.set(NumericTableInputId.data, testData);
     Model model = trainingResult.get(TrainingResultId.model);
     algorithm.input.set(ModelInputId.model, model);
@@ -349,9 +362,9 @@ CollectiveMapper<String, String, Object, Object>{
 
   private void printResults(String testGroundTruth, PredictionResult predictionResult, Configuration conf) throws java.io.FileNotFoundException, java.io.IOException {
 
-        int nRows = 3770;
+        int nRows = testSize;
 
-        NumericTable expected = getNumericTableHDFS(daal_Context, conf, testGroundTruth, 1, 3770);
+        NumericTable expected = getNumericTableHDFS(daal_Context, conf, testGroundTruth, 1, nRows);
         NumericTable prediction = predictionResult.get(PredictionResultId.prediction);
         Service.printClassificationResult(expected, prediction, "Ground truth", "Classification results",
                 "NaiveBayes classification results (first 20 observations):", 20);
@@ -360,7 +373,8 @@ CollectiveMapper<String, String, Object, Object>{
         FloatBuffer result = FloatBuffer.allocate((int) (1 * nRows));
         result = prediction.getBlockOfRows(0, nRows, result);        
         
-        String cFile = "/20news/out/pred";
+        //String cFile = workDirPath + "/20news/out/pred";
+        String cFile = workDirPath + "/out/pred";
         //    cenDir + File.separator + "out"
         //    + File.separator + name;
         Path cPath = new Path(cFile);
