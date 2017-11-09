@@ -41,7 +41,8 @@ class DAALNavieBayes():
         x_test = x_test.toarray()
         y = y.reshape((y.shape[0], 1))
         y_test = y_test.reshape((y_test.shape[0], 1))
-        print("dim: %s, %s, %s, %s"%(x.shape, y.shape, x_test.shape, y_test.shape))
+        nClasses = len(np.unique(y))
+        print("dim: %s, %s, %s, %s, classes: %s"%(x.shape, y.shape, x_test.shape, y_test.shape, nClasses))
         #prepare the input data
         data = np.hstack((x,y))
         self.coef_ = np.ones((1, x.shape[1]))
@@ -52,7 +53,8 @@ class DAALNavieBayes():
         # call run harpdaal naivebayes
         #my_app.args('/daal_naive/train /daal_naive/test /daal_naive/groundTruth /naive-work 10240 50 2 24')
         harp_naivebayes.args(self.workdir + '/train', self.workdir + '/test', self.workdir + '/groundTruth', self.workdir + '/work',
-                self.n_mem, 50, self.n_node, self.n_thread)
+                self.n_mem, 50, self.n_node, self.n_thread,
+                nClasses, x.shape[1], x.shape[0], x_test.shape[0])
 
         harp_naivebayes.run()
 

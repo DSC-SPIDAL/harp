@@ -74,8 +74,8 @@ implements Tool {
                 + "<input ground truth dir>"
                 + "<workDirPath> "
                 + "<mem per mapper>"
-                + "<batch size>"
-                + "<num mappers> <thread per worker>");
+                + "<num mappers> <thread per worker>"
+                + "<class number=20> <vectorSize=20> <pointsPerFile=2000> <testSize=2000>");
       ToolRunner.printGenericCommandUsage(System.err);
       return -1;
     }
@@ -84,25 +84,39 @@ implements Tool {
     String testGroundTruthDirPath = args[2];            
     String workDirPath = args[3];    
     int mem = Integer.parseInt(args[4]);
-    int batchSize = Integer.parseInt(args[5]);
+    int batchSize = Integer.parseInt(args[5]);     //no use, only for compatibility 
     int numMapTasks = Integer.parseInt(args[6]);      
     int numThreadsPerWorker = Integer.parseInt(args[7]);
+    int pointsPerFile = 2000;
+    int vectorSize = 20;
+    int nClasses = 20;
+    int testSize = 2000;
 
-    System.out.println("Number of Map Tasks = " + numMapTasks);
+    if (args.length == 12) {
+        nClasses = Integer.parseInt(args[8]);
+        vectorSize = Integer.parseInt(args[9]); 
+        pointsPerFile = Integer.parseInt(args[10]); 
+        testSize = Integer.parseInt(args[11]); 
+    }
+
     System.out.println("Number of Map Tasks = "+ numMapTasks);
+    System.out.println("Classes=" + nClasses + ",vectorSize=" + vectorSize +
+            ",pointsPerFile=" + pointsPerFile + ",testSize=" + testSize);
 
     if (mem < 1000) {
       return -1;
     }
 
-    launch(inputDirPath, testDirPath, testGroundTruthDirPath, workDirPath, mem, batchSize, numMapTasks, numThreadsPerWorker);
+    launch(inputDirPath, testDirPath, testGroundTruthDirPath, workDirPath, mem, 
+            nClasses, vectorSize, pointsPerFile, testSize,
+            numMapTasks, numThreadsPerWorker);
     return 0;
 }
 
 private void launch(String inputDirPath, 
   String testDirPath, 
   String testGroundTruthDirPath, 
-  String workDirPath, int mem, int batchSize, 
+  String workDirPath, int mem, int nClasses, int vectorSize, int pointsPerFile,int testSize, 
   int numMapTasks, int numThreadsPerWorker) throws IOException,
 URISyntaxException, InterruptedException,
 ExecutionException, ClassNotFoundException {
@@ -121,7 +135,9 @@ ExecutionException, ClassNotFoundException {
   Path outputDir = new Path(workDirPath, "output");
   long startTime = System.currentTimeMillis();
 
-  runNaive(inputDir, testDirPath, testGroundTruthDirPath, mem, batchSize, numMapTasks,
+  runNaive(inputDir, testDirPath, testGroundTruthDirPath, workDirPath, mem, 
+          nClasses, vectorSize, pointsPerFile, testSize,
+          numMapTasks,
       numThreadsPerWorker, modelDir,
       outputDir, configuration);
 
@@ -131,7 +147,9 @@ ExecutionException, ClassNotFoundException {
         + (endTime - startTime));
 }
 
-private void runNaive(Path inputDir, String testDirPath, String testGroundTruthDirPath, int mem, int batchSize,  
+private void runNaive(Path inputDir, String testDirPath, String testGroundTruthDirPath, String workDirPath,
+        int mem, 
+        int nClasses, int vectorSize, int pointsPerFile, int testSize, 
     int numMapTasks, int numThreadsPerWorker,
      Path modelDir, Path outputDir,
     Configuration configuration)
@@ -148,7 +166,8 @@ private void runNaive(Path inputDir, String testDirPath, String testGroundTruthD
           Calendar.getInstance().getTime()));
 
     Job naiveJob =
-      configureNaiveJob(inputDir, testDirPath, testGroundTruthDirPath, mem, batchSize,
+      configureNaiveJob(inputDir, testDirPath, testGroundTruthDirPath, workDirPath, mem, 
+              nClasses, vectorSize, pointsPerFile, testSize,
         numMapTasks, numThreadsPerWorker,
         modelDir, outputDir, configuration);
 
@@ -175,17 +194,22 @@ private void runNaive(Path inputDir, String testDirPath, String testGroundTruthD
   }
 
   private Job configureNaiveJob(Path inputDir,
-    String testDirPath, String testGroundTruthDirPath,
-    int mem, int batchSize, int numMapTasks, int numThreadsPerWorker,
+    String testDirPath, String testGroundTruthDirPath, String workDirPath,
+    int mem, int nClasses, int vectorSize, int pointsPerFile, int testSize,
+    int numMapTasks, int numThreadsPerWorker,
     Path modelDir, Path outputDir,
     Configuration configuration)
     throws IOException, URISyntaxException {
 
     configuration.set(Constants.TEST_FILE_PATH, testDirPath);
     configuration.set(Constants.TEST_TRUTH_PATH, testGroundTruthDirPath);
+    configuration.set(Constants.WORK_DIR, workDirPath);
     configuration.setInt(Constants.NUM_MAPPERS, numMapTasks);
     configuration.setInt(Constants.NUM_THREADS, numThreadsPerWorker);
-    configuration.setInt(Constants.BATCH_SIZE, batchSize);
+    configuration.setInt(Constants.NUM_CLASSES, nClasses);
+    configuration.setInt(Constants.VECTOR_SIZE, vectorSize);
+    configuration.setInt(Constants.POINTS_PERFILE, pointsPerFile);
+    configuration.setInt(Constants.TEST_SIZE, testSize);
 
     Job job = Job.getInstance(configuration, "naive_job");
     JobConf jobConf = (JobConf) job.getConfiguration();
