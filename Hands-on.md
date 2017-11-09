@@ -156,6 +156,12 @@ Harp-DAAL framework provides developers of Java API to implement inter-mapper co
 /harp/harp-daal-app/src/main/java/edu/iu/daal_tutorial/daal_kmeans/
 ```
 
+Lets open the source file where K-Means is implemented.
+
+``` bash
+vi /harp/harp-daal-app/src/main/java/edu/iu/daal_tutorial/daal_kmeans/KMeansDaalCollectiveMapper.java
+```
+
 Users shall edit the function *runKmeans* from source file *KMeansDaalCollectiveMapper.java*. 
 Currently, the function *runKmeans* is only a skeleton, and users will go through 8 steps to finish 
 a complete Harp-DAAL-Kmeans application as indicated in the following code snippet.
