@@ -103,7 +103,7 @@ ${HADOOP_HOME}/bin/hdfs dfsadmin -report
 ${HADOOP_HOME}/bin/yarn node -list
 ```
 
-and the env vars
+Check out the environment variables to figure out the locations of the important files.
 ```bash
 echo $HADOOP_HOME
 /usr/local/hadoop
