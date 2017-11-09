@@ -106,10 +106,19 @@ ${HADOOP_HOME}/bin/yarn node -list
 and the env vars
 ```bash
 echo $HADOOP_HOME
+/usr/local/hadoop
+
 echo $HARP_JAR
+/usr/local/hadoop/harp-app-1.0-SNAPSHOT.jar
+
 echo $HARP_DAAL_JAR
+/usr/local/hadoop/harp-daal-app-1.0-SNAPSHOT.jar
+
 echo $DAALROOT
+/harp/harp-daal-app/__release__lnx/daal
+
 echo $PYTHONPATH
+/harp/harp-daal-python
 ```
 
 If the script fails to complete these steps, users could manually set them 
