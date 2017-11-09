@@ -59,6 +59,14 @@ The hands-on codes have the dependencies as follow,
 * Hadoop 2.6.0/Hadoop 2.6.5
 * DAAL 2018+ 
 
+The following section describes where the important components of the Tutorial are
+
+| Harp Source Code         | /harp                                                                   |
+| Hadoop Installation      | /usr/local/hadoop                                                       | 
+| K-Means tutorial code    | /harp/harp-daal-app/src/main/java/edu/iu/daal_tutorial/daal_kmeans      |
+| Python Code              | /harp/harp-daal-python/examples/daal/                                   |
+
+
 The docker image already includes them and other tools, the image has the following contents
 
 ```bash
@@ -130,8 +138,11 @@ export DAALROOT=<path to your compiled daal folder>
 export PYTHONPATH=<path to>/harp-daal-python
 ```
 
-and launch the hadoop daemons
+In a situation where you would like to stop and restart Hadoop following commands can be used
+
 ```bash
+## stop all services
+${HADOOP_HOME}/sbin/stop-all.sh
 ## launch HDFS service
 ${HADOOP_HOME}/sbin/start-dfs.sh
 ## launch yarn daemons
