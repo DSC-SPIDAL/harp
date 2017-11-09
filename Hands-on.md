@@ -150,9 +150,11 @@ ${HADOOP_HOME}/sbin/start-yarn.sh
 
 ## Program K-means via Java APIs 
 
-Harp-DAAL framework provides developers of Java API to implement inter-mapper communication patterns and invoke intra-node DAAL kernels. 
-The K-means source files are located at 
-**harp-daal-app/src/main/java/edu/iu/daal_tutorial/daal_kmeans**
+Harp-DAAL framework provides developers of Java API to implement inter-mapper communication patterns and invoke intra-node DAAL kernels. The K-means source files are located at 
+
+``` bash
+/harp/harp-daal-app/src/main/java/edu/iu/daal_tutorial/daal_kmeans/
+```
 
 Users shall edit the function *runKmeans* from source file **KMeansDaalCollectiveMapper.java**. 
 Currently, the function *runKmeans*is only a skeleton, and users will go through 8 steps to finish 
@@ -160,31 +162,28 @@ a complete Harp-DAAL-Kmeans application as indicated in the following code snipp
 *runKmeans* are located at function *runKmeans_Answer* of the same file. 
 
 ```java
-private void runKmeans(List<String> fileNames, Configuration conf, Context context)
-{
-	long start_execution = System.currentTimeMillis();
-	this.fileNames = fileNames;
-	this.conf = conf;
+private void runKmeans(List<String> fileNames, Configuration conf, Context context) {
+  long start_execution = System.currentTimeMillis();
+  this.fileNames = fileNames;
+  this.conf = conf;
 
-	//************* Step 1: load training data *********************
-	//************* Step 2: load centroids (model) data *********************
-	//************* Step 3: convert training data from harp to daal *********************
-	//************* Step 4: Setup DAAL K-means kernel and cenTable at DAAL side *********************
-	// start the iteration
-	for (int i = 0; i < numIterations; i++) 
-	{
-		//************* Step 5: Convert Centroids data from Harp to DAAL *********************
-		//************* Step 6: Local computation by DAAL to get partial result *********************
-		//************* Step 7: Inter-Mapper communication *********************
-	}
-	//************* Step 8: Release Memory and Store Centroids *********************
+  //************* Step 1: load training data *********************
+  //************* Step 2: load centroids (model) data *********************
+  //************* Step 3: convert training data from harp to daal *********************
+  //************* Step 4: Setup DAAL K-means kernel and cenTable at DAAL side *********************
+  // start the iteration
+  for (int i = 0; i < numIterations; i++) {
+    //************* Step 5: Convert Centroids data from Harp to DAAL *********************
+    //************* Step 6: Local computation by DAAL to get partial result *********************
+    //************* Step 7: Inter-Mapper communication *********************
+  }
+  //************* Step 8: Release Memory and Store Centroids *********************
 }
 ```
 
-The codes of missing steps are already packaged into private member function of *KMeansDaalCollectiveMapper.java* called runKmeans_Answer.  
-Please refer to function definitions for all the implementation details.
-After adding codes at each step, re-compile the harp-daal-application by maven
-at the root harp directory (where the pom.xml resides) 
+The codes of missing steps are already packaged into private member function of *KMeansDaalCollectiveMapper.java* called runKmeans_Answer and you can use it to get it to working quickly.
+
+Please refer to function definitions for all the implementation details. After adding codes at each step, re-compile the harp-daal-application by maven at the root harp directory (where the pom.xml resides) 
 
 ```bash
 cd /harp
