@@ -205,6 +205,16 @@ cd /harp/harp-daal-app/test_scripts
 ./harp-daal-tutorial-kmeans.sh
 ```
 
+While application is running you can use Hadoop commands to manage the application.
+
+```bash
+cd $HADOOP_HOME
+## list applications
+./bin/yarn application -list
+## kill application
+./bin/yarn application -kill <application id>
+```
+
 ### Solution Description
 
 The following sections describe each step of the algorithm that is left blank. 
