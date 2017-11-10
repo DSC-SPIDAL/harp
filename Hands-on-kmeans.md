@@ -217,7 +217,7 @@ cd $HADOOP_HOME
 
 ### Solution Description
 
-The following sections describe each step of the algorithm that is left blank. 
+The following sections describe each step of the algorithm that is left blank. You can copy the code in each step to complete the solution.
 
 ### Step 1: Load training data (feature vectors)
 
