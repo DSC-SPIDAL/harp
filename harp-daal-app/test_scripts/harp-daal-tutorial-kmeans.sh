@@ -51,7 +51,7 @@ File=5
 # iteration times
 ITR=100
 # memory allocated to each mapper (MB)
-Mem=6000
+Mem=3000
 # generate training data or not (once generated, data file /kmeans-P$Pts-C$Ced-D$Dim-N$Node is in hdfs, you could reuse them next time)
 GenData=true
 # num of mappers (nodes)
