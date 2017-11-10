@@ -1,4 +1,4 @@
-# Python Interface to Harp and Harp-Daal
+# Python Interface to Harp-Daal
 
 ## Introduction
 
@@ -25,6 +25,7 @@ git clone https://github.com/DSC-SPIDAL/harp.git
 ### Dependencies
 Please have all dependencies installed.
 
+* If you use our Docker Image, all the dependencies are pre-installed.
 * Python 2.7+
 * Python module Numpy (Install with your `pip`)
 * Hadoop 2.6.0/Hadoop 2.6.5
@@ -33,7 +34,7 @@ Please have all dependencies installed.
 ### Environment Variables
 After the code have been checked out and dependencies installed, please `export` all the following environment variables.
 
-```
+```bash
 # Hadoop
 export HADOOP_HOME=<path to hadoop home folder>
 
@@ -45,11 +46,25 @@ export PYTHONPATH=<path to>/harp-daal-python
 ```
 
 ## Example Code
-Example code can be found under folder `examples`. For instance, to run KMeans with Harp-Daal, please run the following command:
+Example code can be found under folder `harp/harp-daal-python/examples`. For instance, to run KMeans with Harp-Daal, please run the following command:
 
-```
+```bash
 cd harp-daal-python
 python examples/daal/run_harp_daal_KMeansDaal.py
+
+# All 12 examples
+python examples/daal/run_harp_daal_ALSDaal.py
+python examples/daal/run_harp_daal_COVDaal.py
+python examples/daal/run_harp_daal_KMeansDaal.py
+python examples/daal/run_harp_daal_LinRegDaal.py
+python examples/daal/run_harp_daal_MOMDaal.py
+python examples/daal/run_harp_daal_NNDaal.py
+python examples/daal/run_harp_daal_NaiveDaal.py
+python examples/daal/run_harp_daal_PCADaal.py
+python examples/daal/run_harp_daal_QRDaal.py
+python examples/daal/run_harp_daal_RidgeRegDaal.py
+python examples/daal/run_harp_daal_SGDDaal.py
+python examples/daal/run_harp_daal_SVDDaal.py
 ```
 
 ## Arguments and Testing Results
