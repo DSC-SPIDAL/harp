@@ -19,6 +19,12 @@ following commands to build the latest version of harp-daal
 cd harp/
 git pull origin master
 mvn clean package
+
+# Copy all dynamic links to HDFS
+hdfs dfs -mkdir -p /Hadoop/Libraries && \
+hdfs dfs -put -f ${DAALROOT}/lib/intel64_lin/libJavaAPI.so /Hadoop/Libraries/ && \
+hdfs dfs -put -f ${DAALROOT}/../tbb/lib/intel64_lin/gcc4.4/libtbb* /Hadoop/Libraries/ && \
+hdfs dfs -put -f ${HARP_DAAL_ROOT}/external/omp/libiomp5.so /Hadoop/Libraries/
 ```
 
 The container takes up to 20GB disk space. If the machine has more than 50GB disk space, there shall be no problem to 
