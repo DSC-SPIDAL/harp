@@ -15,25 +15,22 @@ Users are supposed to get an access to a machine with sudo permission and pre-in
 
 ### Download Docker Image and launch Container Instance
 
-If the machine already provides a docker image (tarball file), just import the image and launch the 
-container
-```bash
-sudo docker import /mnt/backup/harp-daal-docker-image.tar
-## check the container id
-sudo docker image ls
-## Start a container
-sudo docker run -it <container_id> /etc/bootstrap.sh -bash
-```
-
-Otherwise, download the image via network and launch the container
+Download the image and launch the container
 ```bash
 # Download an image
-sudo docker pull lee212/harp-daal:icc_included
+sudo docker pull dscspidal/harp-daal
 # Start a container
-sudo docker run -it lee212/harp-daal:icc_included /etc/bootstrap.sh -bash
+sudo docker run -it dscspidal/harp-daal /etc/bootstrap.sh -bash
 ```
 
-After executing the last command you will be logged on to the docker image.
+After executing the last command you will be logged on to the docker image and use the 
+following commands to build the latest version of harp-daal
+
+```bash
+cd harp/
+git pull origin master
+mvn clean package
+```
 
 The container takes up to 20GB disk space. If the machine has more than 50GB disk space, there shall be no problem to 
 launch the container instance. Otherwise, users could use the following commands to clean up the docker space 
