@@ -6,7 +6,9 @@
 
 Download the image and launch the container
 ```bash
-# Download an image
+# Check installed images
+sudo docker image ls
+# Download an image if not installed otherwise skip this step
 sudo docker pull dscspidal/harp-daal
 # Start a container
 sudo docker run -it dscspidal/harp-daal /etc/bootstrap.sh -bash
