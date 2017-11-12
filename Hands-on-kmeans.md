@@ -17,6 +17,8 @@ Users are supposed to get an access to a machine with sudo permission and pre-in
 
 Download the image and launch the container. Before downloading check weather the VM already has the docker image.
 ```bash
+# start the docker
+sudo systemctl start docker
 # Check installed images
 sudo docker image ls
 # Download an image if not installed otherwise skip this step
