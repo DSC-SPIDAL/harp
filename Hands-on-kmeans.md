@@ -31,7 +31,7 @@ following commands to build the latest version of harp-daal
 ```bash
 cd /harp
 git pull origin master
-mvn clean package
+mvn package
 
 # Copy all dynamic links to HDFS
 hdfs dfs -mkdir -p /Hadoop/Libraries && \
@@ -204,7 +204,7 @@ by maven at the root harp directory (where the pom.xml resides)
 
 ```bash
 cd /harp
-mvn clean package
+mvn package
 ```
 
 and re-run the application on Hadoop cluster
