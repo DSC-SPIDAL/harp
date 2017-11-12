@@ -15,9 +15,11 @@ Users are supposed to get an access to a machine with sudo permission and pre-in
 
 ### Download Docker Image and launch Container Instance
 
-Download the image and launch the container
+Download the image and launch the container. Before downloading check weather the VM already has the docker image.
 ```bash
-# Download an image
+# Check installed images
+sudo docker image ls
+# Download an image if not installed otherwise skip this step
 sudo docker pull dscspidal/harp-daal
 # Start a container
 sudo docker run -it dscspidal/harp-daal /etc/bootstrap.sh -bash
@@ -27,7 +29,7 @@ After executing the last command you will be logged on to the docker image and u
 following commands to build the latest version of harp-daal
 
 ```bash
-cd harp/
+cd /harp
 git pull origin master
 mvn clean package
 
