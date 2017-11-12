@@ -6,6 +6,8 @@
 
 Download the image and launch the container
 ```bash
+# start the docker
+sudo systemctl start docker
 # Download an image
 sudo docker pull dscspidal/harp-daal
 # Start a container
