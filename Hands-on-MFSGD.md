@@ -6,6 +6,8 @@
 
 Download the image and launch the container
 ```bash
+# start the docker
+sudo systemctl start docker
 # Check installed images
 sudo docker image ls
 # Download an image if not installed otherwise skip this step
