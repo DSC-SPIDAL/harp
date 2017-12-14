@@ -7,12 +7,16 @@ public class Constants {
     "vector_size";
   public static final String NUM_CENTROIDS =
     "num_centroids";
+  public static final String NUM_CLASS =
+    "num_class";
   public static final String WEIGHTBIAS_FILE_NAME =
     "init_weightbias";
   public static final String CEN_DIR = "c-file";
 
   public static final String NUM_MAPPERS =
     "num_mappers";
+  public static final String NUM_TEST =
+    "num_test";
   public static final String NUM_THREADS =
     "num_threads";
   public static final String NUM_ITERATIONS =

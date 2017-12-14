@@ -26,6 +26,8 @@ import java.util.Random;
 /**
  * @brief Generate Binary file for Dense matrix
  * used by daal_pca, daal_svd, daal_kmeans
+ * no line breaks between two points (vectors)
+ * reader shall be aware of the feature dimension when loading file
  */
 public class DataGenBinDense implements Runnable {
 

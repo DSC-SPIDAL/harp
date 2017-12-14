@@ -26,30 +26,31 @@ import java.io.IOException;
 import java.util.Random;
 
 /**
- * @brief generator ascii Matrix Market format for Dense matrix 
- * (Array format column oriented)
- * used by daal_pca, daal_svd, daal_kmeans
- * each line contains one feature vector 
+ * @brief generator ascii file for Naive Bayes training datasets 
+ * each line contains vec size random double value and a random label value [0, nClasses] 
+ * used by daal_naive 
  */
-public class DataGenMMDense implements Runnable {
+public class DataGenNaiveBayes implements Runnable {
 
   private int pointsPerFile;
   private String localDir;
   private String fileName;
   int vectorSize;
+  int nClasses;
 
-  public DataGenMMDense(int pointsPerFile,
-    String localInputDir, String fileName,
-    int vectorSize) {
-    this.pointsPerFile = pointsPerFile;
+  public DataGenNaiveBayes(String localInputDir, String fileName,int pointsPerFile, 
+    int vectorSize, int nClasses) {
     this.localDir = localInputDir;
     this.fileName = fileName;
+	this.pointsPerFile = pointsPerFile;
     this.vectorSize = vectorSize;
+	this.nClasses = nClasses;
   }
 
   @Override
   public void run() {
     double point;
+	int label;
     Random random = new Random();
     try {
 
@@ -59,9 +60,12 @@ public class DataGenMMDense implements Runnable {
         for (int j = 0; j < vectorSize; j++) {
           point = random.nextDouble()*2 -1;
           writer.write(String.valueOf(point));
+		  writer.write(",");
         }
-        
-		writer.newLine();
+
+		label = random.nextInt(nClasses);
+		writer.write(String.valueOf(label));
+        writer.newLine();
       }
       
       writer.close();
