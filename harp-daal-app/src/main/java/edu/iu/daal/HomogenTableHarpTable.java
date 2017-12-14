@@ -37,6 +37,7 @@ import com.intel.daal.data_management.data.NumericTable;
 /**
  * @brief A class to convert data structure between DAAL's HomogenNumericTable
  * and Harp's Table 
+ * size limitation of java object 
  */
 public class HomogenTableHarpTable<I, E extends Array<I>, T extends Table<E> > {
 

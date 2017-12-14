@@ -39,10 +39,6 @@ import it.unimi.dsi.fastutil.objects.ObjectIterator;
 
 import org.apache.hadoop.mapreduce.Mapper.Context;
 
-// using HJlib 
-import static edu.rice.hj.Module0.launchHabaneroApp;
-import static edu.rice.hj.Module1.forallChunked;
-
 //for BSP-LRT
 import java.util.*;
 import java.util.BitSet;

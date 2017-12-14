@@ -42,15 +42,10 @@ import java.util.*;
 public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object, Object> {
 	private int numMappers;
 	private int numColor;
-	private int isom;
-	private int sizeTemplate;
 	private String templateFile;
-	private String wholeTemplateName;
-	// private ArrayList<SCSubJob> subjoblist;
 	private Random rand = new Random();
-	private int numMaxThreads;
 	private int numThreads;
-    private int harpThreads; 
+    private int harpThreads; //always use the maximum hardware threads to load in data and convert data
 	private int numIteration;
     private int numCores;
     private int tpc;

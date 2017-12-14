@@ -56,9 +56,8 @@ public class PointLoadTask implements
     boolean isSuccess = false;
     do {
       try {
-        List<double[]> array =
-          loadPoints(fileName, pointsPerFile,
-            cenVecSize, conf);
+        // List<double[]> array = loadPoints(fileName, pointsPerFile, cenVecSize, conf);
+        List<double[]> array = loadPoints2(fileName, pointsPerFile, cenVecSize, conf);
         return array;
       } catch (Exception e) {
         LOG.error("load " + fileName
@@ -70,6 +69,52 @@ public class PointLoadTask implements
     } while (!isSuccess && count < 100);
     LOG.error("Fail to load files.");
     return null;
+  }
+
+  // create a loadPoints that ignores the points per file
+  public static List<double[]> loadPoints2(String file,
+    int pointsPerFile, int cenVecSize,
+    Configuration conf) throws Exception {
+
+    System.out.println("filename: "+file );
+    List<double[]> points = new LinkedList<double[]>();
+
+    // double[] trainingData = new double[pointsPerFile * cenVecSize];
+    // double[] labelData = new double[pointsPerFile * 1]; 
+	List<Double> labelData = new LinkedList<Double>();
+
+    Path pointFilePath = new Path(file);
+    FileSystem fs =
+      pointFilePath.getFileSystem(conf);
+    FSDataInputStream in = fs.open(pointFilePath);
+	String readline = null;
+
+    int k =0;
+    try{
+
+	  while ((readline = in.readLine()) != null)
+	  {
+        String[] line = readline.split(",");
+		double[] trainpoint = new double[cenVecSize];
+        for(int j = 0; j < cenVecSize; j++)
+          trainpoint[j] = Double.parseDouble(line[j]);
+
+		points.add(trainpoint);
+		labelData.add(Double.parseDouble(line[cenVecSize]));
+
+	  }
+
+	  //convert labelData to primitive array
+	  double[] labelDataArray = new double[labelData.size()];
+	  for(int j=0;j<labelData.size();j++)
+		  labelDataArray[j] = labelData.get(j);
+
+      points.add(labelDataArray);
+
+    } finally{
+      in.close();
+    }
+    return points;
   }
 
   public static List<double[]> loadPoints(String file,
