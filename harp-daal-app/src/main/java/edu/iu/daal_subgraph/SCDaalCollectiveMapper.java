@@ -292,7 +292,8 @@ public class SCDaalCollectiveMapper  extends CollectiveMapper<String, String, Ob
         full_count = graph_count.do_full_count(numIteration);
         //
 		long computation_end = System.currentTimeMillis();
-        long local_count_time = (computation_end - computation_start)/1000;
+        // long local_count_time = (computation_end - computation_start)/1000;
+        long local_count_time = graph_count.get_subs_time()/1000;
         long local_comm_time = graph_count.get_comm_time()/1000;
         long local_sync_time = graph_count.get_sync_time()/1000;
 		long local_comp_time = graph_count.get_comp_time()/1000;
@@ -424,7 +425,6 @@ public class SCDaalCollectiveMapper  extends CollectiveMapper<String, String, Ob
         // double prob_colorful = Util.factorial(num_colors) /
         //         ( Util.factorial(num_colors - t_num_vert) * Math.pow(num_colors, t_num_vert) );
         //do not use util.factorial for large value
-        
         double factor_val = (double)num_colors;
         for(int f = num_colors - 1; f > (num_colors - t_num_vert); f--)
             factor_val *= f;
