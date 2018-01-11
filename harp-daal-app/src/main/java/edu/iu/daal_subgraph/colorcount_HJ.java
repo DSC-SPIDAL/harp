@@ -226,24 +226,33 @@ public class colorcount_HJ {
     private static DaalContext daal_Context = new DaalContext();
 
     // -------------------------------- Misc --------------------------------
-    
+    // all the var with postfix _prev refers to the value in computing 
+	// previous sub templates
     // record computation time 
     private long start_comp = 0;
+	private long start_sub = 0;
     // avg computation time of all iterations
+	private long time_subs = 0;
     private long time_comp = 0;
     private long time_comp_pip = 0; //within pipeline
+	private long time_comp_prev = 0;
+    private long time_comp_pip_prev = 0; //within pipeline
 
     //global comm time, excluding the waiting time on local 
     //computation
     private long start_comm = 0;
     private long time_comm = 0;
     private long time_comm_pip = 0; //within pipline
+	private long time_comm_prev = 0;
+    private long time_comm_pip_prev = 0; //within pipline
 
     //local sync time, including comm time and waiting time because of 
     //load imbalance
     private long start_sync = 0;
     private long time_sync = 0;
     private long time_sync_pip = 0; //within pipeline
+	private long time_sync_prev = 0;
+    private long time_sync_pip_prev = 0; //within pipeline
 
     private long start_misc = 0;
 
@@ -258,10 +267,14 @@ public class colorcount_HJ {
 
 	//trace mem usage and comm data throughput
 	//in GB unit
-	private double peak_mem;
-	private double peak_mem_comm;
-	private double transfer_data;
-    
+	private double peak_mem = 0;
+	private double peak_mem_comm = 0;
+	private double transfer_data = 0;
+
+	private double peak_mem_all = 0;
+	private double peak_mem_comm_all = 0;
+	private double transfer_data_prev = 0;
+
     /**
      * @brief initialize local graph 
      *
@@ -491,7 +504,6 @@ public class colorcount_HJ {
         // start the main loop of iterations
         for(int cur_itr = 0; cur_itr < this.num_iter; cur_itr++)
         {
-            // if (threadIdx == 0)
             this.cur_iter = cur_itr;
 
             //start sampling colors
@@ -501,7 +513,11 @@ public class colorcount_HJ {
             }
 
             // --------- daal kernel for sampling ---------
+			this.start_sub = System.currentTimeMillis();
+			this.start_comp = System.currentTimeMillis();
             scAlgorithm.input.sampleColors();
+			this.time_subs += (System.currentTimeMillis() - this.start_sub);
+			this.time_comp += (System.currentTimeMillis() - this.start_comp);
 
             // this.barrier.await();
             if(this.verbose){
@@ -511,29 +527,33 @@ public class colorcount_HJ {
             // start doing counting
             for( int s = this.subtemplate_count -1; s > 0; --s)
             {
-                // TODO: daa kernel to do local computation for subtemplate s 
+				
                 //get num_vert of subtemplate s
 				//test sub itr 3 trace comb len 495
 				// write vtune flag files to disk
-				if (s == 3)
-				{
-					java.nio.file.Path vtune_file = java.nio.file.Paths.get("/N/u/lc37/WorkSpace/Hsw_Test/harp-2018/test_scripts/vtune-flag.txt");
-					String flag_trigger = "Start training process and trigger vtune profiling.";
-					try {
-						java.nio.file.Files.write(vtune_file, flag_trigger.getBytes());
-					}catch (IOException e)
-					{
-
-					}
-				}
+				// if (s == 3)
+				// {
+				// 	java.nio.file.Path vtune_file = java.nio.file.Paths.get("/N/u/lc37/WorkSpace/Hsw_Test/harp-2018/test_scripts/vtune-flag.txt");
+				// 	String flag_trigger = "Start training process and trigger vtune profiling.";
+				// 	try {
+				// 		java.nio.file.Files.write(vtune_file, flag_trigger.getBytes());
+				// 	}catch (IOException e)
+				// 	{
+                //
+				// 	}
+				// }
 				
+				// reset peak mem value befor each sub-tempalte 
+				this.scAlgorithm.input.resetPeakMem();
+				this.peak_mem_comm = 0.0;
+
 				//record the local computation time 
 				this.start_comp = System.currentTimeMillis();
+				this.start_sub = System.currentTimeMillis();
 
                 this.num_verts_sub_ato = scAlgorithm.input.getSubVertN(s);
                 if(this.verbose)
                     LOG.info("Initing Subtemplate "+ s + ", t verts: " + num_verts_sub_ato);
-
 
                 //hit the bottom of subtemplate chain, dangling template node
                 if( this.num_verts_sub_ato == 1){
@@ -569,8 +589,47 @@ public class colorcount_HJ {
                         regroup_update_all(s);
                 }
 
+				// record var for each sub-template
                 if (this.verbose)
+				{
+					// LOG.info("sub id: " + s + "; ");
                     LOG.info("sub id: " + s + " local counts: " + (this.scAlgorithm.parameter.getTotalCounts()) + " update remote counts: " + final_update_comm_counts);
+					LOG.info("Process: "+local_mapper_id+" trace sub id: " + s + " CombNum: " + this.scAlgorithm.input.getCombCur(s) + " CombActiveNum: " + this.scAlgorithm.input.getCombActiveCur(s));
+
+					if (this.rotation_pipeline)
+					{
+						LOG.info("Process: "+local_mapper_id+" trace sub id: " + s + " Comp Time: " + (this.time_comp_pip - this.time_comp_pip_prev)/(double)1000 + " s");
+						LOG.info("Process: "+local_mapper_id+" trace sub id: " + s + " Com Time: " + (this.time_comm_pip - this.time_comm_pip_prev)/(double)1000 + " s");
+						LOG.info("Process: "+local_mapper_id+" trace sub id: " + s + " Sync Time: " + (this.time_sync_pip - this.time_sync_pip_prev)/(double)1000 + " s");
+					}
+					else
+					{
+						LOG.info("Process: "+local_mapper_id+" trace sub id: " + s + " Comp Time: " + (this.time_comp - this.time_comp_prev)/(double)1000 + " s");
+						LOG.info("Process: "+local_mapper_id+" trace sub id: " + s + " Com Time: " + (this.time_comm - this.time_comm_prev)/(double)1000 + " s");
+						LOG.info("Process: "+local_mapper_id+" trace sub id: " + s + " Sync Time: " + (this.time_sync - this.time_sync_prev)/(double)1000 + " s");
+					}
+
+					LOG.info("Process: "+local_mapper_id+" trace sub id: " + s + " Total Time: " + (System.currentTimeMillis() - this.start_sub)/(double)1000 + " s");
+					LOG.info("Process: "+local_mapper_id+" trace sub id: " + s + " Comm Data: " + (this.transfer_data - this.transfer_data_prev)/(double)(1024*1024*1024) + " GB");
+
+					// get peak mem and peak mem comm val for each sub-template 
+					this.peak_mem = this.scAlgorithm.input.getPeakMem();
+					LOG.info("Process: "+local_mapper_id+" trace sub id: " + s + " Peak Mem: " + (this.peak_mem) + " GB");
+					LOG.info("Process: "+local_mapper_id+" trace sub id: " + s + " Peak Mem Comm: " + (this.peak_mem_comm) + " GB");
+
+					this.time_comp_prev = this.time_comp;
+					this.time_comp_pip_prev = this.time_comp_pip;
+					this.time_comm_prev = this.time_comm;
+					this.time_comm_pip_prev = this.time_comm_pip;
+					this.time_sync_prev = this.time_sync;
+					this.time_sync_pip_prev = this.time_sync_pip;
+					this.time_subs += (System.currentTimeMillis() - this.start_sub);
+
+					this.transfer_data_prev = this.transfer_data;
+					this.peak_mem_all = ( this.peak_mem > this.peak_mem_all ) ? this.peak_mem : this.peak_mem_all;
+					this.peak_mem_comm_all = ( this.peak_mem_comm > this.peak_mem_comm_all ) ? this.peak_mem_comm : this.peak_mem_comm_all;
+				}
+				
 
                 this.scAlgorithm.input.clearDTSub(s);
                 this.context.progress();
@@ -580,8 +639,12 @@ public class colorcount_HJ {
             if(verbose)
                 LOG.info("Done with initialization. Doing full count");
 
+			// reset peak mem value befor each sub-tempalte 
+			this.scAlgorithm.input.resetPeakMem();
+			this.peak_mem_comm = 0.0;
 			
 			this.start_comp = System.currentTimeMillis();
+			this.start_sub = System.currentTimeMillis();
 
             this.scAlgorithm.input.initDTSub(0);
             scAlgorithm.computeNonBottom(0);
@@ -602,43 +665,25 @@ public class colorcount_HJ {
                     regroup_update_all(0);
             }
 
+			// record peak mem val for last template
+			this.peak_mem = this.scAlgorithm.input.getPeakMem();
+			this.peak_mem_all = ( this.peak_mem > this.peak_mem_all ) ? this.peak_mem : this.peak_mem_all;
+			this.peak_mem_comm_all = ( this.peak_mem_comm > this.peak_mem_comm_all ) ? this.peak_mem_comm : this.peak_mem_comm_all;
+
+			this.time_subs += (System.currentTimeMillis() - this.start_sub);
+
             this.scAlgorithm.input.clearDTSub(0);
             //add counts from every iteration
             this.cumulate_count_ato += this.scAlgorithm.parameter.getTotalCounts();
             this.cumulate_count_ato += final_update_comm_counts;
-
-            //TODO harp kernel to release comm data
-            // free comm data
-            // if (threadIdx == 0)
-            // {
-            //     if (this.mapper_num > 1)  
-            //     {
-            //         ResourcePool.get().clean();
-            //         ConnPool.get().clean();
-            //     }
-            //     System.gc();
-            //     this.context.progress();
-            // }
 
         } // end of an iteration
 
         //----------------------- end of color_counting -----------------
         double final_count = cumulate_count_ato / (double) this.num_iter;
 		//get the peak memory information
-		peak_mem = this.scAlgorithm.input.getPeakMem();
-		
-        //
-        // //free memory
-        // this.send_vertex_table = null;
-        // this.comm_vertex_table = null;
-        // this.update_map = null;
-        //
-        // this.compress_cache_array = null;
-        // this.compress_cache_index = null;
-        //
-        // this.map_ids_cache_pip = null;
-        // this.chunk_ids_cache_pip = null;
-        // this.chunk_internal_offsets_cache_pip = null;
+		// peak_mem = this.scAlgorithm.input.getPeakMem();
+        
         return final_count;
     }
 
@@ -2105,14 +2150,19 @@ public class colorcount_HJ {
         return this.time_comm;
     }
 
+	public long get_subs_time()
+	{
+		return this.time_subs;
+	}
+
 	public double getPeakMem()
 	{
-		return this.peak_mem;
+		return this.peak_mem_all;
 	}
 
 	public double getPeakCommMem()
 	{
-		return this.peak_mem_comm;
+		return this.peak_mem_comm_all;
 	}
 
     public long get_sync_time()
