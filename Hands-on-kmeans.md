@@ -13,6 +13,21 @@ Users are supposed to get an access to a machine with sudo permission and pre-in
 
 ## Prerequisites
 
+### Install docker
+
+Run the following command to install docker
+
+```bash
+sudo curl -sSL https://get.docker.com/ | s
+```
+
+If docker is not started start it 
+
+```bash
+sudo su -
+service docker start
+```
+
 ### Download Docker Image and launch Container Instance
 
 Download the image and launch the container. Before downloading check weather the VM already has the docker image.
