@@ -177,7 +177,7 @@ ${HADOOP_HOME}/sbin/start-dfs.sh
 ${HADOOP_HOME}/sbin/start-yarn.sh
 ```
 
-You may need to change the yarn-site.xml file in-order to run applications because the defualt values may be too high.
+You may need to change the yarn-site.xml file in-order to run applications because the defualt values may be too high. Make sure to restart hadoop using above commands if you change the configurations.
 
 ```bash
 ## stop all services
@@ -248,6 +248,17 @@ by maven at the root harp directory (where the pom.xml resides)
 cd /harp
 mvn package
 ```
+
+Important: Make sure the memory set for each mapper in the script is less than the maximum memory allowed for a container as set in yarn-site.xml (yarn.scheduler.maximum-allocation-mb).
+
+```bash
+cd /harp/harp-daal-app/test_scripts
+vim harp-daal-tutorial-kmeans.sh
+```
+Change the setting
+
+Mem=6000
+
 
 and re-run the application on Hadoop cluster
 ```bash
