@@ -177,6 +177,31 @@ ${HADOOP_HOME}/sbin/start-dfs.sh
 ${HADOOP_HOME}/sbin/start-yarn.sh
 ```
 
+You may need to change the yarn-site.xml file in-order to run applications because the defualt values may be too high.
+
+```bash
+## stop all services
+vim ${HADOOP_HOME}/etc/hadoop/yarn-site.xml
+```
+
+```xml
+  <property>
+    <name>yarn.scheduler.maximum-allocation-mb</name>
+    <value>4096</value>
+    <description>Maximum size of a container</description>
+  </property>
+  <property>
+    <name>yarn.nodemanager.resource.memory-mb</name>
+    <value>12288</value>
+    <description>Maximum memory per node manager</description>
+  </property>
+  <property>
+    <name>yarn.nodemanager.disk-health-checker.max-disk-utilization-per-disk-percentage</name>
+    <value>99</value>
+    <description>Set this property higher than your disk usage percentage</description>
+  </property>
+```
+
 ## Program K-means via Java APIs 
 
 Harp-DAAL framework provides developers of Java API to implement inter-mapper communication patterns and invoke intra-node DAAL kernels. The K-means source files are located at 
