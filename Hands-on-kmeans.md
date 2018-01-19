@@ -23,17 +23,24 @@ sudo curl -sSL https://get.docker.com/ | s
 
 If docker is not started start it 
 
+Ubuntu
+
 ```bash
 sudo su -
 service docker start
+```
+
+RedHat Linux
+
+```bash
+# start the docker
+sudo systemctl start docker
 ```
 
 ### Download Docker Image and launch Container Instance
 
 Download the image and launch the container. Before downloading check weather the VM already has the docker image.
 ```bash
-# start the docker
-sudo systemctl start docker
 # Check installed images
 sudo docker image ls
 # Download an image if not installed otherwise skip this step
