@@ -49,6 +49,12 @@ sudo docker pull dscspidal/harp-daal
 sudo docker run -it dscspidal/harp-daal /etc/bootstrap.sh -bash
 ```
 
+If you are loading the docker image from file system use the following command. Make sure to use the correct file name of the docker image.
+
+```
+docker load < dscspidal_harp.docker
+```
+
 After executing the last command you will be logged on to the docker image and use the 
 following commands to build the latest version of harp-daal
 
