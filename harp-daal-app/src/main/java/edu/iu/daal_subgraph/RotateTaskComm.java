@@ -35,12 +35,15 @@ public class RotateTaskComm implements Runnable {
     private int local_mapper_id;
     private int mapper_num;
     private int sub_id;
+	private long start_time;
     private long time_sync;
     private long time_comm;
+    private long time_comm_single;
     private long time_sync_pip;
     private long time_comm_pip;
 
     private double transfer_comm_data;
+    private double transfer_comm_data_pipstep;
     private double peak_data_comm;
     private boolean enter_pip;
 
@@ -59,11 +62,14 @@ public class RotateTaskComm implements Runnable {
         this.pipeline_send_id = -1;
         this.pipeline_recv_id = -1;
         this.pipeline_update_id = -1;
+		this.start_time = 0;
         this.time_sync = 0;
         this.time_comm = 0;
+		this.time_comm_single=0;
         this.time_sync_pip = 0;
         this.time_comm_pip = 0;
         this.transfer_comm_data = 0.0;
+		this.transfer_comm_data_pipstep = 0.0;
         this.peak_data_comm = 0.0;
 
         this.local_mapper_id = local_mapper_id;
@@ -103,6 +109,7 @@ public class RotateTaskComm implements Runnable {
     long getCommTimePip() {return this.time_comm_pip; }
 
     double getTransferData() {return this.transfer_comm_data;}
+    double getTransferDataPipStep() {return this.transfer_comm_data_pipstep;}
     double getPeakDataComm() {return this.peak_data_comm; }
 
     void set_enter_pip(boolean flag) { this.enter_pip = flag; }
@@ -162,6 +169,7 @@ public class RotateTaskComm implements Runnable {
             
             //record transfer data in bytes 
 			this.transfer_comm_data += ((parcel_v_num+1 + parcel_c_len*2)*4);
+			this.transfer_comm_data_pipstep = ((parcel_v_num+1 + parcel_c_len*2)*4); 
 
             //convert parcel index data from int to short
             short[] parcel_v_index_short = new short[parcel_c_len]; 
@@ -190,12 +198,14 @@ public class RotateTaskComm implements Runnable {
 
         } // end for parcels of a sender id
 
+		this.start_time = System.currentTimeMillis();
         LOG.info("Start rotate comm for subtemplate: " + this.sub_id + "; for pipeline send id: " + this.pipeline_send_id);
 
         this.mapper.regroup("sc", "regroup counts data", this.comm_data_table, new SCPartitioner2(this.mapper_num));
         this.mapper.barrier("sc", "all regroup sync");
 
         LOG.info("Finish rotate comm for subtemplate: " + this.sub_id + "; for pipeline send id: " + this.pipeline_send_id);
+		this.time_comm_single = (System.currentTimeMillis() - this.start_time);
 
         //update local g counts by adj from each other mapper
         //move this to daal side
@@ -256,10 +266,11 @@ public class RotateTaskComm implements Runnable {
         if (this.enter_pip)
             this.time_sync_pip += cur_sync_time;
 
-        // all reduce to get the miminal sync time from all the mappers, set that to the comm time
+        // all reduce to get the miminal com time from all the mappers, set that to the comm time
         Table<LongArray> comm_time_table = new Table<>(0, new LongArrMin());
         LongArray comm_time_array = LongArray.create(1, false);
-        comm_time_array.get()[0] = cur_sync_time;
+        // comm_time_array.get()[0] = cur_sync_time;
+        comm_time_array.get()[0] = this.time_comm_single;
         comm_time_table.addPartition(new Partition<>(0, comm_time_array));
         this.mapper.allreduce("sc", "get-global-comm-time", comm_time_table);
         this.time_comm += (comm_time_table.getPartition(0).get().get()[0]);
