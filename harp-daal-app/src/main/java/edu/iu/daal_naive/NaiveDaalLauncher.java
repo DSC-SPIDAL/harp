@@ -60,17 +60,10 @@ implements Tool {
 
     DistributedCache.createSymlink(conf);
     DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libJavaAPI.so#libJavaAPI.so"), conf);
-    DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libdaal_core.so#libdaal_core.so"), conf);
-    DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libdaal_thread.so#libdaal_thread.so"), conf);
-    DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libdaal_sequential.so#libdaal_sequential.so"), conf);
-
     DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbb.so.2#libtbb.so.2"), conf);
     DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbb.so#libtbb.so"), conf);
     DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbbmalloc.so.2#libtbbmalloc.so.2"), conf);
     DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbbmalloc.so#libtbbmalloc.so"), conf);
-    DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libiomp5.so#libiomp5.so"), conf);
-	DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libhdfs.so#libhdfs.so"), conf);
-    DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libhdfs.so.0.0.0#libhdfs.so.0.0.0"), conf);
 
     if (args.length < 13) {
       System.err.println("Usage: edu.iu.daal_naive "
@@ -79,7 +72,6 @@ implements Tool {
                 + "<input ground truth dir>"
                 + "<workDirPath> "
                 + "<mem per mapper>"
-// <<<<<<< HEAD
                 + "<vec size>"
                 + "<num classes>"
                 + "<num testpoints>"
@@ -87,10 +79,6 @@ implements Tool {
 				+ "<generateData>" 
 				+ "<num of generated train points"
 				+ "<num of train files");
-// =======
-//                 + "<num mappers> <thread per worker>"
-//                 + "<class number=20> <vectorSize=20> <pointsPerFile=2000> <testSize=2000>");
-// >>>>>>> 419fc2fb06407ed7facb0a05d2d2206ef9b21b3b
       ToolRunner.printGenericCommandUsage(System.err);
       return -1;
     }
@@ -100,7 +88,6 @@ implements Tool {
     String testGroundTruthDirPath = args[2];            
     String workDirPath = args[3];    
     int mem = Integer.parseInt(args[4]);
-// <<<<<<< HEAD
     int vecsize = Integer.parseInt(args[5]);
     int num_class = Integer.parseInt(args[6]);
     int num_test = Integer.parseInt(args[7]);
@@ -119,48 +106,15 @@ implements Tool {
 
     launch(inputDirPath, testDirPath, testGroundTruthDirPath, workDirPath, mem, vecsize, num_class, num_test, numMapTasks, 
 			numThreadsPerWorker, generateData, num_train_points, numfiles);
-// =======
-//     int batchSize = Integer.parseInt(args[5]);     //no use, only for compatibility 
-//     int numMapTasks = Integer.parseInt(args[6]);      
-//     int numThreadsPerWorker = Integer.parseInt(args[7]);
-//     int pointsPerFile = 2000;
-//     int vectorSize = 20;
-//     int nClasses = 20;
-//     int testSize = 2000;
-//
-//     if (args.length == 12) {
-//         nClasses = Integer.parseInt(args[8]);
-//         vectorSize = Integer.parseInt(args[9]); 
-//         pointsPerFile = Integer.parseInt(args[10]); 
-//         testSize = Integer.parseInt(args[11]); 
-//     }
-//
-//     System.out.println("Number of Map Tasks = "+ numMapTasks);
-//     System.out.println("Classes=" + nClasses + ",vectorSize=" + vectorSize +
-//             ",pointsPerFile=" + pointsPerFile + ",testSize=" + testSize);
-//
-//     if (mem < 1000) {
-//       return -1;
-//     }
-//
-//     launch(inputDirPath, testDirPath, testGroundTruthDirPath, workDirPath, mem, 
-//             nClasses, vectorSize, pointsPerFile, testSize,
-//             numMapTasks, numThreadsPerWorker);
-// >>>>>>> 419fc2fb06407ed7facb0a05d2d2206ef9b21b3b
     return 0;
 }
 
 private void launch(String inputDirPath, 
   String testDirPath, 
   String testGroundTruthDirPath, 
-// <<<<<<< HEAD
   String workDirPath, int mem, int vecsize, int num_class, int num_test, 
   int numMapTasks, int numThreadsPerWorker, boolean generateData, int num_train_points,
   int numfiles) throws IOException,
-// =======
-//   String workDirPath, int mem, int nClasses, int vectorSize, int pointsPerFile,int testSize, 
-//   int numMapTasks, int numThreadsPerWorker) throws IOException,
-// >>>>>>> 419fc2fb06407ed7facb0a05d2d2206ef9b21b3b
 URISyntaxException, InterruptedException,
 ExecutionException, ClassNotFoundException {
 
@@ -181,7 +135,6 @@ ExecutionException, ClassNotFoundException {
   Path outputDir = new Path(workDirPath, "output");
   long startTime = System.currentTimeMillis();
 
-// <<<<<<< HEAD
   //test and generate training datasets
   if (generateData)
   {
@@ -191,11 +144,6 @@ ExecutionException, ClassNotFoundException {
   }
 
   runNaive(inputDir, testDirPath, testGroundTruthDirPath, mem, vecsize, num_class, num_test, numMapTasks,
-// =======
-//   runNaive(inputDir, testDirPath, testGroundTruthDirPath, workDirPath, mem, 
-//           nClasses, vectorSize, pointsPerFile, testSize,
-//           numMapTasks,
-// >>>>>>> 419fc2fb06407ed7facb0a05d2d2206ef9b21b3b
       numThreadsPerWorker, modelDir,
       outputDir, configuration);
 
@@ -205,13 +153,7 @@ ExecutionException, ClassNotFoundException {
         + (endTime - startTime));
 }
 
-// <<<<<<< HEAD
 private void runNaive(Path inputDir, String testDirPath, String testGroundTruthDirPath, int mem, int vecsize, int num_class, int num_test, 
-// =======
-// private void runNaive(Path inputDir, String testDirPath, String testGroundTruthDirPath, String workDirPath,
-//         int mem, 
-//         int nClasses, int vectorSize, int pointsPerFile, int testSize, 
-// >>>>>>> 419fc2fb06407ed7facb0a05d2d2206ef9b21b3b
     int numMapTasks, int numThreadsPerWorker,
      Path modelDir, Path outputDir,
     Configuration configuration)
@@ -228,12 +170,7 @@ private void runNaive(Path inputDir, String testDirPath, String testGroundTruthD
           Calendar.getInstance().getTime()));
 
     Job naiveJob =
-// <<<<<<< HEAD
       configureNaiveJob(inputDir, testDirPath, testGroundTruthDirPath, mem, vecsize, num_class, num_test,
-// =======
-//       configureNaiveJob(inputDir, testDirPath, testGroundTruthDirPath, workDirPath, mem, 
-//               nClasses, vectorSize, pointsPerFile, testSize,
-// >>>>>>> 419fc2fb06407ed7facb0a05d2d2206ef9b21b3b
         numMapTasks, numThreadsPerWorker,
         modelDir, outputDir, configuration);
 
@@ -260,33 +197,19 @@ private void runNaive(Path inputDir, String testDirPath, String testGroundTruthD
   }
 
   private Job configureNaiveJob(Path inputDir,
-// <<<<<<< HEAD
     String testDirPath, String testGroundTruthDirPath,
     int mem, int vecsize, int num_class, int num_test, int numMapTasks, int numThreadsPerWorker,
-// =======
-//     String testDirPath, String testGroundTruthDirPath, String workDirPath,
-//     int mem, int nClasses, int vectorSize, int pointsPerFile, int testSize,
-//     int numMapTasks, int numThreadsPerWorker,
-// >>>>>>> 419fc2fb06407ed7facb0a05d2d2206ef9b21b3b
     Path modelDir, Path outputDir,
     Configuration configuration)
     throws IOException, URISyntaxException {
 
     configuration.set(Constants.TEST_FILE_PATH, testDirPath);
     configuration.set(Constants.TEST_TRUTH_PATH, testGroundTruthDirPath);
-    configuration.set(Constants.WORK_DIR, workDirPath);
     configuration.setInt(Constants.NUM_MAPPERS, numMapTasks);
     configuration.setInt(Constants.NUM_THREADS, numThreadsPerWorker);
-// <<<<<<< HEAD
     configuration.setInt(Constants.VECTOR_SIZE, vecsize);
     configuration.setInt(Constants.NUM_CLASS, num_class);
     configuration.setInt(Constants.NUM_TEST, num_test);
-// =======
-//     configuration.setInt(Constants.NUM_CLASSES, nClasses);
-//     configuration.setInt(Constants.VECTOR_SIZE, vectorSize);
-//     configuration.setInt(Constants.POINTS_PERFILE, pointsPerFile);
-//     configuration.setInt(Constants.TEST_SIZE, testSize);
-// >>>>>>> 419fc2fb06407ed7facb0a05d2d2206ef9b21b3b
 
     Job job = Job.getInstance(configuration, "naive_job");
     JobConf jobConf = (JobConf) job.getConfiguration();
@@ -301,8 +224,11 @@ private void runNaive(Path inputDir, String testDirPath, String testGroundTruthD
     // 125000
     jobConf.setInt(
       "mapreduce.map.collective.memory.mb", mem);
-
-    int xmx = (int) Math.ceil((mem - 2000)*0.5);
+    // mapreduce.map.collective.java.opts
+    // -Xmx120000m -Xms120000m
+    // int xmx = (mem - 5000) > (mem * 0.5)
+    //   ? (mem - 5000) : (int) Math.ceil(mem * 0.5);
+    int xmx = (int) Math.ceil((mem - 5000)*0.5);
     int xmn = (int) Math.ceil(0.25 * xmx);
     jobConf.set(
       "mapreduce.map.collective.java.opts",
