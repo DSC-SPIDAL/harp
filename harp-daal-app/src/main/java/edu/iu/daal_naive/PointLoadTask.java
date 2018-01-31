@@ -36,13 +36,12 @@ public class PointLoadTask implements
   protected static final Log LOG = LogFactory
     .getLog(PointLoadTask.class);
 
-  private int pointsPerFile;
+  // private int pointsPerFile;
   private int cenVecSize;
   private Configuration conf;
 
-  public PointLoadTask(int pointsPerFile,
-    int cenVecSize, Configuration conf) {
-    this.pointsPerFile = pointsPerFile;
+  public PointLoadTask(int cenVecSize, Configuration conf) {
+    // this.pointsPerFile = pointsPerFile;
     this.cenVecSize = cenVecSize;
     this.conf = conf;
   }
@@ -51,13 +50,11 @@ public class PointLoadTask implements
   public List<double[]> run(String fileName)
     throws Exception {
     long threadId = Thread.currentThread().getId();
-   // System.out.println("PointLoadTaskthread "+threadId);
     int count = 0;
     boolean isSuccess = false;
     do {
       try {
-        // List<double[]> array = loadPoints(fileName, pointsPerFile, cenVecSize, conf);
-        List<double[]> array = loadPoints2(fileName, pointsPerFile, cenVecSize, conf);
+        List<double[]> array = loadPoints(fileName, cenVecSize, conf);
         return array;
       } catch (Exception e) {
         LOG.error("load " + fileName
@@ -72,15 +69,12 @@ public class PointLoadTask implements
   }
 
   // create a loadPoints that ignores the points per file
-  public static List<double[]> loadPoints2(String file,
-    int pointsPerFile, int cenVecSize,
+  public static List<double[]> loadPoints(String file, int cenVecSize,
     Configuration conf) throws Exception {
 
     System.out.println("filename: "+file );
     List<double[]> points = new LinkedList<double[]>();
 
-    // double[] trainingData = new double[pointsPerFile * cenVecSize];
-    // double[] labelData = new double[pointsPerFile * 1]; 
 	List<Double> labelData = new LinkedList<Double>();
 
     Path pointFilePath = new Path(file);
@@ -117,12 +111,20 @@ public class PointLoadTask implements
     return points;
   }
 
-  public static List<double[]> loadPoints(String file,
+  /**
+   * @brief deprecated load in function
+   *
+   * @param file
+   * @param pointsPerFile
+   * @param cenVecSize
+   * @param conf
+   *
+   * @return 
+   */
+  public static List<double[]> loadPointsOld(String file,
     int pointsPerFile, int cenVecSize,
     Configuration conf) throws Exception {
     System.out.println("filename: "+file );
-    LOG.info("LoadPoints: pointsPerFile=" + pointsPerFile + 
-            " cenVecSize=" + cenVecSize);
     List<double[]> points = new LinkedList<double[]>();
     double[] trainingData =
       new double[pointsPerFile * cenVecSize];

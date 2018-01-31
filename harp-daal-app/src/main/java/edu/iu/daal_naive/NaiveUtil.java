@@ -58,8 +58,7 @@ public class NaiveUtil{
 			new LinkedList<>();
 		List<List<double[]>> arrays = new LinkedList<List<double[]>>();
 		for (int i = 0; i < numThreads; i++) {
-			tasks.add(new PointLoadTask(pointsPerFile,
-						cenVecSize, conf));
+			tasks.add(new PointLoadTask(cenVecSize, conf));
 		}
 		DynamicScheduler<String, List<double[]>, PointLoadTask> compute =
 			new DynamicScheduler<>(tasks);
