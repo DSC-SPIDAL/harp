@@ -102,5 +102,11 @@ website/static/
 run_ctags.sh
 tags
 srclist
+# <<<<<<< HEAD
 sytastic_java_config
 .osync_workdir
+# =======
+
+# custom
+dataset/
+# >>>>>>> 419fc2fb06407ed7facb0a05d2d2206ef9b21b3b

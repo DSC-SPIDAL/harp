@@ -30,6 +30,12 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.BufferedWriter;
+import java.nio.DoubleBuffer;
+import java.nio.FloatBuffer;
+import java.io.OutputStreamWriter;
+import org.apache.hadoop.fs.FSDataOutputStream;
+
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -76,10 +82,18 @@ public class NaiveDaalCollectiveMapper
 extends
 CollectiveMapper<String, String, Object, Object>{
 
+// <<<<<<< HEAD
   private int pointsPerFile = 2000;                         
   private int vectorSize = 20;
   private long nClasses = 20;
   private int num_test = 10;
+// =======
+//   //20news dataset  
+//   private int pointsPerFile = 15076;                             //change
+//   private int vectorSize = 2000;
+//   private long nClasses = 20;
+//   private int testSize = 2000;
+// >>>>>>> 419fc2fb06407ed7facb0a05d2d2206ef9b21b3b
   private int numMappers;
   private int numThreads; //used in computation
   private int harpThreads; //used in data conversion
@@ -87,7 +101,11 @@ CollectiveMapper<String, String, Object, Object>{
   private PredictionResult predictionResult;
   private String testFilePath;
   private String testGroundTruth;
+// <<<<<<< HEAD
   private NumericTable testData;
+// =======
+//   private String workDirPath;
+// >>>>>>> 419fc2fb06407ed7facb0a05d2d2206ef9b21b3b
 
   //to measure the time
   private long load_time = 0;
@@ -129,8 +147,20 @@ CollectiveMapper<String, String, Object, Object>{
       testGroundTruth =
       configuration.get(Constants.TEST_TRUTH_PATH,"");
 
+// <<<<<<< HEAD
       //always use the maximum hardware threads to load in data and convert data 
       harpThreads = Runtime.getRuntime().availableProcessors();
+// =======
+//       nClasses = configuration
+//       .getInt(Constants.NUM_CLASSES, 20);
+//       vectorSize = configuration
+//       .getInt(Constants.VECTOR_SIZE, 20);
+//       pointsPerFile = configuration
+//       .getInt(Constants.POINTS_PERFILE, 2000);
+//       testSize = configuration.getInt(Constants.TEST_SIZE, 2000);
+//       workDirPath = configuration.get(Constants.WORK_DIR, "/daal_naive/");
+//
+// >>>>>>> 419fc2fb06407ed7facb0a05d2d2206ef9b21b3b
 
       LOG.info("Num Mappers " + numMappers);
       LOG.info("Num Threads " + numThreads);
@@ -397,7 +427,11 @@ CollectiveMapper<String, String, Object, Object>{
   private void testModel(String testFilePath, Configuration conf) throws java.io.FileNotFoundException, java.io.IOException {
     PredictionBatch algorithm = new PredictionBatch(daal_Context, Float.class, PredictionMethod.defaultDense, nClasses);
 
+// <<<<<<< HEAD
     // NumericTable testData = getNumericTableHDFS(daal_Context, conf, testFilePath, vectorSize, num_test);
+// =======
+//     NumericTable testData = getNumericTableHDFS(daal_Context, conf, testFilePath, vectorSize, testSize);
+// >>>>>>> 419fc2fb06407ed7facb0a05d2d2206ef9b21b3b
     algorithm.input.set(NumericTableInputId.data, testData);
     Model model = trainingResult.get(TrainingResultId.model);
     algorithm.input.set(ModelInputId.model, model);
@@ -411,10 +445,42 @@ CollectiveMapper<String, String, Object, Object>{
   }
 
   private void printResults(String testGroundTruth, PredictionResult predictionResult, Configuration conf) throws java.io.FileNotFoundException, java.io.IOException {
+// <<<<<<< HEAD
         NumericTable expected = getNumericTableHDFS(daal_Context, conf, testGroundTruth, 1, num_test);
+// =======
+//
+//         int nRows = testSize;
+//
+//         NumericTable expected = getNumericTableHDFS(daal_Context, conf, testGroundTruth, 1, nRows);
+// >>>>>>> 419fc2fb06407ed7facb0a05d2d2206ef9b21b3b
         NumericTable prediction = predictionResult.get(PredictionResultId.prediction);
         Service.printClassificationResult(expected, prediction, "Ground truth", "Classification results",
                 "NaiveBayes classification results (first 20 observations):", 20);
+
+        //save the pred
+        FloatBuffer result = FloatBuffer.allocate((int) (1 * nRows));
+        result = prediction.getBlockOfRows(0, nRows, result);        
+        
+        //String cFile = workDirPath + "/20news/out/pred";
+        String cFile = workDirPath + "/out/pred";
+        //    cenDir + File.separator + "out"
+        //    + File.separator + name;
+        Path cPath = new Path(cFile);
+        LOG.info("pred path: "
+                + cPath.toString());
+        FileSystem fs = FileSystem.get(conf);
+        fs.delete(cPath, true);
+        FSDataOutputStream out = fs.create(cPath);
+        BufferedWriter bw =
+            new BufferedWriter(new OutputStreamWriter(out));
+
+        for (int i = 0; i < nRows; i++) {
+            bw.write(String.format("%-6.3f", result.get(i)) + "\n");
+        }
+
+        bw.flush();
+        bw.close();
+
     }
 
 private NumericTable getNumericTableHDFS(DaalContext daal_Context, Configuration conf, String inputFiles, int vectorSize, int numRows) 

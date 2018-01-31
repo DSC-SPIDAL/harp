@@ -254,6 +254,16 @@ public class KmeansMapCollective
       workDirPath.toString());
     jobConfig.setInt(KMeansConstants.NUM_MAPPERS,
       numMapTasks);
+
+	jobConf.setInt(
+      "mapreduce.map.collective.memory.mb", 6000);
+    // mapreduce.map.collective.java.opts
+    int xmx = (int) Math.ceil((6000)*0.5);
+    int xmn = (int) Math.ceil(0.25 * xmx);
+    jobConf.set(
+      "mapreduce.map.collective.java.opts",
+      "-Xmx" + xmx + "m -Xms" + xmx + "m"
+        + " -Xmn" + xmn + "m");
     return job;
   }
 

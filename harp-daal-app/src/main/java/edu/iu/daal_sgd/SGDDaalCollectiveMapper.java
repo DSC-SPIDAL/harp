@@ -42,6 +42,8 @@ import java.util.Collections;
 import java.lang.Thread;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.FSDataOutputStream;
+
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapred.CollectiveMapper;
@@ -384,6 +386,8 @@ public class SGDDaalCollectiveMapper
             long ComputeEnd = 0;
             long ComputeTime = 0;
             // int innerItr = 0;
+            
+
 
             // -----------------------------------------
             // For iteration
@@ -494,6 +498,10 @@ public class SGDDaalCollectiveMapper
                 context.progress();
 
             }
+
+
+            //save model
+            saveModel(configuration);
 
             // Stop sgdCompute and rotation
             trainTimePerIter = ((double)iterationAccu)/numIterations;
@@ -1085,7 +1093,9 @@ public class SGDDaalCollectiveMapper
                                      long wMap_size,
                                      int iteration,
                                      Configuration configuration) throws InterruptedException {
-
+            //go to next
+            rmse = 0.0;
+ 
             DoubleArray array = DoubleArray.create(2, false);
 
             array.get()[0] = computeRMSEbyDAAL(Algo, model_data, rotator, hTableMap, hTableMap_daal, numWorkers, wMap_size);
@@ -1102,9 +1112,31 @@ public class SGDDaalCollectiveMapper
 
             LOG.info("RMSE After Iteration " + iteration + ": " + rmse);
             rmseTable.release();
-            rmse = 0.0;
-                    
         }
+
+        private void saveModel(Configuration conf) 
+            throws java.io.FileNotFoundException, java.io.IOException {
+
+            String cFile = modelDirPath + "/out/rmse";
+            Path cPath = new Path(cFile);
+            LOG.info("pred path: "
+                    + cPath.toString());
+            FileSystem fs = FileSystem.get(conf);
+            fs.delete(cPath, true);
+            FSDataOutputStream out = fs.create(cPath);
+            BufferedWriter bw =
+                new BufferedWriter(new OutputStreamWriter(out));
+
+            //for (int i = 0; i < nRows; i++) {
+            //    bw.write(String.format("%-6.3f", result.get(i)) + "\n");
+            //}
+            bw.write(String.format("%-6.3f", rmse) + "\n");
+
+            bw.flush();
+            bw.close();
+
+        }
+
 
         /**
          * @brief compute RMSE for test dataset
