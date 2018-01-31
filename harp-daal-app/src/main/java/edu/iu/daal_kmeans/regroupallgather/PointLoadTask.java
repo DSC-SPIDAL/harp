@@ -34,13 +34,20 @@ public class PointLoadTask implements
   protected static final Log LOG = LogFactory
     .getLog(PointLoadTask.class);
 
-  private int pointsPerFile;
   private int cenVecSize;
   private Configuration conf;
 
-  public PointLoadTask(int pointsPerFile,
-    int cenVecSize, Configuration conf) {
-    this.pointsPerFile = pointsPerFile;
+  /**
+   * @brief read in data points (dense matrix) 
+   * by multi Java threads
+   *
+   * @param cenVecSize
+   * @param conf
+   *
+   * @return 
+   */
+  public PointLoadTask(int cenVecSize, Configuration conf) 
+  {
     this.cenVecSize = cenVecSize;
     this.conf = conf;
   }
@@ -53,12 +60,9 @@ public class PointLoadTask implements
     do {
       try {
         
-        // double[] array = DataLoader.loadPoints(fileName, pointsPerFile,
-        //     cenVecSize, conf);
-        double[] array = DataLoader.loadPointsMMDense(fileName, pointsPerFile,
-            cenVecSize, conf);
-
+        double[] array = DataLoader.loadPointsMMDense(fileName, cenVecSize, conf);
         return array;
+
       } catch (Exception e) {
         LOG.error("load " + fileName
           + " fails. Count=" + count, e);
@@ -71,33 +75,4 @@ public class PointLoadTask implements
     return null;
   }
 
-  /**
-   * Load data points from a file.
-   * 
-   * @param file
-   * @param conf
-   * @return
-   * @throws IOException
-   */
-  public static double[] loadPoints(String file,
-    int pointsPerFile, int cenVecSize,
-    Configuration conf) throws Exception {
-    double[] points =
-      new double[pointsPerFile * cenVecSize];
-    Path pointFilePath = new Path(file);
-    FileSystem fs =
-      pointFilePath.getFileSystem(conf);
-    FSDataInputStream in = fs.open(pointFilePath);
-    try {
-      for (int i = 0; i < points.length;) {
-        points[i++] = Double.MAX_VALUE;
-        for (int j = 1; j < cenVecSize; j++) {
-          points[i++] = in.readDouble();
-        }
-      }
-    } finally {
-      in.close();
-    }
-    return points;
-  }
 }

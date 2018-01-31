@@ -193,7 +193,7 @@ public class KMUtil {
       new LinkedList<>();
     List<double[]> arrays = new LinkedList<>();
     for (int i = 0; i < numThreads; i++) {
-      tasks.add(new PointLoadTask(pointsPerFile,
+      tasks.add(new PointLoadTask(
         cenVecSize, conf));
     }
     DynamicScheduler<String, double[], PointLoadTask> compute =

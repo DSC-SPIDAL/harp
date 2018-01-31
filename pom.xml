@@ -119,7 +119,7 @@
                     <excludes>
                         <exclude>**/daal_als/*</exclude>
                         <exclude>**/daal_cov/*</exclude>
-                        <exclude>**/daal_kmeans/**/*</exclude>
+                        <!-- <exclude>**/daal_kmeans/**/*</exclude> -->
                         <exclude>**/daal_linreg/*</exclude>
                         <exclude>**/daal_mom/*</exclude>
                         <exclude>**/daal_naive/*</exclude>
@@ -128,7 +128,7 @@
                         <exclude>**/daal_qr/*</exclude>
                         <exclude>**/daal_ridgereg/*</exclude>
                         <exclude>**/daal_sgd/*</exclude>
-                        <!-- <exclude>**/daal_subgraph/*</exclude> -->
+                        <exclude>**/daal_subgraph/*</exclude>
                         <exclude>**/daal_svd/*</exclude>
                     </excludes>
                 </configuration>

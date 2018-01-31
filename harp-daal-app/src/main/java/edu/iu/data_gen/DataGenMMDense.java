@@ -38,6 +38,18 @@ public class DataGenMMDense implements Runnable {
   private String fileName;
   int vectorSize;
 
+  /**
+   * @brief multi-threading data points generator
+   * each thread generates pointsPerFile number of "vectorSize" dimensioned 
+   * point seperated by comma
+   *
+   * @param pointsPerFile
+   * @param localInputDir
+   * @param fileName
+   * @param vectorSize
+   *
+   * @return 
+   */
   public DataGenMMDense(int pointsPerFile,
     String localInputDir, String fileName,
     int vectorSize) {
@@ -59,6 +71,7 @@ public class DataGenMMDense implements Runnable {
         for (int j = 0; j < vectorSize; j++) {
           point = random.nextDouble()*2 -1;
           writer.write(String.valueOf(point));
+		  writer.write(",");
         }
         
 		writer.newLine();

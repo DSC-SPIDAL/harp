@@ -56,7 +56,7 @@ public class KMeansDaalCollectiveMapper
     extends
     CollectiveMapper<String, String, Object, Object> {
 
-        private int pointsPerFile;
+        // private int pointsPerFile;
         private int numCentroids;
         private int vectorSize;
         private int numCenPars;
@@ -93,9 +93,9 @@ public class KMeansDaalCollectiveMapper
         long startTime = System.currentTimeMillis();
         Configuration configuration =
             context.getConfiguration();
-        pointsPerFile =
-            configuration.getInt(
-                    Constants.POINTS_PER_FILE, 20);
+        // pointsPerFile =
+        //     configuration.getInt(
+        //             Constants.POINTS_PER_FILE, 20);
         numCentroids =
             configuration.getInt(
                     Constants.NUM_CENTROIDS, 20);
@@ -114,7 +114,7 @@ public class KMeansDaalCollectiveMapper
             configuration.getInt(
                     Constants.NUM_ITERATIONS, 10);
         cenDir = configuration.get(Constants.CEN_DIR);
-        LOG.info("Points Per File " + pointsPerFile);
+        // LOG.info("Points Per File " + pointsPerFile);
         LOG.info("Num Centroids " + numCentroids);
         LOG.info("Vector Size " + vectorSize);
         LOG.info("Num Mappers " + numMappers);
@@ -193,6 +193,7 @@ public class KMeansDaalCollectiveMapper
             for (int i = 0; i < numIterations; i++) {
 
 				//Convert Centroids data from Harp to DAAL
+				printTable(cenTable, 10, 10, i); 
 				convertCenTableHarpToDAAL(cenTable, cenTable_daal);
 				// specify centroids data to daal kernel 
 				kmeansLocal.input.set(InputId.inputCentroids, cenTable_daal);
@@ -203,7 +204,6 @@ public class KMeansDaalCollectiveMapper
 				// comm_allreduce(cenTable, pres);
 				// comm_broadcastreduce(cenTable, pres);
 				// comm_push_pull(cenTable, pres);
-				printTable(cenTable, 10, 10, i); 
 			}
             
 			// free memory and record time
@@ -228,7 +228,7 @@ public class KMeansDaalCollectiveMapper
 		 */
 		private List<double[]> LoadTrainingData()
 		{
-			List<double[]> pointArrays = KMUtil.loadPoints(this.fileNames, this.pointsPerFile,
+			List<double[]> pointArrays = KMUtil.loadPoints(this.fileNames,
                         this.vectorSize, this.conf, this.numThreads);
 			LOG.info("read in pointArray size: " + pointArrays.size());
 			return pointArrays;
