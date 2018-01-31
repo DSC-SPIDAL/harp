@@ -75,7 +75,6 @@ public class KMUtil {
     }
     data = new double[numCentroids * vectorSize];
     for (int i = 0; i < data.length; i++) {
-      // data[i] = 1000;
       data[i] = random.nextDouble() * 1000;
     }
     Path initClustersFile =
@@ -154,10 +153,7 @@ public class KMUtil {
     List<Future<?>> futures =
       new LinkedList<Future<?>>();
     for (int k = 0; k < numPointFiles; k++) {
-      // Future<?> f =
-      //   service.submit(new DataGenRunnable(
-      //     pointsPerFile, localInputDir, Integer
-      //       .toString(k), vectorSize));
+      
       Future<?> f = 
           service.submit(new DataGenMMDense(pointsPerFile, 
         localInputDir, Integer.toString(k), vectorSize));
@@ -189,7 +185,7 @@ public class KMUtil {
   }
 
   public static List<double[]> loadPoints(
-    List<String> fileNames, int pointsPerFile,
+    List<String> fileNames,
     int cenVecSize, Configuration conf,
     int numThreads) {
     long startTime = System.currentTimeMillis();
@@ -197,8 +193,7 @@ public class KMUtil {
       new LinkedList<>();
     List<double[]> arrays = new LinkedList<>();
     for (int i = 0; i < numThreads; i++) {
-      tasks.add(new PointLoadTask(pointsPerFile,
-        cenVecSize, conf));
+      tasks.add(new PointLoadTask(cenVecSize, conf));
     }
     DynamicScheduler<String, double[], PointLoadTask> compute =
       new DynamicScheduler<>(tasks);

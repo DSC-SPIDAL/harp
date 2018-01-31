@@ -38,6 +38,8 @@ public final class DataLoader
 
 	/**
 	 * Load data points from a file.
+	 * deprecated
+	 * To be removed
 	 * 
 	 * @param file
 	 * @param conf
@@ -66,54 +68,16 @@ public final class DataLoader
 	}
 
 	/**
-	 * @brief load points from a ASCII Matrix Market format 
-	 * Dense file
+	 * @brief read in data points with seperator ","
+	 * each line contains a dense vector with length cenVecSize
 	 *
 	 * @param file
-	 * @param pointsPerFile
 	 * @param cenVecSize
 	 * @param conf
 	 *
 	 * @return 
 	 */
-	public static double[] loadPointsMMDenseOld(String file,
-			int pointsPerFile, int cenVecSize,
-			Configuration conf) throws Exception {
-
-		FSDataInputStream in = null;
-		BufferedReader reader = null;
-		String line = null;
-
-		double[] points = new double[pointsPerFile*cenVecSize];
-
-		try {
-
-			Path pointFilePath = new Path(file);
-			FileSystem fs = pointFilePath.getFileSystem(conf);
-
-			in = fs.open(pointFilePath);
-			reader = new BufferedReader(new InputStreamReader(in), 1048576);
-
-			for (int i = 0; i < points.length;) {
-			    for (int j = 0; j < cenVecSize; j++) {
-			        if ((line = reader.readLine())!= null)
-			            points[i++] = Double.parseDouble(line);
-			    }
-			}
-
-		} finally {
-
-			in.close();
-			reader.close();
-
-		}
-
-		return points;
-	}
-
-	// create a loadPoints that ignores the points per file
-	public static double[] loadPointsMMDense(String file,
-			int pointsPerFile, int cenVecSize,
+	public static double[] loadPointsMMDense(String file, int cenVecSize,
 			Configuration conf) throws Exception {
 
 		System.out.println("filename: "+file );
