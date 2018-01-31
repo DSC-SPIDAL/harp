@@ -83,6 +83,8 @@ sections:
         url: /docs/harpdaal/linear_regression
       - name: Ridge Regression
         url: /docs/harpdaal/ridge_regression
+      - name: Hands-on 
+        url: /docs/harpdaal/handson
   - name: Harp Resources
     sublinks:
       - name: Harp Resources
