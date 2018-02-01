@@ -74,6 +74,58 @@ public class PointLoadTask implements
     return null;
   }
 
+  // // create a loadPoints that ignores the points per file
+  // public static List<double[]> loadPoints(String file, int cenVecSize,int labelSize,
+  //   Configuration conf) throws Exception {
+  //
+  //   System.out.println("filename: "+file );
+  //   List<double[]> points = new LinkedList<double[]>();
+	// List<Double> labelData = new LinkedList<Double>();
+  //
+  //   Path pointFilePath = new Path(file);
+  //   FileSystem fs =
+  //     pointFilePath.getFileSystem(conf);
+  //   FSDataInputStream in = fs.open(pointFilePath);
+	// String readline = null;
+  //
+  //   try{
+  //
+	//   while ((readline = in.readLine()) != null)
+	//   {
+  //       String[] line = readline.split(",");
+	// 	double[] trainpoint = new double[cenVecSize];
+  //       for(int j = 0; j < cenVecSize; j++)
+  //         trainpoint[j] = Double.parseDouble(line[j]);
+  //
+	// 	points.add(trainpoint);
+	// 	labelData.add(Double.parseDouble(line[cenVecSize]));
+  //
+	//   }
+  //
+	//   //convert labelData to primitive array
+	//   double[] labelDataArray = new double[labelData.size()];
+	//   for(int j=0;j<labelData.size();j++)
+	// 	  labelDataArray[j] = labelData.get(j);
+  //
+  //     points.add(labelDataArray);
+  //
+  //   } finally{
+  //     in.close();
+  //   }
+  //   return points;
+  // }
+
+  /**
+   * @brief deprecated
+   *
+   * @param file
+   * @param pointsPerFile
+   * @param cenVecSize
+   * @param labelSize
+   * @param conf
+   *
+   * @return 
+   */
   public static List<double[]> loadPoints(String file,
     int pointsPerFile, int cenVecSize,int labelSize,
     Configuration conf) throws Exception {

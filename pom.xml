@@ -118,10 +118,10 @@
                     <target>1.8</target>
                     <excludes>
                         <exclude>**/daal_als/*</exclude>
-                        <exclude>**/daal_cov/*</exclude>
+                        <!-- <exclude>**/daal_cov/*</exclude> -->
                         <!-- <exclude>**/daal_kmeans/**/*</exclude> -->
-                        <exclude>**/daal_linreg/*</exclude>
-                        <exclude>**/daal_mom/*</exclude>
+                        <!-- <exclude>**/daal_linreg/*</exclude> -->
+                        <!-- <exclude>**/daal_mom/*</exclude> -->
                         <!-- <exclude>**/daal_naive/*</exclude> -->
                         <exclude>**/daal_nn/*</exclude>
                         <exclude>**/daal_pca/*</exclude>
