@@ -122,4 +122,52 @@ public class Util {
     }
     writer.close();
   }
+
+  public static void outputEval(String filename,
+    ArrayList<String> topics,
+    Table<DoubleArray> evTable, Configuration conf)
+    throws IOException {
+        double tp = 0.;
+        double fn = 0.;
+        double fp = 0.;
+        double sump = 0.;
+        double sumr = 0.;
+        double count = 0.;
+
+        Path path = new Path(filename);
+        FileSystem fs = path.getFileSystem(conf);
+        FSDataOutputStream output =
+          fs.create(path, true);
+        BufferedWriter writer = new BufferedWriter(
+          new OutputStreamWriter(output));
+
+        writer.write(" cat\ttp\tfn\tfp\ttn\tf1\n");
+        for (Partition par : evTable.getPartitions()) {
+          //System.out.print(" " + par.id());
+          
+          String cat = topics.get(par.id());
+          // tp, fn, fp, tn
+          double[] cm = ((DoubleArray) par.get()).get();
+          tp += cm[0];
+          fp += cm[2];
+          fn += cm[1];
+          sump += cm[0] / (cm[0] + cm[2] + 1e-9);
+          sumr += cm[0] / (cm[0] + cm[1] + 1e-9);
+          count ++;
+
+          writer.write(" " + cat + ":" + "\t" + 
+                  cm[0] + "\t" + cm[1] + "\t" +cm[2] + "\t" + cm[3] + "\t" + 
+                  2*cm[0]/(2*cm[0] + cm[1] +cm[2] + 1e-9) + "\n");
+        }
+
+        //microF1
+        double microF1 = 2*tp/(2*tp + fp +fn);
+        double macroF1 = 2*sump*sumr/count/(sump + sumr);
+        writer.write("microF1 : " + microF1 + "\n");
+        writer.write("macroF1 : " + macroF1 + "\n");
+        
+        writer.close();
+
+    }
+
 }

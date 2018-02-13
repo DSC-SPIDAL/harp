@@ -31,6 +31,12 @@ public class MLRMapper extends
   private List<GDtask> GDthread;
   private DynamicScheduler<Partition, Object, GDtask> GDsch;
 
+  //evaluation 
+  private Table<DoubleArray> evTable;
+  private List<EVtask> EVthread;
+  private DynamicScheduler<Partition, Object, EVtask> EVsch;
+
+ 
   @Override
   protected void setup(Context context)
     throws IOException, InterruptedException {
@@ -59,7 +65,7 @@ public class MLRMapper extends
 
     regroup("mlr", "regroup_wTable", wTable,
       new Partitioner(getNumWorkers()));
-    // printPar();
+    printPar(wTable, "wTable");
 
     GDsch.start();
     for (int iter = 0; iter < ITER
@@ -84,16 +90,62 @@ public class MLRMapper extends
     allgather("mlr", "allgather_wTable", wTable);
 
     if (isMaster()) {
-      Util.outputData(outputPath, topics, wTable,
+      Util.outputData(outputPath + File.separator + "weights", topics, wTable,
         conf);
     }
 
+    printPar(wTable, "wTable");
+    //evaluation on the training set
+    evaluation();
+
     wTable.release();
+  } 
+
+
+  private void evaluation() 
+    throws IOException {
+    initThreadEval();
+    regroup("mlr", "regroup_evTable", evTable,
+      new Partitioner(getNumWorkers()));
+
+    printPar(evTable, "evTable_start");
+
+    EVsch.start();
+    for (int iter = 0; iter < 1
+      * numMapTask; ++iter) {
+      // submit job
+      for (Partition par : evTable
+        .getPartitions()) {
+        EVsch.submit(par);
+      }
+      // wait until all job completed
+      while (EVsch.hasOutput()) {
+        EVsch.waitForOutput();
+      }
+
+      rotate("mlr", "rotate_eval_" + iter, evTable,
+        null);
+      // printPar();
+
+      //context.progress();
+    }
+    EVsch.stop();
+    allgather("mlr", "allgather_evTable", evTable);
+    printPar(evTable, "evTable_end");
+
+    // report the result
+
+    if (isMaster()) {
+      Util.outputEval(outputPath + File.separator + "evaluation", topics, evTable,
+        conf);
+    }
+
+    evTable.release();
   }
 
-  private void printPar() {
-    System.out.print(this.getSelfID() + ":");
-    for (Partition par : wTable.getPartitions()) {
+  private void printPar(Table<DoubleArray> tb, String tbName) {
+    System.out.print(this.getSelfID() + ":" + tbName + ":");
+    for (Partition par : tb.getPartitions()) {
       System.out.print(" " + par.id());
     }
     System.out.println();
@@ -113,17 +165,31 @@ public class MLRMapper extends
       // value);
       Util.LoadData(value, conf, data);
     }
+
+    System.out.println("Worker " +
+      this.getSelfID() + ": load data total size as " + data.size());
+ 
   }
 
   private void initTable() {
+    // weight parameters
     wTable = new Table(0, new DoubleArrPlus());
     for (int i = 0; i < topics.size(); ++i) {
       wTable.addPartition(new Partition(i,
         DoubleArray.create(TERM + 1, false)));
     }
+
+    // evaluation confusion matrix(tp, fn, fp, tf)
+    evTable = new Table(0, new DoubleArrPlus());
+    for (int i = 0; i < topics.size(); ++i) {
+      evTable.addPartition(new Partition(i,
+        DoubleArray.create(4, false)));
+    }
+
   }
 
   private void initThread() {
+    //training threads
     GDthread = new LinkedList<>();
     for (int i = 0; i < numThread; i++) {
       GDthread.add(
@@ -131,4 +197,17 @@ public class MLRMapper extends
     }
     GDsch = new DynamicScheduler<>(GDthread);
   }
+
+
+  private void initThreadEval() {
+    //evaluation threads
+    EVthread = new LinkedList<>();
+    for (int i = 0; i < numThread; i++) {
+      EVthread.add(
+        new EVtask(wTable, data, topics, qrels));
+    }
+    EVsch = new DynamicScheduler<>(EVthread);
+
+  }
+
 }
