@@ -346,7 +346,8 @@ public class LDAMPCollectiveMapper extends
         printNumTokens(topicSums);
         printWordModelSize(wordTableMap);
         printDocModelSize(dMap);
-        printLikelihood(wordTableMap, numWorkers,
+        double likelihood = 
+          printLikelihood(wordTableMap, numWorkers,
           i, topicSums, vocabularySize);
         if (printModel
           && i % (printInterval * 10) == 0) {
@@ -360,6 +361,11 @@ public class LDAMPCollectiveMapper extends
             // dMap, docIDMap, modelDirPath
             // + "/tmp_doc_model/" + i + "/",
             // selfID, configuration);
+            
+            if (isMaster() && (i == numIterations)){
+              saveLikelihood(likelihood, modelDirPath,
+                selfID, configuration);
+            }
           } catch (Exception e) {
             LOG.error("Fail to print model.", e);
           }
@@ -691,7 +697,7 @@ public class LDAMPCollectiveMapper extends
     LOG.info("Total Topic Sum " + numTokens);
   }
 
-  private void printLikelihood(
+  private double printLikelihood(
     Table<TopicCountList>[] wTableMap,
     int numWorkers, int iteration,
     int[] topicSums, int vocabularySize) {
@@ -742,5 +748,31 @@ public class LDAMPCollectiveMapper extends
     // output
     LOG.info("Iteration " + iteration
       + ", logLikelihood: " + likelihood);
+
+    return likelihood;
   }
+
+  private void saveLikelihood(
+    double likelihood,
+    String folderPath, int selfID,
+    Configuration congfiguration)
+    throws IOException {
+    FileSystem fs =
+      FileSystem.get(congfiguration);
+    Path folder = new Path(folderPath);
+    if (!fs.exists(folder)) {
+      fs.mkdirs(folder);
+    }
+    Path file =
+      new Path(folderPath + "/evaluation");
+    PrintWriter writer =
+      new PrintWriter(new BufferedWriter(
+        new OutputStreamWriter(fs.create(file))));
+    writer.print(likelihood);
+    writer.println();
+    writer.flush();
+    writer.close();
+  }
+
+
 }
