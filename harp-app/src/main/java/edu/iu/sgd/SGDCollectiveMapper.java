@@ -16,6 +16,10 @@
 
 package edu.iu.sgd;
 
+import java.io.BufferedWriter;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.util.Arrays;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -25,6 +29,8 @@ import java.util.Random;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapred.CollectiveMapper;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 
 import edu.iu.dymoro.RotationUtil;
 import edu.iu.dymoro.Rotator;
@@ -294,13 +300,22 @@ public class SGDCollectiveMapper extends
       computeTime = 0L;
       waitTime = 0L;
       // Calculate RMSE
-      if (i == 1 || i % rmseIteInterval == 0) {
+      if (i == 1 || i % rmseIteInterval == 0 ||
+              i == numIterations) {
         // this.logMemUsage();
         // this.logGCTime();
+        double retTestRMSE = 
         printRMSE(rotator, numWorkers, vWHMap,
           totalNumV, testVColMap, totalNumTestV,
           wMap, i);
         context.progress();
+
+        if ( i == numIterations){
+            saveModels(hTableMap, wMap, r, retTestRMSE,
+              modelDirPath,
+              this.getSelfID(), configuration);
+        }
+
       }
       if (i % freeInterval == 0) {
         this.freeMemory();
@@ -653,7 +668,7 @@ public class SGDCollectiveMapper extends
     return newMinibatch;
   }
 
-  private void printRMSE(
+  private double printRMSE(
     Rotator<DoubleArray> rotator, int numWorkers,
     Int2ObjectOpenHashMap<VRowCol>[] vWHMap,
     long totalNumV,
@@ -692,8 +707,10 @@ public class SGDCollectiveMapper extends
     LOG.info(
       "RMSE " + rmse + ", Test RMSE " + testRMSE);
     rmseTable.release();
+    double ret = testRMSE;
     rmse = 0.0;
     testRMSE = 0.0;
+    return ret;
   }
 
   private void computeRMSE(
@@ -717,4 +734,90 @@ public class SGDCollectiveMapper extends
       testRMSE += rmseTask.getTestRMSE();
     }
   }
+
+  private void saveModels(
+    Table<DoubleArray>[] hTableMap,
+    double[][] wMap,
+    int K, double testRMSE,
+    String folderPath, int selfID,
+    Configuration congfiguration)
+    throws IOException {
+    FileSystem fs =
+      FileSystem.get(congfiguration);
+    Path folder = new Path(folderPath);
+    if (!fs.exists(folder)) {
+      fs.mkdirs(folder);
+    }
+ 
+    //evaluation result
+    if (this.isMaster()){
+      Path file =
+        new Path(folderPath + "/evaluation");
+      PrintWriter writer =
+        new PrintWriter(new BufferedWriter(
+          new OutputStreamWriter(fs.create(file))));
+      writer.print(testRMSE);
+      writer.println();
+      writer.flush();
+      writer.close();
+    }
+
+    //H model
+    {
+      Path file =
+        new Path(folderPath + "/H-" + selfID);
+      PrintWriter writer =
+        new PrintWriter(new BufferedWriter(
+          new OutputStreamWriter(fs.create(file))));
+      for (Table<DoubleArray> hTable : hTableMap) {
+        if (hTable == null) continue;
+        for (Partition<DoubleArray> hPartition : hTable
+          .getPartitions()) {
+          int colID = hPartition.id();
+          if (hPartition.get() != null){
+            double[] hRow =
+              hPartition.get().get();
+            // Print word
+            writer.print(colID +" :");
+            // Print topic count
+            for (int i = 0; i < K; i++) {
+              writer.print(" " + hRow[i]);
+            }
+            writer.println();
+          }
+        }
+      }
+      writer.flush();
+      writer.close();
+    }
+
+    //W model
+    {
+      LOG.info("wMap length:" + wMap.length + " K:" + K);
+      Path file =
+        new Path(folderPath + "/W-" + selfID);
+      PrintWriter writer =
+        new PrintWriter(new BufferedWriter(
+          new OutputStreamWriter(fs.create(file))));
+      for (int i=0; i< wMap.length; i++) {
+          double[] wRow = wMap[i];
+          if (wRow != null){
+            // Print word
+            writer.print(i + " :");
+            // Print topic count
+            for (int j = 0; j < K; j++) {
+              writer.print(" " + wRow[j]);
+            }
+            writer.println();
+          }
+      }
+      writer.flush();
+      writer.close();
+    }
+
+ }
+
+  
+
+
 }

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# test script for MLR, using the rcv1v2 dataset
+# test script for LDA, using the nytimes-30k dataset
 #
 
 #get the startup directory
