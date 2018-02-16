@@ -1,8 +1,9 @@
 test scripts
 ===============
 
-### kmeans.sh
-
+### km.sh
+Test the four kmeans implementations with different communication operations, using random generated dataset.
+Final evaluation on the MSE, which is around 7.4 for 1000 data points with feature vector size 10 and 10 clusters.
 
 ### mlr.sh
 
