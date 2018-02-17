@@ -817,7 +817,4 @@ public class SGDCollectiveMapper extends
 
  }
 
-  
-
-
 }

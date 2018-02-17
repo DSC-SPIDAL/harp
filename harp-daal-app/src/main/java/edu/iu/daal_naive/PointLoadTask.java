@@ -36,13 +36,12 @@ public class PointLoadTask implements
   protected static final Log LOG = LogFactory
     .getLog(PointLoadTask.class);
 
-  private int pointsPerFile;
+  // private int pointsPerFile;
   private int cenVecSize;
   private Configuration conf;
 
-  public PointLoadTask(int pointsPerFile,
-    int cenVecSize, Configuration conf) {
-    this.pointsPerFile = pointsPerFile;
+  public PointLoadTask(int cenVecSize, Configuration conf) {
+    // this.pointsPerFile = pointsPerFile;
     this.cenVecSize = cenVecSize;
     this.conf = conf;
   }
@@ -51,14 +50,11 @@ public class PointLoadTask implements
   public List<double[]> run(String fileName)
     throws Exception {
     long threadId = Thread.currentThread().getId();
-   // System.out.println("PointLoadTaskthread "+threadId);
     int count = 0;
     boolean isSuccess = false;
     do {
       try {
-        List<double[]> array =
-          loadPoints(fileName, pointsPerFile,
-            cenVecSize, conf);
+        List<double[]> array = loadPoints(fileName, cenVecSize, conf);
         return array;
       } catch (Exception e) {
         LOG.error("load " + fileName
@@ -72,12 +68,63 @@ public class PointLoadTask implements
     return null;
   }
 
-  public static List<double[]> loadPoints(String file,
+  // create a loadPoints that ignores the points per file
+  public static List<double[]> loadPoints(String file, int cenVecSize,
+    Configuration conf) throws Exception {
+
+    System.out.println("filename: "+file );
+    List<double[]> points = new LinkedList<double[]>();
+
+	List<Double> labelData = new LinkedList<Double>();
+
+    Path pointFilePath = new Path(file);
+    FileSystem fs =
+      pointFilePath.getFileSystem(conf);
+    FSDataInputStream in = fs.open(pointFilePath);
+	String readline = null;
+
+    int k =0;
+    try{
+
+	  while ((readline = in.readLine()) != null)
+	  {
+        String[] line = readline.split(",");
+		double[] trainpoint = new double[cenVecSize];
+        for(int j = 0; j < cenVecSize; j++)
+          trainpoint[j] = Double.parseDouble(line[j]);
+
+		points.add(trainpoint);
+		labelData.add(Double.parseDouble(line[cenVecSize]));
+
+	  }
+
+	  //convert labelData to primitive array
+	  double[] labelDataArray = new double[labelData.size()];
+	  for(int j=0;j<labelData.size();j++)
+		  labelDataArray[j] = labelData.get(j);
+
+      points.add(labelDataArray);
+
+    } finally{
+      in.close();
+    }
+    return points;
+  }
+
+  /**
+   * @brief deprecated load in function
+   *
+   * @param file
+   * @param pointsPerFile
+   * @param cenVecSize
+   * @param conf
+   *
+   * @return 
+   */
+  public static List<double[]> loadPointsOld(String file,
     int pointsPerFile, int cenVecSize,
     Configuration conf) throws Exception {
     System.out.println("filename: "+file );
-    LOG.info("LoadPoints: pointsPerFile=" + pointsPerFile + 
-            " cenVecSize=" + cenVecSize);
     List<double[]> points = new LinkedList<double[]>();
     double[] trainingData =
       new double[pointsPerFile * cenVecSize];

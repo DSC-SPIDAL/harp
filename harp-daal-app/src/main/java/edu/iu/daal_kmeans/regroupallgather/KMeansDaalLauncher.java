@@ -65,7 +65,7 @@ public class KMeansDaalLauncher extends Configured
       DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbb.so#libtbb.so"), conf);
       DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbbmalloc.so.2#libtbbmalloc.so.2"), conf);
       DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbbmalloc.so#libtbbmalloc.so"), conf);
-      DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libiomp5.so#libiomp5.so"), conf);
+      // DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libiomp5.so#libiomp5.so"), conf);
 
       if (args.length < 10) {
       System.err
@@ -129,15 +129,13 @@ public class KMeansDaalLauncher extends Configured
     Path cenDir =
       new Path(workDirPath, "centroids");
 
-    // if (fs.exists(cenDir)) {
-    //   fs.delete(cenDir, true);
-    // }
-
     fs.mkdirs(cenDir);
     Path outDir = new Path(workDirPath, "out");
     if (fs.exists(outDir)) {
       fs.delete(outDir, true);
     }
+
+	// -------------- generate data if required --------------
     if (generateData) {
         System.out.println("Generate data.");
         KMUtil.generateData(numOfDataPoints,
@@ -153,9 +151,6 @@ public class KMeansDaalLauncher extends Configured
                 vectorSize, configuration, cenDir, fs);
     }
 
-    // KMUtil.generateCentroids(numCentroids,
-    //   vectorSize, configuration, cenDir, fs);
-    //
     long startTime = System.currentTimeMillis();
     runKMeansAllReduce(numOfDataPoints,
       numCentroids, vectorSize, numPointFiles,
