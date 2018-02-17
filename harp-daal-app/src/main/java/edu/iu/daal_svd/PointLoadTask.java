@@ -57,7 +57,7 @@ public class PointLoadTask implements
         
         // double[] array = DataLoader.loadPoints(fileName, pointsPerFile,
         //     cenVecSize, conf);
-        double[] array = DataLoader.loadPointsMMDense(fileName, pointsPerFile,
+        double[] array = DataLoader.loadPointsMMDense(fileName, 
             cenVecSize, conf);
 
         return array;

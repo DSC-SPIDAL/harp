@@ -501,7 +501,8 @@ public class SGDDaalCollectiveMapper
 
 
             //save model
-            saveModel(configuration);
+			if (this.getSelfID() == 0)
+				saveModel(configuration);
 
             // Stop sgdCompute and rotation
             trainTimePerIter = ((double)iterationAccu)/numIterations;
@@ -1127,9 +1128,6 @@ public class SGDDaalCollectiveMapper
             BufferedWriter bw =
                 new BufferedWriter(new OutputStreamWriter(out));
 
-            //for (int i = 0; i < nRows; i++) {
-            //    bw.write(String.format("%-6.3f", result.get(i)) + "\n");
-            //}
             bw.write(String.format("%-6.3f", rmse) + "\n");
 
             bw.flush();
