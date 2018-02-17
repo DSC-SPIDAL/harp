@@ -75,6 +75,7 @@ public class PCADaalCollectiveMapper extends
   private int vectorSize;
   private int numMappers;
   private int numThreads;
+  private int harpThreads; 
 
   //to measure the time
   private long load_time = 0;
@@ -102,10 +103,16 @@ public class PCADaalCollectiveMapper extends
     vectorSize = configuration.getInt(Constants.VECTOR_SIZE, 20);
     numMappers = configuration.getInt(Constants.NUM_MAPPERS, 10);
     numThreads = configuration.getInt(Constants.NUM_THREADS, 10);
+
+    //always use the maximum hardware threads to load in data and convert data 
+    harpThreads = Runtime.getRuntime().availableProcessors();
+
     LOG.info("Points Per File " + pointsPerFile);
     LOG.info("Vector Size " + vectorSize);
     LOG.info("Num Mappers " + numMappers);
     LOG.info("Num Threads " + numThreads);
+    LOG.info("Num harp load data threads " + harpThreads);
+
     long endTime = System.currentTimeMillis();
     LOG.info("config (ms) :" + (endTime - startTime));
   }
@@ -148,7 +155,9 @@ public class PCADaalCollectiveMapper extends
 
     //load data
     ts1 = System.currentTimeMillis();
-    List<double[]> pointArrays = PCAUtil.loadPoints(fileNames, pointsPerFile, vectorSize, conf, numThreads);
+    // use maximum hardware threads to load data
+    int loadThreads = Runtime.getRuntime().availableProcessors();
+    List<double[]> pointArrays = PCAUtil.loadPoints(fileNames, pointsPerFile, vectorSize, conf, harpThreads);
     ts2 = System.currentTimeMillis();
     load_time += (ts2 - ts1);
 

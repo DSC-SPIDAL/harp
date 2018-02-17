@@ -34,13 +34,12 @@ public class PointLoadTask implements
   protected static final Log LOG = LogFactory
     .getLog(PointLoadTask.class);
 
-  private int pointsPerFile;
+  // private int pointsPerFile;
   private int cenVecSize;
   private Configuration conf;
 
-  public PointLoadTask(int pointsPerFile,
-    int cenVecSize, Configuration conf) {
-    this.pointsPerFile = pointsPerFile;
+  public PointLoadTask(int cenVecSize, Configuration conf) {
+    // this.pointsPerFile = pointsPerFile;
     this.cenVecSize = cenVecSize;
     this.conf = conf;
   }
@@ -53,9 +52,7 @@ public class PointLoadTask implements
     do {
       try {
         
-        // double[] array = DataLoader.loadPoints(fileName, pointsPerFile,
-        //     cenVecSize, conf);
-        double[] array = DataLoader.loadPointsMMDense(fileName, pointsPerFile,
+        double[] array = DataLoader.loadPointsMMDense(fileName,
             cenVecSize, conf);
 
         return array;

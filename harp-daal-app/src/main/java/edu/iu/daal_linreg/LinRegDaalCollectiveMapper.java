@@ -74,6 +74,7 @@ CollectiveMapper<String, String, Object, Object>{
   private int nDependentVariables  = 2;
   private int numMappers;
   private int numThreads;
+  private int harpThreads; 
   private TrainingResult trainingResult;
   private PredictionResult predictionResult;
   private String testFilePath;
@@ -111,8 +112,13 @@ CollectiveMapper<String, String, Object, Object>{
       testGroundTruth =
       configuration.get(Constants.TEST_TRUTH_PATH,"");
 
+      //always use the maximum hardware threads to load in data and convert data 
+      harpThreads = Runtime.getRuntime().availableProcessors();
+
       LOG.info("Num Mappers " + numMappers);
       LOG.info("Num Threads " + numThreads);
+      LOG.info("Num harp load data threads " + harpThreads);
+
       long endTime = System.currentTimeMillis();
       LOG.info(
         "config (ms) :" + (endTime - startTime));
@@ -160,7 +166,7 @@ CollectiveMapper<String, String, Object, Object>{
       ts1 = System.currentTimeMillis();
     // extracting points from csv files
       List<List<double[]>> pointArrays = LinRegUtil.loadPoints(trainingDataFiles, pointsPerFile,
-                    vectorSize, nDependentVariables, conf, numThreads);
+                    vectorSize, nDependentVariables, conf, harpThreads);
       List<double[]> featurePoints = new LinkedList<>();
       for(int i = 0; i<pointArrays.size(); i++){
           featurePoints.add(pointArrays.get(i).get(0));

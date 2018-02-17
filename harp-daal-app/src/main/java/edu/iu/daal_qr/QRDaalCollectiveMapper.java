@@ -79,6 +79,7 @@ public class QRDaalCollectiveMapper
         private static DaalContext daal_Context = new DaalContext();
         private int numMappers;
         private int numThreads;
+        private int harpThreads; 
 
         //to measure the time
         private long total_time = 0;
@@ -105,8 +106,13 @@ public class QRDaalCollectiveMapper
         numThreads = configuration
             .getInt(Constants.NUM_THREADS, 10);
 
+        //always use the maximum hardware threads to load in data and convert data 
+        harpThreads = Runtime.getRuntime().availableProcessors();
+
         LOG.info("Num Mappers " + numMappers);
         LOG.info("Num Threads " + numThreads);
+        LOG.info("Num harp load data threads " + harpThreads);
+
         long endTime = System.currentTimeMillis();
         LOG.info(
                 "config (ms) :" + (endTime - startTime));
@@ -145,7 +151,8 @@ public class QRDaalCollectiveMapper
             this.freeMemory();
             this.freeConn();
             System.gc();
-                }
+                
+        }
 
 
 
@@ -163,10 +170,7 @@ public class QRDaalCollectiveMapper
             ts1 = System.currentTimeMillis();
             // extracting points from csv files
             List<double[]> pointArrays = QRUtil.loadPoints(trainingDataFiles, pointsPerFile,
-                    vectorSize, conf, numThreads);
-            for(int i = 0; i<20; i++){
-                System.out.println(" point array : "+pointArrays.get(1)[i]);
-            }
+                    vectorSize, conf, harpThreads);
 
             ts2 = System.currentTimeMillis();
             load_time += (ts2 - ts1);

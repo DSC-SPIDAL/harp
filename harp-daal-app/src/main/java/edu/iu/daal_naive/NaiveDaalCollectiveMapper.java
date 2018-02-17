@@ -30,12 +30,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.BufferedWriter;
-import java.nio.DoubleBuffer;
-import java.nio.FloatBuffer;
-import java.io.OutputStreamWriter;
-import org.apache.hadoop.fs.FSDataOutputStream;
-
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -61,7 +55,7 @@ import com.intel.daal.algorithms.classifier.prediction.NumericTableInputId;
 import com.intel.daal.algorithms.classifier.prediction.PredictionResult;
 import com.intel.daal.algorithms.classifier.prediction.PredictionResultId;
 import com.intel.daal.algorithms.classifier.training.InputId;
-import com.intel.daal.algorithms.classifier.training.TrainingDistributedInputId;
+// import com.intel.daal.algorithms.classifier.training.TrainingDistributedInputId;
 import com.intel.daal.algorithms.classifier.training.TrainingResultId;
 import com.intel.daal.algorithms.multinomial_naive_bayes.Model;
 import com.intel.daal.algorithms.multinomial_naive_bayes.prediction.*;
@@ -82,20 +76,20 @@ public class NaiveDaalCollectiveMapper
 extends
 CollectiveMapper<String, String, Object, Object>{
 
-  //20news dataset  
-  private int pointsPerFile = 15076;                             //change
-  private int vectorSize = 2000;
+  private int pointsPerFile = 2000;                         
+  private int vectorSize = 20;
   private long nClasses = 20;
-  private int testSize = 2000;
+  private int num_test = 10;
   private int numMappers;
-  private int numThreads;
+  private int numThreads; //used in computation
+  private int harpThreads; //used in data conversion
   private TrainingResult trainingResult;
   private PredictionResult predictionResult;
   private String testFilePath;
   private String testGroundTruth;
-  private String workDirPath;
+  private NumericTable testData;
 
-    //to measure the time
+  //to measure the time
   private long load_time = 0;
   private long convert_time = 0;
   private long total_time = 0;
@@ -120,23 +114,30 @@ CollectiveMapper<String, String, Object, Object>{
       .getInt(Constants.NUM_MAPPERS, 10);
       numThreads = configuration
       .getInt(Constants.NUM_THREADS, 10);
+
+	  vectorSize = configuration
+      .getInt(Constants.VECTOR_SIZE, 20);
+
+	  nClasses = configuration
+      .getInt(Constants.NUM_CLASS, 20);
+
+	  num_test = configuration
+      .getInt(Constants.NUM_TEST, 20);
+
       testFilePath =
             configuration.get(Constants.TEST_FILE_PATH,"");
       testGroundTruth =
       configuration.get(Constants.TEST_TRUTH_PATH,"");
 
-      nClasses = configuration
-      .getInt(Constants.NUM_CLASSES, 20);
-      vectorSize = configuration
-      .getInt(Constants.VECTOR_SIZE, 20);
-      pointsPerFile = configuration
-      .getInt(Constants.POINTS_PERFILE, 2000);
-      testSize = configuration.getInt(Constants.TEST_SIZE, 2000);
-      workDirPath = configuration.get(Constants.WORK_DIR, "/daal_naive/");
-
+      //always use the maximum hardware threads to load in data and convert data 
+      harpThreads = Runtime.getRuntime().availableProcessors();
 
       LOG.info("Num Mappers " + numMappers);
       LOG.info("Num Threads " + numThreads);
+      LOG.info("Feature Dim " + vectorSize);
+      LOG.info("Num classes " + nClasses);
+      LOG.info("Num harp load data threads " + harpThreads);
+
       long endTime = System.currentTimeMillis();
       LOG.info(
         "config (ms) :" + (endTime - startTime));
@@ -147,12 +148,12 @@ CollectiveMapper<String, String, Object, Object>{
     protected void mapCollective(
       KeyValReader reader, Context context)
     throws IOException, InterruptedException {
-      long startTime = System.currentTimeMillis();
+
+      // long startTime = System.currentTimeMillis();
       List<String> trainingDataFiles =
       new LinkedList<String>();
 
-    //splitting files between mapper
-
+	  //splitting files between mapper
       while (reader.nextKeyValue()) {
         String key = reader.getCurrentKey();
         String value = reader.getCurrentValue();
@@ -170,8 +171,8 @@ CollectiveMapper<String, String, Object, Object>{
       FSDataInputStream in = fs.open(pointFilePath);
 
       runNaive(trainingDataFiles, conf, context);
-      LOG.info("Total iterations in master view: "
-        + (System.currentTimeMillis() - startTime));
+      // LOG.info("Total time of iterations in master view: "
+      //   + (System.currentTimeMillis() - startTime));
       this.freeMemory();
       this.freeConn();
       System.gc();
@@ -179,27 +180,61 @@ CollectiveMapper<String, String, Object, Object>{
 
   private void runNaive(List<String> trainingDataFiles, Configuration conf, Context context) throws IOException {
 
-      ts_start = System.currentTimeMillis();
 
       ts1 = System.currentTimeMillis();
-    // extracting points from csv files
+
+	  // extracting points from csv files
       List<List<double[]>> pointArrays = NaiveUtil.loadPoints(trainingDataFiles, pointsPerFile,
-                    vectorSize, conf, numThreads);
+                    vectorSize, conf, harpThreads);
+
       List<double[]> featurePoints = new LinkedList<>();
-      for(int i = 0; i<pointArrays.size(); i++){
-          featurePoints.add(pointArrays.get(i).get(0));
-      }
       List<double[]> labelPoints = new LinkedList<>();
+	  
+	  //divide data into chunks for harp to daal conversion
+      List<double[]> ConvertPoints = new LinkedList<>();
+
+	  // long total_point_dataSize = 
       for(int i = 0; i<pointArrays.size(); i++){
-          labelPoints.add(pointArrays.get(i).get(1));
+
+		  for(int j=0;j<pointArrays.get(i).size()-1; j++)
+			featurePoints.add(pointArrays.get(i).get(j));
+
+          labelPoints.add(pointArrays.get(i).get(pointArrays.get(i).size()-1));
       }
+
+	  int total_point = featurePoints.size();
+	  long total_train_size = total_point*vectorSize*8;
+	  // long convert_unit_size = 2*1024*1024*1024; //2GB each conversion container  
+	  long convert_unit_size = 250*1024*1024; //2GB each conversion container  
+	  int point_per_conversion =(int)(convert_unit_size/(vectorSize*8));
+	  // int num_conversion = (total_point + (point_per_conversion - 1))/point_per_conversion;
+	  // aggregate points 
+	  int convert_p = 0; 
+	  int convert_pos = 0;
+	  while(total_point > 0)
+	  {
+	     convert_p = (point_per_conversion > total_point ) ? total_point : point_per_conversion;	  
+		 total_point -= convert_p;
+
+		 double[] convert_data = new double[convert_p*vectorSize];
+		 for(int j=0; j<convert_p; j++)
+		 {
+			System.arraycopy(featurePoints.get(convert_pos+j), 0, convert_data, j*vectorSize, vectorSize); 
+		 }
+
+		 ConvertPoints.add(convert_data);
+		 convert_pos += convert_p;
+	  }
+      
+	  testData = getNumericTableHDFS(daal_Context, conf, testFilePath, vectorSize, num_test);
 
       ts2 = System.currentTimeMillis();
       load_time += (ts2 - ts1);
 
+	  // start effective execution (exclude loading time)
+      ts_start = System.currentTimeMillis();
 
-
-    // converting data to Numeric Table
+	  // converting data to Numeric Table
       ts1 = System.currentTimeMillis();
 
       long nFeature = vectorSize;
@@ -207,17 +242,17 @@ CollectiveMapper<String, String, Object, Object>{
       long totalLengthFeature = 0;
       long totalLengthLabel = 0;
 
-      long[] array_startP_feature = new long[pointArrays.size()];
-      double[][] array_data_feature = new double[pointArrays.size()][];
+	  long[] array_startP_feature = new long[ConvertPoints.size()];
+      double[][] array_data_feature = new double[ConvertPoints.size()][];
       long[] array_startP_label = new long[labelPoints.size()];
       double[][] array_data_label = new double[labelPoints.size()][];
 
-      for(int k=0;k<featurePoints.size();k++)
-            {
-                array_data_feature[k] = featurePoints.get(k);
-                array_startP_feature[k] = totalLengthFeature;
-                totalLengthFeature += featurePoints.get(k).length;
-            }
+	  for(int k=0;k<ConvertPoints.size();k++)
+	  {
+		  array_data_feature[k] = ConvertPoints.get(k);
+		  array_startP_feature[k] = totalLengthFeature;
+		  totalLengthFeature += ConvertPoints.get(k).length;
+	  }
 
       for(int k=0;k<labelPoints.size();k++)
       {
@@ -229,23 +264,21 @@ CollectiveMapper<String, String, Object, Object>{
     long featuretableSize = totalLengthFeature/nFeature;
     long labeltableSize = totalLengthLabel/nLabel;
 
-   //initializing Numeric Table
-
-
+   
+	//initializing Numeric Table
     NumericTable featureArray_daal = new HomogenNumericTable(daal_Context, Double.class, nFeature, featuretableSize, NumericTable.AllocationFlag.DoAllocate);
     NumericTable labelArray_daal = new HomogenNumericTable(daal_Context, Double.class, nLabel, labeltableSize, NumericTable.AllocationFlag.DoAllocate);
-
 
     int row_idx_feature = 0;
     int row_len_feature = 0;
 
-    for (int k=0; k<featurePoints.size(); k++) 
-      {
-          row_len_feature = (array_data_feature[k].length)/(int)nFeature;
-          //release data from Java side to native side
-          ((HomogenNumericTable)featureArray_daal).releaseBlockOfRows(row_idx_feature, row_len_feature, DoubleBuffer.wrap(array_data_feature[k]));
-          row_idx_feature += row_len_feature;
-      }
+	for (int k=0; k<ConvertPoints.size(); k++) 
+	{
+		row_len_feature = (array_data_feature[k].length)/(int)nFeature;
+		//release data from Java side to native side
+		((HomogenNumericTable)featureArray_daal).releaseBlockOfRows(row_idx_feature, row_len_feature, DoubleBuffer.wrap(array_data_feature[k]));
+		row_idx_feature += row_len_feature;
+	}
 
     int row_idx_label = 0;
     int row_len_label = 0;
@@ -269,20 +302,23 @@ CollectiveMapper<String, String, Object, Object>{
       printResults(testGroundTruth, predictionResult, conf);
     }
     
+	this.barrier("naive", "testmodel-sync");
+
     daal_Context.dispose();
 
     ts_end = System.currentTimeMillis();
     total_time = (ts_end - ts_start);
     
-    LOG.info("Total Execution Time of Naive: "+ total_time);
     LOG.info("Loading Data Time of Naive: "+ load_time);
+    LOG.info("Total Execution Time of Naive: "+ total_time);
     LOG.info("Computation Time of Naive: "+ compute_time);
     LOG.info("Comm Time of Naive: "+ comm_time);
     LOG.info("DataType Convert Time of Naive: "+ convert_time);
-    LOG.info("Misc Time of Naive: "+ (total_time - load_time - compute_time - comm_time - convert_time));
+    LOG.info("Misc Time of Naive: "+ (total_time - compute_time - comm_time - convert_time));
 }
   
-  private void trainModel(NumericTable featureArray_daal, NumericTable labelArray_daal, Table<ByteArray> partialResultTable) throws java.io.IOException {
+  private void trainModel(NumericTable featureArray_daal, NumericTable labelArray_daal, Table<ByteArray> partialResultTable) throws java.io.IOException 
+  {
 
     DaalContext localContext = new DaalContext();
 
@@ -303,9 +339,12 @@ CollectiveMapper<String, String, Object, Object>{
     compute_time += (ts2 - ts1);
 
     ts1 = System.currentTimeMillis();
-    partialResultTable.addPartition(new Partition<>(this.getSelfID(), serializePartialResult(pres)));
+
+	partialResultTable.addPartition(new Partition<>(this.getSelfID(), serializePartialResult(pres)));
     boolean reduceStatus = false;
+    // reduceStatus = this.reduce("naive", "sync-partialresult", partialResultTable, this.getMasterID());
     reduceStatus = this.reduce("naive", "sync-partialresult", partialResultTable, this.getMasterID());
+	this.barrier("naive", "reduce-sync");
     ts2 = System.currentTimeMillis();
     comm_time += (ts2 - ts1); 
 
@@ -317,11 +356,18 @@ CollectiveMapper<String, String, Object, Object>{
     }
       
     if(this.isMaster()){
+	  ts1 = System.currentTimeMillis();
       TrainingDistributedStep2Master masterAlgorithm = new TrainingDistributedStep2Master(daal_Context, Float.class,
                 TrainingMethod.defaultDense, nClasses);
+	  ts2 = System.currentTimeMillis();
+	  compute_time += (ts2 - ts1);
+
       ts1 = System.currentTimeMillis();
       int[] pid = partialResultTable.getPartitionIDs().toIntArray();
       for(int j = 0; j< pid.length; j++){
+		if (pid[j] < 0)
+			continue;
+
         try {
           System.out.println("pid : "+pid[j]);
           masterAlgorithm.input.add(TrainingDistributedInputId.partialModels,
@@ -331,7 +377,9 @@ CollectiveMapper<String, String, Object, Object>{
             System.out.println("Fail to deserilize partialResultTable" + e.toString());
             e.printStackTrace();
           }
+
       }
+
       ts2 = System.currentTimeMillis();
       comm_time += (ts2 - ts1);
 
@@ -342,12 +390,14 @@ CollectiveMapper<String, String, Object, Object>{
       compute_time += (ts2 - ts1);
     }
 
+	this.barrier("naive", "master-compute-sync");
+
   }
 
   private void testModel(String testFilePath, Configuration conf) throws java.io.FileNotFoundException, java.io.IOException {
     PredictionBatch algorithm = new PredictionBatch(daal_Context, Float.class, PredictionMethod.defaultDense, nClasses);
 
-    NumericTable testData = getNumericTableHDFS(daal_Context, conf, testFilePath, vectorSize, testSize);
+    // NumericTable testData = getNumericTableHDFS(daal_Context, conf, testFilePath, vectorSize, num_test);
     algorithm.input.set(NumericTableInputId.data, testData);
     Model model = trainingResult.get(TrainingResultId.model);
     algorithm.input.set(ModelInputId.model, model);
@@ -361,38 +411,10 @@ CollectiveMapper<String, String, Object, Object>{
   }
 
   private void printResults(String testGroundTruth, PredictionResult predictionResult, Configuration conf) throws java.io.FileNotFoundException, java.io.IOException {
-
-        int nRows = testSize;
-
-        NumericTable expected = getNumericTableHDFS(daal_Context, conf, testGroundTruth, 1, nRows);
+        NumericTable expected = getNumericTableHDFS(daal_Context, conf, testGroundTruth, 1, num_test);
         NumericTable prediction = predictionResult.get(PredictionResultId.prediction);
         Service.printClassificationResult(expected, prediction, "Ground truth", "Classification results",
                 "NaiveBayes classification results (first 20 observations):", 20);
-
-        //save the pred
-        FloatBuffer result = FloatBuffer.allocate((int) (1 * nRows));
-        result = prediction.getBlockOfRows(0, nRows, result);        
-        
-        //String cFile = workDirPath + "/20news/out/pred";
-        String cFile = workDirPath + "/out/pred";
-        //    cenDir + File.separator + "out"
-        //    + File.separator + name;
-        Path cPath = new Path(cFile);
-        LOG.info("pred path: "
-                + cPath.toString());
-        FileSystem fs = FileSystem.get(conf);
-        fs.delete(cPath, true);
-        FSDataOutputStream out = fs.create(cPath);
-        BufferedWriter bw =
-            new BufferedWriter(new OutputStreamWriter(out));
-
-        for (int i = 0; i < nRows; i++) {
-            bw.write(String.format("%-6.3f", result.get(i)) + "\n");
-        }
-
-        bw.flush();
-        bw.close();
-
     }
 
 private NumericTable getNumericTableHDFS(DaalContext daal_Context, Configuration conf, String inputFiles, int vectorSize, int numRows) 
