@@ -32,6 +32,7 @@ hdfs dfs -rm /Hadoop/Libraries/*
 hdfs dfs -put ${DAALROOT}/lib/intel64_lin/libJavaAPI.so /Hadoop/Libraries/
 hdfs dfs -put ${DAALROOT}/../tbb/lib/intel64_lin/gcc4.4/libtbb* /Hadoop/Libraries/
 hdfs dfs -put ${HARP_DAAL_ROOT}/external/omp/libiomp5.so /Hadoop/Libraries/
+hdfs dfs -put ${HARP_DAAL_ROOT}/external/hdfs/libhdfs.so* /Hadoop/Libraries/
 
 ## log directory
 mkdir -p ${HADOOP_HOME}/Harp-DAAL-LOG
