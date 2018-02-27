@@ -3,6 +3,8 @@ package edu.iu.kmeans.pushpull;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.BufferedWriter;
+import java.io.OutputStreamWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -11,6 +13,7 @@ import java.util.Arrays;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
@@ -29,6 +32,8 @@ public class KmeansMapper extends
   private int numMappers;
   private int vectorSize;
   private int iteration;
+  private int numPoints;
+  private double MSE;
 
   @Override
   protected void setup(Context context)
@@ -89,7 +94,7 @@ public class KmeansMapper extends
     }
   }
 
-  private void computation(
+  private double computation(
     Table<DoubleArray> cenTable,
     Table<DoubleArray> previousCenTable,
     ArrayList<DoubleArray> dataPoints) {
@@ -142,7 +147,46 @@ public class KmeansMapper extends
       }
     }
     System.out.println("Errors: " + err);
+    return err;
   }
+
+  private void calcMSE(Configuration conf)
+    throws IOException {
+    double[] arrMSE = 
+      new double[2];
+    arrMSE[0] = numPoints;
+    arrMSE[1] = MSE;
+    Table<DoubleArray> mseTable =
+        new Table<>(0, new DoubleArrPlus());
+    Partition<DoubleArray> tmpAp =
+        new Partition<DoubleArray>(
+          0, new DoubleArray(
+            arrMSE, 0, 2));
+    mseTable.addPartition(tmpAp);
+
+    // allreduce
+    allreduce("main", "allreduce-mse",
+          mseTable);
+
+    //get result
+    double[] finalArrMSE = mseTable.getPartition(0).get().get();
+    double finalMSE = finalArrMSE[1]/finalArrMSE[0];
+
+    mseTable.release();
+
+    //save
+    if (this.isMaster()){
+      FileSystem fs = FileSystem.get(conf);
+      Path path = new Path(conf.get(KMeansConstants.WORK_DIR) + "/evaluation");
+      FSDataOutputStream output =
+        fs.create(path, true);
+      BufferedWriter writer = new BufferedWriter(
+        new OutputStreamWriter(output));
+      writer.write("MSE : " + finalMSE + "\n");
+      writer.close();
+    }
+  }
+
 
   private void runKmeans(List<String> fileNames,
     Configuration conf, Context context)
@@ -178,6 +222,7 @@ public class KmeansMapper extends
     // Table<DoubleArray> globalTable =
     //   new Table<DoubleArray>(0,
     //     new DoubleArrPlus());
+    numPoints = dataPoints.size();
 	
     Table<DoubleArray> globalTable = null;
     Table<DoubleArray> previousCenTable = null;
@@ -195,7 +240,7 @@ public class KmeansMapper extends
 
       // compute new partial centroid table using
       // previousCenTable and data points
-      computation(cenTable, previousCenTable,
+      MSE = computation(cenTable, previousCenTable,
         dataPoints);
 
       /****************************************/
@@ -235,6 +280,7 @@ public class KmeansMapper extends
 
     }
     // output results
+    calcMSE(conf);
     if (this.isMaster()) {
       outputCentroids(cenTable, conf, context);
     }

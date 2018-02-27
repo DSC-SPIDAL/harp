@@ -55,8 +55,8 @@ import com.intel.daal.algorithms.classifier.prediction.NumericTableInputId;
 import com.intel.daal.algorithms.classifier.prediction.PredictionResult;
 import com.intel.daal.algorithms.classifier.prediction.PredictionResultId;
 import com.intel.daal.algorithms.classifier.training.InputId;
-// import com.intel.daal.algorithms.classifier.training.TrainingDistributedInputId;
-import com.intel.daal.algorithms.classifier.training.TrainingResultId;
+import com.intel.daal.algorithms.classifier.training.TrainingDistributedInputId; //for daal_2018_beta
+import com.intel.daal.algorithms.classifier.training.TrainingResultId; //for daal_2018
 import com.intel.daal.algorithms.multinomial_naive_bayes.Model;
 import com.intel.daal.algorithms.multinomial_naive_bayes.prediction.*;
 import com.intel.daal.algorithms.multinomial_naive_bayes.training.*;

@@ -110,8 +110,7 @@ public class MLRMapCollective extends Configured
     jobConfig.set("topicPath", topicPath);
     jobConfig.set("qrelsPath", qrelsPath);
     jobConfig.set("dataPath", dataPath);
-    jobConfig.set("outputPath",
-      outputPath + File.separator + "weights");
+    jobConfig.set("outputPath", outputPath);
 
     return job;
   }
