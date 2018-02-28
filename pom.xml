@@ -9,11 +9,16 @@
     <packaging>pom</packaging>
     <version>1.0-SNAPSHOT</version>
     <modules>
-        <module>harp-project</module>
+        <module>core</module>
+        <module>ml</module>
+        <!--module>experimental</module-->
+        <!--module>distribution</module-->
         <module>harp-tutorial-app</module>
-        <module>harp-app</module>
-        <module>harp-daal-app</module>
     </modules>
+
+    <properties>
+        <hadoop-version>2.6.0</hadoop-version>
+    </properties>
 
     <dependencyManagement>
         <dependencies>
@@ -21,56 +26,55 @@
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-annotations</artifactId>
-                <version>2.6.0</version>
+                <version>${hadoop-version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-common</artifactId>
-                <version>2.6.0</version>
+                <version>${hadoop-version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-mapreduce-client-app</artifactId>
-                <version>2.6.0</version>
+                <version>${hadoop-version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-mapreduce-client-common</artifactId>
-                <version>2.6.0</version>
+                <version>${hadoop-version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-mapreduce-client-core</artifactId>
-                <version>2.6.0</version>
+                <version>${hadoop-version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-mapreduce-client-jobclient</artifactId>
-                <version>2.6.0</version>
+                <version>${hadoop-version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-yarn-api</artifactId>
-                <version>2.6.0</version>
+                <version>${hadoop-version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-yarn-client</artifactId>
-                <version>2.6.0</version>
+                <version>${hadoop-version}</version>
             </dependency>
-
 
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-yarn-common</artifactId>
-                <version>2.6.0</version>
+                <version>${hadoop-version}</version>
             </dependency>
 
             <dependency>
