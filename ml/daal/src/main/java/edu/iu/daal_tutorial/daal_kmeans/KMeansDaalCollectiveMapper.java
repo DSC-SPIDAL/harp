@@ -16,34 +16,38 @@
 
 package edu.iu.daal_tutorial.daal_kmeans;
 
-import com.intel.daal.algorithms.kmeans.*;
-import com.intel.daal.algorithms.kmeans.init.*;
-import com.intel.daal.data_management.data.HomogenNumericTable;
-import com.intel.daal.data_management.data.NumericTable;
-import com.intel.daal.services.DaalContext;
-import com.intel.daal.services.Environment;
-import edu.iu.harp.example.DoubleArrPlus;
-import edu.iu.harp.partition.Partition;
-import edu.iu.harp.partition.Partitioner;
-import edu.iu.harp.partition.Table;
-import edu.iu.harp.resource.DoubleArray;
-import edu.iu.harp.schdynamic.DynamicScheduler;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Arrays;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.CollectiveMapper;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import edu.iu.harp.example.DoubleArrPlus;
+import edu.iu.harp.partition.Partition;
+import edu.iu.harp.partition.Partitioner;
+import edu.iu.harp.partition.Table;
+import edu.iu.harp.resource.DoubleArray;
+import edu.iu.harp.schdynamic.DynamicScheduler;
+
+import edu.iu.daal.*;
 import java.nio.DoubleBuffer;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
 
 //import daa.jar API
+import com.intel.daal.algorithms.kmeans.*;
+import com.intel.daal.algorithms.kmeans.init.*;
+
+import com.intel.daal.data_management.data.NumericTable;
+import com.intel.daal.data_management.data.HomogenNumericTable;
+import com.intel.daal.services.DaalContext;
+import com.intel.daal.services.Environment;
 
 /**
  * @brief the Harp mapper for running K-means

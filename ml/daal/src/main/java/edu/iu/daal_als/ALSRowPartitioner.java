@@ -1,5 +1,7 @@
 package edu.iu.daal_als;
 
+import java.util.Random;
+
 import edu.iu.harp.partition.Partitioner;
 
 public class ALSRowPartitioner extends

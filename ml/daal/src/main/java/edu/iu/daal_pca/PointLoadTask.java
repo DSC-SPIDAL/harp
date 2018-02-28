@@ -16,8 +16,11 @@
 
 package edu.iu.daal_pca;
 
-import edu.iu.data_gen.DataLoader;
-import edu.iu.harp.schdynamic.Task;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.BufferedReader;
+import java.io.FileReader;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -25,7 +28,8 @@ import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
-import java.io.IOException;
+import edu.iu.harp.schdynamic.Task;
+import edu.iu.data_gen.*;
 
 public class PointLoadTask implements
   Task<String, double[]> {

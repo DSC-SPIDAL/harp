@@ -16,16 +16,19 @@
 
 package edu.iu.daal_linreg;
 
-import edu.iu.harp.schdynamic.Task;
+import java.io.IOException;
+import java.lang.*;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-
 import java.util.LinkedList;
 import java.util.List;
+
+import edu.iu.harp.schdynamic.Task;
 
 public class PointLoadTask implements
   Task<String, List<double[]>> {

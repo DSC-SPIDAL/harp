@@ -1,10 +1,21 @@
 package edu.iu.daal_qr;
 
-import com.intel.daal.data_management.data.CSRNumericTable;
-import com.intel.daal.data_management.data.NumericTable;
-import com.intel.daal.data_management.data_source.*;
-
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.text.DecimalFormat;
+import java.util.ArrayList;
+
+import com.intel.daal.data_management.data.CSRNumericTable;
+import com.intel.daal.data_management.data.HomogenNumericTable;
+import com.intel.daal.data_management.data.NumericTable;
+import com.intel.daal.data_management.data.Tensor;
+import com.intel.daal.data_management.data.HomogenTensor;
+import com.intel.daal.data_management.data.KeyValueDataCollection;
+import com.intel.daal.data_management.data_source.*;
+import com.intel.daal.services.DaalContext;
 
 public class Service{
 public static void printNumericTable(String header, NumericTable nt, long nPrintedRows, long nPrintedCols) {

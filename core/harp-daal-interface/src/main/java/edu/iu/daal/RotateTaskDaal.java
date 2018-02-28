@@ -18,8 +18,15 @@ package edu.iu.daal;
 
 import com.intel.daal.data_management.data.HomogenNumericTable;
 import com.intel.daal.data_management.data.NumericTable;
+import com.intel.daal.data_management.data.SOANumericTable;
 import com.intel.daal.services.DaalContext;
+import edu.iu.dymoro.*;
+import edu.iu.harp.partition.Partition;
 import edu.iu.harp.partition.Table;
+import edu.iu.harp.resource.IntArray;
+import edu.iu.harp.resource.Simple;
+import edu.iu.harp.resource.DoubleArray;
+import edu.iu.harp.resource.IntArray;
 import edu.iu.harp.resource.Array;
 import edu.iu.harp.schstatic.Task;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;

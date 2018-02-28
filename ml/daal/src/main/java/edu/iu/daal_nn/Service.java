@@ -16,10 +16,15 @@
 
 package edu.iu.daal_nn;
 
+import edu.iu.harp.example.DoubleArrPlus;
+import edu.iu.harp.partition.Partition;
+import edu.iu.harp.partition.Partitioner;
+import edu.iu.harp.partition.Table;
+import edu.iu.harp.resource.DoubleArray;
+import edu.iu.harp.schdynamic.DynamicScheduler;
+import com.intel.daal.services.DaalContext;
 import com.intel.daal.data_management.data.*;
 import com.intel.daal.data_management.data_source.*;
-import com.intel.daal.services.DaalContext;
-
 import java.nio.DoubleBuffer;
 
 

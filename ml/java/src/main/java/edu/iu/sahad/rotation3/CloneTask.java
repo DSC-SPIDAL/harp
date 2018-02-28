@@ -1,6 +1,7 @@
 package edu.iu.sahad.rotation3;
 
 import edu.iu.harp.partition.Partition;
+import edu.iu.harp.schstatic.StaticScheduler;
 import edu.iu.harp.schstatic.Task;
 
 public class CloneTask extends Task<Partition<ColorCountPairsKVPartition>,  CloneTask.CloneTaskOutput> {

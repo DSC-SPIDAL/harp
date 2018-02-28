@@ -16,6 +16,41 @@
 
 package edu.iu.daal_nn;
 
+import org.apache.commons.io.IOUtils;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.LinkedList;
+import java.util.ListIterator;
+import java.util.Arrays;
+import java.nio.DoubleBuffer;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.LocatedFileStatus;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.RemoteIterator;
+import org.apache.hadoop.mapred.CollectiveMapper;
+
+import edu.iu.harp.example.DoubleArrPlus;
+import edu.iu.harp.partition.Partition;
+import edu.iu.harp.partition.Partitioner;
+import edu.iu.harp.partition.Table;
+import edu.iu.harp.resource.DoubleArray;
+import edu.iu.harp.resource.ByteArray;
+import edu.iu.harp.schdynamic.DynamicScheduler;
+
+import java.nio.DoubleBuffer;
+
+//import daal.jar API
 import com.intel.daal.algorithms.neural_networks.*;
 import com.intel.daal.algorithms.neural_networks.initializers.gaussian.*;
 import com.intel.daal.algorithms.neural_networks.initializers.truncated_gaussian.*;
@@ -24,26 +59,12 @@ import com.intel.daal.algorithms.neural_networks.initializers.xavier.*;
 import com.intel.daal.algorithms.neural_networks.layers.*;
 import com.intel.daal.algorithms.neural_networks.prediction.*;
 import com.intel.daal.algorithms.neural_networks.training.*;
-import com.intel.daal.algorithms.optimization_solver.sgd.Batch;
-import com.intel.daal.algorithms.optimization_solver.sgd.Method;
 import com.intel.daal.data_management.data.*;
 import com.intel.daal.services.DaalContext;
+import com.intel.daal.algorithms.optimization_solver.sgd.Batch;
+import com.intel.daal.algorithms.optimization_solver.sgd.Method;
+
 import com.intel.daal.services.Environment;
-import edu.iu.harp.partition.Partition;
-import edu.iu.harp.partition.Table;
-import edu.iu.harp.resource.ByteArray;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.*;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.mapred.CollectiveMapper;
-
-import java.io.*;
-import java.nio.DoubleBuffer;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.ListIterator;
-
-//import daal.jar API
 
 
 /**
@@ -292,7 +313,7 @@ CollectiveMapper<String, String, Object, Object>{
             netLocal.input.set(DistributedStep1LocalInputId.inputModel, trainingModel);
         }
 
-        private void trainModel(Tensor featureTensorInit, Tensor labelTensorInit) throws java.io.FileNotFoundException, IOException {
+        private void trainModel(Tensor featureTensorInit, Tensor labelTensorInit) throws java.io.FileNotFoundException, java.io.IOException {
             com.intel.daal.algorithms.optimization_solver.sgd.Batch sgdAlgorithm =
             new com.intel.daal.algorithms.optimization_solver.sgd.Batch(daal_Context, Float.class, com.intel.daal.algorithms.optimization_solver.sgd.Method.defaultDense);
 
@@ -304,7 +325,7 @@ CollectiveMapper<String, String, Object, Object>{
             if(this.isMaster()){
                 net.parameter.setOptimizationSolver(sgdAlgorithm);
             }
-            int nSamples = (int)featureTensorInit.getDimensions()[0];
+            int nSamples = (int)featureTensorInit.getDimensions()[0]; 
 
             LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
             Environment.setNumberOfThreads(numThreads);
@@ -329,7 +350,7 @@ CollectiveMapper<String, String, Object, Object>{
                 partialResultTable.addPartition(new Partition<>(i+this.getSelfID()*nSamples, serializePartialResult(partialResult)));
 
                 boolean reduceStatus = false;
-                reduceStatus = this.reduce("nn", "sync-partialresult", partialResultTable, this.getMasterID());
+                reduceStatus = this.reduce("nn", "sync-partialresult", partialResultTable, this.getMasterID()); 
 
                 ts2 = System.currentTimeMillis();
                 comm_time += (ts2 - ts1);
@@ -345,8 +366,8 @@ CollectiveMapper<String, String, Object, Object>{
                     for(int j = 0; j< pid.length; j++){
                         try {
                             net.input.add(DistributedStep2MasterInputId.partialResults, j, deserializePartialResult(partialResultTable.getPartition(pid[j]).get()));
-                        } catch (Exception e)
-                        {
+                        } catch (Exception e) 
+                        {  
                             System.out.println("Fail to deserilize partialResultTable" + e.toString());
                             e.printStackTrace();
                         }
@@ -379,7 +400,7 @@ CollectiveMapper<String, String, Object, Object>{
                     ts1 = System.currentTimeMillis();
                     NumericTable wb = result.get(DistributedPartialResultId.resultFromMaster).get(TrainingResultId.model).getWeightsAndBiases();
 
-                    wbHarpTable.addPartition(new Partition<>(this.getMasterID(),
+                    wbHarpTable.addPartition(new Partition<>(this.getMasterID(), 
                         serializeNumericTable(wb)));
                     ts2 = System.currentTimeMillis();
                     comm_time += (ts2 - ts1);
@@ -389,11 +410,11 @@ CollectiveMapper<String, String, Object, Object>{
                 bcastTrainingModel(wbHarpTable, this.getMasterID());
 
                 try {
-                    NumericTable wbMaster = deserializeNumericTable(wbHarpTable.getPartition(this.getMasterID()).get());
+                    NumericTable wbMaster = deserializeNumericTable(wbHarpTable.getPartition(this.getMasterID()).get()); 
                     netLocal.input.get(DistributedStep1LocalInputId.inputModel).setWeightsAndBiases(wbMaster);
 
-                } catch (Exception e)
-                {
+                } catch (Exception e) 
+                {  
                     System.out.println("Fail to deserilize partialResultTable" + e.toString());
                     e.printStackTrace();
                 }
@@ -413,7 +434,7 @@ CollectiveMapper<String, String, Object, Object>{
             }
         }
 
-        private void testModel(Configuration conf) throws java.io.FileNotFoundException, IOException {
+        private void testModel(Configuration conf) throws java.io.FileNotFoundException, java.io.IOException {
             Tensor predictionData = getTensorHDFS(daal_Context, conf, testFilePath, vectorSize, 2000);
             PredictionBatch net = new PredictionBatch(daal_Context);
             long[] predictionDimensions = predictionData.getDimensions();
@@ -429,7 +450,7 @@ CollectiveMapper<String, String, Object, Object>{
 
         }
 
-        private void printResults(Configuration conf) throws java.io.FileNotFoundException, IOException {
+        private void printResults(Configuration conf) throws java.io.FileNotFoundException, java.io.IOException {
             Tensor predictionGroundTruth = getTensorHDFS(daal_Context, conf, testGroundTruthPath, 1, 2000);
             Service.printTensors("Ground truth", "Neural network predictions: each class probability",
                 "Neural network classification results (first 50 observations):",

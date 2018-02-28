@@ -16,12 +16,18 @@
 
 package edu.iu.daal;
 
+import com.intel.daal.data_management.data.HomogenNumericTable;
 import com.intel.daal.data_management.data.NumericTable;
-import edu.iu.harp.partition.Partition;
+import com.intel.daal.data_management.data.SOANumericTable;
+import edu.iu.harp.io.DataType;
 import edu.iu.harp.partition.Table;
+import edu.iu.harp.partition.Partition;
+import edu.iu.harp.partition.PartitionStatus;
+import edu.iu.harp.partition.Partitioner;
 import edu.iu.harp.resource.Array;
 import org.apache.log4j.Logger;
 
+import java.lang.System;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;

@@ -13,6 +13,7 @@ import org.apache.hadoop.fs.Path;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.List;
 
 public class GraphLoadTask implements Task<String, ArrayList<Partition<IntArray>>>{
 	protected static final Log LOG = LogFactory

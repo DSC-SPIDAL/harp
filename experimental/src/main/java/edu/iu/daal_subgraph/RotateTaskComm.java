@@ -1,18 +1,30 @@
 
 package edu.iu.daal_subgraph;
 
-import com.intel.daal.algorithms.subgraph.*;
-import com.intel.daal.data_management.data.HomogenNumericTable;
-import com.intel.daal.services.DaalContext;
-import edu.iu.harp.io.ConnPool;
+import edu.iu.harp.example.IntArrPlus;
+import edu.iu.harp.example.DoubleArrPlus;
 import edu.iu.harp.partition.Partition;
 import edu.iu.harp.partition.Table;
+import edu.iu.harp.resource.IntArray;
+import edu.iu.harp.resource.DoubleArray;
 import edu.iu.harp.resource.LongArray;
+import edu.iu.harp.io.ConnPool;
 import edu.iu.harp.resource.ResourcePool;
+
+import org.apache.hadoop.mapreduce.Mapper.Context;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import java.lang.System;
+import com.intel.daal.algorithms.subgraph.*;
+import com.intel.daal.data_management.data.NumericTable;
+import com.intel.daal.data_management.data.HomogenNumericTable;
 // import com.intel.daal.data_management.data.HomogenBMNumericTable;
+import com.intel.daal.data_management.data.SOANumericTable;
+import com.intel.daal.data_management.data_source.DataSource;
+import com.intel.daal.data_management.data_source.FileDataSource;
+import com.intel.daal.services.DaalContext;
 
 public class RotateTaskComm implements Runnable {
 

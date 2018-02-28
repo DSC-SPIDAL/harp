@@ -8,6 +8,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class ColorCountPairs  extends Value {
 	protected static final Log LOG = LogFactory

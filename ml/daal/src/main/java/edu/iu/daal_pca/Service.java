@@ -23,12 +23,6 @@
 
 package edu.iu.daal_pca;
 
-import com.intel.daal.data_management.data.*;
-import com.intel.daal.data_management.data_source.*;
-import com.intel.daal.services.DaalContext;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -36,6 +30,18 @@ import java.nio.DoubleBuffer;
 import java.nio.IntBuffer;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+
+import com.intel.daal.data_management.data.CSRNumericTable;
+import com.intel.daal.data_management.data.HomogenNumericTable;
+import com.intel.daal.data_management.data.NumericTable;
+import com.intel.daal.data_management.data.Tensor;
+import com.intel.daal.data_management.data.HomogenTensor;
+import com.intel.daal.data_management.data.KeyValueDataCollection;
+import com.intel.daal.data_management.data_source.*;
+import com.intel.daal.services.DaalContext;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 public class Service {
 

@@ -16,16 +16,22 @@
 
 package edu.iu.dymoro;
 
-import edu.iu.harp.partition.Partition;
-import edu.iu.harp.partition.Table;
-import edu.iu.harp.resource.Simple;
-import edu.iu.harp.schstatic.Task;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
+import it.unimi.dsi.fastutil.ints.IntArrays;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+
+import java.util.List;
+import java.util.Random;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.mapred.CollectiveMapper;
 
-import java.util.List;
+import edu.iu.harp.partition.Partition;
+import edu.iu.harp.partition.Table;
+import edu.iu.harp.resource.IntArray;
+import edu.iu.harp.resource.Simple;
+import edu.iu.harp.schstatic.Task;
 
 public class RotateTask<P extends Simple> extends
   Task<Integer, List<Partition<P>>[]> {

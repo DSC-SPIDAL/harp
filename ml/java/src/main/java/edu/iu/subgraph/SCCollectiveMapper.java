@@ -16,13 +16,16 @@
 
 package edu.iu.subgraph;
 
+import edu.iu.dymoro.Rotator;
 import edu.iu.harp.example.IntArrPlus;
 import edu.iu.harp.example.DoubleArrPlus;
 import edu.iu.harp.partition.Partition;
 import edu.iu.harp.partition.Table;
 import edu.iu.harp.resource.IntArray;
 import edu.iu.harp.resource.DoubleArray;
+import edu.iu.harp.resource.LongArray;
 import edu.iu.harp.schdynamic.DynamicScheduler;
+import edu.iu.harp.schstatic.StaticScheduler;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
@@ -37,48 +40,48 @@ import java.util.*;
  * Instead of using allgather, using rotation
  */
 public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object, Object> {
-    private int numMappers;
-    private int numColor;
-    private String templateFile;
-    private Random rand = new Random();
-    private int numThreads;
+	private int numMappers;
+	private int numColor;
+	private String templateFile;
+	private Random rand = new Random();
+	private int numThreads;
     private int harpThreads; //always use the maximum hardware threads to load in data and convert data
-    private int numIteration;
+	private int numIteration;
     private int numCores;
     private int tpc;
     private long send_array_limit;
     private boolean rotation_pipeline;
     private String affinity;
-    boolean useLocalMultiThread;
-    int numModelSlices; // number of slices for pipeline optimization
+	boolean useLocalMultiThread;
+	int numModelSlices; // number of slices for pipeline optimization
     private int vert_num_count =0;
     private int vert_num_count_total = 0;
     private int adj_len = 0;
     private int max_v_id = 0;
     private Graph t;
     private Table<IntArray> abs_ids_table;
-    private int[] mapper_id_vertex;
+    private int[] mapper_id_vertex; 
 
-    @Override
-    protected void setup(Context context) throws IOException, InterruptedException {
+	@Override
+	protected void setup(Context context) throws IOException, InterruptedException {
 
-        LOG.info("start setup");
+		LOG.info("start setup");
 
-        Configuration configuration = context.getConfiguration();
-        numMappers = configuration.getInt(SCConstants.NUM_MAPPERS, 10);
-        templateFile = configuration.get(SCConstants.TEMPLATE_PATH);
-        useLocalMultiThread = configuration.getBoolean(SCConstants.USE_LOCAL_MULTITHREAD, true);
-        rotation_pipeline = configuration.getBoolean(SCConstants.ROTATION_PIPELINE, true);
+		Configuration configuration = context.getConfiguration();
+    	numMappers = configuration.getInt(SCConstants.NUM_MAPPERS, 10);
+    	templateFile = configuration.get(SCConstants.TEMPLATE_PATH);
+    	useLocalMultiThread = configuration.getBoolean(SCConstants.USE_LOCAL_MULTITHREAD, true);
+    	rotation_pipeline = configuration.getBoolean(SCConstants.ROTATION_PIPELINE, true);
 
-        LOG.info("init templateFile");
-        LOG.info(templateFile);
+    	LOG.info("init templateFile");
+    	LOG.info(templateFile);
 
-        numThreads =configuration.getInt(SCConstants.THREAD_NUM, 10);
+    	numThreads =configuration.getInt(SCConstants.THREAD_NUM, 10);
         numCores = configuration.getInt(SCConstants.CORE_NUM, 24);
         affinity = configuration.get(SCConstants.THD_AFFINITY);
         tpc = configuration.getInt(SCConstants.TPC, 2);
 
-        //always use the maximum hardware threads to load in data and convert data
+        //always use the maximum hardware threads to load in data and convert data 
         harpThreads = Runtime.getRuntime().availableProcessors();
         LOG.info("Num Threads " + numThreads);
         LOG.info("Num harp load data threads " + harpThreads);
@@ -88,13 +91,13 @@ public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object
         numIteration =configuration.getInt(SCConstants.NUM_ITERATION, 10);
         LOG.info("Subgraph Counting Iteration: " + numIteration);
 
-        numModelSlices = 2;
-    }
+		numModelSlices = 2;
+	}
 
     protected void mapCollective( KeyValReader reader, Context context) throws IOException, InterruptedException {
-        LOG.info("Start collective mapper" );
-        this.logMemUsage();
-        LOG.info("Memory Used: "+ (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()));
+		LOG.info("Start collective mapper" );
+		this.logMemUsage();
+		LOG.info("Memory Used: "+ (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()));
 
         long startTime = System.currentTimeMillis();
         LinkedList<String> vFiles = getVFiles(reader);
@@ -105,42 +108,42 @@ public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object
         }
         LOG.info("Total execution time: "
                 + (System.currentTimeMillis() - startTime));
+		
+	}
 
-    }
-
-
+    
 
     private void runSC(final LinkedList<String> vFilePaths,
-                       final Configuration configuration,
-                       final Context context) throws Exception {
+            final Configuration configuration,
+            final Context context) throws Exception {
 
-        Configuration conf = context.getConfiguration();
+		Configuration conf = context.getConfiguration();
 
         // ------------------------- read in graph data -------------------------
         //
-        LOG.info("Start read Graph Data");
-        long readGraphbegintime = System.currentTimeMillis();
+		LOG.info("Start read Graph Data");
+		long readGraphbegintime = System.currentTimeMillis();
 
         Graph g_part = new Graph();
-        readGraphDataMultiThread(conf, vFilePaths, g_part);
+		readGraphDataMultiThread(conf, vFilePaths, g_part);
 
-        long readGraphendtime=System.currentTimeMillis();
-        LOG.info("Loaded local graph verts: " + g_part.num_vertices()+"; takes time: " + (readGraphendtime- readGraphbegintime)+"ms");
+		long readGraphendtime=System.currentTimeMillis();
+		LOG.info("Loaded local graph verts: " + g_part.num_vertices()+"; takes time: " + (readGraphendtime- readGraphbegintime)+"ms");
 
-        // this.logMemUsage();
-        // LOG.info("Memory Used: "+ (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()));
-        // logGCTime();
+		// this.logMemUsage();
+		// LOG.info("Memory Used: "+ (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()));
+		// logGCTime();
         // ------------------------- read in template data -------------------------
         Graph t = new Graph();
         readTemplate(templateFile, context, t);
         LOG.info("Finish load templateFile, num_verts: " + t.num_vertices() + "; edges: " + t.num_edges());
 
-        // ---------------  main computation ----------------------------------
+		// ---------------  main computation ----------------------------------
         colorcount_HJ graph_count = new colorcount_HJ();
         graph_count.init(this, context, g_part, max_v_id, numThreads, numCores, tpc, affinity, false, false, true);
 
         // ------------------- generate communication information -------------------
-        // send/recv num and verts
+        // send/recv num and verts 
         if (this.getNumWorkers() > 1)
         {
             graph_count.init_comm(mapper_id_vertex, send_array_limit, rotation_pipeline);
@@ -148,12 +151,12 @@ public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object
         }
 
         // --------------------- start counting ---------------------
-        long computation_start = System.currentTimeMillis();
+		long computation_start = System.currentTimeMillis();
 
         double full_count = 0.0;
         full_count = graph_count.do_full_count(t, numIteration);
 
-        long computation_end = System.currentTimeMillis();
+		long computation_end = System.currentTimeMillis();
         long local_count_time = (computation_end - computation_start);
         long local_comm_time = graph_count.get_comm_time();
         long local_sync_time = graph_count.get_sync_time();
@@ -168,11 +171,11 @@ public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object
 
         this.allreduce("sc", "get-time", time_table);
 
-        double global_count_time = time_table.getPartition(0).get().get()[0]/this.getNumWorkers();
-        double global_comm_time = time_table.getPartition(0).get().get()[1]/this.getNumWorkers();
-        double global_sync_time = time_table.getPartition(0).get().get()[2]/this.getNumWorkers();
+        double global_count_time = time_table.getPartition(0).get().get()[0]/this.getNumWorkers(); 
+        double global_comm_time = time_table.getPartition(0).get().get()[1]/this.getNumWorkers(); 
+        double global_sync_time = time_table.getPartition(0).get().get()[2]/this.getNumWorkers(); 
 
-        LOG.info("Total Counting time: " + global_count_time + " ms" + "; Avg per itr: " +
+        LOG.info("Total Counting time: " + global_count_time + " ms" + "; Avg per itr: " + 
                 (global_count_time/(double)numIteration) + " ms");
 
 
@@ -182,7 +185,7 @@ public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object
         LOG.info("Total sync waiting time: " + global_sync_time + " ms" + "; Avg per itr: "
                 + (global_sync_time/(double)numIteration) + " ms");
 
-        LOG.info("Time Ratio: Comm: " + (global_comm_time/global_count_time)*100 + " %; Waiting: "
+        LOG.info("Time Ratio: Comm: " + (global_comm_time/global_count_time)*100 + " %; Waiting: " 
                 + (global_sync_time)/global_count_time*100 + " %; Local Computation: "
                 + (global_count_time - global_sync_time - global_comm_time)/global_count_time*100 + " %");
 
@@ -199,7 +202,7 @@ public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object
 
         full_count = final_count_table.getPartition(0).get().get()[0];
 
-        //formula to compute the prob
+        //formula to compute the prob 
         int num_colors = t.num_vertices();
         boolean calculate_automorphisms = true;
 
@@ -211,134 +214,134 @@ public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object
 
         LOG.info("Finish counting local color count: " + full_count + "; final alll count: " + final_count);
 
-        //-------------------------------------------------------------------
+		//-------------------------------------------------------------------
         //
     }
 
     private LinkedList<String>
-    getVFiles(final KeyValReader reader)
-            throws IOException, InterruptedException {
+        getVFiles(final KeyValReader reader)
+        throws IOException, InterruptedException {
         final LinkedList<String> vFiles =
-                new LinkedList<>();
+            new LinkedList<>();
         while (reader.nextKeyValue()) {
             final String value =
-                    reader.getCurrentValue();
+                reader.getCurrentValue();
             LOG.info("File: " + value);
             vFiles.add(value);
         }
         return vFiles;
     }
-
+    
     /**
      * @brief read in data and store them in Fascia structure
      *
      * @param conf
      * @param vFilePaths
      *
-     * @return
+     * @return 
      */
-    private void readGraphDataMultiThread( Configuration conf, List<String> vFilePaths, Graph g){
+	private void readGraphDataMultiThread( Configuration conf, List<String> vFilePaths, Graph g){
 
-        LOG.info("[BEGIN] SCCollectiveMapper.readGraphDataMultiThread" );
+			LOG.info("[BEGIN] SCCollectiveMapper.readGraphDataMultiThread" );
 
-        Table<IntArray> graphData = new Table<>(0, new IntArrPlus());
-        List<GraphLoadTask> tasks = new LinkedList<>();
+			Table<IntArray> graphData = new Table<>(0, new IntArrPlus());
+		    List<GraphLoadTask> tasks = new LinkedList<>();
 
-        for (int i = 0; i < harpThreads; i++) {
-            tasks.add(new GraphLoadTask(conf));
-        }
+		    for (int i = 0; i < harpThreads; i++) {
+		    	tasks.add(new GraphLoadTask(conf));
+		    }
 
-        DynamicScheduler<String, ArrayList<Partition<IntArray>>, GraphLoadTask> compute
-                = new DynamicScheduler<>(tasks);
+		    DynamicScheduler<String, ArrayList<Partition<IntArray>>, GraphLoadTask> compute
+		    	= new DynamicScheduler<>(tasks);
 
-        compute.start();
+		    compute.start();
 
-        for (String filename : vFilePaths) {
-            compute.submit(filename);
-        }
+		    for (String filename : vFilePaths) {
+		    	compute.submit(filename);
+		    }
 
-        ArrayList<Partition<IntArray>> output=null;
-        while (compute.hasOutput()) {
-            output = compute.waitForOutput();
-            if(output != null){
-                ArrayList<Partition<IntArray>> partialGraphDataList = output;
-                for(Partition<IntArray> partialGraph:partialGraphDataList )
-                {
-                    graphData.addPartition(partialGraph);
-                }
+		    ArrayList<Partition<IntArray>> output=null;
+		    while (compute.hasOutput()) {
+		    	output = compute.waitForOutput();
+		    	if(output != null){
+		    		ArrayList<Partition<IntArray>> partialGraphDataList = output;
+		    		for(Partition<IntArray> partialGraph:partialGraphDataList )
+		    		{
+		    			graphData.addPartition(partialGraph);
+		    		}
+		    	}
+		    }
+
+		    compute.stop();
+		    LOG.info("[END] SCCollectiveMapper.readGraphDataMultiThread" );
+
+            //get num vert and size of adjacent array
+            vert_num_count = 0;
+            adj_len = 0;
+            max_v_id = 0;
+
+            for(int p=0;p<tasks.size();p++)
+            {
+                vert_num_count += tasks.get(p).get_vert_num_local();
+                adj_len += tasks.get(p).get_adjacent_local_num();
+
+                int max_id_local = tasks.get(p).get_max_v_id();
+                max_v_id = max_id_local > max_v_id ? max_id_local: max_v_id; 
             }
-        }
 
-        compute.stop();
-        LOG.info("[END] SCCollectiveMapper.readGraphDataMultiThread" );
+            //debug
+            LOG.info("vert num count local: " + vert_num_count + " total partitions: " 
+                    + graphData.getNumPartitions() + "; local max v id: " + max_v_id + "; total local nbrs num: " + adj_len);
 
-        //get num vert and size of adjacent array
-        vert_num_count = 0;
-        adj_len = 0;
-        max_v_id = 0;
+            vert_num_count = graphData.getNumPartitions();
+		 
+            //allreduce to get the total vert number 
+            Table<IntArray> table_max_id = new Table<>(0, new IntArrMax());
+            IntArray array_max_id = IntArray.create(1, false);
+    
+            array_max_id.get()[0] = max_v_id;
+            table_max_id.addPartition(new Partition<>(0, array_max_id));
+    
+            this.allreduce("sc", "get-max-v-id", table_max_id);
 
-        for(int p=0;p<tasks.size();p++)
-        {
-            vert_num_count += tasks.get(p).get_vert_num_local();
-            adj_len += tasks.get(p).get_adjacent_local_num();
+            max_v_id = table_max_id.getPartition(0).get().get()[0];
 
-            int max_id_local = tasks.get(p).get_max_v_id();
-            max_v_id = max_id_local > max_v_id ? max_id_local: max_v_id;
-        }
+            LOG.info("Max vertex id of full graph: " + max_v_id);
+    
+            table_max_id.release();
+            table_max_id = null;
 
-        //debug
-        LOG.info("vert num count local: " + vert_num_count + " total partitions: "
-                + graphData.getNumPartitions() + "; local max v id: " + max_v_id + "; total local nbrs num: " + adj_len);
+            //initialize the Graph class
+            g.initGraph(vert_num_count, max_v_id, adj_len, graphData);
 
-        vert_num_count = graphData.getNumPartitions();
+            //communication allgather to get all global ids
+            abs_ids_table = new Table<>(0, new IntArrPlus());
+            IntArray abs_ids_array = new IntArray(g.get_abs_v_ids(), 0, g.num_vertices());
+            abs_ids_table.addPartition(new Partition<>(this.getSelfID(), abs_ids_array));
 
-        //allreduce to get the total vert number
-        Table<IntArray> table_max_id = new Table<>(0, new IntArrMax());
-        IntArray array_max_id = IntArray.create(1, false);
+            this.allgather("sc", "collect all abs ids", abs_ids_table);
 
-        array_max_id.get()[0] = max_v_id;
-        table_max_id.addPartition(new Partition<>(0, array_max_id));
+            //create an label array to store mapper ids info
+            mapper_id_vertex = new int[max_v_id+1];
+            for(int p=0; p<this.getNumWorkers();p++)
+            {
+                // mapper_vertex_array stores abs ids from each mapper
+                int[] mapper_vertex_array = abs_ids_table.getPartition(p).get().get();
+                for(int q=0;q<mapper_vertex_array.length;q++)
+                    mapper_id_vertex[mapper_vertex_array[q]] = p;
+            }
 
-        this.allreduce("sc", "get-max-v-id", table_max_id);
+            LOG.info("Finish creating mapper-vertex mapping array");
+            abs_ids_table = null;
 
-        max_v_id = table_max_id.getPartition(0).get().get()[0];
-
-        LOG.info("Max vertex id of full graph: " + max_v_id);
-
-        table_max_id.release();
-        table_max_id = null;
-
-        //initialize the Graph class
-        g.initGraph(vert_num_count, max_v_id, adj_len, graphData);
-
-        //communication allgather to get all global ids
-        abs_ids_table = new Table<>(0, new IntArrPlus());
-        IntArray abs_ids_array = new IntArray(g.get_abs_v_ids(), 0, g.num_vertices());
-        abs_ids_table.addPartition(new Partition<>(this.getSelfID(), abs_ids_array));
-
-        this.allgather("sc", "collect all abs ids", abs_ids_table);
-
-        //create an label array to store mapper ids info
-        mapper_id_vertex = new int[max_v_id+1];
-        for(int p=0; p<this.getNumWorkers();p++)
-        {
-            // mapper_vertex_array stores abs ids from each mapper
-            int[] mapper_vertex_array = abs_ids_table.getPartition(p).get().get();
-            for(int q=0;q<mapper_vertex_array.length;q++)
-                mapper_id_vertex[mapper_vertex_array[q]] = p;
-        }
-
-        LOG.info("Finish creating mapper-vertex mapping array");
-        abs_ids_table = null;
-
-    }
+	}
 
     /**
      * @brief read in template file
      *
      * @param template
      *
-     * @return
+     * @return 
      */
     private void readTemplate(String templateFile, Context context, Graph t) {
 
@@ -347,7 +350,7 @@ public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object
 
         try {
 
-            Configuration conf = context.getConfiguration();
+		    Configuration conf = context.getConfiguration();
 
 
             Path path = new Path(templateFile);
@@ -413,5 +416,5 @@ public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object
 
     }
 
-
+	
 }

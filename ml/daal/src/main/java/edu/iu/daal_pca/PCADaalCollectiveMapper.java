@@ -16,24 +16,54 @@
 
 package edu.iu.daal_pca;
 
-import com.intel.daal.algorithms.pca.*;
-import com.intel.daal.data_management.data.HomogenNumericTable;
-import com.intel.daal.data_management.data.NumericTable;
-import com.intel.daal.services.DaalContext;
-import com.intel.daal.services.Environment;
-import edu.iu.harp.partition.Partition;
-import edu.iu.harp.partition.Table;
-import edu.iu.harp.resource.ByteArray;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.mapred.CollectiveMapper;
-
-import java.io.*;
-import java.nio.DoubleBuffer;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Arrays;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStreamWriter;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapred.CollectiveMapper;
+
+import edu.iu.harp.example.DoubleArrPlus;
+import edu.iu.harp.partition.Partition;
+import edu.iu.harp.partition.Partitioner;
+import edu.iu.harp.partition.PartitionStatus;
+import edu.iu.harp.partition.Table;
+import edu.iu.harp.resource.DoubleArray;
+import edu.iu.harp.schdynamic.DynamicScheduler;
+
+import edu.iu.harp.resource.ByteArray;
+
+import edu.iu.daal.*;
+import java.nio.DoubleBuffer;
 
 //import PCA from DAAL library
+import com.intel.daal.algorithms.PartialResult;
+import com.intel.daal.algorithms.pca.*;
+import com.intel.daal.data_management.data_source.DataSource;
+import com.intel.daal.data_management.data_source.FileDataSource;
+import edu.iu.harp.resource.ByteArray;
+
+import com.intel.daal.data_management.data.NumericTable;
+import com.intel.daal.data_management.data.HomogenNumericTable;
 // import com.intel.daal.data_management.data.HomogenBMNumericTable;
+import com.intel.daal.services.DaalContext;
+import com.intel.daal.services.Environment;
 
 /**
  * @brief the Harp mapper for running PCA

@@ -16,18 +16,7 @@
 
 package edu.iu.daal_tutorial.daal_kmeans;
 
-import edu.iu.data_gen.DataGenMMDense;
-import edu.iu.harp.partition.Partition;
-import edu.iu.harp.partition.Table;
-import edu.iu.harp.resource.DoubleArray;
-import edu.iu.harp.schdynamic.DynamicScheduler;
 import it.unimi.dsi.fastutil.ints.IntArrays;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FSDataOutputStream;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -40,6 +29,20 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+
+import edu.iu.harp.schdynamic.DynamicScheduler;
+import edu.iu.harp.partition.Partition;
+import edu.iu.harp.partition.Table;
+import edu.iu.harp.resource.DoubleArray;
+
+import edu.iu.data_gen.*;
 
 public class KMUtil {
 

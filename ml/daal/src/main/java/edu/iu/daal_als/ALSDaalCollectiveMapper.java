@@ -16,39 +16,80 @@
 
 package edu.iu.daal_als;
 
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.ints.IntArrays;
+import it.unimi.dsi.fastutil.ints.IntAVLTreeSet;
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
+
+import java.text.SimpleDateFormat;
+import java.text.DecimalFormat;
+
+import java.util.Calendar;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Random;
+import java.util.ArrayList;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.BufferedWriter;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.OutputStreamWriter;
+
+import java.nio.DoubleBuffer;
+import java.nio.IntBuffer;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.io.PrintWriter;
+import java.util.ListIterator;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.lang.Thread;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.mapred.CollectiveMapper;
+
+import edu.iu.dymoro.RotationUtil;
+import edu.iu.dymoro.Rotator;
+import edu.iu.dymoro.Scheduler;
+import edu.iu.harp.example.DoubleArrPlus;
+import edu.iu.harp.example.IntArrPlus;
+import edu.iu.harp.partition.Partition;
+import edu.iu.harp.partition.PartitionStatus;
+import edu.iu.harp.partition.Partitioner;
+import edu.iu.harp.partition.Table;
+import edu.iu.harp.resource.DoubleArray;
+import edu.iu.harp.resource.IntArray;
+import edu.iu.harp.resource.ByteArray;
+import edu.iu.harp.resource.LongArray;
+import edu.iu.harp.schdynamic.DynamicScheduler;
+import edu.iu.harp.example.LongArrPlus;
+
+import edu.iu.daal.*;
+
+// packages from Daal 
 import com.intel.daal.algorithms.implicit_als.PartialModel;
 import com.intel.daal.algorithms.implicit_als.prediction.ratings.*;
 import com.intel.daal.algorithms.implicit_als.training.*;
 import com.intel.daal.algorithms.implicit_als.training.init.*;
+import com.intel.daal.data_management.data.NumericTable;
 import com.intel.daal.data_management.data.CSRNumericTable;
 import com.intel.daal.data_management.data.HomogenNumericTable;
 import com.intel.daal.data_management.data.KeyValueDataCollection;
-import com.intel.daal.data_management.data.NumericTable;
+
+import com.intel.daal.data_management.data.SOANumericTable;
+import com.intel.daal.data_management.data_source.DataSource;
+import com.intel.daal.data_management.data_source.FileDataSource;
 import com.intel.daal.services.DaalContext;
 import com.intel.daal.services.Environment;
-import edu.iu.harp.example.DoubleArrPlus;
-import edu.iu.harp.example.LongArrPlus;
-import edu.iu.harp.partition.Partition;
-import edu.iu.harp.partition.Table;
-import edu.iu.harp.resource.ByteArray;
-import edu.iu.harp.resource.DoubleArray;
-import edu.iu.harp.resource.LongArray;
-import edu.iu.harp.schdynamic.DynamicScheduler;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.objects.ObjectIterator;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.mapred.CollectiveMapper;
-
-import java.io.*;
-import java.nio.DoubleBuffer;
-import java.nio.IntBuffer;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.LinkedList;
-import java.util.Random;
-
-// packages from Daal
 
 public class ALSDaalCollectiveMapper
     extends

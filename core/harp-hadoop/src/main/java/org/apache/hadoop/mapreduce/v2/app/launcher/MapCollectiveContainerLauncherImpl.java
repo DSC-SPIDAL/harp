@@ -115,7 +115,7 @@ public class MapCollectiveContainerLauncherImpl
       LOG.info("Processing the event "
         + event.toString());
       if (event
-        .getType() == EventType.CONTAINER_REMOTE_LAUNCH
+        .getType() == ContainerLauncher.EventType.CONTAINER_REMOTE_LAUNCH
         && event.getTaskAttemptID().getTaskId()
           .getTaskType() == TaskType.MAP) {
         ContainerRemoteLaunchEvent launchEvent =

@@ -16,10 +16,14 @@
 
 package edu.iu.daal_tutorial.daal_kmeans;
 
-import edu.iu.harp.resource.DoubleArray;
-import edu.iu.harp.schdynamic.Task;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import java.util.Arrays;
+
+import edu.iu.harp.schdynamic.Task;
+import edu.iu.harp.partition.Partition;
+import edu.iu.harp.partition.Table;
+import edu.iu.harp.resource.DoubleArray;
 
 public class AvgCalcTask implements
   Task<DoubleArray, Object> {

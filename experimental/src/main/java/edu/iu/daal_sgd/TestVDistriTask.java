@@ -16,11 +16,14 @@
 
 package edu.iu.daal_sgd;
 
-import edu.iu.harp.schdynamic.Task;
+import java.lang.System;
+import java.util.LinkedList;
+import java.util.ArrayList;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import java.util.LinkedList;
+import edu.iu.harp.schdynamic.Task;
 
 /**
  * @brief redistribute test dataset points into LinkedList of multiple threads

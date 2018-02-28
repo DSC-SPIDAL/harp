@@ -26,7 +26,11 @@ import org.apache.hadoop.mapreduce.v2.app.client.ClientService;
 import org.apache.hadoop.mapreduce.v2.app.launcher.ContainerLauncher;
 import org.apache.hadoop.mapreduce.v2.app.launcher.ContainerLauncherEvent;
 import org.apache.hadoop.mapreduce.v2.app.launcher.MapCollectiveContainerLauncherImpl;
-import org.apache.hadoop.mapreduce.v2.app.rm.*;
+import org.apache.hadoop.mapreduce.v2.app.rm.ContainerAllocator;
+import org.apache.hadoop.mapreduce.v2.app.rm.ContainerAllocatorEvent;
+import org.apache.hadoop.mapreduce.v2.app.rm.MapCollectiveContainerAllocator;
+import org.apache.hadoop.mapreduce.v2.app.rm.RMCommunicator;
+import org.apache.hadoop.mapreduce.v2.app.rm.RMHeartbeatHandler;
 import org.apache.hadoop.mapreduce.v2.util.MRWebAppUtil;
 import org.apache.hadoop.service.AbstractService;
 import org.apache.hadoop.service.Service;
@@ -286,7 +290,7 @@ public class MapCollectiveAppMaster
 
       MRWebAppUtil.initialize(conf);
       String jobUserName = System.getenv(
-        Environment.USER
+        ApplicationConstants.Environment.USER
           .name());
       conf.set(MRJobConfig.USER_NAME,
         jobUserName);

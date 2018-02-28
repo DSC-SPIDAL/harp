@@ -16,7 +16,11 @@
 
 package edu.iu.harp.collective;
 
-import edu.iu.harp.example.*;
+import edu.iu.harp.example.IntCount;
+import edu.iu.harp.example.StringKey;
+import edu.iu.harp.example.WordAvgFunction;
+import edu.iu.harp.example.WordCountPartition;
+import edu.iu.harp.example.WordCountTable;
 import edu.iu.harp.io.ConnPool;
 import edu.iu.harp.io.Constant;
 import edu.iu.harp.io.DataMap;

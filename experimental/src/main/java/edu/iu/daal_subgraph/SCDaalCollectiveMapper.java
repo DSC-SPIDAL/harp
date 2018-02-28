@@ -16,34 +16,37 @@
 
 package edu.iu.daal_subgraph;
 
-import com.intel.daal.algorithms.subgraph.*;
-import com.intel.daal.data_management.data.HomogenNumericTable;
-import com.intel.daal.services.DaalContext;
-import edu.iu.harp.example.DoubleArrPlus;
-import edu.iu.harp.example.IntArrPlus;
-import edu.iu.harp.example.LongArrPlus;
-import edu.iu.harp.partition.Partition;
-import edu.iu.harp.partition.Table;
-import edu.iu.harp.resource.DoubleArray;
-import edu.iu.harp.resource.IntArray;
-import edu.iu.harp.resource.LongArray;
-import edu.iu.harp.schdynamic.DynamicScheduler;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.CollectiveMapper;
+import java.io.*;
+import java.util.*;
+import java.nio.file.*;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.nio.file.FileSystem;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Random;
+import edu.iu.dymoro.Rotator;
+import edu.iu.harp.example.IntArrPlus;
+import edu.iu.harp.example.LongArrPlus;
+import edu.iu.harp.example.DoubleArrPlus;
+import edu.iu.harp.partition.Partition;
+import edu.iu.harp.partition.Table;
+import edu.iu.harp.resource.IntArray;
+import edu.iu.harp.resource.DoubleArray;
+import edu.iu.harp.resource.LongArray;
+import edu.iu.harp.schdynamic.DynamicScheduler;
+import edu.iu.harp.schstatic.StaticScheduler;
+import edu.iu.daal.*;
 
-// packages from Daal
+// packages from Daal 
+import com.intel.daal.algorithms.subgraph.*;
+import com.intel.daal.data_management.data.NumericTable;
+import com.intel.daal.data_management.data.HomogenNumericTable;
 // import com.intel.daal.data_management.data.HomogenBMNumericTable;
+import com.intel.daal.data_management.data.SOANumericTable;
+import com.intel.daal.data_management.data_source.DataSource;
+import com.intel.daal.data_management.data_source.FileDataSource;
+import com.intel.daal.services.DaalContext;
 
 /*
  * use key-object; in-memory

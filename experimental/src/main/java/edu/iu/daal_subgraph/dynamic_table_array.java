@@ -15,7 +15,14 @@
  */
 package edu.iu.daal_subgraph;
 
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.ints.IntArrays;
+import it.unimi.dsi.fastutil.ints.IntAVLTreeSet;
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
+
 import org.apache.log4j.Logger;
+import java.util.*;
 
 public class dynamic_table_array extends dynamic_table{
     // subtemplate-vertex-colorset

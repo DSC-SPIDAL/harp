@@ -16,8 +16,19 @@
 
 package edu.iu.harp.collective;
 
-import edu.iu.harp.example.*;
-import edu.iu.harp.io.*;
+import edu.iu.harp.example.EdgePartition;
+import edu.iu.harp.example.EdgeTable;
+import edu.iu.harp.example.EdgeVal;
+import edu.iu.harp.example.IntVal;
+import edu.iu.harp.example.MessagePartition;
+import edu.iu.harp.example.MessageTable;
+import edu.iu.harp.example.VertexPartition;
+import edu.iu.harp.example.VertexTable;
+import edu.iu.harp.io.ConnPool;
+import edu.iu.harp.io.Constant;
+import edu.iu.harp.io.DataMap;
+import edu.iu.harp.io.DataUtil;
+import edu.iu.harp.io.EventQueue;
 import edu.iu.harp.keyval.ValStatus;
 import edu.iu.harp.partition.Partition;
 import edu.iu.harp.partition.PartitionUtil;

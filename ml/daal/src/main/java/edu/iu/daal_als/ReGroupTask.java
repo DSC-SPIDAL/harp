@@ -16,12 +16,16 @@
 
 package edu.iu.daal_als;
 
-import edu.iu.harp.schdynamic.Task;
+import java.lang.System;
+import java.util.LinkedList;
+import java.util.ArrayList;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import java.util.LinkedList;
+import edu.iu.harp.schdynamic.Task;
 
 /**
  * @brief regroup the training dataset into hashmap of multiple threads 

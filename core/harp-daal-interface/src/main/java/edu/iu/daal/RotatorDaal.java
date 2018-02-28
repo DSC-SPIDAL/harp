@@ -16,8 +16,12 @@
 
 package edu.iu.daal;
 
+import com.intel.daal.data_management.data.HomogenNumericTable;
 import com.intel.daal.data_management.data.NumericTable;
+import edu.iu.dymoro.*;
+import edu.iu.harp.partition.Partition;
 import edu.iu.harp.partition.Table;
+import edu.iu.harp.resource.Simple;
 import edu.iu.harp.resource.Array;
 import edu.iu.harp.schstatic.StaticScheduler;
 import org.apache.commons.logging.Log;

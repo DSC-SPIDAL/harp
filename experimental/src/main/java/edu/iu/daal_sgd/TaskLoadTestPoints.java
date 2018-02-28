@@ -18,7 +18,23 @@
 package edu.iu.daal_sgd;
 
 import java.util.Arrays;
+import java.lang.System;
 import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.ListIterator;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import java.nio.DoubleBuffer;
+import java.nio.IntBuffer;
+
+import com.intel.daal.data_management.data.*;
+import com.intel.daal.data_management.data_source.*;
+import com.intel.daal.data_management.data.NumericTable;
+import com.intel.daal.data_management.data.HomogenNumericTable;
+
+import com.intel.daal.services.*;
+import com.intel.daal.algorithms.mf_sgd.*;
+
+import com.intel.daal.services.DaalContext;
 
 /**
  * @brief Loading test datasets from a Harp table into a DAAL table 

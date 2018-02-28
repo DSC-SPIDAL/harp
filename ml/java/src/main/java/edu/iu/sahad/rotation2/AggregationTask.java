@@ -1,6 +1,10 @@
 package edu.iu.sahad.rotation2;
 
+import edu.iu.harp.partition.Partition;
+import edu.iu.harp.resource.IntArray;
 import edu.iu.harp.schdynamic.Task;
+
+import java.util.Random;
 
 
 public class AggregationTask implements Task<ColorCountPairs,  Long> {

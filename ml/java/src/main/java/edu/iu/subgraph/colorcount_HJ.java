@@ -15,33 +15,51 @@
  */
 package edu.iu.subgraph;
 
+import org.apache.log4j.Logger;
+import org.apache.commons.lang3.ArrayUtils;
+
+import java.util.Arrays;
+import java.util.Random;
+
 import edu.iu.harp.example.IntArrPlus;
-import edu.iu.harp.io.ConnPool;
+import edu.iu.harp.example.DoubleArrPlus;
 import edu.iu.harp.partition.Partition;
 import edu.iu.harp.partition.Table;
 import edu.iu.harp.resource.IntArray;
+import edu.iu.harp.resource.DoubleArray;
 import edu.iu.harp.resource.LongArray;
+import edu.iu.harp.io.ConnPool;
 import edu.iu.harp.resource.ResourcePool;
-import net.openhft.affinity.Affinity;
-import org.apache.commons.lang3.ArrayUtils;
+
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.ints.IntArrays;
+import it.unimi.dsi.fastutil.ints.IntAVLTreeSet;
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
+
 import org.apache.hadoop.mapreduce.Mapper.Context;
-import org.apache.log4j.Logger;
 
-import java.util.*;
-import java.util.concurrent.BrokenBarrierException;
-import java.util.concurrent.CyclicBarrier;
-import java.util.concurrent.locks.ReentrantLock;
-
+// using HJlib 
 import static edu.rice.hj.Module0.launchHabaneroApp;
 import static edu.rice.hj.Module1.forallChunked;
-import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
 
-// using HJlib
 //for BSP-LRT
+import java.util.*;
+import java.util.BitSet;
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 //threads affinity
-// for triggering vtune
+import net.openhft.affinity.Affinity;
+
+// for triggering vtune 
+import java.nio.file.*;
+import java.io.IOException;
+
 // for hadoop assert
+import static org.junit.Assert.*; 
 
 /**
  * @brief A colorcount method that implements 

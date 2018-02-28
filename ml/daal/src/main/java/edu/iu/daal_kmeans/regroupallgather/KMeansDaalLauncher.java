@@ -16,10 +16,14 @@
 
 package edu.iu.daal_kmeans.regroupallgather;
 
-import edu.iu.fileformat.MultiFileInputFormat;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.concurrent.ExecutionException;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
-import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
@@ -29,12 +33,10 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
-import java.io.IOException;
+import org.apache.hadoop.filecache.DistributedCache;
 import java.net.URI;
-import java.net.URISyntaxException;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.concurrent.ExecutionException;
+
+import edu.iu.fileformat.MultiFileInputFormat;
 
 public class KMeansDaalLauncher extends Configured
   implements Tool {
@@ -64,6 +66,8 @@ public class KMeansDaalLauncher extends Configured
       DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbbmalloc.so.2#libtbbmalloc.so.2"), conf);
       DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbbmalloc.so#libtbbmalloc.so"), conf);
       DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libiomp5.so#libiomp5.so"), conf);
+	  DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libhdfs.so#libhdfs.so"), conf);
+      DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libhdfs.so.0.0.0#libhdfs.so.0.0.0"), conf);
 
       if (args.length < 10) {
       System.err
@@ -127,15 +131,13 @@ public class KMeansDaalLauncher extends Configured
     Path cenDir =
       new Path(workDirPath, "centroids");
 
-    // if (fs.exists(cenDir)) {
-    //   fs.delete(cenDir, true);
-    // }
-
     fs.mkdirs(cenDir);
     Path outDir = new Path(workDirPath, "out");
     if (fs.exists(outDir)) {
       fs.delete(outDir, true);
     }
+
+	// -------------- generate data if required --------------
     if (generateData) {
         System.out.println("Generate data.");
         KMUtil.generateData(numOfDataPoints,
@@ -151,9 +153,6 @@ public class KMeansDaalLauncher extends Configured
                 vectorSize, configuration, cenDir, fs);
     }
 
-    // KMUtil.generateCentroids(numCentroids,
-    //   vectorSize, configuration, cenDir, fs);
-    //
     long startTime = System.currentTimeMillis();
     runKMeansAllReduce(numOfDataPoints,
       numCentroids, vectorSize, numPointFiles,
@@ -236,13 +235,11 @@ public class KMeansDaalLauncher extends Configured
     jobConf.setInt(
       "mapreduce.job.max.split.locations", 10000);
 
-    // mapreduce.map.collective.memory.mb
-    // 125000
     jobConf.setInt(
       "mapreduce.map.collective.memory.mb", mem);
-	int xmx = (int) Math.ceil((mem)*0.5);
+
+    int xmx = (int) Math.ceil((mem)*0.5);
     int xmn = (int) Math.ceil(0.25 * xmx);
-	
     jobConf.set(
       "mapreduce.map.collective.java.opts",
       "-Xmx" + xmx + "m -Xms" + xmx + "m"

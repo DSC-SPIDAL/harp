@@ -16,28 +16,46 @@
 
 package edu.iu.daal_qr;
 
-import com.intel.daal.algorithms.qr.*;
-import com.intel.daal.data_management.data.*;
-import com.intel.daal.services.DaalContext;
-import com.intel.daal.services.Environment;
-import edu.iu.harp.partition.Partition;
-import edu.iu.harp.partition.Table;
-import edu.iu.harp.resource.ByteArray;
+import org.apache.commons.io.IOUtils;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Arrays;
+import java.nio.DoubleBuffer;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.CollectiveMapper;
 
-import java.io.*;
+import edu.iu.harp.example.DoubleArrPlus;
+import edu.iu.harp.partition.Partition;
+import edu.iu.harp.partition.Partitioner;
+import edu.iu.harp.partition.Table;
+import edu.iu.harp.resource.DoubleArray;
+import edu.iu.harp.resource.ByteArray;
+import edu.iu.harp.schdynamic.DynamicScheduler;
+
 import java.nio.DoubleBuffer;
-import java.util.LinkedList;
-import java.util.List;
 
 //import daal.jar API
+import com.intel.daal.algorithms.qr.*;
+import com.intel.daal.data_management.data.*;
 // import com.intel.daal.data_management.data.DataCollection;
 // import com.intel.daal.data_management.data.KeyValueDataCollection;
 // import com.intel.daal.data_management.data.NumericTable;
+import com.intel.daal.data_management.data_source.DataSource;
+import com.intel.daal.data_management.data_source.FileDataSource;
+import com.intel.daal.services.DaalContext;
+import com.intel.daal.services.Environment;
 
 public class QRDaalCollectiveMapper
     extends

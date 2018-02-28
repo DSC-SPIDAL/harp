@@ -38,96 +38,96 @@ public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object
 		LOG.info("start setup");
 
 		Configuration configuration = context.getConfiguration();
-		numMappers = configuration.getInt(SCConstants.NUM_MAPPERS, 10);
-		template = configuration.get(SCConstants.TEMPLATE_PATH);
-		useLocalMultiThread = configuration.getBoolean(SCConstants.USE_LOCAL_MULTITHREAD, true);
-		LOG.info("init template");
-		LOG.info(template);
-		numMaxThreads = Runtime.getRuntime().availableProcessors();
+    	numMappers = configuration.getInt(SCConstants.NUM_MAPPERS, 10);
+    	template = configuration.get(SCConstants.TEMPLATE_PATH);
+    	useLocalMultiThread = configuration.getBoolean(SCConstants.USE_LOCAL_MULTITHREAD, true);
+    	LOG.info("init template");
+    	LOG.info(template);
+    	numMaxThreads = Runtime.getRuntime().availableProcessors();
 
-		numThreads =configuration.getInt(SCConstants.NUM_THREADS_PER_NODE, 10);
-		if(numMaxThreads < numThreads){//if the numMaxThreads is less than numThreads, use numMaxThreads
-			numThreads = numMaxThreads;
-		}
-		LOG.info("numMaxTheads: "+numMaxThreads+";numThreads:"+numThreads);
+    	numThreads =configuration.getInt(SCConstants.NUM_THREADS_PER_NODE, 10);
+        if(numMaxThreads < numThreads){//if the numMaxThreads is less than numThreads, use numMaxThreads
+        	numThreads = numMaxThreads;
+        }
+        LOG.info("numMaxTheads: "+numMaxThreads+";numThreads:"+numThreads);
 
-		init(template);
-		LOG.info("topologySort subjobs");
-		subjoblist = topologySort(subjoblist);
-		for(SCSubJob ssj:subjoblist){
-			LOG.info(ssj.toString());
-		}
-		//set to 2. Not support configuration currently
+    	init(template);
+    	LOG.info("topologySort subjobs");
+    	subjoblist = topologySort(subjoblist);
+    	for(SCSubJob ssj:subjoblist){
+    		LOG.info(ssj.toString());
+    	}
+    	//set to 2. Not support configuration currently
 		numModelSlices = 2;
 	}
 
 	private  Table<IntArray> readGraphDataMultiThread( Configuration conf, List<String> graphFiles){
-		LOG.info("[BEGIN] SCCollectiveMapper.readGraphDataMultiThread" );
+			LOG.info("[BEGIN] SCCollectiveMapper.readGraphDataMultiThread" );
 
-		Table<IntArray> graphData = new Table<>(0, new IntArrPlus());
+			Table<IntArray> graphData = new Table<>(0, new IntArrPlus());
 
-		List<GraphLoadTask> tasks = new LinkedList<>();
-		for (int i = 0; i < numThreads; i++) {
-			tasks.add(new GraphLoadTask(conf));
-		}
+		    List<GraphLoadTask> tasks = new LinkedList<>();
+		    for (int i = 0; i < numThreads; i++) {
+		    	tasks.add(new GraphLoadTask(conf));
+		    }
 
-		DynamicScheduler<String, ArrayList<Partition<IntArray>>, GraphLoadTask> compute
-				= new DynamicScheduler<>(tasks);
-		compute.start();
+		    DynamicScheduler<String, ArrayList<Partition<IntArray>>, GraphLoadTask> compute
+		    	= new DynamicScheduler<>(tasks);
+		    compute.start();
 
-		for (String filename : graphFiles) {
-			compute.submit(filename);
-		}
+		    for (String filename : graphFiles) {
+		    	compute.submit(filename);
+		    }
 
 
-		ArrayList<Partition<IntArray>> output=null;
-		while (compute.hasOutput()) {
-			output = compute.waitForOutput();
-			if(output != null){
-				ArrayList<Partition<IntArray>> partialGraphDataList = output;
-				for(Partition<IntArray> partialGraph:partialGraphDataList )
-				{
-					graphData.addPartition(partialGraph);
-				}
-			}
-		}
-		compute.stop();
-		LOG.info("[END] SCCollectiveMapper.readGraphDataMultiThread" );
-		return graphData;
+		    ArrayList<Partition<IntArray>> output=null;
+		    while (compute.hasOutput()) {
+		    	output = compute.waitForOutput();
+		    	if(output != null){
+		    		ArrayList<Partition<IntArray>> partialGraphDataList = output;
+		    		for(Partition<IntArray> partialGraph:partialGraphDataList )
+		    		{
+		    			graphData.addPartition(partialGraph);
+		    		}
+		    	}
+		    }
+		    compute.stop();
+		    LOG.info("[END] SCCollectiveMapper.readGraphDataMultiThread" );
+		 return graphData;
 	}
 
 	private  Table<IntArray> readGraphData( Configuration conf, List<String> graphFiles) throws IOException{
-		Table<IntArray> graphData = new Table<>(1, new IntArrPlus());
-		for (String file:graphFiles) {
-			Path pointFilePath = new Path(file);
-			FileSystem fs =pointFilePath.getFileSystem(conf);
-			FSDataInputStream in = fs.open(pointFilePath);
-			BufferedReader br  = new BufferedReader(new InputStreamReader(in));
-			try {
-				String line ="";
-				while((line=br.readLine())!=null){
-					line = line.trim();
-					String splits[] = line.split("\\s+");
-					String keyText = splits[0];
-					int key = Integer.parseInt(keyText);
-					if( splits.length == 2){
-						String valueText = splits[1];
-						String[] itr = valueText.split(",");
-						int length = itr.length;
-						int[] intValues = new int[length];
-						for(int i=0; i< length; i++){
-							intValues[i]= Integer.parseInt(itr[i]);
-						}
-						Partition<IntArray> partialgraph = new Partition<IntArray>(key, new IntArray(intValues, 0, length));
-						graphData.addPartition(partialgraph);
-					}
-				}
-			} finally {
-				in.close();
-			}
+		 Table<IntArray> graphData = new Table<>(1, new IntArrPlus());
+		 for (String file:graphFiles) {
+			 Path pointFilePath = new Path(file);
+			 FileSystem fs =pointFilePath.getFileSystem(conf);
+			 FSDataInputStream in = fs.open(pointFilePath);
+			 BufferedReader br  = new BufferedReader(new InputStreamReader(in));
+			 try {
+			      String line ="";
+			      while((line=br.readLine())!=null){
+			          line = line.trim();
+				  String splits[] = line.split("\\s+");
+				  String keyText = splits[0];
+	 			  int key = Integer.parseInt(keyText);
+				  if( splits.length == 2){
+			       	      String valueText = splits[1];
+				      String[] itr = valueText.split(",");
+			   	      int length = itr.length;
+				      int[] intValues = new int[length];
+		   		      for(int i=0; i< length; i++){
+				 	  intValues[i]= Integer.parseInt(itr[i]);
+				      }
+			  	      Partition<IntArray> partialgraph = new Partition<IntArray>(key, new IntArray(intValues, 0, length));
+				      graphData.addPartition(partialgraph);
+				  }
+			      }
+			 } finally {
+			      in.close();
+			 }
 
-		}
-		return graphData;
+		 }
+		 return graphData;
 	}
 
 	protected void mapCollective( KeyValReader reader, Context context) throws IOException, InterruptedException {
@@ -169,107 +169,107 @@ public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object
 		for(SCSubJob subjob: subjoblist){
 			String subjobname = subjob.getSubJobID();
 			LOG.info("The subjob is: "+ subjobname);
-			if( subjobname.equals("i")){//color the graph, and then store the result in obj at Map<"i", obj>
+			 if( subjobname.equals("i")){//color the graph, and then store the result in obj at Map<"i", obj>
 
-				long coloringGraphbegintime = System.currentTimeMillis();
+				 long coloringGraphbegintime = System.currentTimeMillis();
 
-				ColorCountPairsKVTable[] coloredModel  = colorGraphMultiThread(graphData);
+				 ColorCountPairsKVTable[] coloredModel  = colorGraphMultiThread(graphData);
 
-				dataModelMap.put("i", coloredModel);
+				 dataModelMap.put("i", coloredModel);
 
-				LOG.info("Done coloring the graph: size=" + getModelSize(coloredModel));
-				coloredModel = null; //dereference
+				 LOG.info("Done coloring the graph: size=" + getModelSize(coloredModel));
+				 coloredModel = null; //dereference
 
-				this.logMemUsage();
-				LOG.info("Memory Used: "+ (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()));
+				 this.logMemUsage();
+				 LOG.info("Memory Used: "+ (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()));
 
-				long coloringGraphendtime = System.currentTimeMillis();
-				LOG.info("color graph takes: "+(coloringGraphendtime-coloringGraphbegintime  )+"ms");
-				logGCTime();
-			}
-			else if(subjobname.equals("final")){// compute the final count, write back the result to HDFS
+				 long coloringGraphendtime = System.currentTimeMillis();
+				 LOG.info("color graph takes: "+(coloringGraphendtime-coloringGraphbegintime  )+"ms");
+				 logGCTime();
+			 }
+			 else if(subjobname.equals("final")){// compute the final count, write back the result to HDFS
 				// we don't need to use the whole table of the wholeMathcing result.So comment it.
 				 /* String activeChild = subjob.getActiveChild();
 				 ArrTable<IntArray> wholeMatchingTable = dataModelMap.get(activeChild);
 				 int finalCount = finalCounting(wholeMatchingTable);
 				 LOG.info("finalCount:"+finalCount);
 				 */
-				continue;
-			}
-			else{// compute the intermediate process, namely sub-template matching
+				 continue;
+			 }
+			 else{// compute the intermediate process, namely sub-template matching
 
-				long subjobbegintime = System.currentTimeMillis();
+				 long subjobbegintime = System.currentTimeMillis();
 
-				ColorCountPairsKVTable[] subMatchingModel =  matchSubTemplateMultiThread(graphData, dataModelMap, subjob);
+				 ColorCountPairsKVTable[] subMatchingModel =  matchSubTemplateMultiThread(graphData, dataModelMap, subjob);
 
-				long subjobendtime = System.currentTimeMillis();
-				LOG.info(subjobname+" is done."+"takes: "+ (subjobendtime- subjobbegintime ) +"ms"+"; size="+getModelSize(subMatchingModel));
+				 long subjobendtime = System.currentTimeMillis();
+				 LOG.info(subjobname+" is done."+"takes: "+ (subjobendtime- subjobbegintime ) +"ms"+"; size="+getModelSize(subMatchingModel));
 
-				tryAbolish(subjob, dataModelMap);
+				 tryAbolish(subjob, dataModelMap);
 
-				if(subjobname.equals(wholeTemplateName)){
-					//If this is the whole template matching, then sum up the counts locally, then calculate the final result.
-					LOG.info("[BEGIN] SCCollectiveMapper.mapCollective.final ");
+				 if(subjobname.equals(wholeTemplateName)){
+					 //If this is the whole template matching, then sum up the counts locally, then calculate the final result.
+					 LOG.info("[BEGIN] SCCollectiveMapper.mapCollective.final ");
 
-					long wholetempbegintime = System.currentTimeMillis();
+					 long wholetempbegintime = System.currentTimeMillis();
 
-					long localCount = localAggregate(subMatchingModel);
-					//do allgather to aggregate the final counting
-					ColorCountPairsKVTable localCountTable =  new ColorCountPairsKVTable(3);
-					int key = -1;// -1 represents total counts, not a color.
+					 long localCount = localAggregate(subMatchingModel);
+					 //do allgather to aggregate the final counting
+					 ColorCountPairsKVTable localCountTable =  new ColorCountPairsKVTable(3);
+					 int key = -1;// -1 represents total counts, not a color.
 
-					ColorCountPairs ccp = new ColorCountPairs();
-					ccp.addAPair(key, localCount);
-					localCountTable.addKeyVal(key, ccp);
+					 ColorCountPairs ccp = new ColorCountPairs();
+					 ccp.addAPair(key, localCount);
+					 localCountTable.addKeyVal(key, ccp);
 
-					LOG.info("after subjob: "+subjobname);
-					this.logMemUsage();
-					LOG.info("Memory Used: "+
-							(Runtime.getRuntime().totalMemory()
-									-Runtime.getRuntime().freeMemory()));
-					logGCTime();
+					 LOG.info("after subjob: "+subjobname);
+					 this.logMemUsage();
+					 LOG.info("Memory Used: "+
+							 (Runtime.getRuntime().totalMemory()
+									 -Runtime.getRuntime().freeMemory()));
+					 logGCTime();
 
-					long allreducebegintime = System.currentTimeMillis();
+					 long allreducebegintime = System.currentTimeMillis();
 
-					LOG.info("[BEGIN] SCCollectiveMapper.mapCollective.final.allreduce " );
-					allreduce(subjobname, "aggregate", localCountTable);
-					LOG.info("[END] SCCollectiveMapper.mapCollective.final.allreduce" );
+					 LOG.info("[BEGIN] SCCollectiveMapper.mapCollective.final.allreduce " );
+					 allreduce(subjobname, "aggregate", localCountTable);
+					 LOG.info("[END] SCCollectiveMapper.mapCollective.final.allreduce" );
 
-					long allreduceendtime = System.currentTimeMillis();
-					LOG.info("allreduce is done."+"takes: "+ (allreduceendtime - allreducebegintime) +"ms");
+					 long allreduceendtime = System.currentTimeMillis();
+					 LOG.info("allreduce is done."+"takes: "+ (allreduceendtime - allreducebegintime) +"ms");
 
-					LOG.info("after subjob: "+subjobname+": allreduce");
-					this.logMemUsage();
+					 LOG.info("after subjob: "+subjobname+": allreduce");
+					 this.logMemUsage();
 
-					//get the aggregate result and then compute the final result
-					long finalCount=localCountTable.getVal(key).getCounts().get(0);
-					finalCount /= isom;
-					finalCount /= SCUtils.Prob(numColor, sizeTemplate);
+					 //get the aggregate result and then compute the final result
+					 long finalCount=localCountTable.getVal(key).getCounts().get(0);
+					 finalCount /= isom;
+					 finalCount /= SCUtils.Prob(numColor, sizeTemplate);
 
-					long wholetempendtime = System.currentTimeMillis();
-					LOG.info(subjobname+" is done."+"takes: "+ (wholetempendtime- wholetempbegintime ) +"ms");
-					logGCTime();
+					 long wholetempendtime = System.currentTimeMillis();
+					 LOG.info(subjobname+" is done."+"takes: "+ (wholetempendtime- wholetempbegintime ) +"ms");
+					 logGCTime();
 
-					if(this.isMaster()){
-						context.write("finalCount", finalCount);
-					}
+					 if(this.isMaster()){
+						 context.write("finalCount", finalCount);
+					 }
 
-					LOG.info("[END] SCCollectiveMapper.mapCollective.final" );
+					 LOG.info("[END] SCCollectiveMapper.mapCollective.final" );
 
-				}else{
+				 }else{
 
-					dataModelMap.put(subjobname, subMatchingModel);
-					subMatchingModel = null; //dereference
+					 dataModelMap.put(subjobname, subMatchingModel);
+					 subMatchingModel = null; //dereference
 
-					LOG.info("after subjob: "+subjobname);
-					this.logMemUsage();
-					LOG.info("Memory Used: "+
-							(Runtime.getRuntime().totalMemory()
-									-Runtime.getRuntime().freeMemory()));
-					logGCTime();
-				}
-			}
-		}
+					 LOG.info("after subjob: "+subjobname);
+					 this.logMemUsage();
+					 LOG.info("Memory Used: "+
+							 (Runtime.getRuntime().totalMemory()
+									 -Runtime.getRuntime().freeMemory()));
+					 logGCTime();
+				 }
+			 }
+		 }
 		//-------------------------------------------------------------------
 	}
 
@@ -410,10 +410,10 @@ public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object
 		//compose
 		List<SubMatchingTask> tasks = new LinkedList<>();
 		for (int i = 0; i < numThreads; i++) {
-			tasks.add(new SubMatchingTask(graphData,passiveChild[0]));
+	        	tasks.add(new SubMatchingTask(graphData,passiveChild[0]));
 		}
 		DynamicScheduler<Partition<ColorCountPairsKVPartition>, SubMatchingTask.SubMatchingTaskOutput, SubMatchingTask>
-				compute = new DynamicScheduler<>(tasks);
+		compute = new DynamicScheduler<>(tasks);
 
 		long computeTime = 0;
 		long rotatorBegin = System.currentTimeMillis();
@@ -478,38 +478,38 @@ public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object
 		}
 
 		Collection<Partition<IntArray>> graphPartitions = graphData.getPartitions();
-		List<ColorTask> tasks = new LinkedList<>();
-		for (int i = 0; i < numThreads; i++) {
-			tasks.add(new ColorTask(numColor, rand));
-		}
-		// doTasks(cenPartitions, output, tasks);
-		DynamicScheduler<Partition<IntArray>,  ColorTask.ColorTaskOutput, ColorTask>
-				compute = new DynamicScheduler<>(tasks);
-		compute.start();
+	    List<ColorTask> tasks = new LinkedList<>();
+	    for (int i = 0; i < numThreads; i++) {
+	    	tasks.add(new ColorTask(numColor, rand));
+	    }
+	    // doTasks(cenPartitions, output, tasks);
+	    DynamicScheduler<Partition<IntArray>,  ColorTask.ColorTaskOutput, ColorTask>
+	    	compute = new DynamicScheduler<>(tasks);
+	    compute.start();
 
-		for (Partition<IntArray> partition : graphPartitions) {
-			compute.submit(partition);
-		}
+	    for (Partition<IntArray> partition : graphPartitions) {
+	    	compute.submit(partition);
+	    }
 		int modelSliceId = 0;
-		int partitionPerSlice = graphData.getNumPartitions() / numModelSlices
-				+ ( graphData.getNumPartitions() % numModelSlices == 0? 0 : 1);
+	    int partitionPerSlice = graphData.getNumPartitions() / numModelSlices
+								+ ( graphData.getNumPartitions() % numModelSlices == 0? 0 : 1);
 		ColorTask.ColorTaskOutput output=null;
-		while(compute.hasOutput()){
-			output = compute.waitForOutput();
-			if(output != null){
-				if( colorTable[modelSliceId].getNumPartitions() >= partitionPerSlice){
-					modelSliceId++;
+	    while(compute.hasOutput()){
+	    	output = compute.waitForOutput();
+	    	if(output != null){
+	    		if( colorTable[modelSliceId].getNumPartitions() >= partitionPerSlice){
+	    			modelSliceId++;
 				}
 				colorTable[modelSliceId].addKeyVal(output.partitionId, output.colorCountPairs);
-			}
-		}
-		compute.stop();
+	    	}
+	    }
+	    compute.stop();
 
-		for(int i = 0; i < numModelSlices; i++){
-			LOG.info("model slice id: "+i+"; mode size: " + colorTable[i].getNumPartitions());
-		}
+	    for(int i = 0; i < numModelSlices; i++){
+		LOG.info("model slice id: "+i+"; mode size: " + colorTable[i].getNumPartitions());
+	    }
 
-		LOG.info("[END] SCCollectiveMapper.colorGraphMultiThread");
+	    LOG.info("[END] SCCollectiveMapper.colorGraphMultiThread");
 
 		return colorTable;
 	}
@@ -532,123 +532,123 @@ public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object
 	private void init(String template){
 		subjoblist = new ArrayList<SCSubJob>();
 		try {
-			String line;
-			File f = new File(template);
-			BufferedReader fReader = new BufferedReader(new FileReader(f));
-			while ((line = fReader.readLine()) != null) {
-				String[] st = line.split(" ");
-				if(st.length<=1){
-					continue;
-				}
-				if (st[0].contains("final")) { // total count
-					// like final u5-1 5 2
-					SCSubJob subJob = new SCSubJob();
-					isom = Integer.parseInt(st[3]);
-					sizeTemplate = Integer.parseInt(st[2]);
-					subJob.setSubJobID(st[0]);
-					subJob.setActiveChild(st[1]);
-					wholeTemplateName = st[1];
-					subJob.setPassiveChild(null);
-					subjoblist.add(subJob);
+            String line;
+            File f = new File(template);
+            BufferedReader fReader = new BufferedReader(new FileReader(f));
+            while ((line = fReader.readLine()) != null) {
+                String[] st = line.split(" ");
+                if(st.length<=1){
+                	continue;
+                }
+                if (st[0].contains("final")) { // total count
+                	// like final u5-1 5 2
+                	SCSubJob subJob = new SCSubJob();
+                	isom = Integer.parseInt(st[3]);
+                	sizeTemplate = Integer.parseInt(st[2]);
+                	subJob.setSubJobID(st[0]);
+                	subJob.setActiveChild(st[1]);
+                	wholeTemplateName = st[1];
+                	subJob.setPassiveChild(null);
+                    subjoblist.add(subJob);
 
-					// new a subjob, or update an exsiting subjob
-					boolean flag=false;
-					for(SCSubJob ssj: subjoblist){
-						if (ssj.getSubJobID().equals(st[1])){
-							ssj.referedNum ++;
-							flag=true;
-							break;
-						}
-					}
-					if(flag==false){
-						SCSubJob ssj = new SCSubJob();
-						ssj.setSubJobID(st[1]);
-						ssj.referedNum ++;
-						subjoblist.add(ssj);
-					}
+                	// new a subjob, or update an exsiting subjob
+                	boolean flag=false;
+                	for(SCSubJob ssj: subjoblist){
+                		if (ssj.getSubJobID().equals(st[1])){
+                			ssj.referedNum ++;
+                			flag=true;
+                			break;
+                		}
+                	}
+                	if(flag==false){
+                		SCSubJob ssj = new SCSubJob();
+                		ssj.setSubJobID(st[1]);
+                		ssj.referedNum ++;
+                		subjoblist.add(ssj);
+                	}
 
 
 
-				} else if (st[0].equals("i")) { // random coloring
-					// like i graph 5
-					numColor = Integer.parseInt(st[2]);
+                } else if (st[0].equals("i")) { // random coloring
+                	// like i graph 5
+                    numColor = Integer.parseInt(st[2]);
 
-					boolean flag=false;
-					for(SCSubJob ssj: subjoblist){
-						if (ssj.getSubJobID().equals(st[0])){
-							flag=true;
-							ssj.setActiveChild(null);
-							ssj.setPassiveChild(null);
-							break;
-						}
-					}
-					if(flag==false){
-						SCSubJob subJob = new SCSubJob();
-						subJob.setSubJobID(st[0]);
-						subJob.setActiveChild(null);
-						subJob.setPassiveChild(null);
-						subjoblist.add(subJob);
-					}
+                    boolean flag=false;
+                	for(SCSubJob ssj: subjoblist){
+                		if (ssj.getSubJobID().equals(st[0])){
+                			flag=true;
+                			ssj.setActiveChild(null);
+                			ssj.setPassiveChild(null);
+                			break;
+                		}
+                	}
+                	if(flag==false){
+                		SCSubJob subJob = new SCSubJob();
+                        subJob.setSubJobID(st[0]);
+                        subJob.setActiveChild(null);
+                    	subJob.setPassiveChild(null);
+                    	 subjoblist.add(subJob);
+                	}
 
-				} else {
-					// like u5-1 u3-1 u2
-					String activeChild = st[1];
-					String passiveChild = st[2];
+                } else {
+                	// like u5-1 u3-1 u2
+                    String activeChild = st[1];
+                    String passiveChild = st[2];
 
-					boolean flag=false;
-					for(SCSubJob ssj: subjoblist){
-						if (ssj.getSubJobID().equals(st[0])){
-							flag=true;
-							ssj.setActiveChild(activeChild);
-							ssj.setPassiveChild(passiveChild);
-							break;
-						}
-					}
-					if(flag==false){
-						SCSubJob subJob = new SCSubJob();
-						subJob.setSubJobID(st[0]);
-						subJob.setActiveChild(activeChild);
-						subJob.setPassiveChild(passiveChild);
-						subjoblist.add(subJob);
-					}
+                    boolean flag=false;
+                	for(SCSubJob ssj: subjoblist){
+                		if (ssj.getSubJobID().equals(st[0])){
+                			flag=true;
+                			ssj.setActiveChild(activeChild);
+                			ssj.setPassiveChild(passiveChild);
+                			break;
+                		}
+                	}
+                	if(flag==false){
+                		  SCSubJob subJob = new SCSubJob();
+                          subJob.setSubJobID(st[0]);
+                          subJob.setActiveChild(activeChild);
+                          subJob.setPassiveChild(passiveChild);
+                          subjoblist.add(subJob);
+                	}
 
-					flag=false;
-					for(SCSubJob ssj: subjoblist){
-						if (ssj.getSubJobID().equals(activeChild)){
-							flag=true;
-							ssj.referedNum++;
-							break;
-						}
-					}
-					if(flag==false){
-						SCSubJob subJob = new SCSubJob();
-						subJob.setSubJobID(activeChild);
-						subJob.referedNum++;
-						subjoblist.add(subJob);
-					}
+                	flag=false;
+                	for(SCSubJob ssj: subjoblist){
+                		if (ssj.getSubJobID().equals(activeChild)){
+                			flag=true;
+                			ssj.referedNum++;
+                			break;
+                		}
+                	}
+                	if(flag==false){
+                		  SCSubJob subJob = new SCSubJob();
+                          subJob.setSubJobID(activeChild);
+                          subJob.referedNum++;
+                          subjoblist.add(subJob);
+                	}
 
-					flag=false;
-					for(SCSubJob ssj: subjoblist){
-						if (ssj.getSubJobID().equals(passiveChild)){
-							flag=true;
-							ssj.referedNum++;
-							break;
-						}
-					}
-					if(flag==false){
-						SCSubJob subJob = new SCSubJob();
-						subJob.setSubJobID(passiveChild);
-						subJob.referedNum++;
-						subjoblist.add(subJob);
-					}
-				}
-			}
-			fReader.close();
+                	flag=false;
+                	for(SCSubJob ssj: subjoblist){
+                		if (ssj.getSubJobID().equals(passiveChild)){
+                			flag=true;
+                			ssj.referedNum++;
+                			break;
+                		}
+                	}
+                	if(flag==false){
+                		  SCSubJob subJob = new SCSubJob();
+                          subJob.setSubJobID(passiveChild);
+                          subJob.referedNum++;
+                          subjoblist.add(subJob);
+                	}
+                }
+            }
+            fReader.close();
 
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
 	}
 
 	private ArrayList<SCSubJob> topologySort(ArrayList<SCSubJob> subjoblist){
@@ -660,8 +660,8 @@ public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object
 				SCSubJob scsjob = subjoblist.get(i);
 				if(!uniqueSet.contains(scsjob.getSubJobID())){
 					if( (scsjob.getActiveChild() == null || uniqueSet.contains(scsjob.getActiveChild()))
-							&&
-							((scsjob.getPassiveChild() == null) ||  uniqueSet.contains(scsjob.getPassiveChild())) ) {
+							&& 
+						((scsjob.getPassiveChild() == null) ||  uniqueSet.contains(scsjob.getPassiveChild())) ) {
 						res.add(scsjob);
 						uniqueSet.add(scsjob.getSubJobID());
 					}
@@ -682,21 +682,21 @@ public class SCCollectiveMapper  extends CollectiveMapper<String, String, Object
 
 		count /= isom;
 		count /= SCUtils.Prob(numColor, sizeTemplate);
-
-
+		
+		
 		return count;
 	}
-
+	
 	//print for debugging
 	private void printTable( ColorCountPairsKVTable table){
 		for(Partition<ColorCountPairsKVPartition> par: table.getPartitions())
-		{
+		 {
 			int key = par.id();
-			ColorCountPairs ccp = par.get().getVal(key);
-			System.out.print(key+"\t");
-			for(int i = 0; i<ccp.getColors().size(); i++)
-				System.out.print(ccp.getColors().get(i)+","+ccp.getCounts().get(i)+",");
-			System.out.println();
+			 ColorCountPairs ccp = par.get().getVal(key);
+			 System.out.print(key+"\t");
+			 for(int i = 0; i<ccp.getColors().size(); i++)
+				 System.out.print(ccp.getColors().get(i)+","+ccp.getCounts().get(i)+",");
+			 System.out.println();
 		}
 	}
 }

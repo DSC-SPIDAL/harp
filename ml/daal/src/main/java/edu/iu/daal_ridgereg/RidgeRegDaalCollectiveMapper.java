@@ -16,28 +16,48 @@
 
 package edu.iu.daal_ridgereg;
 
+import org.apache.commons.io.IOUtils;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Arrays;
+import java.util.ListIterator;
+import java.nio.DoubleBuffer;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.LocatedFileStatus;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.RemoteIterator;
+import org.apache.hadoop.mapred.CollectiveMapper;
+
+import edu.iu.harp.example.DoubleArrPlus;
+import edu.iu.harp.partition.Partition;
+import edu.iu.harp.partition.Partitioner;
+import edu.iu.harp.partition.Table;
+import edu.iu.harp.resource.DoubleArray;
+import edu.iu.harp.resource.ByteArray;
+import edu.iu.harp.schdynamic.DynamicScheduler;
+
+import java.nio.DoubleBuffer;
+
+//import daal.jar API
 import com.intel.daal.algorithms.ridge_regression.Model;
 import com.intel.daal.algorithms.ridge_regression.prediction.*;
 import com.intel.daal.algorithms.ridge_regression.training.*;
 import com.intel.daal.data_management.data.*;
-import com.intel.daal.data_management.data_source.*;
 import com.intel.daal.services.DaalContext;
+import com.intel.daal.data_management.data_source.*;
+
 import com.intel.daal.services.Environment;
-import edu.iu.harp.partition.Partition;
-import edu.iu.harp.partition.Table;
-import edu.iu.harp.resource.ByteArray;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.*;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.mapred.CollectiveMapper;
-
-import java.io.*;
-import java.nio.DoubleBuffer;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.ListIterator;
-
-//import daal.jar API
 
 
 /**
@@ -243,7 +263,7 @@ CollectiveMapper<String, String, Object, Object>{
     LOG.info("Misc Time of RidgeReg: "+ (total_time - load_time - compute_time - comm_time - convert_time));
 }
   
-  private void trainModel(NumericTable trainData, NumericTable trainDependentVariables, Table<ByteArray> partialResultTable) throws IOException {
+  private void trainModel(NumericTable trainData, NumericTable trainDependentVariables, Table<ByteArray> partialResultTable) throws java.io.IOException {
 
     LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
     Environment.setNumberOfThreads(numThreads);
@@ -264,7 +284,7 @@ CollectiveMapper<String, String, Object, Object>{
     boolean reduceStatus = false;
     reduceStatus = this.reduce("ridgereg", "sync-partialresult", partialResultTable, this.getMasterID());
     ts2 = System.currentTimeMillis();
-    comm_time += (ts2 - ts1);
+    comm_time += (ts2 - ts1); 
 
     if(!reduceStatus){
       System.out.println("reduce not successful");
@@ -272,7 +292,7 @@ CollectiveMapper<String, String, Object, Object>{
     else{
       System.out.println("reduce successful");
     }
-
+      
     if(this.isMaster()){
       TrainingDistributedStep2Master ridgeRegressionTrainingMaster = new TrainingDistributedStep2Master(daal_Context, Float.class,
                 TrainingMethod.normEqDense);
@@ -281,9 +301,9 @@ CollectiveMapper<String, String, Object, Object>{
       for(int j = 0; j< pid.length; j++){
         try {
           ridgeRegressionTrainingMaster.input.add(MasterInputId.partialModels,
-          deserializePartialResult(partialResultTable.getPartition(pid[j]).get()));
-        } catch (Exception e)
-          {
+          deserializePartialResult(partialResultTable.getPartition(pid[j]).get())); 
+        } catch (Exception e) 
+          {  
             System.out.println("Fail to deserilize partialResultTable" + e.toString());
             e.printStackTrace();
           }
@@ -301,7 +321,7 @@ CollectiveMapper<String, String, Object, Object>{
 
   }
 
-  private void testModel(String testFilePath, Configuration conf) throws java.io.FileNotFoundException, IOException {
+  private void testModel(String testFilePath, Configuration conf) throws java.io.FileNotFoundException, java.io.IOException {
     PredictionBatch ridgeRegressionPredict = new PredictionBatch(daal_Context, Float.class, PredictionMethod.defaultDense);
     NumericTable testData = getNumericTableHDFS(daal_Context, conf, testFilePath, 10, 250);
     ridgeRegressionPredict.input.set(PredictionInputId.data, testData);
@@ -316,7 +336,7 @@ CollectiveMapper<String, String, Object, Object>{
 
   }
 
-  private void printResults(String testGroundTruth, PredictionResult predictionResult, Configuration conf) throws java.io.FileNotFoundException, IOException {
+  private void printResults(String testGroundTruth, PredictionResult predictionResult, Configuration conf) throws java.io.FileNotFoundException, java.io.IOException {
         NumericTable beta = model.getBeta();
         NumericTable expected = getNumericTableHDFS(daal_Context, conf, testGroundTruth, 2, 250);
         Service.printNumericTable("Coefficients: ", beta);

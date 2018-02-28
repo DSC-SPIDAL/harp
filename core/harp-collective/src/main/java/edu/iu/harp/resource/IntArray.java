@@ -17,6 +17,7 @@
 package edu.iu.harp.resource;
 
 import edu.iu.harp.io.DataType;
+import edu.iu.harp.resource.Array;
 
 import java.io.DataOutput;
 import java.io.IOException;

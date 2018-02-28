@@ -16,35 +16,55 @@
 
 package edu.iu.daal_naive;
 
+import org.apache.commons.io.IOUtils;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Arrays;
+import java.util.ListIterator;
+import java.nio.DoubleBuffer;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.LocatedFileStatus;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.RemoteIterator;
+import org.apache.hadoop.mapred.CollectiveMapper;
+
+import edu.iu.harp.example.DoubleArrPlus;
+import edu.iu.harp.partition.Partition;
+import edu.iu.harp.partition.Partitioner;
+import edu.iu.harp.partition.Table;
+import edu.iu.harp.resource.DoubleArray;
+import edu.iu.harp.resource.ByteArray;
+import edu.iu.harp.schdynamic.DynamicScheduler;
+
+import java.nio.DoubleBuffer;
+
+//import daal.jar API
 import com.intel.daal.algorithms.classifier.prediction.ModelInputId;
 import com.intel.daal.algorithms.classifier.prediction.NumericTableInputId;
 import com.intel.daal.algorithms.classifier.prediction.PredictionResult;
 import com.intel.daal.algorithms.classifier.prediction.PredictionResultId;
 import com.intel.daal.algorithms.classifier.training.InputId;
-import com.intel.daal.algorithms.classifier.training.TrainingDistributedInputId;
-import com.intel.daal.algorithms.classifier.training.TrainingResultId;
+import com.intel.daal.algorithms.classifier.training.TrainingDistributedInputId; //for daal_2018_beta
+import com.intel.daal.algorithms.classifier.training.TrainingResultId; //for daal_2018
 import com.intel.daal.algorithms.multinomial_naive_bayes.Model;
 import com.intel.daal.algorithms.multinomial_naive_bayes.prediction.*;
 import com.intel.daal.algorithms.multinomial_naive_bayes.training.*;
 import com.intel.daal.data_management.data.*;
-import com.intel.daal.data_management.data_source.*;
 import com.intel.daal.services.DaalContext;
+import com.intel.daal.data_management.data_source.*;
+
 import com.intel.daal.services.Environment;
-import edu.iu.harp.partition.Partition;
-import edu.iu.harp.partition.Table;
-import edu.iu.harp.resource.ByteArray;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.*;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.mapred.CollectiveMapper;
-
-import java.io.*;
-import java.nio.DoubleBuffer;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.ListIterator;
-
-//import daal.jar API
 
 
 /**
@@ -297,7 +317,7 @@ CollectiveMapper<String, String, Object, Object>{
     LOG.info("Misc Time of Naive: "+ (total_time - compute_time - comm_time - convert_time));
 }
   
-  private void trainModel(NumericTable featureArray_daal, NumericTable labelArray_daal, Table<ByteArray> partialResultTable) throws IOException
+  private void trainModel(NumericTable featureArray_daal, NumericTable labelArray_daal, Table<ByteArray> partialResultTable) throws java.io.IOException 
   {
 
     DaalContext localContext = new DaalContext();
@@ -326,7 +346,7 @@ CollectiveMapper<String, String, Object, Object>{
     reduceStatus = this.reduce("naive", "sync-partialresult", partialResultTable, this.getMasterID());
 	this.barrier("naive", "reduce-sync");
     ts2 = System.currentTimeMillis();
-    comm_time += (ts2 - ts1);
+    comm_time += (ts2 - ts1); 
 
     if(!reduceStatus){
       System.out.println("reduce not successful");
@@ -334,7 +354,7 @@ CollectiveMapper<String, String, Object, Object>{
     else{
       System.out.println("reduce successful");
     }
-
+      
     if(this.isMaster()){
 	  ts1 = System.currentTimeMillis();
       TrainingDistributedStep2Master masterAlgorithm = new TrainingDistributedStep2Master(daal_Context, Float.class,
@@ -351,9 +371,9 @@ CollectiveMapper<String, String, Object, Object>{
         try {
           System.out.println("pid : "+pid[j]);
           masterAlgorithm.input.add(TrainingDistributedInputId.partialModels,
-          deserializePartialResult(partialResultTable.getPartition(pid[j]).get()));
-        } catch (Exception e)
-          {
+          deserializePartialResult(partialResultTable.getPartition(pid[j]).get())); 
+        } catch (Exception e) 
+          {  
             System.out.println("Fail to deserilize partialResultTable" + e.toString());
             e.printStackTrace();
           }
@@ -374,7 +394,7 @@ CollectiveMapper<String, String, Object, Object>{
 
   }
 
-  private void testModel(String testFilePath, Configuration conf) throws java.io.FileNotFoundException, IOException {
+  private void testModel(String testFilePath, Configuration conf) throws java.io.FileNotFoundException, java.io.IOException {
     PredictionBatch algorithm = new PredictionBatch(daal_Context, Float.class, PredictionMethod.defaultDense, nClasses);
 
     // NumericTable testData = getNumericTableHDFS(daal_Context, conf, testFilePath, vectorSize, num_test);
@@ -390,7 +410,7 @@ CollectiveMapper<String, String, Object, Object>{
 
   }
 
-  private void printResults(String testGroundTruth, PredictionResult predictionResult, Configuration conf) throws java.io.FileNotFoundException, IOException {
+  private void printResults(String testGroundTruth, PredictionResult predictionResult, Configuration conf) throws java.io.FileNotFoundException, java.io.IOException {
         NumericTable expected = getNumericTableHDFS(daal_Context, conf, testGroundTruth, 1, num_test);
         NumericTable prediction = predictionResult.get(PredictionResultId.prediction);
         Service.printClassificationResult(expected, prediction, "Ground truth", "Classification results",

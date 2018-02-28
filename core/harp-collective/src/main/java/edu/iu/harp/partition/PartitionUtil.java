@@ -18,7 +18,12 @@ package edu.iu.harp.partition;
 
 import edu.iu.harp.client.DataSender;
 import edu.iu.harp.collective.Communication;
-import edu.iu.harp.io.*;
+import edu.iu.harp.io.Constant;
+import edu.iu.harp.io.Data;
+import edu.iu.harp.io.DataMap;
+import edu.iu.harp.io.DataType;
+import edu.iu.harp.io.DataUtil;
+import edu.iu.harp.io.IOUtil;
 import edu.iu.harp.resource.Simple;
 import edu.iu.harp.resource.Transferable;
 import edu.iu.harp.resource.Writable;

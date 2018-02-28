@@ -16,11 +16,15 @@
 
 package edu.iu.daal_sgd;
 
-import edu.iu.harp.schdynamic.DynamicScheduler;
-import edu.iu.harp.schdynamic.Task;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.util.LinkedList;
+import java.util.List;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -28,10 +32,8 @@ import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.util.LinkedList;
-import java.util.List;
+import edu.iu.harp.schdynamic.DynamicScheduler;
+import edu.iu.harp.schdynamic.Task;
 
 class VLoadTask implements Task<String, Object> {
   protected static final Log LOG = LogFactory

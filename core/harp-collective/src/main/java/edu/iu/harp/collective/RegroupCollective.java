@@ -17,8 +17,16 @@
 package edu.iu.harp.collective;
 
 import edu.iu.harp.example.DoubleArrPlus;
-import edu.iu.harp.io.*;
-import edu.iu.harp.partition.*;
+import edu.iu.harp.io.ConnPool;
+import edu.iu.harp.io.Constant;
+import edu.iu.harp.io.DataMap;
+import edu.iu.harp.io.DataUtil;
+import edu.iu.harp.io.EventQueue;
+import edu.iu.harp.partition.Partition;
+import edu.iu.harp.partition.PartitionFunction;
+import edu.iu.harp.partition.PartitionUtil;
+import edu.iu.harp.partition.Partitioner;
+import edu.iu.harp.partition.Table;
 import edu.iu.harp.resource.DoubleArray;
 import edu.iu.harp.resource.Simple;
 import edu.iu.harp.resource.Transferable;

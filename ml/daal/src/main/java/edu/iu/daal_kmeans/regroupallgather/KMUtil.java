@@ -16,18 +16,7 @@
 
 package edu.iu.daal_kmeans.regroupallgather;
 
-import edu.iu.data_gen.DataGenMMDense;
-import edu.iu.harp.partition.Partition;
-import edu.iu.harp.partition.Table;
-import edu.iu.harp.resource.DoubleArray;
-import edu.iu.harp.schdynamic.DynamicScheduler;
 import it.unimi.dsi.fastutil.ints.IntArrays;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FSDataOutputStream;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -40,6 +29,20 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+
+import edu.iu.harp.schdynamic.DynamicScheduler;
+import edu.iu.harp.partition.Partition;
+import edu.iu.harp.partition.Table;
+import edu.iu.harp.resource.DoubleArray;
+
+import edu.iu.data_gen.*;
 
 public class KMUtil {
 
@@ -72,7 +75,6 @@ public class KMUtil {
     }
     data = new double[numCentroids * vectorSize];
     for (int i = 0; i < data.length; i++) {
-      // data[i] = 1000;
       data[i] = random.nextDouble() * 1000;
     }
     Path initClustersFile =
@@ -151,6 +153,7 @@ public class KMUtil {
     List<Future<?>> futures =
       new LinkedList<Future<?>>();
     for (int k = 0; k < numPointFiles; k++) {
+      
       Future<?> f = 
           service.submit(new DataGenMMDense(pointsPerFile, 
         localInputDir, Integer.toString(k), vectorSize));
@@ -182,7 +185,7 @@ public class KMUtil {
   }
 
   public static List<double[]> loadPoints(
-    List<String> fileNames, int pointsPerFile,
+    List<String> fileNames,
     int cenVecSize, Configuration conf,
     int numThreads) {
     long startTime = System.currentTimeMillis();
@@ -190,8 +193,7 @@ public class KMUtil {
       new LinkedList<>();
     List<double[]> arrays = new LinkedList<>();
     for (int i = 0; i < numThreads; i++) {
-      tasks.add(new PointLoadTask(
-        cenVecSize, conf));
+      tasks.add(new PointLoadTask(cenVecSize, conf));
     }
     DynamicScheduler<String, double[], PointLoadTask> compute =
       new DynamicScheduler<>(tasks);

@@ -19,7 +19,6 @@ package edu.iu.daal_subgraph;
 import edu.iu.fileformat.MultiFileInputFormat;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
-import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
@@ -29,8 +28,11 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
-import java.io.IOException;
+import org.apache.hadoop.filecache.DistributedCache;
 import java.net.URI;
+
+import java.io.IOException;
+import java.util.ArrayList;
 
 public class SCDaalLauncher extends Configured implements Tool {
 

@@ -25,12 +25,15 @@ package edu.iu.daal_nn;
 
 import com.intel.daal.algorithms.neural_networks.*;
 import com.intel.daal.algorithms.neural_networks.initializers.uniform.*;
+import com.intel.daal.algorithms.neural_networks.training.TrainingTopology;
 import com.intel.daal.algorithms.neural_networks.layers.fullyconnected.*;
 import com.intel.daal.algorithms.neural_networks.layers.softmax_cross.*;
-import com.intel.daal.algorithms.neural_networks.training.TrainingTopology;
-import com.intel.daal.services.DaalContext;
-
+import com.intel.daal.algorithms.neural_networks.layers.LayerDescriptor;
+import com.intel.daal.algorithms.neural_networks.layers.NextLayers;
+import com.intel.daal.algorithms.neural_networks.layers.ForwardLayer;
+import com.intel.daal.algorithms.neural_networks.layers.BackwardLayer;
 //import com.intel.daal.examples.utils.Service;
+import com.intel.daal.services.DaalContext;
 
 /**
  * <a name="DAAL-EXAMPLE-JAVA-NEURALNETWORKCONFIGURATORDISTR">

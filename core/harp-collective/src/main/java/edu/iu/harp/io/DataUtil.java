@@ -19,7 +19,15 @@ package edu.iu.harp.io;
 import edu.iu.harp.client.Event;
 import edu.iu.harp.client.EventType;
 import edu.iu.harp.partition.Partition;
-import edu.iu.harp.resource.*;
+import edu.iu.harp.resource.ByteArray;
+import edu.iu.harp.resource.DoubleArray;
+import edu.iu.harp.resource.FloatArray;
+import edu.iu.harp.resource.IntArray;
+import edu.iu.harp.resource.LongArray;
+import edu.iu.harp.resource.ShortArray;
+import edu.iu.harp.resource.Simple;
+import edu.iu.harp.resource.Transferable;
+import edu.iu.harp.resource.Writable;
 import org.apache.log4j.Logger;
 
 import java.io.DataInput;

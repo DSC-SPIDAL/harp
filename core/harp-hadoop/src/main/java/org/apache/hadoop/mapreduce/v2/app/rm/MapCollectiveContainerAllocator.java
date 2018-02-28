@@ -116,7 +116,7 @@ public class MapCollectiveContainerAllocator
   protected synchronized void
     handleEvent(ContainerAllocatorEvent event) {
     if (event
-      .getType() == EventType.CONTAINER_REQ) {
+      .getType() == ContainerAllocator.EventType.CONTAINER_REQ) {
       // Modify original request information
       if (event.getAttemptID().getTaskId()
         .getTaskType().equals(TaskType.MAP)) {
