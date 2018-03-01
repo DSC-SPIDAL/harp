@@ -11,6 +11,10 @@
 
     <artifactId>experimental</artifactId>
 
+    <properties>
+        <main.basedir>${project.parent.basedir}</main.basedir>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>edu.iu.harp</groupId>
