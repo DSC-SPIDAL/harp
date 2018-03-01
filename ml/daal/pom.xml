@@ -11,7 +11,7 @@
     </parent>
 
     <groupId>edu.iu.harp</groupId>
-    <artifactId>daal</artifactId>
+    <artifactId>harpdaal</artifactId>
     <version>1.0-SNAPSHOT</version>
 
     <dependencies>
@@ -20,7 +20,6 @@
             <artifactId>daal</artifactId>
             <scope>system</scope>
             <version>1.0</version>
-            <!-- <systemPath>${DAALROOT}/lib/daal.jar</systemPath> -->
 			<systemPath>${basedir}/../../third_party/daal-2018/daal.jar</systemPath>
         </dependency>
     </dependencies>

@@ -29,7 +29,7 @@ Please have all dependencies installed.
 * Python 2.7+
 * Python module Numpy (Install with your `pip`)
 * Hadoop 2.6.0/Hadoop 2.6.5
-* DAAL (Please see instructions under `harp-daal-app`)
+* IntelDAAL (third_party/daal-2018)
 
 ### Environment Variables
 After the code have been checked out and dependencies installed, please `export` all the following environment variables.
@@ -39,17 +39,17 @@ After the code have been checked out and dependencies installed, please `export`
 export HADOOP_HOME=<path to hadoop home folder>
 
 # Harp
-export HARP_JAR=<path to>/harp-app-1.0-SNAPSHOT.jar
-export HARP_DAAL_JAR=<path to>/harp-daal-app-1.0-SNAPSHOT.jar
+export HARP_JAR=<path to>/harpjava-1.0-SNAPSHOT.jar
+export HARP_DAAL_JAR=<path to>/harpdaal-1.0-SNAPSHOT.jar
 export DAALROOT=<path to your compiled daal folder>
-export PYTHONPATH=<path to>/harp-daal-python
+export PYTHONPATH=<path to>/tutorial
 ```
 
 ## Example Code
-Example code can be found under folder `harp/harp-daal-python/examples`. For instance, to run KMeans with Harp-Daal, please run the following command:
+Example code can be found under folder `harp/tutorial/examples`. For instance, to run KMeans with Harp-Daal, please run the following command:
 
 ```bash
-cd harp-daal-python
+cd tutorial 
 python examples/daal/run_harp_daal_KMeansDaal.py
 
 # All 12 examples

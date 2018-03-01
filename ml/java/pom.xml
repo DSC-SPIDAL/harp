@@ -11,7 +11,7 @@
     </parent>
 
     <groupId>edu.iu.harp</groupId>
-    <artifactId>java</artifactId>
+    <artifactId>harpjava</artifactId>
     <version>1.0-SNAPSHOT</version>
 
     <dependencies>
@@ -20,7 +20,6 @@
             <artifactId>habanero-java</artifactId>
             <scope>system</scope>
             <version>0.1.4</version>
-            <!-- <systemPath>${project.basedir}/third_party/habanero&#45;java&#45;lib&#45;0.1.4&#45;SNAPSHOT.jar</systemPath> -->
 			<systemPath>${basedir}/../../third_party/habanero-java-lib-0.1.4-SNAPSHOT.jar</systemPath>
         </dependency>
     </dependencies>
