@@ -55,7 +55,7 @@ import edu.iu.harp.resource.IntArray;
 import edu.iu.harp.resource.ByteArray;
 import edu.iu.harp.resource.LongArray;
 
-import edu.iu.daal.*;
+import edu.iu.data_transfer.*;
 import java.nio.DoubleBuffer;
 
 //import daa.jar API

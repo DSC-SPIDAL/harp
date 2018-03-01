@@ -11,9 +11,9 @@
     <modules>
         <module>core</module>
         <module>ml</module>
-        <!--module>experimental</module-->
+        <module>contrib</module>
+		<module>experimental</module>
         <!--module>distribution</module-->
-        <module>harp-tutorial-app</module>
     </modules>
 
     <properties>

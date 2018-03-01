@@ -49,7 +49,7 @@ import edu.iu.harp.schdynamic.DynamicScheduler;
 
 import edu.iu.harp.resource.ByteArray;
 
-import edu.iu.daal.*;
+import edu.iu.data_transfer.*;
 import java.nio.DoubleBuffer;
 
 //import PCA from DAAL library

@@ -37,7 +37,7 @@ import edu.iu.harp.partition.Table;
 import edu.iu.harp.resource.DoubleArray;
 import edu.iu.harp.schdynamic.DynamicScheduler;
 
-import edu.iu.daal.*;
+import edu.iu.data_transfer.*;
 import java.nio.DoubleBuffer;
 
 //import daa.jar API

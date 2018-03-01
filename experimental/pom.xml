@@ -17,6 +17,12 @@
             <artifactId>harp-collective</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
+		
+		<dependency>
+            <groupId>edu.iu.harp</groupId>
+            <artifactId>harp-daal-interface</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
 
         <dependency>
             <groupId>edu.iu.harp</groupId>
@@ -49,12 +55,6 @@
             <artifactId>lang</artifactId>
             <version>6.7.2</version>
         </dependency>
-
-        <!-- <dependency> -->
-        <!--     <groupId>habanero&#45;java&#45;lib</groupId> -->
-        <!--     <artifactId>habanero&#45;java&#45;lib</artifactId> -->
-        <!--     <version>0.1.4&#45;SNAPSHOT</version> -->
-        <!-- </dependency> -->
 
         <dependency>
             <groupId>org.apache.commons</groupId>

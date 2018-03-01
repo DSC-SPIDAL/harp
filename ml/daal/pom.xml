@@ -20,14 +20,9 @@
             <artifactId>daal</artifactId>
             <scope>system</scope>
             <version>1.0</version>
-            <systemPath>${DAALROOT}/lib/daal.jar</systemPath>
+            <!-- <systemPath>${DAALROOT}/lib/daal.jar</systemPath> -->
+			<systemPath>${basedir}/../../third_party/daal-2018/daal.jar</systemPath>
         </dependency>
-
-        <!-- <dependency> -->
-        <!--     <groupId>habanero&#45;java&#45;lib</groupId> -->
-        <!--     <artifactId>habanero&#45;java&#45;lib</artifactId> -->
-        <!--     <version>0.1.4&#45;SNAPSHOT</version> -->
-        <!-- </dependency> -->
     </dependencies>
     
 </project>

@@ -15,54 +15,48 @@
  *
  * */
 
-package edu.iu.daal;
+package edu.iu.data_transfer;
 
 import java.lang.System;
 
-public class TaskSentinelListToBufferDouble implements Runnable {
+public class TaskTableToBufferFloat implements Runnable {
 
-    private int task_id;
+    private int th_id;
     private int th_num;
-    private int vecSize;
     private int task_num;
-    private long[] startP;
-    private double[][] data;
-    private double[] buffer_array;
+    private CopyObjFloat[] queue;
+    private float[] buffer_array;
+    private int vecsize;
 
     //constructor
-    public TaskSentinelListToBufferDouble(
-            int task_id, 
+    TaskTableToBufferFloat(
+            int th_id, 
             int th_num,
-            int vecSize,
             int task_num, 
-            long[] startP,
-            double[][] data,
-            double[] buffer_array
+            CopyObjFloat[] queue,
+            float[] buffer_array,
+            int vecsize 
     )
     {
-        this.task_id = task_id;
+        this.th_id = th_id;
         this.th_num = th_num;
-        this.vecSize = vecSize;
         this.task_num = task_num;
-        this.startP = startP;
-        this.data = data;
+        this.queue = queue;
         this.buffer_array = buffer_array;
+        this.vecsize = vecsize;
     }
 
     @Override
     public void run() {
 
-        while(task_id < task_num)
+        while(th_id < task_num)
         {
-            int local_cen_num = (data[task_id].length)/(vecSize + 1);
-            int local_startP = (int)startP[task_id];
-
-            for(int k=0;k<local_cen_num;k++)
-                System.arraycopy(data[task_id], k*(vecSize+1) + 1, buffer_array, local_startP + k*vecSize, vecSize); 
-
-            task_id += th_num;
+            CopyObjFloat obj = queue[th_id];
+            System.arraycopy(obj.data(), 0, buffer_array, obj.index()*vecsize, vecsize); 
+            th_id += th_num;
         }
 
     }
+
 
 }

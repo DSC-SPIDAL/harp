@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package edu.iu.daal;
+package edu.iu.data_transfer;
 
 import com.intel.daal.data_management.data.HomogenNumericTable;
 import com.intel.daal.data_management.data.NumericTable;

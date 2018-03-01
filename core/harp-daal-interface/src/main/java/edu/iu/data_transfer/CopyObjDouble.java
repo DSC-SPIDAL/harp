@@ -14,21 +14,21 @@
  * limitations under the License.
  */
 
-package edu.iu.daal;
+package edu.iu.data_transfer;
 
-public class CopyObjFloat
+public class CopyObjDouble
 {
 
-  private float[] data;
+  private double[] data;
   private int index;
 
-  public CopyObjFloat(float[] data, int index) 
+  public CopyObjDouble(double[] data, int index) 
   {
     this.data = data;
     this.index = index;
   }
 
-  public float[] data()
+  public double[] data()
   {
       return this.data;
   }

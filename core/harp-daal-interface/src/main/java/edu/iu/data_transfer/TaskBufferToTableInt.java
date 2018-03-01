@@ -15,26 +15,26 @@
  *
  * */
 
-package edu.iu.daal;
+package edu.iu.data_transfer;
 
 import java.lang.System;
 
-public class TaskBufferToTableDouble implements Runnable {
+public class TaskBufferToTableInt implements Runnable {
 
     private int th_id;
     private int th_num;
     private int task_num;
-    private CopyObjDouble[] queue;
-    private double[] buffer_array;
+    private CopyObjInt[] queue;
+    private int[] buffer_array;
     private int vecsize;
 
     //constructor
-    TaskBufferToTableDouble(
+    TaskBufferToTableInt(
             int th_id, 
             int th_num,
             int task_num, 
-            CopyObjDouble[] queue,
-            double[] buffer_array,
+            CopyObjInt[] queue,
+            int[] buffer_array,
             int vecsize 
     )
     {
@@ -51,7 +51,8 @@ public class TaskBufferToTableDouble implements Runnable {
 
         while(th_id < task_num)
         {
-            CopyObjDouble obj = queue[th_id];
+            CopyObjInt obj = queue[th_id];
+            // System.arraycopy(obj.data(), 0, buffer_array, obj.index()*vecsize, vecsize); 
             System.arraycopy(buffer_array, obj.index()*vecsize, obj.data(), 0, vecsize); 
             th_id += th_num;
         }

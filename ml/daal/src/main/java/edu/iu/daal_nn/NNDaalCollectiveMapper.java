@@ -309,7 +309,8 @@ CollectiveMapper<String, String, Object, Object>{
             topologyLocal = NeuralNetConfiguratorDistr.configureNet(daal_Context);
             netLocal = new DistributedStep1Local(daal_Context);
             trainingModel = new TrainingModel(daal_Context);
-            trainingModel.initialize(Float.class, sampleSize, topologyLocal, null);
+            // trainingModel.initialize(Float.class, sampleSize, topologyLocal, null);
+            trainingModel.initialize(Float.class, sampleSize, topologyLocal);
             netLocal.input.set(DistributedStep1LocalInputId.inputModel, trainingModel);
         }
 

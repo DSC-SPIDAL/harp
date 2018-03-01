@@ -16,7 +16,7 @@
     <modules>
         <module>harp-collective</module>
         <module>harp-hadoop</module>
-        <!--module>harp-daal-interface</module-->
+		<module>harp-daal-interface</module>
     </modules>
 
     <dependencies>

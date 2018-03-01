@@ -13,8 +13,8 @@
     <packaging>pom</packaging>
 
     <modules>
-        <!--module>daal</module-->
         <module>java</module>
+        <module>daal</module>
     </modules>
 
     <dependencies>
@@ -29,8 +29,13 @@
             <artifactId>harp-hadoop</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
+		
+		<dependency>
+            <groupId>edu.iu.harp</groupId>
+            <artifactId>harp-daal-interface</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
 
-        <!-- https://mvnrepository.com/artifact/cc.mallet/mallet -->
         <dependency>
             <groupId>cc.mallet</groupId>
             <artifactId>mallet</artifactId>

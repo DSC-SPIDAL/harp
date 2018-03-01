@@ -39,7 +39,7 @@ import edu.iu.harp.resource.IntArray;
 import edu.iu.harp.resource.ByteArray;
 import edu.iu.harp.resource.LongArray;
 
-import edu.iu.daal.*;
+import edu.iu.data_transfer.*;
 
 // packages from Daal 
 import com.intel.daal.algorithms.implicit_als.PartialModel;

@@ -39,14 +39,10 @@ import edu.iu.harp.resource.IntArray;
 import edu.iu.harp.resource.ByteArray;
 import edu.iu.harp.resource.LongArray;
 
-import edu.iu.daal.*;
+import edu.iu.data_transfer.*;
 
 // packages from Daal 
 import com.intel.daal.algorithms.implicit_als.*;
-// import com.intel.daal.algorithms.implicit_als.prediction.ratings.*;
-// import com.intel.daal.algorithms.implicit_als.training.*;
-// import com.intel.daal.algorithms.implicit_als.training.init.*;
-
 import com.intel.daal.data_management.data.NumericTable;
 import com.intel.daal.data_management.data.CSRNumericTable;
 import com.intel.daal.data_management.data.HomogenNumericTable;

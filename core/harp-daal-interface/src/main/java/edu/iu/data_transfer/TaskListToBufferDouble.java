@@ -15,7 +15,7 @@
  *
  * */
 
-package edu.iu.daal;
+package edu.iu.data_transfer;
 
 import java.lang.System;
 

@@ -61,7 +61,7 @@ import edu.iu.harp.resource.DoubleArray;
 import edu.iu.harp.resource.IntArray;
 import edu.iu.harp.resource.LongArray;
 import edu.iu.harp.schdynamic.DynamicScheduler;
-import edu.iu.daal.*;
+import edu.iu.data_transfer.*;
 
 // packages from Daal 
 import com.intel.daal.algorithms.mf_sgd.*;
