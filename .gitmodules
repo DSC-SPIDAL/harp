@@ -1,0 +1,8 @@
+[submodule "website/public"]
+	path = website/public
+	url = https://github.com/DSC-SPIDAL/harp.git
+	branch = gh-pages
+[submodule "third_party/daal-exp"]
+	path = third_party/daal-exp
+	url = https://github.com/DSC-SPIDAL/harp.git
+	branch = daal_2018_beta
