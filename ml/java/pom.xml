@@ -11,8 +11,12 @@
     </parent>
 
     <groupId>edu.iu.harp</groupId>
-    <artifactId>harpjava</artifactId>
+    <artifactId>harp-java</artifactId>
     <version>1.0-SNAPSHOT</version>
+
+    <properties>
+        <main.basedir>${project.parent.parent.basedir}</main.basedir>
+    </properties>
 
     <dependencies>
         <dependency>
