@@ -5,7 +5,7 @@
 #
 
 #get the startup directory
-hadoopversion=2.7.5
+hadoopversion=2.6.0
 startdir=$(dirname $0)
 harproot=$(readlink -m $startdir/../../../)
 datadir=$harproot/datasets/tutorial/movielens

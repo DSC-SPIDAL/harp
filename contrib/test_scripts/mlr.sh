@@ -5,7 +5,7 @@
 #
 
 #get the startup directory
-hadoopversion=2.9.0
+hadoopversion=2.6.0
 startdir=$(dirname $0)
 harproot=$(readlink -m $startdir/../../)
 datadir=$harproot/datasets/tutorial/rcv1

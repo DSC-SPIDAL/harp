@@ -5,7 +5,7 @@
 #
 
 #get the startup directory
-hadoopversion=2.7.5
+hadoopversion=2.6.0
 startdir=$(dirname $0)
 harproot=$(readlink -m $startdir/../../)
 bin=$harproot/distribution/hadoop-$hadoopversion/contrib-1.0-SNAPSHOT.jar
