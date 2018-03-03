@@ -16,6 +16,10 @@
         <module>experimental</module>
     </modules>
 
+    <properties>
+        <hadoop-version>2.6.0</hadoop-version>
+    </properties>
+
     <dependencyManagement>
         <dependencies>
 

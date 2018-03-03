@@ -5,10 +5,11 @@
 #
 
 #get the startup directory
+hadoopversion=2.6.0
 startdir=$(dirname $0)
-harproot=$(readlink -m $startdir/../../)
+harproot=$(readlink -m $startdir/../../../)
 datadir=$harproot/datasets/tutorial/nytimes-30k
-bin=$harproot/harp-app/target/harp-app-1.0-SNAPSHOT.jar
+bin=$harproot/distribution/hadoop-$hadoopversion/harp-java-1.0-SNAPSHOT.jar
 hdfsroot=/harp-test
 hdfsdatadir=$hdfsroot/nytimes-30k/
 hdfsoutput=$hdfsroot/lda/
@@ -56,7 +57,7 @@ fi
 #hadoop jar $bin edu.iu.lda.LDALauncher $hdfsdatadir/data/ 1000 0.01 0.01 200 100 100 2 16 2 20000 $hdfsoutput true
 hadoop jar $bin edu.iu.lda.LDALauncher $hdfsdatadir/data/ 1000 0.01 0.01 200 40 80 2 16 2 20000 $hdfsoutput true
 if [ $? -ne 0 ]; then
-    echo "run mlr failure"
+    echo "run lda failure"
     exit -1
 fi
 

@@ -5,10 +5,11 @@
 #
 
 #get the startup directory
+hadoopversion=2.6.0
 startdir=$(dirname $0)
 harproot=$(readlink -m $startdir/../../)
 datadir=$harproot/datasets/tutorial/rcv1
-bin=$harproot/harp-tutorial-app/target/harp-tutorial-app-1.0-SNAPSHOT.jar
+bin=$harproot/distribution/hadoop-$hadoopversion/contrib-1.0-SNAPSHOT.jar
 hdfsroot=/harp-test
 hdfsdatadir=$hdfsroot/rcv1/
 hdfsoutput=$hdfsroot/mlr/
@@ -36,7 +37,7 @@ mkdir -p test_mlr
 cd test_mlr
 
 #check dataset
-runlog=$(hadoop fs -ls $hdfsdatadir/rcv1.topics.txt)
+runlog=$(hadoop fs -ls $hdfsdatadir/)
 if [ $? -ne 0 ]; then
     echo "initialize the dataset on hdfs......"
 

@@ -5,15 +5,16 @@
 #
 
 #get the startup directory
+hadoopversion=2.6.0
 startdir=$(dirname $0)
 harproot=$(readlink -m $startdir/../../)
-bin=$harproot/harp-tutorial-app/target/harp-tutorial-app-1.0-SNAPSHOT.jar
+bin=$harproot/distribution/hadoop-$hadoopversion/contrib-1.0-SNAPSHOT.jar
 hdfsroot=/harp-test
 hdfsdatadir=$hdfsroot/km-syn/
 hdfsoutput=$hdfsroot/km/
 
 if [ ! -f $bin ] ; then
-    echo "harp tutorial app not found at "$bin
+    echo "harp contrib app not found at "$bin
     exit -1
 fi
 if [ -z ${HADOOP_HOME+x} ];then
