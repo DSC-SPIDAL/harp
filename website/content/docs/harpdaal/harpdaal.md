@@ -164,7 +164,7 @@ git checkout daal_2018_beta_update1
 ```xml
 <modules>
         <module>harp-project</module>
-        <module>harp-tutorial-app</module>
+        <module>contrib</module>
         <module>harp-app</module>
         <module>harp-daal-app</module>
 </modules>
