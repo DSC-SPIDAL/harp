@@ -5,10 +5,11 @@
 #
 
 #get the startup directory
+hadoopversion=2.7.5
 startdir=$(dirname $0)
-harproot=$(readlink -m $startdir/../../)
+harproot=$(readlink -m $startdir/../../../)
 datadir=$harproot/datasets/tutorial/movielens
-bin=$harproot/harp-app/target/harp-app-1.0-SNAPSHOT.jar
+bin=$harproot/distribution/hadoop-$hadoopversion/harp-java-1.0-SNAPSHOT.jar
 hdfsroot=/harp-test
 hdfsdatadir=$hdfsroot/movielens/
 hdfsoutput=$hdfsroot/mfsgd/
@@ -20,7 +21,7 @@ if [ ! -d $datadir ] ; then
     exit -1
 fi
 if [ ! -f $bin ] ; then
-    echo "harp tutorial app not found at "$bin
+    echo "harp java app not found at "$bin
     exit -1
 fi
 if [ -z ${HADOOP_HOME+x} ];then
