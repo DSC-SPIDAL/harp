@@ -257,9 +257,10 @@ $ hadoop datanode -format
 ```
 You have to do this step in every node except the namenode.
 
-2. Copy harp examples to `$HADOOP_HOME`.
+2. Copy harp examples to `$HADOOP_HOME`. Select the distribution folder related to your hadoop version. For ex:- 
+hadoop-2.6.0
 ```bash
-$ cp harp-app/target/harp-app-1.0-SNAPSHOT.jar $HADOOP_HOME
+$ cp distribution/hadoop-2.6.0/harp-java-1.0-SNAPSHOT.jar $HADOOP_HOME
 ```
 
 3. Start Hadoop.
@@ -288,8 +289,8 @@ $ yarn application -kill application-id
 
 7. Run Kmeans Map-collective job. The usage is:
 ```bash
-$ hadoop jar harp-app-1.0-SNAPSHOT.jar edu.iu.kmeans.regroupallgather.KMeansLauncher <num of points> <num of centroids> <vector size> <num of point files per worker> <number of map tasks> <num threads> <number of iteration> <work dir> <local points dir>
-#e.g. hadoop jar harp-app-1.0-SNAPSHOT.jar edu.iu.kmeans.regroupallgather.KMeansLauncher 1000 10 100 5 2 2 10 /kmeans /tmp/kmeans
+$ hadoop jar harp-java-1.0-SNAPSHOT.jar edu.iu.kmeans.regroupallgather.KMeansLauncher <num of points> <num of centroids> <vector size> <num of point files per worker> <number of map tasks> <num threads> <number of iteration> <work dir> <local points dir>
+#e.g. hadoop jar harp-java-1.0-SNAPSHOT.jar edu.iu.kmeans.regroupallgather.KMeansLauncher 1000 10 100 5 2 2 10 /kmeans /tmp/kmeans
 ```
   * `<num of points>` --- the number of data points you want to generate randomly
   * `<num of centriods>` --- the number of centroids you want to clustering the data to

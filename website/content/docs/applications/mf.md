@@ -79,11 +79,11 @@ The format for the data should be a list of ``<number of row, number of column, 
 ## Usage
 ### SGD
 ```bash
-hadoop jar harp-app-1.0-SNAPSHOT.jar edu.iu.sgd.SGDLauncher <input dir> <r> <lambda> <epsilon> <num of iterations> <num of map tasks> <num of threads per worker> <timer> <num of model slices> <timer tuning> <work dir> <test dir>
+hadoop jar harp-java-1.0-SNAPSHOT.jar edu.iu.sgd.SGDLauncher <input dir> <r> <lambda> <epsilon> <num of iterations> <num of map tasks> <num of threads per worker> <timer> <num of model slices> <timer tuning> <work dir> <test dir>
 ```
 
 
 ### CCD
 ```bash
-hadoop jar harp-app-1.0-SNAPSHOT.jar edu.iu.ccd.CCDLauncher <input dir> <r> <lambda> <num of iterations> <num of map tasks> <num of threads per worker> <num of model slices> <work dir> <test dir>
+hadoop jar harp-java-1.0-SNAPSHOT.jar edu.iu.ccd.CCDLauncher <input dir> <r> <lambda> <num of iterations> <num of map tasks> <num of threads per worker> <num of model slices> <work dir> <test dir>
 ```

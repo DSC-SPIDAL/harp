@@ -217,9 +217,10 @@ jobConf.set("mapreduce.framework.name", "map-collective");
 
 ## Step 3 Run harp kmeans example
 
-1. Copy harp examples to $HADOOP_HOME
+1. Copy harp examples to $HADOOP_HOME. Select the distribution folder related to your hadoop version. For ex:- 
+hadoop-2.6.0
 ```bash
-cp harp-app/target/harp-app-1.0-SNAPSHOT.jar $HADOOP_HOME
+cp distribution/hadoop-2.6.0/harp-java-1.0-SNAPSHOT.jar $HADOOP_HOME
 ```
 
 2. Start Hadoop
@@ -232,7 +233,7 @@ cp harp-app/target/harp-app-1.0-SNAPSHOT.jar $HADOOP_HOME
 3. Run Kmeans Map-collective job.
 The usage is
    ```bash
-   hadoop jar harp-app-1.0-SNAPSHOT.jar edu.iu.kmeans.regroupallgather.KMeansLauncher <num of points> <num of centroids> <vector size> <num of point files per worker> <number of map tasks> <num threads> <number of iteration> <work dir> <local points dir>
+   hadoop jar harp-java-1.0-SNAPSHOT.jar edu.iu.kmeans.regroupallgather.KMeansLauncher <num of points> <num of centroids> <vector size> <num of point files per worker> <number of map tasks> <num threads> <number of iteration> <work dir> <local points dir>
    ```
    * `<num of points>` --- the number of data points you want to generate randomly
    * `<num of centriods>` --- the number of centroids you want to clustering the data to
@@ -246,7 +247,7 @@ The usage is
 
     For example:
    ```bash
-   hadoop jar harp-app-1.0-SNAPSHOT.jar edu.iu.kmeans.regroupallgather.KMeansLauncher 1000 10 100 5 2 2 10 /kmeans /tmp/kmeans
+   hadoop jar harp-java-1.0-SNAPSHOT.jar edu.iu.kmeans.regroupallgather.KMeansLauncher 1000 10 100 5 2 2 10 /kmeans /tmp/kmeans
    ```
 
 4. To fetch the results, use the following command:
