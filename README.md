@@ -3,28 +3,46 @@
 @Copyright 2013-2017 Inidana University
 Apache License 2.0
 
-@Author: Bingjing Zhang
+@Author: Bingjing Zhang, Langshi Chen, Bo Peng, Sabra Ossen
 
 ## WHAT IS HARP?
-Harp is a framework for machine learning applications.
 
-## FEATURES
-1. A Hadoop plugin. It currently supports hadoop 2.6.0 ~ 2.7.3 version.
-2. Hierarchical data abstraction (arrays/objects, partitions/tables)
-3. Pool based memory management
-4. Collective + event-driven programming model (distributed computing)
-5. Dynamic Scheduler + Static Scheduler (multi-threading)
+Harp is a HPC-ABDS (High Performance Computing Enhanced Apache Big Data Stack) framework aiming to provide distributed 
+machine learning and other data intensive applications. 
+
+## Highlights
+
+1. Plug into Hadoop ecosystem.
+2. Rich computation models for different machine learning/data intensive applications
+2. MPI-like Collective Communication operations 
+4. High performance native kernels supporting many-core processors (e.g., Intel Xeon Phi) 
 
 ## COMPILATION & INSTALLATION
 
 #### 1. Install Maven by following the [maven official instruction](http://maven.apache.org/install.html)
 #### 2. Enter "harp" home directory
 #### 3. Compile harp
-    mvn clean package
 
-#### 4. Install harp plugin to hadoop
-    cp harp-project/target/harp-project-1.0-SNAPSHOT.jar $HADOOP_HOME/share/hadoop/mapreduce/
-    cp third_party/fastutil-7.0.13.jar $HADOOP_HOME/share/hadoop/mapreduce/
+```bash
+	cd harp/
+    mvn clean package
+```
+#### 4. Install harp Core Module 
+
+```bash
+    cp core/harp-collective/target/harp-collective-1.0-SNAPSHOT.jar $HADOOP_HOME/share/hadoop/mapreduce/
+    cp core/harp-hadoop/target/harp-hadoop-1.0-SNAPSHOT.jar $HADOOP_HOME/share/hadoop/mapreduce/
+	cp core/harp-daal-interface/harp-daal-interface-1.0-SNAPSHOT.jar $HADOOP_HOME/share/hadoop/mapreduce/
+```
+
+### 5. Install third party dependencies  
+
+```bash 
+
+    cp third_party/*.jar $HADOOP_HOME/share/hadoop/mapreduce/
+	cp third_party/daal-2018/daal.jar $HADOOP_HOME/share/hadoop/mapreduce/
+
+```
 
 #### 5. Configure Hadoop environment for settings required to run Hadoop
 
@@ -43,25 +61,3 @@ Harp is a framework for machine learning applications.
 #### 7. To develop Harp applications, remember to add the following property in job configuration:
     jobConf.set("mapreduce.framework.name", "map-collective");
 
-## EXAMPLE
-
-#### 1. copy harp examples to $HADOOP_HOME
-    cp harp-app/target/harp-app-1.0-SNAPSHOT.jar $HADOOP_HOME
-
-#### 2. Start Hadoop
-    cd $HADOOP_HOME
-    sbin/start-dfs.sh
-    sbin/start-yarn.sh
-
-#### 3. Run Kmeans Map-collective job
-##### The usage is
-```bash
-hadoop jar harp-app-1.0-SNAPSHOT.jar edu.iu.kmeans.regroupallgather.KMeansLauncher
-  <num of points> <num of centroids> <vector size> <num of point files per worker>
-  <number of map tasks> <num threads> <number of iteration> <work dir> <local points dir>
-```
-##### For example:
-```bash
-hadoop jar harp-app-1.0-SNAPSHOT.jar edu.iu.kmeans.regroupallgather.KMeansLauncher
-  1000 10 100 5 2 2 10 /kmeans /tmp/kmeans
-```
