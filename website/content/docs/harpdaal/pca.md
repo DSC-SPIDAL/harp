@@ -21,7 +21,7 @@ Here are the steps to implement and run the PCA code.
   1. data node (divided into master and slave nodes, where slave nodes compute in parallel and communicate results to the master node)
   1. login node
   
-* The data files (csv [sample](https://github.com/DSC-SPIDAL/harp/tree/master/harp-daal-app/daal-src/examples/data/distributed "sample data")) which is data tagged with `pca` can be tested the following ways:
+* The data files (csv [sample](https://github.com/DSC-SPIDAL/harp/tree/master/ml/daal/daal-src/examples/data/distributed "sample data")) which is data tagged with `pca` can be tested the following ways:
   1. On the shared location
   1. On each datanode individually
   1. Hadoop Filesystem Format (HDFS) [Tutorial](https://www.tutorialspoint.com/hadoop/hadoop_hdfs_overview.htm "hdfs tutorial")   
@@ -30,7 +30,7 @@ Here are the steps to implement and run the PCA code.
 
 * Harp's collective communication has been described [here](https://dsc-spidal.github.io/harp/docs/programming/overview/ "Collective Communication")
 
-* The [Java language](https://github.com/DSC-SPIDAL/harp/tree/master/harp-daal-app/daal-src/lang_interface/java/com/intel/daal "language interface") services provided by intel as a wrapper to their C++ code.
+* The [Java language](https://github.com/DSC-SPIDAL/harp/tree/master/ml/daal/daal-src/lang_interface/java/com/intel/daal "language interface") services provided by intel as a wrapper to their C++ code.
 
 ### Code Walk-Through 
 Only the MapCollective function is explained [here](https://github.com/DSC-SPIDAL/harp/blob/master/core/harp-hadoop/src/main/java/org/apache/hadoop/mapred/CollectiveMapper.java "Collective Mapper") as the rest of the code follows the same Harp-DAAL style.
@@ -146,13 +146,13 @@ Furthermore DAAL installation and usage can be found [here](https://dsc-spidal.g
 #### Running the code
 Run the `harp-daal-pca.sh` script to run the code.
 ```shell
-cd $HARP_ROOT_DIR/harp-daal-app
+cd $HARP_ROOT_DIR/ml/daal
 ./harp-daal-pca.sh  
 ```
 To edit the location of the data set file location edit the following line in the  shell script file
 
 ```shell
-hadoop jar harp-daal-app-1.0-SNAPSHOT.jar edu.iu.daal_pca.PCADaalLauncher -libjars ${LIBJARS} $Pts $Dim $File $Node $Thd $Mem /pca-P$Pts-D$Dim-N$Node /tmp/pca $GenData
+hadoop jar harp-daal-1.0-SNAPSHOT.jar edu.iu.daal_pca.PCADaalLauncher -libjars ${LIBJARS} $Pts $Dim $File $Node $Thd $Mem /pca-P$Pts-D$Dim-N$Node /tmp/pca $GenData
 ```
 Where each variable is defined as below
 

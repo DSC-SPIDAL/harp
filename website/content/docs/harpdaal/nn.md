@@ -34,7 +34,7 @@ Here are the steps to implement and run the Neural Network code.
 The MapCollective function is defined [here](https://github.com/DSC-SPIDAL/harp/blob/master/core/harp-hadoop/src/main/java/org/apache/hadoop/mapred/CollectiveMapper.java).
  
 #### Step 1 (on slave nodes)
-The first step involves reading the files from the HDFS filesystem after splitting files between each mapper. Splitting is done by MultiFileInputFormat class defined [here](https://github.com/DSC-SPIDAL/harp/blob/master/harp-daal-app/src/main/java/edu/iu/fileformat/MultiFileInputFormat.java). 
+The first step involves reading the files from the HDFS filesystem after splitting files between each mapper. Splitting is done by MultiFileInputFormat class defined [here](https://github.com/DSC-SPIDAL/harp/blob/master/ml/daal/src/main/java/edu/iu/fileformat/MultiFileInputFormat.java). 
 Data is converted into an array which is eventually converted into the DAAL [_Numeric Table_](https://software.intel.com/en-us/node/564579) data structure.  In this example the files have been stored on HDFS. The files have to be read in the DAAL table format as the local computations are performed by the DAAL libraries.</br>
 Getting Array From CSV File (below)
 -----------------------------
@@ -175,18 +175,19 @@ Details about setting up Hadoop along with Harp-DAAL on the cluster can be found
 
 #### Running the code
 ----------------------
-Make sure that the code is placed in the `/harp/harp-daal-app` directory.
+Make sure that the code is placed in the `/harp/ml/daal` directory.
 Run the `harp-daal-nn-run.sh` script here to run the code.
 ```shell
-cd $HARP_ROOT/harp-daal-app
+cd $HARP_ROOT/ml/daal
 ./harp-daal-nn.sh  
 ```
-Details of the script can be seen below: 
+Details of the script can be seen below: Select the distribution folder related to your hadoop version. For ex:- 
+hadoop-2.6.0
 ```shell
 #!/bin/bash
 
 # enter the directory of hadoop and copy your_harp_daal.jar file here
-cp ./target/harp-daal-app-1.0-SNAPSHOT.jar ${HADOOP_HOME}
+cp $HARP_ROOT_DIR/distribution/hadoop-2.6.0/harp-daal-1.0-SNAPSHOT.jar ${HADOOP_HOME}
 # set up daal environment
 #source ./__release_tango_lnx/daal/bin/daalvars.sh intel64
 echo "${DAALROOT}"
@@ -228,5 +229,5 @@ Node=2
 # num of threads on each mapper(node)
 Thd=64
 
-hadoop jar harp-daal-app-1.0-SNAPSHOT.jar edu.iu.daal_nn.NNDaalLauncher -libjars ${LIBJARS}  /nn/input /nn/work $Node $Thd 
+hadoop jar harp-daal-1.0-SNAPSHOT.jar edu.iu.daal_nn.NNDaalLauncher -libjars ${LIBJARS}  /nn/input /nn/work $Node $Thd 
 ```

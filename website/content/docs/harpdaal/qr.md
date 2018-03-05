@@ -26,10 +26,10 @@ The implementation of QR in our Harp-DAAL consists of two levels. At the top Lev
 * The description of the intel daal's JAVA API used can be found [here](https://software.intel.com/sites/products/documentation/doclib/daal/daal-user-and-reference-guides/daal_java_api/group__qr__without__pivoting.htm)
 
 ### Code Walk-Through 
-The actual implemented code can be found [here](https://github.com/DSC-SPIDAL/harp/tree/master/harp-daal-app/src/main/java/edu/iu/daal_qr). The MapCollective function is defined [here](https://github.com/DSC-SPIDAL/harp/blob/master/harp-daal-app/src/main/java/edu/iu/daal_qr/QRDaalCollectiveMapper.java).
+The actual implemented code can be found [here](https://github.com/DSC-SPIDAL/harp/tree/master/ml/daal/src/main/java/edu/iu/daal_qr). The MapCollective function is defined [here](https://github.com/DSC-SPIDAL/harp/blob/master/ml/daal/src/main/java/edu/iu/daal_qr/QRDaalCollectiveMapper.java).
 
 #### Step 1 (on data nodes)
-The first step involves reading the files from the hdfs filesystem after splitting files between each mapper. Splitting is done by MultipleFileInputFormat class defined [here](https://github.com/DSC-SPIDAL/harp/blob/master/harp-daal-app/src/main/java/edu/iu/fileformat/MultiFileInputFormat.java). 
+The first step involves reading the files from the hdfs filesystem after splitting files between each mapper. Splitting is done by MultipleFileInputFormat class defined [here](https://github.com/DSC-SPIDAL/harp/blob/master/ml/daal/src/main/java/edu/iu/fileformat/MultiFileInputFormat.java). 
 Data is converted into array which is eventually converted into the daal [_Numeric Table_](https://software.intel.com/en-us/node/564579) datastructure.  In this example the files have been stored on the hdfs. The files have to be read in the daal table format as the local computations are performed by the daal libraries. 
 Getting array from csv file - 
 
@@ -190,11 +190,12 @@ Details about setting up hadoop along with harp-daal on the cluster can be found
 
 #### Running the code
 
-Make sure that the code is placed in the `/harp/harp-daal-app` directory.
-Run the `harp-daal-qr-hsw.sh` script here to run the code.
+Make sure that the code is placed in the `/harp/ml/daal` directory. 
+Run the `harp-daal-qr-hsw.sh` script here to run the code. Select the distribution folder related to your hadoop version.
+For ex:- hadoop-2.6.0
 
 ```bash
-cd $HARP_ROOT/harp-daal-app/test_scripts
+cd $HARP_ROOT/ml/daal/test_scripts
 ./harp-daal-qr-hsw.sh 
 ```
 Details of script - 
@@ -204,7 +205,7 @@ Details of script -
 
 Arch=hsw
 
-cp ../target/harp-daal-app-1.0-SNAPSHOT.jar ${HADOOP_HOME}
+cp $HARP_ROOT_DIR/distribution/hadoop-2.6.0/harp-daal-1.0-SNAPSHOT.jar ${HADOOP_HOME}
 
 source /N/u/lc37/Lib/DAAL2018_Beta/__release_lnx/daal/bin/daalvars.sh intel64
 echo "${DAALROOT}"
@@ -236,6 +237,6 @@ Node=2
 Thd=8
 
 echo "Test-$Arch-daal-qr-$Dataset-N$Node-T$Thd Start" 
-hadoop jar harp-daal-app-1.0-SNAPSHOT.jar edu.iu.daal_qr.QRDaalLauncher -libjars ${LIBJARS}  /Hadoop/qr-input/$Dataset /qr/work $Mem $Node $Thd 2>$logDir/Test-$Arch-daal-qr-$Dataset-N$Node-T$Thd.log 
+hadoop jar harp-daal-1.0-SNAPSHOT.jar edu.iu.daal_qr.QRDaalLauncher -libjars ${LIBJARS}  /Hadoop/qr-input/$Dataset /qr/work $Mem $Node $Thd 2>$logDir/Test-$Arch-daal-qr-$Dataset-N$Node-T$Thd.log 
 echo "Test-$Arch-daal-qr-$Dataset-N$Node-T$Thd End" 
 ```
