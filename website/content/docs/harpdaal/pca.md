@@ -33,7 +33,7 @@ Here are the steps to implement and run the PCA code.
 * The [Java language](https://github.com/DSC-SPIDAL/harp/tree/master/harp-daal-app/daal-src/lang_interface/java/com/intel/daal "language interface") services provided by intel as a wrapper to their C++ code.
 
 ### Code Walk-Through 
-Only the MapCollective function is explained [here](https://github.com/DSC-SPIDAL/harp/blob/master/harp-project/src/main/java/org/apache/hadoop/mapred/CollectiveMapper.java "Collective Mapper") as the rest of the code follows the same Harp-DAAL style.
+Only the MapCollective function is explained [here](https://github.com/DSC-SPIDAL/harp/blob/master/core/harp-hadoop/src/main/java/org/apache/hadoop/mapred/CollectiveMapper.java "Collective Mapper") as the rest of the code follows the same Harp-DAAL style.
 
 #### Step 1 (on slave nodes)
 The first step involves reading the files from the filesystem into the DAAL [_NumericTable_](https://software.intel.com/en-us/node/564579 "Numeric Table") data structure.  The files have to be read in the DAAL table format as the local computations are performed by the DAAL libraries. Note that for the first step, all the nodes act as slave nodes and the master node comes into the picture only for the second step. 

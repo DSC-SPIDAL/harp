@@ -200,11 +200,11 @@ $ git clone git@github.com:DSC-SPIDAL/harp.git
 
 3. Add environment variables in `~/.bashrc`.
 ```bash
-export HARP_ROOD_DIR=<where Harp locates>
-#e.g. harp/harp-project
-export HARP_HOME=$HARP_ROOD_DIR/harp-project
+export HARP_ROOT_DIR=<where Harp locates>
+#e.g. ~/harp
+export HARP_HOME=$HARP_ROOT_DIR/core/harp-collective/
 ```
-4. Run source command to set the envrionment variables.
+4. Run source command to set the environment variables.
 ```bash
 $ source ~/.bashrc
 ```
@@ -225,9 +225,10 @@ $ cd $HARP_ROOT_DIR
 $ mvn clean package
 ```
 
-8. Install harp plugin to hadoop.
+8. Install harp plugin to hadoop. Select the distribution folder related to your hadoop version. For ex:- hadoop-2.6.0
 ```bash
-$ cp harp-project/target/harp-project-1.0-SNAPSHOT.jar $HADOOP_HOME/share/hadoop/mapreduce/
+$ cp distribution/hadoop-2.6.0/harp-collective-1.0-SNAPSHOT.jar $HADOOP_HOME/share/hadoop/mapreduce/
+$ cp distribution/hadoop-2.6.0/harp-hadoop-1.0-SNAPSHOT.jar $HADOOP_HOME/share/hadoop/mapreduce/
 $ cp third_party/fastutil-7.0.13.jar $HADOOP_HOME/share/hadoop/mapreduce/
 ```
 

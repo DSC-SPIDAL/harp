@@ -31,7 +31,7 @@ Here are the steps to implement and run the Neural Network code.
 * The Java language services provided by Intel as a wrapper to their C++ code.
 
 ### Code Walk-Through 
-The MapCollective function is defined [here](https://github.com/DSC-SPIDAL/harp/blob/master/harp-project/src/main/java/org/apache/hadoop/mapred/CollectiveMapper.java).
+The MapCollective function is defined [here](https://github.com/DSC-SPIDAL/harp/blob/master/core/harp-hadoop/src/main/java/org/apache/hadoop/mapred/CollectiveMapper.java).
  
 #### Step 1 (on slave nodes)
 The first step involves reading the files from the HDFS filesystem after splitting files between each mapper. Splitting is done by MultiFileInputFormat class defined [here](https://github.com/DSC-SPIDAL/harp/blob/master/harp-daal-app/src/main/java/edu/iu/fileformat/MultiFileInputFormat.java). 
