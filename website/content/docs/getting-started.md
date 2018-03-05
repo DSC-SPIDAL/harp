@@ -168,7 +168,7 @@ git clone git@github.com:DSC-SPIDAL/harp.git
 ```bash
 export HARP_ROOT_DIR=<where Harp locates>
 #e.g. ~/harp
-export HARP_HOME=$HARP_ROOT_DIR/core/harp-collective/
+export HARP_HOME=$HARP_ROOT_DIR/core/
 ```
 4. Run source command to set the environment variables.
 ```bash
@@ -187,8 +187,11 @@ cd $HARP_ROOT_DIR
 ```
 
 7. Compile harp
+
+Select the profile related to your hadoop version. For ex: hadoop-2.6.0. Supported hadoop versions are 2.6.0, 2.7.5 and 2.9.0
+
 ```bash
-mvn clean package
+mvn clean package -Phadoop-2.6.0
 ```
 
 8. Install harp plugin to hadoop. Select the distribution folder related to your hadoop version. For ex:- hadoop-2.6.0

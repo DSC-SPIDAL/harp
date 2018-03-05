@@ -339,7 +339,8 @@ private void calculateCentroids( Table<DoubleArray> cenTable){
 
 ## COMPILE
 
-In order to compile select the profile related to your hadoop version. For ex:- hadoop-2.6.0
+Select the profile related to your hadoop version. For ex: hadoop-2.6.0. Supported hadoop versions are 2.6.0, 2.7.5 
+and 2.9.0
 ```bash
 cd $HARP_ROOT_DIR
 mvn clean package -Phadoop-2.6.0

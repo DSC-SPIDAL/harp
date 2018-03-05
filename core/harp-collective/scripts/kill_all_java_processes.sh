@@ -29,7 +29,7 @@ fi
 source env-config.sh
 
 # Kill processes from nodes
-for line in `cat $HARP_HOME/scripts/nodes`;do
+for line in `cat $HARP_HOME/harp-collective/scripts/nodes`;do
   if [[ $line =~ ^\# ]]; then
     continue
   fi
