@@ -268,7 +268,7 @@ These instructions have only been tested on:
 
 1. Clone Harp repository using the following command. It is available at [DSC-SPIDAL/harp](https://github.com/DSC-SPIDAL/harp.git).
     ```bash
-    git clone https://github.com/DSC-SPIDAL/harp.git
+    $ git clone https://github.com/DSC-SPIDAL/harp.git
     ```
 
 2. Set the environment variables in file `~/.bashrc`.
@@ -285,7 +285,7 @@ These instructions have only been tested on:
     ```
 3. Run the following command to make sure the changes are applied.
     ```bash
-    source ~/.bashrc
+    $ source ~/.bashrc
     ```
 
 4. If hadoop is still running, stop it first with the following code.
@@ -354,7 +354,7 @@ To develop Harp applications add the following property when configuring the job
 2. Copy harp examples to `$HADOOP_HOME` using the following code.
    Select the distribution folder related to your hadoop version. For ex:- hadoop-2.6.0
     ```bash
-    $ cp $HARP_ROOT_DIR/distribution/hadoop-2.6.0/harp-java-1.0-SNAPSHOT.jar $HADOOP_HOME
+     $ cp $HARP_ROOT_DIR/distribution/hadoop-2.6.0/harp-java-1.0-SNAPSHOT.jar $HADOOP_HOME
     ```
 
 3. Start Hadoop. 
@@ -404,7 +404,7 @@ The usage is:
 
     For example:
     ```bash
-     $ hadoop jar harp-java-1.0-SNAPSHOT.jar edu.iu.kmeans.regroupallgather.KMeansLauncher 1000 10 100 5 2 2 10 /kmeans /tmp/kmeans
+    $ hadoop jar harp-java-1.0-SNAPSHOT.jar edu.iu.kmeans.regroupallgather.KMeansLauncher 1000 10 100 5 2 2 10 /kmeans /tmp/kmeans
     ```
     
 8. To fetch the results, use the following command:
