@@ -28,15 +28,15 @@ If you are using windows, we suggest you to install an Ubuntu system on a virtua
 1. Download and extract the hadoop-2.6.0 binary into your machine. It's available at [hadoop-2.6.0.tar.gz](https://archive.apache.org/dist/hadoop/core/hadoop-2.6.0/hadoop-2.6.0.tar.gz).
     
    ```bash
-    $ mkdir ~/Hadoop
-    $ cd ~/Hadoop
-    $ wget https://archive.apache.org/dist/hadoop/core/hadoop-2.6.0/hadoop-2.6.0.tar.gz
-    $ tar -xvzf hadoop-2.6.0.tar.gz
+     $ mkdir ~/Hadoop
+     $ cd ~/Hadoop
+     $ wget https://archive.apache.org/dist/hadoop/core/hadoop-2.6.0/hadoop-2.6.0.tar.gz
+     $ tar -xvzf hadoop-2.6.0.tar.gz
    ```
 2. Set the environment variables in file `~/.bashrc`.
 
    ```bash
-    $ vim ~/.bashrc
+     $ vim ~/.bashrc
    ```
    Add the following text to the file and update the values for `<where Java locates>` and 
    `<where hadoop locates>` with the path of where Java and Hadoop are located in your system. 
@@ -86,7 +86,7 @@ If you are using windows, we suggest you to install an Ubuntu system on a virtua
 
     (a). `$HADOOP_HOME/etc/hadoop/core-site.xml`:
      ```bash
-      $ vim $HADOOP_HOME/etc/hadoop/core-site.xml
+       $ vim $HADOOP_HOME/etc/hadoop/core-site.xml
      ```
      
      Copy the following text into the file and replace ${user.name} with your user name.
@@ -147,7 +147,7 @@ If you are using windows, we suggest you to install an Ubuntu system on a virtua
 
     (d).`$HADOOP_HOME/etc/hadoop/yarn-site.xml`:
     ```bash
-     $ vim $HADOOP_HOME/etc/hadoop/yarn-site.xml
+    $ vim $HADOOP_HOME/etc/hadoop/yarn-site.xml
     ```
     
     Copy the following text into the file.
@@ -234,7 +234,7 @@ If you are using windows, we suggest you to install an Ubuntu system on a virtua
 
 1. Clone Harp repository using the following command. It is available at [DSC-SPIDAL/harp](https://github.com/DSC-SPIDAL/harp.git).
     ```bash
-    git clone https://github.com/DSC-SPIDAL/harp.git
+     $ git clone https://github.com/DSC-SPIDAL/harp.git
     ```
 
 2. Set the environment variables in file `~/.bashrc`.
@@ -251,7 +251,7 @@ If you are using windows, we suggest you to install an Ubuntu system on a virtua
     ```
 3. Run the following command to make sure the changes are applied.
     ```bash
-    source ~/.bashrc
+    $ source ~/.bashrc
     ```
 
 4. If hadoop is still running, stop it first with the following code.
@@ -287,7 +287,7 @@ If you are using windows, we suggest you to install an Ubuntu system on a virtua
 8. Edit mapred-site.xml in $HADOOP_HOME/etc/hadoop by using the following code.
     
     ```bash
-     $ vim $HADOOP_HOME/etc/hadoop/mapred-site.xml
+    $ vim $HADOOP_HOME/etc/hadoop/mapred-site.xml
     ```
     
    Add java opts settings for map-collective tasks as follows. For example:
