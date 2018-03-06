@@ -55,7 +55,7 @@ if [ $? -ne 0 ]; then
 fi
 
 #run test
-#$ hadoop jar harp-tutorial-app-1.0-SNAPSHOT.jar edu.iu.mlr.MLRMapCollective [alpha] [number of iteration] [number of features] [number of workers] [number of threads] [topic file path] [qrel file path] [input path in HDFS] [output path in HDFS]
+#$ hadoop jar contrib-1.0-SNAPSHOT.jar edu.iu.mlr.MLRMapCollective [alpha] [number of iteration] [number of features] [number of workers] [number of threads] [topic file path] [qrel file path] [input path in HDFS] [output path in HDFS]
 hadoop jar $bin edu.iu.mlr.MLRMapCollective 1.0 5 47236 2 16 $hdfsdatadir/rcv1.topics.txt $hdfsdatadir/rcv1-v2.topics.qrels $hdfsdatadir/data $hdfsoutput
 if [ $? -ne 0 ]; then
     echo "run mlr failure"

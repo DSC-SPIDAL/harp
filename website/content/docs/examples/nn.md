@@ -2,6 +2,7 @@
 title: Harp Neural Network
 ---
 
+Before going through this tutorial take a look at the [overview](https://dsc-spidal.github.io/harp/docs/examples/overview/) section.
 
 <img src="/img/nn.png" width="60%"  >
 
@@ -12,23 +13,23 @@ Here, we give a simple tutorial on how to parallel a standard implementation of 
 
 ## PARALLEL DESIGN
 
-* What are the model? What kind of data structure?
+* What is the model? What kind of data structure is applicable?
 
     Weights matrices, including the biases for each node, between each adjacent layers are the model in neural network. It is a vector of double matrix.
 
-* What are the characteristics of the data dependency in model update computation, can updates run concurrently?
+* What are the characteristics of the data dependency in model update computation? Can updates run concurrently?
 
     In the core model update computation in BP training algorithm, each data point, or a minibatch, should access all the model, compute gradients and update model layer by layer from the output layer back to the input layer. 
 
     The nodes in the same layer can be updated in parallel without conflicts, but there are dependency between the layers. But generally, it is not easy to utilize these network structure related parallelism.
 
-* which kind of parallelism scheme is suitable, data parallelism or model parallelism?
+* Which kind of parallelism scheme is suitable, data parallelism or model parallelism?
 
     Data parallelism can be used, i.e., calculating different data points in parallel. 
 
     No model parallelism, each node get one replica of the whole model, which updates locally in parallel, and then synchronizes and averages when local computation all finish.
 
-* which collective communication operations is suitable to synchronize model?
+* which collective communication operation is suitable to synchronize the model?
 
     Synchronize replicas of the model by allreduce is an simple solution. 
 
@@ -72,9 +73,9 @@ The MNIST dataset is used in this tutorial. Refer the [dataset script](https://g
 
 ## USAGE
 ```bash
-$ hadoop jar harp-tutorial-app-1.0-SNAPSHOT.jar edu.iu.NN.NNMapCollective
+$ hadoop jar contrib-1.0-SNAPSHOT.jar edu.iu.NN.NNMapCollective
 Usage: NNMapCollective <number of map tasks> <epochs> <syncIterNum> <hiddenLayers> <minibatchsize> <lambda> <workDir>
-# hadoop jar harp-tutorial-app-1.0-SNAPSHOT.jar edu.iu.NN.NNMapCollective 2 20 5 100,32 2000 0 /nn
+# hadoop jar contrib-1.0-SNAPSHOT.jar edu.iu.NN.NNMapCollective 2 20 5 100,32 2000 0 /nn
 ```
 
 This command run harp neuralnetwork training on the input dataset under /nn, with 2 mappers. Training process goes through 20 times of the training dataset, averages the model every 5 iteration for each minibatch. The minibatch size is 2000, lambda is default value 0.689. There are 2 hidden layers, with 100 and 32 nodes each. Finally, it outputs the accuracy on the training set into the hadoop log.

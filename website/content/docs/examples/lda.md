@@ -2,10 +2,12 @@
 title: Latent Dirichlet Allocation 
 ---
 
+Before going through this tutorial take a look at the [overview](https://dsc-spidal.github.io/harp/docs/examples/overview/) section to get an understanding of the structure of the tutorial.
+
 <img src="/img/lda-cvb.png" width="30%"  >
 
 
-[Harp LDA](https://github.com/DSC-SPIDAL/harp/tree/master/harp-tutorial-app/src/main/java/edu/iu/lda) is a distributed variational bayes inference (VB) algorithm for LDA model which is able to model a large and continuously expanding dataset using Harp collective communication library. We demonstrate how variational bayes inference converges within Map-Collective jobs provided by Harp. We provide results of the experiments conducted on a corpus of Wikipedia Dataset.
+[Harp LDA](https://github.com/DSC-SPIDAL/harp/tree/master/contrib/src/main/java/edu/iu/lda) is a distributed variational bayes inference (VB) algorithm for LDA model which is able to model a large and continuously expanding dataset using Harp collective communication library. We demonstrate how variational bayes inference converges within Map-Collective jobs provided by Harp. We provide results of the experiments conducted on a corpus of Wikipedia Dataset.
 
 LDA is a popular topic modeling algorithm. We follow the [Mr.LDA](https://github.com/lintool/Mr.LDA) to implement distributed variational inference LDA on Harp with it’s dynamic scheduler, allreduce and push-pull communication models.
 
@@ -33,21 +35,30 @@ hdfs dfs -put $HARP_ROOT_DIR/datasets/tutorial/lda-cvb/sample-sparse-data/sample
 ```
 
 ### Compile
+
+Select the profile related to your hadoop version. For ex: hadoop-2.6.0. Supported hadoop versions are 2.6.0, 2.7.5 
+and 2.9.0
 ```bash
 cd $HARP_ROOT_DIR
-mvn clean package
-cp $HARP_ROOT_DIR/harp-tutorial-app/target/harp-tutorial-app-2.0.SNAPSHOT.jar $HADOOP_HOME
+mvn clean package -Phadoop-2.6.0
+```
+
+Select the distribution folder related to your hadoop version. For ex:- hadoop-2.6.0
+
+```
+cd $HARP_ROOT_DIR/distribution/hadoop-2.6.0/
+cp contrib-1.0.SNAPSHOT.jar $HADOOP_HOME
 cp $HARP_ROOT_DIR/third_parity/cloud9-1.4.17.jar $HADOOP_HOME/share/hadoop/mapreduce
 ```
 
 ### Run
 ```bash
-hadoop jar harp-tutorial-app-1.0.SNAPSHOT.jar  edu.iu.lda.LdaMapCollective <input dir>  <metafile>  <output dir> <number of terms> <number of topics> <number of docs> <number of MapTasks> <number of iterations> <number of threads> <mode, 1=multithreading>
+hadoop jar contrib-1.0.SNAPSHOT.jar  edu.iu.lda.LdaMapCollective <input dir>  <metafile>  <output dir> <number of terms> <number of topics> <number of docs> <number of MapTasks> <number of iterations> <number of threads> <mode, 1=multithreading>
 ```
 
 ### Example
 ```bash
-hadoop jar harp-tutorial-app-1.0.SNAPSHOT.jar  edu.iu.lda.LdaMapCollective sample-sparse-data sample-sparse-metadata  sample-sparse-output 11 2 12 2 5 4 1
+hadoop jar contrib-1.0.SNAPSHOT.jar  edu.iu.lda.LdaMapCollective sample-sparse-data sample-sparse-metadata  sample-sparse-output 11 2 12 2 5 4 1
 ```
 
 Please be noted:

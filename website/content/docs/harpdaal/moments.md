@@ -22,10 +22,10 @@ The implementation of Mom in our Harp-DAAL consists of two levels. At the top Le
 * The description of the intel daal's JAVA API used can be found [here](https://software.intel.com/sites/products/documentation/doclib/daal/daal-user-and-reference-guides/hh_goto.htm?index.htm#daal_java_api/group__low__order__moments.htm#details)
 
 ### Code Walk-Through 
-The actual implemented code can be found [here](https://github.com/DSC-SPIDAL/harp/tree/master/harp-daal-app/src/main/java/edu/iu/daal_mom). The MapCollective function is defined [here](https://github.com/DSC-SPIDAL/harp/blob/master/harp-daal-app/src/main/java/edu/iu/daal_mom/MOMDaalCollectiveMapper.java).
+The actual implemented code can be found [here](https://github.com/DSC-SPIDAL/harp/tree/master/ml/daal/src/main/java/edu/iu/daal_mom). The MapCollective function is defined [here](https://github.com/DSC-SPIDAL/harp/blob/master/ml/daal/src/main/java/edu/iu/daal_mom/MOMDaalCollectiveMapper.java).
  
 #### Step 1 (on data nodes)
-The first step involves reading the files from the hdfs filesystem after splitting files between each mapper. Splitting is done by MultipleFileInputFormat class defined [here](https://github.com/DSC-SPIDAL/harp/blob/master/harp-daal-app/src/main/java/edu/iu/fileformat/MultiFileInputFormat.java). 
+The first step involves reading the files from the hdfs filesystem after splitting files between each mapper. Splitting is done by MultipleFileInputFormat class defined [here](https://github.com/DSC-SPIDAL/harp/blob/master/ml/daal/src/main/java/edu/iu/fileformat/MultiFileInputFormat.java). 
 Data is converted into array which is eventually converted into the daal [_Numeric Table_](https://software.intel.com/en-us/node/564579) datastructure.  In this example the files have been stored on the hdfs. The files have to be read in the daal table format as the local computations are performed by the daal libraries. 
 Getting array from csv file - 
 ```java
@@ -143,14 +143,16 @@ Final low order characteristics are computed on master node.
 Details about setting up hadoop along with harp-daal on the cluster can be found [here](https://dsc-spidal.github.io/harp/docs/getting-started-cluster/). 
 
 #### Running the code
-Make sure that the code is placed in the `/harp/harp-daal-app` directory.
-Run the `harp-daal-mom-hsw.sh` script here to run the code.
+Make sure that the code is placed in the `/harp/ml/daal` directory. 
+Run the `harp-daal-mom-hsw.sh` script here to run the code. Select the distribution folder related to your hadoop 
+version. For ex:- hadoop-2.6.0
+
 ```shell
 #!/bin/bash
 
 Arch=hsw
 
-cp ../target/harp-daal-app-1.0-SNAPSHOT.jar ${HADOOP_HOME}
+cp $HARP_ROOT_DIR/distribution/hadoop-2.6.0/harp-daal-1.0-SNAPSHOT.jar ${HADOOP_HOME}
 
 source /N/u/lc37/Lib/DAAL2018_Beta/__release_lnx/daal/bin/daalvars.sh intel64
 
@@ -181,7 +183,7 @@ Node=2
 Thd=8
 
 echo "Test-$Arch-daal-mom-$Dataset-N$Node-T$Thd Start" 
-hadoop jar harp-daal-app-1.0-SNAPSHOT.jar edu.iu.daal_mom.MOMDaalLauncher -libjars ${LIBJARS}  /Hadoop/mom-input/$Dataset /mom/work $Mem $Node $Thd 2>$logDir/Test-$Arch-daal-mom-$Dataset-N$Node-T$Thd.log 
+hadoop jar harp-daal-1.0-SNAPSHOT.jar edu.iu.daal_mom.MOMDaalLauncher -libjars ${LIBJARS}  /Hadoop/mom-input/$Dataset /mom/work $Mem $Node $Thd 2>$logDir/Test-$Arch-daal-mom-$Dataset-N$Node-T$Thd.log 
 echo "Test-$Arch-daal-mom-$Dataset-N$Node-T$Thd End" 
 ```
 

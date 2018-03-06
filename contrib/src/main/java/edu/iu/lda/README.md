@@ -17,21 +17,24 @@ hdfs dfs -put $HARP_ROOT_DIR/datasets/tutorial/lda-cvb/sample-sparse-data/sample
 ```
 
 Compile
+
+Select the profile related to your hadoop version. For ex: hadoop-2.6.0. Supported hadoop versions are 2.6.0, 2.7.5 and 2.9.0
+
 ```bash
 cd $HARP_ROOT_DIR
-mvn clean package
-cp $HARP_ROOT_DIR/harp-tutorial-app/target/harp-tutorial-app-1.0.SNAPSHOT.jar $HADOOP_HOME
+mvn clean package -Phadoop-2.6.0
+cp $HARP_ROOT_DIR/distribution/hadoop-2.6.0/contrib-1.0.SNAPSHOT.jar $HADOOP_HOME
 cp $HARP_ROOT_DIR/third_parity/cloud9-1.4.17.jar $HADOOP_HOME/share/hadoop/mapreduce
 ```
 
 Run
 ```bash
-hadoop jar harp-tutorial-app-1.0.SNAPSHOT.jar  edu.iu.lda.LdaMapCollective <input dir>  <metafile>  <output dir> <number of terms> <number of topics> <number of docs> <number of MapTasks> <number of iterations> <number of threads> <mode, 1=multithreading>
+hadoop jar contrib-1.0.SNAPSHOT.jar  edu.iu.lda.LdaMapCollective <input dir>  <metafile>  <output dir> <number of terms> <number of topics> <number of docs> <number of MapTasks> <number of iterations> <number of threads> <mode, 1=multithreading>
 ```
 
 Example
 ```
-hadoop jar harp-tutorial-app-1.0.SNAPSHOT.jar  edu.iu.lda.LdaMapCollective sample-sparse-data sample-sparse-metadata  sample-sparse-output 11 2 12 2 5 4 1
+hadoop jar contrib-1.0.SNAPSHOT.jar  edu.iu.lda.LdaMapCollective sample-sparse-data sample-sparse-metadata sample-sparse-output 11 2 12 2 5 4 1
 ```
 
 

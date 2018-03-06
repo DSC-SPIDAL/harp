@@ -22,10 +22,10 @@ The implementation of Naive in our Harp-DAAL consists of two levels. At the top 
 * The description of the intel daal's JAVA API used can be found [here](https://software.intel.com/sites/products/documentation/doclib/daal/daal-user-and-reference-guides/hh_goto.htm?index.htm#daal_java_api/group__multinomial__naive__bayes.htm)
 
 ### Code Walk-Through 
-The actual implemented code can be found [here](https://github.com/DSC-SPIDAL/harp/tree/master/harp-daal-app/src/main/java/edu/iu/daal_naive). The MapCollective function is defined [here](https://github.com/DSC-SPIDAL/harp/blob/master/harp-daal-app/src/main/java/edu/iu/daal_naive/NaiveDaalCollectiveMapper.java).
+The actual implemented code can be found [here](https://github.com/DSC-SPIDAL/harp/tree/master/ml/daal/src/main/java/edu/iu/daal_naive). The MapCollective function is defined [here](https://github.com/DSC-SPIDAL/harp/blob/master/ml/daal/src/main/java/edu/iu/daal_naive/NaiveDaalCollectiveMapper.java).
  
 #### Step 1 (on data nodes)
-The first step involves reading the files from the hdfs filesystem after splitting files between each mapper. Splitting is done by MultipleFileInputFormat class defined [here](https://github.com/DSC-SPIDAL/harp/blob/master/harp-daal-app/src/main/java/edu/iu/fileformat/MultiFileInputFormat.java). 
+The first step involves reading the files from the hdfs filesystem after splitting files between each mapper. Splitting is done by MultipleFileInputFormat class defined [here](https://github.com/DSC-SPIDAL/harp/blob/master/ml/daal/src/main/java/edu/iu/fileformat/MultiFileInputFormat.java). 
 Data is converted into array which is eventually converted into the daal [_Numeric Table_](https://software.intel.com/en-us/node/564579) datastructure.  In this example the files have been stored on the hdfs. The files have to be read in the daal table format as the local computations are performed by the daal libraries. 
 Getting array from csv file - 
 ```java
@@ -193,14 +193,15 @@ Final result is computed on master node.
 Details about setting up hadoop along with harp-daal on the cluster can be found [here](https://dsc-spidal.github.io/harp/docs/getting-started-cluster/). 
 
 #### Running the code
-Make sure that the code is placed in the `/harp/harp-daal-app` directory.
-Run the `harp-daal-naive-hsw.sh` script here to run the code.
+Make sure that the code is placed in the `/harp/ml/daal` directory.
+Run the `harp-daal-naive-hsw.sh` script here to run the code. Select the distribution folder related to your hadoop 
+version. For ex:- hadoop-2.6.0
 ```shell
 #!/bin/bash
 
 Arch=hsw
 
-cp ../target/harp-daal-app-1.0-SNAPSHOT.jar ${HADOOP_HOME}
+cp $HARP_ROOT_DIR/distribution/hadoop-2.6.0/harp-daal-1.0-SNAPSHOT.jar ${HADOOP_HOME}
 
 source /N/u/lc37/Lib/DAAL2018_Beta/__release_lnx/daal/bin/daalvars.sh intel64
 echo "${DAALROOT}"
@@ -231,7 +232,7 @@ Node=2
 Thd=24
 
 echo "Test-$Arch-daal-naive-$Dataset-N$Node-T$Thd-B$Batch Start" 
-hadoop jar harp-daal-app-1.0-SNAPSHOT.jar edu.iu.daal_naive.NaiveDaalLauncher -libjars ${LIBJARS}  /Hadoop/naive-input/$Dataset/train /Hadoop/naive-input/$Dataset/test /Hadoop/naive-input/$Dataset/groundTruth /naive/work $Mem $Batch $Node $Thd 2>$logDir/Test-$Arch-daal-naive-$Dataset-N$Node-T$Thd-B$Batch.log 
+hadoop jar harp-daal-1.0-SNAPSHOT.jar edu.iu.daal_naive.NaiveDaalLauncher -libjars ${LIBJARS}  /Hadoop/naive-input/$Dataset/train /Hadoop/naive-input/$Dataset/test /Hadoop/naive-input/$Dataset/groundTruth /naive/work $Mem $Batch $Node $Thd 2>$logDir/Test-$Arch-daal-naive-$Dataset-N$Node-T$Thd-B$Batch.log 
 echo "Test-$Arch-daal-naive-$Dataset-N$Node-T$Thd-B$Batch End" 
 ```
 

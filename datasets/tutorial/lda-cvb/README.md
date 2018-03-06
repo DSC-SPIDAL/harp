@@ -1,4 +1,4 @@
-## The sample data for harp-tutorial-app lda to use.
+## The sample data for contrib lda to use.
 
 
 

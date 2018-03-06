@@ -2,13 +2,15 @@
 title: K-Means
 ---
 
+Before going through this tutorial take a look at the [overview](https://dsc-spidal.github.io/harp/docs/examples/overview/) section to get an understanding of the structure of the tutorial.
+
 <img src="/img/kmeans.png" width="80%" >
 
-K-Means is a powerful and easily understood clustering algorithm. The aim of the algorithm is to divide a given set of points into `K` partitions. `K` needs to be specified by the user. In order to understand K-Means, first you need to understand the proceeding concepts and their meanings.
+K-Means is a powerful and easily understood clustering algorithm. The aim of the algorithm is to divide a given set of points into `K` partitions. `K` needs to be specified by the user. In order to understand K-Means, first, you need to understand the proceeding concepts and their meanings.
 
 * `Centroids`:
-    Centroids can be defined as the center of each cluster. If we are performing clustering with k=3, we will have 3 centroids. To perform K-Means clustering, the users needs to provide an initial set of centroids.
-
+    Centroids can be defined as the center of each cluster. If we are performing clustering with k=3, we will have 3 centroids. To perform K-Means clustering, the users need to provide an initial set of centroids.
+    
 * `Distance`:
     In order to group data points as close together or as far-apart, we need to define a distance between two given data points. In K-Means, clustering distance is normally calculated as the Euclidean Distance between two data points.
 
@@ -16,7 +18,7 @@ The K-Means algorithm simply repeats the following set of steps until there is n
 
 1. Choose K points as the initial set of centroids.
 
-2. Assign each data point in the data set to the closest centroid (this is done by calculating the distance between the data point and each centroid).
+2. Assign each data point in the dataset to the closest centroid (this is done by calculating the distance between the data point and each centroid).
 
 3. Calculate the new centroids based on the clusters that were generated in step 2. Normally this is done by calculating the mean of each cluster.
 
@@ -24,15 +26,15 @@ The K-Means algorithm simply repeats the following set of steps until there is n
 
 ## PARALLEL DESIGN
 
-* What are the model? What kind of data structure?
+* What are the models? What kind of data structure is applicable?
 
-    Centroids of the clusters are model in vanilla kmeans. It has a vector structure as a double array.
+    Centroids of the clusters are models in vanilla k-means. It has a vector structure as a double array.
 
 * What are the characteristics of the data dependency in model update computation, can updates run concurrently?
 
-    In the core model update computation, each data point should access all the model, compute distance with each centroid, find the nearest one and partially update model. The true update only occurs when all data points finish their search.
+    In the core model update computation, each data point should access all the model, compute distance with each centroid, find the nearest one and partially update the model. The true update only occurs when all data points finish their search.
 
-* which kind of parallelism scheme is suitable, data parallelism or model parallelism?
+* Which kind of parallelism scheme is suitable, data parallelism or model parallelism?
 
     Data parallelism can be used, i.e., calculating different data points in parallel.
 
@@ -40,11 +42,12 @@ The K-Means algorithm simply repeats the following set of steps until there is n
 
     1). Without model parallelism, each node get one replica of the whole model, which updates locally in parallel, and then synchronizes when local computation all finish
 
-    2). With model parallelism, each node get one partition of the model, which updates in parallel, and then rotates to the neighbor node when local computation for all local data points finish. Repeat until each partition returns back to the original node, then do the final model update.
+    2). With model parallelism, each node gets one partition of the model, which updates in parallel, and then rotates to the neighbor node when local computation for all local data points finish. Repeat until each partition returns back to the original node, then do the final model update.
 
-* which collective communication operations is suitable to synchronize model?
+* Which collective communication operation is suitable to synchronize the model?
 
-    For solution without model parallelism, Synchronize replicas of the model by allreduce, then calculate the new centroids and go to the next iteration. For vanilla kmeans, the combination of reduce/broadcast, push/pull, regroup/allgather are similar to allreduce.
+    For solution without model parallelism, Synchronize replicas of the model by `allreduce`, then calculate the new 
+    centroids and go to the next iteration. For vanilla kmeans, the combination of `reduce/broadcast`, `push/pull`, `regroup/allgather` are similar to `allreduce`.
 
     For solution with model parallelism, there is no replica exists, but the movement of the model partitions are a kind of synchronized collective operation, supported in Harp by an abstraction of rotate.
 
@@ -53,7 +56,7 @@ The K-Means algorithm simply repeats the following set of steps until there is n
 ![dataflow](/img/4-2-2.png)
 
 ## Step 1 --- The Main Method
-The tasks of the main class is to configure and run the job iteratively.
+The tasks of the main class are to configure and run the job iteratively.
 ```java
 generate N data points (D dimensions), write to HDFS
 generate M centroids, write to HDFS
@@ -64,7 +67,7 @@ for iterations{
 ```
 
 ## Step 2 --- The mapCollective function
-This is the definition of map-collective task. It reads data from context and then call runKmeans function to actually run kmeans Mapper task.
+This is the definition of the map-collective task. It reads data from context and then calls `runKmeans` function to actually run k-means Mapper task.
 ```java
 protected void mapCollective( KeyValReader reader, Context context) throws IOException, InterruptedException {
     LOG.info("Start collective mapper.");
@@ -338,18 +341,24 @@ private void calculateCentroids( Table<DoubleArray> cenTable){
 ```
 
 ## COMPILE
+
+Select the profile related to your hadoop version. For ex: hadoop-2.6.0. Supported hadoop versions are 2.6.0, 2.7.5 
+and 2.9.0
 ```bash
 cd $HARP_ROOT_DIR
-mvn clean package
-cd $HARP_ROOT_DIR/harp-tutorial-app
-cp target/harp-tutorial-app-1.0-SNAPSHOT.jar $HADOOP_HOME
+mvn clean package -Phadoop-2.6.0
+```
+Select the distribution folder related to your hadoop version. For ex:- hadoop-2.6.0
+```
+cd $HARP_ROOT_DIR/distribution/hadoop-2.6.0/
+cp contrib-1.0-SNAPSHOT.jar $HADOOP_HOME
 cd $HADOOP_HOME
 ```
 
 ## USAGE
 Run Harp K-Means:
 ```bash
-hadoop jar harp-tutorial-app-1.0-SNAPSHOT.jar edu.iu.kmeans.common.KmeansMapCollective <numOfDataPoints> <num of Centroids> <size of vector> <number of map tasks> <number of iteration> <workDir> <localDir> <communication operation>
+hadoop jar contrib-1.0-SNAPSHOT.jar edu.iu.kmeans.common.KmeansMapCollective <numOfDataPoints> <num of Centroids> <size of vector> <number of map tasks> <number of iteration> <workDir> <localDir> <communication operation>
 
    <numOfDataPoints>: the number of data points you want to generate randomly
    <num of centriods>: the number of centroids you want to clustering the data to
@@ -368,7 +377,7 @@ hadoop jar harp-tutorial-app-1.0-SNAPSHOT.jar edu.iu.kmeans.common.KmeansMapColl
 For example:
 
 ```bash
-hadoop jar harp-tutorial-app-1.0-SNAPSHOT.jar edu.iu.kmeans.common.KmeansMapCollective 1000 10 10 2 10 /kmeans /tmp/kmeans allreduce
+hadoop jar contrib-1.0-SNAPSHOT.jar edu.iu.kmeans.common.KmeansMapCollective 1000 10 10 2 10 /kmeans /tmp/kmeans allreduce
 ```
 
 Fetch the results:
