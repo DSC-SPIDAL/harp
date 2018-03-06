@@ -38,12 +38,13 @@ If you are using windows, we suggest you to install an Ubuntu system on a virtua
    ```bash
     $ vim ~/.bashrc
    ```
-   Add the following text to the file.
+   Add the following text to the file and update the values for `<where Java locates>` and 
+   `<where hadoop locates>` with the path of where Java and Hadoop are located in your system. 
 
     ```bash
-    export JAVA_HOME=<where Java locates>
-    #e.g. ~/opt/jdk1.8.0_91
-    export HADOOP_HOME=<where hadoop-2.6.0 locates>
+    export JAVA_HOME="<where Java locates>"
+    #e.g. /usr/lib/jvm/java-1.8.0-openjdk-amd64
+    export HADOOP_HOME="<where hadoop locates>"
     #e.g. ~/Hadoop/hadoop-2.6.0
     export YARN_HOME=$HADOOP_HOME
     export HADOOP_CONF_DIR=$HADOOP_HOME/etc/hadoop
