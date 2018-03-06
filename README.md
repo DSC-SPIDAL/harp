@@ -9,7 +9,7 @@ Apache License 2.0
 Harp is a framework for machine learning applications.
 
 ## FEATURES
-1. A Hadoop plugin. It currently supports hadoop 2.6.0 ~ 2.7.3 version.
+1. A Hadoop plugin. It currently supports hadoop 2.6.0, 2.7.5 and 2.9.0 versions.
 2. Hierarchical data abstraction (arrays/objects, partitions/tables)
 3. Pool based memory management
 4. Collective + event-driven programming model (distributed computing)
@@ -21,10 +21,13 @@ Harp is a framework for machine learning applications.
 #### 2. Enter "harp" home directory
 #### 3. Compile harp
 Select the profile related to your hadoop version. For ex: hadoop-2.6.0. Supported hadoop versions are 2.6.0, 2.7.5
-and 2.9.0
+and 2.9.0. 
 
     mvn clean package -Phadoop-2.6.0
 
+You can also change the `hadoop-version` property in the harp/pom.xml file and compile using the following command.
+
+    mvn clean package
 #### 4. Install harp plugin to hadoop
 
 Select the distribution folder related to your hadoop version. For ex: hadoop-2.6.0
@@ -52,7 +55,7 @@ Select the distribution folder related to your hadoop version. For ex: hadoop-2.
 
 ## EXAMPLE
 
-#### 1. copy harp examples to $HADOOP_HOME
+#### 1. Copy harp examples to $HADOOP_HOME
 
 Select the distribution folder related to your hadoop version. For ex: 2.6.0
 
