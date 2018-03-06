@@ -89,7 +89,7 @@ If you are using windows, we suggest you to install an Ubuntu system on a virtua
       $ vim $HADOOP_HOME/etc/hadoop/core-site.xml
      ```
      
-     Copy the following text into the file and replace ${user.name} with your name.
+     Copy the following text into the file and replace ${user.name} with your user name.
     
     ```html
     <configuration>
@@ -147,7 +147,7 @@ If you are using windows, we suggest you to install an Ubuntu system on a virtua
 
     (d).`$HADOOP_HOME/etc/hadoop/yarn-site.xml`:
     ```bash
-     vim $HADOOP_HOME/etc/hadoop/yarn-site.xml
+     $ vim $HADOOP_HOME/etc/hadoop/yarn-site.xml
     ```
     
     Copy the following text into the file.
@@ -209,7 +209,7 @@ If you are using windows, we suggest you to install an Ubuntu system on a virtua
     $ jps
    ```
     The output should look similar to the following text with `xxxxx` replaced by the 
-    process ids for "NameNode", "SecondaryNameNode', etc. 
+    process ids for "NameNode", "SecondaryNameNode", etc. 
     ```bash
     xxxxx NameNode
     xxxxx SecondaryNameNode
@@ -221,7 +221,7 @@ If you are using windows, we suggest you to install an Ubuntu system on a virtua
     If all the processes listed above aren't in your output recheck your configurations and
     rerun steps 6 through 8 after executing the following commands.
     
-    Replace ${user.name} with the name given in step 5 (a).
+    Replace ${user.name} with the user name given in step 5 (a).
     ```bash
      $ $HADOOP_HOME/sbin/stop-dfs.sh
      $ $HADOOP_HOME/sbin/stop-yarn.sh
@@ -242,29 +242,30 @@ If you are using windows, we suggest you to install an Ubuntu system on a virtua
      $ vim ~/.bashrc
     ```
 
-   Add the following text into the file. 
+   Add the following text into the file. Replace `<where Harp locates>` with the path of where Harp is located in 
+   your system. 
     ```bash
     export HARP_ROOT_DIR=<where Harp locates>
     #e.g. ~/harp
     export HARP_HOME=$HARP_ROOT_DIR/core/
     ```
-4. Run the following command to set the environment variables.
+3. Run the following command to make sure the changes are applied.
     ```bash
     source ~/.bashrc
     ```
 
-5. If hadoop is still running, stop it first with the following code.
+4. If hadoop is still running, stop it first with the following code.
     ```bash
     $ $HADOOP_HOME/sbin/stop-dfs.sh
     $ $HADOOP_HOME/sbin/stop-yarn.sh
     ```
 
-6. Enter "harp" home directory using the following command.
+5. Enter "harp" home directory using the following command.
     ```bash
     $ cd $HARP_ROOT_DIR
     ```
 
-7. Compile harp
+6. Compile harp
 
     Select the profile related to your hadoop version (For ex: hadoop-2.6.0) and compile using maven. 
     Supported hadoop versions are 2.6.0, 2.7.5 and 2.9.0.
@@ -273,7 +274,7 @@ If you are using windows, we suggest you to install an Ubuntu system on a virtua
     $ mvn clean package -Phadoop-2.6.0
     ```
 
-8. Install harp plugin to hadoop as demonstrated below. 
+7. Install harp plugin to hadoop as demonstrated below. 
 
     Select the distribution folder related to your hadoop version. For ex:- hadoop-2.6.0
     
@@ -283,7 +284,7 @@ If you are using windows, we suggest you to install an Ubuntu system on a virtua
     $ cp third_party/fastutil-7.0.13.jar $HADOOP_HOME/share/hadoop/mapreduce/
     ```
 
-9. Edit mapred-site.xml in $HADOOP_HOME/etc/hadoop by using the following code.
+8. Edit mapred-site.xml in $HADOOP_HOME/etc/hadoop by using the following code.
     
     ```bash
      $ vim $HADOOP_HOME/etc/hadoop/mapred-site.xml
@@ -312,10 +313,10 @@ To develop Harp applications add the following property when configuring the job
 
 ## Step 3 Run harp kmeans example
 
-1. Copy harp examples to $HADOOP_HOME using the following code. 
+1. Copy harp examples to `$HADOOP_HOME` using the following code. 
    Select the distribution folder related to your hadoop version. For ex:- hadoop-2.6.0
     ```bash
-     $ cp distribution/hadoop-2.6.0/harp-java-1.0-SNAPSHOT.jar $HADOOP_HOME
+     $ cp $HARP_ROOT_DIR/distribution/hadoop-2.6.0/harp-java-1.0-SNAPSHOT.jar $HADOOP_HOME
     ```
 
 2. Start Hadoop. 
