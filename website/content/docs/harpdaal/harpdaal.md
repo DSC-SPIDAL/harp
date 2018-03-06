@@ -86,7 +86,8 @@ table.
 
 ### Harp-DAAL Data Conversion API
 
-Harp-DAAL now provides a group of classes under the path *Harp/harp-daal-app/src/edu/iu/daal*, which manipulates the data transfer
+Harp-DAAL now provides a group of classes under the path *harp/ml/daal/src/edu/iu/daal*, which manipulates the data 
+transfer
 between Harp's data structure and that of DAAL.
 
 + RotatorDaal: a rotator which internally converts the H matrix from Harp table to DAAL's NumericTable
@@ -131,7 +132,7 @@ cd harp
 # pull the daal src (as a submodule)
 git submodule update --init --recursive
 # enter daal src directory
-cd harp-daal-app/daal-src
+cd $HARP_ROOT_DIR/ml/daal/daal-src
 # compile and install
 make daal PLAT=lnx32e
 # setup the DAALROOT environment variables
@@ -139,9 +140,9 @@ source ../__release_lnx/daal/bin/daalvars.sh intel64
 ```
 The DAAL source code within DSC-SPIDAL/harp has some modifications upon a certain version of Intel DAAL source code. 
 The current source code is based on Intel DAAL version 2018 beta update1. Installation from Intel DAAL latest version 
-may accelerate the performance of harp-daal-app, however, it may also cause compilation errors if Intel 
+may accelerate the performance of harp-daal, however, it may also cause compilation errors if Intel 
 change some of the DAAL Java APIs. Therefore, we recommend users to use the tested DAAL stable version provided by our 
-repository. Some harp-daal-app codes like MF-SGD contains DAAL native implementation codes that are not yet included to Intel DAAL repository, 
+repository. Some harp-daal codes like MF-SGD contains DAAL native implementation codes that are not yet included to Intel DAAL repository, 
 and users can only run them with installation of DAAL codes from DSC-SPIDAL/harp.
 In addition, our DAAL codes provide users of exclusive optimized data structures for machine learning algorithms 
 with big model. 
@@ -152,7 +153,7 @@ certain commit of our DAAL code version. If users would like to explore the late
 please make https://github.com/francktcheng/Harp-DAAL-Local.git as a remote upstream repository and git pull daal_2018_beta_update1 
 branch
 ```bash
-cd harp/harp-daal-app/daal-src
+cd harp/ml/daal/daal-src
 git remote -v 
 git remote rename origin upstream 
 git pull upstream daal_2018_beta_update1:daal_2018_beta_update1
@@ -160,17 +161,24 @@ git checkout daal_2018_beta_update1
 ```
 
 ### Compile and Run Harp-DAAL Applications
-1. add harp-daal-app module back to harp/pom.xml file
+1. Add harp-daal-interface module back to harp/core/pom.xml file
 ```xml
 <modules>
-        <module>harp-project</module>
-        <module>harp-tutorial-app</module>
-        <module>harp-app</module>
-        <module>harp-daal-app</module>
+        <module>harp-collective</module>
+        <module>harp-hadoop</module>
+        <module>harp-daal-interface</module>
 </modules>
 ```
 
-2. Add external daal lib dependency to harp/harp-daal-app/pom.xml file
+2. Add daal module back to harp/ml/pom.xml file
+```xml
+<modules>
+        <module>java</module>
+        <module>daal</module>
+</modules>
+``` 
+
+3. Add external daal lib dependency to harp/core/pom.xml and harp/ml/pom.xml files.
 The daal.jar file contains the Java APIs provided by DAAL to its native kernels
 ```xml
 <dependency>
@@ -182,17 +190,19 @@ The daal.jar file contains the Java APIs provided by DAAL to its native kernels
 </dependency>
 ```
 
-3. Re-compile harp to generate harp-daal-app targets
+3. Re-compile harp to generate harp-daal targets. Select the profile related to your hadoop version. For ex: hadoop-2
+.6.0. Supported hadoop versions are 2.6.0, 2.7.5 and 2.9.0
 ```bash
 cd harp/
-mvn clean package 
+mvn clean package -Phadoop-2.6.0
 ```
-The generated harp-daal-app lib is at harp/harp-daal-app/target/harp-daal-app-1.0-SNAPSHOT.jar
+The generated harp-daal-interface and harp-daal jars are at harp/distribution/hadoop-2.6.0/ folder. 
 
-4. Run harp-daal-app frome NameNode of the launched Hadoop daemons 
+4. Run harp-daal frome NameNode of the launched Hadoop daemons 
 ```bash
-# copy harp-daal-app jar file to Hadoop directory
-cp ../target/harp-daal-app-1.0-SNAPSHOT.jar ${HADOOP_HOME}
+# copy harp-daal jar file to Hadoop directory
+cp $HARP_ROOT_DIR/distribution/hadoop-2.6.0/harp-daal-interface-1.0-SNAPSHOT.jar ${HADOOP_HOME}/share/hadoop/mapreduce
+cp $HARP_ROOT_DIR/distribution/hadoop-2.6.0/harp-daal-1.0-SNAPSHOT.jar ${HADOOP_HOME}
 # enter hadoop home directory
 cd ${HADOOP_HOME}
 # put daal and tbb, omp libs to hdfs, they will be loaded into the distributed cache of 
@@ -205,10 +215,11 @@ hdfs dfs -put ${DAALROOT}/../../daal-misc/lib/libiomp5.so /Hadoop/Libraries/
 # set up path to the DAAL Java APIs lib
 export LIBJARS=${DAALROOT}/lib/daal.jar
 # launch mappers, e.g., harp-daal-als 
-bin/hadoop jar harp-daal-app-1.0-SNAPSHOT.jar edu.iu.daal_als.ALSDaalLauncher -libjars ${LIBJARS} /Hadoop/sgd-input/yahoomusic-train 100 1 0.0001 10 false 2 24 110000 /Hadoop/als-work /Hadoop/sgd-input/yahoomusic-test
+bin/hadoop jar harp-daal-1.0-SNAPSHOT.jar edu.iu.daal_als.ALSDaalLauncher -libjars ${LIBJARS} /Hadoop/sgd-input/yahoomusic-train 100 1 0.0001 10 false 2 24 110000 /Hadoop/als-work /Hadoop/sgd-input/yahoomusic-test
 ```
-comand line arguments vary from app to app, please refer to the src of harp-daal-app
-there is also a test_scripts directory under /harp-daal-app, which contains example scripts to run each harp-daal-app
+command line arguments vary from app to app, please refer to the src of harp-daal
+there is also a test_scripts directory under /ml/daal/, which contains example scripts to run each harp-daal 
+application.
 
 
 

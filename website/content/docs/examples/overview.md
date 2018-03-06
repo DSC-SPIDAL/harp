@@ -43,7 +43,7 @@ For model data, Harp provides distributed dataset abstractions and collective co
 
 The standard steps aim to answer four questions about the model design for a distributed machine learning algorithm based on its sequential algorithm.
 
-* What is the model? What kind of data structure that is applicable?
+* What is the model? What kind of data structure is applicable?
 
 * What are the characteristics of the data dependency in model update computation – can they run concurrently?
 

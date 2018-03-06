@@ -9,7 +9,7 @@ Apache License 2.0
 Harp is a framework for machine learning applications.
 
 ## FEATURES
-1. A Hadoop plugin. It currently supports hadoop 2.6.0 ~ 2.7.3 version.
+1. A Hadoop plugin. It currently supports hadoop 2.6.0, 2.7.5 and 2.9.0 versions.
 2. Hierarchical data abstraction (arrays/objects, partitions/tables)
 3. Pool based memory management
 4. Collective + event-driven programming model (distributed computing)
@@ -20,10 +20,20 @@ Harp is a framework for machine learning applications.
 #### 1. Install Maven by following the [maven official instruction](http://maven.apache.org/install.html)
 #### 2. Enter "harp" home directory
 #### 3. Compile harp
-    mvn clean package
+Select the profile related to your hadoop version. For ex: hadoop-2.6.0. Supported hadoop versions are 2.6.0, 2.7.5
+and 2.9.0. 
 
+    mvn clean package -Phadoop-2.6.0
+
+You can also change the `hadoop-version` property in the harp/pom.xml file and compile using the following command.
+
+    mvn clean package
 #### 4. Install harp plugin to hadoop
-    cp harp-project/target/harp-project-1.0-SNAPSHOT.jar $HADOOP_HOME/share/hadoop/mapreduce/
+
+Select the distribution folder related to your hadoop version. For ex: hadoop-2.6.0
+
+    cp distribution/hadoop-2.6.0/harp-collective-1.0-SNAPSHOT.jar $HADOOP_HOME/share/hadoop/mapreduce/
+    cp distribution/hadoop-2.6.0/harp-hadoop-1.0-SNAPSHOT.jar $HADOOP_HOME/share/hadoop/mapreduce/
     cp third_party/fastutil-7.0.13.jar $HADOOP_HOME/share/hadoop/mapreduce/
 
 #### 5. Configure Hadoop environment for settings required to run Hadoop
@@ -45,8 +55,11 @@ Harp is a framework for machine learning applications.
 
 ## EXAMPLE
 
-#### 1. copy harp examples to $HADOOP_HOME
-    cp harp-app/target/harp-app-1.0-SNAPSHOT.jar $HADOOP_HOME
+#### 1. Copy harp examples to $HADOOP_HOME
+
+Select the distribution folder related to your hadoop version. For ex: 2.6.0
+
+    cp distribution/hadoop-2.6.0/harp-java-1.0-SNAPSHOT.jar $HADOOP_HOME
 
 #### 2. Start Hadoop
     cd $HADOOP_HOME
@@ -56,12 +69,12 @@ Harp is a framework for machine learning applications.
 #### 3. Run Kmeans Map-collective job
 ##### The usage is
 ```bash
-hadoop jar harp-app-1.0-SNAPSHOT.jar edu.iu.kmeans.regroupallgather.KMeansLauncher
+hadoop jar harp-java-1.0-SNAPSHOT.jar edu.iu.kmeans.regroupallgather.KMeansLauncher
   <num of points> <num of centroids> <vector size> <num of point files per worker>
   <number of map tasks> <num threads> <number of iteration> <work dir> <local points dir>
 ```
 ##### For example:
 ```bash
-hadoop jar harp-app-1.0-SNAPSHOT.jar edu.iu.kmeans.regroupallgather.KMeansLauncher
+hadoop jar harp-java-1.0-SNAPSHOT.jar edu.iu.kmeans.regroupallgather.KMeansLauncher
   1000 10 100 5 2 2 10 /kmeans /tmp/kmeans
 ```
