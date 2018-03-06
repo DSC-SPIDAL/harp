@@ -6,7 +6,15 @@ Before going through this tutorial take a look at the [overview](https://dsc-spi
 
 <img src="/img/4-3-1.png" width="60%"  >
 
-Multiclass logistic regression (MLR) is a classification method that generalizes logistic regression to multiclass problems, i.e. with more than two possible discrete outcomes. That is, it is a model that is used to predict the probabilities of the different possible outcomes of a categorically distributed dependent variable, given a set of independent variables.
+Definitions:
+
+* `N` is the number of data points
+* `T` is the number of labels
+* `M` is the number of features
+* `W` is the `T*M` weight matrix
+* `K` is the number of iteration
+
+`Multiclass logistic regression (MLR)` is a classification method that generalizes logistic regression to multiclass problems, i.e. with more than two possible discrete outcomes. It is a model that is used to predict the probabilities of the different possible outcomes of a categorically distributed dependent variable, given a set of independent variables.
 
 The process of the MLR algorithm is:
 
@@ -18,7 +26,7 @@ The process of the MLR algorithm is:
 
 4. Repeat step 1 to 3 with each label and their weights.
 
-Stochastic gradient descent (SGD) is a stochastic approximation of the gradient descent optimization method for minimizing an objective function that is written as a sum of differentiable functions. In other words, SGD tries to find minimums or maximums by iteration. As the algorithm sweeps through the training set, it performs the update for each training example. Several passes can be made over the training set until the algorithm converges.
+`Stochastic gradient descent (SGD)` is a stochastic approximation of the gradient descent optimization method for minimizing an objective function that is written as the sum of differentiable functions. In other words, SGD tries to find minimums or maximums by iteration. As the algorithm sweeps through the training set, it performs the update for each training example. Several passes can be made over the training set until the algorithm converges.
 
 The SGD algorithm can be described as following:
 
@@ -30,31 +38,25 @@ The SGD algorithm can be described as following:
 
 4. Repeat step 2 and 3 `K` times.
 
-Definitions:
 
-* `N` is the number of data points
-* `T` is the number of labels
-* `M` is the number of features
-* `W` is the `T*M` weight matrix
-* `K` is the number of iteration
 
 ## PARALLEL DESIGN
 
-* What are the model? What kind of data structure?
+* What are the models? What kind of data structure is applicable?
 
-    The weight vectors for classes are model. Because an ovr(one-versus-rest) approach is adopted, each weight vector are independent. It has a matrix structure.
+    The weight vectors for classes are models. Because an ovr(one-versus-rest) approach is adopted, each weight vector is independent. It has a matrix structure.
 
-* What are the characteristics of the data dependency in model update computation, can updates run concurrently?
+* What are the characteristics of the data dependency in model update computation? Can updates run concurrently?
 
-    Model update computation here is the SGD update, in which for each data point it should update the model directly. Because of the ovr strategy, each row in the model matrix are independent, and can be updated in parallel.
+    Model update computation here is the SGD update, in which for each data point it should update the model directly. Because of the ovr strategy, each row in the model matrix is independent, and can be updated in parallel.
 
-* which kind of parallelism scheme is suitable, data parallelism or model parallelism?
+* Which kind of parallelism scheme is suitable, data parallelism or model parallelism?
 
     Data parallelism can be used, i.e., calculating different data points in parallel.
 
-    Because the updates can run concurrently, model parallelism is a nature solution.  Each node get one partition of the model, which updates in parallel. And furthermore, thread level parallelism can also follows this model parallelism pattern, that each thread take a subset of partition and update in parallel independently.
+    Because the updates can run concurrently, model parallelism is a nature solution.  Each node gets one partition of the model, which updates in parallel. And furthermore, thread level parallelism can also follow this model parallelism pattern, that each thread takes a subset of partition and updates in parallel independently.
 
-* which collective communication operations is suitable to synchronize model?
+* Which collective communication operation is suitable to synchronize the model?
 
     DynamicScheduler can be used for thread-level parallelism, and Rotate can be used in the inter-node model synchronization.
 
@@ -64,7 +66,7 @@ Definitions:
 
 ## Step 0 --- Data preprocessing
 
-Harp MLR will use the data in the vector format. Each vector in a file represented by the format `<did> [<fid>:<weight>]`:
+Harp MLR will use the data in the vector format. Each vector in a file is represented by the format `<did> [<fid>:<weight>]`:
 
 * `<did>` is an unique document id
 * `<fid>` is a positive feature id
@@ -87,7 +89,7 @@ private void initTable() {
 }
 ```
 
-After that we can initialize the dynamic scheduler. Each thread will be treated as a worker and be added into the scheduler. The only thing that needs to be done is that tasks has to be submitted during the computation.
+After that, we can initialize the dynamic scheduler. Each thread will be treated as a worker and will be added into the scheduler. The only thing that needs to be done is that tasks have to be submitted during the computation.
 ```Java
 private void initThread() {
     GDthread = new LinkedList<>();
@@ -99,7 +101,7 @@ private void initThread() {
 
 ## Step 2 --- Mapper communication
 
-In this main process, we use `regroup` to distribute the partitions to the workers first. The workers will get almost the same number of partitions. Then we start the scheduler. For each time we submit one partition to each thread in the scheduler and the threads will all use SGD to approximate `W` with each label. After the workers finish once with their own partitions, we will use `rotate` operation to swap the partitions among the workers. When finishing the all process, each worker should use its own data training the whole partition `K` times, of which `K` is the number of iteration. `allgather` operation collects all partitions in each worker, combines the partitions, and shares the outcome with all workers. Finally, the Master worker outputs the weight matrix `W`.
+In this main process, we use `regroup` to distribute the partitions to the workers first. The workers will get almost the same number of partitions. Then we start the scheduler. Each time we submit one partition to each thread in the scheduler, the threads will all use SGD to approximate `W` with each label. After the workers finish once with their own partitions, we will use `rotate` operation to swap the partitions among the workers. After all the processes finish, each worker should use its own data training the whole partition `K` times, where `K` is the number of iterations. `allgather` operation collects all partitions in each worker, combines the partitions, and shares the outcome with all workers. Finally, the Master worker outputs the weight matrix `W`.
 ```Java
 protected void mapCollective(KeyValReader reader, Context context) throws IOException, InterruptedException {
     LoadAll(reader);

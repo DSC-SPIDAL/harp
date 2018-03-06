@@ -26,7 +26,7 @@ The K-Means algorithm simply repeats the following set of steps until there is n
 
 ## PARALLEL DESIGN
 
-* What are the models? What kind of data structure?
+* What are the models? What kind of data structure is applicable?
 
     Centroids of the clusters are models in vanilla k-means. It has a vector structure as a double array.
 
@@ -34,7 +34,7 @@ The K-Means algorithm simply repeats the following set of steps until there is n
 
     In the core model update computation, each data point should access all the model, compute distance with each centroid, find the nearest one and partially update the model. The true update only occurs when all data points finish their search.
 
-* which kind of parallelism scheme is suitable, data parallelism or model parallelism?
+* Which kind of parallelism scheme is suitable, data parallelism or model parallelism?
 
     Data parallelism can be used, i.e., calculating different data points in parallel.
 
@@ -44,7 +44,7 @@ The K-Means algorithm simply repeats the following set of steps until there is n
 
     2). With model parallelism, each node gets one partition of the model, which updates in parallel, and then rotates to the neighbor node when local computation for all local data points finish. Repeat until each partition returns back to the original node, then do the final model update.
 
-* which collective communication operations is suitable to synchronize model?
+* Which collective communication operation is suitable to synchronize the model?
 
     For solution without model parallelism, Synchronize replicas of the model by `allreduce`, then calculate the new 
     centroids and go to the next iteration. For vanilla kmeans, the combination of `reduce/broadcast`, `push/pull`, `regroup/allgather` are similar to `allreduce`.
