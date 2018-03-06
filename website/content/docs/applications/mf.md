@@ -35,7 +35,7 @@ For local computations inside each worker, they are simply programmed through an
 model parameter updates and avoid the update conflict. Since the local computation only needs to process the model obtained during the rotation without considering the parallel model updates from
 other workers, the code of a parallel machine learning algorithm can be modularized as a process of performing computation and rotating model partitions.
 
-We adopt `Model Rotation` to parallel SGD and CCD algorithms. The data flow and algorithm are show as follows:
+We adopt `Model Rotation` to parallel SGD and CCD algorithms. The data flow and algorithm are shown as follows:
 
   <img src="/img/model-rotation.png" width="100%" >
 
@@ -60,14 +60,15 @@ We use one big dataset which is generated from "ClueWeb09" to test LDA both on H
 
 In SGD, Harp SGD converges faster than NOMAD. On "clueweb2", with 30 nodes × 30 threads Xeon E5-2699 v3 nodes, Harp is 58% faster, and with 60 nodes × 20 threads Xeon E5-2670 v3 nodes, Harp is 93% faster when the test RMSE value converges to 1.61. The difference of the convergence speed increases because the random shifting mechanism in NOMAD becomes unstable when the scale goes up.
 
-In CCD, we again test the model convergence speed on "clueweb2" dataset. The results show that Harp CCD also has comparable performance with CCD++. Note that CCD++ use a different model update order, so that the convergence rate based on the same number of model update count is different with Harp CCD. However the tests on "clueweb2" reveal that with 30 nodes × 30 threads Xeon E5-2670 v3 nodes Harp CCD is 53% faster than CCD++ and with 60 nodes × 20 threads Xeon E5-2699 v3 nodes Harp CCD is 101% faster than CCD++ when the test RMSE converges to 1.68.
+In CCD, we again test the model convergence speed on "clueweb2" dataset. The results show that Harp CCD also has comparable performance with CCD++. Note that CCD++ use a different model update order so that the convergence rate based on the same number of model update count is different with Harp CCD. However, the tests on "clueweb2" reveal that with 30 nodes × 30 threads Xeon E5-2670 v3 nodes Harp CCD is 53% faster than CCD++ and with 60 nodes × 20 threads Xeon E5-2699 v3 nodes Harp CCD is 101% faster than CCD++ when the test RMSE converges to 1.68.
 
 # Run SGD and CCD example
 
 ## Data
    You can download public data and transfer to the data format required by sgd and ccd application. Here are some [datasets](https://github.iu.edu/IU-Big-Data-Lab/ml-bench/blob/master/dataset/dataset-mf.md) for your reference.
 ### Data Format
-The format for the data should be a list of ``<number of row, number of column, value>``. For example,
+The format for the data should be a list of ``<userid, itemid, rating>`` in the case of a recommendation system. 
+For example,
 ```bash
 1    4026    3.299341
 1    5990    7.005311
