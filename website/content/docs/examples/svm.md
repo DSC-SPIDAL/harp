@@ -2,6 +2,7 @@
 title: Harp Support Vector Machine
 ---
 
+Before going through this tutorial take a look at the [overview](https://dsc-spidal.github.io/harp/docs/examples/overview/) section to get an understanding of the structure of the tutorial.
 
 <img src="/img/4-4-1.png" width="50%"  >
 

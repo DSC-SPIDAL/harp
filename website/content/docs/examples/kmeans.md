@@ -2,6 +2,8 @@
 title: K-Means
 ---
 
+Before going through this tutorial take a look at the [overview](https://dsc-spidal.github.io/harp/docs/examples/overview/) section to get an understanding of the structure of the tutorial.
+
 <img src="/img/kmeans.png" width="80%" >
 
 K-Means is a powerful and easily understood clustering algorithm. The aim of the algorithm is to divide a given set of points into `K` partitions. `K` needs to be specified by the user. In order to understand K-Means, first, you need to understand the proceeding concepts and their meanings.
@@ -24,7 +26,7 @@ The K-Means algorithm simply repeats the following set of steps until there is n
 
 ## PARALLEL DESIGN
 
-* What is the model? What kind of data structure?
+* What are the models? What kind of data structure?
 
     Centroids of the clusters are models in vanilla k-means. It has a vector structure as a double array.
 
