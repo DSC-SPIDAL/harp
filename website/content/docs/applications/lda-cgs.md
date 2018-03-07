@@ -29,7 +29,7 @@ We adopt `Model Rotation` to parallel CGS LDA algorithm. The data flow and algor
 
 # Performance
 
-<img src=/harp-test/img/2-1-5.png width="50%">
+<img src="/img/2-1-5.png" width="50%">
 
 ![Overview-3](/img/2-1-3.png)
 

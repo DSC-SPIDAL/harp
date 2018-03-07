@@ -44,10 +44,10 @@ We adopt `Model Rotation` to parallel SGD and CCD algorithms. The data flow and 
 <table>
   <tr>
     <td width="50%">
-      <img src=/harp-test/img/2-1-6.png border=0>
+      <img src="/img/2-1-6.png" border=0>
     </td>
     <td width="50%">
-      <img src=/harp-test/img/2-1-7.png border=0>
+      <img src="/img/2-1-7.png" border=0>
     </td>
   </tr>
 </table>

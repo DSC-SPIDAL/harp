@@ -10,7 +10,6 @@ K-Means is a powerful and easily understood clustering algorithm. The aim of the
 
 * `Centroids`:
     Centroids can be defined as the center of each cluster. If we are performing clustering with k=3, we will have 3 centroids. To perform K-Means clustering, the users need to provide an initial set of centroids.
-    
 * `Distance`:
     In order to group data points as close together or as far-apart, we need to define a distance between two given data points. In K-Means, clustering distance is normally calculated as the Euclidean Distance between two data points.
 
@@ -348,8 +347,9 @@ and 2.9.0
 cd $HARP_ROOT_DIR
 mvn clean package -Phadoop-2.6.0
 ```
+
 Select the distribution folder related to your hadoop version. For ex:- hadoop-2.6.0
-```
+```bash
 cd $HARP_ROOT_DIR/distribution/hadoop-2.6.0/
 cp contrib-1.0-SNAPSHOT.jar $HADOOP_HOME
 cd $HADOOP_HOME
