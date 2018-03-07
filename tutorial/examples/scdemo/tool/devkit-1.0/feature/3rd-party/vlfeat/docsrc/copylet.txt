@@ -1,4 +1,0 @@
-Copyright <YEARS/> (c) <AUTHORS/>
-
-This file is part of <PROGRAM/>, available in the terms of the GNU
-General Public License version 2.

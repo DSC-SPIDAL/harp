@@ -1,172 +1,149 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
 
-    <groupId>edu.iu.harp</groupId>
-    <artifactId>harp</artifactId>
-    <packaging>pom</packaging>
-    <version>1.0-SNAPSHOT</version>
+	<groupId>edu.iu.harp</groupId>
+	<artifactId>harp</artifactId>
+	<packaging>pom</packaging>
+	<version>1.0-SNAPSHOT</version>
 
-    <modules>
-        <module>core</module>
-        <module>ml</module>
-        <module>contrib</module>
-        <module>experimental</module>
-    </modules>
+	<modules>
+		<module>core</module>
+		<module>ml</module>
+		<module>contrib</module>
+		<module>experimental</module>
+	</modules>
 
-    <properties>
-        <hadoop-version>2.6.0</hadoop-version>
-    </properties>
+	<properties>
+		<hadoop-version>2.6.0</hadoop-version>
+	</properties>
 
-    <dependencyManagement>
-        <dependencies>
+	<dependencyManagement>
+		<dependencies>
 
-            <dependency>
-                <groupId>org.apache.hadoop</groupId>
-                <artifactId>hadoop-annotations</artifactId>
-                <version>${hadoop-version}</version>
-            </dependency>
+			<dependency>
+				<groupId>org.apache.hadoop</groupId>
+				<artifactId>hadoop-annotations</artifactId>
+				<version>${hadoop-version}</version>
+			</dependency>
 
-            <dependency>
-                <groupId>org.apache.hadoop</groupId>
-                <artifactId>hadoop-common</artifactId>
-                <version>${hadoop-version}</version>
-            </dependency>
+			<dependency>
+				<groupId>org.apache.hadoop</groupId>
+				<artifactId>hadoop-common</artifactId>
+				<version>${hadoop-version}</version>
+			</dependency>
 
-            <dependency>
-                <groupId>org.apache.hadoop</groupId>
-                <artifactId>hadoop-mapreduce-client-app</artifactId>
-                <version>${hadoop-version}</version>
-            </dependency>
+			<dependency>
+				<groupId>org.apache.hadoop</groupId>
+				<artifactId>hadoop-mapreduce-client-app</artifactId>
+				<version>${hadoop-version}</version>
+			</dependency>
 
-            <dependency>
-                <groupId>org.apache.hadoop</groupId>
-                <artifactId>hadoop-mapreduce-client-common</artifactId>
-                <version>${hadoop-version}</version>
-            </dependency>
+			<dependency>
+				<groupId>org.apache.hadoop</groupId>
+				<artifactId>hadoop-mapreduce-client-common</artifactId>
+				<version>${hadoop-version}</version>
+			</dependency>
 
-            <dependency>
-                <groupId>org.apache.hadoop</groupId>
-                <artifactId>hadoop-mapreduce-client-core</artifactId>
-                <version>${hadoop-version}</version>
-            </dependency>
+			<dependency>
+				<groupId>org.apache.hadoop</groupId>
+				<artifactId>hadoop-mapreduce-client-core</artifactId>
+				<version>${hadoop-version}</version>
+			</dependency>
 
-            <dependency>
-                <groupId>org.apache.hadoop</groupId>
-                <artifactId>hadoop-mapreduce-client-jobclient</artifactId>
-                <version>${hadoop-version}</version>
-            </dependency>
+			<dependency>
+				<groupId>org.apache.hadoop</groupId>
+				<artifactId>hadoop-mapreduce-client-jobclient</artifactId>
+				<version>${hadoop-version}</version>
+			</dependency>
 
-            <dependency>
-                <groupId>org.apache.hadoop</groupId>
-                <artifactId>hadoop-yarn-api</artifactId>
-                <version>${hadoop-version}</version>
-            </dependency>
+			<dependency>
+				<groupId>org.apache.hadoop</groupId>
+				<artifactId>hadoop-yarn-api</artifactId>
+				<version>${hadoop-version}</version>
+			</dependency>
 
-            <dependency>
-                <groupId>org.apache.hadoop</groupId>
-                <artifactId>hadoop-yarn-client</artifactId>
-                <version>${hadoop-version}</version>
-            </dependency>
+			<dependency>
+				<groupId>org.apache.hadoop</groupId>
+				<artifactId>hadoop-yarn-client</artifactId>
+				<version>${hadoop-version}</version>
+			</dependency>
 
-            <dependency>
-                <groupId>org.apache.hadoop</groupId>
-                <artifactId>hadoop-yarn-common</artifactId>
-                <version>${hadoop-version}</version>
-            </dependency>
+			<dependency>
+				<groupId>org.apache.hadoop</groupId>
+				<artifactId>hadoop-yarn-common</artifactId>
+				<version>${hadoop-version}</version>
+			</dependency>
 
-            <dependency>
-                <groupId>log4j</groupId>
-                <artifactId>log4j</artifactId>
-                <version>1.2.17</version>
-            </dependency>
+			<dependency>
+				<groupId>log4j</groupId>
+				<artifactId>log4j</artifactId>
+				<version>1.2.17</version>
+			</dependency>
 
 
-            <dependency>
-                <groupId>commons-io</groupId>
-                <artifactId>commons-io</artifactId>
-                <version>2.4</version>
-            </dependency>
+			<dependency>
+				<groupId>commons-io</groupId>
+				<artifactId>commons-io</artifactId>
+				<version>2.4</version>
+			</dependency>
 
-            <dependency>
-                <groupId>commons-logging</groupId>
-                <artifactId>commons-logging</artifactId>
-                <version>1.1.3</version>
-            </dependency>
+			<dependency>
+				<groupId>commons-logging</groupId>
+				<artifactId>commons-logging</artifactId>
+				<version>1.1.3</version>
+			</dependency>
 
-            <dependency>
-                <groupId>it.unimi.dsi</groupId>
-                <artifactId>fastutil</artifactId>
-                <version>7.0.13</version>
-            </dependency>
+			<dependency>
+				<groupId>it.unimi.dsi</groupId>
+				<artifactId>fastutil</artifactId>
+				<version>7.0.13</version>
+			</dependency>
 
-            <dependency>
-                <groupId>junit</groupId>
-                <artifactId>junit</artifactId>
-                <version>4.12</version>
-            </dependency>
+			<dependency>
+				<groupId>junit</groupId>
+				<artifactId>junit</artifactId>
+				<version>4.12</version>
+			</dependency>
 
-        </dependencies>
-    </dependencyManagement>
-	
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.6.1</version>
-                <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
-                    <excludes>
-                        <!-- <exclude>**/daal_als/*</exclude> -->
-                        <!-- <exclude>**/daal_cov/*</exclude> -->
-                        <!-- <exclude>**/daal_kmeans/**/*</exclude> -->
-                        <!-- <exclude>**/daal_linreg/*</exclude> -->
-                        <!-- <exclude>**/daal_mom/*</exclude> -->
-                        <!-- <exclude>**/daal_naive/*</exclude> -->
-                        <!-- <exclude>**/daal_nn/*</exclude> -->
-                        <!-- <exclude>**/daal_pca/*</exclude> -->
-                        <!-- <exclude>**/daal_qr/*</exclude> -->
-                        <!-- <exclude>**/daal_ridgereg/*</exclude> -->
-                        <!-- <exclude>**/daal_sgd/*</exclude> -->
-                        <!-- <exclude>**/daal_subgraph/*</exclude> -->
-                        <!-- <exclude>**/daal_svd/*</exclude> -->
-                    </excludes>
-                </configuration>
-            </plugin>
+		</dependencies>
+	</dependencyManagement>
 
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <configuration>
-                    <outputDirectory>${main.basedir}/distribution/hadoop-${hadoop-version}</outputDirectory>
-                </configuration>
-            </plugin>
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.6.1</version>
+				<configuration>
+					<source>1.8</source>
+					<target>1.8</target>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
 
-    <profiles>
-        <profile>
-            <id>hadoop-2.6.0</id>
-            <properties>
-                <hadoop-version>2.6.0</hadoop-version>
-            </properties>
-        </profile>
-        <profile>
-            <id>hadoop-2.7.5</id>
-            <properties>
-                <hadoop-version>2.7.5</hadoop-version>
-            </properties>
-        </profile>
-        <profile>
-            <id>hadoop-2.9.0</id>
-            <properties>
-                <hadoop-version>2.9.0</hadoop-version>
-            </properties>
-        </profile>
-    </profiles>
+	<profiles>
+		<profile>
+			<id>hadoop-2.6.0</id>
+			<properties>
+				<hadoop-version>2.6.0</hadoop-version>
+			</properties>
+		</profile>
+		<profile>
+			<id>hadoop-2.7.5</id>
+			<properties>
+				<hadoop-version>2.7.5</hadoop-version>
+			</properties>
+		</profile>
+		<profile>
+			<id>hadoop-2.9.0</id>
+			<properties>
+				<hadoop-version>2.9.0</hadoop-version>
+			</properties>
+		</profile>
+	</profiles>
 
 </project>
