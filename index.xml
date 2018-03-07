@@ -457,7 +457,7 @@ Furthermore DAAL installation and usage can be found &lt;a href=&#34;https://dsc
 
 &lt;p&gt;Easiest way to run the Harp-DAAL-SVD example is through the command line input shown below as an example (all together as one command)&lt;/p&gt;
 
-&lt;p&gt;&lt;code&gt;hadoop jar harp-daal-app-1.0-SNAPSHOT.jar edu.iu.daal_svd.SVDDaalLauncher -libjars ${LIBJARS} 10000 20 1 2 64 185000 /svd-P$Pts-C$Ced-D$Dim-N$Node /tmp/svd true&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;hadoop jar harp-daal-1.0-SNAPSHOT.jar edu.iu.daal_svd.SVDDaalLauncher -libjars ${LIBJARS} 10000 20 1 2 64 185000 /svd-P$Pts-C$Ced-D$Dim-N$Node /tmp/svd true&lt;/code&gt;&lt;/p&gt;
 
 &lt;h3 id=&#34;explanation-of-the-arguments-required-by-harp-daal-in-the-example-input&#34;&gt;Explanation of the arguments required by Harp-DAAL in the example input&lt;/h3&gt;
 
@@ -957,7 +957,7 @@ Training: Machine learning algorithms are normally iterative computation, proces
 &lt;p&gt;The standard steps aim to answer four questions about the model design for a distributed machine learning algorithm based on its sequential algorithm.&lt;/p&gt;
 
 &lt;ul&gt;
-&lt;li&gt;&lt;p&gt;What is the model? What kind of data structure that is applicable?&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;What is the model? What kind of data structure is applicable?&lt;/p&gt;&lt;/li&gt;
 
 &lt;li&gt;&lt;p&gt;What are the characteristics of the data dependency in model update computation – can they run concurrently?&lt;/p&gt;&lt;/li&gt;
 
@@ -1012,9 +1012,21 @@ Training: Machine learning algorithms are normally iterative computation, proces
       <guid>https://dsc-spidal.github.io/harp/docs/examples/mlrsgd/</guid>
       <description>
 
+&lt;p&gt;Before going through this tutorial take a look at the &lt;a href=&#34;https://dsc-spidal.github.io/harp/docs/examples/overview/&#34;&gt;overview&lt;/a&gt; section to get an understanding of the structure of the tutorial.&lt;/p&gt;
+
 &lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/4-3-1.png&#34; width=&#34;60%&#34;  &gt;&lt;/p&gt;
 
-&lt;p&gt;Multiclass logistic regression (MLR) is a classification method that generalizes logistic regression to multiclass problems, i.e. with more than two possible discrete outcomes. That is, it is a model that is used to predict the probabilities of the different possible outcomes of a categorically distributed dependent variable, given a set of independent variables.&lt;/p&gt;
+&lt;p&gt;Definitions:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;N&lt;/code&gt; is the number of data points&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;T&lt;/code&gt; is the number of labels&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;M&lt;/code&gt; is the number of features&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;W&lt;/code&gt; is the &lt;code&gt;T*M&lt;/code&gt; weight matrix&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;K&lt;/code&gt; is the number of iteration&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;code&gt;Multiclass logistic regression (MLR)&lt;/code&gt; is a classification method that generalizes logistic regression to multiclass problems, i.e. with more than two possible discrete outcomes. It is a model that is used to predict the probabilities of the different possible outcomes of a categorically distributed dependent variable, given a set of independent variables.&lt;/p&gt;
 
 &lt;p&gt;The process of the MLR algorithm is:&lt;/p&gt;
 
@@ -1028,7 +1040,7 @@ Training: Machine learning algorithms are normally iterative computation, proces
 &lt;li&gt;&lt;p&gt;Repeat step 1 to 3 with each label and their weights.&lt;/p&gt;&lt;/li&gt;
 &lt;/ol&gt;
 
-&lt;p&gt;Stochastic gradient descent (SGD) is a stochastic approximation of the gradient descent optimization method for minimizing an objective function that is written as a sum of differentiable functions. In other words, SGD tries to find minimums or maximums by iteration. As the algorithm sweeps through the training set, it performs the update for each training example. Several passes can be made over the training set until the algorithm converges.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;Stochastic gradient descent (SGD)&lt;/code&gt; is a stochastic approximation of the gradient descent optimization method for minimizing an objective function that is written as the sum of differentiable functions. In other words, SGD tries to find minimums or maximums by iteration. As the algorithm sweeps through the training set, it performs the update for each training example. Several passes can be made over the training set until the algorithm converges.&lt;/p&gt;
 
 &lt;p&gt;The SGD algorithm can be described as following:&lt;/p&gt;
 
@@ -1042,34 +1054,24 @@ Training: Machine learning algorithms are normally iterative computation, proces
 &lt;li&gt;&lt;p&gt;Repeat step 2 and 3 &lt;code&gt;K&lt;/code&gt; times.&lt;/p&gt;&lt;/li&gt;
 &lt;/ol&gt;
 
-&lt;p&gt;Definitions:&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;&lt;code&gt;N&lt;/code&gt; is the number of data points&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;T&lt;/code&gt; is the number of labels&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;M&lt;/code&gt; is the number of features&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;W&lt;/code&gt; is the &lt;code&gt;T*M&lt;/code&gt; weight matrix&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;K&lt;/code&gt; is the number of iteration&lt;/li&gt;
-&lt;/ul&gt;
-
 &lt;h2 id=&#34;parallel-design&#34;&gt;PARALLEL DESIGN&lt;/h2&gt;
 
 &lt;ul&gt;
-&lt;li&gt;&lt;p&gt;What are the model? What kind of data structure?&lt;/p&gt;
+&lt;li&gt;&lt;p&gt;What are the models? What kind of data structure is applicable?&lt;/p&gt;
 
-&lt;p&gt;The weight vectors for classes are model. Because an ovr(one-versus-rest) approach is adopted, each weight vector are independent. It has a matrix structure.&lt;/p&gt;&lt;/li&gt;
+&lt;p&gt;The weight vectors for classes are models. Because an ovr(one-versus-rest) approach is adopted, each weight vector is independent. It has a matrix structure.&lt;/p&gt;&lt;/li&gt;
 
-&lt;li&gt;&lt;p&gt;What are the characteristics of the data dependency in model update computation, can updates run concurrently?&lt;/p&gt;
+&lt;li&gt;&lt;p&gt;What are the characteristics of the data dependency in model update computation? Can updates run concurrently?&lt;/p&gt;
 
-&lt;p&gt;Model update computation here is the SGD update, in which for each data point it should update the model directly. Because of the ovr strategy, each row in the model matrix are independent, and can be updated in parallel.&lt;/p&gt;&lt;/li&gt;
+&lt;p&gt;Model update computation here is the SGD update, in which for each data point it should update the model directly. Because of the ovr strategy, each row in the model matrix is independent, and can be updated in parallel.&lt;/p&gt;&lt;/li&gt;
 
-&lt;li&gt;&lt;p&gt;which kind of parallelism scheme is suitable, data parallelism or model parallelism?&lt;/p&gt;
+&lt;li&gt;&lt;p&gt;Which kind of parallelism scheme is suitable, data parallelism or model parallelism?&lt;/p&gt;
 
 &lt;p&gt;Data parallelism can be used, i.e., calculating different data points in parallel.&lt;/p&gt;
 
-&lt;p&gt;Because the updates can run concurrently, model parallelism is a nature solution.  Each node get one partition of the model, which updates in parallel. And furthermore, thread level parallelism can also follows this model parallelism pattern, that each thread take a subset of partition and update in parallel independently.&lt;/p&gt;&lt;/li&gt;
+&lt;p&gt;Because the updates can run concurrently, model parallelism is a nature solution.  Each node gets one partition of the model, which updates in parallel. And furthermore, thread level parallelism can also follow this model parallelism pattern, that each thread takes a subset of partition and updates in parallel independently.&lt;/p&gt;&lt;/li&gt;
 
-&lt;li&gt;&lt;p&gt;which collective communication operations is suitable to synchronize model?&lt;/p&gt;
+&lt;li&gt;&lt;p&gt;Which collective communication operation is suitable to synchronize the model?&lt;/p&gt;
 
 &lt;p&gt;DynamicScheduler can be used for thread-level parallelism, and Rotate can be used in the inter-node model synchronization.&lt;/p&gt;&lt;/li&gt;
 &lt;/ul&gt;
@@ -1080,7 +1082,7 @@ Training: Machine learning algorithms are normally iterative computation, proces
 
 &lt;h2 id=&#34;step-0-data-preprocessing&#34;&gt;Step 0 &amp;mdash; Data preprocessing&lt;/h2&gt;
 
-&lt;p&gt;Harp MLR will use the data in the vector format. Each vector in a file represented by the format &lt;code&gt;&amp;lt;did&amp;gt; [&amp;lt;fid&amp;gt;:&amp;lt;weight&amp;gt;]&lt;/code&gt;:&lt;/p&gt;
+&lt;p&gt;Harp MLR will use the data in the vector format. Each vector in a file is represented by the format &lt;code&gt;&amp;lt;did&amp;gt; [&amp;lt;fid&amp;gt;:&amp;lt;weight&amp;gt;]&lt;/code&gt;:&lt;/p&gt;
 
 &lt;ul&gt;
 &lt;li&gt;&lt;code&gt;&amp;lt;did&amp;gt;&lt;/code&gt; is an unique document id&lt;/li&gt;
@@ -1103,7 +1105,7 @@ hdfs dfs -put input_data/* /input
 &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
-&lt;p&gt;After that we can initialize the dynamic scheduler. Each thread will be treated as a worker and be added into the scheduler. The only thing that needs to be done is that tasks has to be submitted during the computation.&lt;/p&gt;
+&lt;p&gt;After that, we can initialize the dynamic scheduler. Each thread will be treated as a worker and will be added into the scheduler. The only thing that needs to be done is that tasks have to be submitted during the computation.&lt;/p&gt;
 &lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;initThread&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;()&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
     &lt;span style=&#34;color: #f8f8f2&#34;&gt;GDthread&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;LinkedList&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&amp;gt;();&lt;/span&gt;
     &lt;span style=&#34;color: #66d9ef&#34;&gt;for&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;numThread&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;++)&lt;/span&gt;
@@ -1114,7 +1116,7 @@ hdfs dfs -put input_data/* /input
 
 &lt;h2 id=&#34;step-2-mapper-communication&#34;&gt;Step 2 &amp;mdash; Mapper communication&lt;/h2&gt;
 
-&lt;p&gt;In this main process, we use &lt;code&gt;regroup&lt;/code&gt; to distribute the partitions to the workers first. The workers will get almost the same number of partitions. Then we start the scheduler. For each time we submit one partition to each thread in the scheduler and the threads will all use SGD to approximate &lt;code&gt;W&lt;/code&gt; with each label. After the workers finish once with their own partitions, we will use &lt;code&gt;rotate&lt;/code&gt; operation to swap the partitions among the workers. When finishing the all process, each worker should use its own data training the whole partition &lt;code&gt;K&lt;/code&gt; times, of which &lt;code&gt;K&lt;/code&gt; is the number of iteration. &lt;code&gt;allgather&lt;/code&gt; operation collects all partitions in each worker, combines the partitions, and shares the outcome with all workers. Finally, the Master worker outputs the weight matrix &lt;code&gt;W&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;In this main process, we use &lt;code&gt;regroup&lt;/code&gt; to distribute the partitions to the workers first. The workers will get almost the same number of partitions. Then we start the scheduler. Each time we submit one partition to each thread in the scheduler, the threads will all use SGD to approximate &lt;code&gt;W&lt;/code&gt; with each label. After the workers finish once with their own partitions, we will use &lt;code&gt;rotate&lt;/code&gt; operation to swap the partitions among the workers. After all the processes finish, each worker should use its own data training the whole partition &lt;code&gt;K&lt;/code&gt; times, where &lt;code&gt;K&lt;/code&gt; is the number of iterations. &lt;code&gt;allgather&lt;/code&gt; operation collects all partitions in each worker, combines the partitions, and shares the outcome with all workers. Finally, the Master worker outputs the weight matrix &lt;code&gt;W&lt;/code&gt;.&lt;/p&gt;
 &lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;protected&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;mapCollective&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;KeyValReader&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;reader&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Context&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;context&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;throws&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;IOException&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;InterruptedException&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
     &lt;span style=&#34;color: #f8f8f2&#34;&gt;LoadAll&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;reader&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
     &lt;span style=&#34;color: #f8f8f2&#34;&gt;initTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
@@ -1144,8 +1146,8 @@ hdfs dfs -put input_data/* /input
 &lt;/pre&gt;&lt;/div&gt;
 
 &lt;h2 id=&#34;usage&#34;&gt;USAGE&lt;/h2&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;$ hadoop jar harp-tutorial-app-1.0-SNAPSHOT.jar edu.iu.mlr.MLRMapCollective &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;alpha&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;number of iteration&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;number of features&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;number of workers&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;number of threads&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;topic file path&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;qrel file path&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;input path in HDFS&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;output path in HDFS&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt;#e.g. hadoop jar harp-tutorial-app-1.0-SNAPSHOT.jar edu.iu.mlr.MLRMapCollective 1.0 100 47236 2 16 /rcv1v2/rcv1.topics.txt /rcv1v2/rcv1-v2.topics.qrels /input /output&lt;/span&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;$ hadoop jar contrib-1.0-SNAPSHOT.jar edu.iu.mlr.MLRMapCollective &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;alpha&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;number of iteration&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;number of features&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;number of workers&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;number of threads&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;topic file path&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;qrel file path&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;input path in HDFS&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;output path in HDFS&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt;
+&lt;span style=&#34;color: #75715e&#34;&gt;#e.g. hadoop jar contrib-1.0-SNAPSHOT.jar edu.iu.mlr.MLRMapCollective 1.0 100 47236 2 16 /rcv1v2/rcv1.topics.txt /rcv1v2/rcv1-v2.topics.qrels /input /output&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
 &lt;p&gt;The output should be the weight matrix &lt;code&gt;W&lt;/code&gt;.&lt;/p&gt;
@@ -1160,6 +1162,8 @@ hdfs dfs -put input_data/* /input
       <guid>https://dsc-spidal.github.io/harp/docs/examples/nn/</guid>
       <description>
 
+&lt;p&gt;Before going through this tutorial take a look at the &lt;a href=&#34;https://dsc-spidal.github.io/harp/docs/examples/overview/&#34;&gt;overview&lt;/a&gt; section.&lt;/p&gt;
+
 &lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/nn.png&#34; width=&#34;60%&#34;  &gt;&lt;/p&gt;
 
 &lt;p&gt;Neural networks are a set of algorithms, which is based on a large of neural units. Each neural unit is connected with many others, and forms a network structure. Computation happens in the neural unit, which combines all the inputs with a set of coefficients, or weights, and gives an output by an activation function. A layer is a group of neural units, that each layer’s output is the subsequent layer’s input. A learning algorithm tries to learn the weights from data, and then the network can be used to recognize patterns.&lt;/p&gt;
@@ -1169,23 +1173,23 @@ hdfs dfs -put input_data/* /input
 &lt;h2 id=&#34;parallel-design&#34;&gt;PARALLEL DESIGN&lt;/h2&gt;
 
 &lt;ul&gt;
-&lt;li&gt;&lt;p&gt;What are the model? What kind of data structure?&lt;/p&gt;
+&lt;li&gt;&lt;p&gt;What is the model? What kind of data structure is applicable?&lt;/p&gt;
 
 &lt;p&gt;Weights matrices, including the biases for each node, between each adjacent layers are the model in neural network. It is a vector of double matrix.&lt;/p&gt;&lt;/li&gt;
 
-&lt;li&gt;&lt;p&gt;What are the characteristics of the data dependency in model update computation, can updates run concurrently?&lt;/p&gt;
+&lt;li&gt;&lt;p&gt;What are the characteristics of the data dependency in model update computation? Can updates run concurrently?&lt;/p&gt;
 
 &lt;p&gt;In the core model update computation in BP training algorithm, each data point, or a minibatch, should access all the model, compute gradients and update model layer by layer from the output layer back to the input layer.&lt;/p&gt;
 
 &lt;p&gt;The nodes in the same layer can be updated in parallel without conflicts, but there are dependency between the layers. But generally, it is not easy to utilize these network structure related parallelism.&lt;/p&gt;&lt;/li&gt;
 
-&lt;li&gt;&lt;p&gt;which kind of parallelism scheme is suitable, data parallelism or model parallelism?&lt;/p&gt;
+&lt;li&gt;&lt;p&gt;Which kind of parallelism scheme is suitable, data parallelism or model parallelism?&lt;/p&gt;
 
 &lt;p&gt;Data parallelism can be used, i.e., calculating different data points in parallel.&lt;/p&gt;
 
 &lt;p&gt;No model parallelism, each node get one replica of the whole model, which updates locally in parallel, and then synchronizes and averages when local computation all finish.&lt;/p&gt;&lt;/li&gt;
 
-&lt;li&gt;&lt;p&gt;which collective communication operations is suitable to synchronize model?&lt;/p&gt;
+&lt;li&gt;&lt;p&gt;which collective communication operation is suitable to synchronize the model?&lt;/p&gt;
 
 &lt;p&gt;Synchronize replicas of the model by allreduce is an simple solution.&lt;/p&gt;&lt;/li&gt;
 &lt;/ul&gt;
@@ -1228,9 +1232,9 @@ hdfs dfs -put input_data/* /input
 &lt;p&gt;The MNIST dataset is used in this tutorial. Refer the &lt;a href=&#34;https://github.com/DSC-SPIDAL/harp/tree/master/data/tutorial/mnist&#34;&gt;dataset script&lt;/a&gt; for more details.&lt;/p&gt;
 
 &lt;h2 id=&#34;usage&#34;&gt;USAGE&lt;/h2&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;$ hadoop jar harp-tutorial-app-1.0-SNAPSHOT.jar edu.iu.NN.NNMapCollective
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;$ hadoop jar contrib-1.0-SNAPSHOT.jar edu.iu.NN.NNMapCollective
 Usage: NNMapCollective &amp;lt;number of map tasks&amp;gt; &amp;lt;epochs&amp;gt; &amp;lt;syncIterNum&amp;gt; &amp;lt;hiddenLayers&amp;gt; &amp;lt;minibatchsize&amp;gt; &amp;lt;lambda&amp;gt; &amp;lt;workDir&amp;gt;
-&lt;span style=&#34;color: #75715e&#34;&gt;# hadoop jar harp-tutorial-app-1.0-SNAPSHOT.jar edu.iu.NN.NNMapCollective 2 20 5 100,32 2000 0 /nn&lt;/span&gt;
+&lt;span style=&#34;color: #75715e&#34;&gt;# hadoop jar contrib-1.0-SNAPSHOT.jar edu.iu.NN.NNMapCollective 2 20 5 100,32 2000 0 /nn&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
 &lt;p&gt;This command run harp neuralnetwork training on the input dataset under /nn, with 2 mappers. Training process goes through 20 times of the training dataset, averages the model every 5 iteration for each minibatch. The minibatch size is 2000, lambda is default value 0.689. There are 2 hidden layers, with 100 and 32 nodes each. Finally, it outputs the accuracy on the training set into the hadoop log.&lt;/p&gt;
@@ -1278,6 +1282,8 @@ Usage: NNMapCollective &amp;lt;number of map tasks&amp;gt; &amp;lt;epochs&amp;gt
       
       <guid>https://dsc-spidal.github.io/harp/docs/examples/rf/</guid>
       <description>
+
+&lt;p&gt;Before going through this tutorial take a look at the &lt;a href=&#34;https://dsc-spidal.github.io/harp/docs/examples/overview/&#34;&gt;overview&lt;/a&gt; section.&lt;/p&gt;
 
 &lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/4-5-1.png&#34; width=&#34;60%&#34;  &gt;&lt;/p&gt;
 
