@@ -33,8 +33,7 @@ $ tar -xvzf hadoop-2.6.0.tar.gz
 
 <li><p>Set the environment variables in file <code>~/.bashrc</code>.</p>
 <div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>$ vim ~/.bashrc
-</pre></div></li>
-</ol>
+</pre></div>
 
 <p>Add the following text to the file and update the values for <code>&lt;where Java locates&gt;</code> and
 <code>&lt;where hadoop locates&gt;</code> with the path of where Java and Hadoop are located in your system.</p>
@@ -45,15 +44,13 @@ $ tar -xvzf hadoop-2.6.0.tar.gz
 <span style="color: #f8f8f2">export</span> <span style="color: #f8f8f2">YARN_HOME</span><span style="color: #f92672">=</span><span style="color: #f8f8f2">$HADOOP_HOME</span>
 <span style="color: #f8f8f2">export</span> <span style="color: #f8f8f2">HADOOP_CONF_DIR</span><span style="color: #f92672">=</span><span style="color: #f8f8f2">$HADOOP_HOME</span>/etc/hadoop
 <span style="color: #f8f8f2">export</span> <span style="color: #f8f8f2">PATH</span><span style="color: #f92672">=</span><span style="color: #f8f8f2">$HADOOP_HOME</span>/bin:<span style="color: #f8f8f2">$JAVA_HOME</span>/bin:<span style="color: #f8f8f2">$PATH</span>
-</pre></div>
+</pre></div></li>
 
-<ol>
 <li><p>Run the following command to make sure the changes are applied.</p>
 <div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>$ <span style="color: #f8f8f2">source</span> ~/.bashrc
 </pre></div></li>
 
-<li><p>Check if environment variables are set correctly by running the following command.</p></li>
-</ol>
+<li><p>Check if environment variables are set correctly by running the following command.</p>
 <div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>$ hadoop
 </pre></div>
 
@@ -74,101 +71,96 @@ trace                view and modify Hadoop tracing settings
 or
 CLASSNAME            run the class named CLASSNAME
 Most commands print <span style="color: #f8f8f2">help</span> when invoked w/o parameters.
-</pre></div>
+</pre></div></li>
 
-<ol>
-<li>Follow steps a-d to modify the following files in the Apache Hadoop distribution.</li>
-</ol>
+<li><p>Follow steps (i)-(iv) to modify the following files in the Apache Hadoop distribution.</p>
 
-<p>(a). <code>$HADOOP_HOME/etc/hadoop/core-site.xml</code>:</p>
+<p>(i). <code>$HADOOP_HOME/etc/hadoop/core-site.xml</code>:</p>
 <div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>$ vim <span style="color: #f8f8f2">$HADOOP_HOME</span>/etc/hadoop/core-site.xml
 </pre></div>
 
 <p>Copy the following text into the file and replace ${user.name} with your user name.</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">&lt;</span><span style="color: #f92672">configuration</span><span style="color: #f8f8f2">&gt;</span>
-<span style="color: #f8f8f2">&lt;</span><span style="color: #f92672">property</span><span style="color: #f8f8f2">&gt;</span>
-<span style="color: #f8f8f2">&lt;</span><span style="color: #f92672">name</span><span style="color: #f8f8f2">&gt;</span>fs.default.name<span style="color: #f8f8f2">&lt;/</span><span style="color: #f92672">name</span><span style="color: #f8f8f2">&gt;</span>
-<span style="color: #f8f8f2">&lt;</span><span style="color: #f92672">value</span><span style="color: #f8f8f2">&gt;</span>hdfs://localhost:9010<span style="color: #f8f8f2">&lt;/</span><span style="color: #f92672">value</span><span style="color: #f8f8f2">&gt;</span>
-<span style="color: #f8f8f2">&lt;/</span><span style="color: #f92672">property</span><span style="color: #f8f8f2">&gt;</span>
-<span style="color: #f8f8f2">&lt;</span><span style="color: #f92672">property</span><span style="color: #f8f8f2">&gt;</span>
-<span style="color: #f8f8f2">&lt;</span><span style="color: #f92672">name</span><span style="color: #f8f8f2">&gt;</span>hadoop.tmp.dir<span style="color: #f8f8f2">&lt;/</span><span style="color: #f92672">name</span><span style="color: #f8f8f2">&gt;</span>
-<span style="color: #f8f8f2">&lt;</span><span style="color: #f92672">value</span><span style="color: #f8f8f2">&gt;</span>/tmp/hadoop-${user.name}<span style="color: #f8f8f2">&lt;/</span><span style="color: #f92672">value</span><span style="color: #f8f8f2">&gt;</span>
-<span style="color: #f8f8f2">&lt;</span><span style="color: #f92672">description</span><span style="color: #f8f8f2">&gt;</span>A base for other temporary directories.<span style="color: #f8f8f2">&lt;/</span><span style="color: #f92672">description</span><span style="color: #f8f8f2">&gt;</span>
-<span style="color: #f8f8f2">&lt;/</span><span style="color: #f92672">property</span><span style="color: #f8f8f2">&gt;</span>
-<span style="color: #f8f8f2">&lt;/</span><span style="color: #f92672">configuration</span><span style="color: #f8f8f2">&gt;</span>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f92672">&lt;configuration&gt;</span>
+  <span style="color: #f92672">&lt;property&gt;</span>
+     <span style="color: #f92672">&lt;name&gt;</span>fs.default.name<span style="color: #f92672">&lt;/name&gt;</span>
+     <span style="color: #f92672">&lt;value&gt;</span>hdfs://localhost:9010<span style="color: #f92672">&lt;/value&gt;</span>
+  <span style="color: #f92672">&lt;/property&gt;</span>
+  <span style="color: #f92672">&lt;property&gt;</span>
+     <span style="color: #f92672">&lt;name&gt;</span>hadoop.tmp.dir<span style="color: #f92672">&lt;/name&gt;</span>
+     <span style="color: #f92672">&lt;value&gt;</span>/tmp/hadoop-${user.name}<span style="color: #f92672">&lt;/value&gt;</span>
+     <span style="color: #f92672">&lt;description&gt;</span>A base for other temporary directories.<span style="color: #f92672">&lt;/description&gt;</span>
+  <span style="color: #f92672">&lt;/property&gt;</span>
+<span style="color: #f92672">&lt;/configuration&gt;</span>
 </pre></div>
 
-<p>(b).<code>$HADOOP_HOME/etc/hadoop/hdfs-site.xml</code>:</p>
+<p>(ii).<code>$HADOOP_HOME/etc/hadoop/hdfs-site.xml</code>:</p>
 <div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>$ vim <span style="color: #f8f8f2">$HADOOP_HOME</span>/etc/hadoop/hdfs-site.xml
 </pre></div>
 
 <p>Copy the following text into the file.</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">&lt;</span><span style="color: #f92672">configuration</span><span style="color: #f8f8f2">&gt;</span>
-<span style="color: #f8f8f2">&lt;</span><span style="color: #f92672">property</span><span style="color: #f8f8f2">&gt;</span>
-<span style="color: #f8f8f2">&lt;</span><span style="color: #f92672">name</span><span style="color: #f8f8f2">&gt;</span>dfs.replication<span style="color: #f8f8f2">&lt;/</span><span style="color: #f92672">name</span><span style="color: #f8f8f2">&gt;</span>
-<span style="color: #f8f8f2">&lt;</span><span style="color: #f92672">value</span><span style="color: #f8f8f2">&gt;</span>1<span style="color: #f8f8f2">&lt;/</span><span style="color: #f92672">value</span><span style="color: #f8f8f2">&gt;</span>
-<span style="color: #f8f8f2">&lt;/</span><span style="color: #f92672">property</span><span style="color: #f8f8f2">&gt;</span>
-<span style="color: #f8f8f2">&lt;/</span><span style="color: #f92672">configuration</span><span style="color: #f8f8f2">&gt;</span>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f92672">&lt;configuration&gt;</span>
+  <span style="color: #f92672">&lt;property&gt;</span>
+    <span style="color: #f92672">&lt;name&gt;</span>dfs.replication<span style="color: #f92672">&lt;/name&gt;</span>
+    <span style="color: #f92672">&lt;value&gt;</span>1<span style="color: #f92672">&lt;/value&gt;</span>
+  <span style="color: #f92672">&lt;/property&gt;</span>
+<span style="color: #f92672">&lt;/configuration&gt;</span>
 </pre></div>
 
-<p>&copy;.<code>$HADOOP_HOME/etc/hadoop/mapred-site.xml</code>:
+<p>(iii).<code>$HADOOP_HOME/etc/hadoop/mapred-site.xml</code>:
 You will be creating this file. It doesn’t exist in the original package.</p>
 <div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>$ vim <span style="color: #f8f8f2">$HADOOP_HOME</span>/etc/hadoop/mapred-site.xml
 </pre></div>
 
 <p>Copy the following text into the file.</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">&lt;</span><span style="color: #f92672">configuration</span><span style="color: #f8f8f2">&gt;</span>
-<span style="color: #f8f8f2">&lt;</span><span style="color: #f92672">property</span><span style="color: #f8f8f2">&gt;</span>
-<span style="color: #f8f8f2">&lt;</span><span style="color: #f92672">name</span><span style="color: #f8f8f2">&gt;</span>mapreduce.framework.name<span style="color: #f8f8f2">&lt;/</span><span style="color: #f92672">name</span><span style="color: #f8f8f2">&gt;</span>
-<span style="color: #f8f8f2">&lt;</span><span style="color: #f92672">value</span><span style="color: #f8f8f2">&gt;</span>yarn<span style="color: #f8f8f2">&lt;/</span><span style="color: #f92672">value</span><span style="color: #f8f8f2">&gt;</span>
-<span style="color: #f8f8f2">&lt;/</span><span style="color: #f92672">property</span><span style="color: #f8f8f2">&gt;</span>
-<span style="color: #f8f8f2">&lt;</span><span style="color: #f92672">property</span><span style="color: #f8f8f2">&gt;</span>
-<span style="color: #f8f8f2">&lt;</span><span style="color: #f92672">name</span><span style="color: #f8f8f2">&gt;</span>yarn.app.mapreduce.am.resource.mb<span style="color: #f8f8f2">&lt;/</span><span style="color: #f92672">name</span><span style="color: #f8f8f2">&gt;</span>
-<span style="color: #f8f8f2">&lt;</span><span style="color: #f92672">value</span><span style="color: #f8f8f2">&gt;</span>512<span style="color: #f8f8f2">&lt;/</span><span style="color: #f92672">value</span><span style="color: #f8f8f2">&gt;</span>
-<span style="color: #f8f8f2">&lt;/</span><span style="color: #f92672">property</span><span style="color: #f8f8f2">&gt;</span>
-<span style="color: #f8f8f2">&lt;</span><span style="color: #f92672">property</span><span style="color: #f8f8f2">&gt;</span>
-<span style="color: #f8f8f2">&lt;</span><span style="color: #f92672">name</span><span style="color: #f8f8f2">&gt;</span>yarn.app.mapreduce.am.command-opts<span style="color: #f8f8f2">&lt;/</span><span style="color: #f92672">name</span><span style="color: #f8f8f2">&gt;</span>
-<span style="color: #f8f8f2">&lt;</span><span style="color: #f92672">value</span><span style="color: #f8f8f2">&gt;</span>-Xmx256m -Xms256m<span style="color: #f8f8f2">&lt;/</span><span style="color: #f92672">value</span><span style="color: #f8f8f2">&gt;</span>
-<span style="color: #f8f8f2">&lt;/</span><span style="color: #f92672">property</span><span style="color: #f8f8f2">&gt;</span>
-<span style="color: #f8f8f2">&lt;/</span><span style="color: #f92672">configuration</span><span style="color: #f8f8f2">&gt;</span>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f92672">&lt;configuration&gt;</span>
+  <span style="color: #f92672">&lt;property&gt;</span>
+    <span style="color: #f92672">&lt;name&gt;</span>mapreduce.framework.name<span style="color: #f92672">&lt;/name&gt;</span>
+    <span style="color: #f92672">&lt;value&gt;</span>yarn<span style="color: #f92672">&lt;/value&gt;</span>
+  <span style="color: #f92672">&lt;/property&gt;</span>
+  <span style="color: #f92672">&lt;property&gt;</span>
+    <span style="color: #f92672">&lt;name&gt;</span>yarn.app.mapreduce.am.resource.mb<span style="color: #f92672">&lt;/name&gt;</span>
+    <span style="color: #f92672">&lt;value&gt;</span>512<span style="color: #f92672">&lt;/value&gt;</span>
+  <span style="color: #f92672">&lt;/property&gt;</span>
+  <span style="color: #f92672">&lt;property&gt;</span>
+    <span style="color: #f92672">&lt;name&gt;</span>yarn.app.mapreduce.am.command-opts<span style="color: #f92672">&lt;/name&gt;</span>
+    <span style="color: #f92672">&lt;value&gt;</span>-Xmx256m -Xms256m<span style="color: #f92672">&lt;/value&gt;</span>
+  <span style="color: #f92672">&lt;/property&gt;</span>
+<span style="color: #f92672">&lt;/configuration&gt;</span>
 </pre></div>
 
-<p>(d).<code>$HADOOP_HOME/etc/hadoop/yarn-site.xml</code>:</p>
+<p>(iv).<code>$HADOOP_HOME/etc/hadoop/yarn-site.xml</code>:</p>
 <div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>$ vim <span style="color: #f8f8f2">$HADOOP_HOME</span>/etc/hadoop/yarn-site.xml
 </pre></div>
 
 <p>Copy the following text into the file.</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">&lt;</span><span style="color: #f92672">configuration</span><span style="color: #f8f8f2">&gt;</span>
-<span style="color: #f8f8f2">&lt;</span><span style="color: #f92672">property</span><span style="color: #f8f8f2">&gt;</span>
-<span style="color: #f8f8f2">&lt;</span><span style="color: #f92672">name</span><span style="color: #f8f8f2">&gt;</span>yarn.nodemanager.aux-services<span style="color: #f8f8f2">&lt;/</span><span style="color: #f92672">name</span><span style="color: #f8f8f2">&gt;</span>
-<span style="color: #f8f8f2">&lt;</span><span style="color: #f92672">value</span><span style="color: #f8f8f2">&gt;</span>mapreduce_shuffle<span style="color: #f8f8f2">&lt;/</span><span style="color: #f92672">value</span><span style="color: #f8f8f2">&gt;</span>
-<span style="color: #f8f8f2">&lt;/</span><span style="color: #f92672">property</span><span style="color: #f8f8f2">&gt;</span>
-<span style="color: #f8f8f2">&lt;</span><span style="color: #f92672">property</span><span style="color: #f8f8f2">&gt;</span>
-<span style="color: #f8f8f2">&lt;</span><span style="color: #f92672">name</span><span style="color: #f8f8f2">&gt;</span>yarn.nodemanager.resource.memory-mb<span style="color: #f8f8f2">&lt;/</span><span style="color: #f92672">name</span><span style="color: #f8f8f2">&gt;</span>
-<span style="color: #f8f8f2">&lt;</span><span style="color: #f92672">value</span><span style="color: #f8f8f2">&gt;</span>4096<span style="color: #f8f8f2">&lt;/</span><span style="color: #f92672">value</span><span style="color: #f8f8f2">&gt;</span>
-<span style="color: #f8f8f2">&lt;/</span><span style="color: #f92672">property</span><span style="color: #f8f8f2">&gt;</span>
-<span style="color: #f8f8f2">&lt;</span><span style="color: #f92672">property</span><span style="color: #f8f8f2">&gt;</span>
-<span style="color: #f8f8f2">&lt;</span><span style="color: #f92672">description</span><span style="color: #f8f8f2">&gt;</span>Whether virtual memory limits will be enforced for containers.<span style="color: #f8f8f2">&lt;/</span><span style="color: #f92672">description</span><span style="color: #f8f8f2">&gt;</span>
-<span style="color: #f8f8f2">&lt;</span><span style="color: #f92672">name</span><span style="color: #f8f8f2">&gt;</span>yarn.nodemanager.vmem-check-enabled<span style="color: #f8f8f2">&lt;/</span><span style="color: #f92672">name</span><span style="color: #f8f8f2">&gt;</span>
-<span style="color: #f8f8f2">&lt;</span><span style="color: #f92672">value</span><span style="color: #f8f8f2">&gt;</span>false<span style="color: #f8f8f2">&lt;/</span><span style="color: #f92672">value</span><span style="color: #f8f8f2">&gt;</span>
-<span style="color: #f8f8f2">&lt;/</span><span style="color: #f92672">property</span><span style="color: #f8f8f2">&gt;</span>
-<span style="color: #f8f8f2">&lt;</span><span style="color: #f92672">property</span><span style="color: #f8f8f2">&gt;</span>
-<span style="color: #f8f8f2">&lt;</span><span style="color: #f92672">name</span><span style="color: #f8f8f2">&gt;</span>yarn.scheduler.minimum-allocation-mb<span style="color: #f8f8f2">&lt;/</span><span style="color: #f92672">name</span><span style="color: #f8f8f2">&gt;</span>
-<span style="color: #f8f8f2">&lt;</span><span style="color: #f92672">value</span><span style="color: #f8f8f2">&gt;</span>512<span style="color: #f8f8f2">&lt;/</span><span style="color: #f92672">value</span><span style="color: #f8f8f2">&gt;</span>
-<span style="color: #f8f8f2">&lt;/</span><span style="color: #f92672">property</span><span style="color: #f8f8f2">&gt;</span>
-<span style="color: #f8f8f2">&lt;</span><span style="color: #f92672">property</span><span style="color: #f8f8f2">&gt;</span>
-<span style="color: #f8f8f2">&lt;</span><span style="color: #f92672">name</span><span style="color: #f8f8f2">&gt;</span>yarn.scheduler.maximum-allocation-mb<span style="color: #f8f8f2">&lt;/</span><span style="color: #f92672">name</span><span style="color: #f8f8f2">&gt;</span>
-<span style="color: #f8f8f2">&lt;</span><span style="color: #f92672">value</span><span style="color: #f8f8f2">&gt;</span>2048<span style="color: #f8f8f2">&lt;/</span><span style="color: #f92672">value</span><span style="color: #f8f8f2">&gt;</span>
-<span style="color: #f8f8f2">&lt;/</span><span style="color: #f92672">property</span><span style="color: #f8f8f2">&gt;</span>
-<span style="color: #f8f8f2">&lt;/</span><span style="color: #f92672">configuration</span><span style="color: #f8f8f2">&gt;</span>
-</pre></div>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f92672">&lt;configuration&gt;</span>
+  <span style="color: #f92672">&lt;property&gt;</span>
+    <span style="color: #f92672">&lt;name&gt;</span>yarn.nodemanager.aux-services<span style="color: #f92672">&lt;/name&gt;</span>
+    <span style="color: #f92672">&lt;value&gt;</span>mapreduce_shuffle<span style="color: #f92672">&lt;/value&gt;</span>
+  <span style="color: #f92672">&lt;/property&gt;</span>
+  <span style="color: #f92672">&lt;property&gt;</span>
+    <span style="color: #f92672">&lt;name&gt;</span>yarn.nodemanager.resource.memory-mb<span style="color: #f92672">&lt;/name&gt;</span>
+    <span style="color: #f92672">&lt;value&gt;</span>4096<span style="color: #f92672">&lt;/value&gt;</span>
+  <span style="color: #f92672">&lt;/property&gt;</span>
+  <span style="color: #f92672">&lt;property&gt;</span>
+    <span style="color: #f92672">&lt;description&gt;</span>Whether virtual memory limits will be enforced for containers.<span style="color: #f92672">&lt;/description&gt;</span>
+    <span style="color: #f92672">&lt;name&gt;</span>yarn.nodemanager.vmem-check-enabled<span style="color: #f92672">&lt;/name&gt;</span>
+    <span style="color: #f92672">&lt;value&gt;</span>false<span style="color: #f92672">&lt;/value&gt;</span>
+  <span style="color: #f92672">&lt;/property&gt;</span>
+  <span style="color: #f92672">&lt;property&gt;</span>
+    <span style="color: #f92672">&lt;name&gt;</span>yarn.scheduler.minimum-allocation-mb<span style="color: #f92672">&lt;/name&gt;</span>
+    <span style="color: #f92672">&lt;value&gt;</span>512<span style="color: #f92672">&lt;/value&gt;</span>
+  <span style="color: #f92672">&lt;/property&gt;</span>
+  <span style="color: #f92672">&lt;property&gt;</span>
+    <span style="color: #f92672">&lt;name&gt;</span>yarn.scheduler.maximum-allocation-mb<span style="color: #f92672">&lt;/name&gt;</span>
+    <span style="color: #f92672">&lt;value&gt;</span>2048<span style="color: #f92672">&lt;/value&gt;</span>
+  <span style="color: #f92672">&lt;/property&gt;</span>
+<span style="color: #f92672">&lt;/configuration&gt;</span>
+</pre></div></li>
 
-<ol>
-<li>Format the file system using the following code.
-<code>bash
-$ hdfs namenode -format
-</code></li>
-</ol>
+<li><p>Format the file system using the following code.</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>$ hdfs namenode -format
+</pre></div>
 
 <p>You should be able to see it exit with status 0 as follows.</p>
 <div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>...
@@ -177,9 +169,8 @@ xx/xx/xx xx:xx:xx INFO util.ExitUtil: Exiting with status <span style="color: #a
 xx/xx/xx xx:xx:xx INFO namenode.NameNode: SHUTDOWN_MSG:
 /************************************************************
 SHUTDOWN_MSG: Shutting down NameNode at xxx.xxx.xxx.xxx
-</pre></div>
+</pre></div></li>
 
-<ol>
 <li><p>Launch NameNode, SecondaryNameNode and DataNode daemons.</p>
 <div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>$ <span style="color: #f8f8f2">$HADOOP_HOME</span>/sbin/start-dfs.sh
 </pre></div></li>
@@ -190,8 +181,7 @@ SHUTDOWN_MSG: Shutting down NameNode at xxx.xxx.xxx.xxx
 
 <li><p>Check if the daemons started successfully by running the following command.</p>
 <div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>$ jps
-</pre></div></li>
-</ol>
+</pre></div>
 
 <p>The output should look similar to the following text with <code>xxxxx</code> replaced by the
 process ids for &ldquo;NameNode&rdquo;, &ldquo;SecondaryNameNode&rdquo;, etc.</p>
@@ -206,14 +196,13 @@ xxxxx ResourceManager
 <p>If all the processes listed above aren&rsquo;t in your output recheck your configurations and
 rerun steps 6 through 8 after executing the following commands.</p>
 
-<p>Replace ${user.name} with the user name given in step 5 (a).</p>
+<p>Replace ${user.name} with the user name given in step 5 (i).</p>
 <div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>$ <span style="color: #f8f8f2">$HADOOP_HOME</span>/sbin/stop-dfs.sh
 $ <span style="color: #f8f8f2">$HADOOP_HOME</span>/sbin/stop-yarn.sh
 $ rm -r /tmp/hadoop-<span style="color: #e6db74">${</span><span style="color: #f8f8f2">user.name</span><span style="color: #e6db74">}</span> 
-</pre></div>
+</pre></div></li>
 
-<ol>
-<li>You can browse the web interface for the NameNode at <a href="http://localhost:50070">http://localhost:50070</a> and for the ResourceManager at <a href="http://localhost:8080">http://localhost:8080</a>.</li>
+<li><p>You can browse the web interface for the NameNode at <a href="http://localhost:50070">http://localhost:50070</a> and for the ResourceManager at <a href="http://localhost:8080">http://localhost:8080</a>.</p></li>
 </ol>
 
 <h2 id="step-2-install-harp:b6885e1f85551f51a4707c402f8200a3">Step 2 &mdash; Install Harp</h2>
@@ -225,17 +214,15 @@ $ rm -r /tmp/hadoop-<span style="color: #e6db74">${</span><span style="color: #f
 
 <li><p>Set the environment variables in file <code>~/.bashrc</code>.</p>
 <div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>$ vim ~/.bashrc
-</pre></div></li>
-</ol>
+</pre></div>
 
 <p>Add the following text into the file. Replace <code>&lt;where Harp locates&gt;</code> with the path of where Harp is located in
 your system.</p>
 <div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">export</span> <span style="color: #f8f8f2">HARP_ROOT_DIR</span><span style="color: #f92672">=</span>&lt;where Harp locates&gt;
 <span style="color: #75715e">#e.g. ~/harp</span>
 <span style="color: #f8f8f2">export</span> <span style="color: #f8f8f2">HARP_HOME</span><span style="color: #f92672">=</span><span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/core/
-</pre></div>
+</pre></div></li>
 
-<ol>
 <li><p>Run the following command to make sure the changes are applied.</p>
 <div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>$ <span style="color: #f8f8f2">source</span> ~/.bashrc
 </pre></div></li>
@@ -249,50 +236,46 @@ $ <span style="color: #f8f8f2">$HADOOP_HOME</span>/sbin/stop-yarn.sh
 <div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>$ <span style="color: #f8f8f2">cd</span> <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>
 </pre></div></li>
 
-<li><p>Compile harp</p></li>
-</ol>
+<li><p>Compile harp</p>
 
 <p>Select the profile related to your hadoop version (For ex: hadoop-2.6.0) and compile using maven.
 Supported hadoop versions are 2.6.0, 2.7.5 and 2.9.0.</p>
 <div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>$ mvn clean package -Phadoop-2.6.0
-</pre></div>
+</pre></div></li>
 
-<ol>
-<li>Install harp plugin to hadoop as demonstrated below.</li>
-</ol>
+<li><p>Install harp plugin to hadoop as demonstrated below.</p>
 
 <p>Select the distribution folder related to your hadoop version. For ex:- hadoop-2.6.0</p>
 <div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>$ cp distribution/hadoop-2.6.0/harp-collective-1.0-SNAPSHOT.jar <span style="color: #f8f8f2">$HADOOP_HOME</span>/share/hadoop/mapreduce/
 $ cp distribution/hadoop-2.6.0/harp-hadoop-1.0-SNAPSHOT.jar <span style="color: #f8f8f2">$HADOOP_HOME</span>/share/hadoop/mapreduce/
 $ cp third_party/fastutil-7.0.13.jar <span style="color: #f8f8f2">$HADOOP_HOME</span>/share/hadoop/mapreduce/
-</pre></div>
+</pre></div></li>
 
-<ol>
-<li>Edit mapred-site.xml in $HADOOP_HOME/etc/hadoop by using the following code.</li>
-</ol>
+<li><p>Edit mapred-site.xml in $HADOOP_HOME/etc/hadoop by using the following code.</p>
 <div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>$ vim <span style="color: #f8f8f2">$HADOOP_HOME</span>/etc/hadoop/mapred-site.xml
 </pre></div>
 
 <p>Add java opts settings for map-collective tasks as follows. For example:</p>
 <div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f92672">&lt;property&gt;</span>
-<span style="color: #f92672">&lt;name&gt;</span>mapreduce.map.collective.memory.mb<span style="color: #f92672">&lt;/name&gt;</span>
-<span style="color: #f92672">&lt;value&gt;</span>512<span style="color: #f92672">&lt;/value&gt;</span>
+  <span style="color: #f92672">&lt;name&gt;</span>mapreduce.map.collective.memory.mb<span style="color: #f92672">&lt;/name&gt;</span>
+  <span style="color: #f92672">&lt;value&gt;</span>512<span style="color: #f92672">&lt;/value&gt;</span>
 <span style="color: #f92672">&lt;/property&gt;</span>
 <span style="color: #f92672">&lt;property&gt;</span>
-<span style="color: #f92672">&lt;name&gt;</span>mapreduce.map.collective.java.opts<span style="color: #f92672">&lt;/name&gt;</span>
-<span style="color: #f92672">&lt;value&gt;</span>-Xmx256m -Xms256m<span style="color: #f92672">&lt;/value&gt;</span>
+  <span style="color: #f92672">&lt;name&gt;</span>mapreduce.map.collective.java.opts<span style="color: #f92672">&lt;/name&gt;</span>
+  <span style="color: #f92672">&lt;value&gt;</span>-Xmx256m -Xms256m<span style="color: #f92672">&lt;/value&gt;</span>
 <span style="color: #f92672">&lt;/property&gt;</span>
 </pre></div>
 
 <p>You have completed the Harp installation.</p>
 
-<h3 id="note:b6885e1f85551f51a4707c402f8200a3">Note</h3>
+<p><strong>Note</strong></p>
 
 <p>To develop Harp applications add the following property when configuring the job.</p>
 <div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">jobConf</span><span style="color: #f92672">.</span><span style="color: #a6e22e">set</span><span style="color: #f92672">(</span><span style="color: #e6db74">&quot;mapreduce.framework.name&quot;</span><span style="color: #f92672">,</span> <span style="color: #e6db74">&quot;map-collective&quot;</span><span style="color: #f92672">);</span>
-</pre></div>
+</pre></div></li>
+</ol>
 
-<h2 id="step-3-run-harp-kmeans-example:b6885e1f85551f51a4707c402f8200a3">Step 3 Run harp kmeans example</h2>
+<h2 id="step-3-run-harp-kmeans-example:b6885e1f85551f51a4707c402f8200a3">Step 3 &mdash; Run harp kmeans example</h2>
 
 <ol>
 <li><p>Copy harp examples to <code>$HADOOP_HOME</code> using the following code.
@@ -321,18 +304,15 @@ The usage is</p>
 <li><code>&lt;number of iteration&gt;</code> &mdash; the number of iterations to run</li>
 <li><code>&lt;work dir&gt;</code> &mdash; the root directory for this running in HDFS</li>
 <li><code>&lt;local points dir&gt;</code> &mdash; the harp kmeans will firstly generate files which contain data points to local directory. Set this argument to determine the local directory.</li>
-</ul></li>
-</ol>
+</ul>
 
 <p>For example:</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>   hadoop jar harp-java-1.0-SNAPSHOT.jar edu.iu.kmeans.regroupallgather.KMeansLauncher <span style="color: #ae81ff">1000</span> <span style="color: #ae81ff">10</span> <span style="color: #ae81ff">100</span> <span style="color: #ae81ff">5</span> <span style="color: #ae81ff">2</span> <span style="color: #ae81ff">2</span> <span style="color: #ae81ff">10</span> /kmeans /tmp/kmeans
-</pre></div>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>hadoop jar harp-java-1.0-SNAPSHOT.jar edu.iu.kmeans.regroupallgather.KMeansLauncher <span style="color: #ae81ff">1000</span> <span style="color: #ae81ff">10</span> <span style="color: #ae81ff">100</span> <span style="color: #ae81ff">5</span> <span style="color: #ae81ff">2</span> <span style="color: #ae81ff">2</span> <span style="color: #ae81ff">10</span> /kmeans /tmp/kmeans
+</pre></div></li>
 
-<ol>
-<li>To fetch the results, use the following command:
-<code>bash
-$ hdfs dfs –get &lt;work dir&gt; &lt;local dir&gt;
-#e.g. hdfs dfs -get /kmeans ~/Document
-</code></li>
+<li><p>To fetch the results, use the following command:</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>$ hdfs dfs –get &lt;work dir&gt; &lt;<span style="color: #f8f8f2">local</span> dir&gt;
+<span style="color: #75715e">#e.g. hdfs dfs -get /kmeans ~/Document</span>
+</pre></div></li>
 </ol>
 </article></section></div></div></div><script src="https://code.jquery.com/jquery-2.2.1.min.js"></script><script src="https://dsc-spidal.github.io/harp/js/app.min.js"></script></body></html>

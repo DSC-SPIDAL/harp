@@ -21,13 +21,12 @@
 <h2 id="step-1-install-hadoop-2-6-0:a1a896010cc86ec86571c7957cfb822d">Step 1 &mdash; Install Hadoop 2.6.0</h2>
 
 <ol>
-<li>Download and extract the hadoop-2.6.0 binary into your machine. It&rsquo;s available at <a href="https://archive.apache.org/dist/hadoop/core/hadoop-2.6.0/hadoop-2.6.0.tar.gz">hadoop-2.6.0.tar.gz</a>.
-<code>bash
-$ mkdir ~/Hadoop
-$ cd ~/Hadoop
+<li><p>Download and extract the hadoop-2.6.0 binary into your machine. It&rsquo;s available at <a href="https://archive.apache.org/dist/hadoop/core/hadoop-2.6.0/hadoop-2.6.0.tar.gz">hadoop-2.6.0.tar.gz</a>.</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>$ mkdir ~/Hadoop
+$ <span style="color: #f8f8f2">cd</span> ~/Hadoop
 $ wget https://archive.apache.org/dist/hadoop/core/hadoop-2.6.0/hadoop-2.6.0.tar.gz
 $ tar -xvzf hadoop-2.6.0.tar.gz
-</code></li>
+</pre></div></li>
 
 <li><p>Set the environment variables in file <code>~/.bashrc</code>.</p>
 <div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>$ vim ~/.bashrc
@@ -51,11 +50,11 @@ $ tar -xvzf hadoop-2.6.0.tar.gz
 </pre></div></li>
 
 <li><p>Run the following command to make sure the changes are applied.</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span> $ <span style="color: #f8f8f2">source</span> ~/.bashrc
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>$ <span style="color: #f8f8f2">source</span> ~/.bashrc
 </pre></div></li>
 
 <li><p>Check if environment variables are set correctly by running the following command.</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span> $ hadoop
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>$ hadoop
 </pre></div>
 
 <p>The results should look similar to the example below.</p>
@@ -77,10 +76,10 @@ $ tar -xvzf hadoop-2.6.0.tar.gz
 Most commands print <span style="color: #f8f8f2">help</span> when invoked w/o parameters.
 </pre></div></li>
 
-<li><p>Follow steps a-e to modify the following files in the Apache Hadoop distribution.</p>
+<li><p>Follow steps (i)-(v) to modify the following files in the Apache Hadoop distribution.</p>
 
-<p>(a).<code>$HADOOP_HOME/etc/hadoop/core-site.xml</code>:</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>   $ vim <span style="color: #f8f8f2">$HADOOP_HOME</span>/etc/hadoop/core-site.xml
+<p>(i).<code>$HADOOP_HOME/etc/hadoop/core-site.xml</code>:</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>$ vim <span style="color: #f8f8f2">$HADOOP_HOME</span>/etc/hadoop/core-site.xml
 </pre></div>
 
 <p>Copy the following text into the file and replace ${namenode} with the IP address of the name node
@@ -98,8 +97,8 @@ Most commands print <span style="color: #f8f8f2">help</span> when invoked w/o pa
 <span style="color: #f92672">&lt;/configuration&gt;</span>
 </pre></div>
 
-<p>(b).<code>$HADOOP_HOME/etc/hadoop/hdfs-site.xml</code>:</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>   $ vim <span style="color: #f8f8f2">$HADOOP_HOME</span>/etc/hadoop/hdfs-site.xml
+<p>(ii).<code>$HADOOP_HOME/etc/hadoop/hdfs-site.xml</code>:</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>$ vim <span style="color: #f8f8f2">$HADOOP_HOME</span>/etc/hadoop/hdfs-site.xml
 </pre></div>
 
 <p>Copy the following text into the file and replace ${hadoop_home} with the path of where Hadoop is located in
@@ -124,30 +123,30 @@ Most commands print <span style="color: #f8f8f2">help</span> when invoked w/o pa
 <span style="color: #f92672">&lt;/configuration&gt;</span>
 </pre></div>
 
-<p>&copy;.<code>$HADOOP_HOME/etc/hadoop/mapred-site.xml</code>:
+<p>(iii).<code>$HADOOP_HOME/etc/hadoop/mapred-site.xml</code>:
     You will be creating this file. It doesn’t exist in the original package.</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>   $ vim <span style="color: #f8f8f2">$HADOOP_HOME</span>/etc/hadoop/mapred-site.xml
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>$ vim <span style="color: #f8f8f2">$HADOOP_HOME</span>/etc/hadoop/mapred-site.xml
 </pre></div>
 
 <p>Copy the following text into the file.</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>    <span style="color: #f92672">&lt;configuration&gt;</span>
-      <span style="color: #f92672">&lt;property&gt;</span>
-        <span style="color: #f92672">&lt;name&gt;</span>mapreduce.framework.name<span style="color: #f92672">&lt;/name&gt;</span>
-        <span style="color: #f92672">&lt;value&gt;</span>yarn<span style="color: #f92672">&lt;/value&gt;</span>
-      <span style="color: #f92672">&lt;/property&gt;</span>
-      <span style="color: #f92672">&lt;property&gt;</span>
-        <span style="color: #f92672">&lt;name&gt;</span>mapreduce.map.collective.memory.mb<span style="color: #f92672">&lt;/name&gt;</span>
-        <span style="color: #f92672">&lt;value&gt;</span>100000<span style="color: #f92672">&lt;/value&gt;</span>
-      <span style="color: #f92672">&lt;/property&gt;</span>
-      <span style="color: #f92672">&lt;property&gt;</span>
-        <span style="color: #f92672">&lt;name&gt;</span>mapreduce.map.collective.java.opts<span style="color: #f92672">&lt;/name&gt;</span>
-        <span style="color: #f92672">&lt;value&gt;</span>-Xmx90000m -Xms90000m<span style="color: #f92672">&lt;/value&gt;</span>
-      <span style="color: #f92672">&lt;/property&gt;</span>
-    <span style="color: #f92672">&lt;/configuration&gt;</span>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f92672">&lt;configuration&gt;</span>
+  <span style="color: #f92672">&lt;property&gt;</span>
+    <span style="color: #f92672">&lt;name&gt;</span>mapreduce.framework.name<span style="color: #f92672">&lt;/name&gt;</span>
+    <span style="color: #f92672">&lt;value&gt;</span>yarn<span style="color: #f92672">&lt;/value&gt;</span>
+  <span style="color: #f92672">&lt;/property&gt;</span>
+  <span style="color: #f92672">&lt;property&gt;</span>
+    <span style="color: #f92672">&lt;name&gt;</span>mapreduce.map.collective.memory.mb<span style="color: #f92672">&lt;/name&gt;</span>
+    <span style="color: #f92672">&lt;value&gt;</span>100000<span style="color: #f92672">&lt;/value&gt;</span>
+  <span style="color: #f92672">&lt;/property&gt;</span>
+  <span style="color: #f92672">&lt;property&gt;</span>
+    <span style="color: #f92672">&lt;name&gt;</span>mapreduce.map.collective.java.opts<span style="color: #f92672">&lt;/name&gt;</span>
+    <span style="color: #f92672">&lt;value&gt;</span>-Xmx90000m -Xms90000m<span style="color: #f92672">&lt;/value&gt;</span>
+  <span style="color: #f92672">&lt;/property&gt;</span>
+<span style="color: #f92672">&lt;/configuration&gt;</span>
 </pre></div>
 
-<p>(d).<code>$HADOOP_HOME/etc/hadoop/yarn-site.xml</code>:</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>   $ vim <span style="color: #f8f8f2">$HADOOP_HOME</span>/etc/hadoop/yarn-site.xml
+<p>(iv).<code>$HADOOP_HOME/etc/hadoop/yarn-site.xml</code>:</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>$ vim <span style="color: #f8f8f2">$HADOOP_HOME</span>/etc/hadoop/yarn-site.xml
 </pre></div>
 
 <p>Copy the following text into the file and replace ${namenode} with the IP address of your name node.</p>
@@ -187,8 +186,8 @@ Most commands print <span style="color: #f8f8f2">help</span> when invoked w/o pa
 <span style="color: #f92672">&lt;/configuration&gt;</span>
 </pre></div>
 
-<p>(e).<code>$HADOOP_HOME/etc/hadoop/slaves</code>:</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span> $ vim <span style="color: #f8f8f2">$HADOOP_HOME</span>/etc/hadoop/slaves
+<p>(v).<code>$HADOOP_HOME/etc/hadoop/slaves</code>:</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>$ vim <span style="color: #f8f8f2">$HADOOP_HOME</span>/etc/hadoop/slaves
 </pre></div>
 
 <p>Update the <code>slaves</code> file by replacing ${namenode}, etc with the IP addresses of the name node and other data nodes.</p>
@@ -199,7 +198,7 @@ Most commands print <span style="color: #f8f8f2">help</span> when invoked w/o pa
 </pre></div></li>
 
 <li><p>Format the file system using the following code.</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span> $ hdfs namenode -format
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>$ hdfs namenode -format
 </pre></div>
 
 <p>You should be able to see it exit with status 0 as follows.</p>
@@ -212,11 +211,11 @@ SHUTDOWN_MSG: Shutting down NameNode at xxx.xxx.xxx.xxx
 </pre></div></li>
 
 <li><p>Launch NameNode, SecondaryNameNode and DataNode daemons.</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span> $ <span style="color: #f8f8f2">$HADOOP_HOME</span>/sbin/start-dfs.sh
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>$ <span style="color: #f8f8f2">$HADOOP_HOME</span>/sbin/start-dfs.sh
 </pre></div></li>
 
 <li><p>Launch ResourceManager and NodeManager Daemons.</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span> $ <span style="color: #f8f8f2">$HADOOP_HOME</span>/sbin/start-yarn.sh
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>$ <span style="color: #f8f8f2">$HADOOP_HOME</span>/sbin/start-yarn.sh
 </pre></div></li>
 
 <li><p>Check if the daemons started successfully by running the following command.</p>
@@ -237,9 +236,9 @@ xxxxx ResourceManager
 rerun steps 6 through 8 after executing the following commands.</p>
 
 <p>Replace ${user.name} with the name given in step 5 (a).</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span> $ <span style="color: #f8f8f2">$HADOOP_HOME</span>/sbin/stop-dfs.sh
- $ <span style="color: #f8f8f2">$HADOOP_HOME</span>/sbin/stop-yarn.sh
- $ rm -r /tmp/hadoop-<span style="color: #e6db74">${</span><span style="color: #f8f8f2">user.name</span><span style="color: #e6db74">}</span> 
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>$ <span style="color: #f8f8f2">$HADOOP_HOME</span>/sbin/stop-dfs.sh
+$ <span style="color: #f8f8f2">$HADOOP_HOME</span>/sbin/stop-yarn.sh
+$ rm -r /tmp/hadoop-<span style="color: #e6db74">${</span><span style="color: #f8f8f2">user.name</span><span style="color: #e6db74">}</span> 
 </pre></div></li>
 </ol>
 
@@ -304,16 +303,16 @@ $ cp third_party/fastutil-7.0.13.jar <span style="color: #f8f8f2">$HADOOP_HOME</
 <span style="color: #f92672">&lt;/property&gt;</span>
 </pre></div>
 
-<p>You have completed the Harp installation.</p></li>
-</ol>
+<p>You have completed the Harp installation.</p>
 
-<h3 id="note:a1a896010cc86ec86571c7957cfb822d">Note</h3>
+<p><strong>Note</strong></p>
 
 <p>To develop Harp applications add the following property when configuring the job.</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>   <span style="color: #f8f8f2">jobConf</span><span style="color: #f92672">.</span><span style="color: #a6e22e">set</span><span style="color: #f92672">(</span><span style="color: #e6db74">&quot;mapreduce.framework.name&quot;</span><span style="color: #f92672">,</span> <span style="color: #e6db74">&quot;map-collective&quot;</span><span style="color: #f92672">);</span>
-</pre></div>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">jobConf</span><span style="color: #f92672">.</span><span style="color: #a6e22e">set</span><span style="color: #f92672">(</span><span style="color: #e6db74">&quot;mapreduce.framework.name&quot;</span><span style="color: #f92672">,</span> <span style="color: #e6db74">&quot;map-collective&quot;</span><span style="color: #f92672">);</span>
+</pre></div></li>
+</ol>
 
-<h2 id="step-3-run-harp-kmeans-example:a1a896010cc86ec86571c7957cfb822d">Step 3 Run harp kmeans example</h2>
+<h2 id="step-3-run-harp-kmeans-example:a1a896010cc86ec86571c7957cfb822d">Step 3 &mdash; Run harp kmeans example</h2>
 
 <ol>
 <li><p>Format the other data nodes. Replace ${data node} by the IP address.</p>
@@ -325,25 +324,24 @@ $ hadoop datanode -format
 
 <li><p>Copy harp examples to <code>$HADOOP_HOME</code> using the following code.
 Select the distribution folder related to your hadoop version. For ex:- hadoop-2.6.0</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span> $ cp <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/distribution/hadoop-2.6.0/harp-java-1.0-SNAPSHOT.jar <span style="color: #f8f8f2">$HADOOP_HOME</span>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>$ cp <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/distribution/hadoop-2.6.0/harp-java-1.0-SNAPSHOT.jar <span style="color: #f8f8f2">$HADOOP_HOME</span>
 </pre></div></li>
 
 <li><p>Start Hadoop.</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span> $ <span style="color: #f8f8f2">cd</span> <span style="color: #f8f8f2">$HADOOP_HOME</span>
- $ sbin/start-dfs.sh
- $ sbin/start-yarn.sh
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>$ <span style="color: #f8f8f2">cd</span> <span style="color: #f8f8f2">$HADOOP_HOME</span>
+$ sbin/start-dfs.sh
+$ sbin/start-yarn.sh
 </pre></div></li>
 
 <li><p><code>ssh</code> to the other data nodes and check if the Hadoop processes are running.</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span> $ jps
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>$ jps
 </pre></div>
 
 <p>This output will only appear in the data node. The output should look similar to the following text
 with <code>xxxxx</code> replaced by the process ids for &ldquo;DataNode&rdquo; and &ldquo;NodeManager&rdquo;.</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span> $ jps
- xxxxx DataNode
- xxxxx NodeManager
- xxxxx Jps
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>xxxxx DataNode
+xxxxx NodeManager
+xxxxx Jps
 </pre></div></li>
 
 <li><p>To view your running applications in the terminal, use:</p>
