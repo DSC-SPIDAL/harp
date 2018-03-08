@@ -213,7 +213,7 @@ If you are using windows, we suggest you to install an Ubuntu system on a virtua
     If all the processes listed above aren't in your output recheck your configurations and
     rerun steps 6 through 8 after executing the following commands.
     
-    Replace ${user.name} with the user name given in step 5 (a).
+    Replace ${user.name} with the user name given in step 5 (i).
     ```bash
     $ $HADOOP_HOME/sbin/stop-dfs.sh
     $ $HADOOP_HOME/sbin/stop-yarn.sh
