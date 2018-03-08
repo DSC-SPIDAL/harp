@@ -22,12 +22,14 @@ These instructions have only been tested on:
 ## Step 1 --- Install Hadoop 2.6.0
 
 1. Download and extract the hadoop-2.6.0 binary into your machine. It's available at [hadoop-2.6.0.tar.gz](https://archive.apache.org/dist/hadoop/core/hadoop-2.6.0/hadoop-2.6.0.tar.gz).
-   ```bash
+
+    ```bash
     $ mkdir ~/Hadoop
     $ cd ~/Hadoop
     $ wget https://archive.apache.org/dist/hadoop/core/hadoop-2.6.0/hadoop-2.6.0.tar.gz
     $ tar -xvzf hadoop-2.6.0.tar.gz
-   ```
+    ```
+
 2. Set the environment variables in file `~/.bashrc`.
    ```bash
     $ vim ~/.bashrc
@@ -52,13 +54,13 @@ These instructions have only been tested on:
 
 3. Run the following command to make sure the changes are applied.
     ```bash
-     $ source ~/.bashrc
+    $ source ~/.bashrc
     ```
 
 4. Check if environment variables are set correctly by running the following command.
 
     ```bash
-     $ hadoop
+    $ hadoop
     ```
     The results should look similar to the example below.
     
@@ -81,12 +83,12 @@ These instructions have only been tested on:
     Most commands print help when invoked w/o parameters.
     ```
 
-5. Follow steps a-e to modify the following files in the Apache Hadoop distribution.
+5. Follow steps (i)-(v) to modify the following files in the Apache Hadoop distribution.
 
-    (a).`$HADOOP_HOME/etc/hadoop/core-site.xml`:
-      ```bash
-       $ vim $HADOOP_HOME/etc/hadoop/core-site.xml
-      ```
+    (i).`$HADOOP_HOME/etc/hadoop/core-site.xml`:
+    ```bash
+    $ vim $HADOOP_HOME/etc/hadoop/core-site.xml
+    ```
      
       Copy the following text into the file and replace ${namenode} with the IP address of the name node 
       and ${user.name} with your user name.
@@ -105,11 +107,11 @@ These instructions have only been tested on:
     </configuration>
     ```
 
-    (b).`$HADOOP_HOME/etc/hadoop/hdfs-site.xml`:
+    (ii).`$HADOOP_HOME/etc/hadoop/hdfs-site.xml`:
     
-      ```bash
-       $ vim $HADOOP_HOME/etc/hadoop/hdfs-site.xml
-      ```
+    ```bash
+    $ vim $HADOOP_HOME/etc/hadoop/hdfs-site.xml
+    ```
       Copy the following text into the file and replace ${hadoop_home} with the path of where Hadoop is located in 
       your system and ${namenode} with the IP address of the name node. 
     ```xml
@@ -133,34 +135,34 @@ These instructions have only been tested on:
     </configuration>
    ```
 
-    (c).`$HADOOP_HOME/etc/hadoop/mapred-site.xml`:
+    (iii).`$HADOOP_HOME/etc/hadoop/mapred-site.xml`:
         You will be creating this file. It doesn’t exist in the original package.
-      ```bash
-       $ vim $HADOOP_HOME/etc/hadoop/mapred-site.xml
-      ```
+    ```bash
+    $ vim $HADOOP_HOME/etc/hadoop/mapred-site.xml
+    ```
         
       Copy the following text into the file. 
       ```xml
-        <configuration>
-          <property>
-            <name>mapreduce.framework.name</name>
-            <value>yarn</value>
-          </property>
-          <property>
-            <name>mapreduce.map.collective.memory.mb</name>
-            <value>100000</value>
-          </property>
-          <property>
-            <name>mapreduce.map.collective.java.opts</name>
-            <value>-Xmx90000m -Xms90000m</value>
-          </property>
-        </configuration>
+    <configuration>
+      <property>
+        <name>mapreduce.framework.name</name>
+        <value>yarn</value>
+      </property>
+      <property>
+        <name>mapreduce.map.collective.memory.mb</name>
+        <value>100000</value>
+      </property>
+      <property>
+        <name>mapreduce.map.collective.java.opts</name>
+        <value>-Xmx90000m -Xms90000m</value>
+      </property>
+    </configuration>
       ```
 
-    (d).`$HADOOP_HOME/etc/hadoop/yarn-site.xml`:
-      ```bash
-       $ vim $HADOOP_HOME/etc/hadoop/yarn-site.xml
-      ```
+    (iv).`$HADOOP_HOME/etc/hadoop/yarn-site.xml`:
+    ```bash
+    $ vim $HADOOP_HOME/etc/hadoop/yarn-site.xml
+    ```
         
       Copy the following text into the file and replace ${namenode} with the IP address of your name node.
     ```xml
@@ -200,10 +202,10 @@ These instructions have only been tested on:
     </configuration>
     ```
 
-    (e).`$HADOOP_HOME/etc/hadoop/slaves`:
+    (v).`$HADOOP_HOME/etc/hadoop/slaves`:
     
     ```bash
-     $ vim $HADOOP_HOME/etc/hadoop/slaves
+    $ vim $HADOOP_HOME/etc/hadoop/slaves
     ```
     Update the `slaves` file by replacing ${namenode}, etc with the IP addresses of the name node and other data nodes.
     
@@ -217,7 +219,7 @@ These instructions have only been tested on:
 6. Format the file system using the following code.
 
     ```bash
-     $ hdfs namenode -format
+    $ hdfs namenode -format
     ```
     You should be able to see it exit with status 0 as follows.
     
@@ -232,12 +234,12 @@ These instructions have only been tested on:
 
 7. Launch NameNode, SecondaryNameNode and DataNode daemons.
     ```bash
-     $ $HADOOP_HOME/sbin/start-dfs.sh
+    $ $HADOOP_HOME/sbin/start-dfs.sh
     ```
     
 8. Launch ResourceManager and NodeManager Daemons.
     ```bash
-     $ $HADOOP_HOME/sbin/start-yarn.sh
+    $ $HADOOP_HOME/sbin/start-yarn.sh
     ```
 
 9. Check if the daemons started successfully by running the following command.
@@ -259,9 +261,9 @@ These instructions have only been tested on:
     
     Replace ${user.name} with the name given in step 5 (a).
     ```bash
-     $ $HADOOP_HOME/sbin/stop-dfs.sh
-     $ $HADOOP_HOME/sbin/stop-yarn.sh
-     $ rm -r /tmp/hadoop-${user.name} 
+    $ $HADOOP_HOME/sbin/stop-dfs.sh
+    $ $HADOOP_HOME/sbin/stop-yarn.sh
+    $ rm -r /tmp/hadoop-${user.name} 
     ```
 
 ## Step 2 --- Install Harp
@@ -333,16 +335,16 @@ These instructions have only been tested on:
       <value>-Xmx256m -Xms256m</value>
     </property>
     ```
-You have completed the Harp installation.
+    You have completed the Harp installation.
+    
+    **Note**
+    
+    To develop Harp applications add the following property when configuring the job.
+      ```java
+    jobConf.set("mapreduce.framework.name", "map-collective");
+      ```
 
-### Note
-
-To develop Harp applications add the following property when configuring the job.
-  ```java
-   jobConf.set("mapreduce.framework.name", "map-collective");
-  ```
-
-## Step 3 Run harp kmeans example
+## Step 3 --- Run harp kmeans example
 
 1. Format the other data nodes. Replace ${data node} by the IP address. 
    ```bash
@@ -354,27 +356,26 @@ To develop Harp applications add the following property when configuring the job
 2. Copy harp examples to `$HADOOP_HOME` using the following code.
    Select the distribution folder related to your hadoop version. For ex:- hadoop-2.6.0
     ```bash
-     $ cp $HARP_ROOT_DIR/distribution/hadoop-2.6.0/harp-java-1.0-SNAPSHOT.jar $HADOOP_HOME
+    $ cp $HARP_ROOT_DIR/distribution/hadoop-2.6.0/harp-java-1.0-SNAPSHOT.jar $HADOOP_HOME
     ```
 
 3. Start Hadoop. 
     ```bash
-     $ cd $HADOOP_HOME
-     $ sbin/start-dfs.sh
-     $ sbin/start-yarn.sh
+    $ cd $HADOOP_HOME
+    $ sbin/start-dfs.sh
+    $ sbin/start-yarn.sh
     ```
 4. `ssh` to the other data nodes and check if the Hadoop processes are running. 
     ```bash
-     $ jps
+    $ jps
     ```
        
     This output will only appear in the data node. The output should look similar to the following text 
     with `xxxxx` replaced by the process ids for "DataNode" and "NodeManager". 
     ```bash
-     $ jps
-     xxxxx DataNode
-     xxxxx NodeManager
-     xxxxx Jps
+    xxxxx DataNode
+    xxxxx NodeManager
+    xxxxx Jps
     ```
 
 5. To view your running applications in the terminal, use:
