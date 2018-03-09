@@ -1,23 +1,16 @@
 #!/bin/bash
 
-## export the HARP_DAAL_ROOT
-cd ../
-export HARP_DAAL_ROOT=$(pwd)
+## root path of harp  
+cd ../../../
+export HARP_ROOT=$(pwd)
+cd ${HARP_ROOT}
 
 if [ -z ${HADOOP_HOME+x} ];then
     echo "HADOOP not setup"
     exit
 fi
 
-cp ${HARP_DAAL_ROOT}/target/harp-daal-app-1.0-SNAPSHOT.jar ${HADOOP_HOME}
-
-## check if DAAL env is setup 
-if [ -z ${DAALROOT+x} ];then
-    echo "DAAL not installed, please setup DAALROOT"
-    exit
-else
-    echo "${DAALROOT}"
-fi
+cp ${HARP_ROOT}/ml/daal/target/harp-daal-1.0-SNAPSHOT.jar ${HADOOP_HOME}
 
 cd ${HADOOP_HOME}
 
@@ -27,22 +20,23 @@ if [[ "$?" = "0"  ]]; then
     hdfs dfsadmin -safemode leave
 fi
 
-# put daal and tbb, omp libs to hdfs, they will be loaded into the distributed cache
+## copy required third_party native libs to HDFS
+hdfs dfs -mkdir -p /Hadoop
 hdfs dfs -mkdir -p /Hadoop/Libraries
 hdfs dfs -rm /Hadoop/Libraries/*
-hdfs dfs -put ${DAALROOT}/lib/intel64_lin/libJavaAPI.so /Hadoop/Libraries/
-hdfs dfs -put ${DAALROOT}/../tbb/lib/intel64_lin/gcc4.4/libtbb* /Hadoop/Libraries/
-hdfs dfs -put ${HARP_DAAL_ROOT}/external/omp/libiomp5.so /Hadoop/Libraries/
-hdfs dfs -put ${HARP_DAAL_ROOT}/external/hdfs/libhdfs.so* /Hadoop/Libraries/
+hdfs dfs -put ${HARP_ROOT}/third_party/daal-2018/lib/intel64_lin/libJavaAPI.so /Hadoop/Libraries/
+hdfs dfs -put ${HARP_ROOT}/third_party/tbb/lib/intel64_lin/gcc4.4/libtbb* /Hadoop/Libraries/
+
+export LIBJARS=${HARP_ROOT}/third_party/daal-2018/lib/daal.jar
+
+hdfs dfs -mkdir -p /Hadoop/kmeans-input
 
 ## log directory
-mkdir -p ${HADOOP_HOME}/Harp-DAAL-LOG
-logDir=${HADOOP_HOME}/Harp-DAAL-LOG
+mkdir -p ${HADOOP_HOME}/Harp-DAAL-Kmeans
+logDir=${HADOOP_HOME}/Harp-DAAL-Kmeans
 
-export LIBJARS=${DAALROOT}/lib/daal.jar
-
+## parameters
 # num of training data points
-# Pts=5000
 Pts=10000
 # num of training data centroids
 Ced=10
@@ -53,20 +47,15 @@ File=5
 # iteration times
 ITR=100
 # memory allocated to each mapper (MB)
-Mem=6000
-# generate training data or not (once generated, data file /kmeans-P$Pts-C$Ced-D$Dim-N$Node is in hdfs, you could reuse them next time)
-# GenData=true
-GenData=false
+Mem=110000
+GenData=true
 # num of mappers (nodes)
 Node=2
 # num of threads on each mapper(node)
-Thd=4
+Thd=16
+Dataset=kmeans-P$Pts-C$Ced-D$Dim-F$File-N$Node
 
 echo "Test-daal-kmeans-P$Pts-C$Ced-D$Dim-F$File-ITR$ITR-N$Node-Thd$Thd Start" 
-hadoop jar harp-daal-app-1.0-SNAPSHOT.jar edu.iu.daal_kmeans.regroupallgather.KMeansDaalLauncher -libjars ${LIBJARS} $Pts $Ced $Dim $File $Node $Thd $ITR $Mem /kmeans-P$Pts-C$Ced-D$Dim-F$File-N$Node /tmp/kmeans $GenData 2>&1 | tee $logDir/Test-daal-kmeans-P$Pts-C$Ced-D$Dim-F$File-ITR$ITR-N$Node-Thd$Thd.log  
+hadoop jar harp-daal-1.0-SNAPSHOT.jar edu.iu.daal_kmeans.regroupallgather.KMeansDaalLauncher -libjars ${LIBJARS} $Pts $Ced $Dim $File $Node $Thd $ITR $Mem /Hadoop/kmeans-input/$Dataset /tmp/kmeans $GenData 2>$logDir/Test-daal-kmeans-P$Pts-C$Ced-D$Dim-F$File-ITR$ITR-N$Node-Thd$Thd.log  
 echo "Test-daal-kmeans-P$Pts-C$Ced-D$Dim-F$File-ITR$ITR-N$Node-Thd$Thd End" 
-
-hdfs dfs -ls /
-hdfs dfs -cat /kmeans-P$Pts-C$Ced-D$Dim-F$File-N$Node/centroids/out/*
-
 

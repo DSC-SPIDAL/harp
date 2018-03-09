@@ -1,24 +1,16 @@
 #!/bin/bash
 
-## export the HARP_DAAL_ROOT
-cd ../
-export HARP_DAAL_ROOT=$(pwd)
+## root path of harp  
+cd ../../../
+export HARP_ROOT=$(pwd)
+cd ${HARP_ROOT}
 
 if [ -z ${HADOOP_HOME+x} ];then
     echo "HADOOP not setup"
     exit
 fi
 
-cp ${HARP_DAAL_ROOT}/target/harp-daal-app-1.0-SNAPSHOT.jar ${HADOOP_HOME}
-
-## check if DAAL env is setup 
-if [ -z ${DAALROOT+x} ];then
-    echo "DAAL not installed, please setup DAALROOT"
-    exit
-else
-    echo "${DAALROOT}"
-fi
-
+cp ${HARP_ROOT}/ml/daal/target/harp-daal-1.0-SNAPSHOT.jar ${HADOOP_HOME}
 cd ${HADOOP_HOME}
 
 hdfs dfsadmin -safemode get | grep -q "ON"
@@ -26,21 +18,26 @@ if [[ "$?" = "0" ]]; then
     hdfs dfsadmin -safemode leave
 fi
 
-# put daal and tbb, omp libs to hdfs, they will be loaded into the distributed cache
+## copy required third_party native libs to HDFS
+hdfs dfs -mkdir -p /Hadoop
 hdfs dfs -mkdir -p /Hadoop/Libraries
 hdfs dfs -rm /Hadoop/Libraries/*
-hdfs dfs -put ${DAALROOT}/lib/intel64_lin/libJavaAPI.so /Hadoop/Libraries/
-hdfs dfs -put ${DAALROOT}/../tbb/lib/intel64_lin/gcc4.4/libtbb* /Hadoop/Libraries/
-hdfs dfs -put ${HARP_DAAL_ROOT}/external/omp/libiomp5.so /Hadoop/Libraries/
-hdfs dfs -put ${HARP_DAAL_ROOT}/external/hdfs/libhdfs.so* /Hadoop/Libraries/
+hdfs dfs -put ${HARP_ROOT}/third_party/daal-2018/lib/intel64_lin/libJavaAPI.so /Hadoop/Libraries/
+hdfs dfs -put ${HARP_ROOT}/third_party/tbb/lib/intel64_lin/gcc4.4/libtbb* /Hadoop/Libraries/
+
+export LIBJARS=${HARP_ROOT}/third_party/daal-2018/lib/daal.jar
+
+## load training and test data
+datadir=${HARP_ROOT}/datasets/daal_nn
+
+hdfs dfs -mkdir -p /Hadoop/nn-input
+hdfs dfs -rm -r /Hadoop/nn-input/*
+hdfs dfs -put ${datadir}/* /Hadoop/nn-input/ 
 
 ## log directory
-mkdir -p ${HADOOP_HOME}/Harp-DAAL-LOG
-logDir=${HADOOP_HOME}/Harp-DAAL-LOG
+mkdir -p ${HADOOP_HOME}/Harp-DAAL-NN
+logDir=${HADOOP_HOME}/Harp-DAAL-NN
 
-export LIBJARS=${DAALROOT}/lib/daal.jar
-
-Dataset=daal_nn
 Mem=110000
 Batch=50
 # num of mappers (nodes)
@@ -49,5 +46,5 @@ Node=2
 Thd=16
 
 echo "Test-daal-nn-$Dataset-N$Node-T$Thd-B$Batch Start" 
-hadoop jar harp-daal-app-1.0-SNAPSHOT.jar edu.iu.daal_nn.NNDaalLauncher -libjars ${LIBJARS}  /Hadoop/nn-input/$Dataset/train /Hadoop/nn-input/$Dataset/test /Hadoop/nn-input/$Dataset/groundTruth /nn/work $Mem $Batch $Node $Thd 2>$logDir/Test-daal-nn-$Dataset-N$Node-T$Thd-B$Batch.log 
+hadoop jar harp-daal-1.0-SNAPSHOT.jar edu.iu.daal_nn.NNDaalLauncher -libjars ${LIBJARS}  /Hadoop/nn-input/train /Hadoop/nn-input/test /Hadoop/nn-input/groundTruth /nn/work $Mem $Batch $Node $Thd 2>$logDir/Test-daal-nn-$Dataset-N$Node-T$Thd-B$Batch.log 
 echo "Test-daal-nn-$Dataset-N$Node-T$Thd-B$Batch End" 

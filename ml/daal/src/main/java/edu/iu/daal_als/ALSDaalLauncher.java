@@ -58,14 +58,13 @@ public class ALSDaalLauncher extends Configured
 
       DistributedCache.createSymlink(conf);
       DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libJavaAPI.so#libJavaAPI.so"), conf);
-
       DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbb.so.2#libtbb.so.2"), conf);
       DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbb.so#libtbb.so"), conf);
       DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbbmalloc.so.2#libtbbmalloc.so.2"), conf);
       DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbbmalloc.so#libtbbmalloc.so"), conf);
-      DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libiomp5.so#libiomp5.so"), conf);
-      DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libhdfs.so#libhdfs.so"), conf);
-      DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libhdfs.so.0.0.0#libhdfs.so.0.0.0"), conf);
+      // DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libiomp5.so#libiomp5.so"), conf);
+      // DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libhdfs.so#libhdfs.so"), conf);
+      // DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libhdfs.so.0.0.0#libhdfs.so.0.0.0"), conf);
 
       if (args.length < 11) {
       System.err

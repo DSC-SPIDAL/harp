@@ -18,17 +18,4 @@
         <main.basedir>${project.parent.parent.basedir}</main.basedir>
     </properties>
 
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <configuration>
-                    <outputDirectory>${project.parent.parent.basedir}/distribution/</outputDirectory>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
-
-
 </project>
