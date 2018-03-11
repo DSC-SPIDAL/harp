@@ -18,7 +18,9 @@ Harp Resources outside this documentation:
 
 * [B. Zhang, J. Qiu. High Performance Clustering of Social Images in a Map-Collective Programming Model](http://cgl.soic.indiana.edu/publications/116-zhang.pdf) (Poster in SoCC, 2013)
 
+* [Lei Jiang, Langshi Chen, Judy Qiu. Performance Characterization of Multi-threaded Graph Processing Applications on Many-Integrated-Core Architecture](http://ipcc.soic.iu.edu/ispass2018_Performance_Characterization_of_Multi_threaded_Graph_Processing_Applications_on_Many_Integrated_Core_Architecture.pdf) (IEEE International Symposium on Performance Analysis of Systems and Software, 2018)
 
+* [Bo Peng et. al. HarpLDA+: Optimizing Latent Dirichlet Allocation for Parallel Efficiency](http://ipcc.soic.iu.edu/Bigdata_Harp_LDA.pdf) (IEEE Big Data, 2017)
 
 ## Book & Book Chapter
 
