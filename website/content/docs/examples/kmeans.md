@@ -348,17 +348,17 @@ cd $HARP_ROOT_DIR
 mvn clean package -Phadoop-2.6.0
 ```
 
-Select the distribution folder related to your hadoop version. For ex:- hadoop-2.6.0
 ```bash
-cd $HARP_ROOT_DIR/distribution/hadoop-2.6.0/
-cp contrib-1.0-SNAPSHOT.jar $HADOOP_HOME
+cd $HARP_ROOT_DIR/contrib/target
+cp contrib-0.1.0.jar $HADOOP_HOME
 cd $HADOOP_HOME
 ```
 
 ## USAGE
 Run Harp K-Means:
 ```bash
-hadoop jar contrib-1.0-SNAPSHOT.jar edu.iu.kmeans.common.KmeansMapCollective <numOfDataPoints> <num of Centroids> <size of vector> <number of map tasks> <number of iteration> <workDir> <localDir> <communication operation>
+hadoop jar contrib-0.1.0.jar edu.iu.kmeans.common.KmeansMapCollective <numOfDataPoints> <num of Centroids> <size of 
+vector> <number of map tasks> <number of iteration> <workDir> <localDir> <communication operation>
 
    <numOfDataPoints>: the number of data points you want to generate randomly
    <num of centriods>: the number of centroids you want to clustering the data to
@@ -377,7 +377,7 @@ hadoop jar contrib-1.0-SNAPSHOT.jar edu.iu.kmeans.common.KmeansMapCollective <nu
 For example:
 
 ```bash
-hadoop jar contrib-1.0-SNAPSHOT.jar edu.iu.kmeans.common.KmeansMapCollective 1000 10 10 2 10 /kmeans /tmp/kmeans allreduce
+hadoop jar contrib-0.1.0.jar edu.iu.kmeans.common.KmeansMapCollective 1000 10 10 2 10 /kmeans /tmp/kmeans allreduce
 ```
 
 Fetch the results:

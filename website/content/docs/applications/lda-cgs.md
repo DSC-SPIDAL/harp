@@ -53,5 +53,6 @@ doc2   545 1939 206863 773279 773279
 
 ## Usage
 ```bash
-hadoop jar harp-java-1.0-SNAPSHOT.jar  edu.iu.lda.LDALauncher <doc dir> <num of topics> <alpha> <beta> <num of iterations> <num of map tasks> <num of threads per worker> <timer> <num of model slices> <enable timer tuning> <work dir> <print model>
+hadoop jar harp-java-0.1.0.jar  edu.iu.lda.LDALauncher <doc dir> <num of topics> <alpha> <beta> <num of iterations> 
+<num of map tasks> <num of threads per worker> <timer> <num of model slices> <enable timer tuning> <work dir> <print model>
 ```

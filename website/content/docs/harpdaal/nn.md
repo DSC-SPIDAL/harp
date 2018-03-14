@@ -181,13 +181,12 @@ Run the `harp-daal-nn-run.sh` script here to run the code.
 cd $HARP_ROOT/ml/daal
 ./harp-daal-nn.sh  
 ```
-Details of the script can be seen below: Select the distribution folder related to your hadoop version. For ex:- 
-hadoop-2.6.0
+Details of the script can be seen below: 
 ```shell
 #!/bin/bash
 
 # enter the directory of hadoop and copy your_harp_daal.jar file here
-cp $HARP_ROOT_DIR/distribution/hadoop-2.6.0/harp-daal-1.0-SNAPSHOT.jar ${HADOOP_HOME}
+cp $HARP_ROOT_DIR/ml/daal/target/harp-daal-0.1.0.jar ${HADOOP_HOME}
 # set up daal environment
 #source ./__release_tango_lnx/daal/bin/daalvars.sh intel64
 echo "${DAALROOT}"
@@ -229,5 +228,5 @@ Node=2
 # num of threads on each mapper(node)
 Thd=64
 
-hadoop jar harp-daal-1.0-SNAPSHOT.jar edu.iu.daal_nn.NNDaalLauncher -libjars ${LIBJARS}  /nn/input /nn/work $Node $Thd 
+hadoop jar harp-daal-0.1.0.jar edu.iu.daal_nn.NNDaalLauncher -libjars ${LIBJARS}  /nn/input /nn/work $Node $Thd 
 ```

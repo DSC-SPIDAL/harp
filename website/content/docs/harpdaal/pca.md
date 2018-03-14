@@ -152,7 +152,8 @@ cd $HARP_ROOT_DIR/ml/daal
 To edit the location of the data set file location edit the following line in the  shell script file
 
 ```shell
-hadoop jar harp-daal-1.0-SNAPSHOT.jar edu.iu.daal_pca.PCADaalLauncher -libjars ${LIBJARS} $Pts $Dim $File $Node $Thd $Mem /pca-P$Pts-D$Dim-N$Node /tmp/pca $GenData
+hadoop jar harp-daal-0.1.0.jar edu.iu.daal_pca.PCADaalLauncher -libjars ${LIBJARS} $Pts $Dim $File $Node $Thd $Mem 
+/pca-P$Pts-D$Dim-N$Node /tmp/pca $GenData
 ```
 Where each variable is defined as below
 

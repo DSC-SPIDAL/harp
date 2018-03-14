@@ -7,7 +7,7 @@ and 2.9.0
 cd $HARP_ROOT_DIR
 mvn clean package -Phadoop-2.6.0
 cd $HARP_ROOT_DIR/contrib
-cp $HARP_ROOT_DIR/distribution/hadoop-2.6.0/contrib-1.0.SNAPSHOT.jar $HADOOP_HOME
+cp target/contrib-0.1.0.jar $HADOOP_HOME
 ```
 
 ####RUN EXAMPLE
