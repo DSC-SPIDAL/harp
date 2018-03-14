@@ -194,14 +194,13 @@ Details about setting up hadoop along with harp-daal on the cluster can be found
 
 #### Running the code
 Make sure that the code is placed in the `/harp/ml/daal` directory.
-Run the `harp-daal-naive-hsw.sh` script here to run the code. Select the distribution folder related to your hadoop 
-version. For ex:- hadoop-2.6.0
+Run the `harp-daal-naive-hsw.sh` script here to run the code.
 ```shell
 #!/bin/bash
 
 Arch=hsw
 
-cp $HARP_ROOT_DIR/distribution/hadoop-2.6.0/harp-daal-1.0-SNAPSHOT.jar ${HADOOP_HOME}
+cp $HARP_ROOT_DIR/ml/daal/target/harp-daal-0.1.0.jar ${HADOOP_HOME}
 
 source /N/u/lc37/Lib/DAAL2018_Beta/__release_lnx/daal/bin/daalvars.sh intel64
 echo "${DAALROOT}"
@@ -232,7 +231,8 @@ Node=2
 Thd=24
 
 echo "Test-$Arch-daal-naive-$Dataset-N$Node-T$Thd-B$Batch Start" 
-hadoop jar harp-daal-1.0-SNAPSHOT.jar edu.iu.daal_naive.NaiveDaalLauncher -libjars ${LIBJARS}  /Hadoop/naive-input/$Dataset/train /Hadoop/naive-input/$Dataset/test /Hadoop/naive-input/$Dataset/groundTruth /naive/work $Mem $Batch $Node $Thd 2>$logDir/Test-$Arch-daal-naive-$Dataset-N$Node-T$Thd-B$Batch.log 
+hadoop jar harp-daal-0.1.0.jar edu.iu.daal_naive.NaiveDaalLauncher -libjars ${LIBJARS}  
+/Hadoop/naive-input/$Dataset/train /Hadoop/naive-input/$Dataset/test /Hadoop/naive-input/$Dataset/groundTruth /naive/work $Mem $Batch $Node $Thd 2>$logDir/Test-$Arch-daal-naive-$Dataset-N$Node-T$Thd-B$Batch.log 
 echo "Test-$Arch-daal-naive-$Dataset-N$Node-T$Thd-B$Batch End" 
 ```
 

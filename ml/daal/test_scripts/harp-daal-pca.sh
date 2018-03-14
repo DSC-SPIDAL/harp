@@ -10,7 +10,7 @@ if [ -z ${HADOOP_HOME+x} ];then
     exit
 fi
 
-cp ${HARP_ROOT}/ml/daal/target/harp-daal-1.0-SNAPSHOT.jar ${HADOOP_HOME}
+cp ${HARP_ROOT}/ml/daal/target/harp-daal-0.1.0.jar ${HADOOP_HOME}
 cd ${HADOOP_HOME}
 
 # check that safemode is not enabled 
@@ -51,5 +51,5 @@ Node=2
 Thd=16
 
 echo "Test-daal-pca-P$Pts-D$Dim-F$File-N$Node-T$Thd Start" 
-hadoop jar harp-daal-1.0-SNAPSHOT.jar edu.iu.daal_pca.PCADaalLauncher -libjars ${LIBJARS} $Pts $Dim $File $Node $Thd $Mem /Hadoop/pca-input/Pca-P$Pts-D$Dim-F$File-N$Node /tmp/PCA $GenData 2>$logDir/Test-daal-pca-P$Pts-D$Dim-F$File-N$Node-T$Thd.log
+hadoop jar harp-daal-0.1.0.jar edu.iu.daal_pca.PCADaalLauncher -libjars ${LIBJARS} $Pts $Dim $File $Node $Thd $Mem /Hadoop/pca-input/Pca-P$Pts-D$Dim-F$File-N$Node /tmp/PCA $GenData 2>$logDir/Test-daal-pca-P$Pts-D$Dim-F$File-N$Node-T$Thd.log
 echo "Test-daal-pca-P$Pts-D$Dim-F$File-N$Node-T$Thd End" 

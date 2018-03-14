@@ -19,18 +19,16 @@ set -e
 
 #set environment variables
 export HARP_ROOT_DIR=$(git rev-parse --show-toplevel)
-export HARP_HOME=$HARP_ROOT_DIR/core/
+export HARP_HOME=$HARP_ROOT_DIR/core
 
 
 #Setting local classpath.
-HARP_CLASSPATH=$HARP_HOME/harp-collective/scripts
+HARP_CLASSPATH=$HARP_HOME/scripts
 for i in ${HARP_ROOT_DIR}/third_party/*.jar;
   do HARP_CLASSPATH=$i:${HARP_CLASSPATH}
 done
 
-# TODO: Test the change in path
-# Select the distribution folder that is related to your hadoop version, For ex: 2.6.0
-for i in $HARP_ROOT_DIR/distribution/hadoop-2.6.0/harp-*.jar;
+for i in $HARP_HOME/**/target/harp-*.jar;
   do HARP_CLASSPATH=$i:${HARP_CLASSPATH}
 done
 

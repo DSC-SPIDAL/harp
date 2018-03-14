@@ -21,7 +21,7 @@ else
 	echo "${DAALROOT}"
 fi
 
-cp ${HARP_ROOT}/experimental/target/experimental-1.0-SNAPSHOT.jar ${HADOOP_HOME}
+cp ${HARP_ROOT}/experimental/target/experimental-0.1.0.jar ${HADOOP_HOME}
 cd ${HADOOP_HOME}
 
 hdfs dfsadmin -safemode get | grep -q "ON"
@@ -71,7 +71,7 @@ hdfs dfs -mkdir -p /Hadoop/mfsgd-work
 hdfs dfs -rm -r /Hadoop/mfsgd-work/*                                                        
 
 echo "Test-daal-sgd-$Dataset-D$Dim-N$Node-T$Thd-ITR$Itr-Timer-$Tune Start" 
-hadoop jar experimental-1.0-SNAPSHOT.jar edu.iu.daal_sgd.SGDDaalLauncher -libjars ${LIBJARS} /Hadoop/mfsgd-input/$Dataset $Dim $Lambda $Epsilon $Itr $Tune $Node $Thd $Mem /Hadoop/mfsgd-work /Hadoop/mfsgd-input/$Testset 2>$logDir/Test-daal-sgd-$Dataset-D$Dim-N$Node-T$Thd-ITR$Itr-Timer-$Tune.log
+hadoop jar experimental-0.1.0.jar edu.iu.daal_sgd.SGDDaalLauncher -libjars ${LIBJARS} /Hadoop/mfsgd-input/$Dataset $Dim $Lambda $Epsilon $Itr $Tune $Node $Thd $Mem /Hadoop/mfsgd-work /Hadoop/mfsgd-input/$Testset 2>$logDir/Test-daal-sgd-$Dataset-D$Dim-N$Node-T$Thd-ITR$Itr-Timer-$Tune.log
 echo "Test-daal-sgd-$Dataset-D$Dim-N$Node-T$Thd-ITR$Itr-Timer-$Tune End" 
 
 

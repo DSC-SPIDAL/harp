@@ -116,10 +116,10 @@ echo $HADOOP_HOME
 /usr/local/hadoop
 
 echo $HARP_JAR
-/usr/local/hadoop/harp-app-1.0-SNAPSHOT.jar
+/usr/local/hadoop/harp-app-0.1.0.jar
 
 echo $HARP_DAAL_JAR
-/usr/local/hadoop/harp-daal-app-1.0-SNAPSHOT.jar
+/usr/local/hadoop/harp-daal-app-0.1.0.jar
 
 echo $DAALROOT
 /harp/harp-daal-app/__release__lnx/daal
@@ -131,8 +131,8 @@ echo $PYTHONPATH
 If the script fails to complete these steps, users could manually set them 
 ```bash
 export HADOOP_HOME=<path to hadoop home folder>
-export HARP_JAR=<path to>/harp-app-1.0-SNAPSHOT.jar
-export HARP_DAAL_JAR=<path to>/harp-daal-app-1.0-SNAPSHOT.jar
+export HARP_JAR=<path to>/harp-app-0.1.0.jar
+export HARP_DAAL_JAR=<path to>/harp-daal-app-0.1.0.jar
 export DAALROOT=<path to your compiled daal folder>
 export PYTHONPATH=<path to>/harp-daal-python
 ```

@@ -311,12 +311,10 @@ These instructions have only been tested on:
     ```
 
 7. Install harp plugin to hadoop as demonstrated below. 
-
-    Select the distribution folder related to your hadoop version. For ex:- hadoop-2.6.0
-    
+   
     ```bash
-    $ cp distribution/hadoop-2.6.0/harp-collective-1.0-SNAPSHOT.jar $HADOOP_HOME/share/hadoop/mapreduce/
-    $ cp distribution/hadoop-2.6.0/harp-hadoop-1.0-SNAPSHOT.jar $HADOOP_HOME/share/hadoop/mapreduce/
+    $ cp core/harp-collective/target/harp-collective-0.1.0.jar $HADOOP_HOME/share/hadoop/mapreduce/
+    $ cp core/harp-hadoop/target/harp-hadoop-0.1.0.jar $HADOOP_HOME/share/hadoop/mapreduce/
     $ cp third_party/fastutil-7.0.13.jar $HADOOP_HOME/share/hadoop/mapreduce/
     ```
 
@@ -354,9 +352,9 @@ These instructions have only been tested on:
    You have to do this step in every node except the namenode.
    
 2. Copy harp examples to `$HADOOP_HOME` using the following code.
-   Select the distribution folder related to your hadoop version. For ex:- hadoop-2.6.0
+   
     ```bash
-    $ cp $HARP_ROOT_DIR/distribution/hadoop-2.6.0/harp-java-1.0-SNAPSHOT.jar $HADOOP_HOME
+    $ cp $HARP_ROOT_DIR/ml/java/target/harp-java-0.1.0.jar $HADOOP_HOME
     ```
 
 3. Start Hadoop. 
@@ -391,7 +389,8 @@ These instructions have only been tested on:
 7. Run Kmeans Map-collective job. Make sure you are in the `$HADOOP_HOME` folder. 
 The usage is:
     ```bash
-    $ hadoop jar harp-java-1.0-SNAPSHOT.jar edu.iu.kmeans.regroupallgather.KMeansLauncher <num of points> <num of centroids> <vector size> <num of point files per worker> <number of map tasks> <num threads> <number of iteration> <work dir> <local points dir>
+    $ hadoop jar harp-java-0.1.0.jar edu.iu.kmeans.regroupallgather.KMeansLauncher <num of points> <num of centroids> 
+    <vector size> <num of point files per worker> <number of map tasks> <num threads> <number of iteration> <work dir> <local points dir>
     ```
       * `<num of points>` --- the number of data points you want to generate randomly
       * `<num of centriods>` --- the number of centroids you want to clustering the data to
@@ -405,7 +404,8 @@ The usage is:
 
     For example:
     ```bash
-    $ hadoop jar harp-java-1.0-SNAPSHOT.jar edu.iu.kmeans.regroupallgather.KMeansLauncher 1000 10 100 5 2 2 10 /kmeans /tmp/kmeans
+    $ hadoop jar harp-java-0.1.0.jar edu.iu.kmeans.regroupallgather.KMeansLauncher 1000 10 100 5 2 2 10 /kmeans 
+    /tmp/kmeans
     ```
     
 8. To fetch the results, use the following command:

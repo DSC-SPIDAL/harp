@@ -28,7 +28,8 @@ The following commands and information are useful in understanding and writing H
 
 Easiest way to run the Harp-DAAL-SVD example is through the command line input shown below as an example (all together as one command)
 
-`hadoop jar harp-daal-1.0-SNAPSHOT.jar edu.iu.daal_svd.SVDDaalLauncher -libjars ${LIBJARS} 10000 20 1 2 64 185000 /svd-P$Pts-C$Ced-D$Dim-N$Node /tmp/svd true`
+`hadoop jar harp-daal-0.1.0.jar edu.iu.daal_svd.SVDDaalLauncher -libjars ${LIBJARS} 10000 20 1 2 64 185000 
+/svd-P$Pts-C$Ced-D$Dim-N$Node /tmp/svd true`
 
 ### Explanation of the arguments required by Harp-DAAL in the example input
 

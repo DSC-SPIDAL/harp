@@ -21,7 +21,7 @@ else
 	echo "${DAALROOT}"
 fi
 
-cp ${HARP_ROOT}/experimental/target/experimental-1.0-SNAPSHOT.jar ${HADOOP_HOME}
+cp ${HARP_ROOT}/experimental/target/experimental-0.1.0.jar ${HADOOP_HOME}
 cd ${HADOOP_HOME}
 
 # check that safemode is not enabled 
@@ -89,6 +89,6 @@ fi
 
 logName=Test-subgraph-N$Node-$template_name-$graph-Thd-$Thd-Core-$Core-$Affinity-Omp-$ompschedule-SendLimit-$SENDLIMIT-TaskLen-$NBRTASKLEN-Rotation-${ROTATION_PIP}-Itr-$ITR.log
 echo "Start Test harp-daal-subgraph Node: $Node template: $template_name graph: $graph Thd: $Thd Core: $Core Affinity: $Affinity TPC: $tpc SENDLIMIT: $SENDLIMIT NBRTASKLEN: $NBRTASKLEN Rotation $ROTATION_PIP Itr: $ITR Round: $round"
-hadoop jar experimental-1.0-SNAPSHOT.jar edu.iu.daal_subgraph.SCDaalLauncher -libjars ${LIBJARS} $Node $multiThd /Hadoop/subgraph-input/$template /Hadoop/subgraph-input/$graph /tmp/subgraph $Thd $Core $Affinity $ompschedule $tpc $Mem $memjavaratio $SENDLIMIT $NBRTASKLEN $ROTATION_PIP $ITR 2>$logDir/${logName}
+hadoop jar experimental-0.1.0.jar edu.iu.daal_subgraph.SCDaalLauncher -libjars ${LIBJARS} $Node $multiThd /Hadoop/subgraph-input/$template /Hadoop/subgraph-input/$graph /tmp/subgraph $Thd $Core $Affinity $ompschedule $tpc $Mem $memjavaratio $SENDLIMIT $NBRTASKLEN $ROTATION_PIP $ITR 2>$logDir/${logName}
 echo "Finish Test harp-daal-subgraph Node: $Node template: $template_name graph: $graph Thd: $Thd Core: $Core Affinity: $Affinity TPC: $tpc SENDLIMIT: $SENDLIMIT NBRTASKLEN: $NBRTASKLEN Rotation $ROTATION_PIP Itr: $ITR Round: $round"
 

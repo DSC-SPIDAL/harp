@@ -5,11 +5,10 @@
 #
 
 #get the startup directory
-hadoopversion=2.6.0
 startdir=$(dirname $0)
 harproot=$(readlink -m $startdir/../../)
 datadir=$harproot/datasets/tutorial/rcv1
-bin=$harproot/distribution/hadoop-$hadoopversion/contrib-1.0-SNAPSHOT.jar
+bin=$harproot/contrib/target/contrib-0.1.0.jar
 hdfsroot=/harp-test
 hdfsdatadir=$hdfsroot/rcv1/
 hdfsoutput=$hdfsroot/mlr/
@@ -55,7 +54,7 @@ if [ $? -ne 0 ]; then
 fi
 
 #run test
-#$ hadoop jar contrib-1.0-SNAPSHOT.jar edu.iu.mlr.MLRMapCollective [alpha] [number of iteration] [number of features] [number of workers] [number of threads] [topic file path] [qrel file path] [input path in HDFS] [output path in HDFS]
+#$ hadoop jar contrib-0.1.0.jar edu.iu.mlr.MLRMapCollective [alpha] [number of iteration] [number of features] [number of workers] [number of threads] [topic file path] [qrel file path] [input path in HDFS] [output path in HDFS]
 hadoop jar $bin edu.iu.mlr.MLRMapCollective 1.0 5 47236 2 16 $hdfsdatadir/rcv1.topics.txt $hdfsdatadir/rcv1-v2.topics.qrels $hdfsdatadir/data $hdfsoutput
 if [ $? -ne 0 ]; then
     echo "run mlr failure"

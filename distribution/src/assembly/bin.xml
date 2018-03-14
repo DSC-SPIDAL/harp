@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<assembly>
+    <id>harp-distribution</id>
+    <includeBaseDirectory>true</includeBaseDirectory>
+    <baseDirectory>harp-${version}</baseDirectory>
+
+    <formats>
+        <format>zip</format>
+    </formats>
+
+    <files>
+        <file>
+            <source>${main.basedir}/README.md</source>
+            <outputDirectory>/</outputDirectory>
+            <fileMode>644</fileMode>
+        </file>
+    </files>
+
+    <dependencySets>
+        <!--core libraries-->
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>core</outputDirectory>
+            <includes>
+                <include>edu.iu.harp:harp-collective:*</include>
+                <include>edu.iu.harp:harp-hadoop:*</include>
+                <include>edu.iu.harp:harp-daal-interface:*</include>
+            </includes>
+        </dependencySet>
+        <!--application kernels-->
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>ml</outputDirectory>
+            <includes>
+                <include>edu.iu.harp:harp-daal:*</include>
+                <include>edu.iu.harp:harp-java:*</include>
+            </includes>
+        </dependencySet>
+        <!--contrib-->
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <includes>
+                <include>edu.iu.harp:contrib:*</include>
+                <include>edu.iu.harp:experimental:*</include>
+            </includes>
+            <outputDirectory></outputDirectory>
+        </dependencySet>
+    </dependencySets>
+</assembly>

@@ -10,7 +10,7 @@ if [ -z ${HADOOP_HOME+x} ];then
     exit
 fi
 
-cp ${HARP_ROOT}/ml/daal/target/harp-daal-1.0-SNAPSHOT.jar ${HADOOP_HOME}
+cp ${HARP_ROOT}/ml/daal/target/harp-daal-0.1.0.jar ${HADOOP_HOME}
 
 cd ${HADOOP_HOME}
 
@@ -60,7 +60,7 @@ hdfs dfs -mkdir -p /Hadoop/als-work
 hdfs dfs -rm -r /Hadoop/als-work/*
 
 echo "Test-daal-als-$Dataset-D$Dim-N$Node-T$Thd-ITR$Itr-Timer-$Tune Start" 
-bin/hadoop jar harp-daal-1.0-SNAPSHOT.jar edu.iu.daal_als.ALSDaalLauncher -libjars ${LIBJARS} /Hadoop/als-input/$Dataset $Dim $Lambda $Epsilon $Itr $Tune $Node $Thd $Mem /Hadoop/als-work /Hadoop/als-input/$Testset 2>$logDir/Test-daal-als-$Dataset-D$Dim-N$Node-T$Thd-ITR$Itr-Timer-$Tune.log 
+bin/hadoop jar harp-daal-0.1.0.jar edu.iu.daal_als.ALSDaalLauncher -libjars ${LIBJARS} /Hadoop/als-input/$Dataset $Dim $Lambda $Epsilon $Itr $Tune $Node $Thd $Mem /Hadoop/als-work /Hadoop/als-input/$Testset 2>$logDir/Test-daal-als-$Dataset-D$Dim-N$Node-T$Thd-ITR$Itr-Timer-$Tune.log
 echo "Test-daal-als-$Dataset-D$Dim-N$Node-T$Thd-ITR$Itr-Timer-$Tune End" 
 
 

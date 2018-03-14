@@ -7,13 +7,14 @@
 	<groupId>edu.iu.harp</groupId>
 	<artifactId>harp</artifactId>
 	<packaging>pom</packaging>
-	<version>1.0-SNAPSHOT</version>
+	<version>0.1.0</version>
 
 	<modules>
 		<module>core</module>
 		<module>ml</module>
 		<module>contrib</module>
-		<module>experimental</module>
+		<module>distribution</module>
+		<!--module>experimental</module-->
 	</modules>
 
 	<properties>
@@ -22,7 +23,6 @@
 
 	<dependencyManagement>
 		<dependencies>
-
 			<dependency>
 				<groupId>org.apache.hadoop</groupId>
 				<artifactId>hadoop-annotations</artifactId>
@@ -83,7 +83,6 @@
 				<version>1.2.17</version>
 			</dependency>
 
-
 			<dependency>
 				<groupId>commons-io</groupId>
 				<artifactId>commons-io</artifactId>
@@ -107,7 +106,6 @@
 				<artifactId>junit</artifactId>
 				<version>4.12</version>
 			</dependency>
-
 		</dependencies>
 	</dependencyManagement>
 
@@ -120,6 +118,19 @@
 				<configuration>
 					<source>1.8</source>
 					<target>1.8</target>
+				</configuration>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>3.0.0</version>
+				<configuration>
+					<archive>
+						<manifest>
+							<addClasspath>true</addClasspath>
+						</manifest>
+					</archive>
 				</configuration>
 			</plugin>
 		</plugins>
