@@ -19,7 +19,11 @@ These instructions have only been tested on:
 
 4. ssh
 
-## Step 1 --- Install Hadoop 2.6.0
+**Select the Hadoop distribution of your choice. Supported Hadoop versions are 2.6.0, 2.7.5 and 2.9.0.**  
+
+## Step 1 --- Install Hadoop 2.x.x
+
+**For example:- Hadoop 2.6.0**
 
 1. Download and extract the hadoop-2.6.0 binary into your machine. It's available at [hadoop-2.6.0.tar.gz](https://archive.apache.org/dist/hadoop/core/hadoop-2.6.0/hadoop-2.6.0.tar.gz).
 
