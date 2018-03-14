@@ -10,7 +10,7 @@ if [ -z ${HADOOP_HOME+x} ];then
     exit
 fi
 
-cp ${HARP_ROOT}/ml/daal/target/harp-daal-1.0-SNAPSHOT.jar ${HADOOP_HOME}
+cp ${HARP_ROOT}/ml/daal/target/harp-daal-0.1.0.jar ${HADOOP_HOME}
 cd ${HADOOP_HOME}
 
 hdfs dfsadmin -safemode get | grep -q "ON"
@@ -46,5 +46,5 @@ Node=2
 Thd=16
 
 echo "Test-daal-mom-$Dataset-N$Node-T$Thd Start" 
-hadoop jar harp-daal-1.0-SNAPSHOT.jar edu.iu.daal_mom.MOMDaalLauncher -libjars ${LIBJARS}  /Hadoop/mom-input/$Dataset /mom/work $Mem $Node $Thd 2>$logDir/Test-daal-mom-$Dataset-N$Node-T$Thd.log 
+hadoop jar harp-daal-0.1.0.jar edu.iu.daal_mom.MOMDaalLauncher -libjars ${LIBJARS}  /Hadoop/mom-input/$Dataset /mom/work $Mem $Node $Thd 2>$logDir/Test-daal-mom-$Dataset-N$Node-T$Thd.log
 echo "Test-daal-mom-$Dataset-N$Node-T$Thd End" 

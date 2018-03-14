@@ -10,7 +10,7 @@ if [ -z ${HADOOP_HOME+x} ];then
     exit
 fi
 
-cp ${HARP_ROOT}/ml/daal/target/harp-daal-1.0-SNAPSHOT.jar ${HADOOP_HOME}
+cp ${HARP_ROOT}/ml/daal/target/harp-daal-0.1.0.jar ${HADOOP_HOME}
 
 cd ${HADOOP_HOME}
 
@@ -50,5 +50,5 @@ hdfs dfs -mkdir -p /Hadoop/cov-work
 hdfs dfs -rm -r /Hadoop/cov-work/*
 
 echo "Test-daal-cov-$Dataset-N$Node-T$Thd Start" 
-hadoop jar harp-daal-1.0-SNAPSHOT.jar edu.iu.daal_cov.COVDaalLauncher -libjars ${LIBJARS}  /Hadoop/cov-input/$Dataset  /Hadoop/cov-work $Mem $Node $Thd 2>$logDir/Test-daal-cov-$Dataset-N$Node-T$Thd.log 
+hadoop jar harp-daal-0.1.0.jar edu.iu.daal_cov.COVDaalLauncher -libjars ${LIBJARS}  /Hadoop/cov-input/$Dataset  /Hadoop/cov-work $Mem $Node $Thd 2>$logDir/Test-daal-cov-$Dataset-N$Node-T$Thd.log
 echo "Test-daal-cov-$Dataset-N$Node-T$Thd End" 

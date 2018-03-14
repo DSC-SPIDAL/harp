@@ -73,9 +73,9 @@ The MNIST dataset is used in this tutorial. Refer the [dataset script](https://g
 
 ## USAGE
 ```bash
-$ hadoop jar contrib-1.0-SNAPSHOT.jar edu.iu.NN.NNMapCollective
+$ hadoop jar contrib-0.1.0.jar edu.iu.NN.NNMapCollective
 Usage: NNMapCollective <number of map tasks> <epochs> <syncIterNum> <hiddenLayers> <minibatchsize> <lambda> <workDir>
-# hadoop jar contrib-1.0-SNAPSHOT.jar edu.iu.NN.NNMapCollective 2 20 5 100,32 2000 0 /nn
+# hadoop jar contrib-0.1.0.jar edu.iu.NN.NNMapCollective 2 20 5 100,32 2000 0 /nn
 ```
 
 This command run harp neuralnetwork training on the input dataset under /nn, with 2 mappers. Training process goes through 20 times of the training dataset, averages the model every 5 iteration for each minibatch. The minibatch size is 2000, lambda is default value 0.689. There are 2 hidden layers, with 100 and 32 nodes each. Finally, it outputs the accuracy on the training set into the hadoop log.

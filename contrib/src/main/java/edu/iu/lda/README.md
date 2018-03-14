@@ -23,7 +23,7 @@ Select the profile related to your hadoop version. For ex: hadoop-2.6.0. Support
 ```bash
 cd $HARP_ROOT_DIR
 mvn clean package -Phadoop-2.6.0
-cp $HARP_ROOT_DIR/distribution/hadoop-2.6.0/contrib-1.0.SNAPSHOT.jar $HADOOP_HOME
+cp contrib/target/contrib-0.1.0.jar $HADOOP_HOME
 cp $HARP_ROOT_DIR/third_parity/cloud9-1.4.17.jar $HADOOP_HOME/share/hadoop/mapreduce
 ```
 

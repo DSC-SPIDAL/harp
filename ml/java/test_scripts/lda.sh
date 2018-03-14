@@ -5,11 +5,10 @@
 #
 
 #get the startup directory
-hadoopversion=2.6.0
 startdir=$(dirname $0)
 harproot=$(readlink -m $startdir/../../../)
 datadir=$harproot/datasets/tutorial/nytimes-30k
-bin=$harproot/distribution/hadoop-$hadoopversion/harp-java-1.0-SNAPSHOT.jar
+bin=$harproot/ml/java/target/harp-java-0.1.0.jar
 hdfsroot=/harp-test
 hdfsdatadir=$hdfsroot/nytimes-30k/
 hdfsoutput=$hdfsroot/lda/

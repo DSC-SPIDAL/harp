@@ -191,8 +191,7 @@ Details about setting up hadoop along with harp-daal on the cluster can be found
 #### Running the code
 
 Make sure that the code is placed in the `/harp/ml/daal` directory. 
-Run the `harp-daal-qr-hsw.sh` script here to run the code. Select the distribution folder related to your hadoop version.
-For ex:- hadoop-2.6.0
+Run the `harp-daal-qr-hsw.sh` script here to run the code.
 
 ```bash
 cd $HARP_ROOT/ml/daal/test_scripts
@@ -205,7 +204,7 @@ Details of script -
 
 Arch=hsw
 
-cp $HARP_ROOT_DIR/distribution/hadoop-2.6.0/harp-daal-1.0-SNAPSHOT.jar ${HADOOP_HOME}
+cp $HARP_ROOT_DIR/ml/daal/target/harp-daal-0.1.0.jar ${HADOOP_HOME}
 
 source /N/u/lc37/Lib/DAAL2018_Beta/__release_lnx/daal/bin/daalvars.sh intel64
 echo "${DAALROOT}"
@@ -237,6 +236,7 @@ Node=2
 Thd=8
 
 echo "Test-$Arch-daal-qr-$Dataset-N$Node-T$Thd Start" 
-hadoop jar harp-daal-1.0-SNAPSHOT.jar edu.iu.daal_qr.QRDaalLauncher -libjars ${LIBJARS}  /Hadoop/qr-input/$Dataset /qr/work $Mem $Node $Thd 2>$logDir/Test-$Arch-daal-qr-$Dataset-N$Node-T$Thd.log 
+hadoop jar harp-daal-0.1.0.jar edu.iu.daal_qr.QRDaalLauncher -libjars ${LIBJARS}  /Hadoop/qr-input/$Dataset /qr/work 
+$Mem $Node $Thd 2>$logDir/Test-$Arch-daal-qr-$Dataset-N$Node-T$Thd.log 
 echo "Test-$Arch-daal-qr-$Dataset-N$Node-T$Thd End" 
 ```

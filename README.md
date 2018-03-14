@@ -22,25 +22,6 @@ examples.
 
 ## Installation of Harp 
 
-### Install from Distribution 
-
-Harp provides pre-compiled JAR files with different Hadoop version: 2.6.0, 2.7.5, and 2.9.0 at the following path
-```bash
-cd harp/distribution
-```
-
-copy them to the home directory of Hadoop installation
-```bash
-## the core modules 
-cp hadoop-x.x.x/harp-hadoop-1.0-SNAPSHOT.jar $HADOOP_HOME/share/hadoop/mapreduce/ 
-cp harp-collective-1.0-SNAPSHOT.jar $HADOOP_HOME/share/hadoop/mapreduce/
-cp hadoop-x.x.x/harp-daal-interface-1.0-SNAPSHOT.jar $HADOOP_HOME/share/hadoop/mapreduce/ 
-## the applications modules 
-cp hadoop-x.x.x/harp-java-1.0-SNAPSHOT.jar $HADOOP_HOME/
-cp hadoop-x.x.x/harp-daal-1.0-SNAPSHOT.jar $HADOOP_HOME/
-cp hadoop-x.x.x/contrib-1.0-SNAPSHOT.jar $HADOOP_HOME/
-```
-
 ### Install from Source Code
 
 1. Install Maven by following the [maven official instruction](http://maven.apache.org/install.html)
@@ -54,17 +35,17 @@ mvn clean package -Phadoop-x.x.x
 ```bash
 cd harp/
 ## the core modules 
-cp core/harp-hadoop/target/harp-hadoop-1.0-SNAPSHOT.jar $HADOOP_HOME/share/hadoop/mapreduce/
-cp core/harp-collective/target/harp-collective-1.0-SNAPSHOT.jar $HADOOP_HOME/share/hadoop/mapreduce/
-cp core/harp-daal-interface/target/harp-daal-interface-1.0-SNAPSHOT.jar $HADOOP_HOME/share/hadoop/mapreduce/
+cp core/harp-hadoop/target/harp-hadoop-0.1.0.jar $HADOOP_HOME/share/hadoop/mapreduce/
+cp core/harp-collective/target/harp-collective-0.1.0.jar $HADOOP_HOME/share/hadoop/mapreduce/
+cp core/harp-daal-interface/target/harp-daal-interface-0.1.0.jar $HADOOP_HOME/share/hadoop/mapreduce/
 ## the applications modules 
-cp ml/java/target/harp-java-1.0-SNAPSHOT.jar $HADOOP_HOME/
-cp ml/daal/target/harp-daal-1.0-SNAPSHOT.jar $HADOOP_HOME/
-cp contrib/target/contrib-1.0-SNAPSHOT.jar $HADOOP_HOME/ 
-cp experimental/target/experimental-1.0-SNAPSHOT.jar $HADOOP_HOME/
+cp ml/java/target/harp-java-0.1.0.jar $HADOOP_HOME/
+cp ml/daal/target/harp-daal-0.1.0.jar $HADOOP_HOME/
+cp contrib/target/contrib-0.1.0.jar $HADOOP_HOME/ 
+cp experimental/target/experimental-0.1.0.jar $HADOOP_HOME/
 ```
 
-Here the *experimental-1.0-SNAPSHOT.jar* could only be installed from our source codes and not yet included in the distribution folder
+Here the *experimental-0.1.0.jar* could only be installed from our source codes.
 
 ## Enable third party dependencies
 
@@ -116,7 +97,7 @@ The experimental codes have only been tested on Linux 64 bit platforme with Inte
 
 ## Run example of K-means
 
-Make sure that harp-java-1.0-SNAPSHOT.jar has been copied to $HADOOP_HOME.
+Make sure that harp-java-0.1.0.jar has been copied to $HADOOP_HOME.
 Start the Hadoop service
 ```bash
 cd $HADOOP_HOME
@@ -126,13 +107,13 @@ sbin/start-yarn.sh
 
 The usage of K-means is 
 ```bash
-hadoop jar harp-java-1.0-SNAPSHOT.jar edu.iu.kmeans.regroupallgather.KMeansLauncher
+hadoop jar harp-java-0.1.0.jar edu.iu.kmeans.regroupallgather.KMeansLauncher
   <num of points> <num of centroids> <vector size> <num of point files per worker>
   <number of map tasks> <num threads> <number of iteration> <work dir> <local points dir>
 ```
 
 For example:
 ```bash
-hadoop jar harp-app-1.0-SNAPSHOT.jar edu.iu.kmeans.regroupallgather.KMeansLauncher 1000 10 100 5 2 2 10 /kmeans /tmp/kmeans
+hadoop jar harp-app-0.1.0.jar edu.iu.kmeans.regroupallgather.KMeansLauncher 1000 10 100 5 2 2 10 /kmeans /tmp/kmeans
 ```
 

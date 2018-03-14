@@ -196,13 +196,14 @@ The daal.jar file contains the Java APIs provided by DAAL to its native kernels
 cd harp/
 mvn clean package -Phadoop-2.6.0
 ```
-The generated harp-daal-interface and harp-daal jars are at harp/distribution/hadoop-2.6.0/ folder. 
+The generated harp-daal-interface jar is at ```$HARP_ROOT_DIR/core/harp-daal-interface/target``` folder and the 
+harp-daal jar is at ```$HARP_ROOT_DIR/ml/daal/target/``` folder. 
 
 4. Run harp-daal frome NameNode of the launched Hadoop daemons 
 ```bash
 # copy harp-daal jar file to Hadoop directory
-cp $HARP_ROOT_DIR/distribution/hadoop-2.6.0/harp-daal-interface-1.0-SNAPSHOT.jar ${HADOOP_HOME}/share/hadoop/mapreduce
-cp $HARP_ROOT_DIR/distribution/hadoop-2.6.0/harp-daal-1.0-SNAPSHOT.jar ${HADOOP_HOME}
+cp $HARP_ROOT_DIR/core/harp-daal-interface/target/harp-daal-interface-0.1.0.jar ${HADOOP_HOME}/share/hadoop/mapreduce
+cp $HARP_ROOT_DIR/ml/daal/target/harp-daal-0.1.0.jar ${HADOOP_HOME}
 # enter hadoop home directory
 cd ${HADOOP_HOME}
 # put daal and tbb, omp libs to hdfs, they will be loaded into the distributed cache of 
@@ -215,7 +216,8 @@ hdfs dfs -put ${DAALROOT}/../../daal-misc/lib/libiomp5.so /Hadoop/Libraries/
 # set up path to the DAAL Java APIs lib
 export LIBJARS=${DAALROOT}/lib/daal.jar
 # launch mappers, e.g., harp-daal-als 
-bin/hadoop jar harp-daal-1.0-SNAPSHOT.jar edu.iu.daal_als.ALSDaalLauncher -libjars ${LIBJARS} /Hadoop/sgd-input/yahoomusic-train 100 1 0.0001 10 false 2 24 110000 /Hadoop/als-work /Hadoop/sgd-input/yahoomusic-test
+bin/hadoop jar harp-daal-0.1.0.jar edu.iu.daal_als.ALSDaalLauncher -libjars ${LIBJARS} 
+/Hadoop/sgd-input/yahoomusic-train 100 1 0.0001 10 false 2 24 110000 /Hadoop/als-work /Hadoop/sgd-input/yahoomusic-test
 ```
 command line arguments vary from app to app, please refer to the src of harp-daal
 there is also a test_scripts directory under /ml/daal/, which contains example scripts to run each harp-daal 

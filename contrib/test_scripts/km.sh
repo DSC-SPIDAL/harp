@@ -5,10 +5,9 @@
 #
 
 #get the startup directory
-hadoopversion=2.6.0
 startdir=$(dirname $0)
 harproot=$(readlink -m $startdir/../../)
-bin=$harproot/distribution/hadoop-$hadoopversion/contrib-1.0-SNAPSHOT.jar
+bin=$harproot/contrib/target/contrib-0.1.0.jar
 hdfsroot=/harp-test
 hdfsdatadir=$hdfsroot/km-syn/
 hdfsoutput=$hdfsroot/km/
