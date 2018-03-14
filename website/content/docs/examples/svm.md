@@ -162,7 +162,7 @@ for (String line : svString) {
 ## USAGE
 Run Harp SVM:
 ```bash
-$ hadoop jar build/harp3-app-hadoop-2.6.0.jar edu.iu.svm.IterativeSVM <number of mappers> <number of iteration> <output path in HDFS> <data set path>
+$ hadoop jar contrib-0.1.0.jar edu.iu.svm.IterativeSVM <number of mappers> <number of iteration> <output path in HDFS> <data set path>
 ```
 Fetch the result:
 ```bash
