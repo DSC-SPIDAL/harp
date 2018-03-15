@@ -586,6 +586,16 @@ from the appropriate folder specified in core-site.xml specified during the Harp
 &lt;p&gt;Log files are contained in latest application-xxxxx-xxx folder for the latest run and in
 container-xx-xx folder inside it. The log files are distributed across different datanodes, to check each of them you have to visit different datanodes and repeat the process described
 above.&lt;/p&gt;
+
+&lt;h2 id=&#34;running-the-codes&#34;&gt;Running the codes&lt;/h2&gt;
+
+&lt;p&gt;Make sure that the code is placed in the &lt;code&gt;/harp/ml/daal&lt;/code&gt; directory.
+Run the &lt;code&gt;harp-daal-svd.sh&lt;/code&gt; script here to run the code.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;cd&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;$HARP_ROOT&lt;/span&gt;/ml/daal
+./test_scripts/harp-daal-svd.sh
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;The details of script is &lt;a href=&#34;https://github.com/DSC-SPIDAL/harp/blob/master/ml/daal/test_scripts/harp-daal-svd.sh&#34;&gt;here&lt;/a&gt;&lt;/p&gt;
 </description>
     </item>
     

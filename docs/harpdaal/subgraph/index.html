@@ -1,0 +1,162 @@
+<!DOCTYPE html><html lang="en-us"><head><link rel="shortcut icon" type="image/png" sizes="16x16" href="https://dsc-spidal.github.io/harp/img/favicon-16x9.png"><link rel="shortcut icon" type="image/png" sizes="32x32" href="https://dsc-spidal.github.io/harp/img/favicon-32x18.png"><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="generator" content="Hugo 0.18" /><meta property="og:locale" content="en_US"><meta property="og:type" content="article"><meta property="og:title" content="harp"><meta property="og:image" content="/img/logo54x54.png"><meta property="og:url" content="https://dsc-spidal.github.io/harp/"><meta name="twitter:title" content="harp"><meta name="twitter:image" content="/img/0-1-1.png"><meta property="og:site_name" content="Harp-DAAL-Subgraph"><meta property="og:url" content="/docs/harpdaal/subgraph/"><meta property="og:description" content=""><meta name="twitter:description" content=""><title>harp Documentation - Harp-DAAL-Subgraph</title><link rel="stylesheet" href="https://dsc-spidal.github.io/harp/css/style.min.css"><link rel="stylesheet" href="https://dsc-spidal.github.io/harp/css/font-awesome.min.css"><link rel="stylesheet" href="https://dsc-spidal.github.io/harp/css/pygments.css"></head><body><nav class="hn-top-navbar navbar navbar-inverse navbar-fixed-top" role="navigation"><div class="hn-navbar-container container-fluid"><div class="navbar-header"><button class="navbar-toggle collapsed" type="button" data-toggle="collapse" data-target="#hn-navbar" aria-controls="hn-navbar" aria-expanded="false"><span class="sr-only"><Toggle>navigation</Toggle></span><i class="hn-toggle-button fa fa-bars"></i></button><a class="hn-navbar-logo navbar-brand" href="https://dsc-spidal.github.io/harp/"><img class="pull-left" src="https://dsc-spidal.github.io/harp/img/0-1-2.png" width="76%"></a></div><div id="hn-navbar" class="navbar-collapse collapse"><ul class="nav navbar-nav navbar-right"><li><a href="https://dsc-spidal.github.io/harp/docs/getting-started">Docs</a></li><li><a href="https://dsc-spidal.github.io/harp/api">API</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/resources">Resources</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/contributors/community">Community</a></li><li><a href="https://github.com/DSC-SPIDAL/harp/">GitHub</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/survey">Feedback</a></li><li><a href="https://groups.google.com/forum/#!forum/harp-users">Mailing List</a></li></ul></div></div></nav><div class="hn-main"><div class="container"><div class="row"><aside class="hn-sidebar hidden-xs col-sm-4 col-md-3 col-lg-2 collapse"><nav class="hn-sidebar-nav"><div id="hn-accordion" class="panel-group" role="tablist" aria-multiselectable="true"><div class="panel panel-default"><section id="quick-start" class="panel-heading" role="tab"><h4 class="panel-title"><a role="button" data-toggle="collapse" data-parent="#hn-accordion" href="#collapse-quick-start" aria-labelledby="quick-start"><i class="fa fa-caret-right"></i>Quick Start</a></h4></section><div id="collapse-quick-start" class="panel-collapse collapse" aria-labelledby="quick-start"><div class="panel-body"><ul><li><a href="https://dsc-spidal.github.io/harp/docs/getting-started">Harp Installation (single)</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/getting-started-cluster">Harp Installation (cluster)</a></li></ul></div></div></div><div class="panel panel-default"><section id="programming-guides" class="panel-heading" role="tab"><h4 class="panel-title"><a role="button" data-toggle="collapse" data-parent="#hn-accordion" href="#collapse-programming-guides" aria-labelledby="programming-guides"><i class="fa fa-caret-right"></i>Programming Guides</a></h4></section><div id="collapse-programming-guides" class="panel-collapse collapse" aria-labelledby="programming-guides"><div class="panel-body"><ul><li><a href="https://dsc-spidal.github.io/harp/docs/programming/overview">Overview</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/programming/data-interface">Data Interfaces and Types</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/programming/scheduler">Schedulers</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/programming/computation-models">Computation Models</a></li></ul></div></div></div><div class="panel panel-default"><section id="collective-communication" class="panel-heading" role="tab"><h4 class="panel-title"><a role="button" data-toggle="collapse" data-parent="#hn-accordion" href="#collapse-collective-communication" aria-labelledby="collective-communication"><i class="fa fa-caret-right"></i>Collective Communication</a></h4></section><div id="collapse-collective-communication" class="panel-collapse collapse" aria-labelledby="collective-communication"><div class="panel-body"><ul><li><a href="https://dsc-spidal.github.io/harp/docs/communications/broadcast">broadcast</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/communications/reduce">reduce</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/communications/allgather">allgather</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/communications/allreduce">allreduce</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/communications/regroup">regroup</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/communications/pushandpull">push &amp; pull</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/communications/rotate">rotate</a></li></ul></div></div></div><div class="panel panel-default"><section id="examples" class="panel-heading" role="tab"><h4 class="panel-title"><a role="button" data-toggle="collapse" data-parent="#hn-accordion" href="#collapse-examples" aria-labelledby="examples"><i class="fa fa-caret-right"></i>Examples</a></h4></section><div id="collapse-examples" class="panel-collapse collapse" aria-labelledby="examples"><div class="panel-body"><ul><li><a href="https://dsc-spidal.github.io/harp/docs/examples/overview">Overview</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/examples/kmeans">K-Means</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/examples/mlrsgd">Multiclass Logistic Regression</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/examples/lda">Latent Dirichlet Allocation (CVB)</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/examples/svm">Support Vector Machine</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/examples/rf">Random Forests</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/examples/nn">Neural Network</a></li></ul></div></div></div><div class="panel panel-default"><section id="applications" class="panel-heading" role="tab"><h4 class="panel-title"><a role="button" data-toggle="collapse" data-parent="#hn-accordion" href="#collapse-applications" aria-labelledby="applications"><i class="fa fa-caret-right"></i>Applications</a></h4></section><div id="collapse-applications" class="panel-collapse collapse" aria-labelledby="applications"><div class="panel-body"><ul><li><a href="https://dsc-spidal.github.io/harp/docs/applications/lda-cgs">Latent Dirichlet Allocation (CGS)</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/applications/mf">Matrix Factorization</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/applications/sahad">Sub-graph Counting</a></li></ul></div></div></div><div class="panel panel-default"><section id="harp-daal" class="panel-heading" role="tab"><h4 class="panel-title"><a role="button" data-toggle="collapse" data-parent="#hn-accordion" href="#collapse-harp-daal" aria-labelledby="harp-daal"><i class="fa fa-caret-right"></i>Harp-DAAL</a></h4></section><div id="collapse-harp-daal" class="panel-collapse collapse" aria-labelledby="harp-daal"><div class="panel-body"><ul><li><a href="https://dsc-spidal.github.io/harp/docs/harpdaal/harpdaal">Overview</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/harpdaal/kmeans">K-means</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/harpdaal/mfsgd">Matrix Factorization (SGD)</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/harpdaal/als">Recommender System (ALS)</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/harpdaal/svd">Singular Value Decomposition (SVD)</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/harpdaal/pca">Principal Component Analysis (PCA)</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/harpdaal/nn">Neural Network</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/harpdaal/qr">QR Decomposition (QR)</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/harpdaal/covariance">Covariance</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/harpdaal/moments">Low Order Moments</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/harpdaal/naive_bayes">Naive Bayes</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/harpdaal/linear_regression">Linear Regression</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/harpdaal/ridge_regression">Ridge Regression</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/harpdaal/subgraph">Subgraph Counting</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/harpdaal/handson">Hands-on</a></li></ul></div></div></div><div class="panel panel-default"><section id="harp-resources" class="panel-heading" role="tab"><h4 class="panel-title"><a role="button" data-toggle="collapse" data-parent="#hn-accordion" href="#collapse-harp-resources" aria-labelledby="harp-resources"><i class="fa fa-caret-right"></i>Harp Resources</a></h4></section><div id="collapse-harp-resources" class="panel-collapse collapse" aria-labelledby="harp-resources"><div class="panel-body"><ul><li><a href="https://dsc-spidal.github.io/harp/docs/resources">Harp Resources</a></li></ul></div></div></div><div class="panel panel-default"><section id="contributors" class="panel-heading" role="tab"><h4 class="panel-title"><a role="button" data-toggle="collapse" data-parent="#hn-accordion" href="#collapse-contributors" aria-labelledby="contributors"><i class="fa fa-caret-right"></i>Contributors</a></h4></section><div id="collapse-contributors" class="panel-collapse collapse" aria-labelledby="contributors"><div class="panel-body"><ul><li><a href="https://dsc-spidal.github.io/harp/docs/contributors/community">Community</a></li><li><a href="https://dsc-spidal.github.io/harp/docs/contributors/contributors">Contributors</a></li></ul></div></div></div><div class="panel panel-default"><section id="user-feedback" class="panel-heading" role="tab"><h4 class="panel-title"><a role="button" data-toggle="collapse" data-parent="#hn-accordion" href="#collapse-user-feedback" aria-labelledby="user-feedback"><i class="fa fa-caret-right"></i>User Feedback</a></h4></section><div id="collapse-user-feedback" class="panel-collapse collapse" aria-labelledby="user-feedback"><div class="panel-body"><ul><li><a href="https://dsc-spidal.github.io/harp/docs/survey">Online Survey</a></li></ul></div></div></div></div></nav></aside><section class="hn-docs-main col-sm-8 col-md-9 col-lg-10 col-sm-offset-4 col-md-offset-3 col-lg-offset-2"><header class="hn-docs-header page-header"><h1>Harp-DAAL-Subgraph</h1><div class="hn-docs-description"></div></header><article class="hn-docs-content">
+
+<p><img src="https://dsc-spidal.github.io/harp/img/sahad/subgraph-counting-illustration.png" width="50%"  ></p>
+
+<h2 id="overview">Overview</h2>
+
+<h3 id="what-is-sub-graph-counting">What is Sub-graph Counting?</h3>
+
+<p>Sub-graph counting goes under many names such as template matching or motif counting, but they all generally refer to counting the amount
+of a template T, that are present in a graph G. Refering to our illustration above, we may imagine that the template T (Here T is
+split on T&rsquo; and T&rdquo;) on the right could fit in graph G in a few ways right? Well we would like to quantify just how many times T can fit
+in G. Such general problem manifests itself in many domains such as genomics, design of electronic circuits, and social network analysis.</p>
+
+<h3 id="how-do-we-solve-this-problem">How do we solve this problem?</h3>
+
+<p>We use the Color-coding approximation formulated by (Alon et. al., 1995) which can be presented the following way:
+</br>
+1. Establish a group of k distinct colors, where k is the number of vertices in the template T
+</br>
+2. Randomly color each vertex of graph G with the k distinct colors
+</br>
+3. Count all colorful (meaning all vertices have a distinct color with no duplicates) copies of T in G rooted at every vertex v using
+    the following formula and diagram, where this is achieved by bottom-up dynamic programming. This means that we start by counting
+    the colorful copies of each one vertex tuple (this is trivial as they are all one distinct color), then we buid up to two vertex
+    tuples and use the counts of the previous one-tuple step where we have the notion of an active child p, and a passive child p&rsquo;.
+    Thus, we count all two-tuple embeddings where p is rooted at some vertex v in G, and p&rsquo; is its adjacent neighbor, then we multiply
+    their colorful combinations. We continue this process for 3-tuples by using the 2-tuple and 1-tuple counts, and finally we conclude
+    by finding the 5-tuple (final template count) by using the 3-tuple and 2-tuple counts. As a last counting step, we divide by d, where d is equal
+    to one plus the number of siblings of p&rsquo; which are roots of subtrees isomorphic to the subtemplate
+<img src="https://dsc-spidal.github.io/harp/img/sahad/t2pprime-illustration.png" width="5%">
+</br>
+<img src="https://dsc-spidal.github.io/harp/img/sahad/graph-template-illustration.png" width="50%">
+<img src="https://dsc-spidal.github.io/harp/img/sahad/color-counting-dynamic-prog-illustration.png" width="70%">
+</br>
+4. Sum up the template counts at all the vertices, then divide by q (which signifies the possibility of the template T being isomorphic to itself) as the following:
+</br>
+<img src="https://dsc-spidal.github.io/harp/img/sahad/sum-derandomization-illustration.png" width="20%">
+</br>
+5. Multiply the final sum N by the probability of any given template T to be colorful as the following:
+</br>
+<img src="https://dsc-spidal.github.io/harp/img/sahad/koverkk-illustration.png" width="8%">
+</br>
+6. If needed, repeat this process more times and average the count to obtain a more accurate measure (as this method yields an approximation)</p>
+
+<h2 id="implementation">Implementation</h2>
+
+<h3 id="node-level-communication">Node-level Communication</h3>
+
+<p>Harp-DAAL-Subgraph uses a unique Adaptive-Group Communication approach for its node-level (process) communication based upon the collective regroup
+operation provided by Harp,
+<img src="https://dsc-spidal.github.io/harp/img/harpdaal/harp-regroup-new.png" width="80%"  >
+and the classic &ldquo;AlltoAll&rdquo; communication pattern is decoupled to s steps, where each step conducts a partial collective communication among selected
+mappers following a user-defined order.
+<img src="https://dsc-spidal.github.io/harp/img/harpdaal/ring-order-example.png" width="80%"  >
+Because of this decoupling of communication, the communication is able to be interleaved by local computation in a pipeline design
+<img src="https://dsc-spidal.github.io/harp/img/harpdaal/pipeline-interleaving-new.png" width="80%"  ></p>
+
+<h3 id="single-node-load-balancing">Single-Node Load Balancing</h3>
+
+<p>At intra-node level, Harp-DAAL-Subgraph applies a neighbour list partitioning technique to the computation of counts for each vertex of input graph.
+This technique alleviates the ill load balancing problem due to the irregularity of data distribution of the input graph.</p>
+
+<h3 id="code-walk-through">Code Walk-Through</h3>
+
+<p>The code of harp-daal-subgraph is located at <a href="https://github.com/DSC-SPIDAL/harp/tree/master/experimental/src/main/java/edu/iu/daal_subgraph">here</a>.
+The body of implementation is within the SCDaalCollectiveMapper.java file that invokes the native DAAL kernels via Java API</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f92672">import</span> <span style="color: #f8f8f2">com.intel.daal.algorithms.subgraph.*</span><span style="color: #f92672">;</span>
+</pre></div>
+
+<p>It takes the following steps in <em>runSC</em> function to finish the whole counting task</p>
+
+<h4 id="read-in-data-from-hdfs">Read in Data from HDFS</h4>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f92672">...</span>
+<span style="color: #75715e">//  read in template data </span>
+<span style="color: #f8f8f2">HomogenNumericTable</span><span style="color: #f92672">[]</span> <span style="color: #f8f8f2">file_tables</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">load_data_names</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">vFilePaths</span><span style="color: #f92672">);</span>
+<span style="color: #f8f8f2">Distri</span> <span style="color: #f8f8f2">scAlgorithm</span> <span style="color: #f92672">=</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">Distri</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">daal_Context</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">Double</span><span style="color: #f92672">.</span><span style="color: #a6e22e">class</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">Method</span><span style="color: #f92672">.</span><span style="color: #a6e22e">defaultSC</span><span style="color: #f92672">);</span>
+<span style="color: #f8f8f2">scAlgorithm</span><span style="color: #f92672">.</span><span style="color: #a6e22e">input</span><span style="color: #f92672">.</span><span style="color: #a6e22e">set</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">InputId</span><span style="color: #f92672">.</span><span style="color: #a6e22e">filenames</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">file_tables</span><span style="color: #f92672">[</span><span style="color: #ae81ff">0</span><span style="color: #f92672">]);</span>
+<span style="color: #f8f8f2">scAlgorithm</span><span style="color: #f92672">.</span><span style="color: #a6e22e">input</span><span style="color: #f92672">.</span><span style="color: #a6e22e">set</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">InputId</span><span style="color: #f92672">.</span><span style="color: #a6e22e">fileoffset</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">file_tables</span><span style="color: #f92672">[</span><span style="color: #ae81ff">1</span><span style="color: #f92672">]);</span>
+<span style="color: #f8f8f2">scAlgorithm</span><span style="color: #f92672">.</span><span style="color: #a6e22e">input</span><span style="color: #f92672">.</span><span style="color: #a6e22e">readGraph</span><span style="color: #f92672">();</span>
+<span style="color: #f92672">...</span>
+<span style="color: #75715e">//initialize daal graph structure</span>
+<span style="color: #f8f8f2">scAlgorithm</span><span style="color: #f92672">.</span><span style="color: #a6e22e">input</span><span style="color: #f92672">.</span><span style="color: #a6e22e">initGraph</span><span style="color: #f92672">();</span>
+<span style="color: #f92672">...</span>
+<span style="color: #75715e">//  read in template data </span>
+<span style="color: #f8f8f2">HomogenNumericTable</span><span style="color: #f92672">[]</span> <span style="color: #f8f8f2">t_tables</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">load_data_names</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">tFilesPaths</span><span style="color: #f92672">);</span>
+<span style="color: #f8f8f2">scAlgorithm</span><span style="color: #f92672">.</span><span style="color: #a6e22e">input</span><span style="color: #f92672">.</span><span style="color: #a6e22e">set</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">InputId</span><span style="color: #f92672">.</span><span style="color: #a6e22e">tfilenames</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">t_tables</span><span style="color: #f92672">[</span><span style="color: #ae81ff">0</span><span style="color: #f92672">]);</span>
+<span style="color: #f8f8f2">scAlgorithm</span><span style="color: #f92672">.</span><span style="color: #a6e22e">input</span><span style="color: #f92672">.</span><span style="color: #a6e22e">set</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">InputId</span><span style="color: #f92672">.</span><span style="color: #a6e22e">tfileoffset</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">t_tables</span><span style="color: #f92672">[</span><span style="color: #ae81ff">1</span><span style="color: #f92672">]);</span>
+<span style="color: #f8f8f2">scAlgorithm</span><span style="color: #f92672">.</span><span style="color: #a6e22e">input</span><span style="color: #f92672">.</span><span style="color: #a6e22e">readTemplate</span><span style="color: #f92672">();</span>
+<span style="color: #f8f8f2">scAlgorithm</span><span style="color: #f92672">.</span><span style="color: #a6e22e">input</span><span style="color: #f92672">.</span><span style="color: #a6e22e">initTemplate</span><span style="color: #f92672">();</span>
+</pre></div>
+
+<p>Both of input graph data and template data are loaded directly into native memory space of DAAL kernels from HDFS filesystem.</p>
+
+<p>The local computation and communication codes are located at file colorcount_HJ.java, where the function <em>do_full_count</em> is invoked by</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">full_count</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">graph_count</span><span style="color: #f92672">.</span><span style="color: #a6e22e">do_full_count</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">numIteration</span><span style="color: #f92672">);</span>
+</pre></div>
+
+<p>The main body of <em>do_full_count</em> has the following structure</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #75715e">// looping all the iterations</span>
+<span style="color: #66d9ef">for</span><span style="color: #f92672">(</span><span style="color: #66d9ef">int</span> <span style="color: #f8f8f2">cur_itr</span> <span style="color: #f92672">=</span> <span style="color: #ae81ff">0</span><span style="color: #f92672">;</span> <span style="color: #f8f8f2">cur_itr</span> <span style="color: #f92672">&lt;</span> <span style="color: #66d9ef">this</span><span style="color: #f92672">.</span><span style="color: #a6e22e">num_iter</span><span style="color: #f92672">;</span> <span style="color: #f8f8f2">cur_itr</span><span style="color: #f92672">++)</span>
+<span style="color: #f92672">{</span>
+	<span style="color: #f92672">...</span>
+	<span style="color: #75715e">// looping over all the sub-templates in a reverse order</span>
+	<span style="color: #66d9ef">for</span><span style="color: #f92672">(</span> <span style="color: #66d9ef">int</span> <span style="color: #f8f8f2">s</span> <span style="color: #f92672">=</span> <span style="color: #66d9ef">this</span><span style="color: #f92672">.</span><span style="color: #a6e22e">subtemplate_count</span> <span style="color: #f92672">-</span><span style="color: #ae81ff">1</span><span style="color: #f92672">;</span> <span style="color: #f8f8f2">s</span> <span style="color: #f92672">&gt;</span> <span style="color: #ae81ff">0</span><span style="color: #f92672">;</span> <span style="color: #f92672">--</span><span style="color: #f8f8f2">s</span><span style="color: #f92672">)</span>
+	<span style="color: #f92672">{</span>
+	   <span style="color: #75715e">// local computation</span>
+	   <span style="color: #f92672">...</span>
+	   <span style="color: #75715e">// inter-node communication</span>
+	   <span style="color: #f92672">...</span>
+
+	<span style="color: #f92672">}</span>
+	<span style="color: #f92672">...</span>
+<span style="color: #f92672">}</span>
+</pre></div>
+
+<h4 id="computation">Computation</h4>
+
+<p>The local computation will detect the position and shapes of sub-templates and compute the counting values contributed by local neighbours of each graph vertex.</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #66d9ef">if</span><span style="color: #f92672">(</span> <span style="color: #66d9ef">this</span><span style="color: #f92672">.</span><span style="color: #a6e22e">num_verts_sub_ato</span> <span style="color: #f92672">==</span> <span style="color: #ae81ff">1</span><span style="color: #f92672">)</span>
+<span style="color: #f92672">{</span>
+	<span style="color: #75715e">// if the subtemplate size == 1 </span>
+	<span style="color: #66d9ef">if</span> <span style="color: #f92672">(</span> <span style="color: #f8f8f2">s</span> <span style="color: #f92672">==</span> <span style="color: #66d9ef">this</span><span style="color: #f92672">.</span><span style="color: #a6e22e">subtemplate_count</span> <span style="color: #f92672">-</span> <span style="color: #ae81ff">1</span><span style="color: #f92672">)</span>
+	<span style="color: #f92672">{</span>
+		<span style="color: #66d9ef">this</span><span style="color: #f92672">.</span><span style="color: #a6e22e">scAlgorithm</span><span style="color: #f92672">.</span><span style="color: #a6e22e">input</span><span style="color: #f92672">.</span><span style="color: #a6e22e">initDTSub</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">s</span><span style="color: #f92672">);</span>
+		<span style="color: #66d9ef">this</span><span style="color: #f92672">.</span><span style="color: #a6e22e">scAlgorithm</span><span style="color: #f92672">.</span><span style="color: #a6e22e">computeBottom</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">s</span><span style="color: #f92672">);</span>
+	<span style="color: #f92672">}</span>
+	<span style="color: #66d9ef">else</span>
+		<span style="color: #66d9ef">this</span><span style="color: #f92672">.</span><span style="color: #a6e22e">scAlgorithm</span><span style="color: #f92672">.</span><span style="color: #a6e22e">input</span><span style="color: #f92672">.</span><span style="color: #a6e22e">setToTable</span><span style="color: #f92672">(</span><span style="color: #66d9ef">this</span><span style="color: #f92672">.</span><span style="color: #a6e22e">subtemplate_count</span> <span style="color: #f92672">-</span> <span style="color: #ae81ff">1</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">s</span><span style="color: #f92672">);</span>
+
+<span style="color: #f92672">}</span><span style="color: #66d9ef">else</span>
+<span style="color: #f92672">{</span>
+
+	<span style="color: #75715e">// if the subtemplate has a size &gt; 1</span>
+	<span style="color: #66d9ef">this</span><span style="color: #f92672">.</span><span style="color: #a6e22e">scAlgorithm</span><span style="color: #f92672">.</span><span style="color: #a6e22e">input</span><span style="color: #f92672">.</span><span style="color: #a6e22e">initDTSub</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">s</span><span style="color: #f92672">);</span>
+	<span style="color: #f8f8f2">scAlgorithm</span><span style="color: #f92672">.</span><span style="color: #a6e22e">computeNonBottom</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">s</span><span style="color: #f92672">);</span>
+<span style="color: #f92672">}</span>
+</pre></div>
+
+<p>The computation follows a dynamic programming technique, where the computation of sub-template <em>s==k</em> uses the results from sub-template <em>s&lt;k</em>.</p>
+
+<h4 id="communication">Communication</h4>
+
+<p>If the program is running on more than one mappers and the template has more than one vertex,
+there comes the inter-node communication after finishing the computation</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #66d9ef">if</span> <span style="color: #f92672">(</span><span style="color: #66d9ef">this</span><span style="color: #f92672">.</span><span style="color: #a6e22e">mapper_num</span> <span style="color: #f92672">&gt;</span> <span style="color: #ae81ff">1</span> <span style="color: #f92672">&amp;&amp;</span> <span style="color: #66d9ef">this</span><span style="color: #f92672">.</span><span style="color: #a6e22e">num_verts_sub_ato</span> <span style="color: #f92672">&gt;</span> <span style="color: #ae81ff">1</span><span style="color: #f92672">)</span>
+<span style="color: #f92672">{</span>
+  <span style="color: #f92672">...</span>
+  <span style="color: #f8f8f2">regroup_update_pipeline</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">s</span><span style="color: #f92672">);</span>
+  <span style="color: #f92672">...</span>
+<span style="color: #f92672">}</span>
+</pre></div>
+
+<h2 id="running-the-codes">Running the codes</h2>
+
+<p>Make sure that the code is placed in the <code>/harp/experimental</code> directory.
+Run the <code>harp-daal-subgraph.sh</code> script here to run the code.</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">cd</span> <span style="color: #f8f8f2">$HARP_ROOT</span>/experimental
+./test_scripts/harp-daal-subgraph.sh
+</pre></div>
+
+<p>The details of script is <a href="https://github.com/DSC-SPIDAL/harp/blob/master/experimental/test_scripts/harp-daal-subgraph.sh">here</a></p>
+</article></section></div></div></div><script src="https://code.jquery.com/jquery-2.2.1.min.js"></script><script src="https://dsc-spidal.github.io/harp/js/app.min.js"></script></body></html>
