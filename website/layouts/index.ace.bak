@@ -179,8 +179,6 @@ html lang={{.Site.LanguageCode}}
                   a href=docs/harpdaal/linear_regression/ Linear Regression 
                   br
                   a href=docs/harpdaal/ridge_regression/ Ridge Regression 
-                  br
-                  a href=docs/harpdaal/subgraph/ Subgraph Counting 
                 .col-sm-2
                   h4 Contributors
                   a href=docs/contributors/community/ Community

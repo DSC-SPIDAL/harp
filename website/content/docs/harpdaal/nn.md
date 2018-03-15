@@ -167,66 +167,15 @@ Service.printTensors("Ground truth", "Neural network predictions: each class pro
 "Neural network classification results (first 50 observations):",predictionGroundTruth, predictionResult.get(PredictionResultId.prediction), 50);
 ```
 
-### Executing the code 
+## Running the codes
 
-#### Setting up Hadoop and Harp-daal
-------------------------------------
-Details about setting up Hadoop along with Harp-DAAL on the cluster can be found [here](https://dsc-spidal.github.io/harp/docs/getting-started-cluster/ "Harp Cluster Installation") and [here](https://dsc-spidal.github.io/harp/docs/harpdaal/harpdaal/ "DAAL Installation"). 
-
-#### Running the code
-----------------------
 Make sure that the code is placed in the `/harp/ml/daal` directory.
-Run the `harp-daal-nn-run.sh` script here to run the code.
-```shell
+Run the `harp-daal-nn.sh` script here to run the code.
+
+```bash
 cd $HARP_ROOT/ml/daal
-./harp-daal-nn.sh  
+./test_scripts/harp-daal-nn.sh
 ```
-Details of the script can be seen below: 
-```shell
-#!/bin/bash
 
-# enter the directory of hadoop and copy your_harp_daal.jar file here
-cp $HARP_ROOT_DIR/ml/daal/target/harp-daal-0.1.0.jar ${HADOOP_HOME}
-# set up daal environment
-#source ./__release_tango_lnx/daal/bin/daalvars.sh intel64
-echo "${DAALROOT}"
+The details of script is [here](https://github.com/DSC-SPIDAL/harp/blob/master/ml/daal/test_scripts/harp-daal-nn.sh)
 
-cd ${HADOOP_HOME}
-
-# check that safemode is not enabled 
-hdfs dfsadmin -safemode get | grep -q "ON"
-if [[ "$?" = "0"  ]]; then
-    hdfs dfsadmin -safemode leave
-fi
-
-# put daal and tbb, omp libs to hdfs, they will be loaded into the distributed cache
-hdfs dfs -mkdir -p /Hadoop/Libraries
-hdfs dfs -rm /Hadoop/Libraries/*
-hdfs dfs -put ${DAALROOT}/lib/intel64_lin/libJavaAPI.so /Hadoop/Libraries/
-hdfs dfs -put ${TBB_ROOT}/lib/intel64_lin_mic/libtbb* /Hadoop/Libraries/
-hdfs dfs -put /N/u/mayank/daal/omp/lib/libiomp5.so /Hadoop/Libraries/
-
-# daal.jar will be used in command line
-export LIBJARS=${DAALROOT}/lib/daal.jar
-
-# num of training data points
-#Pts=50000
-# num of training data centroids
-#Ced=1000
-# feature vector dimension
-#Dim=100
-# file per mapper
-#File=5
-# iteration times
-#ITR=10
-# memory allocated to each mapper (MB)
-#Mem=185000
-# generate training data or not (once generated, data file /kmeans-P$Pts-C$Ced-D$Dim-N$Node is in hdfs, you could reuse them next time)
-#GenData=false
-# num of mappers (nodes)
-Node=2
-# num of threads on each mapper(node)
-Thd=64
-
-hadoop jar harp-daal-0.1.0.jar edu.iu.daal_nn.NNDaalLauncher -libjars ${LIBJARS}  /nn/input /nn/work $Node $Thd 
-```
