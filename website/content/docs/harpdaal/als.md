@@ -280,6 +280,16 @@ testModel(iteration, usersPartition, itemsPartition, usersPartialResultLocal, it
 
 Comparing the RMSE value before and after the training process, we could evaluate the correctness and efficiency of our Harp-DAAL-ALS algorithm.
 
+## Running the codes
+
+Make sure that the code is placed in the `/harp/ml/daal` directory.
+Run the `harp-daal-als.sh` script here to run the code.
+```bash
+cd $HARP_ROOT/ml/daal
+./test_scripts/harp-daal-als.sh
+```
+
+The details of script is [here](https://github.com/DSC-SPIDAL/harp/blob/master/ml/daal/test_scripts/harp-daal-als.sh)
 
 
 

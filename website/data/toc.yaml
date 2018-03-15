@@ -53,7 +53,7 @@ sections:
         url: /docs/applications/lda-cgs
       - name: Matrix Factorization
         url: /docs/applications/mf
-      - name: Sub-graph Counting
+      - name: Subgraph Counting
         url: /docs/applications/sahad
   - name: Harp-DAAL
     sublinks:
@@ -83,6 +83,8 @@ sections:
         url: /docs/harpdaal/linear_regression
       - name: Ridge Regression
         url: /docs/harpdaal/ridge_regression
+      - name: Subgraph Counting
+        url: /docs/harpdaal/subgraph
       - name: Hands-on 
         url: /docs/harpdaal/handson
   - name: Harp Resources

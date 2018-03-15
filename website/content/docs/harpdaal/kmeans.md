@@ -109,5 +109,15 @@ allgather("main", "allgather-" + i, cenTable);
 }
 
 ```
+## Running the codes
+
+Make sure that the code is placed in the `/harp/ml/daal` directory.
+Run the `harp-daal-kmeans.sh` script here to run the code.
+```bash
+cd $HARP_ROOT/ml/daal
+./test_scripts/harp-daal-kmeans.sh
+```
+
+The details of script is [here](https://github.com/DSC-SPIDAL/harp/blob/master/ml/daal/test_scripts/harp-daal-kmeans.sh)
 
 

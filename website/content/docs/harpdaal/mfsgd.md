@@ -272,6 +272,18 @@ for (int i = 1; i <= numIterations; i++) {
 
 After each iteration, we can choose to evaluate the training result immediately, or we may evaluate the result after every certain times of training iterations. 
 
+## Running the codes
+
+Make sure that the code is placed in the `/harp/experimental` directory.
+Run the `harp-daal-mfsgd.sh` script here to run the code.
+
+```bash
+cd $HARP_ROOT/experimental
+./test_scripts/harp-daal-mfsgd.sh
+```
+
+The details of script is [here](https://github.com/DSC-SPIDAL/harp/blob/master/experimental/test_scripts/harp-daal-mfsgd.sh)
+
 
  
 
