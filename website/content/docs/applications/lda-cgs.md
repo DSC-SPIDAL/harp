@@ -42,7 +42,7 @@ Through examining the model likelihood achieved by the training time, the result
 # Run LDA example
 
 ## Data
-   You can download public data and transfer to the data format required by sgd and ccd application. Here are some [datasets](dataset-lda.md) for your reference.
+   You can download public data and transfer to the data format required by sgd and ccd application. Here are some [datasets](/docs/applications/dataset-lda) for your reference.
 ### Data Format
 The format for the data should be a list of ``doc-name  wordid1 wordid2 ...>``. For example,
 ```bash
