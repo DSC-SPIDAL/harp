@@ -86,13 +86,11 @@ has 179-962 as its neighbors, and vertex 1 has 37-975 as its neighbors.
 
 ## Usage
 ```bash
-hadoop jar harp-java-0.1.0.jar edu.iu.sahad.rotation.SCMapCollective <number of map tasks> <useLocalMultiThread> 
-<template> <graphDir> <outDir> <num threads per node>
+hadoop jar harp-java-0.1.0.jar edu.iu.sahad.rotation.SCMapCollective <number of map tasks> <useLocalMultiThread> <template> <graphDir> <outDir> <num threads per node>
 ```
 ### Concrete Usage Example
 ```bash
-hadoop jar harp-java-0.1.0.jar edu.iu.sahad.rotation.SCMapCollective 2 1 templates/u5-1.t ./inputgraphfileloc 
-./outputharpsahad 5
+hadoop jar harp-java-0.1.0.jar edu.iu.sahad.rotation.SCMapCollective 2 1 templates/u5-1.t ./inputgraphfileloc ./outputharpsahad 5
 ```
 Assuming that you are using 2 compute nodes, have placed the template in the same location from which you are running this command, and have split the input file in half.
 One way to split the file is by using the `wc -l <inputfile>` to get the total amount of lines where each line is a vertex. Then the `split -l <total_amt_lines/2>` which
