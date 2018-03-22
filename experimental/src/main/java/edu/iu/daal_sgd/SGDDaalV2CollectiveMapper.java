@@ -140,14 +140,12 @@ public class SGDDaalV2CollectiveMapper
         // private HomogenNumericTable train_val_daal;
 
         //daal table to hold row ids of test set
-        // private HomogenBMNumericTable test_wPos_daal;
-        private HomogenNumericTable test_wPos_daal;
+		private KeyValueDataCollection test_data;
+        // private HomogenNumericTable test_wPos_daal;
         //daal table to hold col ids of test set
-        // private HomogenBMNumericTable test_hPos_daal;
-        private HomogenNumericTable test_hPos_daal;
+        // private HomogenNumericTable test_hPos_daal;
         //daal table to hold values of test set
-        // private HomogenBMNumericTable test_val_daal;
-        private HomogenNumericTable test_val_daal;
+        // private HomogenNumericTable test_val_daal;
         //daal table to hold rotated H model
         private NumericTable hTableMap_daal;
         
@@ -345,10 +343,11 @@ public class SGDDaalV2CollectiveMapper
             // sgdAlgorithm.input.set(InputId.dataVal, train_val_daal);
 
             sgdAlgorithm.input.set(InputId.dataTrain, train_data);
+            sgdAlgorithm.input.set(InputId.dataTest, test_data);
 
-            sgdAlgorithm.input.set(InputId.testWPos, test_wPos_daal);
-            sgdAlgorithm.input.set(InputId.testHPos, test_hPos_daal);
-            sgdAlgorithm.input.set(InputId.testVal, test_val_daal);
+            // sgdAlgorithm.input.set(InputId.testWPos, test_wPos_daal);
+            // sgdAlgorithm.input.set(InputId.testHPos, test_hPos_daal);
+            // sgdAlgorithm.input.set(InputId.testVal, test_val_daal);
 
             PartialResult model_data = new PartialResult(daal_Context);
             sgdAlgorithm.setPartialResult(model_data);
@@ -528,9 +527,12 @@ public class SGDDaalV2CollectiveMapper
             // train_hPos_daal.freeDataMemory();
             // train_val_daal.freeDataMemory();
 
-            test_wPos_daal.freeDataMemory();
-            test_hPos_daal.freeDataMemory();
-            test_val_daal.freeDataMemory();
+			((HomogenNumericTable)test_data.get(0)).freeDataMemory();
+			((HomogenNumericTable)test_data.get(1)).freeDataMemory();
+			((HomogenNumericTable)test_data.get(2)).freeDataMemory();
+            // test_wPos_daal.freeDataMemory();
+            // test_hPos_daal.freeDataMemory();
+            // test_val_daal.freeDataMemory();
 
             daal_Context.dispose();
             rotator.stop();
@@ -840,9 +842,11 @@ public class SGDDaalV2CollectiveMapper
             }
 
             //load points from Harp to DAAL side
-            test_wPos_daal = new HomogenNumericTable(daal_Context, Integer.class, 1, workerTestV, NumericTable.AllocationFlag.DoAllocate);
-            test_hPos_daal = new HomogenNumericTable(daal_Context, Integer.class, 1, workerTestV, NumericTable.AllocationFlag.DoAllocate);
-            test_val_daal = new HomogenNumericTable(daal_Context, Double.class, 1, workerTestV, NumericTable.AllocationFlag.DoAllocate);
+			test_data = new KeyValueDataCollection(daal_Context);
+
+            HomogenNumericTable test_wPos_daal = new HomogenNumericTable(daal_Context, Integer.class, 1, workerTestV, NumericTable.AllocationFlag.DoAllocate);
+            HomogenNumericTable test_hPos_daal = new HomogenNumericTable(daal_Context, Integer.class, 1, workerTestV, NumericTable.AllocationFlag.DoAllocate);
+            HomogenNumericTable test_val_daal = new HomogenNumericTable(daal_Context, Double.class, 1, workerTestV, NumericTable.AllocationFlag.DoAllocate);
 
             Thread[] threads = new Thread[numThreads];
 
@@ -877,6 +881,8 @@ public class SGDDaalV2CollectiveMapper
 
             }
 
+			
+
             long prepareDaalCopyEnd = System.currentTimeMillis();
             LOG.info("Time of Preparing Test Data Daal Copy: " + (prepareDaalCopyEnd - prepareDaalCopyStart));
 
@@ -898,6 +904,10 @@ public class SGDDaalV2CollectiveMapper
                 itr_pos += reg_tasks.get(i).getNumPoint();
 
             }
+
+			test_data.set(0, test_wPos_daal);
+			test_data.set(1, test_hPos_daal);
+			test_data.set(2, test_val_daal);
 
             long DaalCopyEnd = System.currentTimeMillis();
             LOG.info("Time of Test Data Daal Copy: " + (DaalCopyEnd - DaalCopyStart));
