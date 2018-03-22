@@ -93,9 +93,10 @@ daal::services::interface1::Status DistriContainer<step, interm, method, cpu>::c
     NumericTable *a1 = static_cast<NumericTable *>((*train_a)[1].get());
     NumericTable *a2 = static_cast<NumericTable *>((*train_a)[2].get());
 
-    NumericTable *a3 = static_cast<NumericTable *>(input->get(wPosTest).get());
-    NumericTable *a4 = static_cast<NumericTable *>(input->get(hPosTest).get());
-    NumericTable *a5 = static_cast<NumericTable *>(input->get(valTest).get());
+    KeyValueDataCollection* test_a = static_cast<KeyValueDataCollection *>(input->get(dataTest).get());
+    NumericTable *a3 = static_cast<NumericTable *>((*test_a)[0].get());
+    NumericTable *a4 = static_cast<NumericTable *>((*test_a)[1].get());
+    NumericTable *a5 = static_cast<NumericTable *>((*test_a)[2].get());
 
     assert(a0 != NULL);
     assert(a1 != NULL);
