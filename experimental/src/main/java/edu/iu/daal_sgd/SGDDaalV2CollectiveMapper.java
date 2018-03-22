@@ -68,6 +68,7 @@ import com.intel.daal.algorithms.mf_sgd.*;
 import com.intel.daal.data_management.data.NumericTable;
 import com.intel.daal.data_management.data.HomogenNumericTable;
 import com.intel.daal.data_management.data.SOANumericTable;
+import com.intel.daal.data_management.data.KeyValueDataCollection;
 import com.intel.daal.data_management.data_source.DataSource;
 import com.intel.daal.data_management.data_source.FileDataSource;
 import com.intel.daal.services.DaalContext;
@@ -129,15 +130,14 @@ public class SGDDaalV2CollectiveMapper
         //num of local rows of training set
         private long wMat_size;
 
+		// TODO: replace the three homogenNumericTable by a KeyValueCollection
+		private KeyValueDataCollection train_data;
         //daal table to hold row ids of local training set
-        // private HomogenBMNumericTable train_wPos_daal;
-        private HomogenNumericTable train_wPos_daal;
+        // private HomogenNumericTable train_wPos_daal;
         //daal table to hold cols ids of local training set
-        // private HomogenBMNumericTable train_hPos_daal;
-        private HomogenNumericTable train_hPos_daal;
+        // private HomogenNumericTable train_hPos_daal;
         //daal table to hold values of local training set
-        // private HomogenBMNumericTable train_val_daal;
-        private HomogenNumericTable train_val_daal;
+        // private HomogenNumericTable train_val_daal;
 
         //daal table to hold row ids of test set
         // private HomogenBMNumericTable test_wPos_daal;
@@ -340,9 +340,11 @@ public class SGDDaalV2CollectiveMapper
             Distri sgdAlgorithm = new Distri(daal_Context, Double.class, Method.defaultSGD);
 
             // --------------------------loading training and test datasets into DAAL ------------------------------
-            sgdAlgorithm.input.set(InputId.dataWPos, train_wPos_daal);
-            sgdAlgorithm.input.set(InputId.dataHPos, train_hPos_daal);
-            sgdAlgorithm.input.set(InputId.dataVal, train_val_daal);
+            // sgdAlgorithm.input.set(InputId.dataWPos, train_wPos_daal);
+            // sgdAlgorithm.input.set(InputId.dataHPos, train_hPos_daal);
+            // sgdAlgorithm.input.set(InputId.dataVal, train_val_daal);
+
+            sgdAlgorithm.input.set(InputId.dataTrain, train_data);
 
             sgdAlgorithm.input.set(InputId.testWPos, test_wPos_daal);
             sgdAlgorithm.input.set(InputId.testHPos, test_hPos_daal);
@@ -518,9 +520,13 @@ public class SGDDaalV2CollectiveMapper
 
             //free up native memory of daal tables
             wMat_rowid_daal.freeDataMemory();
-            train_wPos_daal.freeDataMemory();
-            train_hPos_daal.freeDataMemory();
-            train_val_daal.freeDataMemory();
+
+			((HomogenNumericTable)train_data.get(0)).freeDataMemory();
+			((HomogenNumericTable)train_data.get(1)).freeDataMemory();
+			((HomogenNumericTable)train_data.get(2)).freeDataMemory();
+            // train_wPos_daal.freeDataMemory();
+            // train_hPos_daal.freeDataMemory();
+            // train_val_daal.freeDataMemory();
 
             test_wPos_daal.freeDataMemory();
             test_hPos_daal.freeDataMemory();
@@ -671,9 +677,11 @@ public class SGDDaalV2CollectiveMapper
             }
 
             //load points from Harp to DAAL side
-            train_wPos_daal = new HomogenNumericTable(daal_Context, Integer.class, 1, workerNumV, NumericTable.AllocationFlag.DoAllocate);
-            train_hPos_daal = new HomogenNumericTable(daal_Context, Integer.class, 1, workerNumV, NumericTable.AllocationFlag.DoAllocate);
-            train_val_daal = new HomogenNumericTable(daal_Context, Double.class, 1, workerNumV, NumericTable.AllocationFlag.DoAllocate);
+			train_data = new KeyValueDataCollection(daal_Context);
+			
+            HomogenNumericTable train_wPos_daal = new HomogenNumericTable(daal_Context, Integer.class, 1, workerNumV, NumericTable.AllocationFlag.DoAllocate);
+            HomogenNumericTable train_hPos_daal = new HomogenNumericTable(daal_Context, Integer.class, 1, workerNumV, NumericTable.AllocationFlag.DoAllocate);
+            HomogenNumericTable train_val_daal = new HomogenNumericTable(daal_Context, Double.class, 1, workerNumV, NumericTable.AllocationFlag.DoAllocate);
 
             Thread[] threads = new Thread[numThreads];
 
@@ -727,6 +735,10 @@ public class SGDDaalV2CollectiveMapper
 
                 itr_pos += reg_tasks.get(i).getNumPoint();
             }
+
+			train_data.set(0, train_wPos_daal);
+			train_data.set(1, train_hPos_daal);
+			train_data.set(2, train_val_daal);
 
             long DaalCopyEnd = System.currentTimeMillis();
             LOG.info("Time of Train Data Daal Copy: " + (DaalCopyEnd - DaalCopyStart));
