@@ -240,7 +240,8 @@ public class SGDDaalLauncher extends Configured
     job.setInputFormatClass(
       MultiFileInputFormat.class);
     job.setJarByClass(SGDDaalLauncher.class);
-    job.setMapperClass(SGDDaalCollectiveMapper.class);
+    // job.setMapperClass(SGDDaalCollectiveMapper.class);
+    job.setMapperClass(SGDDaalV2CollectiveMapper.class);
     job.setNumReduceTasks(0);
     return job;
   }

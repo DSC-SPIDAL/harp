@@ -117,6 +117,10 @@
 				<version>3.6.1</version>
 				<configuration>
 					<source>1.8</source>
+					<excludes>
+						<exclude>**/daal_subgraph/*</exclude>
+						<exclude>**/daal_sgd/SGDDaalCollectiveMapper.java</exclude>
+					</excludes>
 					<target>1.8</target>
 				</configuration>
 			</plugin>
