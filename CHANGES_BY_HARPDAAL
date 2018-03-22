@@ -1,0 +1,45 @@
+# All the changes made by Harp-DAAL
+
+
+## New data structures
+
+New files
+
+* daal/lang_service/java/com/intel/daal/data_management/data/java_harptensor.h 
+* daal/lang_service/java/com/intel/daal/data_management/data/java_harptensor.cpp 
+* daal/lang_service/java/com/intel/daal/data_management/data/harp_tensor_Array_impl.cpp 
+
+* daal/lang_interface/java/com/intel/daal/data_management/data/HarpTensor.java
+* daal/lang_interface/java/com/intel/daal/data_management/data/HarpTensorImpl.java
+* daal/lang_interface/java/com/intel/daal/data_management/data/HarpTensorArrayImpl.java
+
+Changes to 
+
+* daal/lang_service/java/com/intel/daal/include/common_defines.i 
+* daal/lang_interface/java/com/intel/daal/SerializationTag.java
+
+## New Algorithm
+
+Changes to 
+* daal/include/daal.h
+* daal/include/daal_win.h
+
+### MF_SGD
+
+* daal/lang_interface/java/com/intel/daal/algorithms/mf_sgd/*.java
+* daal/lang_service/java/com/intel/daal/algorithms/mf_sgd/*
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

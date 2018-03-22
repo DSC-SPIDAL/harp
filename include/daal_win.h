@@ -388,5 +388,8 @@
 #include "algorithms/engines/engine.h"
 #include "algorithms/engines/mt19937/mt19937.h"
 #include "algorithms/engines/mt19937/mt19937_types.h"
+//added by Harp-DAAL
+#include "algorithms/mf_sgd/mf_sgd_distri.h"
+#include "algorithms/mf_sgd/mf_sgd_types.h"
 
 #endif /* #ifndef __DAAL_H__ */
