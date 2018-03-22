@@ -775,6 +775,8 @@ void hMat_generate(NumericTable *r[], mf_sgd::Parameter* &par, size_t dim_r, int
     // std::fflush(stdout);
 
     clock_gettime(CLOCK_MONOTONIC, &ts1);
+
+    //TODO replace this by JavaHarpTensor
     // set up the threads used
     if (thread_num > 0)
         services::Environment::getInstance()->setNumberOfThreads(thread_num);

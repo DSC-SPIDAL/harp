@@ -136,14 +136,14 @@ public:
      * \param[in] id    Identifier of the input object
      * \return          Input object that corresponds to the given identifier
      */
-    data_management::NumericTablePtr get(InputId id) const;
+    data_management::SerializationIfacePtr get(InputId id) const;
 
     /**
      * Sets input object for the mf_sgd algorithm
      * \param[in] id    Identifier of the input object
      * \param[in] value Pointer to the input object
      */
-    void set(InputId id, const data_management::NumericTablePtr &value);
+    void set(InputId id, const data_management::SerializationIfacePtr &value);
 
 	/**
 	 * @brief get the column num of NumericTable associated to an inputid
@@ -151,7 +151,7 @@ public:
 	 * @param[in] id of input table
 	 * @return column num of input table 
 	 */
-    size_t getNumberOfColumns(InputId id) const;
+    // size_t getNumberOfColumns(InputId id) const;
 
 	/**
 	 * @brief get the column num of NumericTable associated to an inputid
@@ -160,7 +160,7 @@ public:
 	 *
 	 * @return row num of input table 
 	 */
-    size_t getNumberOfRows(InputId id) const;
+    // size_t getNumberOfRows(InputId id) const;
 
     daal::services::interface1::Status check(const daal::algorithms::Parameter *parameter, int method) const DAAL_C11_OVERRIDE;
 
@@ -176,13 +176,13 @@ public:
 	 * @param[in,out] points_Train
 	 * @param[in,out] points_Test
 	 */
-    template <typename algorithmFPType>
-    void generate_points(const int64_t num_Train,
-						 const int64_t num_Test, 
-						 const int64_t row_num_w, 
-						 const int64_t col_num_h,
-						 mf_sgd::VPoint<algorithmFPType>* points_Train,
-						 mf_sgd::VPoint<algorithmFPType>* points_Test);
+    // template <typename algorithmFPType>
+    // void generate_points(const int64_t num_Train,
+	// 					 const int64_t num_Test, 
+	// 					 const int64_t row_num_w, 
+	// 					 const int64_t col_num_h,
+	// 					 mf_sgd::VPoint<algorithmFPType>* points_Train,
+	// 					 mf_sgd::VPoint<algorithmFPType>* points_Test);
                                                                                 
 	/**
 	 * @brief load data from CSV files 
@@ -195,9 +195,9 @@ public:
 	 *
 	 * @return the number of loaded data points  
 	 */
-    template <typename algorithmFPType>
-	int64_t loadData(const std::string filename, std::vector<int64_t>* lineContainer, 
-				    std::unordered_map<int64_t, std::vector<mf_sgd::VPoint<algorithmFPType>*>*> &map);
+    // template <typename algorithmFPType>
+	// int64_t loadData(const std::string filename, std::vector<int64_t>* lineContainer, 
+	// 			    std::unordered_map<int64_t, std::vector<mf_sgd::VPoint<algorithmFPType>*>*> &map);
 
 	/**
 	 * @brief Convert loaded data from CSV files into mf_sgd::VPoint format
@@ -214,16 +214,16 @@ public:
 	 * @param[out] col_num_h col num of H model for train data 
 	 * @param[out] absent_num_test num of test points whose row or column are not included in Training dataset 
 	 */
-	template <typename algorithmFPType>
-    void convert_format(std::unordered_map<int64_t, std::vector<mf_sgd::VPoint<algorithmFPType>*>*> &map_train,
-						std::unordered_map<int64_t, std::vector<mf_sgd::VPoint<algorithmFPType>*>*> &map_test,
-						const int64_t num_Train,
-					    const int64_t num_Test,
-						mf_sgd::VPoint<algorithmFPType>* points_Train,  
-						mf_sgd::VPoint<algorithmFPType>* points_Test, 
-						int64_t &row_num_w, 
-						int64_t &col_num_h,
-                        size_t &absent_num_test);
+	// template <typename algorithmFPType>
+    // void convert_format(std::unordered_map<int64_t, std::vector<mf_sgd::VPoint<algorithmFPType>*>*> &map_train,
+	// 					std::unordered_map<int64_t, std::vector<mf_sgd::VPoint<algorithmFPType>*>*> &map_test,
+	// 					const int64_t num_Train,
+	// 				    const int64_t num_Test,
+	// 					mf_sgd::VPoint<algorithmFPType>* points_Train,  
+	// 					mf_sgd::VPoint<algorithmFPType>* points_Test, 
+	// 					int64_t &row_num_w, 
+	// 					int64_t &col_num_h,
+    //                     size_t &absent_num_test);
      /**
 	 * @brief Convert loaded data from CSV files into mf_sgd::VPoint format
 	 * implemented in mf_sgd_default_distri.h
@@ -249,8 +249,8 @@ public:
 	 * @tparam algorithmFPType
 	 * @param map
 	 */
-	template <typename algorithmFPType>
-	void freeData(std::unordered_map<int64_t, std::vector<mf_sgd::VPoint<algorithmFPType>*>*> &map);
+	// template <typename algorithmFPType>
+	// void freeData(std::unordered_map<int64_t, std::vector<mf_sgd::VPoint<algorithmFPType>*>*> &map);
 };
 
 
@@ -264,7 +264,6 @@ class DAAL_EXPORT Result : public daal::algorithms::Result
 {
 public:
 
-    DECLARE_SERIALIZABLE_CAST(Result);
     /** Default constructor */
     Result();
     /** Default destructor */
@@ -284,12 +283,12 @@ public:
      * \param[in] parameter Pointer to parameter
      * \param[in] method    Algorithm method
      */
-    template <typename algorithmFPType>
-    DAAL_EXPORT void allocate(const daal::algorithms::Input *input, const daal::algorithms::Parameter *parameter, const int method);
+    // template <typename algorithmFPType>
+    // DAAL_EXPORT void allocate(const daal::algorithms::Input *input, const daal::algorithms::Parameter *parameter, const int method);
 
 
-    template <typename algorithmFPType>
-    DAAL_EXPORT void free_mem(size_t r, size_t w, size_t h);
+    // template <typename algorithmFPType>
+    // DAAL_EXPORT void free_mem(size_t r, size_t w, size_t h);
 
     /**
     * Sets an input object for the mf_sgd decomposition algorithm
@@ -313,23 +312,23 @@ public:
      * \param[in]  w  Number of rows in the model W 
      * \param[in]  h  Number of cols in the model H 
      */
-    template <typename algorithmFPType>
-    DAAL_EXPORT void allocateImpl(size_t r, size_t w, size_t h);
-
-    template <typename algorithmFPType>
-    DAAL_EXPORT void freeImpl(size_t r, size_t w, size_t h);
-
-    template <typename algorithmFPType>
-    DAAL_EXPORT void allocateImpl_cache_aligned(size_t r, size_t w, size_t h);
-
-    template <typename algorithmFPType>
-    DAAL_EXPORT void freeImpl_cache_aligned(size_t r, size_t w, size_t h);
-
-    template <typename algorithmFPType>
-    DAAL_EXPORT void allocateImpl_hbw_mem(size_t r, size_t w, size_t h);
-
-    template <typename algorithmFPType>
-    DAAL_EXPORT void freeImpl_hbw_mem(size_t r, size_t w, size_t h);
+    // template <typename algorithmFPType>
+    // DAAL_EXPORT void allocateImpl(size_t r, size_t w, size_t h);
+    //
+    // template <typename algorithmFPType>
+    // DAAL_EXPORT void freeImpl(size_t r, size_t w, size_t h);
+    //
+    // template <typename algorithmFPType>
+    // DAAL_EXPORT void allocateImpl_cache_aligned(size_t r, size_t w, size_t h);
+    //
+    // template <typename algorithmFPType>
+    // DAAL_EXPORT void freeImpl_cache_aligned(size_t r, size_t w, size_t h);
+    //
+    // template <typename algorithmFPType>
+    // DAAL_EXPORT void allocateImpl_hbw_mem(size_t r, size_t w, size_t h);
+    //
+    // template <typename algorithmFPType>
+    // DAAL_EXPORT void freeImpl_hbw_mem(size_t r, size_t w, size_t h);
 
 
 protected:
@@ -374,7 +373,7 @@ class DAAL_EXPORT DistributedPartialResult : public daal::algorithms::PartialRes
 {
 public:
 
-    DECLARE_SERIALIZABLE_CAST(DistributedPartialResult);
+    // DECLARE_SERIALIZABLE_CAST(DistributedPartialResult);
 
     /** Default constructor */
     DistributedPartialResult();

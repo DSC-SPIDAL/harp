@@ -16,7 +16,7 @@
 *******************************************************************************/
 
 #include <jni.h>
-#include "mf_sgd_types.i"
+// #include "mf_sgd_types.i"
 
 #include "JComputeMode.h"
 #include "JComputeStep.h"

@@ -30,6 +30,7 @@
 #include <vector>
 #include <assert.h>
 #include "numeric_table.h"
+#include "data_collection.h"
 #include "service_rng.h"
 #include "services/daal_memory.h"
 #include "service_micro_table.h"
@@ -84,9 +85,13 @@ daal::services::interface1::Status DistriContainer<step, interm, method, cpu>::c
     int thread_num = par->_thread_num;
 
     // retrieve the training and test datasets 
-    NumericTable *a0 = static_cast<NumericTable *>(input->get(wPos).get());
-    NumericTable *a1 = static_cast<NumericTable *>(input->get(hPos).get());
-    NumericTable *a2 = static_cast<NumericTable *>(input->get(val).get());
+    // NumericTable *a0 = static_cast<NumericTable *>(input->get(wPos).get());
+    // NumericTable *a1 = static_cast<NumericTable *>(input->get(hPos).get());
+    // NumericTable *a2 = static_cast<NumericTable *>(input->get(val).get());
+    KeyValueDataCollection* train_a = static_cast<KeyValueDataCollection *>(input->get(dataTrain).get());
+    NumericTable *a0 = static_cast<NumericTable *>((*train_a)[0].get());
+    NumericTable *a1 = static_cast<NumericTable *>((*train_a)[1].get());
+    NumericTable *a2 = static_cast<NumericTable *>((*train_a)[2].get());
 
     NumericTable *a3 = static_cast<NumericTable *>(input->get(wPosTest).get());
     NumericTable *a4 = static_cast<NumericTable *>(input->get(hPosTest).get());
@@ -147,7 +152,7 @@ daal::services::interface1::Status DistriContainer<step, interm, method, cpu>::c
     internal::SOADataCopy<interm>** copylist = NULL;
 
     //generate h matrix on native side in parallel
-    internal::hMat_generate<interm, cpu>(r, par, dim_r, thread_num, col_ids, hMat_native_mem, hMat_blk_array, copylist);
+    // internal::hMat_generate<interm, cpu>(r, par, dim_r, thread_num, col_ids, hMat_native_mem, hMat_blk_array, copylist);
     
     //r[3] is used in test dataset to hold rmse values
     if ((static_cast<Parameter*>(_par))->_isTrain)
@@ -160,7 +165,7 @@ daal::services::interface1::Status DistriContainer<step, interm, method, cpu>::c
     __DAAL_CALL_KERNEL_STATUS(env, internal::MF_SGDDistriKernel, __DAAL_KERNEL_ARGUMENTS(interm, method), compute, WPos, HPos, Val, WPosTest, HPosTest, ValTest, r, par, col_ids, hMat_native_mem)
 
     //release h matrix from native side back to Java side after updating values
-    internal::hMat_release<interm, cpu>(r, par, dim_r, thread_num, hMat_blk_array, copylist);
+    // internal::hMat_release<interm, cpu>(r, par, dim_r, thread_num, hMat_blk_array, copylist);
 
     //clean up the memory space per iteration
     if (col_ids != NULL)

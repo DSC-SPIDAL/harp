@@ -34,6 +34,7 @@ import com.intel.daal.algorithms.ComputeMode;
 import com.intel.daal.algorithms.Precision;
 import com.intel.daal.data_management.data.HomogenNumericTable;
 import com.intel.daal.data_management.data.NumericTable;
+import com.intel.daal.data_management.data.SerializableBase;
 import com.intel.daal.services.DaalContext;
 
 /**
@@ -55,7 +56,7 @@ public final class Input extends com.intel.daal.algorithms.Input {
      * @param id    Identifier of the %input object for the mf_sgd algorithm
      * @param val   Value of the input object
      */
-    public void set(InputId id, NumericTable val) {
+    public void set(InputId id, SerializableBase val) {
         cSetInputTable(cObject, id.getValue(), val.getCObject());
     }
 
@@ -64,8 +65,9 @@ public final class Input extends com.intel.daal.algorithms.Input {
      * @param id Identifier of the input object
      * @return   Input object that corresponds to the given identifier
      */
-    public NumericTable get(InputId id) {
-        return new HomogenNumericTable(getContext(), cGetInputTable(cObject, id.getValue()));
+    public SerializableBase get(InputId id) {
+        // return new HomogenNumericTable(getContext(), cGetInputTable(cObject, id.getValue()));
+        return new SerializableBase(getContext(), cGetInputTable(cObject, id.getValue()));
     }
 
     /**
