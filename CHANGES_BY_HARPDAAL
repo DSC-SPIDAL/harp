@@ -27,6 +27,19 @@ Changes to
 * daal/lang_service/java/com/intel/daal/include/common_defines.i 
 * daal/lang_interface/java/com/intel/daal/SerializationTag.java
 
+## New Aux headers
+
+New Files
+
+* daal/include/services/thpool.h
+* daal/include/services/hdfs.h
+* daal/service/kernel/thpool.cpp
+* daal/externals/hdfs/*
+
+Changes to 
+
+* makefile
+
 ## New Algorithm
 
 Changes to 
@@ -35,8 +48,17 @@ Changes to
 
 ### MF_SGD
 
-* daal/lang_interface/java/com/intel/daal/algorithms/mf_sgd/*.java
+* daal/include/algorithms/mf_sgd/*
+* daal/algorithms/kernel/mf_sgd/*
+* daal/lang_interface/java/com/intel/daal/algorithms/mf_sgd/*
 * daal/lang_service/java/com/intel/daal/algorithms/mf_sgd/*
+
+### Subgraph
+
+* daal/include/algorithms/subgraph/*
+* daal/algorithms/kernel/subgraph/*
+* daal/lang_interface/java/com/intel/daal/algorithms/subgraph/*
+* daal/lang_service/java/com/intel/daal/algorithms/subgraph/*
 
 
 

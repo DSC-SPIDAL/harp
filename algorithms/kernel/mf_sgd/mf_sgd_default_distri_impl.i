@@ -206,7 +206,7 @@ void MF_SGDDistriKernel<interm, method, cpu>::compute_train_omp(int* &workWPos,
                                                                 Parameter* &parameter)
 {/*{{{*/
 
-#ifdef _OPENMP
+#ifdef USE_OMP
 
     // retrieve members of parameter 
     const int dim_r = parameter->_Dim_r;
@@ -637,7 +637,7 @@ void MF_SGDDistriKernel<interm, method, cpu>::compute_test_omp(int* workWPos,
 
 {/*{{{*/
 
-#ifdef _OPENMP
+#ifdef USE_OMP
 
     /* retrieve members of parameter */
     const int dim_r = parameter->_Dim_r;

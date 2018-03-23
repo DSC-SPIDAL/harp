@@ -62,6 +62,10 @@
 #include "services/base.h"
 #include "services/env_detect.h"
 #include "services/library_version_info.h"
+//--- Start added by Harp-DAAL ---
+#include "services/hdfs.h"
+#include "services/thpool.h"
+//--- End added by Harp-DAAL ---
 #include "data_management/compression/bzip2compression.h"
 #include "data_management/compression/compression.h"
 #include "data_management/compression/compression_stream.h"
@@ -87,8 +91,9 @@
 #include "data_management/data/data_utils.h"
 #include "data_management/data/homogen_tensor.h"
 #include "data_management/data/homogen_numeric_table.h"
-//added by Harp-DAAL
+//--- Start added by Harp-DAAL ---
 #include "data_management/data/harp_numeric_table.h"
+//--- End added by Harp-DAAL ---
 #include "data_management/data/merged_numeric_table.h"
 #include "data_management/data/row_merged_numeric_table.h"
 #include "data_management/data/matrix.h"
@@ -390,8 +395,11 @@
 #include "algorithms/engines/engine.h"
 #include "algorithms/engines/mt19937/mt19937.h"
 #include "algorithms/engines/mt19937/mt19937_types.h"
-//added by Harp-DAAL
+//--- Start added by Harp-DAAL ---
 #include "algorithms/mf_sgd/mf_sgd_distri.h"
 #include "algorithms/mf_sgd/mf_sgd_types.h"
+#include "algorithms/subgraph/subgraph_distri.h"
+#include "algorithms/subgraph/subgraph_types.h"
+//--- End added by Harp-DAAL ---
 
 #endif /* #ifndef __DAAL_H__ */

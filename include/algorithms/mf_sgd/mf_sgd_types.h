@@ -271,20 +271,6 @@ public:
     data_management::NumericTablePtr get(ResultId id) const;
 
     /**
-     * Allocates memory for storing final results of the mf_sgd decomposition algorithm
-     * implemented in mf_sgd_default_batch.h
-     * \param[in] input     Pointer to input object
-     * \param[in] parameter Pointer to parameter
-     * \param[in] method    Algorithm method
-     */
-    // template <typename algorithmFPType>
-    // DAAL_EXPORT void allocate(const daal::algorithms::Input *input, const daal::algorithms::Parameter *parameter, const int method);
-
-
-    // template <typename algorithmFPType>
-    // DAAL_EXPORT void free_mem(size_t r, size_t w, size_t h);
-
-    /**
     * Sets an input object for the mf_sgd decomposition algorithm
     * \param[in] id    Identifier of the result
     * \param[in] value Pointer to the result
@@ -298,32 +284,6 @@ public:
       * \param[in] method Computation method
       */
     daal::services::interface1::Status check(const daal::algorithms::Input *input, const daal::algorithms::Parameter *par, int method) const DAAL_C11_OVERRIDE;
-
-    /**
-     * Allocates memory for storing final results of the mf_sgd decomposition algorithm
-     * \tparam     algorithmFPType float or double 
-     * \param[in]  r  dimension of feature vector, num col of model W and num row of model H 
-     * \param[in]  w  Number of rows in the model W 
-     * \param[in]  h  Number of cols in the model H 
-     */
-    // template <typename algorithmFPType>
-    // DAAL_EXPORT void allocateImpl(size_t r, size_t w, size_t h);
-    //
-    // template <typename algorithmFPType>
-    // DAAL_EXPORT void freeImpl(size_t r, size_t w, size_t h);
-    //
-    // template <typename algorithmFPType>
-    // DAAL_EXPORT void allocateImpl_cache_aligned(size_t r, size_t w, size_t h);
-    //
-    // template <typename algorithmFPType>
-    // DAAL_EXPORT void freeImpl_cache_aligned(size_t r, size_t w, size_t h);
-    //
-    // template <typename algorithmFPType>
-    // DAAL_EXPORT void allocateImpl_hbw_mem(size_t r, size_t w, size_t h);
-    //
-    // template <typename algorithmFPType>
-    // DAAL_EXPORT void freeImpl_hbw_mem(size_t r, size_t w, size_t h);
-
 
 protected:
     /** \private */

@@ -41,6 +41,10 @@
 COMPILERs = icc gnu clang vc
 COMPILER ?= icc
 
+# added by Harp-DAAL
+## choose multi-threading impl: THDIMPL=openmp
+THDIMPL ?= tbb
+
 $(if $(filter $(COMPILERs),$(COMPILER)),,$(error COMPILER must be one of $(COMPILERs)))
 
 req-features = order-only second-expansion
@@ -71,6 +75,10 @@ COMPILER_is_$(COMPILER)  := yes
 OS_is_$(_OS)             := yes
 IA_is_$(_IA)             := yes
 PLAT_is_$(PLAT)          := yes
+
+## added by Harp-DAAL
+## choose multi-threading impl
+THD_is_$(THDIMPL) 		 := yes
 
 #===============================================================================
 # Compiler specific part
@@ -118,6 +126,13 @@ knl_OPT  := $(knl_OPT.$(COMPILER))
 skx_OPT  := $(skx_OPT.$(COMPILER))
 
 _OSr := $(if $(OS_is_win),win,$(if $(OS_is_lnx),lin,))
+
+# added by Harp-DAAL
+## add support to OpenMP
+-omp   := $(if $(THD_is_openmp), $(if $(COMPILER_is_icc), -qopenmp, $(if $(COMPILER_is_gnu), -fopenmp,)), )
+-ansialias := $(if $(COMPILER_is_icc), -ansi-alias, )
+-useomp := $(if $(THD_is_openmp), -DUSE_OMP, )
+-linkomp := $(if $(THD_is_openmp), -liomp5, )
 
 #===============================================================================
 # Paths
@@ -213,7 +228,9 @@ daaldep.lnx32e.mkl.seq := $(MKLFPKDIR.libia)/$(plib)daal_mkl_sequential.$a
 daaldep.lnx32e.mkl := $(MKLFPKDIR.libia)/$(plib)daal_vmlipp_core.$a
 daaldep.lnx32e.vml := 
 daaldep.lnx32e.ipp := 
-daaldep.lnx32e.rt  := -L$(TBBDIR.libia) -ltbb -ltbbmalloc -lpthread $(daaldep.lnx32e.rt.$(COMPILER))
+# daaldep.lnx32e.rt  := -L$(TBBDIR.libia) -ltbb -ltbbmalloc -lpthread $(daaldep.lnx32e.rt.$(COMPILER))
+# added by Harp-DAAL: 1) OpenMP, 2) Apache hdfs
+daaldep.lnx32e.rt  := -L$(TBBDIR.libia) -ltbb -ltbbmalloc -lpthread $(-linkomp) -L$(DIR)/externals/hdfs/lib -lhdfs $(daaldep.lnx32e.rt.$(COMPILER))
 
 daaldep.lnx32.mkl.thr := $(MKLFPKDIR.libia)/$(plib)daal_mkl_thread.$a    
 daaldep.lnx32.mkl.seq := $(MKLFPKDIR.libia)/$(plib)daal_mkl_sequential.$a
@@ -397,6 +414,10 @@ $(CORE.objs_a): $(CORE.tmpdir_a)/inc_a_folders.txt
 $(CORE.objs_a): COPT += $(-fPIC) $(-cxx11) $(-Zl) $(-DEBC)
 $(CORE.objs_a): COPT += -D__TBB_NO_IMPLICIT_LINKAGE -DDAAL_NOTHROW_EXCEPTIONS -DDAAL_HIDE_DEPRECATED
 $(CORE.objs_a): COPT += @$(CORE.tmpdir_a)/inc_a_folders.txt
+# added by Harp-DAAL
+# openmp support and O3 optimization
+$(CORE.objs_a): COPT += $(-omp) $(-useomp) -I$(DIR)/externals/hdfs/include $(-ansialias) -O3
+
 $(filter %threading.$o, $(CORE.objs_a)): COPT += -D__DO_TBB_LAYER__
 $(call containing,_nrh, $(CORE.objs_a)): COPT += $(p4_OPT)   -DDAAL_CPU=sse2
 $(call containing,_mrm, $(CORE.objs_a)): COPT += $(mc_OPT)   -DDAAL_CPU=ssse3
@@ -412,6 +433,10 @@ $(CORE.objs_y): $(CORE.tmpdir_y)/inc_y_folders.txt
 $(CORE.objs_y): COPT += $(-fPIC) $(-cxx11) $(-Zl) $(-DEBC)
 $(CORE.objs_y): COPT += -D__DAAL_IMPLEMENTATION -D__TBB_NO_IMPLICIT_LINKAGE -DDAAL_NOTHROW_EXCEPTIONS -DDAAL_HIDE_DEPRECATED $(if $(CHECK_DLL_SIG),-DDAAL_CHECK_DLL_SIG)
 $(CORE.objs_y): COPT += @$(CORE.tmpdir_y)/inc_y_folders.txt
+# added by Harp-DAAL
+# openmp support and O3 optimization
+$(CORE.objs_y): COPT += $(-omp) $(-useomp) -I$(DIR)/externals/hdfs/include $(-ansialias) -O3
+
 $(filter %threading.$o, $(CORE.objs_y)): COPT += -D__DO_TBB_LAYER__
 $(call containing,_nrh, $(CORE.objs_y)): COPT += $(p4_OPT)   -DDAAL_CPU=sse2
 $(call containing,_mrm, $(CORE.objs_y)): COPT += $(mc_OPT)   -DDAAL_CPU=ssse3
