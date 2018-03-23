@@ -39,21 +39,9 @@ public final class InputId {
 
     private static final int dataTrainId = 0;   /* training data in KeyValueDataCollection */
     private static final int dataTestId = 1;    /* test data in KeyValueDataCollection */
-    private static final int dataWPosId = 2;    /* Row id of training points in Model W stored in homogenNumericTable */
-    private static final int dataHPosId = 3;    /* Col id of training points in Model H stored in homogenNumericTable */
-    private static final int dataValId = 4;     /* Value of training points stored in homogenNumericTable */
-    private static final int testWPosId = 5;    /* Row id of training points in Model W stored in homogenNumericTable */
-    private static final int testHPosId = 6;    /* Col id of training points in Model H stored in homogenNumericTable */
-    private static final int testValId = 7;     /* Value of training points stored in homogenNumericTable */
 
     /** %Input data table */
     public static final InputId dataTrain = new InputId(dataTrainId);
     public static final InputId dataTest = new InputId(dataTestId);
-    public static final InputId dataWPos = new InputId(dataWPosId);
-    public static final InputId dataHPos = new InputId(dataHPosId);
-    public static final InputId dataVal = new InputId(dataValId);
-    public static final InputId testWPos = new InputId(testWPosId);
-    public static final InputId testHPos = new InputId(testHPosId);
-    public static final InputId testVal = new InputId(testValId);
 
 }

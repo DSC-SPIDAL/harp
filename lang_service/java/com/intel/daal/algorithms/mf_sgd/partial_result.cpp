@@ -54,15 +54,15 @@ JNIEXPORT jlong JNICALL Java_com_intel_daal_algorithms_mf_1sgd_PartialResult_cGe
 {
     if ( id == presWMatId )
     {
-        return jniArgument<mf_sgd::DistributedPartialResult>::get<mf_sgd::DistributedPartialResultId, NumericTable>(resAddr, mf_sgd::presWMat);
+        return jniArgument<mf_sgd::DistributedPartialResult>::get<mf_sgd::DistributedPartialResultId, SerializationIface>(resAddr, mf_sgd::presWMat);
     }
     else if(id == presHMatId)
     {
-        return jniArgument<mf_sgd::DistributedPartialResult>::get<mf_sgd::DistributedPartialResultId, NumericTable>(resAddr, mf_sgd::presHMat);
+        return jniArgument<mf_sgd::DistributedPartialResult>::get<mf_sgd::DistributedPartialResultId, SerializationIface>(resAddr, mf_sgd::presHMat);
     }
     else if(id == presRMSEId)
     {
-        return jniArgument<mf_sgd::DistributedPartialResult>::get<mf_sgd::DistributedPartialResultId, NumericTable>(resAddr, mf_sgd::presRMSE);
+        return jniArgument<mf_sgd::DistributedPartialResult>::get<mf_sgd::DistributedPartialResultId, SerializationIface>(resAddr, mf_sgd::presRMSE);
     }
 
     return (jlong)0;
@@ -76,5 +76,5 @@ JNIEXPORT jlong JNICALL Java_com_intel_daal_algorithms_mf_1sgd_PartialResult_cGe
 JNIEXPORT void JNICALL Java_com_intel_daal_algorithms_mf_1sgd_PartialResult_cSetPartialResultTable
 (JNIEnv *env, jobject thisObj, jlong resAddr, jint id, jlong ntAddr)
 {
-    jniArgument<mf_sgd::DistributedPartialResult>::set<mf_sgd::DistributedPartialResultId, NumericTable>(resAddr, id, ntAddr);
+    jniArgument<mf_sgd::DistributedPartialResult>::set<mf_sgd::DistributedPartialResultId, SerializationIface>(resAddr, id, ntAddr);
 }

@@ -85,9 +85,6 @@ daal::services::interface1::Status DistriContainer<step, interm, method, cpu>::c
     int thread_num = par->_thread_num;
 
     // retrieve the training and test datasets 
-    // NumericTable *a0 = static_cast<NumericTable *>(input->get(wPos).get());
-    // NumericTable *a1 = static_cast<NumericTable *>(input->get(hPos).get());
-    // NumericTable *a2 = static_cast<NumericTable *>(input->get(val).get());
     KeyValueDataCollection* train_a = static_cast<KeyValueDataCollection *>(input->get(dataTrain).get());
     NumericTable *a0 = static_cast<NumericTable *>((*train_a)[0].get());
     NumericTable *a1 = static_cast<NumericTable *>((*train_a)[1].get());

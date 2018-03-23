@@ -22,6 +22,7 @@ import com.intel.daal.algorithms.ComputeStep;
 import com.intel.daal.algorithms.Precision;
 import com.intel.daal.data_management.data.HomogenNumericTable;
 import com.intel.daal.data_management.data.NumericTable;
+import com.intel.daal.data_management.data.SerializableBase;
 import com.intel.daal.services.DaalContext;
 
 /**
@@ -51,13 +52,13 @@ public class PartialResult extends com.intel.daal.algorithms.PartialResult {
      * @param id    Identifier of the result
      * @return      Result that corresponds to the given identifier
      */
-    public NumericTable get(PartialResultId id) {
+    public SerializableBase get(PartialResultId id) {
         if (id != PartialResultId.presWMat 
             && id != PartialResultId.presHMat 
             && id != PartialResultId.presRMSE) {
             throw new IllegalArgumentException("id unsupported");
         }
-        return new HomogenNumericTable(getContext(), cGetPartialResultTable(cObject, id.getValue()));
+        return new SerializableBase(getContext(), cGetPartialResultTable(cObject, id.getValue()));
     }
 
     /**
@@ -65,7 +66,7 @@ public class PartialResult extends com.intel.daal.algorithms.PartialResult {
      * @param id    Identifier of the result
      * @param value NumericTable to store result
      */
-    public void set(PartialResultId id, NumericTable value) {
+    public void set(PartialResultId id, SerializableBase value) {
         if (id != PartialResultId.presWMat 
             && id != PartialResultId.presHMat
             && id != PartialResultId.presRMSE) {

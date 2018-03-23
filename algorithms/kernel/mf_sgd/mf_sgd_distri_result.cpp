@@ -40,12 +40,13 @@ DistributedPartialResult::DistributedPartialResult() : daal::algorithms::Partial
 //three partial result ids
 //presWMat, presHMat, presRMSE
 
-NumericTablePtr DistributedPartialResult::get(DistributedPartialResultId id) const
+SerializationIfacePtr DistributedPartialResult::get(DistributedPartialResultId id) const
 {
-    return staticPointerCast<NumericTable, SerializationIface>(Argument::get(id));
+    // return staticPointerCast<NumericTable, SerializationIface>(Argument::get(id));
+    return Argument::get(id);
 }
 
-void DistributedPartialResult::set(DistributedPartialResultId id, const NumericTablePtr &value)
+void DistributedPartialResult::set(DistributedPartialResultId id, const SerializationIfacePtr &value)
 {
     Argument::set(id, value);
 }

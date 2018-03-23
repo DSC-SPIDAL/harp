@@ -36,7 +36,7 @@ namespace mf_sgd
 namespace interface1
 {
 
-Input::Input() : daal::algorithms::Input(8) {}
+Input::Input() : daal::algorithms::Input(2) {}
 
 SerializationIfacePtr Input::get(InputId id) const
 {
@@ -48,34 +48,6 @@ void Input::set(InputId id, const SerializationIfacePtr &value)
 {
     Argument::set(id, value);
 }
-
-// size_t Input::getNumberOfColumns(InputId id) const
-// {
-//     NumericTablePtr dataTable = get(id);
-//     if(dataTable)
-//     {
-//         return dataTable->getNumberOfColumns();
-//     }
-//     else
-//     {
-//         // this->_errors->add(Error::create(ErrorNullNumericTable, ArgumentName, dataStr()));
-//         return 0;
-//     }
-// }
-
-// size_t Input::getNumberOfRows(InputId id) const
-// {
-//     NumericTablePtr dataTable = get(id);
-//     if(dataTable)
-//     {
-//         return dataTable->getNumberOfRows();
-//     }
-//     else
-//     {
-//         // this->_errors->add(Error::create(ErrorNullNumericTable, ArgumentName, dataStr()));
-//         return 0;
-//     }
-// }
 
 daal::services::interface1::Status Input::check(const daal::algorithms::Parameter *parameter, int method) const {services::Status s; return s;}
 

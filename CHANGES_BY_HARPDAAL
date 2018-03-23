@@ -9,9 +9,16 @@ New files
 * daal/lang_service/java/com/intel/daal/data_management/data/java_harptensor.cpp 
 * daal/lang_service/java/com/intel/daal/data_management/data/harp_tensor_Array_impl.cpp 
 
+* daal/lang_service/java/com/intel/daal/data_management/data/java_harp_numeric_table.h 
+* daal/lang_service/java/com/intel/daal/data_management/data/java_harp_numeric_table.cpp 
+* daal/lang_service/java/com/intel/daal/data_management/data/harp_numeric_table_impl.cpp 
+
 * daal/lang_interface/java/com/intel/daal/data_management/data/HarpTensor.java
 * daal/lang_interface/java/com/intel/daal/data_management/data/HarpTensorImpl.java
 * daal/lang_interface/java/com/intel/daal/data_management/data/HarpTensorArrayImpl.java
+
+* daal/lang_interface/java/com/intel/daal/data_management/data/HarpNumericTable.java
+* daal/lang_interface/java/com/intel/daal/data_management/data/HarpNumericTableImpl.java
 
 Changes to 
 

@@ -70,13 +70,7 @@ enum Method
 enum InputId
 {
     dataTrain = 0,		  /*!< Training Dataset */
-	dataTest = 1,	      /*!< Test Dataset */
-	wPos = 2,	          /*!< array of row position in model W of dataset, used in distributed mode */
-	hPos = 3,	          /*!< array of col position in model H of dataset, used in distributed mode */
-	val = 4,				  /*!< array of val of dataset, used in distributed mode */
-    wPosTest = 5,
-    hPosTest = 6,
-    valTest = 7
+	dataTest = 1          /*!< Test Dataset */
 };
 
 /**
@@ -385,14 +379,14 @@ public:
      * \param[in] id    Identifier of the result
      * \return          Result that corresponds to the given identifier
      */
-	data_management::NumericTablePtr get(DistributedPartialResultId id) const;
+	data_management::SerializationIfacePtr get(DistributedPartialResultId id) const;
 
     /**
      * Sets Result object to store the result of the mf_sgd decomposition algorithm
      * \param[in] id    Identifier of the result
      * \param[in] value Pointer to the Result object
      */
-    void set(DistributedPartialResultId id, const data_management::NumericTablePtr &value);
+    void set(DistributedPartialResultId id, const data_management::SerializationIfacePtr &value);
 
 
 	/**
