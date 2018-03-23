@@ -130,24 +130,11 @@ public class SGDDaalV2CollectiveMapper
         private HomogenNumericTable wMat_rowid_daal;  
         //num of local rows of training set
         private long wMat_size;
-
-		// TODO: replace the three homogenNumericTable by a KeyValueCollection
+		// training data, including wPos, hPos, val
 		private KeyValueDataCollection train_data;
-        //daal table to hold row ids of local training set
-        // private HomogenNumericTable train_wPos_daal;
-        //daal table to hold cols ids of local training set
-        // private HomogenNumericTable train_hPos_daal;
-        //daal table to hold values of local training set
-        // private HomogenNumericTable train_val_daal;
-
-        //daal table to hold row ids of test set
+		// test data, including wPos, hPos, val
 		private KeyValueDataCollection test_data;
-        // private HomogenNumericTable test_wPos_daal;
-        //daal table to hold col ids of test set
-        // private HomogenNumericTable test_hPos_daal;
-        //daal table to hold values of test set
-        // private HomogenNumericTable test_val_daal;
-        //daal table to hold rotated H model
+		// model data for H matrix
         private NumericTable hTableMap_daal;
         
         /**
@@ -339,16 +326,8 @@ public class SGDDaalV2CollectiveMapper
             Distri sgdAlgorithm = new Distri(daal_Context, Double.class, Method.defaultSGD);
 
             // --------------------------loading training and test datasets into DAAL ------------------------------
-            // sgdAlgorithm.input.set(InputId.dataWPos, train_wPos_daal);
-            // sgdAlgorithm.input.set(InputId.dataHPos, train_hPos_daal);
-            // sgdAlgorithm.input.set(InputId.dataVal, train_val_daal);
-
             sgdAlgorithm.input.set(InputId.dataTrain, train_data);
             sgdAlgorithm.input.set(InputId.dataTest, test_data);
-
-            // sgdAlgorithm.input.set(InputId.testWPos, test_wPos_daal);
-            // sgdAlgorithm.input.set(InputId.testHPos, test_hPos_daal);
-            // sgdAlgorithm.input.set(InputId.testVal, test_val_daal);
 
             PartialResult model_data = new PartialResult(daal_Context);
             sgdAlgorithm.setPartialResult(model_data);
@@ -1151,7 +1130,6 @@ public class SGDDaalV2CollectiveMapper
 
                     model_data.set(PartialResultId.presHMat, hTableMap_daal);
 
-                    // NumericTable matrixRMSE = new HomogenBMNumericTable(daal_Context, Double.class, 1, 1, NumericTable.AllocationFlag.DoAllocate, 0.0);
                     NumericTable matrixRMSE = new HomogenNumericTable(daal_Context, Double.class, 1, 1, NumericTable.AllocationFlag.DoAllocate, 0.0);
                     model_data.set(PartialResultId.presRMSE, matrixRMSE);
 
@@ -1161,23 +1139,14 @@ public class SGDDaalV2CollectiveMapper
                     Algo.parameter.setIsTrain(0);
                     Algo.compute();
                     effectiveTestV += Algo.parameter.GetTestV();
-                    //debug
-                    // LOG.info("Effective Initial Test V: " + effectiveTestV);
                     Algo.parameter.setIsTrain(1);
 
                     //retrieve rmse value
                     double[] prmse_array = new double[1];
-                    //debug
-                    // prmse_array[0] = 5;
 
-                    // ((HomogenBMNumericTable)matrixRMSE).getBlockOfRowsByte(0,1,prmse_array);
                     DoubleBuffer prmse_array_buf = DoubleBuffer.allocate(1);
-                    // ((HomogenBMNumericTable)matrixRMSE).getBlockOfRowsByte(0,1,prmse_array);
                     prmse_array_buf = matrixRMSE.getBlockOfRows(0,1,prmse_array_buf);
                     prmse_array_buf.get(prmse_array, 0, 1);
-
-                    //debug
-                    // LOG.info("Test rmse partial: " + prmse_array[0]);
 
                     matrixRMSE.freeDataMemory();
                     prmse += prmse_array[0];
