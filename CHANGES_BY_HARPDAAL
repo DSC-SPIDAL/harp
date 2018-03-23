@@ -20,6 +20,8 @@ New files
 * daal/lang_interface/java/com/intel/daal/data_management/data/HarpNumericTable.java
 * daal/lang_interface/java/com/intel/daal/data_management/data/HarpNumericTableImpl.java
 
+* daal/include/data_management/data/harp_numeric_table.h
+
 Changes to 
 
 * daal/lang_service/java/com/intel/daal/include/common_defines.i 

@@ -53,6 +53,7 @@
 
 
 #include "numeric_table.h"
+// #include "harp_numeric_table.h"
 #include "data_management/data/data_serialize.h"
 
 using namespace daal::data_management;
@@ -87,6 +88,7 @@ private:
  */
 template<int Tag>
 class DAAL_EXPORT JavaHarpNumericTable : public NumericTable, public JavaHarpNumericTableBase
+// class DAAL_EXPORT JavaHarpNumericTable : public HarpNumericTable, public JavaHarpNumericTableBase
 {
 public:
     DECLARE_SERIALIZABLE_TAG();
@@ -224,6 +226,36 @@ public:
         "getIntFeature", "(JJJLjava/nio/ByteBuffer;)Ljava/nio/IntBuffer;");
     }
 
+    /**
+     * @brief get block of column values in parallel (multi-threading) 
+     * for harp-daal framework
+     *
+     * @param feature_idx
+     * @param vector_idx
+     * @param value_num
+     * @param rwflag
+     * @param block
+     */
+    void getBlockOfColumnValuesBM(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num,
+                                ReadWriteMode rwflag, BlockDescriptor<double>** block) DAAL_C11_OVERRIDE
+    {
+        return getTFeatureBM<double>(feature_start, feature_len, vector_idx, value_num, rwflag, block,
+        "getDoubleFeature", "(JJJLjava/nio/ByteBuffer;)Ljava/nio/DoubleBuffer;");
+    }
+
+    void getBlockOfColumnValuesBM(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num,
+                                ReadWriteMode rwflag, BlockDescriptor<float>** block) DAAL_C11_OVERRIDE
+    {
+        return getTFeatureBM<float>(feature_start, feature_len, vector_idx, value_num, rwflag, block,
+        "getFloatFeature", "(JJJLjava/nio/ByteBuffer;)Ljava/nio/FloatBuffer;");
+    }
+
+    void getBlockOfColumnValuesBM(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num,
+                                ReadWriteMode rwflag, BlockDescriptor<int>** block) DAAL_C11_OVERRIDE
+    {
+        return getTFeatureBM<int>(feature_start, feature_len, vector_idx, value_num, rwflag, block,
+        "getIntFeature", "(JJJLjava/nio/ByteBuffer;)Ljava/nio/IntBuffer;");
+    }
 
     services::Status releaseBlockOfColumnValues(BlockDescriptor<double> &block) DAAL_C11_OVERRIDE
     {
@@ -238,6 +270,28 @@ public:
         return releaseTFeature<int>(block, "releaseIntFeature");
     }
 
+    /**
+     * @brief release multiple columns in parallel (multi-threading) 
+     * for harp-daal framework
+     *
+     * @param feature_start
+     * @param feature_len
+     * @param block
+     */
+    void releaseBlockOfColumnValuesBM(size_t feature_start, size_t feature_len, BlockDescriptor<double>** block) DAAL_C11_OVERRIDE
+    {
+        releaseTFeatureBM<double>(feature_start, feature_len, block, "releaseDoubleFeature");
+    }
+
+    void releaseBlockOfColumnValuesBM(size_t feature_start, size_t feature_len, BlockDescriptor<float>** block) DAAL_C11_OVERRIDE
+    {
+        releaseTFeatureBM<float>(feature_start, feature_len, block, "releaseFloatFeature");
+    }
+
+    void releaseBlockOfColumnValuesBM(size_t feature_start, size_t feature_len, BlockDescriptor<int>** block) DAAL_C11_OVERRIDE
+    {
+        releaseTFeatureBM<int>(feature_start, feature_len, block, "releaseIntFeature");
+    }
 
     template<typename T>
     services::Status getTBlock(size_t idx, size_t nrows, ReadWriteMode rwFlag, BlockDescriptor<T> &block,
@@ -405,6 +459,87 @@ public:
     }
 
     template<typename T>
+    void getTFeatureBM(size_t feature_start, size_t feature_len, size_t idx, size_t nrows, ReadWriteMode rwFlag, BlockDescriptor<T>** block,
+                     const char *javaMethodName, const char *javaMethodSignature)
+    {
+        jint status = JNI_OK;
+        _tls local_tls = tls.local();
+
+        /* Get JNI interface pointer for current thread */
+        status = jvm->AttachCurrentThread((void **)(&(local_tls.jenv)), NULL);
+        if(status != JNI_OK)
+        {
+            // this->_errors->add(services::ErrorCouldntAttachCurrentThreadToJavaVM);
+            std::printf("Get Tfeature error:services::ErrorCouldntAttachCurrentThreadToJavaVM\n");
+            std::fflush(stdout);
+            return;
+        }
+
+        local_tls.is_attached = true;
+
+        /* Get class associated with Java object */
+        local_tls.jcls = (local_tls.jenv)->GetObjectClass(jJavaNumTable);
+        if(local_tls.jcls == NULL)
+        {
+            // this->_errors->add(services::ErrorCouldntFindClassForJavaObject);
+            std::printf("Get Tfeature error:services::ErrorCouldntFindClassForJavaObject\n");
+            std::fflush(stdout);
+
+            return;
+        }
+
+        /* Get ID of the 'getBlockOfRows' method of the Java class */
+        jmethodID jmeth = (local_tls.jenv)->GetMethodID(local_tls.jcls, javaMethodName,
+                                                        javaMethodSignature);
+        if(jmeth == NULL)
+        {
+            services::SharedPtr<services::Error> e(new services::Error(services::ErrorCouldntFindJavaMethod));
+            e->addStringDetail(services::Method, services::String(javaMethodName));
+            // this->_errors->add(e);
+            std::printf("Get Tfeature error:services::ErrorCouldntFindJavaMethod\n");
+            std::fflush(stdout);
+
+            return;
+        }
+
+        //create a buffer space and wrap it to a java.nio.directbytebuffer
+        size_t bufferSize = nrows * sizeof(T);
+        T* buf_space = (T*)malloc(bufferSize);
+
+        //Main loop to retrieve data from javaNumTable to blockDescriptor
+        size_t feature_idx = 0;
+        void* buf = NULL;
+        void* javabuf = NULL;
+
+        jobject jbuf = (local_tls.jenv)->NewDirectByteBuffer(buf_space, bufferSize);
+
+        for(int k=0;k<feature_len;k++)
+        {
+            feature_idx = feature_start + k;
+
+            block[feature_idx]->setDetails(feature_idx, idx, rwFlag);
+
+            if( !(block[feature_idx]->resizeBuffer( 1, nrows )) ) { return; }
+
+            buf = block[feature_idx]->getBlockPtr();
+
+            //return a double buffer instead of a bytebuffer
+            jobject jdoubleBuf = (local_tls.jenv)->CallObjectMethod(
+                             jJavaNumTable, jmeth, (jlong)feature_idx, (jlong)idx, (jlong)nrows, jbuf);
+
+            javabuf = (local_tls.jenv)->GetDirectBufferAddress(jbuf);
+
+            std::memcpy(buf, javabuf, nrows*sizeof(T));
+
+            //delete local reference of jdoubleBuf
+            (local_tls.jenv)->DeleteLocalRef(jdoubleBuf);
+
+        }
+        
+        free(buf_space);
+    }
+
+    template<typename T>
     services::Status releaseTFeature(BlockDescriptor<T> &block, const char *javaMethodName)
     {
         jint status = JNI_OK;
@@ -448,6 +583,77 @@ public:
         }
         block.reset();
         return services::Status();
+    }
+
+    template<typename T>
+    void releaseTFeatureBM(size_t feature_start, size_t feature_len, BlockDescriptor<T>** block, const char *javaMethodName)
+    {
+        jint status = JNI_OK;
+        _tls local_tls = tls.local();
+        
+        /* Get JNI interface pointer for current thread */
+        status = jvm->AttachCurrentThread((void **)(&(local_tls.jenv)), NULL);
+        if(status != JNI_OK)
+        {
+            // this->_errors->add(services::ErrorCouldntAttachCurrentThreadToJavaVM);
+            std::printf("Release TFeature error:services::ErrorCouldntAttachCurrentThreadToJavaVM\n");
+            std::fflush(stdout);
+            return;
+        }
+
+        local_tls.is_attached = true;
+        
+        /* Get class associated with Java object */
+        local_tls.jcls = (local_tls.jenv)->GetObjectClass(jJavaNumTable);
+        if(local_tls.jcls == NULL)
+        {
+            // this->_errors->add(services::ErrorCouldntFindClassForJavaObject);
+            std::printf("Release TFeature error:services::ErrorCouldntFindClassForJavaObject\n");
+            std::fflush(stdout);
+            return;
+        }
+
+        /* Get ID of the 'releaseBlockOfRows' method of the Java class */
+        jmethodID jmeth = (local_tls.jenv)->GetMethodID(local_tls.jcls, javaMethodName,
+                "(JJJLjava/nio/ByteBuffer;)V");
+        if(jmeth == NULL)
+        {
+            services::SharedPtr<services::Error> e(new services::Error(services::ErrorCouldntFindJavaMethod));
+            e->addStringDetail(services::Method, services::String(javaMethodName));
+            // this->_errors->add(e);
+            std::printf("Release TFeature error:services::ErrorCouldntFindJavaMethod\n");
+            std::fflush(stdout);
+
+            return;
+        }
+
+        //create a buffer space and wrap it to a java.nio.directbytebuffer
+        size_t nrows = block[feature_start]->getNumberOfRows();
+        size_t bufferSize = nrows * sizeof(T);
+        T* buf_space = (T*)malloc(bufferSize);
+
+        size_t feature_idx = 0;
+        size_t idx = 0;
+        void* buf = NULL;
+        void* javabuf = NULL;
+
+        jobject jbuf = (local_tls.jenv)->NewDirectByteBuffer(buf_space, bufferSize);
+        javabuf = (local_tls.jenv)->GetDirectBufferAddress(jbuf);
+
+        for(int k=0;k<feature_len;k++)
+        {
+            feature_idx = feature_start + k;
+            buf = block[feature_idx]->getBlockPtr();
+            idx  = block[feature_idx]->getRowsOffset();
+            std::memcpy(javabuf, buf, nrows*sizeof(T));
+            //caal "releaseDoubleFeature
+            (local_tls.jenv)->CallObjectMethod( jJavaNumTable, jmeth, (jlong)feature_idx, (jlong)idx, (jlong)nrows,
+                        jbuf, writeOnly);
+
+        }
+
+        free(buf_space);
+
     }
 
     virtual jobject getJavaObject() const DAAL_C11_OVERRIDE

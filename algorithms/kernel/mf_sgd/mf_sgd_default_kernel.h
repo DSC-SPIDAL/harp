@@ -52,6 +52,8 @@
 #include "service_numeric_table.h"
 #include "service_error_handling.h"
 
+// #include "harp_numeric_table.h"
+
 #include "mf_sgd_types.h"
 
 using namespace tbb;
@@ -408,16 +410,19 @@ template <typename interm>
 void* SOACopyBulkData(void* arg)
 {/*{{{*/
 
-    // internal::SOADataCopy<interm>* copyElem = static_cast<internal::SOADataCopy<interm>* >(arg);
-    // (copyElem->_SOA_Table)->getBlockOfColumnValuesBM(copyElem->_start_pos, copyElem->_len, 0, copyElem->_nDim, writeOnly, copyElem->_Descriptor);
-    //
-    // //assign ptr of blockDescriptors to nativeMem
-    // for(int k=0;k<copyElem->_len;k++)
-    // {
-    //     int feature_idx = copyElem->_start_pos + k;
-    //     (copyElem->_nativeMem)[feature_idx] = (copyElem->_Descriptor)[feature_idx]->getBlockPtr();
-    //
-    // }
+    internal::SOADataCopy<interm>* copyElem = static_cast<internal::SOADataCopy<interm>* >(arg);
+    // HarpNumericTable* table_ptr = reinterpret_cast<HarpNumericTable*>(copyElem->_SOA_Table); 
+
+    (copyElem->_SOA_Table)->getBlockOfColumnValuesBM(copyElem->_start_pos, copyElem->_len, 0, copyElem->_nDim, writeOnly, copyElem->_Descriptor);
+    // table_ptr->getBlockOfColumnValuesBM(copyElem->_start_pos, copyElem->_len, 0, copyElem->_nDim, writeOnly, copyElem->_Descriptor);
+
+    //assign ptr of blockDescriptors to nativeMem
+    for(int k=0;k<copyElem->_len;k++)
+    {
+        int feature_idx = copyElem->_start_pos + k;
+        (copyElem->_nativeMem)[feature_idx] = (copyElem->_Descriptor)[feature_idx]->getBlockPtr();
+
+    }
 
     return NULL;
 
@@ -435,8 +440,12 @@ template <typename interm>
 void* SOAReleaseBulkData(void* arg)
 {/*{{{*/
 
-    // internal::SOADataCopy<interm>* copyElem = static_cast<internal::SOADataCopy<interm>* >(arg);
-    // (copyElem->_SOA_Table)->releaseBlockOfColumnValuesBM(copyElem->_start_pos, copyElem->_len, copyElem->_Descriptor);
+    internal::SOADataCopy<interm>* copyElem = static_cast<internal::SOADataCopy<interm>* >(arg);
+    // HarpNumericTable* table_ptr = reinterpret_cast<HarpNumericTable*>(copyElem->_SOA_Table); 
+
+    (copyElem->_SOA_Table)->releaseBlockOfColumnValuesBM(copyElem->_start_pos, copyElem->_len, copyElem->_Descriptor);
+    // table_ptr->releaseBlockOfColumnValuesBM(copyElem->_start_pos, copyElem->_len, copyElem->_Descriptor);
+
     return NULL;
 
 }/*}}}*/

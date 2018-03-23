@@ -93,6 +93,16 @@ public class HarpNumericTable extends NumericTable {
     }
 
     /**
+     * update array to the table
+     *
+     * @param arr Array of values of the feature
+     * @param idx Index of the feature
+     */
+    public void updateArray(double[] arr, long idx) {
+        ((HarpNumericTableImpl)tableImpl).updateArray(arr, idx);
+    }
+
+    /**
      * Sets array of floats of the feature to the table
      *
      * @param arr Array of values of the feature
@@ -100,6 +110,16 @@ public class HarpNumericTable extends NumericTable {
      */
     public void setArray(float[] arr, long idx) {
         ((HarpNumericTableImpl)tableImpl).setArray(arr, idx);
+    }
+
+    /**
+     * update array to the table
+     *
+     * @param arr Array of values of the feature
+     * @param idx Index of the feature
+     */
+    public void updateArray(float[] arr, long idx) {
+        ((HarpNumericTableImpl)tableImpl).updateArray(arr, idx);
     }
 
     /**
@@ -113,6 +133,16 @@ public class HarpNumericTable extends NumericTable {
     }
 
     /**
+     * update array to the table
+     *
+     * @param arr Array of values of the feature
+     * @param idx Index of the feature
+     */
+    public void updateArray(long[] arr, long idx) {
+        ((HarpNumericTableImpl)tableImpl).updateArray(arr, idx);
+    }
+
+    /**
      * Sets array of integers of the feature to the table
      *
      * @param arr Array of values of the feature
@@ -121,5 +151,16 @@ public class HarpNumericTable extends NumericTable {
     public void setArray(int[] arr, long idx) {
         ((HarpNumericTableImpl)tableImpl).setArray(arr, idx);
     }
+
+    /**
+     * update array to the table
+     *
+     * @param arr Array of values of the feature
+     * @param idx Index of the feature
+     */
+    public void updateArray(int[] arr, long idx) {
+        ((HarpNumericTableImpl)tableImpl).updateArray(arr, idx);
+    }
+
 }
 /** @} */

@@ -87,6 +87,8 @@
 #include "data_management/data/data_utils.h"
 #include "data_management/data/homogen_tensor.h"
 #include "data_management/data/homogen_numeric_table.h"
+//added by Harp-DAAL
+#include "data_management/data/harp_numeric_table.h"
 #include "data_management/data/merged_numeric_table.h"
 #include "data_management/data/row_merged_numeric_table.h"
 #include "data_management/data/matrix.h"

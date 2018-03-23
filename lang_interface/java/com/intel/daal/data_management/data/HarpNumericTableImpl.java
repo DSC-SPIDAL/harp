@@ -106,6 +106,16 @@ public class HarpNumericTableImpl extends NumericTableImpl {
     }
 
     /**
+     * updates array of doubles of the feature to the table
+     *
+     * @param arr Array of values of the feature
+     * @param idx Index of the feature
+     */
+    public void updateArray(double[] arr, long idx) {
+        arrays.set((int) idx, arr);
+    }
+
+    /**
      * Sets array of floats of the feature to the table
      *
      * @param arr Array of values of the feature
@@ -113,6 +123,16 @@ public class HarpNumericTableImpl extends NumericTableImpl {
      */
     public void setArray(float[] arr, long idx) {
         dict.setFeature(Float.class, (int) idx);
+        arrays.set((int) idx, arr);
+    }
+
+    /**
+     * updates array of floats of the feature to the table
+     *
+     * @param arr Array of values of the feature
+     * @param idx Index of the feature
+     */
+    public void updateArray(float[] arr, long idx) {
         arrays.set((int) idx, arr);
     }
 
@@ -128,6 +148,16 @@ public class HarpNumericTableImpl extends NumericTableImpl {
     }
 
     /**
+     * updates array of longs of the feature to the table
+     *
+     * @param arr Array of values of the feature
+     * @param idx Index of the feature
+     */
+    public void updateArray(long[] arr, long idx) {
+        arrays.set((int) idx, arr);
+    }
+
+    /**
      * Sets array of integers of the feature to the table
      *
      * @param arr Array of values of the feature
@@ -135,6 +165,16 @@ public class HarpNumericTableImpl extends NumericTableImpl {
      */
     public void setArray(int[] arr, long idx) {
         dict.setFeature(Integer.class, (int) idx);
+        arrays.set((int) idx, arr);
+    }
+
+    /**
+     * updates array of ints of the feature to the table
+     *
+     * @param arr Array of values of the feature
+     * @param idx Index of the feature
+     */
+    public void updateArray(int[] arr, long idx) {
         arrays.set((int) idx, arr);
     }
 
@@ -289,6 +329,11 @@ public class HarpNumericTableImpl extends NumericTableImpl {
             this.cObject = newJavaNumericTable(nJavaFeatures, nJavaVectors, NumericTable.StorageLayout.soa, DataDictionary.FeaturesEqual.notEqual,
                                                SerializationTag.SERIALIZATION_JAVANIO_HARP_NT_ID);
         }
+    }
+
+    @Override
+    public void freeDataMemory() {
+        arrays = null;
     }
 }
 /** @} */
