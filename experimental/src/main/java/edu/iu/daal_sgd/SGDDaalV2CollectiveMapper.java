@@ -68,6 +68,7 @@ import com.intel.daal.algorithms.mf_sgd.*;
 import com.intel.daal.data_management.data.NumericTable;
 import com.intel.daal.data_management.data.HomogenNumericTable;
 import com.intel.daal.data_management.data.SOANumericTable;
+import com.intel.daal.data_management.data.HarpNumericTable;
 import com.intel.daal.data_management.data.KeyValueDataCollection;
 import com.intel.daal.data_management.data_source.DataSource;
 import com.intel.daal.data_management.data_source.FileDataSource;
@@ -367,12 +368,12 @@ public class SGDDaalV2CollectiveMapper
 
             //hTableMap_daal has a dimension of feature dimension plus a sentinal value to remember 
             //the column id
-            hTableMap_daal = new SOANumericTable(daal_Context, htable_daal_size, r+1);
+            hTableMap_daal = new HarpNumericTable(daal_Context, htable_daal_size, r+1);
 
             //initialize htable_daal_size with empty values
 			//a sentinel value at [0], making length to be r+1
             for(int k=0;k<htable_daal_size;k++)
-                ((SOANumericTable)hTableMap_daal).setArray(new double[r+1], k);
+                ((HarpNumericTable)hTableMap_daal).setArray(new double[r+1], k);
 
             //computeRMSE before iteration
             printRMSEbyDAAL(sgdAlgorithm, model_data, rotator, hTableMap, hTableMap_daal, numWorkers, totalNumTestV, wMat_size, 0, configuration);
@@ -423,7 +424,7 @@ public class SGDDaalV2CollectiveMapper
                         for(Partition<DoubleArray> p : hTableMap[k].getPartitions())
                         {
                             double[] data = (double[])p.get().get(); 
-                            // ((SOANumericTable)hTableMap_daal).setArrayOnly(data, table_entry);
+                            ((HarpNumericTable)hTableMap_daal).updateArray(data, table_entry);
                             table_entry++;
                         }
 
@@ -1144,7 +1145,7 @@ public class SGDDaalV2CollectiveMapper
                     for(Partition<DoubleArray> p : hTableMap[k].getPartitions())
                     {
                         double[] data = (double[])p.get().get(); 
-                        // ((SOANumericTable)hTableMap_daal).setArrayOnly(data, table_entry);
+                        ((HarpNumericTable)hTableMap_daal).updateArray(data, table_entry);
                         table_entry++;
                     }
 
