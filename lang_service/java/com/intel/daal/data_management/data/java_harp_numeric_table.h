@@ -53,7 +53,7 @@
 
 
 #include "numeric_table.h"
-// #include "harp_numeric_table.h"
+#include "harp_numeric_table.h"
 #include "data_management/data/data_serialize.h"
 
 using namespace daal::data_management;
@@ -87,14 +87,14 @@ private:
  *  to the corresponding methods of user-defined Java class.
  */
 template<int Tag>
-class DAAL_EXPORT JavaHarpNumericTable : public NumericTable, public JavaHarpNumericTableBase
-// class DAAL_EXPORT JavaHarpNumericTable : public HarpNumericTable, public JavaHarpNumericTableBase
+// class DAAL_EXPORT JavaHarpNumericTable : public NumericTable, public JavaHarpNumericTableBase
+class DAAL_EXPORT JavaHarpNumericTable : public HarpNumericTable, public JavaHarpNumericTableBase
 {
 public:
     DECLARE_SERIALIZABLE_TAG();
 
     explicit JavaHarpNumericTable(DictionaryIface::FeaturesEqual featuresEqual = DictionaryIface::notEqual):
-        NumericTable(0, 0, featuresEqual), jvm(NULL), jJavaNumTable(NULL)
+        HarpNumericTable(0, 0, featuresEqual), jvm(NULL), jJavaNumTable(NULL)
     {
     }
 
@@ -108,7 +108,7 @@ public:
      */
     JavaHarpNumericTable(size_t featnum, size_t obsnum, JavaVM *_jvm, jobject _JavaNumTable,
                      StorageLayout layout = layout_unknown, DictionaryIface::FeaturesEqual featuresEqual = DictionaryIface::notEqual):
-        NumericTable(featnum, obsnum, featuresEqual), jvm(_jvm)
+        HarpNumericTable(featnum, obsnum, featuresEqual), jvm(_jvm)
     {
         _layout = layout;
         _memStatus = userAllocated;
@@ -236,24 +236,24 @@ public:
      * @param rwflag
      * @param block
      */
-    void getBlockOfColumnValuesBM(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num,
+    void getBlockOfColumnValuesMT(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num,
                                 ReadWriteMode rwflag, BlockDescriptor<double>** block) DAAL_C11_OVERRIDE
     {
-        return getTFeatureBM<double>(feature_start, feature_len, vector_idx, value_num, rwflag, block,
+        return getTFeatureMT<double>(feature_start, feature_len, vector_idx, value_num, rwflag, block,
         "getDoubleFeature", "(JJJLjava/nio/ByteBuffer;)Ljava/nio/DoubleBuffer;");
     }
 
-    void getBlockOfColumnValuesBM(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num,
+    void getBlockOfColumnValuesMT(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num,
                                 ReadWriteMode rwflag, BlockDescriptor<float>** block) DAAL_C11_OVERRIDE
     {
-        return getTFeatureBM<float>(feature_start, feature_len, vector_idx, value_num, rwflag, block,
+        return getTFeatureMT<float>(feature_start, feature_len, vector_idx, value_num, rwflag, block,
         "getFloatFeature", "(JJJLjava/nio/ByteBuffer;)Ljava/nio/FloatBuffer;");
     }
 
-    void getBlockOfColumnValuesBM(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num,
+    void getBlockOfColumnValuesMT(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num,
                                 ReadWriteMode rwflag, BlockDescriptor<int>** block) DAAL_C11_OVERRIDE
     {
-        return getTFeatureBM<int>(feature_start, feature_len, vector_idx, value_num, rwflag, block,
+        return getTFeatureMT<int>(feature_start, feature_len, vector_idx, value_num, rwflag, block,
         "getIntFeature", "(JJJLjava/nio/ByteBuffer;)Ljava/nio/IntBuffer;");
     }
 
@@ -278,19 +278,19 @@ public:
      * @param feature_len
      * @param block
      */
-    void releaseBlockOfColumnValuesBM(size_t feature_start, size_t feature_len, BlockDescriptor<double>** block) DAAL_C11_OVERRIDE
+    void releaseBlockOfColumnValuesMT(size_t feature_start, size_t feature_len, BlockDescriptor<double>** block) DAAL_C11_OVERRIDE
     {
-        releaseTFeatureBM<double>(feature_start, feature_len, block, "releaseDoubleFeature");
+        releaseTFeatureMT<double>(feature_start, feature_len, block, "releaseDoubleFeature");
     }
 
-    void releaseBlockOfColumnValuesBM(size_t feature_start, size_t feature_len, BlockDescriptor<float>** block) DAAL_C11_OVERRIDE
+    void releaseBlockOfColumnValuesMT(size_t feature_start, size_t feature_len, BlockDescriptor<float>** block) DAAL_C11_OVERRIDE
     {
-        releaseTFeatureBM<float>(feature_start, feature_len, block, "releaseFloatFeature");
+        releaseTFeatureMT<float>(feature_start, feature_len, block, "releaseFloatFeature");
     }
 
-    void releaseBlockOfColumnValuesBM(size_t feature_start, size_t feature_len, BlockDescriptor<int>** block) DAAL_C11_OVERRIDE
+    void releaseBlockOfColumnValuesMT(size_t feature_start, size_t feature_len, BlockDescriptor<int>** block) DAAL_C11_OVERRIDE
     {
-        releaseTFeatureBM<int>(feature_start, feature_len, block, "releaseIntFeature");
+        releaseTFeatureMT<int>(feature_start, feature_len, block, "releaseIntFeature");
     }
 
     template<typename T>
@@ -459,7 +459,7 @@ public:
     }
 
     template<typename T>
-    void getTFeatureBM(size_t feature_start, size_t feature_len, size_t idx, size_t nrows, ReadWriteMode rwFlag, BlockDescriptor<T>** block,
+    void getTFeatureMT(size_t feature_start, size_t feature_len, size_t idx, size_t nrows, ReadWriteMode rwFlag, BlockDescriptor<T>** block,
                      const char *javaMethodName, const char *javaMethodSignature)
     {
         jint status = JNI_OK;
@@ -586,7 +586,7 @@ public:
     }
 
     template<typename T>
-    void releaseTFeatureBM(size_t feature_start, size_t feature_len, BlockDescriptor<T>** block, const char *javaMethodName)
+    void releaseTFeatureMT(size_t feature_start, size_t feature_len, BlockDescriptor<T>** block, const char *javaMethodName)
     {
         jint status = JNI_OK;
         _tls local_tls = tls.local();

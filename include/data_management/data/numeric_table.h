@@ -644,15 +644,6 @@ public:
         _normalizationFlag = NumericTable::nonNormalized;
     }
 
-    //added by HarpDAAL
-    virtual void getBlockOfColumnValuesBM(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num, ReadWriteMode rwflag, BlockDescriptor<double>** block) {}
-    virtual void getBlockOfColumnValuesBM(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num, ReadWriteMode rwflag, BlockDescriptor<float>** block) {}
-    virtual void getBlockOfColumnValuesBM(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num, ReadWriteMode rwflag, BlockDescriptor<int>** block) {}
-
-    virtual void releaseBlockOfColumnValuesBM(size_t feature_start, size_t feature_len, BlockDescriptor<double>** block) {}
-    virtual void releaseBlockOfColumnValuesBM(size_t feature_start, size_t feature_len, BlockDescriptor<float>** block) {}
-    virtual void releaseBlockOfColumnValuesBM(size_t feature_start, size_t feature_len, BlockDescriptor<int>** block) {}
-
     /** \private */
     virtual ~NumericTable() {}
 
