@@ -53,6 +53,8 @@
 #include <pthread.h>
 #include <unistd.h>
 
+#include "harp_numeric_table.h"
+
 using namespace daal::data_management;
 using namespace daal::services;
 
@@ -176,17 +178,6 @@ Input::Input() : daal::algorithms::Input(10) {
 	thdwork_record = NULL;
 	thdwork_avg = 0;
 	thdwork_stdev = 0;
-
-#ifndef USE_OMP
-
-    //test the enabling of thread pinning
-    daal::services::interface1::thread_pinner_t*  thread_pinner = daal::services::interface1::getThreadPinner(true);
-    if(thread_pinner != NULL)
-    {
-        thread_pinner->set_pinning(true);
-    }
-
-#endif
 
 }
 
@@ -667,7 +658,6 @@ void Input::sendCommParcelLoadOld()
 void Input::sendCommParcelLoad()
 {
 
-    // virtual void releaseBlockOfColumnValuesBM(size_t feature_start, size_t feature_len, BlockDescriptor<double>** block) {} 
     BlockDescriptor<int>* up_block_int =  new BlockDescriptor<int>();
     BlockDescriptor<float>* up_block_float = new BlockDescriptor<float>();
 
@@ -676,7 +666,8 @@ void Input::sendCommParcelLoad()
     up_block_int->setPtr(cur_parcel_v_offset, 1, parceloffset->getNumberOfRows());
     up_block_int->setDetails(0, 0, writeOnly);
 
-    // (parceloffset.get())->releaseBlockOfColumnValuesBM(0, 1, &up_block_int);
+    HarpNumericTable* release_offset_ptr = reinterpret_cast<HarpNumericTable*>(parceloffset.get());
+    release_offset_ptr->releaseBlockOfColumnValuesMT(0, 1, &up_block_int);
     up_block_int->reset();
 
     // upload parcel data
@@ -684,7 +675,8 @@ void Input::sendCommParcelLoad()
     up_block_float->setPtr(cur_parcel_v_counts_data, 1, parceldata->getNumberOfRows());
     up_block_float->setDetails(0, 0, writeOnly);
 
-    // (parceldata.get())->releaseBlockOfColumnValuesBM(0, 1, &up_block_float);
+    HarpNumericTable* release_data_ptr = reinterpret_cast<HarpNumericTable*>(parceldata.get());
+    release_data_ptr->releaseBlockOfColumnValuesMT(0, 1, &up_block_float);
     up_block_float->reset();
 
     //upload parcel index data
@@ -692,7 +684,8 @@ void Input::sendCommParcelLoad()
     up_block_int->setPtr(cur_parcel_v_counts_index, 1, parcelindex->getNumberOfRows());
     up_block_int->setDetails(0, 0, writeOnly);
 
-    // (parcelindex.get())->releaseBlockOfColumnValuesBM(0, 1, &up_block_int);
+    HarpNumericTable* release_index_ptr = reinterpret_cast<HarpNumericTable*>(parcelindex.get());
+    release_index_ptr->releaseBlockOfColumnValuesMT(0, 1, &up_block_int);
     up_block_int->reset();
 
     //free cur parcel realted data
@@ -755,15 +748,18 @@ void Input::updateRecvParcel2()
 
     BlockDescriptor<int>* recv_offset_ptr = &(update_queue_pos[cur_upd_mapper_id][cur_upd_parcel_id]); 
     NumericTablePtr recv_v_offset_table = get(ParcelOffsetId);
-    // recv_v_offset_table->getBlockOfColumnValuesBM(0, 1, 0, recv_v_offset_table->getNumberOfRows(), readOnly, &recv_offset_ptr);
+    HarpNumericTable* recv_v_offset_table_mt = reinterpret_cast<HarpNumericTable*>(recv_v_offset_table.get()); 
+    recv_v_offset_table_mt->getBlockOfColumnValuesMT(0, 1, 0, recv_v_offset_table->getNumberOfRows(), readOnly, &recv_offset_ptr);
 
     BlockDescriptor<float>* recv_data_ptr = &(update_queue_counts[cur_upd_mapper_id][cur_upd_parcel_id]);
     NumericTablePtr recv_v_data_table = get(ParcelDataId);
-    // recv_v_data_table->getBlockOfColumnValuesBM(0, 1, 0, recv_v_data_table->getNumberOfRows(), readOnly, &recv_data_ptr);
+    HarpNumericTable* recv_v_data_table_mt = reinterpret_cast<HarpNumericTable*>(recv_v_data_table.get()); 
+    recv_v_data_table_mt->getBlockOfColumnValuesMT(0, 1, 0, recv_v_data_table->getNumberOfRows(), readOnly, &recv_data_ptr);
 
     BlockDescriptor<int>* recv_index_ptr = &(update_queue_index[cur_upd_mapper_id][cur_upd_parcel_id]);
     NumericTablePtr recv_v_index_table = get(ParcelIdxId);
-    // recv_v_index_table->getBlockOfColumnValuesBM(0, 1, 0, recv_v_index_table->getNumberOfRows(), readOnly, &recv_index_ptr);
+    HarpNumericTable* recv_v_index_table_mt = reinterpret_cast<HarpNumericTable*>(recv_v_index_table.get()); 
+    recv_v_index_table_mt->getBlockOfColumnValuesMT(0, 1, 0, recv_v_index_table->getNumberOfRows(), readOnly, &recv_index_ptr);
 
 }
 
@@ -773,19 +769,21 @@ void Input::updateRecvParcel2()
  */
 void Input::updateRecvParcel()
 {
-    //for a specific cur_upd_mapper_id and parcel id
 
     BlockDescriptor<int>* recv_offset_ptr = &(update_queue_pos[cur_upd_mapper_id][cur_upd_parcel_id]); 
     NumericTablePtr recv_v_offset_table = get(ParcelOffsetId);
-    // recv_v_offset_table->getBlockOfColumnValuesBM(0, 1, 0, recv_v_offset_table->getNumberOfRows(), readOnly, &recv_offset_ptr);
+    HarpNumericTable* recv_v_offset_table_mt = reinterpret_cast<HarpNumericTable*>(recv_v_offset_table.get()); 
+    recv_v_offset_table_mt->getBlockOfColumnValuesMT(0, 1, 0, recv_v_offset_table->getNumberOfRows(), readOnly, &recv_offset_ptr);
 
     BlockDescriptor<float>* recv_data_ptr = &(update_queue_counts[cur_upd_mapper_id][cur_upd_parcel_id]);
     NumericTablePtr recv_v_data_table = get(ParcelDataId);
-    // recv_v_data_table->getBlockOfColumnValuesBM(0, 1, 0, recv_v_data_table->getNumberOfRows(), readOnly, &recv_data_ptr);
+    HarpNumericTable* recv_v_data_table_mt = reinterpret_cast<HarpNumericTable*>(recv_v_data_table.get()); 
+    recv_v_data_table_mt->getBlockOfColumnValuesMT(0, 1, 0, recv_v_data_table->getNumberOfRows(), readOnly, &recv_data_ptr);
 
     BlockDescriptor<int>* recv_index_ptr = &(update_queue_index[cur_upd_mapper_id][cur_upd_parcel_id]);
     NumericTablePtr recv_v_index_table = get(ParcelIdxId);
-    // recv_v_index_table->getBlockOfColumnValuesBM(0, 1, 0, recv_v_index_table->getNumberOfRows(), readOnly, &recv_index_ptr);
+    HarpNumericTable* recv_v_index_table_mt = reinterpret_cast<HarpNumericTable*>(recv_v_index_table.get()); 
+    recv_v_index_table_mt->getBlockOfColumnValuesMT(0, 1, 0, recv_v_index_table->getNumberOfRows(), readOnly, &recv_index_ptr);
 
     //start the decompress process for a specific mapper id and a parcel id
     //construct update_queue_counts_decompress val 

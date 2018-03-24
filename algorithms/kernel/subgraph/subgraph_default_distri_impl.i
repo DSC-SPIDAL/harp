@@ -201,6 +201,8 @@ void subgraphDistriKernel<interm, method, cpu>::computeBottomTBB(Parameter* &par
     std::printf("Start Distrikernel compute bottom\n");
     std::fflush;
 
+    services::Environment::getInstance()->enableThreadPinning(true);
+
     int* colors = input->getColorsG();
 
     daal::algorithms::subgraph::interface1::dynamic_table_array* dt = input->getDTTable();
@@ -226,6 +228,7 @@ void subgraphDistriKernel<interm, method, cpu>::computeBottomTBB(Parameter* &par
     safeStat.detach();
 
     std::printf("Finish Distrikernel compute bottom\n");
+    services::Environment::getInstance()->enableThreadPinning(false);
     std::fflush;
 
 }/*}}}*/
@@ -593,6 +596,9 @@ void subgraphDistriKernel<interm, method, cpu>::computeNonBottomNbrSplitTBB(Para
 
     std::memset(thdwork_record, 0, thread_num*sizeof(double));
 
+    //enabling thread pinning for TBB
+    services::Environment::getInstance()->enableThreadPinning(true);
+
     SafeStatus safeStat;
     daal::threader_for(num_vert_g, num_vert_g, [&](int v)
     {
@@ -766,6 +772,8 @@ void subgraphDistriKernel<interm, method, cpu>::computeNonBottomNbrSplitTBB(Para
     });
 
     safeStat2.detach();
+
+    services::Environment::getInstance()->enableThreadPinning(false);
 
     //clear task_list
     input->task_list.clear();
@@ -1218,6 +1226,9 @@ void subgraphDistriKernel<interm, method, cpu>::updateRemoteCountsNbrSplitTBB(Pa
 
     std::memset(thdwork_record, 0, thread_num*sizeof(double));
 
+    //enabling thread pinning for TBB
+    services::Environment::getInstance()->enableThreadPinning(true);
+
     //loop over all the task_list_updates
     SafeStatus safeStat;
 
@@ -1344,6 +1355,8 @@ void subgraphDistriKernel<interm, method, cpu>::updateRemoteCountsNbrSplitTBB(Pa
     }); // finish all the v on thread
 
     safeStat.detach();
+
+    services::Environment::getInstance()->enableThreadPinning(false);
 
     input->task_list_update.clear();
 
@@ -1800,6 +1813,9 @@ void subgraphDistriKernel<interm, method, cpu>::updateRemoteCountsPipNbrSplitTBB
 
     std::memset(thdwork_record, 0, thread_num*sizeof(double));
 
+    //enabling thread pinning for TBB
+    services::Environment::getInstance()->enableThreadPinning(true);
+
     SafeStatus safeStat;
     //loop over all the task_list_updates
     daal::threader_for(task_update_queue_size, task_update_queue_size, [&](int t_id)
@@ -1931,6 +1947,8 @@ void subgraphDistriKernel<interm, method, cpu>::updateRemoteCountsPipNbrSplitTBB
     }); // finish all the v on thread
 
     safeStat.detach();
+
+    services::Environment::getInstance()->enableThreadPinning(false);
 
     // task_update list will be re-used til the last pipeline operation
     // input->task_list_update.clear();
