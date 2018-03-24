@@ -531,6 +531,9 @@ void MF_SGDDistriKernel<interm, method, cpu>::compute_train_tbb(int* &workWPos,
     else
         thread_num = threader_get_max_threads_number();
 
+    //enabling thread pinning for TBB
+    services::Environment::getInstance()->enableThreadPinning(true);
+
     SafeStatus safeStat;
     daal::threader_for(task_queues_num, task_queues_num, [=, &safeStat](int k)
     {
@@ -598,6 +601,8 @@ void MF_SGDDistriKernel<interm, method, cpu>::compute_train_tbb(int* &workWPos,
     });
 
     safeStat.detach();
+
+    services::Environment::getInstance()->enableThreadPinning(false);
 
     //reduce the trained num of points
     for(int k=0;k<task_queues_num;k++)
@@ -971,6 +976,9 @@ void MF_SGDDistriKernel<interm, method, cpu>::compute_test_tbb(int* workWPos,
     else
         thread_num = threader_get_max_threads_number();
 
+    //enabling thread pinning for TBB
+    services::Environment::getInstance()->enableThreadPinning(true);
+
     SafeStatus safeStat;
     daal::threader_for(task_queues_num, task_queues_num, [=, &safeStat](int k)
     {
@@ -1038,6 +1046,9 @@ void MF_SGDDistriKernel<interm, method, cpu>::compute_test_tbb(int* workWPos,
         }
 
     });
+
+    safeStat.detach();
+    services::Environment::getInstance()->enableThreadPinning(false);
 
     //sum up the rmse and testV values
     for(int k=0;k<task_queues_num;k++)
