@@ -264,11 +264,9 @@ public class SCDaalCollectiveMapper  extends CollectiveMapper<String, String, Ob
         // graph_count.init(this, context, scAlgorithm, max_v_id, numThreads, numCores, tpc, affinity, omp_opt, nbr_split_len, false, false, true);
         //
         // LOG.info("Finish colorcount_HJ init");
-
-		colorcount_HJ_V2 graph_count = new colorcount_HJ_V2();
+		colorcount_HJ graph_count = new colorcount_HJ();
         graph_count.init(this, context, scAlgorithm, max_v_id, numThreads, numCores, tpc, affinity, omp_opt, nbr_split_len, false, false, true);
-
-        LOG.info("Finish colorcount_HJ_V2 init");
+        LOG.info("Finish colorcount_HJ init");
 
         // // ------------------- generate communication information -------------------
         // // send/recv num and verts 

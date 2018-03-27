@@ -20,7 +20,7 @@ import java.lang.System;
 import com.intel.daal.algorithms.subgraph.*;
 import com.intel.daal.data_management.data.NumericTable;
 import com.intel.daal.data_management.data.HomogenNumericTable;
-// import com.intel.daal.data_management.data.HomogenBMNumericTable;
+import com.intel.daal.data_management.data.HarpNumericTable;
 import com.intel.daal.data_management.data.SOANumericTable;
 import com.intel.daal.data_management.data_source.DataSource;
 import com.intel.daal.data_management.data_source.FileDataSource;
@@ -152,11 +152,20 @@ public class RotateTaskComm implements Runnable {
 
             // add three numerictables
             int[] parcel_v_offset = new int[parcel_v_num+1];
-            HomogenNumericTable parcel_v_offset_table = new HomogenNumericTable(daal_Context, parcel_v_offset, 1, (parcel_v_num+1));
+            // HomogenNumericTable parcel_v_offset_table = new HomogenNumericTable(daal_Context, parcel_v_offset, 1, (parcel_v_num+1));
+            HarpNumericTable parcel_v_offset_table = new HarpNumericTable(daal_Context, 1, (parcel_v_num+1));
+			parcel_v_offset_table.setArray(parcel_v_offset, 0);
+
             float[] parcel_v_data = new float[parcel_c_len];
-            HomogenNumericTable parcel_v_data_table = new HomogenNumericTable(daal_Context, parcel_v_data, 1, parcel_c_len);
+            // HomogenNumericTable parcel_v_data_table = new HomogenNumericTable(daal_Context, parcel_v_data, 1, parcel_c_len);
+            HarpNumericTable parcel_v_data_table = new HarpNumericTable(daal_Context, 1, parcel_c_len);
+			parcel_v_data_table.setArray(parcel_v_data, 0);
+
             int[] parcel_v_index = new int[parcel_c_len];
-            HomogenNumericTable parcel_v_index_table = new HomogenNumericTable(daal_Context, parcel_v_index, 1, parcel_c_len);
+            // HomogenNumericTable parcel_v_index_table = new HomogenNumericTable(daal_Context, parcel_v_index, 1, parcel_c_len);
+            HarpNumericTable parcel_v_index_table = new HarpNumericTable(daal_Context, 1, parcel_c_len);
+			parcel_v_index_table.setArray(parcel_v_index, 0);
+
             // set the table to daal side
             this.scAlgorithm.input.set(InputId.ParcelOffset, parcel_v_offset_table);
             this.scAlgorithm.input.set(InputId.ParcelData, parcel_v_data_table);
@@ -226,13 +235,19 @@ public class RotateTaskComm implements Runnable {
             for(int p= 0; p<recv_v_index.length;p++)
                 recv_v_index_int[p] = (int)recv_v_index[p];
             
-            HomogenNumericTable recv_v_offset_table = new HomogenNumericTable(daal_Context, recv_v_offset, 1, recv_v_offset.length);
+            // HomogenNumericTable recv_v_offset_table = new HomogenNumericTable(daal_Context, recv_v_offset, 1, recv_v_offset.length);
+            HarpNumericTable recv_v_offset_table = new HarpNumericTable(daal_Context, 1, recv_v_offset.length);
+			recv_v_offset_table.setArray(recv_v_offset, 0);
             this.scAlgorithm.input.set(InputId.ParcelOffset, recv_v_offset_table);
 
-            HomogenNumericTable recv_v_data_table = new HomogenNumericTable(daal_Context, recv_v_data, 1, recv_v_data.length);
+            // HomogenNumericTable recv_v_data_table = new HomogenNumericTable(daal_Context, recv_v_data, 1, recv_v_data.length);
+            HarpNumericTable recv_v_data_table = new HarpNumericTable(daal_Context, 1, recv_v_data.length);
+			recv_v_data_table.setArray(recv_v_data, 0);
             this.scAlgorithm.input.set(InputId.ParcelData, recv_v_data_table);
 
-            HomogenNumericTable recv_v_index_table = new HomogenNumericTable(daal_Context, recv_v_index_int, 1, recv_v_index_int.length);
+            // HomogenNumericTable recv_v_index_table = new HomogenNumericTable(daal_Context, recv_v_index_int, 1, recv_v_index_int.length);
+            HarpNumericTable recv_v_index_table = new HarpNumericTable(daal_Context, 1, recv_v_index_int.length);
+			recv_v_index_table.setArray(recv_v_index_int, 0);
             this.scAlgorithm.input.set(InputId.ParcelIdx, recv_v_index_table);
 
             peak_data_comm_count += ((double)(recv_v_offset.length + recv_v_data.length + recv_v_index_int.length)*4/(1024*1024*1024));
