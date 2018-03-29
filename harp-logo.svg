@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="460px" height="120px" viewBox="0 0 460 120" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 49 (51002) - http://www.bohemiancoding.com/sketch -->
+    <title>Artboard 3</title>
+    <desc>Created with Sketch.</desc>
+    <defs></defs>
+    <g id="Artboard-3" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Logo-Copy" transform="translate(37.000000, 5.000000)" stroke="#FFFFFF">
+            <path d="M61.7322404,12.9411765 L47.4863388,97.9215686" id="Path-5" stroke-width="2.15686275"></path>
+            <path d="M54.8251366,12.9411765 L40.795082,96.8431373" id="Path-5-Copy" stroke-width="2.15686275"></path>
+            <path d="M47.4863388,14.2600936 C47.1985428,9.57993341 47.0546448,14.2856049 47.0546448,28.3771082 C47.0546448,49.5143631 35.8306011,63.6040391 35.8306011,77.9849513 C35.8306011,87.5722262 35.6867031,91.2064239 35.3989071,88.8875446" id="Path-5-Copy-2" stroke-width="2.15686275"></path>
+            <path d="M39.5,19.627451 L29.1393443,82.6078431" id="Path-5-Copy-3" stroke-width="2.15686275"></path>
+            <path d="M30.4344262,29.9803922 L23.0956284,75.7058824" id="Path-5-Copy-4" stroke-width="2.15686275"></path>
+            <path d="M22.2322404,37.745098 L17.4836066,67.5098039" id="Path-5-Copy-5" stroke-width="2.15686275"></path>
+            <path d="M14.4617486,40.7647059 L11.8715847,58.0196078" id="Path-5-Copy-6" stroke-width="2.15686275"></path>
+            <path d="M69.8516119,13.4803922 C61.8758524,11.6111111 55.1126466,11.6111111 49.5619945,13.4803922 C39.3251311,16.7156863 28.1010874,42.5980392 15.5819617,42.5980392 C15.1401967,42.5980392 6.51638795,40.872549 5.09751358,40.2254902 C1.52588376,38.5966958 -0.946202271,40.2254902 0.348879696,43.245098 C1.21226767,45.2581699 19.1995172,67.2581699 54.3106283,109.245098 L69.8516119,13.4803922 Z" id="Path-3" stroke-width="6.47058824" stroke-linecap="round" stroke-linejoin="round"></path>
+            <polyline id="Path-4" stroke-width="6.47058824" stroke-linecap="round" stroke-linejoin="round" points="69.9344262 12.9411765 72.0928962 0.862745098 65.6174863 0 79 1.7254902"></polyline>
+            <path d="M30,109.568627 L75.9781421,109.568627" id="Path-2" stroke-width="6.47058824" fill="#FFFFFF" stroke-linecap="round"></path>
+        </g>
+        <text id="Harp" font-family="Oswald-Regular, Oswald" font-size="112" font-weight="normal" letter-spacing="5.5999999" fill="#FFFFFF">
+            <tspan x="155" y="109">HAR</tspan>
+            <tspan x="356.64375" y="109">P</tspan>
+        </text>
+    </g>
+</svg>
