@@ -88,8 +88,8 @@ public class HarpNumericTable extends NumericTable {
      * @param arr Array of values of the feature
      * @param idx Index of the feature
      */
-    public void setArray(double[] arr, long idx) {
-        ((HarpNumericTableImpl)tableImpl).setArray(arr, idx);
+    public void setArray(double[] arr, long idx, long key) {
+        ((HarpNumericTableImpl)tableImpl).setArray(arr, idx, key);
     }
 
     /**
@@ -98,8 +98,8 @@ public class HarpNumericTable extends NumericTable {
      * @param arr Array of values of the feature
      * @param idx Index of the feature
      */
-    public void updateArray(double[] arr, long idx) {
-        ((HarpNumericTableImpl)tableImpl).updateArray(arr, idx);
+    public void updateArray(double[] arr, long idx, long key) {
+        ((HarpNumericTableImpl)tableImpl).updateArray(arr, idx, key);
     }
 
     /**
@@ -108,8 +108,8 @@ public class HarpNumericTable extends NumericTable {
      * @param arr Array of values of the feature
      * @param idx Index of the feature
      */
-    public void setArray(float[] arr, long idx) {
-        ((HarpNumericTableImpl)tableImpl).setArray(arr, idx);
+    public void setArray(float[] arr, long idx, long key) {
+        ((HarpNumericTableImpl)tableImpl).setArray(arr, idx, key);
     }
 
     /**
@@ -118,8 +118,8 @@ public class HarpNumericTable extends NumericTable {
      * @param arr Array of values of the feature
      * @param idx Index of the feature
      */
-    public void updateArray(float[] arr, long idx) {
-        ((HarpNumericTableImpl)tableImpl).updateArray(arr, idx);
+    public void updateArray(float[] arr, long idx, long key) {
+        ((HarpNumericTableImpl)tableImpl).updateArray(arr, idx, key);
     }
 
     /**
@@ -128,8 +128,8 @@ public class HarpNumericTable extends NumericTable {
      * @param arr Array of values of the feature
      * @param idx Index of the feature
      */
-    public void setArray(long[] arr, long idx) {
-        ((HarpNumericTableImpl)tableImpl).setArray(arr, idx);
+    public void setArray(long[] arr, long idx, long key) {
+        ((HarpNumericTableImpl)tableImpl).setArray(arr, idx, key);
     }
 
     /**
@@ -138,8 +138,8 @@ public class HarpNumericTable extends NumericTable {
      * @param arr Array of values of the feature
      * @param idx Index of the feature
      */
-    public void updateArray(long[] arr, long idx) {
-        ((HarpNumericTableImpl)tableImpl).updateArray(arr, idx);
+    public void updateArray(long[] arr, long idx, long key) {
+        ((HarpNumericTableImpl)tableImpl).updateArray(arr, idx, key);
     }
 
     /**
@@ -148,8 +148,8 @@ public class HarpNumericTable extends NumericTable {
      * @param arr Array of values of the feature
      * @param idx Index of the feature
      */
-    public void setArray(int[] arr, long idx) {
-        ((HarpNumericTableImpl)tableImpl).setArray(arr, idx);
+    public void setArray(int[] arr, long idx, long key) {
+        ((HarpNumericTableImpl)tableImpl).setArray(arr, idx, key);
     }
 
     /**
@@ -158,8 +158,8 @@ public class HarpNumericTable extends NumericTable {
      * @param arr Array of values of the feature
      * @param idx Index of the feature
      */
-    public void updateArray(int[] arr, long idx) {
-        ((HarpNumericTableImpl)tableImpl).updateArray(arr, idx);
+    public void updateArray(int[] arr, long idx, long key) {
+        ((HarpNumericTableImpl)tableImpl).updateArray(arr, idx, key);
     }
 
 }

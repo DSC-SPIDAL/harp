@@ -43,6 +43,7 @@
 
 #include "JHarpNumericTableImpl.h"
 #include "numeric_table.h"
+#include "harp_numeric_table.h"
 #include "homogen_numeric_table.h"
 
 #include "daal.h"
@@ -65,10 +66,19 @@ inline static NumericTablePtr *getNIONumericTableObject(JNIEnv *env, jobject thi
     return (NumericTablePtr *)(env->GetLongField(thisObj, objFieldID));
 }
 
-/*
- * Class:     daal_NumericTableImpl
- * Method:    cNewJavaHarpNumericTable
- * Signature:(JJIII)J
+
+/**
+ * @brief create a JavaHarpNumeric Table
+ *
+ * @param env
+ * @param thisObj
+ * @param p
+ * @param n
+ * @param layout
+ * @param featuresEqual
+ * @param tag
+ *
+ * @return 
  */
 JNIEXPORT jlong JNICALL Java_com_intel_daal_data_1management_data_HarpNumericTableImpl_cNewJavaHarpNumericTable
 (JNIEnv *env, jobject thisObj, jlong p, jlong n, jint layout, jint featuresEqual, jint tag)
@@ -146,4 +156,23 @@ JNIEXPORT jlong JNICALL Java_com_intel_daal_data_1management_data_HarpNumericTab
     }
 
     return(jlong)(new SerializationIfacePtr(tbl));
+}
+
+
+/**
+ * @brief set up a key-idx pair
+ *
+ * @param env
+ * @param thisObj
+ * @param key
+ * @param idx
+ *
+ * @return 
+ */
+JNIEXPORT void JNICALL Java_com_intel_daal_data_1management_data_HarpNumericTableImpl_cSetKeyMap
+(JNIEnv *env, jobject thisObj, jlong numTableAddr, jlong key, jlong idx)
+{
+    HarpNumericTable *nt = static_cast<HarpNumericTable *>(((SerializationIfacePtr *)numTableAddr)->get());
+    nt->setKeyIdx(key, idx);
+
 }

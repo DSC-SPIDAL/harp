@@ -89,6 +89,10 @@ public:
     virtual void releaseBlockOfColumnValuesMT(size_t feature_start, size_t feature_len, BlockDescriptor<float>** block) {}
     virtual void releaseBlockOfColumnValuesMT(size_t feature_start, size_t feature_len, BlockDescriptor<int>** block) {}
 
+    virtual void setKeyIdx(long key, long idx) {}
+
+    virtual long* getKeys() {return NULL;}
+
 };
 
 typedef services::SharedPtr<HarpNumericTable> HarpNumericTablePtr;

@@ -159,21 +159,21 @@ public:
      * @param[in] par
      */
     daal::services::interface1::Status compute(NumericTable** WPos, NumericTable** HPos, NumericTable** Val, NumericTable** WPosTest, 
-            NumericTable** HPosTest, NumericTable** ValTest, NumericTable *r[], Parameter* &par, int* &col_ids, interm** &hMat_native_mem);
+            NumericTable** HPosTest, NumericTable** ValTest, NumericTable *r[], Parameter* &par, long* &col_ids, interm** &hMat_native_mem);
 
     // multi-threading version of training process implemented by OpenMP 
     void compute_train_omp(int* &workWPos, int* &workHPos, interm* &workV, const int dim_set,
-                           interm* &mtWDataPtr, int* &col_ids, interm** &hMat_native_mem, Parameter* &parameter);
+                           interm* &mtWDataPtr, long* &col_ids, interm** &hMat_native_mem, Parameter* &parameter);
 
     // multi-threading version of training process implemented by Intel TBB 
     void compute_train_tbb(int* &workWPos, int* &workHPos, interm* &workV, const int dim_set,
-                           interm* &mtWDataPtr, int* &col_ids, interm** &hMat_native_mem, Parameter* &parameter);
+                           interm* &mtWDataPtr, long* &col_ids, interm** &hMat_native_mem, Parameter* &parameter);
 
     // multi-threading version of testing process implemented by OpenMP 
-    void compute_test_omp(int* workWPos, int* workHPos, interm* workV, const int dim_set, interm* mtWDataPtr, interm* mtRMSEPtr, Parameter *parameter, int* col_ids, interm** hMat_native_mem);
+    void compute_test_omp(int* workWPos, int* workHPos, interm* workV, const int dim_set, interm* mtWDataPtr, interm* mtRMSEPtr, Parameter *parameter, long* col_ids, interm** hMat_native_mem);
 
     // multi-threading version of testing process implemented by TBB 
-    void compute_test_tbb(int* workWPos, int* workHPos, interm* workV, const int dim_set, interm* mtWDataPtr, interm* mtRMSEPtr, Parameter *parameter, int* col_ids, interm** hMat_native_mem);
+    void compute_test_tbb(int* workWPos, int* workHPos, interm* workV, const int dim_set, interm* mtWDataPtr, interm* mtRMSEPtr, Parameter *parameter, long* col_ids, interm** hMat_native_mem);
 
 };
 
@@ -740,7 +740,7 @@ void test_generate_distri(NumericTable *r[], NumericTable* &a3, NumericTable* &a
  * @param copylist
  */
 template<typename interm, CpuType cpu>
-void hMat_generate(NumericTable *r[], mf_sgd::Parameter* &par, size_t dim_r, int thread_num, int* &col_ids,
+void hMat_generate(NumericTable *r[], mf_sgd::Parameter* &par, size_t dim_r, int thread_num, long* &col_ids,
     interm** &hMat_native_mem, BlockDescriptor<interm>** &hMat_blk_array, internal::SOADataCopy<interm>** &copylist)
 {/*{{{*/
 
@@ -753,10 +753,15 @@ void hMat_generate(NumericTable *r[], mf_sgd::Parameter* &par, size_t dim_r, int
     assert(hMat_rowNum <= (r[1]->getNumberOfColumns()));
 
     // should be dim_r + 1, there is a sentinel to record the col id 
+    // deprecated
+    // int hMat_colNum = r[1]->getNumberOfRows(); 
+    // assert(hMat_colNum == dim_r + 1);
     int hMat_colNum = r[1]->getNumberOfRows(); 
-    assert(hMat_colNum == dim_r + 1);
+    assert(hMat_colNum == dim_r);
 
-    col_ids = (int*)calloc(hMat_rowNum, sizeof(int));
+    HarpNumericTable* rhmap = reinterpret_cast<HarpNumericTable*>(r[1]);
+    col_ids = rhmap->getKeys(); 
+    // col_ids = (int*)calloc(hMat_rowNum, sizeof(int));
     assert(col_ids != NULL);
 
     hMat_native_mem = new interm *[hMat_rowNum];
@@ -782,7 +787,6 @@ void hMat_generate(NumericTable *r[], mf_sgd::Parameter* &par, size_t dim_r, int
 
     // std::printf("Start converting h_map\n");
     // std::fflush(stdout);
-
     clock_gettime(CLOCK_MONOTONIC, &ts1);
 
     //TODO replace this by JavaHarpTensor
@@ -821,9 +825,9 @@ void hMat_generate(NumericTable *r[], mf_sgd::Parameter* &par, size_t dim_r, int
     daal::threader_for(hMat_rowNum, hMat_rowNum, [=, &safeStat2](int k)
     {
         ConcurrentModelMap::accessor pos; 
-        int col_id = (int)((hMat_native_mem[k])[0]);
-        col_ids[k] = col_id;
-
+        // int col_id = (int)((hMat_native_mem[k])[0]);
+        // col_ids[k] = col_id;
+        int col_id = (int)(col_ids[k]);
         if(par->_hMat_map->insert(pos, col_id))
         {
             pos->second = k;

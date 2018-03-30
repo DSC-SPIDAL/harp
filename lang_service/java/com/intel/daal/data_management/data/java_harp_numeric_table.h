@@ -51,6 +51,7 @@
 #include <jni.h>
 #include <tbb/tbb.h>
 
+#include <unordered_map>
 
 #include "numeric_table.h"
 #include "harp_numeric_table.h"
@@ -96,6 +97,7 @@ public:
     explicit JavaHarpNumericTable(DictionaryIface::FeaturesEqual featuresEqual = DictionaryIface::notEqual):
         HarpNumericTable(0, 0, featuresEqual), jvm(NULL), jJavaNumTable(NULL)
     {
+        keys = NULL;
     }
 
     /**
@@ -135,6 +137,8 @@ public:
         }
 
         tls.local() = local_tls;
+        keys = new long[featnum];
+
     }
 
     /**
@@ -160,6 +164,10 @@ public:
                 (local_tls.jenv)->DeleteGlobalRef(jJavaNumTable);
             }
         }
+
+        if (keys != NULL)
+            delete[] keys;
+
     }
 
     services::Status serializeImpl(InputDataArchive  *arch) DAAL_C11_OVERRIDE
@@ -404,6 +412,27 @@ public:
         return services::Status();
     }
 
+    /**
+     * @brief set key-idx pair
+     *
+     * @param key
+     * @param idx
+     */
+    void setKeyIdx(long key, long idx) DAAL_C11_OVERRIDE
+    {
+        if (keys == NULL)
+        {
+            keys = new long[(int)getNumberOfColumns()];
+        }
+
+        keys[(int)idx] = key;
+        keysMap.insert({ key, (int)idx });
+    }
+
+    long* getKeys() DAAL_C11_OVERRIDE
+    {
+        return keys;
+    }
 
     template<typename T>
     services::Status getTFeature(size_t feature_idx, size_t idx, size_t nrows, ReadWriteMode rwFlag, BlockDescriptor<T> &block,
@@ -679,9 +708,13 @@ protected:
             is_attached = false;
         }
     };
+
     tbb::enumerable_thread_specific<_tls> tls;  /**< Thread local storage */
     jobject jJavaNumTable;                      /**< Java object associated with this C++ object */
     JavaVM *jvm;                                /**< Java VM interface function table */
+    long* keys;                                 /* store the keys in an ordered compact way */
+    std::unordered_map<long, int> keysMap;      /* lookup a feature index by the key */
+    
 
     template<typename Archive, bool onDeserialize>
     services::Status serialImpl(Archive *arch)

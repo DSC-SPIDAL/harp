@@ -101,7 +101,7 @@ daal::services::interface1::Status MF_SGDDistriKernel<interm, method, cpu>::comp
                                                       NumericTable** WPosTest,
                                                       NumericTable** HPosTest, 
                                                       NumericTable** ValTest, 
-                                                      NumericTable *r[], Parameter* &parameter, int* &col_ids,
+                                                      NumericTable *r[], Parameter* &parameter, long* &col_ids,
                                                       interm** &hMat_native_mem)
 {/*{{{*/
 
@@ -201,7 +201,7 @@ void MF_SGDDistriKernel<interm, method, cpu>::compute_train_omp(int* &workWPos,
                                                                 interm* &workV, 
                                                                 const int dim_set,
                                                                 interm* &mtWDataPtr, 
-                                                                int* &col_ids,
+                                                                long* &col_ids,
                                                                 interm** &hMat_native_mem,
                                                                 Parameter* &parameter)
 {/*{{{*/
@@ -215,9 +215,6 @@ void MF_SGDDistriKernel<interm, method, cpu>::compute_train_omp(int* &workWPos,
     const double learningRate = parameter->_learningRate;
     const double lambda = parameter->_lambda;
     int thread_num = parameter->_thread_num;
-    // const int iteration = parameter->_iteration;
-    // const int Avx_explicit = parameter->_Avx_explicit;
-    // const double ratio = parameter->_ratio;
 
     // ------------------- Starting OpenMP based Training  -------------------
     if (thread_num == 0)
@@ -334,18 +331,13 @@ void MF_SGDDistriKernel<interm, method, cpu>::compute_train_omp(int* &workWPos,
         interm *WMat = 0; 
         interm HMat[dim_r];
 
-        interm Mult = 0;
-        interm Err = 0;
-        interm WMatVal = 0;
-        interm HMatVal = 0;
-        int p = 0;
-
         interm* mtWDataLocal = mtWDataPtr;
         interm** mtHDataLocal = hMat_native_mem;   
 
         size_t stride_w = dim_r;
         // h matrix has a sentinel as the first element of each row
-        size_t stride_h = dim_r + 1;  
+        // size_t stride_h = dim_r + 1;  
+        size_t stride_h = dim_r;  
 
         interm learningRateLocal = learningRate;
         interm lambdaLocal = lambda;
@@ -360,25 +352,24 @@ void MF_SGDDistriKernel<interm, method, cpu>::compute_train_omp(int* &workWPos,
         {
             //data copy 
             //mtHDataLocal contains a first sentinal element of col id
-            memcpy(HMat, (mtHDataLocal[col_pos]+1), dim_r*sizeof(interm));
+            //sentinal deprecated
+            memcpy(HMat, mtHDataLocal[col_pos], dim_r*sizeof(interm));
 
             for(int j=0;j<squeue_size;j++)
             {
                 int data_id = ids_ptr[j];
                 size_t row_pos = workWPosLocal[data_id];
-                Mult = 0;
-                Err = 0;
-
                 WMat = mtWDataLocal + row_pos*stride_w;
                 //use avx intrinsics
                 updateMF_explicit<interm, cpu>(WMat, HMat, workVLocal, data_id, dim_r, learningRateLocal, lambdaLocal);
-                
             }
 
             partialTrainedNumV[task_id] = squeue_size;
             //data copy 
             //mtHDataLocal contains a first sentinal element of col id
-            memcpy(mtHDataLocal[col_pos]+1, HMat, dim_r*sizeof(interm));
+            //sentinal deprecated
+            // memcpy(mtHDataLocal[col_pos]+1, HMat, dim_r*sizeof(interm));
+            memcpy(mtHDataLocal[col_pos], HMat, dim_r*sizeof(interm));
         }
 
     }
@@ -422,7 +413,7 @@ void MF_SGDDistriKernel<interm, method, cpu>::compute_train_tbb(int* &workWPos,
                                                                 interm* &workV, 
                                                                 const int dim_set,
                                                                 interm* &mtWDataPtr, 
-                                                                int* &col_ids,
+                                                                long* &col_ids,
                                                                 interm** &hMat_native_mem,
                                                                 Parameter* &parameter)
 {/*{{{*/
@@ -552,18 +543,13 @@ void MF_SGDDistriKernel<interm, method, cpu>::compute_train_tbb(int* &workWPos,
             interm *WMat = 0; 
             interm HMat[dim_r];
 
-            interm Mult = 0;
-            interm Err = 0;
-            interm WMatVal = 0;
-            interm HMatVal = 0;
-            int p = 0;
-
             interm* mtWDataLocal = mtWDataPtr;
             interm** mtHDataLocal = hMat_native_mem;   
 
             size_t stride_w = dim_r;
             // h matrix has a sentinel as the first element of each row
-            size_t stride_h = dim_r + 1;  
+            // sentinal deprecated
+            size_t stride_h = dim_r;  
 
             interm learningRateLocal = learningRate;
             interm lambdaLocal = lambda;
@@ -578,14 +564,14 @@ void MF_SGDDistriKernel<interm, method, cpu>::compute_train_tbb(int* &workWPos,
             {
                 //data copy 
                 //mtHDataLocal contains a first sentinal element of col id
-                memcpy(HMat, (mtHDataLocal[col_pos]+1), dim_r*sizeof(interm));
+                //sentinal deprecated
+                // memcpy(HMat, (mtHDataLocal[col_pos]+1), dim_r*sizeof(interm));
+                memcpy(HMat, mtHDataLocal[col_pos], dim_r*sizeof(interm));
 
                 for(int j=0;j<squeue_size;j++)
                 {
                     int data_id = ids_ptr[j];
                     size_t row_pos = workWPosLocal[data_id];
-                    Mult = 0;
-                    Err = 0;
 
                     WMat = mtWDataLocal + row_pos*stride_w;
                     //use avx intrinsics
@@ -596,7 +582,9 @@ void MF_SGDDistriKernel<interm, method, cpu>::compute_train_tbb(int* &workWPos,
                 partialTrainedNumV[task_id] = squeue_size;
                 //data copy 
                 //mtHDataLocal contains a first sentinal element of col id
-                memcpy(mtHDataLocal[col_pos]+1, HMat, dim_r*sizeof(interm));
+                //sentinal deprecated
+                // memcpy(mtHDataLocal[col_pos]+1, HMat, dim_r*sizeof(interm));
+                memcpy(mtHDataLocal[col_pos], HMat, dim_r*sizeof(interm));
             }
     });
 
@@ -637,7 +625,7 @@ void MF_SGDDistriKernel<interm, method, cpu>::compute_test_omp(int* workWPos,
                                                                interm* mtWDataPtr, 
                                                                interm* mtRMSEPtr,
                                                                Parameter *parameter,
-                                                               int* col_ids,
+                                                               long* col_ids,
                                                                interm** hMat_native_mem)
 
 {/*{{{*/
@@ -767,7 +755,9 @@ void MF_SGDDistriKernel<interm, method, cpu>::compute_test_omp(int* workWPos,
 
         size_t stride_w = dim_r;
         // h matrix has a sentinel as the first element of each row
-        int stride_h = dim_r + 1;  
+        // sentinal deprecated
+        // int stride_h = dim_r + 1;  
+        int stride_h = dim_r;  
 
         int col_pos = queue_cols_ptr[k];
         int squeue_size = queue_size_ptr[k];
@@ -778,7 +768,9 @@ void MF_SGDDistriKernel<interm, method, cpu>::compute_test_omp(int* workWPos,
             //---------- copy hmat data ---------------
             currentMutex_t::scoped_lock lock_h(mutex_h[col_pos]);
             //attention to the first sentinel element
-            memcpy(HMat, mtHDataLocal[col_pos]+1, dim_r*sizeof(interm));
+            //sentinal deprecated
+            // memcpy(HMat, mtHDataLocal[col_pos]+1, dim_r*sizeof(interm));
+            memcpy(HMat, mtHDataLocal[col_pos], dim_r*sizeof(interm));
             lock_h.release();
 
             for(int j=0;j<squeue_size;j++)
@@ -809,12 +801,6 @@ void MF_SGDDistriKernel<interm, method, cpu>::compute_test_omp(int* workWPos,
             partialTestV[k] = testV;
 
         }
-        // else
-        // {
-            // std::printf("Abnormal Col pos: %d, H range: %ld\n", col_pos, dim_h);
-            // std::fflush(stdout);
-        // }
-
 
     }
 
@@ -865,17 +851,10 @@ void MF_SGDDistriKernel<interm, method, cpu>::compute_test_tbb(int* workWPos,
                                                                interm* mtWDataPtr, 
                                                                interm* mtRMSEPtr,
                                                                Parameter *parameter,
-                                                               int* col_ids,
+                                                               long* col_ids,
                                                                interm** hMat_native_mem)
 
 {/*{{{*/
-
-    // //debug for test tbb:atomic<T> size
-    // std::printf("Test the cast of tbb atomic array\n");
-    // std::fflush;
-    // float* array_nonatomic = new float[10];
-    // std::memset(array_nonatomic, 0, sizeof(array_nonatomic));
-    // tbb::atomic<float>* array_atomic = reinterpret_cast<tbb::atomic<float>*>(array_nonatomic);
 
     /* retrieve members of parameter */
     const int dim_r = parameter->_Dim_r;
@@ -980,7 +959,7 @@ void MF_SGDDistriKernel<interm, method, cpu>::compute_test_tbb(int* workWPos,
     services::Environment::getInstance()->enableThreadPinning(true);
 
     SafeStatus safeStat;
-    daal::threader_for(task_queues_num, task_queues_num, [=, &safeStat](int k)
+    daal::threader_for(task_queues_num, task_queues_num, [&](int k)
     {
         int* workWPosLocal = workWPos; 
         int* workHPosLocal = workHPos; 
@@ -1002,7 +981,9 @@ void MF_SGDDistriKernel<interm, method, cpu>::compute_test_tbb(int* workWPos,
 
         size_t stride_w = dim_r;
         // h matrix has a sentinel as the first element of each row
-        int stride_h = dim_r + 1;  
+        // sentinal deprecated
+        // int stride_h = dim_r + 1;  
+        int stride_h = dim_r;  
 
         int col_pos = queue_cols_ptr[k];
         int squeue_size = queue_size_ptr[k];
@@ -1013,7 +994,9 @@ void MF_SGDDistriKernel<interm, method, cpu>::compute_test_tbb(int* workWPos,
             //---------- copy hmat data ---------------
             currentMutex_t::scoped_lock lock_h(mutex_h[col_pos]);
             //attention to the first sentinel element
-            memcpy(HMat, mtHDataLocal[col_pos]+1, dim_r*sizeof(interm));
+            //sentinal deprecated
+            // memcpy(HMat, mtHDataLocal[col_pos]+1, dim_r*sizeof(interm));
+            memcpy(HMat, mtHDataLocal[col_pos], dim_r*sizeof(interm));
             lock_h.release();
 
             for(int j=0;j<squeue_size;j++)

@@ -141,7 +141,7 @@ daal::services::interface1::Status DistriContainer<step, interm, method, cpu>::c
     //------------------------------- build up the hMat matrix -------------------------------
 
     //store the col_ids of this iteration
-    int* col_ids = NULL;
+    long* col_ids = NULL;
     //native memory space to hold H matrix values
     interm** hMat_native_mem = NULL;
 
@@ -166,8 +166,8 @@ daal::services::interface1::Status DistriContainer<step, interm, method, cpu>::c
     internal::hMat_release<interm, cpu>(r, par, dim_r, thread_num, hMat_blk_array, copylist);
 
     //clean up the memory space per iteration
-    if (col_ids != NULL)
-        free(col_ids);
+    // if (col_ids != NULL)
+    //     free(col_ids);
 
     if (par->_hMat_map != NULL)
     {

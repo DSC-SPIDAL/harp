@@ -49,7 +49,10 @@ import java.nio.Buffer;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
+
 import java.util.Vector;
+import java.util.HashMap;
+import java.util.Map;
 
 import com.intel.daal.services.DaalContext;
 import com.intel.daal.SerializationTag;
@@ -92,7 +95,6 @@ public class HarpNumericTableImpl extends NumericTableImpl {
         return cNewJavaHarpNumericTable(nColumns, nRows, layout.ordinal(), featuresEqual.ordinal(), tag.getValue());
     }
 
-    private native long cNewJavaHarpNumericTable(long nColumns, long nRows, int layout, int featuresEqual, int tag);
 
     /**
      * Sets array of doubles of the feature to the table
@@ -100,9 +102,10 @@ public class HarpNumericTableImpl extends NumericTableImpl {
      * @param arr Array of values of the feature
      * @param idx Index of the feature
      */
-    public void setArray(double[] arr, long idx) {
+    public void setArray(double[] arr, long idx, long key) {
         dict.setFeature(Double.class, (int) idx);
         arrays.set((int) idx, arr);
+        cSetKeyMap(this.cObject, key, idx);
     }
 
     /**
@@ -111,8 +114,9 @@ public class HarpNumericTableImpl extends NumericTableImpl {
      * @param arr Array of values of the feature
      * @param idx Index of the feature
      */
-    public void updateArray(double[] arr, long idx) {
+    public void updateArray(double[] arr, long idx, long key) {
         arrays.set((int) idx, arr);
+        cSetKeyMap(this.cObject, key, idx);
     }
 
     /**
@@ -121,9 +125,10 @@ public class HarpNumericTableImpl extends NumericTableImpl {
      * @param arr Array of values of the feature
      * @param idx Index of the feature
      */
-    public void setArray(float[] arr, long idx) {
+    public void setArray(float[] arr, long idx, long key) {
         dict.setFeature(Float.class, (int) idx);
         arrays.set((int) idx, arr);
+        cSetKeyMap(this.cObject, key, idx);
     }
 
     /**
@@ -132,8 +137,9 @@ public class HarpNumericTableImpl extends NumericTableImpl {
      * @param arr Array of values of the feature
      * @param idx Index of the feature
      */
-    public void updateArray(float[] arr, long idx) {
+    public void updateArray(float[] arr, long idx, long key) {
         arrays.set((int) idx, arr);
+        cSetKeyMap(this.cObject, key, idx);
     }
 
     /**
@@ -142,9 +148,10 @@ public class HarpNumericTableImpl extends NumericTableImpl {
      * @param arr Array of values of the feature
      * @param idx Index of the feature
      */
-    public void setArray(long[] arr, long idx) {
+    public void setArray(long[] arr, long idx, long key) {
         dict.setFeature(Long.class, (int) idx);
         arrays.set((int) idx, arr);
+        cSetKeyMap(this.cObject, key, idx);
     }
 
     /**
@@ -153,8 +160,9 @@ public class HarpNumericTableImpl extends NumericTableImpl {
      * @param arr Array of values of the feature
      * @param idx Index of the feature
      */
-    public void updateArray(long[] arr, long idx) {
+    public void updateArray(long[] arr, long idx, long key) {
         arrays.set((int) idx, arr);
+        cSetKeyMap(this.cObject, key, idx);
     }
 
     /**
@@ -163,9 +171,10 @@ public class HarpNumericTableImpl extends NumericTableImpl {
      * @param arr Array of values of the feature
      * @param idx Index of the feature
      */
-    public void setArray(int[] arr, long idx) {
+    public void setArray(int[] arr, long idx, long key) {
         dict.setFeature(Integer.class, (int) idx);
         arrays.set((int) idx, arr);
+        cSetKeyMap(this.cObject, key, idx);
     }
 
     /**
@@ -174,8 +183,9 @@ public class HarpNumericTableImpl extends NumericTableImpl {
      * @param arr Array of values of the feature
      * @param idx Index of the feature
      */
-    public void updateArray(int[] arr, long idx) {
+    public void updateArray(int[] arr, long idx, long key) {
         arrays.set((int) idx, arr);
+        cSetKeyMap(this.cObject, key, idx);
     }
 
     /**
@@ -321,8 +331,6 @@ public class HarpNumericTableImpl extends NumericTableImpl {
         vectorDownCast.downCast((int) vectorNum, (int) vectorIndex, buf, arrays.get((int) featureIndex));
     }
 
-    protected Vector<Object> arrays;
-
     @Override
     protected void onUnpack(DaalContext context) {
         if (this.cObject == 0) {
@@ -335,5 +343,12 @@ public class HarpNumericTableImpl extends NumericTableImpl {
     public void freeDataMemory() {
         arrays = null;
     }
+
+    // member field
+    protected Vector<Object> arrays;
+    // create a Java_harp_numeric_table at backend
+    private native long cNewJavaHarpNumericTable(long nColumns, long nRows, int layout, int featuresEqual, int tag);
+    // add a new entry to key hashmap
+    private native void cSetKeyMap(long cObject, long key, long idx);
 }
 /** @} */
