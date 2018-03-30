@@ -345,16 +345,16 @@ public class SGDDaalCollectiveMapper
 
             LOG.info("Create a htable_daal with a size of "+htable_daal_size);
 
-            //hTableMap_daal has a dimension of feature dimension plus a sentinal value to remember 
-            //the column id
-            hTableMap_daal = new HarpNumericTable(daal_Context, htable_daal_size, r+1);
+            //hTableMap_daal has a dimension of feature dimension plus a key value of the column id
+            // hTableMap_daal = new HarpNumericTable(daal_Context, htable_daal_size, r+1);
+            hTableMap_daal = new HarpNumericTable(daal_Context, htable_daal_size, r);
 
             //initialize htable_daal_size with empty values
-			//a sentinel value at [0], making length to be r+1
+			//key is intialized to be zero
             for(int k=0;k<htable_daal_size;k++)
-                ((HarpNumericTable)hTableMap_daal).setArray(new double[r+1], k);
+                ((HarpNumericTable)hTableMap_daal).setArray(new double[r], k, 0);
 
-            //computeRMSE before iteration
+			//computeRMSE before iteration
             printRMSEbyDAAL(sgdAlgorithm, model_data, rotator, hTableMap, hTableMap_daal, numWorkers, totalNumTestV, wMat_size, 0, configuration);
             
             LOG.info("Iteration Starts.");
@@ -403,7 +403,7 @@ public class SGDDaalCollectiveMapper
                         for(Partition<DoubleArray> p : hTableMap[k].getPartitions())
                         {
                             double[] data = (double[])p.get().get(); 
-                            ((HarpNumericTable)hTableMap_daal).updateArray(data, table_entry);
+                            ((HarpNumericTable)hTableMap_daal).updateArray(data, table_entry, p.id());
                             table_entry++;
                         }
 
@@ -993,10 +993,14 @@ public class SGDDaalCollectiveMapper
                     // This h column
                     // will be created by this worker
                     int colID = ids[i];
-                    DoubleArray rCol = DoubleArray.create(r+1, false);
+                    // DoubleArray rCol = DoubleArray.create(r+1, false);
+                    // SGDUtil.randomize(random, rCol.get(), r, oneOverSqrtR);
+                    // //the first element of rCol is its col id
+                    // rCol.get()[0] = (double)colID;
+					DoubleArray rCol = DoubleArray.create(r, false);
                     SGDUtil.randomize(random, rCol.get(), r, oneOverSqrtR);
                     //the first element of rCol is its col id
-                    rCol.get()[0] = (double)colID;
+                    // rCol.get()[0] = (double)colID;
 
                     hTableMap[sliceIndex % numModelSlices]
                         .addPartition(new Partition<>(colID,
@@ -1124,7 +1128,7 @@ public class SGDDaalCollectiveMapper
                     for(Partition<DoubleArray> p : hTableMap[k].getPartitions())
                     {
                         double[] data = (double[])p.get().get(); 
-                        ((HarpNumericTable)hTableMap_daal).updateArray(data, table_entry);
+                        ((HarpNumericTable)hTableMap_daal).updateArray(data, table_entry, p.id());
                         table_entry++;
                     }
 
