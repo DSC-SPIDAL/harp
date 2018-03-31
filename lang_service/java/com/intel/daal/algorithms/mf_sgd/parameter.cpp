@@ -151,6 +151,12 @@ JNIEXPORT jlong JNICALL Java_com_intel_daal_algorithms_mf_1sgd_Parameter_cGetItr
 	return (jlong)(((mf_sgd::Parameter*)parAddr)->_itrTimeStamp);
 }
 
+JNIEXPORT jdouble JNICALL Java_com_intel_daal_algorithms_mf_1sgd_Parameter_cGetPeakMem
+(JNIEnv *env, jobject thisObj, jlong parAddr)
+{
+	return (jdouble)(((mf_sgd::Parameter*)parAddr)->_peak_mem);
+}
+
 JNIEXPORT void JNICALL Java_com_intel_daal_algorithms_mf_1sgd_Parameter_cResetItrTimeStamp
 (JNIEnv *env, jobject thisObj, jlong parAddr)
 {

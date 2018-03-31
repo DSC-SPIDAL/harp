@@ -453,6 +453,8 @@ struct DAAL_EXPORT Parameter : public daal::algorithms::Parameter
         _compute_task_time = 0;
         _itrTimeStamp = 0;
         _jniDataConvertTime = 0;
+
+        _peak_mem = 0;
     }
 
     virtual ~Parameter() {}
@@ -673,6 +675,7 @@ struct DAAL_EXPORT Parameter : public daal::algorithms::Parameter
     size_t      _compute_task_time;             /* record the time spent in parallel training points update by each iteration, used in timer setup */
     size_t      _itrTimeStamp;                  /* timestamp for each iteration, used in the convergence analysis */
     size_t      _jniDataConvertTime;            /* time spent in each iteration in converting data from java table to native memory space */
+    double      _peak_mem; 
 
 };
 /** @} */

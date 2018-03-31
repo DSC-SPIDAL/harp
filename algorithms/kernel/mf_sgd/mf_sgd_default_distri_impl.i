@@ -395,6 +395,15 @@ void MF_SGDDistriKernel<interm, method, cpu>::compute_train_omp(int* &workWPos,
     std::printf("Training time this iteration: %f\n", train_time);
     std::fflush(stdout);
 
+    //trace the memory usage after computation
+    double compute_mem = 0.0;
+    process_mem_usage(compute_mem);
+	compute_mem = compute_mem /(1024*1024);
+    std::printf("Mem utilization compute step is %9.6lf GB\n", compute_mem);
+    std::fflush;
+
+    parameter->_peak_mem = (compute_mem > parameter->_peak_mem) ? compute_mem : parameter->_peak_mem;
+
 #else
 
     std::printf("Error: OpenMP module is not enabled\n");
@@ -612,6 +621,15 @@ void MF_SGDDistriKernel<interm, method, cpu>::compute_train_tbb(int* &workWPos,
 
     std::printf("Training time this iteration: %f\n", train_time);
     std::fflush(stdout);
+
+    //trace the memory usage after computation
+    double compute_mem = 0.0;
+    process_mem_usage(compute_mem);
+	compute_mem = compute_mem /(1024*1024);
+    std::printf("Mem utilization compute step is %9.6lf GB\n", compute_mem);
+    std::fflush;
+
+    parameter->_peak_mem = (compute_mem > parameter->_peak_mem) ? compute_mem : parameter->_peak_mem;
 
     return;
 

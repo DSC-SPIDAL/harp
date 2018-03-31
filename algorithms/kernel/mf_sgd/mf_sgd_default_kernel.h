@@ -26,6 +26,7 @@
 
 #include <cstdlib> 
 #include <cstdio> 
+#include <stdio.h>
 #include <assert.h>
 #include <random>
 #include <omp.h>
@@ -174,6 +175,33 @@ public:
 
     // multi-threading version of testing process implemented by TBB 
     void compute_test_tbb(int* workWPos, int* workHPos, interm* workV, const int dim_set, interm* mtWDataPtr, interm* mtRMSEPtr, Parameter *parameter, long* col_ids, interm** hMat_native_mem);
+
+    // trace the peak memory usage of a process
+    void process_mem_usage(double& resident_set)
+    {
+        resident_set = 0.0;
+
+        FILE *fp;
+        long vmrss;
+        int BUFFERSIZE=80;
+        char *buf= new char[85];
+        if((fp = fopen("/proc/self/status","r")))
+        {
+            while(fgets(buf, BUFFERSIZE, fp) != NULL)
+            {
+                if(strstr(buf, "VmRSS") != NULL)
+                {
+                    if (sscanf(buf, "%*s %ld", &vmrss) == 1){
+                        // printf("VmSize is %dKB\n", vmrss);
+                        resident_set = (double)vmrss;
+                    }
+                }
+            }
+        }
+
+        fclose(fp);
+        delete[] buf;
+    }
 
 };
 

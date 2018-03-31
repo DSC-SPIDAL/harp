@@ -225,6 +225,10 @@ public class Parameter extends com.intel.daal.algorithms.Parameter {
         cResetItrTimeStamp(this.cObject);
     }
 
+    public double GetPeakMem() {
+        return cGetPeakMem(this.cObject);
+    }
+
     private native void cSetParameters(long parAddr, double learningRate, double lambda, long Dim_r, long Dim_w, long Dim_h, int iteration, int thread_num, int tbb_grainsize, 
 			int Avx_explicit );
 
@@ -267,5 +271,7 @@ public class Parameter extends com.intel.daal.algorithms.Parameter {
     private native long cGetItrTimeStamp(long parAddr);
 
     private native void cResetItrTimeStamp(long parAddr);
+
+    private native double cGetPeakMem(long parAddr);
 
 }

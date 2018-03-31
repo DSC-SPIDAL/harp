@@ -569,6 +569,88 @@ public:
     }
 
     template<typename T>
+    void getTFeatureMT2(size_t feature_start, size_t feature_len, size_t idx, size_t nrows, ReadWriteMode rwFlag, BlockDescriptor<T>** block,
+                     const char *javaMethodName, const char *javaMethodSignature)
+    {
+        jint status = JNI_OK;
+        _tls local_tls = tls.local();
+
+        /* Get JNI interface pointer for current thread */
+        status = jvm->AttachCurrentThread((void **)(&(local_tls.jenv)), NULL);
+        if(status != JNI_OK)
+        {
+            // this->_errors->add(services::ErrorCouldntAttachCurrentThreadToJavaVM);
+            std::printf("Get Tfeature error:services::ErrorCouldntAttachCurrentThreadToJavaVM\n");
+            std::fflush(stdout);
+            return;
+        }
+
+        local_tls.is_attached = true;
+
+        /* Get class associated with Java object */
+        local_tls.jcls = (local_tls.jenv)->GetObjectClass(jJavaNumTable);
+        if(local_tls.jcls == NULL)
+        {
+            // this->_errors->add(services::ErrorCouldntFindClassForJavaObject);
+            std::printf("Get Tfeature error:services::ErrorCouldntFindClassForJavaObject\n");
+            std::fflush(stdout);
+
+            return;
+        }
+
+        /* Get ID of the 'getBlockOfRows' method of the Java class */
+        jmethodID jmeth = (local_tls.jenv)->GetMethodID(local_tls.jcls, javaMethodName,
+                                                        javaMethodSignature);
+        if(jmeth == NULL)
+        {
+            services::SharedPtr<services::Error> e(new services::Error(services::ErrorCouldntFindJavaMethod));
+            e->addStringDetail(services::Method, services::String(javaMethodName));
+            // this->_errors->add(e);
+            std::printf("Get Tfeature error:services::ErrorCouldntFindJavaMethod\n");
+            std::fflush(stdout);
+
+            return;
+        }
+
+        //create a buffer space and wrap it to a java.nio.directbytebuffer
+        size_t bufferSize = nrows * sizeof(T);
+        // T* buf_space = (T*)malloc(bufferSize);
+
+        //Main loop to retrieve data from javaNumTable to blockDescriptor
+        size_t feature_idx = 0;
+        void* buf = NULL;
+        void* javabuf = NULL;
+
+        // jobject jbuf = (local_tls.jenv)->NewDirectByteBuffer(buf_space, bufferSize);
+
+        for(int k=0;k<feature_len;k++)
+        {
+            feature_idx = feature_start + k;
+
+            block[feature_idx]->setDetails(feature_idx, idx, rwFlag);
+
+            if( !(block[feature_idx]->resizeBuffer( 1, nrows )) ) { return; }
+
+            buf = block[feature_idx]->getBlockPtr();
+
+            jobject jbuf = (local_tls.jenv)->NewDirectByteBuffer(buf, bufferSize);
+
+            //return a double buffer instead of a bytebuffer
+            jobject jdoubleBuf = (local_tls.jenv)->CallObjectMethod(
+                             jJavaNumTable, jmeth, (jlong)feature_idx, (jlong)idx, (jlong)nrows, jbuf);
+
+            // javabuf = (local_tls.jenv)->GetDirectBufferAddress(jbuf);
+            // std::memcpy(buf, javabuf, nrows*sizeof(T));
+
+            //delete local reference of jdoubleBuf
+            (local_tls.jenv)->DeleteLocalRef(jdoubleBuf);
+
+        }
+        
+        // free(buf_space);
+    }
+
+    template<typename T>
     services::Status releaseTFeature(BlockDescriptor<T> &block, const char *javaMethodName)
     {
         jint status = JNI_OK;
