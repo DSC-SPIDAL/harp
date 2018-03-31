@@ -484,6 +484,8 @@ public class SGDDaalCollectiveMapper
             // Stop sgdCompute and rotation
             trainTimePerIter = ((double)iterationAccu)/numIterations;
 
+			double peakMemVal = sgdAlgorithm.parameter.GetPeakMem();
+
             LOG.info("Training Time per iteration: " + trainTimePerIter 
                     + ", Compute Time: " 
                     + ((double)ComputeTime - jniTime)/numIterations 
@@ -492,7 +494,9 @@ public class SGDDaalCollectiveMapper
                     + ", wait rotation time per itr: "
                     + ((double)waitTime)/numIterations 
                     + ", misc time: " 
-                    + ((double)(iterationAccu - ComputeTime - waitTime))/numIterations);
+                    + ((double)(iterationAccu - ComputeTime - waitTime))/numIterations
+					+ ", peak mem: " 
+					+ peakMemVal + " GB");
 
             //free up the native off-JVM heap memory allocated within DAAL codes
             sgdAlgorithm.parameter.freeData();
