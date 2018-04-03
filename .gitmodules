@@ -2,3 +2,7 @@
 	path = third_party/daal-exp
 	url = git@github.com:DSC-SPIDAL/harp.git
 	branch = daal_2018
+[submodule "website/public"]
+	path = website/public
+	url = git@github.com:DSC-SPIDAL/harp.git
+	branch = gh-pages
