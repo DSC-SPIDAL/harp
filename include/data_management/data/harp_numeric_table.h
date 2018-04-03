@@ -81,9 +81,17 @@ public:
         : NumericTable(featnum,obsnum, featuresEqual) {}   
 
     //added by HarpDAAL
+    virtual void getBlockOfColumnValuesST(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num, ReadWriteMode rwflag, BlockDescriptor<double>** block) {}
+    virtual void getBlockOfColumnValuesST(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num, ReadWriteMode rwflag, BlockDescriptor<float>** block) {}
+    virtual void getBlockOfColumnValuesST(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num, ReadWriteMode rwflag, BlockDescriptor<int>** block) {}
+
     virtual void getBlockOfColumnValuesMT(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num, ReadWriteMode rwflag, BlockDescriptor<double>** block) {}
     virtual void getBlockOfColumnValuesMT(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num, ReadWriteMode rwflag, BlockDescriptor<float>** block) {}
     virtual void getBlockOfColumnValuesMT(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num, ReadWriteMode rwflag, BlockDescriptor<int>** block) {}
+
+    virtual void releaseBlockOfColumnValuesST(size_t feature_start, size_t feature_len, BlockDescriptor<double>** block) {}
+    virtual void releaseBlockOfColumnValuesST(size_t feature_start, size_t feature_len, BlockDescriptor<float>** block) {}
+    virtual void releaseBlockOfColumnValuesST(size_t feature_start, size_t feature_len, BlockDescriptor<int>** block) {}
 
     virtual void releaseBlockOfColumnValuesMT(size_t feature_start, size_t feature_len, BlockDescriptor<double>** block) {}
     virtual void releaseBlockOfColumnValuesMT(size_t feature_start, size_t feature_len, BlockDescriptor<float>** block) {}

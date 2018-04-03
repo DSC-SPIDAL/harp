@@ -667,7 +667,7 @@ void Input::sendCommParcelLoad()
     up_block_int->setDetails(0, 0, writeOnly);
 
     HarpNumericTable* release_offset_ptr = reinterpret_cast<HarpNumericTable*>(parceloffset.get());
-    release_offset_ptr->releaseBlockOfColumnValuesMT(0, 1, &up_block_int);
+    release_offset_ptr->releaseBlockOfColumnValuesST(0, 1, &up_block_int);
     up_block_int->reset();
 
     // upload parcel data
@@ -676,7 +676,7 @@ void Input::sendCommParcelLoad()
     up_block_float->setDetails(0, 0, writeOnly);
 
     HarpNumericTable* release_data_ptr = reinterpret_cast<HarpNumericTable*>(parceldata.get());
-    release_data_ptr->releaseBlockOfColumnValuesMT(0, 1, &up_block_float);
+    release_data_ptr->releaseBlockOfColumnValuesST(0, 1, &up_block_float);
     up_block_float->reset();
 
     //upload parcel index data
@@ -685,7 +685,7 @@ void Input::sendCommParcelLoad()
     up_block_int->setDetails(0, 0, writeOnly);
 
     HarpNumericTable* release_index_ptr = reinterpret_cast<HarpNumericTable*>(parcelindex.get());
-    release_index_ptr->releaseBlockOfColumnValuesMT(0, 1, &up_block_int);
+    release_index_ptr->releaseBlockOfColumnValuesST(0, 1, &up_block_int);
     up_block_int->reset();
 
     //free cur parcel realted data
@@ -749,17 +749,17 @@ void Input::updateRecvParcel2()
     BlockDescriptor<int>* recv_offset_ptr = &(update_queue_pos[cur_upd_mapper_id][cur_upd_parcel_id]); 
     NumericTablePtr recv_v_offset_table = get(ParcelOffsetId);
     HarpNumericTable* recv_v_offset_table_mt = reinterpret_cast<HarpNumericTable*>(recv_v_offset_table.get()); 
-    recv_v_offset_table_mt->getBlockOfColumnValuesMT(0, 1, 0, recv_v_offset_table->getNumberOfRows(), readOnly, &recv_offset_ptr);
+    recv_v_offset_table_mt->getBlockOfColumnValuesST(0, 1, 0, recv_v_offset_table->getNumberOfRows(), readOnly, &recv_offset_ptr);
 
     BlockDescriptor<float>* recv_data_ptr = &(update_queue_counts[cur_upd_mapper_id][cur_upd_parcel_id]);
     NumericTablePtr recv_v_data_table = get(ParcelDataId);
     HarpNumericTable* recv_v_data_table_mt = reinterpret_cast<HarpNumericTable*>(recv_v_data_table.get()); 
-    recv_v_data_table_mt->getBlockOfColumnValuesMT(0, 1, 0, recv_v_data_table->getNumberOfRows(), readOnly, &recv_data_ptr);
+    recv_v_data_table_mt->getBlockOfColumnValuesST(0, 1, 0, recv_v_data_table->getNumberOfRows(), readOnly, &recv_data_ptr);
 
     BlockDescriptor<int>* recv_index_ptr = &(update_queue_index[cur_upd_mapper_id][cur_upd_parcel_id]);
     NumericTablePtr recv_v_index_table = get(ParcelIdxId);
     HarpNumericTable* recv_v_index_table_mt = reinterpret_cast<HarpNumericTable*>(recv_v_index_table.get()); 
-    recv_v_index_table_mt->getBlockOfColumnValuesMT(0, 1, 0, recv_v_index_table->getNumberOfRows(), readOnly, &recv_index_ptr);
+    recv_v_index_table_mt->getBlockOfColumnValuesST(0, 1, 0, recv_v_index_table->getNumberOfRows(), readOnly, &recv_index_ptr);
 
 }
 
@@ -773,17 +773,17 @@ void Input::updateRecvParcel()
     BlockDescriptor<int>* recv_offset_ptr = &(update_queue_pos[cur_upd_mapper_id][cur_upd_parcel_id]); 
     NumericTablePtr recv_v_offset_table = get(ParcelOffsetId);
     HarpNumericTable* recv_v_offset_table_mt = reinterpret_cast<HarpNumericTable*>(recv_v_offset_table.get()); 
-    recv_v_offset_table_mt->getBlockOfColumnValuesMT(0, 1, 0, recv_v_offset_table->getNumberOfRows(), readOnly, &recv_offset_ptr);
+    recv_v_offset_table_mt->getBlockOfColumnValuesST(0, 1, 0, recv_v_offset_table->getNumberOfRows(), readOnly, &recv_offset_ptr);
 
     BlockDescriptor<float>* recv_data_ptr = &(update_queue_counts[cur_upd_mapper_id][cur_upd_parcel_id]);
     NumericTablePtr recv_v_data_table = get(ParcelDataId);
     HarpNumericTable* recv_v_data_table_mt = reinterpret_cast<HarpNumericTable*>(recv_v_data_table.get()); 
-    recv_v_data_table_mt->getBlockOfColumnValuesMT(0, 1, 0, recv_v_data_table->getNumberOfRows(), readOnly, &recv_data_ptr);
+    recv_v_data_table_mt->getBlockOfColumnValuesST(0, 1, 0, recv_v_data_table->getNumberOfRows(), readOnly, &recv_data_ptr);
 
     BlockDescriptor<int>* recv_index_ptr = &(update_queue_index[cur_upd_mapper_id][cur_upd_parcel_id]);
     NumericTablePtr recv_v_index_table = get(ParcelIdxId);
     HarpNumericTable* recv_v_index_table_mt = reinterpret_cast<HarpNumericTable*>(recv_v_index_table.get()); 
-    recv_v_index_table_mt->getBlockOfColumnValuesMT(0, 1, 0, recv_v_index_table->getNumberOfRows(), readOnly, &recv_index_ptr);
+    recv_v_index_table_mt->getBlockOfColumnValuesST(0, 1, 0, recv_v_index_table->getNumberOfRows(), readOnly, &recv_index_ptr);
 
     //start the decompress process for a specific mapper id and a parcel id
     //construct update_queue_counts_decompress val 

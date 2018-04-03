@@ -144,13 +144,11 @@ daal::services::interface1::Status DistriContainer<step, interm, method, cpu>::c
     long* col_ids = NULL;
     //native memory space to hold H matrix values
     interm** hMat_native_mem = NULL;
-
     //containers for copying h matrix data between java and c++ in parallel
     BlockDescriptor<interm>** hMat_blk_array = NULL;
-    internal::SOADataCopy<interm>** copylist = NULL;
 
     //generate h matrix on native side in parallel
-    internal::hMat_generate<interm, cpu>(r, par, dim_r, thread_num, col_ids, hMat_native_mem, hMat_blk_array, copylist);
+    internal::hMat_generate<interm, cpu>(r, par, dim_r, col_ids, hMat_native_mem, hMat_blk_array);
     
     //r[3] is used in test dataset to hold rmse values
     if ((static_cast<Parameter*>(_par))->_isTrain)
@@ -163,18 +161,21 @@ daal::services::interface1::Status DistriContainer<step, interm, method, cpu>::c
     __DAAL_CALL_KERNEL_STATUS(env, internal::MF_SGDDistriKernel, __DAAL_KERNEL_ARGUMENTS(interm, method), compute, WPos, HPos, Val, WPosTest, HPosTest, ValTest, r, par, col_ids, hMat_native_mem)
 
     //release h matrix from native side back to Java side after updating values
-    internal::hMat_release<interm, cpu>(r, par, dim_r, thread_num, hMat_blk_array, copylist);
+    internal::hMat_release<interm, cpu>(r, par, dim_r, hMat_blk_array);
 
     //clean up the memory space per iteration
-    // if (col_ids != NULL)
-    //     free(col_ids);
-
     if (par->_hMat_map != NULL)
     {
         delete par->_hMat_map;
         par->_hMat_map = NULL;
     }
     
+    for (int k=0;k<par->_Dim_h;k++)
+    {
+        if (hMat_blk_array[k] != NULL)
+            delete hMat_blk_array[k];
+    }
+
     if (hMat_blk_array != NULL)
         delete[] hMat_blk_array;
 

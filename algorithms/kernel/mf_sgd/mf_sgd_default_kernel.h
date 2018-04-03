@@ -399,84 +399,6 @@ struct MFSGDTBB_TEST
 
 };
 
-/**
- * @brief A function to copy data between JavaNumericTable 
- * and native memory space in parallel
- *
- * @tparam interm
- */
-template <typename interm>
-struct SOADataCopy
-{
-    SOADataCopy(
-            NumericTable* SOA_Table,
-            int start_pos,
-            int len,
-            int nDim,
-            BlockDescriptor<interm>** Descriptor,
-            interm** nativeMem
-            ): _SOA_Table(SOA_Table), _start_pos(start_pos), _len(len), _nDim(nDim), _Descriptor(Descriptor), _nativeMem(nativeMem) {}
-
-    NumericTable* _SOA_Table;
-    int _start_pos;
-    int _len;
-    int _nDim;
-    BlockDescriptor<interm>** _Descriptor;
-    interm** _nativeMem;
-
-};
-
-/**
- * @brief Function to retrieve data from JavaNumericTable
- *
- * @tparam interm
- * @param arg
- *
- * @return 
- */
-template <typename interm>
-void* SOACopyBulkData(void* arg)
-{/*{{{*/
-
-    internal::SOADataCopy<interm>* copyElem = static_cast<internal::SOADataCopy<interm>* >(arg);
-    HarpNumericTable* table_ptr = reinterpret_cast<HarpNumericTable*>(copyElem->_SOA_Table); 
-
-    // (copyElem->_SOA_Table)->getBlockOfColumnValuesBM(copyElem->_start_pos, copyElem->_len, 0, copyElem->_nDim, writeOnly, copyElem->_Descriptor);
-    table_ptr->getBlockOfColumnValuesMT(copyElem->_start_pos, copyElem->_len, 0, copyElem->_nDim, writeOnly, copyElem->_Descriptor);
-
-    //assign ptr of blockDescriptors to nativeMem
-    for(int k=0;k<copyElem->_len;k++)
-    {
-        int feature_idx = copyElem->_start_pos + k;
-        (copyElem->_nativeMem)[feature_idx] = (copyElem->_Descriptor)[feature_idx]->getBlockPtr();
-
-    }
-
-    return NULL;
-
-}/*}}}*/
-
-/**
- * @brief Funtion to release data to JavaNumericTable 
- *
- * @tparam interm
- * @param arg
- *
- * @return 
- */
-template <typename interm>
-void* SOAReleaseBulkData(void* arg)
-{/*{{{*/
-
-    internal::SOADataCopy<interm>* copyElem = static_cast<internal::SOADataCopy<interm>* >(arg);
-    HarpNumericTable* table_ptr = reinterpret_cast<HarpNumericTable*>(copyElem->_SOA_Table); 
-
-    // (copyElem->_SOA_Table)->releaseBlockOfColumnValuesBM(copyElem->_start_pos, copyElem->_len, copyElem->_Descriptor);
-    table_ptr->releaseBlockOfColumnValuesMT(copyElem->_start_pos, copyElem->_len, copyElem->_Descriptor);
-
-    return NULL;
-
-}/*}}}*/
 
 /**
  * @brief generate W matrix model data 
@@ -753,23 +675,21 @@ void test_generate_distri(NumericTable *r[], NumericTable* &a3, NumericTable* &a
 
 }/*}}}*/
 
+
 /**
- * @brief generate H matrix model data from JavaNumericTable 
+ * @brief generate H matrix model data from JavaNumericTable
  *
  * @tparam interm
  * @tparam cpu
  * @param r[]
  * @param par
  * @param dim_r
- * @param thread_num
  * @param col_ids
  * @param hMat_native_mem
  * @param hMat_blk_array
- * @param copylist
  */
 template<typename interm, CpuType cpu>
-void hMat_generate(NumericTable *r[], mf_sgd::Parameter* &par, size_t dim_r, int thread_num, long* &col_ids,
-    interm** &hMat_native_mem, BlockDescriptor<interm>** &hMat_blk_array, internal::SOADataCopy<interm>** &copylist)
+void hMat_generate(NumericTable *r[], mf_sgd::Parameter* &par, size_t dim_r, long* &col_ids, interm** &hMat_native_mem, BlockDescriptor<interm>** &hMat_blk_array)
 {/*{{{*/
 
     struct timespec ts1;
@@ -780,58 +700,29 @@ void hMat_generate(NumericTable *r[], mf_sgd::Parameter* &par, size_t dim_r, int
     int hMat_rowNum = par->_Dim_h;
     assert(hMat_rowNum <= (r[1]->getNumberOfColumns()));
 
-    // should be dim_r + 1, there is a sentinel to record the col id 
-    // deprecated
-    // int hMat_colNum = r[1]->getNumberOfRows(); 
-    // assert(hMat_colNum == dim_r + 1);
     int hMat_colNum = r[1]->getNumberOfRows(); 
     assert(hMat_colNum == dim_r);
 
     HarpNumericTable* rhmap = reinterpret_cast<HarpNumericTable*>(r[1]);
     col_ids = rhmap->getKeys(); 
-    // col_ids = (int*)calloc(hMat_rowNum, sizeof(int));
     assert(col_ids != NULL);
 
     hMat_native_mem = new interm *[hMat_rowNum];
     assert(hMat_native_mem != NULL);
-
+   
     hMat_blk_array = new BlockDescriptor<interm> *[hMat_rowNum];
     assert(hMat_blk_array != NULL);
-
-    copylist = new internal::SOADataCopy<interm> *[thread_num];
-    assert(copylist != NULL);
 
     for(int k=0;k<hMat_rowNum;k++)
         hMat_blk_array[k] = new BlockDescriptor<interm>();
 
-    int res = hMat_rowNum%thread_num;
-    int cpy_len = (int)((hMat_rowNum - res)/thread_num);
-    int last_cpy_len = cpy_len + res;
-
-    for(int k=0;k<thread_num-1;k++)
-        copylist[k] = new internal::SOADataCopy<interm>(r[1], k*cpy_len, cpy_len, hMat_colNum, hMat_blk_array, hMat_native_mem);
-
-    copylist[thread_num-1] = new internal::SOADataCopy<interm>(r[1], (thread_num-1)*cpy_len, last_cpy_len, hMat_colNum, hMat_blk_array, hMat_native_mem);
-
-    // std::printf("Start converting h_map\n");
-    // std::fflush(stdout);
     clock_gettime(CLOCK_MONOTONIC, &ts1);
 
-    //TODO replace this by JavaHarpTensor
-    // set up the threads used
-    if (thread_num > 0)
-        services::Environment::getInstance()->setNumberOfThreads(thread_num);
-    else
-        thread_num = threader_get_max_threads_number();
-
-    SafeStatus safeStat;
-    daal::threader_for(thread_num, thread_num, [=, &safeStat](int k)
-    {
-        internal::SOACopyBulkData<interm>(copylist[k]);
-    });
-
-    safeStat.detach();
-
+    // convert data in parallel (TBB)
+    rhmap->getBlockOfColumnValuesMT(0, hMat_rowNum, 0, hMat_colNum, writeOnly, hMat_blk_array);
+    for(int k=0;k<hMat_rowNum;k++)
+        hMat_native_mem[k] = hMat_blk_array[k]->getBlockPtr();
+    
     clock_gettime(CLOCK_MONOTONIC, &ts2);
     diff = 1000000000L *(ts2.tv_sec - ts1.tv_sec) + ts2.tv_nsec - ts1.tv_nsec;
     hMat_time = (double)(diff)/1000000L;
@@ -841,7 +732,6 @@ void hMat_generate(NumericTable *r[], mf_sgd::Parameter* &par, size_t dim_r, int
     par->_jniDataConvertTime += (size_t)hMat_time;
 
     //---------------------------------- finish doing a parallel data conversion by using tbb ----------------------------------
-    
     //clean up and re-generate a hMat hashmap
     if (par->_hMat_map != NULL)
         par->_hMat_map->~ConcurrentModelMap();
@@ -853,8 +743,6 @@ void hMat_generate(NumericTable *r[], mf_sgd::Parameter* &par, size_t dim_r, int
     daal::threader_for(hMat_rowNum, hMat_rowNum, [=, &safeStat2](int k)
     {
         ConcurrentModelMap::accessor pos; 
-        // int col_id = (int)((hMat_native_mem[k])[0]);
-        // col_ids[k] = col_id;
         int col_id = (int)(col_ids[k]);
         if(par->_hMat_map->insert(pos, col_id))
         {
@@ -871,19 +759,17 @@ void hMat_generate(NumericTable *r[], mf_sgd::Parameter* &par, size_t dim_r, int
 }/*}}}*/
 
 /**
- * @brief release H matrix model data to JavaNumericTable 
+ * @brief release H matrix model data to JavaNumericTable
  *
  * @tparam interm
  * @tparam cpu
  * @param r[]
  * @param par
  * @param dim_r
- * @param thread_num
  * @param hMat_blk_array
- * @param copylist
  */
 template<typename interm, CpuType cpu>
-void hMat_release(NumericTable *r[], mf_sgd::Parameter* &par, size_t dim_r, int thread_num, BlockDescriptor<interm>** &hMat_blk_array, internal::SOADataCopy<interm>** &copylist)
+void hMat_release(NumericTable *r[], mf_sgd::Parameter* &par, size_t dim_r, BlockDescriptor<interm>** &hMat_blk_array)
 {/*{{{*/
 
     struct timespec ts1;
@@ -891,25 +777,21 @@ void hMat_release(NumericTable *r[], mf_sgd::Parameter* &par, size_t dim_r, int 
     int64_t diff = 0;
     double hMat_time = 0;
 
+    int hMat_rowNum = par->_Dim_h;
+    assert(hMat_rowNum <= (r[1]->getNumberOfColumns()));
+
+    int hMat_colNum = r[1]->getNumberOfRows(); 
+    assert(hMat_colNum == dim_r);
+
+    HarpNumericTable* rhmap = reinterpret_cast<HarpNumericTable*>(r[1]);
+
     //a parallel verison
     if (hMat_blk_array != NULL)
     {
 
         clock_gettime(CLOCK_MONOTONIC, &ts1);
 
-        // set up the threads used
-        if (thread_num > 0)
-            services::Environment::getInstance()->setNumberOfThreads(thread_num);
-        else
-            thread_num = threader_get_max_threads_number();
-
-        SafeStatus safeStat;
-        daal::threader_for(thread_num, thread_num, [=, &safeStat](int k)
-        {
-            internal::SOAReleaseBulkData<interm>(copylist[k]);
-        });
-
-        safeStat.detach();
+        rhmap->releaseBlockOfColumnValuesMT(0, hMat_rowNum, hMat_blk_array);
 
         clock_gettime(CLOCK_MONOTONIC, &ts2);
         diff = 1000000000L *(ts2.tv_sec - ts1.tv_sec) + ts2.tv_nsec - ts1.tv_nsec;
@@ -917,23 +799,7 @@ void hMat_release(NumericTable *r[], mf_sgd::Parameter* &par, size_t dim_r, int 
 
         par->_jniDataConvertTime += (size_t)hMat_time;
 
-        //free up memory space of native column data of hMat
-        int hMat_rows_size = par->_Dim_h;
-        for(int k=0;k<hMat_rows_size;k++)
-        {
-            delete hMat_blk_array[k];
-
-        }
-
-        //free up memory space of pthread copy args
-        for(int k=0;k<thread_num;k++)
-            delete copylist[k];
-
-        delete[] copylist;
-
-        
     }
-
 
 }/*}}}*/
 

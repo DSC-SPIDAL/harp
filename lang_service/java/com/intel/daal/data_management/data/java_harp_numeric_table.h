@@ -245,20 +245,65 @@ public:
      * @param block
      */
     void getBlockOfColumnValuesMT(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num,
+                                ReadWriteMode rwflag, BlockDescriptor<double>** BDAccessor) DAAL_C11_OVERRIDE
+    {/*{{{*/
+
+        int thread_num = tbb::task_scheduler_init::default_num_threads();
+        int thread_workload = 2*feature_len/thread_num;
+
+        //blocked tbb parallel for
+        tbb::parallel_for(tbb::blocked_range<int>(0,feature_len,thread_workload), [&](tbb::blocked_range<int> r)
+        {
+            getTFeatureMT<double>(feature_start + (size_t)(r.begin()), (size_t)(r.end()-r.begin()), vector_idx, value_num, rwflag, BDAccessor, "getDoubleFeature", "(JJJLjava/nio/ByteBuffer;)Ljava/nio/DoubleBuffer;");
+        });
+        
+    }/*}}}*/
+
+    void getBlockOfColumnValuesMT(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num,
+                                ReadWriteMode rwflag, BlockDescriptor<float>** BDAccessor) DAAL_C11_OVERRIDE
+    {/*{{{*/
+
+        int thread_num = tbb::task_scheduler_init::default_num_threads();
+        int thread_workload = 2*feature_len/thread_num;
+
+        //blocked tbb parallel for
+        tbb::parallel_for(tbb::blocked_range<int>(0,feature_len,thread_workload), [&](tbb::blocked_range<int> r)
+        {
+            getTFeatureMT<float>(feature_start + (size_t)(r.begin()), (size_t)(r.end()-r.begin()), vector_idx, value_num, rwflag, BDAccessor, "getFloatFeature", "(JJJLjava/nio/ByteBuffer;)Ljava/nio/FloatBuffer;");
+        });
+        
+    }/*}}}*/
+
+    void getBlockOfColumnValuesMT(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num,
+                                ReadWriteMode rwflag, BlockDescriptor<int>** BDAccessor) DAAL_C11_OVERRIDE
+    {/*{{{*/
+
+        int thread_num = tbb::task_scheduler_init::default_num_threads();
+        int thread_workload = 2*feature_len/thread_num;
+
+        //blocked tbb parallel for
+        tbb::parallel_for(tbb::blocked_range<int>(0,feature_len,thread_workload), [&](tbb::blocked_range<int> r)
+        {
+            getTFeatureMT<int>(feature_start + (size_t)(r.begin()), (size_t)(r.end()-r.begin()), vector_idx, value_num, rwflag, BDAccessor, "getIntFeature", "(JJJLjava/nio/ByteBuffer;)Ljava/nio/IntBuffer;");
+        });
+        
+    }/*}}}*/
+
+    void getBlockOfColumnValuesST(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num,
                                 ReadWriteMode rwflag, BlockDescriptor<double>** block) DAAL_C11_OVERRIDE
     {
         return getTFeatureMT<double>(feature_start, feature_len, vector_idx, value_num, rwflag, block,
         "getDoubleFeature", "(JJJLjava/nio/ByteBuffer;)Ljava/nio/DoubleBuffer;");
     }
 
-    void getBlockOfColumnValuesMT(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num,
+    void getBlockOfColumnValuesST(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num,
                                 ReadWriteMode rwflag, BlockDescriptor<float>** block) DAAL_C11_OVERRIDE
     {
         return getTFeatureMT<float>(feature_start, feature_len, vector_idx, value_num, rwflag, block,
         "getFloatFeature", "(JJJLjava/nio/ByteBuffer;)Ljava/nio/FloatBuffer;");
     }
 
-    void getBlockOfColumnValuesMT(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num,
+    void getBlockOfColumnValuesST(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num,
                                 ReadWriteMode rwflag, BlockDescriptor<int>** block) DAAL_C11_OVERRIDE
     {
         return getTFeatureMT<int>(feature_start, feature_len, vector_idx, value_num, rwflag, block,
@@ -286,20 +331,63 @@ public:
      * @param feature_len
      * @param block
      */
-    void releaseBlockOfColumnValuesMT(size_t feature_start, size_t feature_len, BlockDescriptor<double>** block) DAAL_C11_OVERRIDE
+    void releaseBlockOfColumnValuesMT(size_t feature_start, size_t feature_len, BlockDescriptor<double>** BDAccessor) DAAL_C11_OVERRIDE
+    {/*{{{*/
+
+        int thread_num = tbb::task_scheduler_init::default_num_threads();
+        int thread_workload = 2*feature_len/thread_num;
+
+        //blocked tbb parallel for
+        tbb::parallel_for(tbb::blocked_range<int>(0,feature_len,thread_workload), [&](tbb::blocked_range<int> r)
+        {
+            releaseTFeatureMT<double>(feature_start + (size_t)(r.begin()), (size_t)(r.end()-r.begin()), BDAccessor, "releaseDoubleFeature");
+        });
+
+    }/*}}}*/
+
+    void releaseBlockOfColumnValuesMT(size_t feature_start, size_t feature_len, BlockDescriptor<float>** BDAccessor) DAAL_C11_OVERRIDE
+    {/*{{{*/
+
+        int thread_num = tbb::task_scheduler_init::default_num_threads();
+        int thread_workload = 2*feature_len/thread_num;
+
+        //blocked tbb parallel for
+        tbb::parallel_for(tbb::blocked_range<int>(0,feature_len,thread_workload), [&](tbb::blocked_range<int> r)
+        {
+            releaseTFeatureMT<float>(feature_start + (size_t)(r.begin()), (size_t)(r.end()-r.begin()), BDAccessor, "releaseFloatFeature");
+        });
+
+    }/*}}}*/
+
+    void releaseBlockOfColumnValuesMT(size_t feature_start, size_t feature_len, BlockDescriptor<int>** BDAccessor) DAAL_C11_OVERRIDE
+    {/*{{{*/
+
+        int thread_num = tbb::task_scheduler_init::default_num_threads();
+        int thread_workload = 2*feature_len/thread_num;
+
+        //blocked tbb parallel for
+        tbb::parallel_for(tbb::blocked_range<int>(0,feature_len,thread_workload), [&](tbb::blocked_range<int> r)
+        {
+            releaseTFeatureMT<int>(feature_start + (size_t)(r.begin()), (size_t)(r.end()-r.begin()), BDAccessor, "releaseIntFeature");
+        });
+
+    }/*}}}*/
+
+    void releaseBlockOfColumnValuesST(size_t feature_start, size_t feature_len, BlockDescriptor<double>** block) DAAL_C11_OVERRIDE
     {
         releaseTFeatureMT<double>(feature_start, feature_len, block, "releaseDoubleFeature");
     }
 
-    void releaseBlockOfColumnValuesMT(size_t feature_start, size_t feature_len, BlockDescriptor<float>** block) DAAL_C11_OVERRIDE
+    void releaseBlockOfColumnValuesST(size_t feature_start, size_t feature_len, BlockDescriptor<float>** block) DAAL_C11_OVERRIDE
     {
         releaseTFeatureMT<float>(feature_start, feature_len, block, "releaseFloatFeature");
     }
 
-    void releaseBlockOfColumnValuesMT(size_t feature_start, size_t feature_len, BlockDescriptor<int>** block) DAAL_C11_OVERRIDE
+    void releaseBlockOfColumnValuesST(size_t feature_start, size_t feature_len, BlockDescriptor<int>** block) DAAL_C11_OVERRIDE
     {
         releaseTFeatureMT<int>(feature_start, feature_len, block, "releaseIntFeature");
     }
+
 
     template<typename T>
     services::Status getTBlock(size_t idx, size_t nrows, ReadWriteMode rwFlag, BlockDescriptor<T> &block,
