@@ -11,7 +11,7 @@ if [ -z ${HADOOP_HOME+x} ];then
 fi
 
 ## replace the path with your DAAL compiled lib path
-source ~/Lib/DAAL2018_Beta/__release_hsw_lnx/daal/bin/daalvars.sh intel64
+source ~/Lib/DAAL2018/__release_lnx/daal/bin/daalvars.sh intel64
 
 ## check if DAAL env is setup 
 if [ -z ${DAALROOT+x} ];then
