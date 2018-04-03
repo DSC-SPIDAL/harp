@@ -424,13 +424,6 @@ void Input::setSendVertexArray(int dst)
 
     // implicit data copy to vec
     std::vector<int> daal_tmp_vec(daal_tmp_ptr.get(), daal_tmp_ptr.get() + download_send_vertex_table->getNumberOfRows());
-    //debug 
-    // for(int i=0;i<10;i++)
-    // {
-    //     std::printf("Check send vertex array: %d\n", daal_tmp_vec[i]);
-    //     std::fflush;
-    // }
-
     send_vertex_array.insert({dst, daal_tmp_vec});
 }
 
@@ -457,8 +450,6 @@ int Input::sendCommParcelInit(int sub_id, int send_id)
         cur_send_id_data = &(search->second);
         //use long to avoid size overflow
         //long is not enough for overflow
-        // cur_parcel_num = (cur_send_id_data->size()*((long)cur_comb_len_comm)+ send_array_limit - 1)/send_array_limit;
-        
         float cur_parcel_num_tmp = (cur_send_id_data->size()*((float)cur_comb_len_comm)+ send_array_limit - 1)/send_array_limit; 
         if (cur_parcel_num_tmp < 1.0)
             cur_parcel_num = 1;
@@ -469,13 +460,9 @@ int Input::sendCommParcelInit(int sub_id, int send_id)
         std::fflush;
 
         // prepare chunks
-        // send_chunks.length == send_divid_num + 1
         // call the util function
         int* chunk_tmp_ptr = util_divide_chunks_comm(cur_send_id_data->size(), (int)cur_parcel_num);
         cur_send_chunks = new std::vector<int>(chunk_tmp_ptr, chunk_tmp_ptr+((int)cur_parcel_num + 1));
-
-        // std::printf("Find sender id: %d, cur_comb_len_comm: %d, parcel num: %d\n", search->first, cur_comb_len_comm, (int)cur_parcel_num);
-        // std::fflush;
 
         return (int)cur_parcel_num; 
     }
