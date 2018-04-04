@@ -134,34 +134,17 @@ NumericTable eigenVectors = res.get(ResultId.eigenVectors);
 /*printing the results*/
 Service.printNumericTable("Eigenvalues:", eigenValues);
 Service.printNumericTable("Eigenvectors:", eigenVectors);
-
 ```
 
-### Executing the code 
+## Running the codes
 
-#### Setting up Hadoop and Harp-DAAL
-Details about setting up Hadoop along with Harp on the cluster can be found [here](https://dsc-spidal.github.io/harp/docs/getting-started-cluster/ "Installation"). 
-Furthermore DAAL installation and usage can be found [here](https://dsc-spidal.github.io/harp/docs/harpdaal/harpdaal/ "Daal usage").
+Make sure that the code is placed in the `/harp/ml/daal` directory.
+Run the `harp-daal-pca.sh` script here to run the code.
 
-#### Running the code
-Run the `harp-daal-pca.sh` script to run the code.
-```shell
-cd $HARP_ROOT_DIR/ml/daal
-./harp-daal-pca.sh  
+```bash
+cd $HARP_ROOT/ml/daal
+./test_scripts/harp-daal-pca.sh
 ```
-To edit the location of the data set file location edit the following line in the  shell script file
 
-```shell
-hadoop jar harp-daal-0.1.0.jar edu.iu.daal_pca.PCADaalLauncher -libjars ${LIBJARS} $Pts $Dim $File $Node $Thd $Mem /pca-P$Pts-D$Dim-N$Node /tmp/pca $GenData
-```
-Where each variable is defined as below
+The details of script is [here](https://github.com/DSC-SPIDAL/harp/blob/master/ml/daal/test_scripts/harp-daal-pca.sh)
 
-* Pts: Number of training data points (i.e. 1000)
-* Dim: Feature vector dimension (i.e. 10)
-* File: File per mapper (i.e. 1)
-* Mem: Memory allocated to each mapper in MB (i.e. 185000)
-* GenData: Generate training data or not(once generated, data file /PCA-P\$Pts-C\$Dim-N\$Node is in hdfs, you could reuse the training data here next time) (i.e. false)
-* Node: Number of mappers or nodes (i.e. 2)
-* Thd: Number of threads on each mapper or node (i.e. 64)
-* Where /pca-P$Pts-D$Dim-N$Node is the location holding the input files
-* Where /tmp/pca is the working directory

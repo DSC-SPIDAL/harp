@@ -13,7 +13,7 @@ machine learning and other data intensive applications.
 1. Plug into Hadoop ecosystem.
 2. Rich computation models for different machine learning/data intensive applications
 2. MPI-like Collective Communication operations 
-4. High performance native kernels supporting many-core processors (e.g., Intel Xeon Phi) 
+4. High performance native kernels supporting many-core processors (e.g., Intel Xeon and Xeon Phi) 
 
 ## Online Documentation
 

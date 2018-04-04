@@ -1,11 +1,11 @@
 ---
-title: Sub-graph Counting Using Harp-Sahad
+title: Subgraph Counting Using Harp-Sahad
 ---
 
 <img src="/img/sahad/subgraph-counting-illustration.png" width="50%"  >
 
-# What is Sub-graph Counting?
-Sub-graph counting goes under many names such as template matching or motif counting, but they all generally refer to counting the amount
+# What is Subgraph Counting?
+Subgraph counting goes under many names such as template matching or motif counting, but they all generally refer to counting the amount
 of a template T, that are present in a graph G. Refering to our illustration above, we may imagine that the template T (Here T is
 split on T' and T'') on the right could fit in graph G in a few ways right? Well we would like to quantify just how many times T can fit
 in G. Such general problem manifests itself in many domains such as genomics, design of electronic circuits, and social network analysis.

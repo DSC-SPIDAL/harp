@@ -122,3 +122,15 @@ Log files are contained in latest application-xxxxx-xxx folder for the latest ru
 container-xx-xx folder inside it. The log files are distributed across different datanodes, to check each of them you have to visit different datanodes and repeat the process described
 above.
 
+## Running the codes
+
+Make sure that the code is placed in the `/harp/ml/daal` directory.
+Run the `harp-daal-svd.sh` script here to run the code.
+
+```bash
+cd $HARP_ROOT/ml/daal
+./test_scripts/harp-daal-svd.sh
+```
+
+The details of script is [here](https://github.com/DSC-SPIDAL/harp/blob/master/ml/daal/test_scripts/harp-daal-svd.sh)
+
