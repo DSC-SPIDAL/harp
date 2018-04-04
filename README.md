@@ -22,6 +22,22 @@ examples.
 
 ## Installation of Harp 
 
+### Install from Binaries
+
+Please download the binaries of Harp from https://github.com/DSC-SPIDAL/harp/releases.
+
+Copy the jar files to $HADOOP_HOME
+```bash
+## the core modules 
+cp core/harp-hadoop-0.1.0.jar $HADOOP_HOME/share/hadoop/mapreduce/
+cp core/harp-collective-0.1.0.jar $HADOOP_HOME/share/hadoop/mapreduce/
+cp core/harp-daal-interface-0.1.0.jar $HADOOP_HOME/share/hadoop/mapreduce/
+## the application modules 
+cp ml/harp-java-0.1.0.jar $HADOOP_HOME/
+cp ml/harp-daal-0.1.0.jar $HADOOP_HOME/
+cp contrib-0.1.0.jar $HADOOP_HOME/ 
+```
+
 ### Install from Source Code
 
 1. Install Maven by following the [maven official instruction](http://maven.apache.org/install.html)
@@ -38,7 +54,7 @@ cd harp/
 cp core/harp-hadoop/target/harp-hadoop-0.1.0.jar $HADOOP_HOME/share/hadoop/mapreduce/
 cp core/harp-collective/target/harp-collective-0.1.0.jar $HADOOP_HOME/share/hadoop/mapreduce/
 cp core/harp-daal-interface/target/harp-daal-interface-0.1.0.jar $HADOOP_HOME/share/hadoop/mapreduce/
-## the applications modules 
+## the application modules 
 cp ml/java/target/harp-java-0.1.0.jar $HADOOP_HOME/
 cp ml/daal/target/harp-daal-0.1.0.jar $HADOOP_HOME/
 cp contrib/target/contrib-0.1.0.jar $HADOOP_HOME/ 
@@ -47,7 +63,7 @@ cp experimental/target/experimental-0.1.0.jar $HADOOP_HOME/
 
 Here the *experimental-0.1.0.jar* could only be installed from our source codes.
 
-## Enable third party dependencies
+## Add third party dependencies
 
 Harp depends on a group of third party libraries. Make sure to install them before launching the applications
 
@@ -114,6 +130,6 @@ hadoop jar harp-java-0.1.0.jar edu.iu.kmeans.regroupallgather.KMeansLauncher
 
 For example:
 ```bash
-hadoop jar harp-app-0.1.0.jar edu.iu.kmeans.regroupallgather.KMeansLauncher 1000 10 100 5 2 2 10 /kmeans /tmp/kmeans
+hadoop jar harp-java-0.1.0.jar edu.iu.kmeans.regroupallgather.KMeansLauncher 1000 10 100 5 2 2 10 /kmeans /tmp/kmeans
 ```
 
