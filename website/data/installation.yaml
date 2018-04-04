@@ -1,0 +1,9 @@
+sections:
+  - name: Installation Guide
+    sublinks:
+      - name: Prerequisites
+        url: /docs/prerequisites
+      - name: Harp Installation (Single Node)
+        url: /docs/getting-started
+      - name: Harp Installation (Cluster)
+        url: /docs/getting-started-cluster

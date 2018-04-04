@@ -1,23 +1,11 @@
 ---
 title: Quick Start Guide
 description: Run multi-node Harp on clusters
-aliases:
-  - /docs/install.html
 ---
 
 These instructions have only been tested on:
 
 * Red Hat Enterprise Linux Server release 6.8
-
-## Prerequisites
-
-1. Vim (or any other text editor)
-
-2. Java
-
-3. [Maven](https://maven.apache.org/install.html) 
-
-4. ssh
 
 **Select the Hadoop distribution of your choice. Supported Hadoop versions are 2.6.0, 2.7.5 and 2.9.0.**  
 
