@@ -1,0 +1,15 @@
+sections:
+  - name: Resources
+    sublinks:
+      - name: Harp Resources
+        url: /docs/resources
+  - name: Contributors
+    sublinks:
+      - name: Community
+        url: /docs/contributors/community
+      - name: Contributors
+        url: /docs/contributors/contributors
+  - name: User Feedback
+    sublinks:
+      - name: Online Survey
+        url: /docs/survey

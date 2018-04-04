@@ -1,11 +1,91 @@
 nav.hn-sidebar-nav
-  .panel-group id=hn-accordion role=tablist aria-multiselectable=true
-    {{range .Site.Data.toc.sections}}
+  .panel-group id=hn-accordion-1 role=tablist aria-multiselectable=true
+    {{range .Site.Data.installation.sections}}
     {{$label := lower (replace .name " " "-")}}
     .panel.panel-default
       section.panel-heading role=tab id={{$label}}
         h4.panel-title
-          a role=button data-toggle=collapse data-parent=#hn-accordion href=#collapse-{{$label}} aria-labelledby={{$label}}
+          a role=button data-toggle=collapse data-parent=#hn-accordion-1 href=#collapse-{{$label}} aria-labelledby={{$label}}
+            i.fa.fa-caret-right
+            {{.name}}
+      .panel-collapse.collapse id=collapse-{{$label}} aria-labelledby={{$label}}
+        .panel-body
+          ul
+            {{range .sublinks}}
+            li
+              a href={{.url}} {{.name}}
+            {{end}}
+    {{end}}
+h2.panel-title <b>Users Guide</b>
+br
+nav.hn-sidebar-nav
+  .panel-group id=hn-accordion-2 role=tablist aria-multiselectable=true
+    {{range .Site.Data.usersguide.sections}}
+    {{$label := lower (replace .name " " "-")}}
+    .panel.panel-default
+      section.panel-heading role=tab id={{$label}}
+        h4.panel-title
+          a role=button data-toggle=collapse data-parent=#hn-accordion-2 href=#collapse-{{$label}} aria-labelledby={{$label}}
+            i.fa.fa-caret-right
+            {{.name}}
+      .panel-collapse.collapse id=collapse-{{$label}} aria-labelledby={{$label}}
+        .panel-body
+          ul
+            {{range .sublinks}}
+            li
+              a href={{.url}} {{.name}}
+            {{end}}
+    {{end}}
+h2.panel-title <b>Contributors Guide</b>
+br
+nav.hn-sidebar-nav
+  .panel-group id=hn-accordion-3 role=tablist aria-multiselectable=true
+    {{range .Site.Data.contributorsguide.sections}}
+    {{$label := lower (replace .name " " "-")}}
+    .panel.panel-default
+      section.panel-heading role=tab id={{$label}}
+        h4.panel-title
+          a role=button data-toggle=collapse data-parent=#hn-accordion-3 href=#collapse-{{$label}} aria-labelledby={{$label}}
+            i.fa.fa-caret-right
+            {{.name}}
+      .panel-collapse.collapse id=collapse-{{$label}} aria-labelledby={{$label}}
+        .panel-body
+          ul
+            {{range .sublinks}}
+            li
+              a href={{.url}} {{.name}}
+            {{end}}
+    {{end}}
+h2.panel-title <b>Harp-DAAL Documentation</b>
+br
+nav.hn-sidebar-nav
+  .panel-group id=hn-accordion-4 role=tablist aria-multiselectable=true
+    {{range .Site.Data.harpdaal.sections}}
+    {{$label := lower (replace .name " " "-")}}
+    .panel.panel-default
+      section.panel-heading role=tab id={{$label}}
+        h4.panel-title
+          a role=button data-toggle=collapse data-parent=#hn-accordion-4 href=#collapse-{{$label}} aria-labelledby={{$label}}
+            i.fa.fa-caret-right
+            {{.name}}
+      .panel-collapse.collapse id=collapse-{{$label}} aria-labelledby={{$label}}
+        .panel-body
+          ul
+            {{range .sublinks}}
+            li
+              a href={{.url}} {{.name}}
+            {{end}}
+    {{end}}
+h2.panel-title <b>Support</b>
+br
+nav.hn-sidebar-nav
+  .panel-group id=hn-accordion-5 role=tablist aria-multiselectable=true
+    {{range .Site.Data.support.sections}}
+    {{$label := lower (replace .name " " "-")}}
+    .panel.panel-default
+      section.panel-heading role=tab id={{$label}}
+        h4.panel-title
+          a role=button data-toggle=collapse data-parent=#hn-accordion-5 href=#collapse-{{$label}} aria-labelledby={{$label}}
             i.fa.fa-caret-right
             {{.name}}
       .panel-collapse.collapse id=collapse-{{$label}} aria-labelledby={{$label}}
