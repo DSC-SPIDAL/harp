@@ -117,6 +117,8 @@
 				<version>3.6.1</version>
 				<configuration>
 					<source>1.8</source>
+					<excludes>
+					</excludes>
 					<target>1.8</target>
 				</configuration>
 			</plugin>
