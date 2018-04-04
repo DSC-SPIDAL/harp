@@ -42,7 +42,6 @@ import edu.iu.data_transfer.*;
 import com.intel.daal.algorithms.subgraph.*;
 import com.intel.daal.data_management.data.NumericTable;
 import com.intel.daal.data_management.data.HomogenNumericTable;
-// import com.intel.daal.data_management.data.HomogenBMNumericTable;
 import com.intel.daal.data_management.data.SOANumericTable;
 import com.intel.daal.data_management.data_source.DataSource;
 import com.intel.daal.data_management.data_source.FileDataSource;
@@ -261,9 +260,12 @@ public class SCDaalCollectiveMapper  extends CollectiveMapper<String, String, Ob
         LOG.info("Finish load templateFile, num_verts: " + scAlgorithm.input.getTVNum() + "; edges: " + scAlgorithm.input.getTENum());
 
 		// ---------------  main computation ----------------------------------
-        colorcount_HJ graph_count = new colorcount_HJ();
+        // colorcount_HJ graph_count = new colorcount_HJ();
+        // graph_count.init(this, context, scAlgorithm, max_v_id, numThreads, numCores, tpc, affinity, omp_opt, nbr_split_len, false, false, true);
+        //
+        // LOG.info("Finish colorcount_HJ init");
+		colorcount_HJ graph_count = new colorcount_HJ();
         graph_count.init(this, context, scAlgorithm, max_v_id, numThreads, numCores, tpc, affinity, omp_opt, nbr_split_len, false, false, true);
-
         LOG.info("Finish colorcount_HJ init");
 
         // // ------------------- generate communication information -------------------

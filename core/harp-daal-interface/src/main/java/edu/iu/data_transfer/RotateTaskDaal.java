@@ -110,7 +110,6 @@ public class RotateTaskDaal<I, P extends Array<I> > extends
 
     //use standard HomogenNumericTable or optimized HomogenBMNumericTable in DAAL
     this.daal_table = new HomogenNumericTable(daal_Context, Double.class, this.rdim, table.getNumPartitions(), NumericTable.AllocationFlag.DoAllocate);
-    // this.daal_table = new HomogenBMNumericTable(daal_Context, Double.class, this.rdim, table.getNumPartitions(), NumericTable.AllocationFlag.DoAllocate);
 
     //create the converter
     this.converter = new HomogenTableHarpTable<I, P, Table<P> >(table, this.daal_table, table.getNumPartitions(), this.rdim, this.numThreads);

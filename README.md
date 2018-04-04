@@ -65,9 +65,9 @@ hdfs dfs -put daal-2018/lib/intel64_lin/libJavaAPI.so /Hadoop/Libraries
 hdfs dfs -put tbb/lib/intel64_lin/gcc4.4/libtbb* /Hadoop/Libraries
 ```
 
-If you would like to test experimental applications, please install DAAL from source codes kept at daal_2018_beta branch 
+If you would like to test experimental applications, please install DAAL from source codes kept at daal_2018 branch 
 ```bash
-git clone -b daal_2018_betai git@github.com:DSC-SPIDAL/harp.git
+git clone -b daal_2018 git@github.com:DSC-SPIDAL/harp.git
 mv harp harp-daal-exp
 cd harp-daal-exp
 ```
@@ -84,11 +84,11 @@ compile the native library either by icc or gnu
 ## use COMPILER=gun if icc is not available
 make daal PLAT=lnx32e COMPILER=icc
 ## copy native libs to HDFS 
-cp ../__release_hsw_lnx/daal/lib/daal.jar $HADOOP_HOME/share/hadoop/mapreduce/
+cp ../__release_lnx/daal/lib/daal.jar $HADOOP_HOME/share/hadoop/mapreduce/
 hdfs dfs -mkdir -p /Hadoop
 hdfs dfs -mkdir -p /Hadoop/Libraries
-hdfs dfs -put ../__release_hsw_lnx/daal/lib/intel64_lin/libJavaAPI.so /Hadoop/Libraries
-hdfs dfs -put ../__release_hsw_lnx/tbb/lib/intel64_lin/gcc4.4/libtbb* /Hadoop/Libraries
+hdfs dfs -put ../__release_lnx/daal/lib/intel64_lin/libJavaAPI.so /Hadoop/Libraries
+hdfs dfs -put ../__release_lnx/tbb/lib/intel64_lin/gcc4.4/libtbb* /Hadoop/Libraries
 hdfs dfs -put harp/third_party/omp/libiomp5.so /Hadoop/Libraries/
 hdfs dfs -put harp/third_party/hdfs/libhdfs.so* /Hadoop/Libraries/
 ```

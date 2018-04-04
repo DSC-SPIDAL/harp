@@ -106,4 +106,4 @@ sytastic_java_config
 .osync_workdir
 # custom
 dataset/
-compile.sh
+compile*.sh
