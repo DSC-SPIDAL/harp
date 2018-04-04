@@ -1,0 +1,37 @@
+sections:
+  - name: Overview
+    sublinks:
+      - name: Harp-DAAL framework
+        url: /docs/harpdaal/harpdaal
+  - name: Algorithms
+    sublinks:
+      - name: K-means
+        url: /docs/harpdaal/kmeans
+      - name: Matrix Factorization (SGD)
+        url: /docs/harpdaal/mfsgd
+      - name: Recommender System (ALS)
+        url: /docs/harpdaal/als
+      - name: Singular Value Decomposition (SVD)
+        url: /docs/harpdaal/svd
+      - name: Principal Component Analysis (PCA)
+        url: /docs/harpdaal/pca
+      - name: Neural Network
+        url: /docs/harpdaal/nn
+      - name: QR Decomposition (QR)
+        url: /docs/harpdaal/qr
+      - name: Covariance
+        url: /docs/harpdaal/covariance
+      - name: Low Order Moments
+        url: /docs/harpdaal/moments
+      - name: Naive Bayes
+        url: /docs/harpdaal/naive_bayes
+      - name: Linear Regression
+        url: /docs/harpdaal/linear_regression
+      - name: Ridge Regression
+        url: /docs/harpdaal/ridge_regression
+      - name: Subgraph Counting
+        url: /docs/harpdaal/subgraph
+  - name: Hands-on
+    sublinks:
+      - name: Tutorial
+        url: /docs/harpdaal/handson

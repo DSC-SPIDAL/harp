@@ -1,10 +1,12 @@
 sections:
-  - name: Quick Start
+  - name: For Users
     sublinks:
-      - name: Harp Installation (single)
-        url: /docs/getting-started
-      - name: Harp Installation (cluster)
-        url: /docs/getting-started-cluster
+    - name: Latent Dirichlet Allocation (CGS)
+      url: /docs/applications/lda-cgs
+    - name: Matrix Factorization
+      url: /docs/applications/mf
+    - name: Subgraph Counting
+      url: /docs/applications/sahad
   - name: Programming Guides
     sublinks:
       - name: Overview
