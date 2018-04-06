@@ -33,14 +33,14 @@ template<> void updateMF_explicit<DAAL_FPTYPE, avx512_mic>(DAAL_FPTYPE* WMat, DA
 #if( __FPTYPE__(DAAL_FPTYPE) == __float__ )
 
     /* Unrolled by 16 loop */
-    /* int n16 = dim_r & ~(16-1); */
-    int num_n16 = (dim_r + 16 - 1)/16;
-    int n16 = num_n16*16;
+    int n16 = dim_r & ~(16-1); 
 
     __m512 wVal;
     __m512 hVal;
     __m512 tmp1;
     __m512 tmp2;
+
+    __m512 tmpzero = _mm512_set1_ps (0);
 
     DAAL_FPTYPE mul_res;
 
@@ -52,6 +52,17 @@ template<> void updateMF_explicit<DAAL_FPTYPE, avx512_mic>(DAAL_FPTYPE* WMat, DA
         tmp1        = _mm512_mul_ps (wVal, hVal);
         mul_res     = _mm512_reduce_add_ps (tmp1);
 
+        Mult += mul_res;
+    }
+
+    //for rest of dim_r
+    if ( n16 < dim_r  )
+    {
+        __mmask16 mask = (1 << (dim_r - n16)) - 1;
+        wVal = _mm512_mask_load_ps(tmpzero, mask, &(WMat[n16]));
+        hVal = _mm512_mask_load_ps(tmpzero, mask, &(HMat[n16]));
+        tmp1 = _mm512_mul_ps (wVal, hVal);
+        mul_res = _mm512_reduce_add_ps (tmp1);
         Mult += mul_res;
     }
 
@@ -84,19 +95,39 @@ template<> void updateMF_explicit<DAAL_FPTYPE, avx512_mic>(DAAL_FPTYPE* WMat, DA
 
     }
 
+    //for the rest of dim_r
+     if ( n16 < dim_r  )
+     {
+         __mmask16 mask = (1 << (dim_r - n16)) - 1;
+         wVal = _mm512_mask_load_ps(tmpzero, mask, &(WMat[n16]));
+         hVal = _mm512_mask_load_ps(tmpzero, mask, &(HMat[n16]));
+
+         tmp1 = _mm512_mul_ps (lambda_v, wVal);
+         tmp2 = _mm512_mul_ps (err_v, wVal);
+
+         /* update w model */
+         tmp1 = _mm512_fmadd_ps (err_v, hVal, tmp1);
+         wVal = _mm512_fmadd_ps (rate_v, tmp1, wVal);
+
+         /* update h model */
+         tmp2 = _mm512_fmadd_ps (lambda_v, hVal, tmp2);
+         hVal = _mm512_fmadd_ps (rate_v, tmp2, hVal);
+
+         _mm512_mask_store_ps (&(WMat[n16]), mask, wVal);
+         _mm512_mask_store_ps (&(HMat[n16]), mask, hVal);
+     }
 
 #elif( __FPTYPE__(DAAL_FPTYPE) == __double__ )
 
     /* Unrolled by 8 loop */
-    /* int n8 = dim_r & ~(8-1); */
-
-    int num_n8 = (dim_r + 8 - 1)/8;
-    int n8 = num_n8*8;
+    int n8 = dim_r & ~(8-1); 
 
     __m512d wVal;
     __m512d hVal;
     __m512d tmp1;
     __m512d tmp2;
+
+    __m512d tmpzero = _mm512_set1_pd (0);
 
     DAAL_FPTYPE mul_res;
 
@@ -108,6 +139,16 @@ template<> void updateMF_explicit<DAAL_FPTYPE, avx512_mic>(DAAL_FPTYPE* WMat, DA
         tmp1        = _mm512_mul_pd (wVal, hVal);
         mul_res     = _mm512_reduce_add_pd (tmp1);
 
+        Mult += mul_res;
+    }
+
+    if ( n8 < dim_r  )
+    {
+        __mmask8 mask = (1 << (dim_r - n8)) - 1;
+        wVal = _mm512_mask_load_pd(tmpzero, mask, &(WMat[n8]));
+        hVal = _mm512_mask_load_pd(tmpzero, mask, &(HMat[n8]));
+        tmp1 = _mm512_mul_pd (wVal, hVal);
+        mul_res = _mm512_reduce_add_pd (tmp1);
         Mult += mul_res;
     }
 
@@ -141,73 +182,32 @@ template<> void updateMF_explicit<DAAL_FPTYPE, avx512_mic>(DAAL_FPTYPE* WMat, DA
 
     }
 
+    if (n8 < dim_r )
+    {
+        __mmask8 mask = (1 << (dim_r - n8)) - 1;
+        wVal = _mm512_mask_load_pd(tmpzero, mask, &(WMat[n8]));
+        hVal = _mm512_mask_load_pd(tmpzero, mask, &(HMat[n8]));
+
+        tmp1 = _mm512_mul_pd (lambda_v, wVal);
+        tmp2 = _mm512_mul_pd (err_v, wVal);
+
+        /* update w model */
+        tmp1 = _mm512_fmadd_pd (err_v, hVal, tmp1);
+        wVal = _mm512_fmadd_pd (rate_v, tmp1, wVal);
+
+        /* update h model */
+        tmp2 = _mm512_fmadd_pd (lambda_v, hVal, tmp2);
+        hVal = _mm512_fmadd_pd (rate_v, tmp2, hVal);
+
+        _mm512_mask_store_pd (&(WMat[n8]), mask, wVal);
+        _mm512_mask_store_pd (&(HMat[n8]), mask, hVal);
+
+    }
+
+
 #else
     #error "DAAL_FPTYPE must be defined to float or double"
 #endif
 
 }
 
-template<> void computeRMSE_explicit<DAAL_FPTYPE, avx512_mic>(DAAL_FPTYPE *WMat,DAAL_FPTYPE *HMat, DAAL_FPTYPE* testV, DAAL_FPTYPE* testRMSE, int idx, const long dim_r)
-{
-
-    DAAL_FPTYPE Mult = 0;
-    DAAL_FPTYPE Err = 0;
-    int j;
-
-#if( __FPTYPE__(DAAL_FPTYPE) == __float__ )
-
-    int num_n16 = (dim_r + 16 - 1)/16;
-    int n16 = num_n16*16;
-
-    __m512 wVal;
-    __m512 hVal;
-    __m512 tmp1;
-
-    DAAL_FPTYPE mul_res;
-
-    for (j = 0; j < n16; j+=16)
-    {
-
-        wVal        = _mm512_load_ps (&(WMat[j]));
-        hVal        = _mm512_load_ps (&(HMat[j]));
-        tmp1        = _mm512_mul_ps (wVal, hVal);
-        mul_res     = _mm512_reduce_add_ps (tmp1);
-
-        Mult += mul_res;
-    }
-
-    Err = testV[idx] - Mult;
-
-    testRMSE[idx] = Err*Err;
-
-#elif( __FPTYPE__(DAAL_FPTYPE) == __double__ )
-
-    int num_n8 = (dim_r + 8 - 1)/8;
-    int n8 = num_n8*8;
-
-    __m512d wVal;
-    __m512d hVal;
-    __m512d tmp1;
-
-    DAAL_FPTYPE mul_res;
-
-    for (j = 0; j < n8; j+=8)
-    {
-
-        wVal        = _mm512_load_pd (&(WMat[j]));
-        hVal        = _mm512_load_pd (&(HMat[j]));
-        tmp1        = _mm512_mul_pd (wVal, hVal);
-        mul_res     = _mm512_reduce_add_pd (tmp1);
-
-        Mult += mul_res;
-    }
-
-    Err = testV[idx] - Mult;
-
-    testRMSE[idx] = Err*Err;
-
-#else
-    #error "DAAL_FPTYPE must be defined to float or double"
-#endif
-
-}
