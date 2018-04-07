@@ -35,11 +35,14 @@
 
 #include "algorithms/algorithm.h"
 #include "data_management/data/numeric_table.h"
+// #include "data_management/data/harp_numeric_table.h"
 #include "data_management/data/homogen_numeric_table.h"
 #include "services/daal_defines.h"
 #include "services/hdfs.h"
+#include "harp_numeric_table.h"
 
 using namespace daal::data_management;
+using namespace daal::data_management::interface1;
 using namespace daal::services;
 
 namespace daal
@@ -618,10 +621,10 @@ public:
     services::SharedPtr<int>* chunk_ids_cache_pip;
     services::SharedPtr<int>* chunk_internal_offsets_cache_pip;
     
-    BlockDescriptor<int>** update_queue_pos;
-    BlockDescriptor<float>** update_queue_counts;
+    HarpBlockDescriptor<int>** update_queue_pos;
+    HarpBlockDescriptor<float>** update_queue_counts;
 	decompressElem** update_queue_counts_decompress;
-    BlockDescriptor<int>** update_queue_index;
+    HarpBlockDescriptor<int>** update_queue_index;
 
     //for neighborlist partitioning
 	std::vector<task_nbr*> task_list;

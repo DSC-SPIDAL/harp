@@ -58,6 +58,7 @@
 #include "data_management/data/data_serialize.h"
 
 using namespace daal::data_management;
+using namespace daal::data_management::interface1;
 
 namespace daal
 {
@@ -245,7 +246,7 @@ public:
      * @param block
      */
     void getBlockOfColumnValuesMT(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num,
-                                ReadWriteMode rwflag, BlockDescriptor<double>** BDAccessor) DAAL_C11_OVERRIDE
+                                ReadWriteMode rwflag, HarpBlockDescriptor<double>** BDAccessor) DAAL_C11_OVERRIDE
     {/*{{{*/
 
         int thread_num = tbb::task_scheduler_init::default_num_threads();
@@ -260,7 +261,7 @@ public:
     }/*}}}*/
 
     void getBlockOfColumnValuesMT(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num,
-                                ReadWriteMode rwflag, BlockDescriptor<float>** BDAccessor) DAAL_C11_OVERRIDE
+                                ReadWriteMode rwflag, HarpBlockDescriptor<float>** BDAccessor) DAAL_C11_OVERRIDE
     {/*{{{*/
 
         int thread_num = tbb::task_scheduler_init::default_num_threads();
@@ -275,7 +276,7 @@ public:
     }/*}}}*/
 
     void getBlockOfColumnValuesMT(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num,
-                                ReadWriteMode rwflag, BlockDescriptor<int>** BDAccessor) DAAL_C11_OVERRIDE
+                                ReadWriteMode rwflag, HarpBlockDescriptor<int>** BDAccessor) DAAL_C11_OVERRIDE
     {/*{{{*/
 
         int thread_num = tbb::task_scheduler_init::default_num_threads();
@@ -290,21 +291,21 @@ public:
     }/*}}}*/
 
     void getBlockOfColumnValuesST(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num,
-                                ReadWriteMode rwflag, BlockDescriptor<double>** block) DAAL_C11_OVERRIDE
+                                ReadWriteMode rwflag, HarpBlockDescriptor<double>** block) DAAL_C11_OVERRIDE
     {
         return getTFeatureMT<double>(feature_start, feature_len, vector_idx, value_num, rwflag, block,
         "getDoubleFeature", "(JJJLjava/nio/ByteBuffer;)Ljava/nio/DoubleBuffer;");
     }
 
     void getBlockOfColumnValuesST(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num,
-                                ReadWriteMode rwflag, BlockDescriptor<float>** block) DAAL_C11_OVERRIDE
+                                ReadWriteMode rwflag, HarpBlockDescriptor<float>** block) DAAL_C11_OVERRIDE
     {
         return getTFeatureMT<float>(feature_start, feature_len, vector_idx, value_num, rwflag, block,
         "getFloatFeature", "(JJJLjava/nio/ByteBuffer;)Ljava/nio/FloatBuffer;");
     }
 
     void getBlockOfColumnValuesST(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num,
-                                ReadWriteMode rwflag, BlockDescriptor<int>** block) DAAL_C11_OVERRIDE
+                                ReadWriteMode rwflag, HarpBlockDescriptor<int>** block) DAAL_C11_OVERRIDE
     {
         return getTFeatureMT<int>(feature_start, feature_len, vector_idx, value_num, rwflag, block,
         "getIntFeature", "(JJJLjava/nio/ByteBuffer;)Ljava/nio/IntBuffer;");
@@ -331,7 +332,7 @@ public:
      * @param feature_len
      * @param block
      */
-    void releaseBlockOfColumnValuesMT(size_t feature_start, size_t feature_len, BlockDescriptor<double>** BDAccessor) DAAL_C11_OVERRIDE
+    void releaseBlockOfColumnValuesMT(size_t feature_start, size_t feature_len, HarpBlockDescriptor<double>** BDAccessor) DAAL_C11_OVERRIDE
     {/*{{{*/
 
         int thread_num = tbb::task_scheduler_init::default_num_threads();
@@ -345,7 +346,7 @@ public:
 
     }/*}}}*/
 
-    void releaseBlockOfColumnValuesMT(size_t feature_start, size_t feature_len, BlockDescriptor<float>** BDAccessor) DAAL_C11_OVERRIDE
+    void releaseBlockOfColumnValuesMT(size_t feature_start, size_t feature_len, HarpBlockDescriptor<float>** BDAccessor) DAAL_C11_OVERRIDE
     {/*{{{*/
 
         int thread_num = tbb::task_scheduler_init::default_num_threads();
@@ -359,7 +360,7 @@ public:
 
     }/*}}}*/
 
-    void releaseBlockOfColumnValuesMT(size_t feature_start, size_t feature_len, BlockDescriptor<int>** BDAccessor) DAAL_C11_OVERRIDE
+    void releaseBlockOfColumnValuesMT(size_t feature_start, size_t feature_len, HarpBlockDescriptor<int>** BDAccessor) DAAL_C11_OVERRIDE
     {/*{{{*/
 
         int thread_num = tbb::task_scheduler_init::default_num_threads();
@@ -373,17 +374,17 @@ public:
 
     }/*}}}*/
 
-    void releaseBlockOfColumnValuesST(size_t feature_start, size_t feature_len, BlockDescriptor<double>** block) DAAL_C11_OVERRIDE
+    void releaseBlockOfColumnValuesST(size_t feature_start, size_t feature_len, HarpBlockDescriptor<double>** block) DAAL_C11_OVERRIDE
     {
         releaseTFeatureMT<double>(feature_start, feature_len, block, "releaseDoubleFeature");
     }
 
-    void releaseBlockOfColumnValuesST(size_t feature_start, size_t feature_len, BlockDescriptor<float>** block) DAAL_C11_OVERRIDE
+    void releaseBlockOfColumnValuesST(size_t feature_start, size_t feature_len, HarpBlockDescriptor<float>** block) DAAL_C11_OVERRIDE
     {
         releaseTFeatureMT<float>(feature_start, feature_len, block, "releaseFloatFeature");
     }
 
-    void releaseBlockOfColumnValuesST(size_t feature_start, size_t feature_len, BlockDescriptor<int>** block) DAAL_C11_OVERRIDE
+    void releaseBlockOfColumnValuesST(size_t feature_start, size_t feature_len, HarpBlockDescriptor<int>** block) DAAL_C11_OVERRIDE
     {
         releaseTFeatureMT<int>(feature_start, feature_len, block, "releaseIntFeature");
     }
@@ -576,7 +577,7 @@ public:
     }
 
     template<typename T>
-    void getTFeatureMT(size_t feature_start, size_t feature_len, size_t idx, size_t nrows, ReadWriteMode rwFlag, BlockDescriptor<T>** block,
+    void getTFeatureMT(size_t feature_start, size_t feature_len, size_t idx, size_t nrows, ReadWriteMode rwFlag, HarpBlockDescriptor<T>** block,
                      const char *javaMethodName, const char *javaMethodSignature)
     {
         jint status = JNI_OK;
@@ -636,7 +637,7 @@ public:
 
             block[feature_idx]->setDetails(feature_idx, idx, rwFlag);
 
-            if( !(block[feature_idx]->resizeBuffer( 1, nrows )) ) { return; }
+            if( !(block[feature_idx]->resizeBufferMT( 1, nrows )) ) { return; }
 
             buf = block[feature_idx]->getBlockPtr();
 
@@ -707,7 +708,7 @@ public:
         {
             feature_idx = feature_start + k;
             block[feature_idx]->setDetails(feature_idx, idx, rwFlag);
-            if( !(block[feature_idx]->resizeBuffer( 1, nrows )) ) { return; }
+            if( !(block[feature_idx]->resizeBufferMT( 1, nrows )) ) { return; }
             buf = block[feature_idx]->getBlockPtr();
             jobject jbuf = (local_tls.jenv)->NewDirectByteBuffer(buf, bufferSize);
 
@@ -767,7 +768,7 @@ public:
     }
 
     template<typename T>
-    void releaseTFeatureMT2(size_t feature_start, size_t feature_len, BlockDescriptor<T>** block, const char *javaMethodName)
+    void releaseTFeatureMT2(size_t feature_start, size_t feature_len, HarpBlockDescriptor<T>** block, const char *javaMethodName)
     {/*{{{*/
 
         jint status = JNI_OK;
@@ -839,7 +840,7 @@ public:
     }/*}}}*/
 
     template<typename T>
-    void releaseTFeatureMT(size_t feature_start, size_t feature_len, BlockDescriptor<T>** block, const char *javaMethodName)
+    void releaseTFeatureMT(size_t feature_start, size_t feature_len, HarpBlockDescriptor<T>** block, const char *javaMethodName)
     {/*{{{*/
 
         jint status = JNI_OK;

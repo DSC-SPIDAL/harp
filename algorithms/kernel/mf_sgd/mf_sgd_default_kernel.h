@@ -59,6 +59,7 @@
 
 using namespace tbb;
 using namespace daal::data_management;
+using namespace daal::data_management::interface1;
 
 typedef queuing_mutex currentMutex_t;
 
@@ -689,7 +690,7 @@ void test_generate_distri(NumericTable *r[], NumericTable* &a3, NumericTable* &a
  * @param hMat_blk_array
  */
 template<typename interm, CpuType cpu>
-void hMat_generate(NumericTable *r[], mf_sgd::Parameter* &par, size_t dim_r, long* &col_ids, interm** &hMat_native_mem, BlockDescriptor<interm>** &hMat_blk_array)
+void hMat_generate(NumericTable *r[], mf_sgd::Parameter* &par, size_t dim_r, long* &col_ids, interm** &hMat_native_mem, HarpBlockDescriptor<interm>** &hMat_blk_array)
 {/*{{{*/
 
     struct timespec ts1;
@@ -710,11 +711,11 @@ void hMat_generate(NumericTable *r[], mf_sgd::Parameter* &par, size_t dim_r, lon
     hMat_native_mem = new interm *[hMat_rowNum];
     assert(hMat_native_mem != NULL);
    
-    hMat_blk_array = new BlockDescriptor<interm> *[hMat_rowNum];
+    hMat_blk_array = new HarpBlockDescriptor<interm> *[hMat_rowNum];
     assert(hMat_blk_array != NULL);
 
     for(int k=0;k<hMat_rowNum;k++)
-        hMat_blk_array[k] = new BlockDescriptor<interm>();
+        hMat_blk_array[k] = new HarpBlockDescriptor<interm>();
 
     clock_gettime(CLOCK_MONOTONIC, &ts1);
 
@@ -769,7 +770,7 @@ void hMat_generate(NumericTable *r[], mf_sgd::Parameter* &par, size_t dim_r, lon
  * @param hMat_blk_array
  */
 template<typename interm, CpuType cpu>
-void hMat_release(NumericTable *r[], mf_sgd::Parameter* &par, size_t dim_r, BlockDescriptor<interm>** &hMat_blk_array)
+void hMat_release(NumericTable *r[], mf_sgd::Parameter* &par, size_t dim_r, HarpBlockDescriptor<interm>** &hMat_blk_array)
 {/*{{{*/
 
     struct timespec ts1;

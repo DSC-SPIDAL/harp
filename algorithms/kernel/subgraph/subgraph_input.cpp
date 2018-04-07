@@ -131,17 +131,14 @@ Input::Input() : daal::algorithms::Input(10) {
     local_mapper_id = 0;
     send_array_limit = 1000;
     rotation_pipeline = false;
-    // abs_v_to_mapper = NULL;
     abs_v_to_queue = NULL;
     comm_mapper_vertex = NULL;
     update_map = NULL;
-    // update_map_size = NULL;
 
     update_queue_pos = NULL;
     update_queue_counts = NULL;
     update_queue_counts_decompress = NULL;
     update_queue_index = NULL;
-    // update_mapper_len = NULL;
 
     map_ids_cache_pip = NULL;
     chunk_ids_cache_pip = NULL;
@@ -152,7 +149,6 @@ Input::Input() : daal::algorithms::Input(10) {
     daal_table_int_ptr = NULL; // tmp array to hold int data
     daal_table_float_ptr = NULL; //tmp array to hold float data
     
-    // send_vertex_array = NULL;
     send_vertex_array_size = 0;
 
     cur_sub_id_comm = 0;
@@ -251,9 +247,9 @@ void Input::init_comm_omp_kernel(int mapper_num_par, int local_mapper_id_par, lo
     update_map_size = services::SharedPtr<int>(new int[g.vert_num_count]);
     std::memset(update_map_size.get(), 0, g.vert_num_count*sizeof(int));
 
-    update_queue_pos = new BlockDescriptor<int>*[mapper_num];
-    update_queue_counts = new BlockDescriptor<float>*[mapper_num];
-    update_queue_index = new BlockDescriptor<int>*[mapper_num];
+    update_queue_pos = new HarpBlockDescriptor<int>*[mapper_num];
+    update_queue_counts = new HarpBlockDescriptor<float>*[mapper_num];
+    update_queue_index = new HarpBlockDescriptor<int>*[mapper_num];
 
     update_queue_counts_decompress = new decompressElem*[mapper_num];
 
@@ -343,9 +339,9 @@ void Input::init_comm_tbb_kernel(int mapper_num_par, int local_mapper_id_par, lo
     update_map_size = services::SharedPtr<int>(new int[g.vert_num_count]);
     std::memset(update_map_size.get(), 0, g.vert_num_count*sizeof(int));
 
-    update_queue_pos = new BlockDescriptor<int>*[mapper_num];
-    update_queue_counts = new BlockDescriptor<float>*[mapper_num];
-    update_queue_index = new BlockDescriptor<int>*[mapper_num];
+    update_queue_pos = new HarpBlockDescriptor<int>*[mapper_num];
+    update_queue_counts = new HarpBlockDescriptor<float>*[mapper_num];
+    update_queue_index = new HarpBlockDescriptor<int>*[mapper_num];
 
     update_queue_counts_decompress = new decompressElem*[mapper_num];
 
@@ -645,8 +641,8 @@ void Input::sendCommParcelLoadOld()
 void Input::sendCommParcelLoad()
 {
 
-    BlockDescriptor<int>* up_block_int =  new BlockDescriptor<int>();
-    BlockDescriptor<float>* up_block_float = new BlockDescriptor<float>();
+    HarpBlockDescriptor<int>* up_block_int =  new HarpBlockDescriptor<int>();
+    HarpBlockDescriptor<float>* up_block_float = new HarpBlockDescriptor<float>();
 
     //upload parcel offset 
     NumericTablePtr parceloffset = get(ParcelOffsetId);
@@ -722,9 +718,9 @@ void Input::updateRecvParcelInit(int comm_id)
 
         // std::printf("Update create size of id %d: %d\n",cur_upd_mapper_id,  (int)recv_divid_num);
         // std::fflush;
-        update_queue_pos[cur_upd_mapper_id] = new BlockDescriptor<int>[(int)recv_divid_num];
-        update_queue_counts[cur_upd_mapper_id] = new BlockDescriptor<float>[(int)recv_divid_num];
-        update_queue_index[cur_upd_mapper_id] = new BlockDescriptor<int>[(int)recv_divid_num];
+        update_queue_pos[cur_upd_mapper_id] = new HarpBlockDescriptor<int>[(int)recv_divid_num];
+        update_queue_counts[cur_upd_mapper_id] = new HarpBlockDescriptor<float>[(int)recv_divid_num];
+        update_queue_index[cur_upd_mapper_id] = new HarpBlockDescriptor<int>[(int)recv_divid_num];
         update_queue_counts_decompress[cur_upd_mapper_id] = new decompressElem[(int)recv_divid_num];
     }
 
@@ -733,17 +729,17 @@ void Input::updateRecvParcelInit(int comm_id)
 void Input::updateRecvParcel2()
 {
 
-    BlockDescriptor<int>* recv_offset_ptr = &(update_queue_pos[cur_upd_mapper_id][cur_upd_parcel_id]); 
+    HarpBlockDescriptor<int>* recv_offset_ptr = &(update_queue_pos[cur_upd_mapper_id][cur_upd_parcel_id]); 
     NumericTablePtr recv_v_offset_table = get(ParcelOffsetId);
     HarpNumericTable* recv_v_offset_table_mt = reinterpret_cast<HarpNumericTable*>(recv_v_offset_table.get()); 
     recv_v_offset_table_mt->getBlockOfColumnValuesST(0, 1, 0, recv_v_offset_table->getNumberOfRows(), readOnly, &recv_offset_ptr);
 
-    BlockDescriptor<float>* recv_data_ptr = &(update_queue_counts[cur_upd_mapper_id][cur_upd_parcel_id]);
+    HarpBlockDescriptor<float>* recv_data_ptr = &(update_queue_counts[cur_upd_mapper_id][cur_upd_parcel_id]);
     NumericTablePtr recv_v_data_table = get(ParcelDataId);
     HarpNumericTable* recv_v_data_table_mt = reinterpret_cast<HarpNumericTable*>(recv_v_data_table.get()); 
     recv_v_data_table_mt->getBlockOfColumnValuesST(0, 1, 0, recv_v_data_table->getNumberOfRows(), readOnly, &recv_data_ptr);
 
-    BlockDescriptor<int>* recv_index_ptr = &(update_queue_index[cur_upd_mapper_id][cur_upd_parcel_id]);
+    HarpBlockDescriptor<int>* recv_index_ptr = &(update_queue_index[cur_upd_mapper_id][cur_upd_parcel_id]);
     NumericTablePtr recv_v_index_table = get(ParcelIdxId);
     HarpNumericTable* recv_v_index_table_mt = reinterpret_cast<HarpNumericTable*>(recv_v_index_table.get()); 
     recv_v_index_table_mt->getBlockOfColumnValuesST(0, 1, 0, recv_v_index_table->getNumberOfRows(), readOnly, &recv_index_ptr);
@@ -757,17 +753,17 @@ void Input::updateRecvParcel2()
 void Input::updateRecvParcel()
 {
 
-    BlockDescriptor<int>* recv_offset_ptr = &(update_queue_pos[cur_upd_mapper_id][cur_upd_parcel_id]); 
+    HarpBlockDescriptor<int>* recv_offset_ptr = &(update_queue_pos[cur_upd_mapper_id][cur_upd_parcel_id]); 
     NumericTablePtr recv_v_offset_table = get(ParcelOffsetId);
     HarpNumericTable* recv_v_offset_table_mt = reinterpret_cast<HarpNumericTable*>(recv_v_offset_table.get()); 
     recv_v_offset_table_mt->getBlockOfColumnValuesST(0, 1, 0, recv_v_offset_table->getNumberOfRows(), readOnly, &recv_offset_ptr);
 
-    BlockDescriptor<float>* recv_data_ptr = &(update_queue_counts[cur_upd_mapper_id][cur_upd_parcel_id]);
+    HarpBlockDescriptor<float>* recv_data_ptr = &(update_queue_counts[cur_upd_mapper_id][cur_upd_parcel_id]);
     NumericTablePtr recv_v_data_table = get(ParcelDataId);
     HarpNumericTable* recv_v_data_table_mt = reinterpret_cast<HarpNumericTable*>(recv_v_data_table.get()); 
     recv_v_data_table_mt->getBlockOfColumnValuesST(0, 1, 0, recv_v_data_table->getNumberOfRows(), readOnly, &recv_data_ptr);
 
-    BlockDescriptor<int>* recv_index_ptr = &(update_queue_index[cur_upd_mapper_id][cur_upd_parcel_id]);
+    HarpBlockDescriptor<int>* recv_index_ptr = &(update_queue_index[cur_upd_mapper_id][cur_upd_parcel_id]);
     NumericTablePtr recv_v_index_table = get(ParcelIdxId);
     HarpNumericTable* recv_v_index_table_mt = reinterpret_cast<HarpNumericTable*>(recv_v_index_table.get()); 
     recv_v_index_table_mt->getBlockOfColumnValuesST(0, 1, 0, recv_v_index_table->getNumberOfRows(), readOnly, &recv_index_ptr);
@@ -825,8 +821,8 @@ void Input::updateRecvParcel()
     //free mem in the original count array
     // delete recv_data_ptr;
     // update_queue_counts[cur_upd_mapper_id][cur_upd_parcel_id]
-    recv_data_ptr->~BlockDescriptor();
-    recv_index_ptr->~BlockDescriptor();
+    recv_data_ptr->~HarpBlockDescriptor();
+    recv_index_ptr->~HarpBlockDescriptor();
     std::printf("Parcel decompress successful\n");
     std::fflush;
 

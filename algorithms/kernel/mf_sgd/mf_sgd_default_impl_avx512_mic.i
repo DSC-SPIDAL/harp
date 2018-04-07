@@ -41,12 +41,12 @@ template<> void updateMF_explicit<DAAL_FPTYPE, avx512_mic>(DAAL_FPTYPE* WMat, DA
     __m512 tmp2;
 
     __m512 tmpzero = _mm512_set1_ps (0);
+    __mmask16 mask = (1 << (dim_r - n16)) - 1;
 
     DAAL_FPTYPE mul_res;
 
     for (j = 0; j < n16; j+=16)
     {
-
         wVal        = _mm512_load_ps (&(WMat[j]));
         hVal        = _mm512_load_ps (&(HMat[j]));
         tmp1        = _mm512_mul_ps (wVal, hVal);
@@ -58,7 +58,6 @@ template<> void updateMF_explicit<DAAL_FPTYPE, avx512_mic>(DAAL_FPTYPE* WMat, DA
     //for rest of dim_r
     if ( n16 < dim_r  )
     {
-        __mmask16 mask = (1 << (dim_r - n16)) - 1;
         wVal = _mm512_mask_load_ps(tmpzero, mask, &(WMat[n16]));
         hVal = _mm512_mask_load_ps(tmpzero, mask, &(HMat[n16]));
         tmp1 = _mm512_mul_ps (wVal, hVal);
@@ -98,7 +97,6 @@ template<> void updateMF_explicit<DAAL_FPTYPE, avx512_mic>(DAAL_FPTYPE* WMat, DA
     //for the rest of dim_r
      if ( n16 < dim_r  )
      {
-         __mmask16 mask = (1 << (dim_r - n16)) - 1;
          wVal = _mm512_mask_load_ps(tmpzero, mask, &(WMat[n16]));
          hVal = _mm512_mask_load_ps(tmpzero, mask, &(HMat[n16]));
 
@@ -128,23 +126,21 @@ template<> void updateMF_explicit<DAAL_FPTYPE, avx512_mic>(DAAL_FPTYPE* WMat, DA
     __m512d tmp2;
 
     __m512d tmpzero = _mm512_set1_pd (0);
+    __mmask8 mask = (1 << (dim_r - n8)) - 1;
 
     DAAL_FPTYPE mul_res;
 
     for (j = 0; j < n8; j+=8)
     {
-
         wVal        = _mm512_load_pd (&(WMat[j]));
         hVal        = _mm512_load_pd (&(HMat[j]));
         tmp1        = _mm512_mul_pd (wVal, hVal);
         mul_res     = _mm512_reduce_add_pd (tmp1);
-
         Mult += mul_res;
     }
 
     if ( n8 < dim_r  )
     {
-        __mmask8 mask = (1 << (dim_r - n8)) - 1;
         wVal = _mm512_mask_load_pd(tmpzero, mask, &(WMat[n8]));
         hVal = _mm512_mask_load_pd(tmpzero, mask, &(HMat[n8]));
         tmp1 = _mm512_mul_pd (wVal, hVal);
@@ -161,7 +157,6 @@ template<> void updateMF_explicit<DAAL_FPTYPE, avx512_mic>(DAAL_FPTYPE* WMat, DA
     
     for (j = 0; j < n8; j+=8)
     {
-
         wVal        = _mm512_load_pd (&(WMat[j]));
         hVal        = _mm512_load_pd (&(HMat[j]));
 
@@ -184,7 +179,6 @@ template<> void updateMF_explicit<DAAL_FPTYPE, avx512_mic>(DAAL_FPTYPE* WMat, DA
 
     if (n8 < dim_r )
     {
-        __mmask8 mask = (1 << (dim_r - n8)) - 1;
         wVal = _mm512_mask_load_pd(tmpzero, mask, &(WMat[n8]));
         hVal = _mm512_mask_load_pd(tmpzero, mask, &(HMat[n8]));
 

@@ -60,6 +60,7 @@
 
 #include "subgraph_default_impl.i"
 #include "service_thread_pinner.h"
+#include "harp_numeric_table.h"
 
 using namespace tbb;
 using namespace daal::internal;
@@ -885,9 +886,9 @@ void subgraphDistriKernel<interm, method, cpu>::updateRemoteCountsNbrSplit(Param
     services::SharedPtr<int>* chunk_ids_cache_pip = input->chunk_ids_cache_pip;
     services::SharedPtr<int>* chunk_internal_offsets_cache_pip = input->chunk_internal_offsets_cache_pip;
 
-    BlockDescriptor<int>** update_queue_pos = input->update_queue_pos;
-    BlockDescriptor<float>** update_queue_counts = input->update_queue_counts;
-    BlockDescriptor<int>** update_queue_index = input->update_queue_index;
+    HarpBlockDescriptor<int>** update_queue_pos = input->update_queue_pos;
+    HarpBlockDescriptor<float>** update_queue_counts = input->update_queue_counts;
+    HarpBlockDescriptor<int>** update_queue_index = input->update_queue_index;
     decompressElem** update_queue_counts_decompress = input->update_queue_counts_decompress;
 
     int**** comb_num_indexes = input->comb_num_indexes;
@@ -991,7 +992,7 @@ void subgraphDistriKernel<interm, method, cpu>::updateRemoteCountsNbrSplit(Param
         int num_combinations_verts_sub_thd =  num_combinations_verts_sub;
         int sub_id_thd = sub_id;
 
-        BlockDescriptor<int>** update_queue_pos_thd = update_queue_pos;
+        HarpBlockDescriptor<int>** update_queue_pos_thd = update_queue_pos;
         decompressElem** update_queue_counts_decompress_thd = update_queue_counts_decompress;
 
         std::vector<float*> adj_list_valid;
@@ -1140,9 +1141,9 @@ void subgraphDistriKernel<interm, method, cpu>::updateRemoteCountsNbrSplitTBB(Pa
     services::SharedPtr<int>* chunk_ids_cache_pip = input->chunk_ids_cache_pip;
     services::SharedPtr<int>* chunk_internal_offsets_cache_pip = input->chunk_internal_offsets_cache_pip;
 
-    BlockDescriptor<int>** update_queue_pos = input->update_queue_pos;
-    BlockDescriptor<float>** update_queue_counts = input->update_queue_counts;
-    BlockDescriptor<int>** update_queue_index = input->update_queue_index;
+    HarpBlockDescriptor<int>** update_queue_pos = input->update_queue_pos;
+    HarpBlockDescriptor<float>** update_queue_counts = input->update_queue_counts;
+    HarpBlockDescriptor<int>** update_queue_index = input->update_queue_index;
     decompressElem** update_queue_counts_decompress = input->update_queue_counts_decompress;
 
     int**** comb_num_indexes = input->comb_num_indexes;
@@ -1258,7 +1259,7 @@ void subgraphDistriKernel<interm, method, cpu>::updateRemoteCountsNbrSplitTBB(Pa
         int num_combinations_verts_sub_thd =  num_combinations_verts_sub;
         int sub_id_thd = sub_id;
 
-        BlockDescriptor<int>** update_queue_pos_thd = update_queue_pos;
+        HarpBlockDescriptor<int>** update_queue_pos_thd = update_queue_pos;
         decompressElem** update_queue_counts_decompress_thd = update_queue_counts_decompress;
 
         std::vector<float*> adj_list_valid;
@@ -1453,9 +1454,9 @@ void subgraphDistriKernel<interm, method, cpu>::updateRemoteCountsPipNbrSplit(Pa
     services::SharedPtr<int>* chunk_ids_cache_pip = input->chunk_ids_cache_pip;
     services::SharedPtr<int>* chunk_internal_offsets_cache_pip = input->chunk_internal_offsets_cache_pip;
 
-    BlockDescriptor<int>** update_queue_pos = input->update_queue_pos;
-    BlockDescriptor<float>** update_queue_counts = input->update_queue_counts;
-    BlockDescriptor<int>** update_queue_index = input->update_queue_index;
+    HarpBlockDescriptor<int>** update_queue_pos = input->update_queue_pos;
+    HarpBlockDescriptor<float>** update_queue_counts = input->update_queue_counts;
+    HarpBlockDescriptor<int>** update_queue_index = input->update_queue_index;
     decompressElem** update_queue_counts_decompress = input->update_queue_counts_decompress;
 
     int**** comb_num_indexes = input->comb_num_indexes;
@@ -1559,7 +1560,7 @@ void subgraphDistriKernel<interm, method, cpu>::updateRemoteCountsPipNbrSplit(Pa
         int* chunk_ids = task_update_atomic->_chunk_ids_atom;
         int* chunk_internal_offsets = task_update_atomic->_chunk_internal_offsets_atom; 
         int update_pip_id_thd = update_pip_id;
-        BlockDescriptor<int>** update_queue_pos_thd = update_queue_pos;
+        HarpBlockDescriptor<int>** update_queue_pos_thd = update_queue_pos;
         decompressElem** update_queue_counts_decompress_thd = update_queue_counts_decompress;
         int num_combinations_verts_sub_thd = num_combinations_verts_sub;
         int num_combinations_active_ato_thd = num_combinations_active_ato;
@@ -1724,9 +1725,9 @@ void subgraphDistriKernel<interm, method, cpu>::updateRemoteCountsPipNbrSplitTBB
     services::SharedPtr<int>* chunk_ids_cache_pip = input->chunk_ids_cache_pip;
     services::SharedPtr<int>* chunk_internal_offsets_cache_pip = input->chunk_internal_offsets_cache_pip;
 
-    BlockDescriptor<int>** update_queue_pos = input->update_queue_pos;
-    BlockDescriptor<float>** update_queue_counts = input->update_queue_counts;
-    BlockDescriptor<int>** update_queue_index = input->update_queue_index;
+    HarpBlockDescriptor<int>** update_queue_pos = input->update_queue_pos;
+    HarpBlockDescriptor<float>** update_queue_counts = input->update_queue_counts;
+    HarpBlockDescriptor<int>** update_queue_index = input->update_queue_index;
     decompressElem** update_queue_counts_decompress = input->update_queue_counts_decompress;
 
     int**** comb_num_indexes = input->comb_num_indexes;
@@ -1842,7 +1843,7 @@ void subgraphDistriKernel<interm, method, cpu>::updateRemoteCountsPipNbrSplitTBB
         int* chunk_ids = task_update_atomic->_chunk_ids_atom;
         int* chunk_internal_offsets = task_update_atomic->_chunk_internal_offsets_atom; 
         int update_pip_id_thd = update_pip_id;
-        BlockDescriptor<int>** update_queue_pos_thd = update_queue_pos;
+        HarpBlockDescriptor<int>** update_queue_pos_thd = update_queue_pos;
         decompressElem** update_queue_counts_decompress_thd = update_queue_counts_decompress;
         int num_combinations_verts_sub_thd = num_combinations_verts_sub;
         int num_combinations_active_ato_thd = num_combinations_active_ato;

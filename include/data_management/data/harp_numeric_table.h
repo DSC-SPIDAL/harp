@@ -48,7 +48,19 @@
 #ifndef __HARP_NUMERIC_TABLE_H__
 #define __HARP_NUMERIC_TABLE_H__
 
+#include "services/base.h"
+#include "services/daal_defines.h"
+#include "services/daal_memory.h"
+#include "services/error_handling.h"
+#include "algorithms/algorithm_types.h"
+#include "data_management/data/data_collection.h"
+#include "data_management/data/data_dictionary.h"
+
+#include "data_management/data/numeric_types.h"
+
 #include "data_management/data/numeric_table.h"
+#include "tbb/scalable_allocator.h"
+#include "daal_shared_ptr.h"
 
 namespace daal
 {
@@ -57,6 +69,311 @@ namespace data_management
 
 namespace interface1
 {
+
+// class HarpNumericTable;
+
+class HarpMTDeleter : public daal::services::interface1::DeleterIface
+{
+
+public:
+    void operator() (const void *ptr) DAAL_C11_OVERRIDE
+    {
+        scalable_free((void *)ptr);
+    }
+};
+
+// template<typename DataType = DAAL_DATA_TYPE>
+// class DAAL_EXPORT HarpBlockDescriptor : public BlockDescriptor<DataType>
+// {/*{{{*/
+//
+// public:
+//     /** \private */
+//     HarpBlockDescriptor() :  BlockDescriptor<DataType>() {}
+//
+//     ~HarpBlockDescriptor() { this->freeBuffer(); }
+//
+//     bool resizeBufferMT( size_t nColumns, size_t nRows, size_t auxMemorySize = 0 )
+//     {
+//         _ncols = nColumns;
+//         _nrows = nRows;
+//
+//         size_t newSize = nColumns * nRows * sizeof(DataType) + auxMemorySize;
+//
+//         if ( newSize  > _capacity )
+//         {
+//             this->freeBuffer();
+//             _buffer = services::SharedPtr<DataType>((DataType *)scalable_malloc(newSize), HarpMTDeleter());
+//             if ( _buffer != 0 )
+//             {
+//                 _capacity = newSize;
+//             }
+//             else
+//             {
+//                 return false;
+//             }
+//
+//         }
+//
+//         _ptr = _buffer;
+//         if(!auxMemorySize)
+//         {
+//             if(_aux_ptr)
+//             {
+//                 _aux_ptr = services::SharedPtr<DataType>();
+//             }
+//         }
+//         else
+//         {
+//             _aux_ptr = services::SharedPtr<DataType>(_buffer, _buffer.get() + nColumns * nRows);
+//         }
+//
+//         return true;
+//     }
+//
+//    
+// };/*}}}*/
+
+template<typename DataType = DAAL_DATA_TYPE>
+class DAAL_EXPORT HarpBlockDescriptor
+{/*{{{*/
+public:
+    /** \private */
+    HarpBlockDescriptor() : _ptr(), _buffer(), _capacity(0), _ncols(0), _nrows(0), _colsOffset(0), _rowsOffset(0), _rwFlag(0), _pPtr(0), _rawPtr(0)
+    {}
+
+    /** \private */
+    ~HarpBlockDescriptor() { freeBuffer(); }
+
+    /**
+     *  Gets a pointer to the buffer
+     *  \return Pointer to the block
+     */
+    inline DataType *getBlockPtr() const
+    {
+        if(_rawPtr)
+        {
+            return (DataType *)_rawPtr;
+        }
+        return _ptr.get();
+    }
+
+    /**
+     *  Gets a pointer to the buffer
+     *  \return Pointer to the block
+     */
+    inline services::SharedPtr<DataType> getBlockSharedPtr() const
+    {
+        if(_rawPtr)
+        {
+            return services::SharedPtr<DataType>(services::reinterpretPointerCast<DataType, byte>(*_pPtr), (DataType *)_rawPtr);
+        }
+        return _ptr;
+    }
+
+    /**
+     *  Returns the number of columns in the block
+     *  \return Number of columns
+     */
+    inline size_t getNumberOfColumns() const { return _ncols; }
+
+    /**
+     *  Returns the number of rows in the block
+     *  \return Number of rows
+     */
+    inline size_t getNumberOfRows() const { return _nrows; }
+
+    /**
+     * Reset internal values and pointers to zero values
+     */
+    inline void reset()
+    {
+        _colsOffset = 0;
+        _rowsOffset = 0;
+        _rwFlag = 0;
+        _pPtr = NULL;
+        _rawPtr = NULL;
+    }
+
+public:
+    /**
+     *  Sets data pointer to use for in-place calculation
+     *  \param[in] ptr      Pointer to the buffer
+     *  \param[in] nColumns Number of columns
+     *  \param[in] nRows    Number of rows
+     */
+    inline void setPtr( DataType *ptr, size_t nColumns, size_t nRows )
+    {
+        _ptr   = services::SharedPtr<DataType>(ptr, services::EmptyDeleter());
+        _ncols = nColumns;
+        _nrows = nRows;
+    }
+
+    /**
+     *  \param[in] pPtr Pointer to the shared pointer that handles the memory
+     *  \param[in] rawPtr Pointer to she shifted memory
+     *  \param[in] nColumns Number of columns
+     *  \param[in] nRows Number of rows
+     */
+    void setPtr(services::SharedPtr<byte> *pPtr, byte *rawPtr, size_t nColumns, size_t nRows )
+    {
+        _pPtr = pPtr;
+        _rawPtr = rawPtr;
+        _ncols = nColumns;
+        _nrows = nRows;
+    }
+
+    /**
+     *  Allocates memory of (nColumns * nRows + auxMemorySize) size
+     *  \param[in] nColumns      Number of columns
+     *  \param[in] nRows         Number of rows
+     *  \param[in] auxMemorySize Memory size
+     *
+     *  \return true if memory of (nColumns * nRows + auxMemorySize) size is allocated successfully
+     */
+    inline bool resizeBuffer( size_t nColumns, size_t nRows, size_t auxMemorySize = 0 )
+    {
+        _ncols = nColumns;
+        _nrows = nRows;
+
+        size_t newSize = nColumns * nRows * sizeof(DataType) + auxMemorySize;
+
+        if ( newSize  > _capacity )
+        {
+            freeBuffer();
+            _buffer = services::SharedPtr<DataType>((DataType *)daal::services::daal_malloc(newSize), services::ServiceDeleter());
+            if ( _buffer != 0 )
+            {
+                _capacity = newSize;
+            }
+            else
+            {
+                return false;
+            }
+
+        }
+
+        _ptr = _buffer;
+        if(!auxMemorySize)
+        {
+            if(_aux_ptr)
+            {
+                _aux_ptr = services::SharedPtr<DataType>();
+            }
+        }
+        else
+        {
+            _aux_ptr = services::SharedPtr<DataType>(_buffer, _buffer.get() + nColumns * nRows);
+        }
+
+        return true;
+    }
+    
+    bool resizeBufferMT( size_t nColumns, size_t nRows, size_t auxMemorySize = 0 )
+    {
+        _ncols = nColumns;
+        _nrows = nRows;
+
+        size_t newSize = nColumns * nRows * sizeof(DataType) + auxMemorySize;
+
+        if ( newSize  > _capacity )
+        {
+            this->freeBuffer();
+            _buffer = services::SharedPtr<DataType>((DataType *)scalable_malloc(newSize), HarpMTDeleter());
+            if ( _buffer != 0 )
+            {
+                _capacity = newSize;
+            }
+            else
+            {
+                return false;
+            }
+
+        }
+
+        _ptr = _buffer;
+        if(!auxMemorySize)
+        {
+            if(_aux_ptr)
+            {
+                _aux_ptr = services::SharedPtr<DataType>();
+            }
+        }
+        else
+        {
+            _aux_ptr = services::SharedPtr<DataType>(_buffer, _buffer.get() + nColumns * nRows);
+        }
+
+        return true;
+    }
+
+    /**
+     *  Sets parameters of the block
+     *  \param[in]  columnIdx   Index of the first column in the block
+     *  \param[in]  rowIdx      Index of the first row in the block
+     *  \param[in]  rwFlag      Flag specifying read/write access to the block
+     */
+    inline void setDetails( size_t columnIdx, size_t rowIdx, int rwFlag )
+    {
+        _colsOffset = columnIdx;
+        _rowsOffset = rowIdx;
+        _rwFlag     = rwFlag;
+    }
+
+    /**
+     *  Gets the number of columns in the numeric table preceding the first element in the block
+     *  \return columns offset
+     */
+    inline size_t getColumnsOffset() const { return _colsOffset; }
+
+    /**
+     *  Gets the number of rows in the numeric table preceding the first element in the block
+     *  \return rows offset
+     */
+    inline size_t getRowsOffset() const { return _rowsOffset; }
+
+    /**
+     *  Gets the flag specifying read/write access to the block
+     *  \return flag
+     */
+    inline size_t getRWFlag() const { return _rwFlag; }
+
+    /**
+     *  Gets a pointer o the additional memory buffer
+     *  \return pointer
+     */
+    inline void  *getAdditionalBufferPtr() const { return _aux_ptr.get(); }
+    inline services::SharedPtr<DataType> getAdditionalBufferSharedPtr() const { return _aux_ptr; }
+
+protected:
+    /**
+     *  Frees the buffer
+     */
+    void freeBuffer()
+    {
+        if(_buffer)
+        {
+            _buffer = services::SharedPtr<DataType>();
+        }
+        _capacity = 0;
+    }
+
+private:
+    services::SharedPtr<DataType> _ptr;
+    size_t    _nrows;
+    size_t    _ncols;
+
+    size_t _colsOffset;
+    size_t _rowsOffset;
+    int    _rwFlag;
+
+    services::SharedPtr<DataType> _aux_ptr;
+
+    services::SharedPtr<DataType> _buffer; /*<! Pointer to the buffer */
+    size_t    _capacity;                   /*<! Buffer size in bytes */
+
+    services::SharedPtr<byte> *_pPtr;
+    byte *_rawPtr;
+};/*}}}*/
 /**
  * @ingroup numeric_tables
  * @{
@@ -81,21 +398,21 @@ public:
         : NumericTable(featnum,obsnum, featuresEqual) {}   
 
     //added by HarpDAAL
-    virtual void getBlockOfColumnValuesST(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num, ReadWriteMode rwflag, BlockDescriptor<double>** block) {}
-    virtual void getBlockOfColumnValuesST(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num, ReadWriteMode rwflag, BlockDescriptor<float>** block) {}
-    virtual void getBlockOfColumnValuesST(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num, ReadWriteMode rwflag, BlockDescriptor<int>** block) {}
+    virtual void getBlockOfColumnValuesST(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num, ReadWriteMode rwflag, HarpBlockDescriptor<double>** block) {}
+    virtual void getBlockOfColumnValuesST(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num, ReadWriteMode rwflag, HarpBlockDescriptor<float>** block) {}
+    virtual void getBlockOfColumnValuesST(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num, ReadWriteMode rwflag, HarpBlockDescriptor<int>** block) {}
 
-    virtual void getBlockOfColumnValuesMT(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num, ReadWriteMode rwflag, BlockDescriptor<double>** block) {}
-    virtual void getBlockOfColumnValuesMT(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num, ReadWriteMode rwflag, BlockDescriptor<float>** block) {}
-    virtual void getBlockOfColumnValuesMT(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num, ReadWriteMode rwflag, BlockDescriptor<int>** block) {}
+    virtual void getBlockOfColumnValuesMT(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num, ReadWriteMode rwflag, HarpBlockDescriptor<double>** block) {}
+    virtual void getBlockOfColumnValuesMT(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num, ReadWriteMode rwflag, HarpBlockDescriptor<float>** block) {}
+    virtual void getBlockOfColumnValuesMT(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num, ReadWriteMode rwflag, HarpBlockDescriptor<int>** block) {}
 
-    virtual void releaseBlockOfColumnValuesST(size_t feature_start, size_t feature_len, BlockDescriptor<double>** block) {}
-    virtual void releaseBlockOfColumnValuesST(size_t feature_start, size_t feature_len, BlockDescriptor<float>** block) {}
-    virtual void releaseBlockOfColumnValuesST(size_t feature_start, size_t feature_len, BlockDescriptor<int>** block) {}
+    virtual void releaseBlockOfColumnValuesST(size_t feature_start, size_t feature_len, HarpBlockDescriptor<double>** block) {}
+    virtual void releaseBlockOfColumnValuesST(size_t feature_start, size_t feature_len, HarpBlockDescriptor<float>** block) {}
+    virtual void releaseBlockOfColumnValuesST(size_t feature_start, size_t feature_len, HarpBlockDescriptor<int>** block) {}
 
-    virtual void releaseBlockOfColumnValuesMT(size_t feature_start, size_t feature_len, BlockDescriptor<double>** block) {}
-    virtual void releaseBlockOfColumnValuesMT(size_t feature_start, size_t feature_len, BlockDescriptor<float>** block) {}
-    virtual void releaseBlockOfColumnValuesMT(size_t feature_start, size_t feature_len, BlockDescriptor<int>** block) {}
+    virtual void releaseBlockOfColumnValuesMT(size_t feature_start, size_t feature_len, HarpBlockDescriptor<double>** block) {}
+    virtual void releaseBlockOfColumnValuesMT(size_t feature_start, size_t feature_len, HarpBlockDescriptor<float>** block) {}
+    virtual void releaseBlockOfColumnValuesMT(size_t feature_start, size_t feature_len, HarpBlockDescriptor<int>** block) {}
 
     virtual void setKeyIdx(long key, long idx) {}
 

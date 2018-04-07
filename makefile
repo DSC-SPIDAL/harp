@@ -415,8 +415,8 @@ $(CORE.objs_a): COPT += $(-fPIC) $(-cxx11) $(-Zl) $(-DEBC)
 $(CORE.objs_a): COPT += -D__TBB_NO_IMPLICIT_LINKAGE -DDAAL_NOTHROW_EXCEPTIONS -DDAAL_HIDE_DEPRECATED
 $(CORE.objs_a): COPT += @$(CORE.tmpdir_a)/inc_a_folders.txt
 # added by Harp-DAAL
-# openmp support and O3 optimization
-$(CORE.objs_a): COPT += $(-omp) $(-useomp) -I$(DIR)/externals/hdfs/include $(-ansialias) -O3
+# openmp support and O3 optimization add -wn2 to stop after 2 errors
+$(CORE.objs_a): COPT += $(-omp) $(-useomp) -I$(DIR)/externals/hdfs/include $(-ansialias) -O3 -wn2
 
 $(filter %threading.$o, $(CORE.objs_a)): COPT += -D__DO_TBB_LAYER__
 $(call containing,_nrh, $(CORE.objs_a)): COPT += $(p4_OPT)   -DDAAL_CPU=sse2
@@ -435,7 +435,7 @@ $(CORE.objs_y): COPT += -D__DAAL_IMPLEMENTATION -D__TBB_NO_IMPLICIT_LINKAGE -DDA
 $(CORE.objs_y): COPT += @$(CORE.tmpdir_y)/inc_y_folders.txt
 # added by Harp-DAAL
 # openmp support and O3 optimization
-$(CORE.objs_y): COPT += $(-omp) $(-useomp) -I$(DIR)/externals/hdfs/include $(-ansialias) -O3
+$(CORE.objs_y): COPT += $(-omp) $(-useomp) -I$(DIR)/externals/hdfs/include $(-ansialias) -O3 -wn2
 
 $(filter %threading.$o, $(CORE.objs_y)): COPT += -D__DO_TBB_LAYER__
 $(call containing,_nrh, $(CORE.objs_y)): COPT += $(p4_OPT)   -DDAAL_CPU=sse2

@@ -145,7 +145,7 @@ daal::services::interface1::Status DistriContainer<step, interm, method, cpu>::c
     //native memory space to hold H matrix values
     interm** hMat_native_mem = NULL;
     //containers for copying h matrix data between java and c++ in parallel
-    BlockDescriptor<interm>** hMat_blk_array = NULL;
+    HarpBlockDescriptor<interm>** hMat_blk_array = NULL;
 
     //generate h matrix on native side in parallel
     internal::hMat_generate<interm, cpu>(r, par, dim_r, col_ids, hMat_native_mem, hMat_blk_array);
