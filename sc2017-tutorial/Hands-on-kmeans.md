@@ -44,6 +44,7 @@ Download the image and launch the container. Before downloading check weather th
 # Check installed images
 sudo docker image ls
 # Download an image if not installed otherwise skip this step
+# about 30GB disk space needed at the root volume
 sudo docker pull dscspidal/harp-daal
 # Start a container
 sudo docker run -it dscspidal/harp-daal /etc/bootstrap.sh -bash
@@ -60,7 +61,7 @@ following commands to build the latest version of harp-daal
 
 ```bash
 cd /harp
-git pull origin master
+#git pull origin master
 mvn package
 
 # Copy all dynamic links to HDFS
@@ -190,7 +191,7 @@ ${HADOOP_HOME}/sbin/start-dfs.sh
 ${HADOOP_HOME}/sbin/start-yarn.sh
 ```
 
-You may need to change the yarn-site.xml file in-order to run applications because the defualt values may be too high. Make sure to restart hadoop using above commands if you change the configurations.
+You may need to change the yarn-site.xml file in-order to run applications because the default values may be too high. Make sure to restart hadoop using above commands if you change the configurations. The following configuration supports 3 containers with 6GB memory each which should run all the demos.
 
 ```bash
 ## stop all services
@@ -200,12 +201,12 @@ vim ${HADOOP_HOME}/etc/hadoop/yarn-site.xml
 ```xml
   <property>
     <name>yarn.scheduler.maximum-allocation-mb</name>
-    <value>4096</value>
+    <value>6000</value>
     <description>Maximum size of a container</description>
   </property>
   <property>
     <name>yarn.nodemanager.resource.memory-mb</name>
-    <value>12288</value>
+    <value>18500</value>
     <description>Maximum memory per node manager</description>
   </property>
   <property>
