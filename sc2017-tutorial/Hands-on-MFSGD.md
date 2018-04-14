@@ -171,7 +171,7 @@ Run the pipeline from data loading, training, evaluation and finally check resul
 cd ${PYTHONPATH}/examples/scdemo/test
 ../tutorial/run_mf.sh
 ```
-![screen shot of results](https://raw.githubusercontent.com/DSC-SPIDAL/harp/master/harp-daal-python/examples/scdemo/tutorial/mf_runlocal.png)
+![screen shot of results](https://raw.githubusercontent.com/DSC-SPIDAL/harp/tutorial/sc2017-tutorial/scdemo/tutorial/mf_runlocal.png)
 
 
 ### Step.2 Modify to invokes Harp-DAAL

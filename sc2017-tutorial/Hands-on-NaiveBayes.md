@@ -169,7 +169,7 @@ Run the pipeline from feature extraction, training, evaluation and finally check
 cd ${PYTHONPATH}/examples/scdemo/test
 ../tutorial/run_nb.sh
 ```
-![screen shot of results](https://raw.githubusercontent.com/DSC-SPIDAL/harp/master/harp-daal-python/examples/scdemo/tutorial/nb_runlocal.png)
+![screen shot of results](https://raw.githubusercontent.com/DSC-SPIDAL/harp/tutorial/sc2017-tutorial/scdemo/tutorial/nb_runlocal.png)
 
 
 ### Step.2 Modify to invokes Harp-DAAL
