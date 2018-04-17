@@ -52,6 +52,7 @@ public class KMeansCollectiveMapper extends
   private int cenTableSize;
   private String cenDir;
   private long mt_access_enclave;
+  private long total_comm_time;
 
   /**
    * Mapper configuration.
@@ -81,6 +82,7 @@ public class KMeansCollectiveMapper extends
     // unit KB
     cenTableSize = ((numCentroids*cenVecSize*Double.SIZE)/Byte.SIZE)/1024;
     mt_access_enclave = 0;
+    total_comm_time = 0;
 
     cenDir = configuration.get(Constants.CEN_DIR);
     LOG.info("Points Per File " + pointsPerFile);
@@ -274,13 +276,13 @@ public class KMeansCollectiveMapper extends
 	      speedup_enclave = numThreads;
 
       LOG.info("speedup_enclave: " + speedup_enclave);
-      // this.mt_access_enclave += (long)((1.0 - (1.0/speedup_enclave))*compute_time);
       this.mt_access_enclave += ((1.0/speedup_enclave)*numThreads -1 )*compute_time;
 
       LOG.info("Compute: " + (t2 - t1)
         + ", Merge: " + (t3 - t2)
         + ", Aggregate: " + (t4 - t3));
 
+      this.total_comm_time += (t4 - t2);
       logMemUsage();
       logGCTime();
       context.progress();
@@ -291,7 +293,9 @@ public class KMeansCollectiveMapper extends
     // end of iteration
     long end_iter = System.currentTimeMillis();
     // record execution time per iteration
-    LOG.info("Execution Time per iter: " + (end_iter - start_iter + this.mt_access_enclave)/(double)numIterations + "ms");
+    long total_execution_time = (end_iter - start_iter + this.mt_access_enclave);
+    LOG.info("Execution Time per iter: " + total_execution_time/(double)numIterations + "ms");
+    LOG.info("Comm Ratio: " + this.total_comm_time/(double)total_execution_time);
 
     // Write out centroids
     if (this.isMaster()) {
