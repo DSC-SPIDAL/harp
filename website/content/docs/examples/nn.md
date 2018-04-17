@@ -68,15 +68,49 @@ allreduce("main", "allreduce" + i, weightTable);
 weightTable = localNN.modelAveraging(weightTable, numMapTasks);
 ```
 
-## DATA
-The MNIST dataset is used in this tutorial. Refer the [dataset script](https://github.com/DSC-SPIDAL/harp/tree/master/data/tutorial/mnist) for more details.
+# DATA
+The [MNIST](http://yann.lecun.com/exdb/mnist/) dataset is used in this tutorial. 
 
-## USAGE
+# Run example
+
+### Put data on hdfs
 ```bash
-$ hadoop jar contrib-0.1.0.jar edu.iu.NN.NNMapCollective
-Usage: NNMapCollective <number of map tasks> <epochs> <syncIterNum> <hiddenLayers> <minibatchsize> <lambda> <workDir>
-# hadoop jar contrib-0.1.0.jar edu.iu.NN.NNMapCollective 2 20 5 100,32 2000 0 /nn
+	#download the dataset
+    python $HARP_ROOT_DIR/datasets/tutorial/mnist/fetech_mnist.py
+	#split into 2 parts
+    python $HARP_ROOT_DIR/datasets/tutorial/mnist/split_mnist.py mnist_data 2
+
+    #upload data to hadoop
+    hadoop fs -mkdir -p /nn/batch
+    hadoop fs -put mnist_data_?.* /nn/batch
 ```
 
+### Compile
+
+Select the profile related to your hadoop version. For ex: hadoop-2.6.0. Supported hadoop versions are 2.6.0, 2.7.5 
+and 2.9.0
+```bash
+cd $HARP_ROOT_DIR
+mvn clean package -Phadoop-2.6.0
+```
+
+```bash
+cd $HARP_ROOT_DIR/contrib/target
+cp contrib-0.1.0.jar $HADOOP_HOME
+cp $HARP_ROOT_DIR/third_parity/jblas-1.2.4.jar $HADOOP_HOME/share/hadoop/mapreduce
+cp $HARP_ROOT_DIR/third_parity/neuralNet-1.0.0-SNAPSHOT.jar $HADOOP_HOME/share/hadoop/mapreduce
+cd $HADOOP_HOME
+```
+
+### Run
+```bash
+hadoop jar contrib-0.1.0.jar edu.iu.NN.NNMapCollective
+Usage: NNMapCollective <number of map tasks> <epochs> <syncIterNum> <hiddenLayers> <minibatchsize> <lambda> <workDir>
+```
+
+### Example
+```bash
+hadoop jar contrib-0.1.0.jar edu.iu.NN.NNMapCollective 2 20 5 100,32 2000 0 /nn
+```
 This command run harp neuralnetwork training on the input dataset under /nn, with 2 mappers. Training process goes through 20 times of the training dataset, averages the model every 5 iteration for each minibatch. The minibatch size is 2000, lambda is default value 0.689. There are 2 hidden layers, with 100 and 32 nodes each. Finally, it outputs the accuracy on the training set into the hadoop log.
 

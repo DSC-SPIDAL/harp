@@ -3,7 +3,7 @@ mnist dataset
 
 This is the dataset for neuralnetwork test.
 
-```py
+```bash
     python fetech_mnist.py
     python split_mnist.py mnist_data 2
 
@@ -12,5 +12,5 @@ This is the dataset for neuralnetwork test.
     hadoop fs -put mnist_data_?.* /nn/batch
 
     #test harpnn
-    hadoop jar contrib-0.1.0.jar edu.iu.NN.NNMapCollective 2 350 5 100,32 2000 0 /nn
+    hadoop jar contrib-0.1.0.jar edu.iu.NN.NNMapCollective 2 20 5 100,32 2000 0 /nn
 ```

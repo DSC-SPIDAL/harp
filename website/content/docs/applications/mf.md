@@ -80,8 +80,36 @@ For example,
 ## Usage
 ### SGD
 ```bash
-hadoop jar harp-java-0.1.0.jar edu.iu.sgd.SGDLauncher <input dir> <r> <lambda> <epsilon> <num of iterations> <num of map tasks> <num of threads per worker> <timer> <num of model slices> <timer tuning> <work dir> <test dir>
+hadoop jar harp-java-0.1.0.jar edu.iu.sgd.SGDLauncher <input dir> <r> <lambda> <epsilon> <num of iterations> <training ratio> <num of map tasks> <num of threads per worker> <schedule ratio><memory (MB)>  <work dir> <test dir>
+
+	<input dir>				; input directory	
+	<r> <lambda> <epsilon>	; hyper-parameters, different for different datasets
+	<num of iterations>		; iteratoin number
+	<training ratio>		; set the percentage of training to utilize timer control of synchronization
+	<num of map tasks>		;
+	<num of threads per worker>		;
+	<schedule ratio>		; blocks partition ratio for dynamic scheduler, 2 means spliting to 2xThread# X 2xMapper# blocks
+	<memory (MB)>			; memory setting for JVM
+	<work dir>				; working directory, model saved in this directory
+	<test dir>				; directory for test files
+
 ```
+
+### Example
+```bash
+#put data onto hdfs
+cp $HARP_ROOT_DIR/datasets/tutorial/movielens/* .
+bunzip2 movie*.mm.bz2
+mkdir data
+cd data/
+split -a 5 -l 10000 ../movielens-train.mm
+cd ..
+hadoop fs -mkdir -p /harp-test/mf/test
+hadoop fs -put data /harp-test/mf/
+hadoop fs -put movielens-test.mm /harp-test/mf/test
+
+#run lda training
+hadoop jar harp-java-0.1.0.jar edu.iu.sgd.SGDLauncher /harp-test/mf/data 40 0.05 0.003 100 100 10 16 2 10000 /harp-test/mfwork/ /harp-test/mf/test/
 
 
 ### CCD
