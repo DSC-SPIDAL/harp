@@ -38,7 +38,8 @@
 // #include "data_management/data/harp_numeric_table.h"
 #include "data_management/data/homogen_numeric_table.h"
 #include "services/daal_defines.h"
-#include "services/hdfs.h"
+// #include "services/hdfs.h"
+#include "hdfs.h"
 #include "harp_numeric_table.h"
 
 using namespace daal::data_management;

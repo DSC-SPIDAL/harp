@@ -62,6 +62,9 @@
 #include "tbb/scalable_allocator.h"
 #include "daal_shared_ptr.h"
 
+// for hbm (e.g., MCDRAM)
+#include "hbwmalloc.h"
+
 namespace daal
 {
 namespace data_management
@@ -70,9 +73,10 @@ namespace data_management
 namespace interface1
 {
 
-// class HarpNumericTable;
-
-class HarpMTDeleter : public daal::services::interface1::DeleterIface
+/**
+ * @brief free memory allocated by scalable_malloc
+ */
+class HarpSCALDeleter : public daal::services::interface1::DeleterIface
 {
 
 public:
@@ -82,56 +86,18 @@ public:
     }
 };
 
-// template<typename DataType = DAAL_DATA_TYPE>
-// class DAAL_EXPORT HarpBlockDescriptor : public BlockDescriptor<DataType>
-// {/*{{{*/
-//
-// public:
-//     /** \private */
-//     HarpBlockDescriptor() :  BlockDescriptor<DataType>() {}
-//
-//     ~HarpBlockDescriptor() { this->freeBuffer(); }
-//
-//     bool resizeBufferMT( size_t nColumns, size_t nRows, size_t auxMemorySize = 0 )
-//     {
-//         _ncols = nColumns;
-//         _nrows = nRows;
-//
-//         size_t newSize = nColumns * nRows * sizeof(DataType) + auxMemorySize;
-//
-//         if ( newSize  > _capacity )
-//         {
-//             this->freeBuffer();
-//             _buffer = services::SharedPtr<DataType>((DataType *)scalable_malloc(newSize), HarpMTDeleter());
-//             if ( _buffer != 0 )
-//             {
-//                 _capacity = newSize;
-//             }
-//             else
-//             {
-//                 return false;
-//             }
-//
-//         }
-//
-//         _ptr = _buffer;
-//         if(!auxMemorySize)
-//         {
-//             if(_aux_ptr)
-//             {
-//                 _aux_ptr = services::SharedPtr<DataType>();
-//             }
-//         }
-//         else
-//         {
-//             _aux_ptr = services::SharedPtr<DataType>(_buffer, _buffer.get() + nColumns * nRows);
-//         }
-//
-//         return true;
-//     }
-//
-//    
-// };/*}}}*/
+/**
+ * @brief free memory space allocated by memkind on HBM
+ */
+class HarpHBMDeleter : public daal::services::interface1::DeleterIface
+{
+
+public:
+    void operator() (const void *ptr) DAAL_C11_OVERRIDE
+    {
+        hbw_free((void *)ptr);
+    }
+};
 
 template<typename DataType = DAAL_DATA_TYPE>
 class DAAL_EXPORT HarpBlockDescriptor
@@ -231,7 +197,8 @@ public:
      *  \return true if memory of (nColumns * nRows + auxMemorySize) size is allocated successfully
      */
     inline bool resizeBuffer( size_t nColumns, size_t nRows, size_t auxMemorySize = 0 )
-    {
+    {/*{{{*/
+
         _ncols = nColumns;
         _nrows = nRows;
 
@@ -266,10 +233,21 @@ public:
         }
 
         return true;
-    }
+    }/*}}}*/
     
-    bool resizeBufferMT( size_t nColumns, size_t nRows, size_t auxMemorySize = 0 )
-    {
+    /**
+     * @brief allocate buffer memory by using scalable_malloc, invoked from multi-threading 
+     * operations
+     *
+     * @param nColumns
+     * @param nRows
+     * @param auxMemorySize
+     *
+     * @return 
+     */
+    bool resizeBufferSCAL( size_t nColumns, size_t nRows, size_t auxMemorySize = 0 )
+    {/*{{{*/
+
         _ncols = nColumns;
         _nrows = nRows;
 
@@ -278,7 +256,7 @@ public:
         if ( newSize  > _capacity )
         {
             this->freeBuffer();
-            _buffer = services::SharedPtr<DataType>((DataType *)scalable_malloc(newSize), HarpMTDeleter());
+            _buffer = services::SharedPtr<DataType>((DataType *)scalable_malloc(newSize), HarpSCALDeleter());
             if ( _buffer != 0 )
             {
                 _capacity = newSize;
@@ -304,7 +282,57 @@ public:
         }
 
         return true;
-    }
+    }/*}}}*/
+
+    /**
+     * @brief allocate buffer memory space on 
+     * High bandwidth memory (HBM) by invoking memkind library
+     *
+     * @param nColumns
+     * @param nRows
+     * @param auxMemorySize
+     *
+     * @return 
+     */
+    bool resizeBufferHBM( size_t nColumns, size_t nRows, size_t auxMemorySize = 0 )
+    {/*{{{*/
+
+        _ncols = nColumns;
+        _nrows = nRows;
+
+        size_t newSize = nColumns * nRows * sizeof(DataType) + auxMemorySize;
+
+        if ( newSize  > _capacity )
+        {
+            this->freeBuffer();
+            _buffer = services::SharedPtr<DataType>((DataType *)hbw_malloc(newSize), HarpHBMDeleter());
+            if ( _buffer != 0 )
+            {
+                _capacity = newSize;
+            }
+            else
+            {
+                return false;
+            }
+
+        }
+
+        _ptr = _buffer;
+        if(!auxMemorySize)
+        {
+            if(_aux_ptr)
+            {
+                _aux_ptr = services::SharedPtr<DataType>();
+            }
+        }
+        else
+        {
+            _aux_ptr = services::SharedPtr<DataType>(_buffer, _buffer.get() + nColumns * nRows);
+        }
+
+        return true;
+
+    }/*}}}*/
 
     /**
      *  Sets parameters of the block
@@ -374,6 +402,7 @@ private:
     services::SharedPtr<byte> *_pPtr;
     byte *_rawPtr;
 };/*}}}*/
+
 /**
  * @ingroup numeric_tables
  * @{
@@ -402,17 +431,33 @@ public:
     virtual void getBlockOfColumnValuesST(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num, ReadWriteMode rwflag, HarpBlockDescriptor<float>** block) {}
     virtual void getBlockOfColumnValuesST(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num, ReadWriteMode rwflag, HarpBlockDescriptor<int>** block) {}
 
+    virtual void getBlockOfColumnValuesSTHBM(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num, ReadWriteMode rwflag, HarpBlockDescriptor<double>** block) {}
+    virtual void getBlockOfColumnValuesSTHBM(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num, ReadWriteMode rwflag, HarpBlockDescriptor<float>** block) {}
+    virtual void getBlockOfColumnValuesSTHBM(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num, ReadWriteMode rwflag, HarpBlockDescriptor<int>** block) {}
+
     virtual void getBlockOfColumnValuesMT(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num, ReadWriteMode rwflag, HarpBlockDescriptor<double>** block) {}
     virtual void getBlockOfColumnValuesMT(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num, ReadWriteMode rwflag, HarpBlockDescriptor<float>** block) {}
     virtual void getBlockOfColumnValuesMT(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num, ReadWriteMode rwflag, HarpBlockDescriptor<int>** block) {}
+
+    virtual void getBlockOfColumnValuesMTHBM(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num, ReadWriteMode rwflag, HarpBlockDescriptor<double>** block) {}
+    virtual void getBlockOfColumnValuesMTHBM(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num, ReadWriteMode rwflag, HarpBlockDescriptor<float>** block) {}
+    virtual void getBlockOfColumnValuesMTHBM(size_t feature_start, size_t feature_len, size_t vector_idx, size_t value_num, ReadWriteMode rwflag, HarpBlockDescriptor<int>** block) {}
 
     virtual void releaseBlockOfColumnValuesST(size_t feature_start, size_t feature_len, HarpBlockDescriptor<double>** block) {}
     virtual void releaseBlockOfColumnValuesST(size_t feature_start, size_t feature_len, HarpBlockDescriptor<float>** block) {}
     virtual void releaseBlockOfColumnValuesST(size_t feature_start, size_t feature_len, HarpBlockDescriptor<int>** block) {}
 
+    virtual void releaseBlockOfColumnValuesSTHBM(size_t feature_start, size_t feature_len, HarpBlockDescriptor<double>** block) {}
+    virtual void releaseBlockOfColumnValuesSTHBM(size_t feature_start, size_t feature_len, HarpBlockDescriptor<float>** block) {}
+    virtual void releaseBlockOfColumnValuesSTHBM(size_t feature_start, size_t feature_len, HarpBlockDescriptor<int>** block) {}
+
     virtual void releaseBlockOfColumnValuesMT(size_t feature_start, size_t feature_len, HarpBlockDescriptor<double>** block) {}
     virtual void releaseBlockOfColumnValuesMT(size_t feature_start, size_t feature_len, HarpBlockDescriptor<float>** block) {}
     virtual void releaseBlockOfColumnValuesMT(size_t feature_start, size_t feature_len, HarpBlockDescriptor<int>** block) {}
+
+    virtual void releaseBlockOfColumnValuesMTHBM(size_t feature_start, size_t feature_len, HarpBlockDescriptor<double>** block) {}
+    virtual void releaseBlockOfColumnValuesMTHBM(size_t feature_start, size_t feature_len, HarpBlockDescriptor<float>** block) {}
+    virtual void releaseBlockOfColumnValuesMTHBM(size_t feature_start, size_t feature_len, HarpBlockDescriptor<int>** block) {}
 
     virtual void setKeyIdx(long key, long idx) {}
 
