@@ -1212,14 +1212,14 @@ cp contrib-0.1.0.jar &lt;span style=&#34;color: #f8f8f2&#34;&gt;$HADOOP_HOME&lt;
 &lt;/pre&gt;&lt;/div&gt;
 
 &lt;h3 id=&#34;put-data-on-hdfs:e1b862678abc2854a915b8f438d1a26e&#34;&gt;Put data on hdfs&lt;/h3&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;hdfs dfs -mkdir rcv1v2
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;hdfs dfs -mkdir /rcv1v2
 rm -rf data
 mkdir -p data
 &lt;span style=&#34;color: #f8f8f2&#34;&gt;cd&lt;/span&gt; data
-split -l &lt;span style=&#34;color: #ae81ff&#34;&gt;1000&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;$HARP_ROOT_DIR&lt;/span&gt;/datasets/tutorial/mlr/lyrl2004_vectors_train.dat
+split -l &lt;span style=&#34;color: #ae81ff&#34;&gt;1000&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;$HARP_ROOT_DIR&lt;/span&gt;/datasets/tutorial/rcv1/lyrl2004_vectors_train.dat
 &lt;span style=&#34;color: #f8f8f2&#34;&gt;cd&lt;/span&gt; ..
-hdfs dfs -put data rcv1v2
-hdfs dfs -put &lt;span style=&#34;color: #f8f8f2&#34;&gt;$HARP_ROOT_DIR&lt;/span&gt;/datasets/tutorial/mlr/rcv1* rcv1v2
+hdfs dfs -put data /rcv1v2
+hdfs dfs -put &lt;span style=&#34;color: #f8f8f2&#34;&gt;$HARP_ROOT_DIR&lt;/span&gt;/datasets/tutorial/rcv1/rcv1* /rcv1v2
 &lt;/pre&gt;&lt;/div&gt;
 
 &lt;h3 id=&#34;run:e1b862678abc2854a915b8f438d1a26e&#34;&gt;Run&lt;/h3&gt;
@@ -1227,7 +1227,7 @@ hdfs dfs -put &lt;span style=&#34;color: #f8f8f2&#34;&gt;$HARP_ROOT_DIR&lt;/span
 &lt;/pre&gt;&lt;/div&gt;
 
 &lt;h3 id=&#34;example:e1b862678abc2854a915b8f438d1a26e&#34;&gt;Example&lt;/h3&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;hadoop jar contrib-0.1.0.jar edu.iu.mlr.MLRMapCollective 1.0 &lt;span style=&#34;color: #ae81ff&#34;&gt;100&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;47236&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;2&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;16&lt;/span&gt; /rcv1v2/rcv1.topics.txt /rcv1v2/rcv1-v2.topics.qrels /rcv1v2 /output
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;hadoop jar contrib-0.1.0.jar edu.iu.mlr.MLRMapCollective 1.0 &lt;span style=&#34;color: #ae81ff&#34;&gt;100&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;47236&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;2&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;4&lt;/span&gt; /rcv1v2/rcv1.topics.txt /rcv1v2/rcv1-v2.topics.qrels /rcv1v2 /output
 &lt;/pre&gt;&lt;/div&gt;
 
 &lt;p&gt;The output should be the weight matrix &lt;code&gt;W&lt;/code&gt;.

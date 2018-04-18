@@ -152,14 +152,14 @@ cp contrib-0.1.0.jar <span style="color: #f8f8f2">$HADOOP_HOME</span>
 </pre></div>
 
 <h3 id="put-data-on-hdfs:e1b862678abc2854a915b8f438d1a26e">Put data on hdfs</h3>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>hdfs dfs -mkdir rcv1v2
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>hdfs dfs -mkdir /rcv1v2
 rm -rf data
 mkdir -p data
 <span style="color: #f8f8f2">cd</span> data
-split -l <span style="color: #ae81ff">1000</span> <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/datasets/tutorial/mlr/lyrl2004_vectors_train.dat
+split -l <span style="color: #ae81ff">1000</span> <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/datasets/tutorial/rcv1/lyrl2004_vectors_train.dat
 <span style="color: #f8f8f2">cd</span> ..
-hdfs dfs -put data rcv1v2
-hdfs dfs -put <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/datasets/tutorial/mlr/rcv1* rcv1v2
+hdfs dfs -put data /rcv1v2
+hdfs dfs -put <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/datasets/tutorial/rcv1/rcv1* /rcv1v2
 </pre></div>
 
 <h3 id="run:e1b862678abc2854a915b8f438d1a26e">Run</h3>
@@ -167,7 +167,7 @@ hdfs dfs -put <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/datasets/tutori
 </pre></div>
 
 <h3 id="example:e1b862678abc2854a915b8f438d1a26e">Example</h3>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>hadoop jar contrib-0.1.0.jar edu.iu.mlr.MLRMapCollective 1.0 <span style="color: #ae81ff">100</span> <span style="color: #ae81ff">47236</span> <span style="color: #ae81ff">2</span> <span style="color: #ae81ff">16</span> /rcv1v2/rcv1.topics.txt /rcv1v2/rcv1-v2.topics.qrels /rcv1v2 /output
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>hadoop jar contrib-0.1.0.jar edu.iu.mlr.MLRMapCollective 1.0 <span style="color: #ae81ff">100</span> <span style="color: #ae81ff">47236</span> <span style="color: #ae81ff">2</span> <span style="color: #ae81ff">4</span> /rcv1v2/rcv1.topics.txt /rcv1v2/rcv1-v2.topics.qrels /rcv1v2 /output
 </pre></div>
 
 <p>The output should be the weight matrix <code>W</code>.
