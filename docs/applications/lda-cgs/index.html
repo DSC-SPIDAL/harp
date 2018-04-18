@@ -6,7 +6,7 @@
 
 <p><img src="https://dsc-spidal.github.io/harp/img/lda-description.png" width="100%" ></p>
 
-<h3 id="pseudo-code-for-sgd-and-ccd-algorithm:e02fdbf70bf8807e433277a735bf7022">Pseudo code for SGD and CCD algorithm:</h3>
+<h3 id="pseudo-code-for-cgs-lda-algorithm:e02fdbf70bf8807e433277a735bf7022">Pseudo code for CGS LDA algorithm:</h3>
 
 <p><img src="https://dsc-spidal.github.io/harp/img/cgs-algorithm.png" width="80%" ></p>
 
@@ -33,7 +33,7 @@ other workers, the code of a parallel machine learning algorithm can be modulari
 
 <p>We use one big dataset which is generated from &ldquo;ClueWeb09&rdquo; to test LDA both on Harp and Petuum.</p>
 
-<p>Through examining the model likelihood achieved by the training time, the results show that Harp consistently outperforms Petuum. We test Harp CGS and Petuum on &ldquo;clueweb1&rdquo; with 30 nodes × 30 threads and 60 nodes × 20 threads two configurations. Both results show that Harp CGS converges faster than Petuum. Concerning the convergence speed on the same dataset with different configurations, we observe that the fewer the number of cores used and the more computation per core, the faster Harp runs compare to Petuum. When the scale goes up, the difference of the convergence speed reduces. With 30 nodes × 30 threads Xeon E5-2699 v3 nodes, Harp is 45% faster than Petuum while with 60 nodes × 20 threads Xeon E5-2670 v3 nodes, Harp is 18% faster than Petuum when the model likelihood converges to −1.37 × 1011.</p>
+<p>Through examining the model likelihood achieved by the training time, the results show that Harp consistently outperforms Petuum. We test Harp CGS and Petuum on &ldquo;clueweb1&rdquo; with 30 nodes × 30 threads and 60 nodes × 20 threads two configurations. Both results show that Harp CGS converges faster than Petuum. Concerning the convergence speed on the same dataset with different configurations, we observe that the fewer the number of cores used and the more computation per core, the faster Harp runs compare to Petuum. When the scale goes up, the difference of the convergence speed reduces. With 30 nodes × 30 threads Xeon E5-2699 v3 nodes, Harp is 45% faster than Petuum while with 60 nodes × 20 threads Xeon E5-2670 v3 nodes, Harp is 18% faster than Petuum when the model likelihood converges to −1.37 × 10^11.</p>
 
 <h1 id="run-lda-example:e02fdbf70bf8807e433277a735bf7022">Run LDA example</h1>
 
@@ -44,13 +44,39 @@ other workers, the code of a parallel machine learning algorithm can be modulari
 <h3 id="data-format:e02fdbf70bf8807e433277a735bf7022">Data Format</h3>
 
 <p>The format for the data should be a list of <code>doc-name  wordid1 wordid2 ...&gt;</code>. For example,</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>doc1   <span style="color: #ae81ff">63</span> <span style="color: #ae81ff">264</span> <span style="color: #ae81ff">374</span> <span style="color: #ae81ff">4695</span> <span style="color: #ae81ff">5441</span>  <span style="color: #ae81ff">1200</span> <span style="color: #ae81ff">1200</span> <span style="color: #ae81ff">25529</span>  <span style="color: #ae81ff">1707</span>
-doc2   <span style="color: #ae81ff">545</span> <span style="color: #ae81ff">1939</span> <span style="color: #ae81ff">206863</span> <span style="color: #ae81ff">773279</span> <span style="color: #ae81ff">773279</span>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>doc1   <span style="color: #ae81ff">63</span> <span style="color: #ae81ff">264</span> <span style="color: #ae81ff">374</span> <span style="color: #ae81ff">4695</span> <span style="color: #ae81ff">5441</span>  <span style="color: #ae81ff">1200</span> <span style="color: #ae81ff">1200</span> <span style="color: #ae81ff">25529</span>  1707
+doc2   <span style="color: #ae81ff">545</span> <span style="color: #ae81ff">1939</span> <span style="color: #ae81ff">206863</span> <span style="color: #ae81ff">773279</span> 773279
 ...
 </pre></div>
 
 <h2 id="usage:e02fdbf70bf8807e433277a735bf7022">Usage</h2>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>hadoop jar harp-java-0.1.0.jar  edu.iu.lda.LDALauncher &lt;doc dir&gt; &lt;num of topics&gt; &lt;alpha&gt; &lt;beta&gt; &lt;num of iterations&gt; 
-&lt;num of map tasks&gt; &lt;num of threads per worker&gt; &lt;timer&gt; &lt;num of model slices&gt; &lt;<span style="color: #f8f8f2">enable</span> timer tuning&gt; &lt;work dir&gt; &lt;print model&gt;
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>hadoop jar harp-java-0.1.0.jar edu.iu.lda.LDALauncher &lt;doc dir&gt; &lt;num of topics&gt; &lt;alpha&gt; &lt;beta&gt; &lt;num of iterations&gt; &lt;min training percentage&gt; &lt;max training percentage&gt; &lt;num of mappers&gt; &lt;num of threads per worker&gt; &lt;schedule ratio&gt; &lt;memory <span style="color: #f92672">(</span>MB<span style="color: #f92672">)</span>&gt; &lt;work dir&gt; &lt;print model&gt;
+
+	&lt;doc dir&gt;			<span style="color: #f8f8f2">;</span> input directory
+	&lt;num of topics&gt;		<span style="color: #f8f8f2">;</span> K
+	&lt;alpha&gt; &lt;beta&gt;		<span style="color: #f8f8f2">;</span> suggested setting as <span style="color: #f8f8f2">alpha</span> <span style="color: #f92672">=</span> 50/K, <span style="color: #f8f8f2">beta</span> <span style="color: #f92672">=</span> 0.01
+	&lt;num of iterations&gt; <span style="color: #f8f8f2">;</span> iteration number
+	&lt;min training percentage&gt;	<span style="color: #f8f8f2">;</span> <span style="color: #f8f8f2">set</span> the min/max training percentage to utilize timer control of synchronization
+	&lt;max training percentage&gt;	<span style="color: #f8f8f2">;</span> 100,100 will <span style="color: #f8f8f2">set</span> timer off, 40, <span style="color: #ae81ff">90</span> will works fine with timer on
+	&lt;num of mappers&gt;			<span style="color: #f8f8f2">;</span> 
+	&lt;num of threads per worker&gt; <span style="color: #f8f8f2">;</span>
+	&lt;schedule ratio&gt;	<span style="color: #f8f8f2">;</span> blocks partition ratio <span style="color: #66d9ef">for</span> dynamic scheduler, <span style="color: #ae81ff">2</span> means spliting to 2xThread# X 2xMapper# blocks
+	&lt;memory <span style="color: #f92672">(</span>MB<span style="color: #f92672">)</span>&gt;		<span style="color: #f8f8f2">;</span> memory setting <span style="color: #66d9ef">for</span> JVM
+	&lt;work dir&gt;			<span style="color: #f8f8f2">;</span> working directory, model saved in this directory
+	&lt;print model&gt;		<span style="color: #f8f8f2">;</span> True/False, save model W <span style="color: #66d9ef">if</span> <span style="color: #f8f8f2">set</span> to Ture
+</pre></div>
+
+<h3 id="example:e02fdbf70bf8807e433277a735bf7022">Example</h3>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #75715e">#put data onto hdfs</span>
+cp <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/datasets/tutorial/nytimes-30k/nytimes-30K.mrlda .
+mkdir data
+<span style="color: #f8f8f2">cd</span> data/
+split -l <span style="color: #ae81ff">1000</span> <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/datasets/tutorial/nytimes-30k/nytimes-30K.mrlda
+<span style="color: #f8f8f2">cd</span> ..
+hadoop fs -mkdir -p /harp-test/cgs/
+hadoop fs -put data /harp-test/cgs/
+
+<span style="color: #75715e">#run lda training</span>
+hadoop jar harp-java-0.1.0.jar edu.iu.lda.LDALauncher /harp-test/cgs/data <span style="color: #ae81ff">100</span> 0.5 0.01 <span style="color: #ae81ff">100</span> <span style="color: #ae81ff">100</span> <span style="color: #ae81ff">100</span> <span style="color: #ae81ff">10</span> <span style="color: #ae81ff">16</span> <span style="color: #ae81ff">2</span> <span style="color: #ae81ff">10000</span> /harp-test/cgsout True
 </pre></div>
 </article></section></div></div></div><script src="https://code.jquery.com/jquery-2.2.1.min.js"></script><script src="https://dsc-spidal.github.io/harp/js/app.min.js"></script></body></html>

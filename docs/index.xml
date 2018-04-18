@@ -1193,12 +1193,45 @@ hdfs dfs -put input_data/* /input
 &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
-&lt;h2 id=&#34;usage:e1b862678abc2854a915b8f438d1a26e&#34;&gt;USAGE&lt;/h2&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;$ hadoop jar contrib-0.1.0.jar edu.iu.mlr.MLRMapCollective &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;alpha&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;number of iteration&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;number of features&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;number of workers&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;number of threads&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;topic file path&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;qrel file path&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;input path in HDFS&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;output path in HDFS&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt;#e.g. hadoop jar contrib-0.1.0.jar edu.iu.mlr.MLRMapCollective 1.0 100 47236 2 16 /rcv1v2/rcv1.topics.txt /rcv1v2/rcv1-v2.topics.qrels /input /output&lt;/span&gt;
+&lt;h1 id=&#34;data:e1b862678abc2854a915b8f438d1a26e&#34;&gt;Data&lt;/h1&gt;
+
+&lt;p&gt;The dataset used is the (RCV1-v2)[&lt;a href=&#34;http://www.ai.mit.edu/projects/jmlr/papers/volume5/lewis04a/lyrl2004_rcv1v2_README.htm&#34;&gt;http://www.ai.mit.edu/projects/jmlr/papers/volume5/lewis04a/lyrl2004_rcv1v2_README.htm&lt;/a&gt;] dataset.&lt;/p&gt;
+
+&lt;h1 id=&#34;run-example:e1b862678abc2854a915b8f438d1a26e&#34;&gt;Run example&lt;/h1&gt;
+
+&lt;h3 id=&#34;compile:e1b862678abc2854a915b8f438d1a26e&#34;&gt;Compile&lt;/h3&gt;
+
+&lt;p&gt;Select the profile related to your hadoop version. For ex: hadoop-2.6.0. Supported hadoop versions are 2.6.0, 2.7.5
+and 2.9.0&lt;/p&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;cd&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;$HARP_ROOT_DIR&lt;/span&gt;
+mvn clean package -Phadoop-2.6.0
+&lt;/pre&gt;&lt;/div&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;cd&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;$HARP_ROOT_DIR&lt;/span&gt;/contrib/target
+cp contrib-0.1.0.jar &lt;span style=&#34;color: #f8f8f2&#34;&gt;$HADOOP_HOME&lt;/span&gt;
+&lt;span style=&#34;color: #f8f8f2&#34;&gt;cd&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;$HADOOP_HOME&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
-&lt;p&gt;The output should be the weight matrix &lt;code&gt;W&lt;/code&gt;.&lt;/p&gt;
+&lt;h3 id=&#34;put-data-on-hdfs:e1b862678abc2854a915b8f438d1a26e&#34;&gt;Put data on hdfs&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;hdfs dfs -mkdir rcv1v2
+rm -rf data
+mkdir -p data
+&lt;span style=&#34;color: #f8f8f2&#34;&gt;cd&lt;/span&gt; data
+split -l &lt;span style=&#34;color: #ae81ff&#34;&gt;1000&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;$HARP_ROOT_DIR&lt;/span&gt;/datasets/tutorial/mlr/lyrl2004_vectors_train.dat
+&lt;span style=&#34;color: #f8f8f2&#34;&gt;cd&lt;/span&gt; ..
+hdfs dfs -put data rcv1v2
+hdfs dfs -put &lt;span style=&#34;color: #f8f8f2&#34;&gt;$HARP_ROOT_DIR&lt;/span&gt;/datasets/tutorial/mlr/rcv1* rcv1v2
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h3 id=&#34;run:e1b862678abc2854a915b8f438d1a26e&#34;&gt;Run&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;hadoop jar contrib-0.1.0.jar edu.iu.mlr.MLRMapCollective &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;alpha&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;number of iteration&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;number of features&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;number of workers&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;number of threads&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;topic file path&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;qrel file path&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;input path in HDFS&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;output path in HDFS&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h3 id=&#34;example:e1b862678abc2854a915b8f438d1a26e&#34;&gt;Example&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;hadoop jar contrib-0.1.0.jar edu.iu.mlr.MLRMapCollective 1.0 &lt;span style=&#34;color: #ae81ff&#34;&gt;100&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;47236&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;2&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;16&lt;/span&gt; /rcv1v2/rcv1.topics.txt /rcv1v2/rcv1-v2.topics.qrels /rcv1v2 /output
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;The output should be the weight matrix &lt;code&gt;W&lt;/code&gt;.
+Please refer to the test scripts (mlr.sh) under test_scripts for more details.&lt;/p&gt;
 </description>
     </item>
     
@@ -1275,14 +1308,44 @@ hdfs dfs -put input_data/* /input
 &lt;span style=&#34;color: #f8f8f2&#34;&gt;weightTable&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;localNN&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;modelAveraging&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;weightTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;numMapTasks&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
-&lt;h2 id=&#34;data:d53501e04079b53fe39a85cd37d15502&#34;&gt;DATA&lt;/h2&gt;
+&lt;h1 id=&#34;data:d53501e04079b53fe39a85cd37d15502&#34;&gt;DATA&lt;/h1&gt;
 
-&lt;p&gt;The MNIST dataset is used in this tutorial. Refer the &lt;a href=&#34;https://github.com/DSC-SPIDAL/harp/tree/master/data/tutorial/mnist&#34;&gt;dataset script&lt;/a&gt; for more details.&lt;/p&gt;
+&lt;p&gt;The &lt;a href=&#34;http://yann.lecun.com/exdb/mnist/&#34;&gt;MNIST&lt;/a&gt; dataset is used in this tutorial.&lt;/p&gt;
 
-&lt;h2 id=&#34;usage:d53501e04079b53fe39a85cd37d15502&#34;&gt;USAGE&lt;/h2&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;$ hadoop jar contrib-0.1.0.jar edu.iu.NN.NNMapCollective
+&lt;h1 id=&#34;run-example:d53501e04079b53fe39a85cd37d15502&#34;&gt;Run example&lt;/h1&gt;
+
+&lt;h3 id=&#34;put-data-on-hdfs:d53501e04079b53fe39a85cd37d15502&#34;&gt;Put data on hdfs&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;	&lt;span style=&#34;color: #75715e&#34;&gt;#download the dataset&lt;/span&gt;
+    python &lt;span style=&#34;color: #f8f8f2&#34;&gt;$HARP_ROOT_DIR&lt;/span&gt;/datasets/tutorial/mnist/fetech_mnist.py
+	&lt;span style=&#34;color: #75715e&#34;&gt;#split into 2 parts&lt;/span&gt;
+    python &lt;span style=&#34;color: #f8f8f2&#34;&gt;$HARP_ROOT_DIR&lt;/span&gt;/datasets/tutorial/mnist/split_mnist.py mnist_data 2
+
+    &lt;span style=&#34;color: #75715e&#34;&gt;#upload data to hadoop&lt;/span&gt;
+    hadoop fs -mkdir -p /nn/batch
+    hadoop fs -put mnist_data_?.* /nn/batch
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h3 id=&#34;compile:d53501e04079b53fe39a85cd37d15502&#34;&gt;Compile&lt;/h3&gt;
+
+&lt;p&gt;Select the profile related to your hadoop version. For ex: hadoop-2.6.0. Supported hadoop versions are 2.6.0, 2.7.5
+and 2.9.0&lt;/p&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;cd&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;$HARP_ROOT_DIR&lt;/span&gt;
+mvn clean package -Phadoop-2.6.0
+&lt;/pre&gt;&lt;/div&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;cd&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;$HARP_ROOT_DIR&lt;/span&gt;/contrib/target
+cp contrib-0.1.0.jar &lt;span style=&#34;color: #f8f8f2&#34;&gt;$HADOOP_HOME&lt;/span&gt;
+cp &lt;span style=&#34;color: #f8f8f2&#34;&gt;$HARP_ROOT_DIR&lt;/span&gt;/third_parity/jblas-1.2.4.jar &lt;span style=&#34;color: #f8f8f2&#34;&gt;$HADOOP_HOME&lt;/span&gt;/share/hadoop/mapreduce
+cp &lt;span style=&#34;color: #f8f8f2&#34;&gt;$HARP_ROOT_DIR&lt;/span&gt;/third_parity/neuralNet-1.0.0-SNAPSHOT.jar &lt;span style=&#34;color: #f8f8f2&#34;&gt;$HADOOP_HOME&lt;/span&gt;/share/hadoop/mapreduce
+&lt;span style=&#34;color: #f8f8f2&#34;&gt;cd&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;$HADOOP_HOME&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h3 id=&#34;run:d53501e04079b53fe39a85cd37d15502&#34;&gt;Run&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;hadoop jar contrib-0.1.0.jar edu.iu.NN.NNMapCollective
 Usage: NNMapCollective &amp;lt;number of map tasks&amp;gt; &amp;lt;epochs&amp;gt; &amp;lt;syncIterNum&amp;gt; &amp;lt;hiddenLayers&amp;gt; &amp;lt;minibatchsize&amp;gt; &amp;lt;lambda&amp;gt; &amp;lt;workDir&amp;gt;
-&lt;span style=&#34;color: #75715e&#34;&gt;# hadoop jar contrib-0.1.0.jar edu.iu.NN.NNMapCollective 2 20 5 100,32 2000 0 /nn&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h3 id=&#34;example:d53501e04079b53fe39a85cd37d15502&#34;&gt;Example&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;hadoop jar contrib-0.1.0.jar edu.iu.NN.NNMapCollective &lt;span style=&#34;color: #ae81ff&#34;&gt;2&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;20&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;5&lt;/span&gt; 100,32 &lt;span style=&#34;color: #ae81ff&#34;&gt;2000&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt; /nn
 &lt;/pre&gt;&lt;/div&gt;
 
 &lt;p&gt;This command run harp neuralnetwork training on the input dataset under /nn, with 2 mappers. Training process goes through 20 times of the training dataset, averages the model every 5 iteration for each minibatch. The minibatch size is 2000, lambda is default value 0.689. There are 2 hidden layers, with 100 and 32 nodes each. Finally, it outputs the accuracy on the training set into the hadoop log.&lt;/p&gt;

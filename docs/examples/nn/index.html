@@ -65,14 +65,44 @@
 <span style="color: #f8f8f2">weightTable</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">localNN</span><span style="color: #f92672">.</span><span style="color: #a6e22e">modelAveraging</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">weightTable</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">numMapTasks</span><span style="color: #f92672">);</span>
 </pre></div>
 
-<h2 id="data:d53501e04079b53fe39a85cd37d15502">DATA</h2>
+<h1 id="data:d53501e04079b53fe39a85cd37d15502">DATA</h1>
 
-<p>The MNIST dataset is used in this tutorial. Refer the <a href="https://github.com/DSC-SPIDAL/harp/tree/master/data/tutorial/mnist">dataset script</a> for more details.</p>
+<p>The <a href="http://yann.lecun.com/exdb/mnist/">MNIST</a> dataset is used in this tutorial.</p>
 
-<h2 id="usage:d53501e04079b53fe39a85cd37d15502">USAGE</h2>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>$ hadoop jar contrib-0.1.0.jar edu.iu.NN.NNMapCollective
+<h1 id="run-example:d53501e04079b53fe39a85cd37d15502">Run example</h1>
+
+<h3 id="put-data-on-hdfs:d53501e04079b53fe39a85cd37d15502">Put data on hdfs</h3>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>	<span style="color: #75715e">#download the dataset</span>
+    python <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/datasets/tutorial/mnist/fetech_mnist.py
+	<span style="color: #75715e">#split into 2 parts</span>
+    python <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/datasets/tutorial/mnist/split_mnist.py mnist_data 2
+
+    <span style="color: #75715e">#upload data to hadoop</span>
+    hadoop fs -mkdir -p /nn/batch
+    hadoop fs -put mnist_data_?.* /nn/batch
+</pre></div>
+
+<h3 id="compile:d53501e04079b53fe39a85cd37d15502">Compile</h3>
+
+<p>Select the profile related to your hadoop version. For ex: hadoop-2.6.0. Supported hadoop versions are 2.6.0, 2.7.5
+and 2.9.0</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">cd</span> <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>
+mvn clean package -Phadoop-2.6.0
+</pre></div>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">cd</span> <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/contrib/target
+cp contrib-0.1.0.jar <span style="color: #f8f8f2">$HADOOP_HOME</span>
+cp <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/third_parity/jblas-1.2.4.jar <span style="color: #f8f8f2">$HADOOP_HOME</span>/share/hadoop/mapreduce
+cp <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/third_parity/neuralNet-1.0.0-SNAPSHOT.jar <span style="color: #f8f8f2">$HADOOP_HOME</span>/share/hadoop/mapreduce
+<span style="color: #f8f8f2">cd</span> <span style="color: #f8f8f2">$HADOOP_HOME</span>
+</pre></div>
+
+<h3 id="run:d53501e04079b53fe39a85cd37d15502">Run</h3>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>hadoop jar contrib-0.1.0.jar edu.iu.NN.NNMapCollective
 Usage: NNMapCollective &lt;number of map tasks&gt; &lt;epochs&gt; &lt;syncIterNum&gt; &lt;hiddenLayers&gt; &lt;minibatchsize&gt; &lt;lambda&gt; &lt;workDir&gt;
-<span style="color: #75715e"># hadoop jar contrib-0.1.0.jar edu.iu.NN.NNMapCollective 2 20 5 100,32 2000 0 /nn</span>
+</pre></div>
+
+<h3 id="example:d53501e04079b53fe39a85cd37d15502">Example</h3>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>hadoop jar contrib-0.1.0.jar edu.iu.NN.NNMapCollective <span style="color: #ae81ff">2</span> <span style="color: #ae81ff">20</span> <span style="color: #ae81ff">5</span> 100,32 <span style="color: #ae81ff">2000</span> <span style="color: #ae81ff">0</span> /nn
 </pre></div>
 
 <p>This command run harp neuralnetwork training on the input dataset under /nn, with 2 mappers. Training process goes through 20 times of the training dataset, averages the model every 5 iteration for each minibatch. The minibatch size is 2000, lambda is default value 0.689. There are 2 hidden layers, with 100 and 32 nodes each. Finally, it outputs the accuracy on the training set into the hadoop log.</p>

@@ -216,7 +216,7 @@ hdfs dfs -put <span style="color: #e6db74">${</span><span style="color: #f8f8f2"
 <span style="color: #f8f8f2">export</span> <span style="color: #f8f8f2">LIBJARS</span><span style="color: #f92672">=</span><span style="color: #e6db74">${</span><span style="color: #f8f8f2">DAALROOT</span><span style="color: #e6db74">}</span>/lib/daal.jar
 <span style="color: #75715e"># launch mappers, e.g., harp-daal-als </span>
 bin/hadoop jar harp-daal-0.1.0.jar edu.iu.daal_als.ALSDaalLauncher -libjars <span style="color: #e6db74">${</span><span style="color: #f8f8f2">LIBJARS</span><span style="color: #e6db74">}</span> 
-/Hadoop/sgd-input/yahoomusic-train <span style="color: #ae81ff">100</span> <span style="color: #ae81ff">1</span> <span style="color: #ae81ff">0</span>.0001 <span style="color: #ae81ff">10</span> <span style="color: #f8f8f2">false</span> <span style="color: #ae81ff">2</span> <span style="color: #ae81ff">24</span> <span style="color: #ae81ff">110000</span> /Hadoop/als-work /Hadoop/sgd-input/yahoomusic-test
+/Hadoop/sgd-input/yahoomusic-train <span style="color: #ae81ff">100</span> <span style="color: #ae81ff">1</span> 0.0001 <span style="color: #ae81ff">10</span> <span style="color: #f8f8f2">false</span> <span style="color: #ae81ff">2</span> <span style="color: #ae81ff">24</span> <span style="color: #ae81ff">110000</span> /Hadoop/als-work /Hadoop/sgd-input/yahoomusic-test
 </pre></div>
 
 <p>command line arguments vary from app to app, please refer to the src of harp-daal

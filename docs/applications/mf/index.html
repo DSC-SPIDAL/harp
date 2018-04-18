@@ -70,20 +70,48 @@ other workers, the code of a parallel machine learning algorithm can be modulari
 
 <p>The format for the data should be a list of <code>&lt;userid, itemid, rating&gt;</code> in the case of a recommendation system.
 For example,</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #ae81ff">1</span>    <span style="color: #ae81ff">4026</span>    <span style="color: #ae81ff">3</span>.299341
-<span style="color: #ae81ff">1</span>    <span style="color: #ae81ff">5990</span>    <span style="color: #ae81ff">7</span>.005311
-<span style="color: #ae81ff">2</span>    <span style="color: #ae81ff">5988</span>    <span style="color: #ae81ff">13</span>.235623
-<span style="color: #ae81ff">2</span>    <span style="color: #ae81ff">346</span>    <span style="color: #ae81ff">3</span>.518781
-<span style="color: #ae81ff">3</span>    <span style="color: #ae81ff">347</span>    <span style="color: #ae81ff">2</span>.846904
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #ae81ff">1</span>    <span style="color: #ae81ff">4026</span>    3.299341
+<span style="color: #ae81ff">1</span>    <span style="color: #ae81ff">5990</span>    7.005311
+<span style="color: #ae81ff">2</span>    <span style="color: #ae81ff">5988</span>    13.235623
+<span style="color: #ae81ff">2</span>    <span style="color: #ae81ff">346</span>    3.518781
+<span style="color: #ae81ff">3</span>    <span style="color: #ae81ff">347</span>    2.846904
 </pre></div>
 
 <h2 id="usage:352991cffc8c9f4544990a7989638403">Usage</h2>
 
 <h3 id="sgd:352991cffc8c9f4544990a7989638403">SGD</h3>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>hadoop jar harp-java-0.1.0.jar edu.iu.sgd.SGDLauncher &lt;input dir&gt; &lt;r&gt; &lt;lambda&gt; &lt;epsilon&gt; &lt;num of iterations&gt; &lt;num of map tasks&gt; &lt;num of threads per worker&gt; &lt;timer&gt; &lt;num of model slices&gt; &lt;timer tuning&gt; &lt;work dir&gt; &lt;<span style="color: #f8f8f2">test</span> dir&gt;
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>hadoop jar harp-java-0.1.0.jar edu.iu.sgd.SGDLauncher &lt;input dir&gt; &lt;r&gt; &lt;lambda&gt; &lt;epsilon&gt; &lt;num of iterations&gt; &lt;training ratio&gt; &lt;num of map tasks&gt; &lt;num of threads per worker&gt; &lt;schedule ratio&gt;&lt;memory <span style="color: #f92672">(</span>MB<span style="color: #f92672">)</span>&gt;  &lt;work dir&gt; &lt;<span style="color: #f8f8f2">test</span> dir&gt;
+
+	&lt;input dir&gt;				<span style="color: #f8f8f2">;</span> input directory	
+	&lt;r&gt; &lt;lambda&gt; &lt;epsilon&gt;	<span style="color: #f8f8f2">;</span> hyper-parameters, different <span style="color: #66d9ef">for</span> different datasets
+	&lt;num of iterations&gt;		<span style="color: #f8f8f2">;</span> iteratoin number
+	&lt;training ratio&gt;		<span style="color: #f8f8f2">;</span> <span style="color: #f8f8f2">set</span> the percentage of training to utilize timer control of synchronization
+	&lt;num of map tasks&gt;		<span style="color: #f8f8f2">;</span>
+	&lt;num of threads per worker&gt;		<span style="color: #f8f8f2">;</span>
+	&lt;schedule ratio&gt;		<span style="color: #f8f8f2">;</span> blocks partition ratio <span style="color: #66d9ef">for</span> dynamic scheduler, <span style="color: #ae81ff">2</span> means spliting to 2xThread# X 2xMapper# blocks
+	&lt;memory <span style="color: #f92672">(</span>MB<span style="color: #f92672">)</span>&gt;			<span style="color: #f8f8f2">;</span> memory setting <span style="color: #66d9ef">for</span> JVM
+	&lt;work dir&gt;				<span style="color: #f8f8f2">;</span> working directory, model saved in this directory
+	&lt;<span style="color: #f8f8f2">test</span> dir&gt;				<span style="color: #f8f8f2">;</span> directory <span style="color: #66d9ef">for</span> <span style="color: #f8f8f2">test</span> files
 </pre></div>
 
-<h3 id="ccd:352991cffc8c9f4544990a7989638403">CCD</h3>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>hadoop jar harp-java-0.1.0.jar edu.iu.ccd.CCDLauncher &lt;input dir&gt; &lt;r&gt; &lt;lambda&gt; &lt;num of iterations&gt; &lt;num of map tasks&gt; &lt;num of threads per worker&gt; &lt;num of model slices&gt; &lt;work dir&gt; &lt;<span style="color: #f8f8f2">test</span> dir&gt;
+<h3 id="example:352991cffc8c9f4544990a7989638403">Example</h3>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #75715e">#put data onto hdfs</span>
+cp <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/datasets/tutorial/movielens/* .
+bunzip2 movie*.mm.bz2
+mkdir data
+<span style="color: #f8f8f2">cd</span> data/
+split -a <span style="color: #ae81ff">5</span> -l <span style="color: #ae81ff">10000</span> ../movielens-train.mm
+<span style="color: #f8f8f2">cd</span> ..
+hadoop fs -mkdir -p /harp-test/mf/test
+hadoop fs -put data /harp-test/mf/
+hadoop fs -put movielens-test.mm /harp-test/mf/test
+
+<span style="color: #75715e">#run lda training</span>
+hadoop jar harp-java-0.1.0.jar edu.iu.sgd.SGDLauncher /harp-test/mf/data <span style="color: #ae81ff">40</span> 0.05 0.003 <span style="color: #ae81ff">100</span> <span style="color: #ae81ff">100</span> <span style="color: #ae81ff">10</span> <span style="color: #ae81ff">16</span> <span style="color: #ae81ff">2</span> <span style="color: #ae81ff">10000</span> /harp-test/mfwork/ /harp-test/mf/test/
+
+
+<span style="color: #75715e">### CCD</span>
+<span style="color: #e6db74">```</span>bash
+hadoop jar harp-java-0.1.0.jar edu.iu.ccd.CCDLauncher &lt;input dir&gt; &lt;r&gt; &lt;lambda&gt; &lt;num of iterations&gt; &lt;num of map tasks&gt; &lt;num of threads per worker&gt; &lt;num of model slices&gt; &lt;work dir&gt; &lt;<span style="color: #f8f8f2">test</span> dir&gt;
 </pre></div>
 </article></section></div></div></div><script src="https://code.jquery.com/jquery-2.2.1.min.js"></script><script src="https://dsc-spidal.github.io/harp/js/app.min.js"></script></body></html>

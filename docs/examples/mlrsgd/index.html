@@ -133,10 +133,43 @@ hdfs dfs -put input_data/* /input
 <span style="color: #f92672">}</span>
 </pre></div>
 
-<h2 id="usage:e1b862678abc2854a915b8f438d1a26e">USAGE</h2>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>$ hadoop jar contrib-0.1.0.jar edu.iu.mlr.MLRMapCollective <span style="color: #f92672">[</span>alpha<span style="color: #f92672">]</span> <span style="color: #f92672">[</span>number of iteration<span style="color: #f92672">]</span> <span style="color: #f92672">[</span>number of features<span style="color: #f92672">]</span> <span style="color: #f92672">[</span>number of workers<span style="color: #f92672">]</span> <span style="color: #f92672">[</span>number of threads<span style="color: #f92672">]</span> <span style="color: #f92672">[</span>topic file path<span style="color: #f92672">]</span> <span style="color: #f92672">[</span>qrel file path<span style="color: #f92672">]</span> <span style="color: #f92672">[</span>input path in HDFS<span style="color: #f92672">]</span> <span style="color: #f92672">[</span>output path in HDFS<span style="color: #f92672">]</span>
-<span style="color: #75715e">#e.g. hadoop jar contrib-0.1.0.jar edu.iu.mlr.MLRMapCollective 1.0 100 47236 2 16 /rcv1v2/rcv1.topics.txt /rcv1v2/rcv1-v2.topics.qrels /input /output</span>
+<h1 id="data:e1b862678abc2854a915b8f438d1a26e">Data</h1>
+
+<p>The dataset used is the (RCV1-v2)[<a href="http://www.ai.mit.edu/projects/jmlr/papers/volume5/lewis04a/lyrl2004_rcv1v2_README.htm">http://www.ai.mit.edu/projects/jmlr/papers/volume5/lewis04a/lyrl2004_rcv1v2_README.htm</a>] dataset.</p>
+
+<h1 id="run-example:e1b862678abc2854a915b8f438d1a26e">Run example</h1>
+
+<h3 id="compile:e1b862678abc2854a915b8f438d1a26e">Compile</h3>
+
+<p>Select the profile related to your hadoop version. For ex: hadoop-2.6.0. Supported hadoop versions are 2.6.0, 2.7.5
+and 2.9.0</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">cd</span> <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>
+mvn clean package -Phadoop-2.6.0
+</pre></div>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">cd</span> <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/contrib/target
+cp contrib-0.1.0.jar <span style="color: #f8f8f2">$HADOOP_HOME</span>
+<span style="color: #f8f8f2">cd</span> <span style="color: #f8f8f2">$HADOOP_HOME</span>
 </pre></div>
 
-<p>The output should be the weight matrix <code>W</code>.</p>
+<h3 id="put-data-on-hdfs:e1b862678abc2854a915b8f438d1a26e">Put data on hdfs</h3>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>hdfs dfs -mkdir rcv1v2
+rm -rf data
+mkdir -p data
+<span style="color: #f8f8f2">cd</span> data
+split -l <span style="color: #ae81ff">1000</span> <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/datasets/tutorial/mlr/lyrl2004_vectors_train.dat
+<span style="color: #f8f8f2">cd</span> ..
+hdfs dfs -put data rcv1v2
+hdfs dfs -put <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/datasets/tutorial/mlr/rcv1* rcv1v2
+</pre></div>
+
+<h3 id="run:e1b862678abc2854a915b8f438d1a26e">Run</h3>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>hadoop jar contrib-0.1.0.jar edu.iu.mlr.MLRMapCollective <span style="color: #f92672">[</span>alpha<span style="color: #f92672">]</span> <span style="color: #f92672">[</span>number of iteration<span style="color: #f92672">]</span> <span style="color: #f92672">[</span>number of features<span style="color: #f92672">]</span> <span style="color: #f92672">[</span>number of workers<span style="color: #f92672">]</span> <span style="color: #f92672">[</span>number of threads<span style="color: #f92672">]</span> <span style="color: #f92672">[</span>topic file path<span style="color: #f92672">]</span> <span style="color: #f92672">[</span>qrel file path<span style="color: #f92672">]</span> <span style="color: #f92672">[</span>input path in HDFS<span style="color: #f92672">]</span> <span style="color: #f92672">[</span>output path in HDFS<span style="color: #f92672">]</span>
+</pre></div>
+
+<h3 id="example:e1b862678abc2854a915b8f438d1a26e">Example</h3>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>hadoop jar contrib-0.1.0.jar edu.iu.mlr.MLRMapCollective 1.0 <span style="color: #ae81ff">100</span> <span style="color: #ae81ff">47236</span> <span style="color: #ae81ff">2</span> <span style="color: #ae81ff">16</span> /rcv1v2/rcv1.topics.txt /rcv1v2/rcv1-v2.topics.qrels /rcv1v2 /output
+</pre></div>
+
+<p>The output should be the weight matrix <code>W</code>.
+Please refer to the test scripts (mlr.sh) under test_scripts for more details.</p>
 </article></section></div></div></div><script src="https://code.jquery.com/jquery-2.2.1.min.js"></script><script src="https://dsc-spidal.github.io/harp/js/app.min.js"></script></body></html>
