@@ -32,77 +32,112 @@
 
 <p>The predicting part will use these decision trees to predict <code>K</code> results. For regression, the result is the average of each tree&rsquo;s result and for classification, the majority vote will be the output.</p>
 
-<h2 id="step-0-data-preprocessing:2c84034595814347bf43e90d15dbeb2c">Step 0 &mdash; Data preprocessing</h2>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #75715e">// In the case of merging the data from different location, main process needs to create bootstrap samples.</span>
-<span style="color: #75715e">// So here, the main process loads all the data and creates the bootstrap samples.</span>
-<span style="color: #66d9ef">if</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">doBootstrapSampling</span><span style="color: #f92672">)</span> <span style="color: #f92672">{</span>                                     
-    <span style="color: #75715e">//Load each of the training files under train folder                </span>
-    <span style="color: #66d9ef">for</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">i</span> <span style="color: #f92672">=</span> <span style="color: #ae81ff">0</span><span style="color: #f92672">;</span> <span style="color: #f8f8f2">i</span> <span style="color: #f92672">&lt;</span> <span style="color: #f8f8f2">RandomForestConstants</span><span style="color: #f92672">.</span><span style="color: #a6e22e">NUM_GLOBAL</span><span style="color: #f92672">;</span> <span style="color: #f8f8f2">i</span><span style="color: #f92672">++)</span> <span style="color: #f92672">{</span>
-        <span style="color: #f8f8f2">files</span><span style="color: #f92672">.</span><span style="color: #a6e22e">add</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">trainFileFolder</span> <span style="color: #f92672">+</span> <span style="color: #f8f8f2">File</span><span style="color: #f92672">.</span><span style="color: #a6e22e">separator</span> <span style="color: #f92672">+</span> <span style="color: #f8f8f2">trainNameFormat</span> <span style="color: #f92672">+</span> <span style="color: #f8f8f2">i</span> <span style="color: #f92672">+</span> <span style="color: #e6db74">&quot;.csv&quot;</span><span style="color: #f92672">);</span>
-    <span style="color: #f92672">}</span>
-    <span style="color: #f8f8f2">System</span><span style="color: #f92672">.</span><span style="color: #a6e22e">out</span><span style="color: #f92672">.</span><span style="color: #a6e22e">println</span><span style="color: #f92672">(</span><span style="color: #e6db74">&quot;Loading the training data...&quot;</span><span style="color: #f92672">);</span>
-    <span style="color: #f8f8f2">loadData</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">trainData</span><span style="color: #f92672">,</span><span style="color: #f8f8f2">files</span><span style="color: #f92672">);</span>
-    <span style="color: #f8f8f2">System</span><span style="color: #f92672">.</span><span style="color: #a6e22e">out</span><span style="color: #f92672">.</span><span style="color: #a6e22e">println</span><span style="color: #f92672">(</span><span style="color: #e6db74">&quot;Data size: &quot;</span> <span style="color: #f92672">+</span> <span style="color: #f8f8f2">trainData</span><span style="color: #f92672">.</span><span style="color: #a6e22e">size</span><span style="color: #f92672">());</span>
-    <span style="color: #f8f8f2">files</span><span style="color: #f92672">.</span><span style="color: #a6e22e">clear</span><span style="color: #f92672">();</span>
-    <span style="color: #f8f8f2">ArrayList</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">Integer</span><span style="color: #f92672">&gt;</span> <span style="color: #f8f8f2">positions</span><span style="color: #f92672">;</span>
-    <span style="color: #75715e">//Create the bootstrapped samples and write to local disk</span>
-    <span style="color: #66d9ef">for</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">i</span> <span style="color: #f92672">=</span> <span style="color: #ae81ff">0</span><span style="color: #f92672">;</span> <span style="color: #f8f8f2">i</span> <span style="color: #f92672">&lt;</span> <span style="color: #f8f8f2">RandomForestConstants</span><span style="color: #f92672">.</span><span style="color: #a6e22e">NUM_MAPPERS</span><span style="color: #f92672">;</span> <span style="color: #f8f8f2">i</span> <span style="color: #f92672">++)</span> <span style="color: #f92672">{</span>
-        <span style="color: #f8f8f2">positions</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">DoBootStrapSampling</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">trainData</span><span style="color: #f92672">.</span><span style="color: #a6e22e">size</span><span style="color: #f92672">());</span>
-        <span style="color: #f8f8f2">System</span><span style="color: #f92672">.</span><span style="color: #a6e22e">out</span><span style="color: #f92672">.</span><span style="color: #a6e22e">println</span><span style="color: #f92672">(</span><span style="color: #e6db74">&quot;Sampled data for: &quot;</span><span style="color: #f92672">+</span> <span style="color: #f8f8f2">i</span> <span style="color: #f92672">+</span><span style="color: #e6db74">&quot;; size: &quot;</span> <span style="color: #f92672">+</span> <span style="color: #f8f8f2">positions</span><span style="color: #f92672">.</span><span style="color: #a6e22e">size</span><span style="color: #f92672">());</span>
-        <span style="color: #f8f8f2">createMapperFiles</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">trainData</span><span style="color: #f92672">,</span><span style="color: #f8f8f2">testData</span><span style="color: #f92672">,</span><span style="color: #f8f8f2">fs</span><span style="color: #f92672">,</span><span style="color: #f8f8f2">localDirStr</span><span style="color: #f92672">,</span><span style="color: #f8f8f2">i</span><span style="color: #f92672">,</span><span style="color: #f8f8f2">positions</span><span style="color: #f92672">);</span>
-        <span style="color: #f8f8f2">positions</span> <span style="color: #f92672">=</span> <span style="color: #66d9ef">null</span><span style="color: #f92672">;</span>
-    <span style="color: #f92672">}</span>
-<span style="color: #f92672">}</span> <span style="color: #66d9ef">else</span> <span style="color: #f92672">{</span>
-    <span style="color: #75715e">//Load each of the training files under train folder                </span>
-    <span style="color: #66d9ef">for</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">i</span> <span style="color: #f92672">=</span> <span style="color: #ae81ff">0</span><span style="color: #f92672">;</span> <span style="color: #f8f8f2">i</span> <span style="color: #f92672">&lt;</span> <span style="color: #f8f8f2">RandomForestConstants</span><span style="color: #f92672">.</span><span style="color: #a6e22e">NUM_MAPPERS</span><span style="color: #f92672">;</span> <span style="color: #f8f8f2">i</span> <span style="color: #f92672">++){</span>
-        <span style="color: #f8f8f2">System</span><span style="color: #f92672">.</span><span style="color: #a6e22e">out</span><span style="color: #f92672">.</span><span style="color: #a6e22e">println</span><span style="color: #f92672">(</span><span style="color: #e6db74">&quot;Loading the training data for &quot;</span> <span style="color: #f92672">+</span> <span style="color: #f8f8f2">i</span> <span style="color: #f92672">+</span> <span style="color: #e6db74">&quot;...&quot;</span><span style="color: #f92672">);</span>
-        <span style="color: #f8f8f2">files</span><span style="color: #f92672">.</span><span style="color: #a6e22e">add</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">trainFileFolder</span><span style="color: #f92672">+</span><span style="color: #f8f8f2">File</span><span style="color: #f92672">.</span><span style="color: #a6e22e">separator</span><span style="color: #f92672">+</span><span style="color: #f8f8f2">trainNameFormat</span><span style="color: #f92672">+</span><span style="color: #f8f8f2">i</span><span style="color: #f92672">+</span><span style="color: #e6db74">&quot;.csv&quot;</span><span style="color: #f92672">);</span>
-        <span style="color: #f8f8f2">loadData</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">trainData</span><span style="color: #f92672">,</span><span style="color: #f8f8f2">files</span><span style="color: #f92672">);</span>
-        <span style="color: #f8f8f2">System</span><span style="color: #f92672">.</span><span style="color: #a6e22e">out</span><span style="color: #f92672">.</span><span style="color: #a6e22e">println</span><span style="color: #f92672">(</span><span style="color: #e6db74">&quot;Unsampled data for: &quot;</span><span style="color: #f92672">+</span> <span style="color: #f8f8f2">i</span> <span style="color: #f92672">+</span><span style="color: #e6db74">&quot;; size: &quot;</span> <span style="color: #f92672">+</span> <span style="color: #f8f8f2">trainData</span><span style="color: #f92672">.</span><span style="color: #a6e22e">size</span><span style="color: #f92672">());</span>
-        <span style="color: #f8f8f2">createMapperFiles</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">trainData</span><span style="color: #f92672">,</span><span style="color: #f8f8f2">testData</span><span style="color: #f92672">,</span><span style="color: #f8f8f2">fs</span><span style="color: #f92672">,</span><span style="color: #f8f8f2">localDirStr</span><span style="color: #f92672">,</span><span style="color: #f8f8f2">i</span><span style="color: #f92672">,</span><span style="color: #66d9ef">null</span><span style="color: #f92672">);</span>
-        <span style="color: #f8f8f2">files</span><span style="color: #f92672">.</span><span style="color: #a6e22e">clear</span><span style="color: #f92672">();</span>
-        <span style="color: #f8f8f2">trainData</span><span style="color: #f92672">.</span><span style="color: #a6e22e">clear</span><span style="color: #f92672">();</span>
-    <span style="color: #f92672">}</span>
-<span style="color: #f92672">}</span> 
+<p>This tutorial extends a random forest implementation of a popular java machine learning library <a href="http://java-ml.sourceforge.net/">javaml</a> from a shared memory version into a distributed version.</p>
+
+<h2 id="step-0-data-bootstraping:2c84034595814347bf43e90d15dbeb2c">Step 0 &mdash; Data Bootstraping</h2>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #75715e">// create bootstrap samples for each tree</span>
+<span style="color: #f8f8f2">Dataset</span> <span style="color: #f8f8f2">baggingDataset</span> <span style="color: #f92672">=</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">DefaultDataset</span><span style="color: #f92672">();</span>
+<span style="color: #f8f8f2">Random</span> <span style="color: #f8f8f2">rand</span> <span style="color: #f92672">=</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">Random</span><span style="color: #f92672">();</span>
+<span style="color: #66d9ef">for</span> <span style="color: #f92672">(</span><span style="color: #66d9ef">int</span> <span style="color: #f8f8f2">i</span> <span style="color: #f92672">=</span> <span style="color: #ae81ff">0</span><span style="color: #f92672">;</span> <span style="color: #f8f8f2">i</span> <span style="color: #f92672">&lt;</span> <span style="color: #f8f8f2">dataset</span><span style="color: #f92672">.</span><span style="color: #a6e22e">size</span><span style="color: #f92672">();</span> <span style="color: #f8f8f2">i</span><span style="color: #f92672">++)</span> <span style="color: #f92672">{</span>
+	<span style="color: #f8f8f2">baggingDataset</span><span style="color: #f92672">.</span><span style="color: #a6e22e">add</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">dataset</span>
+		<span style="color: #f92672">.</span><span style="color: #a6e22e">get</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">rand</span><span style="color: #f92672">.</span><span style="color: #a6e22e">nextInt</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">dataset</span><span style="color: #f92672">.</span><span style="color: #a6e22e">size</span><span style="color: #f92672">())));</span>
+<span style="color: #f92672">}</span>
 </pre></div>
 
 <h2 id="step-1-train-forests:2c84034595814347bf43e90d15dbeb2c">Step 1 &mdash;Train forests</h2>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #75715e">// Create the Random Forest classifier that uses 5 neighbors to make decisions</span>
-<span style="color: #f8f8f2">Classifier</span> <span style="color: #f8f8f2">rf</span> <span style="color: #f92672">=</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">RandomForest</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">numTrees</span><span style="color: #f92672">,</span> <span style="color: #66d9ef">false</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">numAttributes</span><span style="color: #f92672">,</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">Random</span><span style="color: #f92672">());</span>
-<span style="color: #75715e">// Learn the forest</span>
-<span style="color: #f8f8f2">rf</span><span style="color: #f92672">.</span><span style="color: #a6e22e">buildClassifier</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">trainDataPoints</span><span style="color: #f92672">);</span>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #75715e">// each thread build one decision tree </span>
+<span style="color: #f8f8f2">Classifier</span> <span style="color: #f8f8f2">rf</span> <span style="color: #f92672">=</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">RandomForest</span><span style="color: #f92672">(</span><span style="color: #ae81ff">1</span><span style="color: #f92672">,</span> <span style="color: #66d9ef">false</span><span style="color: #f92672">,</span>
+  <span style="color: #f8f8f2">numFeatures</span><span style="color: #f92672">,</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">Random</span><span style="color: #f92672">());</span>
+<span style="color: #f8f8f2">rf</span><span style="color: #f92672">.</span><span style="color: #a6e22e">buildClassifier</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">dataset</span><span style="color: #f92672">);</span>
+</pre></div>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #75715e">//private DynamicScheduler&lt;Dataset, Classifier, RFTask&gt; rfScheduler;</span>
+
+<span style="color: #f8f8f2">rfScheduler</span><span style="color: #f92672">.</span><span style="color: #a6e22e">start</span><span style="color: #f92672">();</span> 
+<span style="color: #66d9ef">for</span> <span style="color: #f92672">(</span><span style="color: #66d9ef">int</span> <span style="color: #f8f8f2">i</span> <span style="color: #f92672">=</span> <span style="color: #ae81ff">0</span><span style="color: #f92672">;</span> <span style="color: #f8f8f2">i</span> <span style="color: #f92672">&lt;</span> <span style="color: #f8f8f2">numTrees</span>
+		<span style="color: #f92672">/</span> <span style="color: #f8f8f2">numMapTasks</span><span style="color: #f92672">;</span> <span style="color: #f8f8f2">i</span><span style="color: #f92672">++)</span> <span style="color: #f92672">{</span>
+	<span style="color: #f8f8f2">Dataset</span> <span style="color: #f8f8f2">baggingDataset</span> <span style="color: #f92672">=</span>
+		<span style="color: #f8f8f2">Util</span><span style="color: #f92672">.</span><span style="color: #a6e22e">doBagging</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">trainDataset</span><span style="color: #f92672">);</span>
+	<span style="color: #f8f8f2">rfScheduler</span><span style="color: #f92672">.</span><span style="color: #a6e22e">submit</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">trainDataset</span><span style="color: #f92672">);</span>
+<span style="color: #f92672">}</span> 
+
+<span style="color: #66d9ef">while</span> <span style="color: #f92672">(</span><span style="color: #f8f8f2">rfScheduler</span><span style="color: #f92672">.</span><span style="color: #a6e22e">hasOutput</span><span style="color: #f92672">())</span> <span style="color: #f92672">{</span>
+	<span style="color: #f8f8f2">rfClassifier</span> 
+	<span style="color: #f92672">.</span><span style="color: #a6e22e">add</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">rfScheduler</span><span style="color: #f92672">.</span><span style="color: #a6e22e">waitForOutput</span><span style="color: #f92672">());</span>
+
+<span style="color: #f92672">}</span>
+<span style="color: #f8f8f2">rfScheduler</span><span style="color: #f92672">.</span><span style="color: #a6e22e">stop</span><span style="color: #f92672">();</span>
 </pre></div>
 
 <h2 id="step-2-synchronize-majority-vote:2c84034595814347bf43e90d15dbeb2c">Step 2 &mdash; Synchronize majority vote</h2>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #66d9ef">for</span> <span style="color: #f92672">(</span><span style="color: #f8f8f2">Instance</span> <span style="color: #f8f8f2">inst</span> <span style="color: #f92672">:</span> <span style="color: #f8f8f2">testDataPoints</span><span style="color: #f92672">)</span> <span style="color: #f92672">{</span>
-    <span style="color: #75715e">// This will hold this random forest&#39;s class vote for this data point</span>
-    <span style="color: #75715e">//IntArray votes = IntArray.create(C, false);</span>
-    <span style="color: #f8f8f2">IntArray</span> <span style="color: #f8f8f2">votes</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">IntArray</span><span style="color: #f92672">.</span><span style="color: #a6e22e">create</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">RandomForestConstants</span><span style="color: #f92672">.</span><span style="color: #a6e22e">NUM_CLASSES</span><span style="color: #f92672">,</span> <span style="color: #66d9ef">false</span><span style="color: #f92672">);</span>
-    <span style="color: #75715e">// Get the prediction class from this Random Forest</span>
-    <span style="color: #f8f8f2">Object</span> <span style="color: #f8f8f2">predictedClassValue</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">rf</span><span style="color: #f92672">.</span><span style="color: #a6e22e">classify</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">inst</span><span style="color: #f92672">);</span>
-    <span style="color: #75715e">// Get the true value</span>
-    <span style="color: #f8f8f2">Object</span> <span style="color: #f8f8f2">realClassValue</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">inst</span><span style="color: #f92672">.</span><span style="color: #a6e22e">classValue</span><span style="color: #f92672">();</span>
-    <span style="color: #75715e">//int predIndex = Integer.parseInt(preds.get(dp));</span>
-    <span style="color: #75715e">// Check which class was predicted</span>
-    <span style="color: #66d9ef">for</span> <span style="color: #f92672">(</span><span style="color: #66d9ef">int</span> <span style="color: #f8f8f2">i</span> <span style="color: #f92672">=</span> <span style="color: #ae81ff">0</span><span style="color: #f92672">;</span> <span style="color: #f8f8f2">i</span> <span style="color: #f92672">&lt;</span> <span style="color: #f8f8f2">RandomForestConstants</span><span style="color: #f92672">.</span><span style="color: #a6e22e">NUM_CLASSES</span><span style="color: #f92672">;</span> <span style="color: #f8f8f2">i</span><span style="color: #f92672">++)</span> <span style="color: #f92672">{</span>
-        <span style="color: #75715e">// Check to see if this index matches the class that was predicted</span>
-        <span style="color: #66d9ef">if</span> <span style="color: #f92672">(</span><span style="color: #f8f8f2">predictedClassValue</span><span style="color: #f92672">.</span><span style="color: #a6e22e">equals</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">Integer</span><span style="color: #f92672">.</span><span style="color: #a6e22e">toString</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">i</span><span style="color: #f92672">)))</span> <span style="color: #f92672">{</span>
-            <span style="color: #75715e">// log.info(&quot;i: &quot; + i + &quot;; predictedClassValue: &quot; + predictedClassValue + &quot;; condition: &quot; + predictedClassValue.equals(Integer.toString(i)));</span>
-            <span style="color: #f8f8f2">votes</span><span style="color: #f92672">.</span><span style="color: #a6e22e">get</span><span style="color: #f92672">()[</span><span style="color: #f8f8f2">i</span><span style="color: #f92672">]</span> <span style="color: #f92672">=</span> <span style="color: #ae81ff">1</span><span style="color: #f92672">;</span>
-        <span style="color: #f92672">}</span> <span style="color: #66d9ef">else</span> <span style="color: #f92672">{</span>
-            <span style="color: #f8f8f2">votes</span><span style="color: #f92672">.</span><span style="color: #a6e22e">get</span><span style="color: #f92672">()[</span><span style="color: #f8f8f2">i</span><span style="color: #f92672">]</span> <span style="color: #f92672">=</span> <span style="color: #ae81ff">0</span><span style="color: #f92672">;</span>
-        <span style="color: #f92672">}</span>
-    <span style="color: #f92672">}</span>
-    <span style="color: #75715e">// Add the voting results to the partition</span>
-    <span style="color: #f8f8f2">Partition</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">IntArray</span><span style="color: #f92672">&gt;</span> <span style="color: #f8f8f2">dpP</span> <span style="color: #f92672">=</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">Partition</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">IntArray</span><span style="color: #f92672">&gt;(</span><span style="color: #f8f8f2">dp</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">votes</span><span style="color: #f92672">);</span>
-    <span style="color: #f8f8f2">predTable</span><span style="color: #f92672">.</span><span style="color: #a6e22e">addPartition</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">dpP</span><span style="color: #f92672">);</span>
-    <span style="color: #75715e">// Move onto the next data point</span>
-    <span style="color: #f8f8f2">dp</span><span style="color: #f92672">++;</span>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #66d9ef">for</span> <span style="color: #f92672">(</span><span style="color: #f8f8f2">Instance</span> <span style="color: #f8f8f2">testData</span> <span style="color: #f92672">:</span> <span style="color: #f8f8f2">testDataset</span><span style="color: #f92672">)</span> <span style="color: #f92672">{</span>
+	<span style="color: #f8f8f2">IntArray</span> <span style="color: #f8f8f2">votes</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">IntArray</span><span style="color: #f92672">.</span><span style="color: #a6e22e">create</span><span style="color: #f92672">(</span><span style="color: #ae81ff">2</span><span style="color: #f92672">,</span> <span style="color: #66d9ef">false</span><span style="color: #f92672">);</span>
+	<span style="color: #66d9ef">for</span> <span style="color: #f92672">(</span><span style="color: #f8f8f2">Classifier</span> <span style="color: #f8f8f2">rf</span> <span style="color: #f92672">:</span> <span style="color: #f8f8f2">rfClassifier</span><span style="color: #f92672">)</span> <span style="color: #f92672">{</span>
+		<span style="color: #f8f8f2">Object</span> <span style="color: #f8f8f2">classValue</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">rf</span><span style="color: #f92672">.</span><span style="color: #a6e22e">classify</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">testData</span><span style="color: #f92672">);</span>
+		<span style="color: #66d9ef">if</span> <span style="color: #f92672">(</span><span style="color: #f8f8f2">classValue</span><span style="color: #f92672">.</span><span style="color: #a6e22e">toString</span><span style="color: #f92672">().</span><span style="color: #a6e22e">equals</span><span style="color: #f92672">(</span><span style="color: #e6db74">&quot;0&quot;</span><span style="color: #f92672">))</span> <span style="color: #f92672">{</span>
+			<span style="color: #f8f8f2">votes</span><span style="color: #f92672">.</span><span style="color: #a6e22e">get</span><span style="color: #f92672">()[</span><span style="color: #ae81ff">0</span><span style="color: #f92672">]</span> <span style="color: #f92672">+=</span> <span style="color: #ae81ff">1</span><span style="color: #f92672">;</span>
+		<span style="color: #f92672">}</span> <span style="color: #66d9ef">else</span> <span style="color: #f92672">{</span>
+			<span style="color: #f8f8f2">votes</span><span style="color: #f92672">.</span><span style="color: #a6e22e">get</span><span style="color: #f92672">()[</span><span style="color: #ae81ff">1</span><span style="color: #f92672">]</span> <span style="color: #f92672">+=</span> <span style="color: #ae81ff">1</span><span style="color: #f92672">;</span>
+		<span style="color: #f92672">}</span>
+	<span style="color: #f92672">}</span>
+	<span style="color: #f8f8f2">Partition</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">IntArray</span><span style="color: #f92672">&gt;</span> <span style="color: #f8f8f2">partition</span> <span style="color: #f92672">=</span>
+		<span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">Partition</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">IntArray</span><span style="color: #f92672">&gt;(</span><span style="color: #f8f8f2">partitionId</span><span style="color: #f92672">,</span>
+				<span style="color: #f8f8f2">votes</span><span style="color: #f92672">);</span>
+	<span style="color: #f8f8f2">predictTable</span><span style="color: #f92672">.</span><span style="color: #a6e22e">addPartition</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">partition</span><span style="color: #f92672">);</span>
+	<span style="color: #f8f8f2">partitionId</span> <span style="color: #f92672">+=</span> <span style="color: #ae81ff">1</span><span style="color: #f92672">;</span>
+
 <span style="color: #f92672">}</span>
-<span style="color: #f8f8f2">log</span><span style="color: #f92672">.</span><span style="color: #a6e22e">info</span><span style="color: #f92672">(</span><span style="color: #e6db74">&quot;Done populating predTable\n&quot;</span><span style="color: #f92672">);</span>
-<span style="color: #75715e">// All Reduce from all Mappers</span>
-<span style="color: #f8f8f2">log</span><span style="color: #f92672">.</span><span style="color: #a6e22e">info</span><span style="color: #f92672">(</span><span style="color: #e6db74">&quot;Before allreduce!!!!&quot;</span><span style="color: #f92672">);</span>
-<span style="color: #f8f8f2">allreduce</span><span style="color: #f92672">(</span><span style="color: #e6db74">&quot;main&quot;</span><span style="color: #f92672">,</span> <span style="color: #e6db74">&quot;allreduce&quot;</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">predTable</span><span style="color: #f92672">);</span>
-<span style="color: #f8f8f2">log</span><span style="color: #f92672">.</span><span style="color: #a6e22e">info</span><span style="color: #f92672">(</span><span style="color: #e6db74">&quot;After allreduce!!!!&quot;</span><span style="color: #f92672">);</span>
+
+<span style="color: #f8f8f2">reduce</span><span style="color: #f92672">(</span><span style="color: #e6db74">&quot;main&quot;</span><span style="color: #f92672">,</span> <span style="color: #e6db74">&quot;reduce&quot;</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">predictTable</span><span style="color: #f92672">,</span> <span style="color: #ae81ff">0</span><span style="color: #f92672">);</span>
+<span style="color: #66d9ef">if</span> <span style="color: #f92672">(</span><span style="color: #66d9ef">this</span><span style="color: #f92672">.</span><span style="color: #a6e22e">isMaster</span><span style="color: #f92672">())</span> <span style="color: #f92672">{</span>
+	<span style="color: #f8f8f2">printResults</span><span style="color: #f92672">(</span><span style="color: #f8f8f2">predictTable</span><span style="color: #f92672">,</span> <span style="color: #f8f8f2">testDataset</span><span style="color: #f92672">);</span>
+
+<span style="color: #f92672">}</span>
 </pre></div>
+
+<h1 id="run-example:2c84034595814347bf43e90d15dbeb2c">Run example</h1>
+
+<h3 id="data:2c84034595814347bf43e90d15dbeb2c">Data</h3>
+
+<p>The dataset used is sampled from <a href="http://stat-computing.org/dataexpo/2009/">Aireline</a> dataset. Refer to the <a href="https://github.com/DSC-SPIDAL/harp/tree/master/datasets/tutorial/airline">dataset</a> directory for more details.</p>
+
+<p>The format for the data should be a list of &lt;DAY_OF_WEEK DEP_DELAY DEP_DELAY_NEW DEP_DELAY_GROUP ARR_DELAY ARR_DELAY_NEW UNIQUE_CARRIER_ID ORIGIN_STATE_ABR_ID DEST_STATE_ABR_ID CLASS&gt;. For example,</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #ae81ff">1</span> <span style="color: #ae81ff">14</span> <span style="color: #ae81ff">14</span> <span style="color: #ae81ff">0</span> <span style="color: #ae81ff">10</span> <span style="color: #ae81ff">10</span> <span style="color: #ae81ff">15</span> <span style="color: #ae81ff">10</span> <span style="color: #ae81ff">20</span> 0
+<span style="color: #ae81ff">1</span> -3 <span style="color: #ae81ff">0</span> -1 -24 <span style="color: #ae81ff">0</span> <span style="color: #ae81ff">15</span> <span style="color: #ae81ff">10</span> <span style="color: #ae81ff">20</span> 0
+</pre></div>
+
+<h3 id="put-data-on-hdfs:2c84034595814347bf43e90d15dbeb2c">Put data on hdfs</h3>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>hdfs dfs -mkdir /data/airline
+rm -rf data
+mkdir -p data
+<span style="color: #f8f8f2">cd</span> data
+split -l <span style="color: #ae81ff">74850</span> <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/datasets/tutorial/airline/train.csv
+<span style="color: #f8f8f2">cd</span> ..
+hdfs dfs -put data /data/airline
+hdfs dfs -put <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/datasets/tutorial/airline/test.csv /data/airline/
+</pre></div>
+
+<h3 id="compile:2c84034595814347bf43e90d15dbeb2c">Compile</h3>
+
+<p>Select the profile related to your hadoop version. For ex: hadoop-2.6.0. Supported hadoop versions are 2.6.0, 2.7.5
+and 2.9.0</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">cd</span> <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>
+mvn clean package -Phadoop-2.6.0
+</pre></div>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">cd</span> <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/contrib/target
+cp contrib-0.1.0.jar <span style="color: #f8f8f2">$HADOOP_HOME</span>
+cp <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/third_parity/javaml-0.1.7.jar <span style="color: #f8f8f2">$HADOOP_HOME</span>/share/hadoop/mapreduce
+cp <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/third_parity/ajt-2.11.jar <span style="color: #f8f8f2">$HADOOP_HOME</span>/share/hadoop/mapreduce
+<span style="color: #f8f8f2">cd</span> <span style="color: #f8f8f2">$HADOOP_HOME</span>
+</pre></div>
+
+<h3 id="run:2c84034595814347bf43e90d15dbeb2c">Run</h3>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>hadoop jar contrib-0.1.0.jar edu.iu.rf.RFMapCollective 
+Usage: edu.iu.rf.RFMapCollective &lt;numTrees&gt; &lt;numMapTasks&gt; &lt;numThreads&gt; &lt;trainPath&gt; &lt;testPath&gt; &lt;outputPath&gt;
+</pre></div>
+
+<h3 id="example:2c84034595814347bf43e90d15dbeb2c">Example</h3>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>hadoop jar contrib-0.1.0.jar edu.iu.rf.RFMapCollective <span style="color: #ae81ff">32</span> <span style="color: #ae81ff">2</span> <span style="color: #ae81ff">16</span> /data/airline/data/ /data/airline/test.csv /out
+</pre></div>
+
+<p>This will start 2 mappers with 16 threads in each mapper to build 32 decision trees. The accuracy of prediction on the test dataset is the output.</p>
 </article></section></div></div></div><script src="https://code.jquery.com/jquery-2.2.1.min.js"></script><script src="https://dsc-spidal.github.io/harp/js/app.min.js"></script></body></html>

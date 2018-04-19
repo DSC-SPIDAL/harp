@@ -8,7 +8,7 @@
 
 <p>In addition to performing linear classification, SVMs can efficiently perform a non-linear classification using what is called the kernel trick, implicitly mapping their inputs into high-dimensional feature spaces.</p>
 
-<p>In this project, Harp won&rsquo;t touch the core code base of computing SVM. It will use LibSVM, which is an open source library and does parallel around LibSVM. And it is developed at the National Taiwan University and written in C++ with other programming languages&rsquo; APIs. LibSVM implements the SMO algorithm for kernelized support vector machines (SVMs), supporting classification and regression.</p>
+<p>In this tutorial, Harp won&rsquo;t touch the core code base of computing SVM. It will use <a href="https://www.csie.ntu.edu.tw/~cjlin/libsvm/">LibSVM</a>, which is an open source library and does parallel around LibSVM. And it is developed at the National Taiwan University and written in C++ with other programming languages&rsquo; APIs. LibSVM implements the SMO algorithm for kernelized support vector machines (SVMs), supporting classification and regression.</p>
 
 <h2 id="method:e568f1a097194d1d19c4657d52ba5998">METHOD</h2>
 
@@ -39,11 +39,6 @@
 <li><code>&lt;fid&gt;</code> is a positive feature id</li>
 <li><code>&lt;feature&gt;</code> is the feature value</li>
 </ul>
-
-<p>After preprocessing, push the data set into HDFS by the following commands.</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>hdfs dfs -mkdir /input
-hdfs dfs -put input_data/* /input
-</pre></div>
 
 <h2 id="step-1-initialize-and-load-data:e568f1a097194d1d19c4657d52ba5998">Step 1 &mdash; Initialize and load data</h2>
 <div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">Vector</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">Double</span><span style="color: #f92672">&gt;</span> <span style="color: #f8f8f2">vy</span> <span style="color: #f92672">=</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">Vector</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">Double</span><span style="color: #f92672">&gt;();</span>
@@ -89,12 +84,13 @@ hdfs dfs -put input_data/* /input
 <span style="color: #75715e">//initial svm paramter</span>
 <span style="color: #f8f8f2">svmParameter</span> <span style="color: #f92672">=</span> <span style="color: #66d9ef">new</span> <span style="color: #f8f8f2">svm_parameter</span><span style="color: #f92672">();</span>
 <span style="color: #f8f8f2">svmParameter</span><span style="color: #f92672">.</span><span style="color: #a6e22e">svm_type</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">svm_parameter</span><span style="color: #f92672">.</span><span style="color: #a6e22e">C_SVC</span><span style="color: #f92672">;</span>
-<span style="color: #f8f8f2">svmParameter</span><span style="color: #f92672">.</span><span style="color: #a6e22e">kernel_type</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">svm_parameter</span><span style="color: #f92672">.</span><span style="color: #a6e22e">RBF</span><span style="color: #f92672">;</span>
-<span style="color: #f8f8f2">svmParameter</span><span style="color: #f92672">.</span><span style="color: #a6e22e">degree</span> <span style="color: #f92672">=</span> <span style="color: #ae81ff">3</span><span style="color: #f92672">;</span>
+<span style="color: #75715e">//svmParameter.kernel_type = svm_parameter.RBF;</span>
+<span style="color: #75715e">//svmParameter.degree = 3;</span>
+<span style="color: #f8f8f2">svmParameter</span><span style="color: #f92672">.</span><span style="color: #a6e22e">kernel_type</span> <span style="color: #f92672">=</span> <span style="color: #f8f8f2">svm_parameter</span><span style="color: #f92672">.</span><span style="color: #a6e22e">LINEAR</span><span style="color: #f92672">;</span>
 <span style="color: #f8f8f2">svmParameter</span><span style="color: #f92672">.</span><span style="color: #a6e22e">gamma</span> <span style="color: #f92672">=</span> <span style="color: #ae81ff">0</span><span style="color: #f92672">;</span>
 <span style="color: #f8f8f2">svmParameter</span><span style="color: #f92672">.</span><span style="color: #a6e22e">coef0</span> <span style="color: #f92672">=</span> <span style="color: #ae81ff">0</span><span style="color: #f92672">;</span>
 <span style="color: #f8f8f2">svmParameter</span><span style="color: #f92672">.</span><span style="color: #a6e22e">nu</span> <span style="color: #f92672">=</span> <span style="color: #ae81ff">0.5</span><span style="color: #f92672">;</span>
-<span style="color: #f8f8f2">svmParameter</span><span style="color: #f92672">.</span><span style="color: #a6e22e">cache_size</span> <span style="color: #f92672">=</span> <span style="color: #ae81ff">100</span><span style="color: #f92672">;</span>
+<span style="color: #f8f8f2">svmParameter</span><span style="color: #f92672">.</span><span style="color: #a6e22e">cache_size</span> <span style="color: #f92672">=</span> <span style="color: #ae81ff">60000</span><span style="color: #f92672">;</span>
 <span style="color: #f8f8f2">svmParameter</span><span style="color: #f92672">.</span><span style="color: #a6e22e">C</span> <span style="color: #f92672">=</span> <span style="color: #ae81ff">1</span><span style="color: #f92672">;</span>
 <span style="color: #f8f8f2">svmParameter</span><span style="color: #f92672">.</span><span style="color: #a6e22e">eps</span> <span style="color: #f92672">=</span> <span style="color: #ae81ff">1e-3</span><span style="color: #f92672">;</span>
 <span style="color: #f8f8f2">svmParameter</span><span style="color: #f92672">.</span><span style="color: #a6e22e">p</span> <span style="color: #f92672">=</span> <span style="color: #ae81ff">0.1</span><span style="color: #f92672">;</span>
@@ -156,13 +152,47 @@ hdfs dfs -put input_data/* /input
 <span style="color: #f92672">}</span>
 </pre></div>
 
-<h2 id="usage:e568f1a097194d1d19c4657d52ba5998">USAGE</h2>
+<h1 id="run-example:e568f1a097194d1d19c4657d52ba5998">Run example</h1>
 
-<p>Run Harp SVM:</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>$ hadoop jar contrib-0.1.0.jar edu.iu.svm.IterativeSVM &lt;number of mappers&gt; &lt;number of iteration&gt; &lt;output path in HDFS&gt; &lt;data <span style="color: #f8f8f2">set</span> path&gt;
+<h3 id="data:e568f1a097194d1d19c4657d52ba5998">Data</h3>
+
+<p>The dataset used is a subset of (MNIST)[<a href="https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass.html#mnist">https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass.html#mnist</a>] with 6000 examples selected.</p>
+
+<h3 id="compile:e568f1a097194d1d19c4657d52ba5998">Compile</h3>
+
+<p>Select the profile related to your hadoop version. For ex: hadoop-2.6.0. Supported hadoop versions are 2.6.0, 2.7.5
+and 2.9.0</p>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">cd</span> <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>
+mvn clean package -Phadoop-2.6.0
+</pre></div>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">cd</span> <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/contrib/target
+cp contrib-0.1.0.jar <span style="color: #f8f8f2">$HADOOP_HOME</span>
+<span style="color: #f8f8f2">cd</span> <span style="color: #f8f8f2">$HADOOP_HOME</span>
+</pre></div>
+
+<h3 id="get-the-dataset-and-put-data-onto-hdfs:e568f1a097194d1d19c4657d52ba5998">Get the dataset and put data onto hdfs</h3>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>wget https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass/mnist.t.bz2
+bunzip2 mnist.t.bz2
+hdfs dfs -mkdir -p /harp-test/svm/data
+rm -rf data
+mkdir -p data
+<span style="color: #f8f8f2">cd</span> data
+split -l <span style="color: #ae81ff">5000</span> ../mnist.t
+<span style="color: #f8f8f2">cd</span> ..
+hdfs dfs -put data /harp-test/svm/
+</pre></div>
+
+<h3 id="run:e568f1a097194d1d19c4657d52ba5998">Run</h3>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>hadoop jar contrib-0.1.0.jar edu.iu.svm.IterativeSVM &lt;number of mappers&gt; &lt;number of iteration&gt; &lt;work path in HDFS&gt; &lt;<span style="color: #f8f8f2">local</span> data <span style="color: #f8f8f2">set</span> path&gt;
+</pre></div>
+
+<h3 id="example:e568f1a097194d1d19c4657d52ba5998">Example</h3>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>hadoop jar contrib-0.1.0.jar edu.iu.svm.IterativeSVM <span style="color: #ae81ff">2</span> <span style="color: #ae81ff">5</span> /harp-test/svm nolocalfile
 </pre></div>
 
 <p>Fetch the result:</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>$ hdfs dfs -get &lt;output path in HDFS&gt; &lt;path you want to store the output&gt;
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>hdfs dfs -get /harp-test/svm/out
 </pre></div>
+
+<p>The result is the support vectors.</p>
 </article></section></div></div></div><script src="https://code.jquery.com/jquery-2.2.1.min.js"></script><script src="https://dsc-spidal.github.io/harp/js/app.min.js"></script></body></html>
