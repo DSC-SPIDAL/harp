@@ -29,6 +29,7 @@ public class Utils {
     Path dataPath) throws IOException,
     InterruptedException, ExecutionException {
     File localFile = new File(localPathString);
+    int  localPathPos = localPathString.lastIndexOf(File.separator);
 
     // check if localFile exists
     if (localFile.isFile()
@@ -55,8 +56,9 @@ public class Utils {
       File[] subLocalFile = new File[numOfTasks];
       for (int i = 0; i < numOfTasks; i++) {
         subLocalFile[i] = new File(
-          localPathString.substring(0, 10)
-            + File.separator + "data_"
+          localPathString.substring(0, localPathPos)
+            + File.separator + 
+			"data_"
             + Integer.toString(i));
       }
 
@@ -86,17 +88,17 @@ public class Utils {
 
       // copy to HDFS
       Path localPath = new Path(
-        localPathString.substring(0, 10));
+        localPathString.substring(0, localPathPos));
       if (fs.exists(dataPath)) {
         fs.delete(dataPath, true);
       }
       fs.copyFromLocalFile(localPath, dataPath);
       fs.delete(new Path(dataPath,
-        localPathString.substring(11)), false);
+        localPathString.substring(localPathPos + 1)), false);
     } else {
       System.err.println(
-        "Error: Data set doesn't exists!");
-      System.exit(-1);
+        "INFO: Data set doesn't exists!");
+      //System.exit(-1);
     }
   }
 }
