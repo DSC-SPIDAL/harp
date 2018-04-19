@@ -154,14 +154,14 @@ cd $HADOOP_HOME
 
 ### Put data on hdfs
 ```bash
-hdfs dfs -mkdir rcv1v2
+hdfs dfs -mkdir /rcv1v2
 rm -rf data
 mkdir -p data
 cd data
-split -l 1000 $HARP_ROOT_DIR/datasets/tutorial/mlr/lyrl2004_vectors_train.dat
+split -l 1000 $HARP_ROOT_DIR/datasets/tutorial/rcv1/lyrl2004_vectors_train.dat
 cd ..
-hdfs dfs -put data rcv1v2
-hdfs dfs -put $HARP_ROOT_DIR/datasets/tutorial/mlr/rcv1* rcv1v2
+hdfs dfs -put data /rcv1v2
+hdfs dfs -put $HARP_ROOT_DIR/datasets/tutorial/rcv1/rcv1* /rcv1v2
 ```
 
 ### Run
@@ -171,7 +171,7 @@ hadoop jar contrib-0.1.0.jar edu.iu.mlr.MLRMapCollective [alpha] [number of iter
 
 ### Example
 ```bash
-hadoop jar contrib-0.1.0.jar edu.iu.mlr.MLRMapCollective 1.0 100 47236 2 16 /rcv1v2/rcv1.topics.txt /rcv1v2/rcv1-v2.topics.qrels /rcv1v2 /output
+hadoop jar contrib-0.1.0.jar edu.iu.mlr.MLRMapCollective 1.0 100 47236 2 4 /rcv1v2/rcv1.topics.txt /rcv1v2/rcv1-v2.topics.qrels /rcv1v2 /output
 ```
 
 The output should be the weight matrix `W`.
