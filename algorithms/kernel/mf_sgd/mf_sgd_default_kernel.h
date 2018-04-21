@@ -720,8 +720,8 @@ void hMat_generate(NumericTable *r[], mf_sgd::Parameter* &par, size_t dim_r, lon
     clock_gettime(CLOCK_MONOTONIC, &ts1);
 
     // convert data in parallel (TBB)
-    // rhmap->getBlockOfColumnValuesMT(0, hMat_rowNum, 0, hMat_colNum, writeOnly, hMat_blk_array);
-    rhmap->getBlockOfColumnValuesMTHBM(0, hMat_rowNum, 0, hMat_colNum, writeOnly, hMat_blk_array);
+    rhmap->getBlockOfColumnValuesMT(0, hMat_rowNum, 0, hMat_colNum, writeOnly, hMat_blk_array);
+    // rhmap->getBlockOfColumnValuesMTHBM(0, hMat_rowNum, 0, hMat_colNum, writeOnly, hMat_blk_array);
 
     for(int k=0;k<hMat_rowNum;k++)
         hMat_native_mem[k] = hMat_blk_array[k]->getBlockPtr();
@@ -794,8 +794,8 @@ void hMat_release(NumericTable *r[], mf_sgd::Parameter* &par, size_t dim_r, Harp
 
         clock_gettime(CLOCK_MONOTONIC, &ts1);
 
-        // rhmap->releaseBlockOfColumnValuesMT(0, hMat_rowNum, hMat_blk_array);
-        rhmap->releaseBlockOfColumnValuesMTHBM(0, hMat_rowNum, hMat_blk_array);
+        rhmap->releaseBlockOfColumnValuesMT(0, hMat_rowNum, hMat_blk_array);
+        // rhmap->releaseBlockOfColumnValuesMTHBM(0, hMat_rowNum, hMat_blk_array);
 
         clock_gettime(CLOCK_MONOTONIC, &ts2);
         diff = 1000000000L *(ts2.tv_sec - ts1.tv_sec) + ts2.tv_nsec - ts1.tv_nsec;

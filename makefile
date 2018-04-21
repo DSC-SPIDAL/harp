@@ -244,7 +244,6 @@ daaldep.lnx32e.vml :=
 daaldep.lnx32e.ipp := 
 # daaldep.lnx32e.rt  := -L$(TBBDIR.libia) -ltbb -ltbbmalloc -lpthread $(daaldep.lnx32e.rt.$(COMPILER))
 # added by Harp-DAAL: 1) OpenMP, 2) Apache hdfs, 3) memkind
-# daaldep.lnx32e.rt  := -L$(TBBDIR.libia) -ltbb -ltbbmalloc -lpthread $(-linkomp) -L$(DIR)/externals/hdfs/lib -lhdfs -L$(DIR)/externals/memkind/lib -lmemkind $(daaldep.lnx32e.rt.$(COMPILER))
 daaldep.lnx32e.rt  := -L$(TBBDIR.libia) -ltbb -ltbbmalloc -lpthread $(-linkomp) -L$(HDFSDIR.libia) -lhdfs -L$(MEMKINDDIR.libia) -lmemkind $(daaldep.lnx32e.rt.$(COMPILER))
 
 daaldep.lnx32.mkl.thr := $(MKLFPKDIR.libia)/$(plib)daal_mkl_thread.$a    
@@ -435,7 +434,6 @@ $(CORE.objs_a): COPT += @$(CORE.tmpdir_a)/inc_a_folders.txt
 # added by Harp-DAAL
 # openmp support and O3 optimization add -wn2 to stop after 2 errors
 # apache hdfs i/o lib, memkind lib
-# $(CORE.objs_a): COPT += $(-omp) $(-useomp) -I$(DIR)/externals/hdfs/include -I$(DIR)/externals/memkind/include $(-ansialias) -O3 -wn2
 $(CORE.objs_a): COPT += $(-omp) $(-useomp) -I$(HDFSDIR.include) -I$(MEMKINDDIR.include) $(-ansialias) -O3 -wn2
 
 $(filter %threading.$o, $(CORE.objs_a)): COPT += -D__DO_TBB_LAYER__
@@ -456,7 +454,6 @@ $(CORE.objs_y): COPT += @$(CORE.tmpdir_y)/inc_y_folders.txt
 # added by Harp-DAAL
 # openmp support and O3 optimization
 # apache hdfs i/o lib, memkind lib
-# $(CORE.objs_y): COPT += $(-omp) $(-useomp) -I$(DIR)/externals/hdfs/include -I$(DIR)/externals/memkind/include $(-ansialias) -O3 -wn2
 $(CORE.objs_y): COPT += $(-omp) $(-useomp) -I$(HDFSDIR.include) -I$(MEMKINDDIR.include) $(-ansialias) -O3 -wn2
 
 $(filter %threading.$o, $(CORE.objs_y)): COPT += -D__DO_TBB_LAYER__

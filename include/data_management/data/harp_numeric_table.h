@@ -305,7 +305,12 @@ public:
         if ( newSize  > _capacity )
         {
             this->freeBuffer();
-            _buffer = services::SharedPtr<DataType>((DataType *)hbw_malloc(newSize), HarpHBMDeleter());
+            //check availability of hbm 
+            if (!hbw_check_available())
+                _buffer = services::SharedPtr<DataType>((DataType *)hbw_malloc(newSize), HarpHBMDeleter());
+            else // rollback to scalable_malloc
+                _buffer = services::SharedPtr<DataType>((DataType *)scalable_malloc(newSize), HarpSCALDeleter());
+
             if ( _buffer != 0 )
             {
                 _capacity = newSize;
