@@ -69,11 +69,8 @@ public class SGDDaalLauncher extends Configured
       DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libhdfs.so#libhdfs.so"), conf);
       DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libhdfs.so.0.0.0#libhdfs.so.0.0.0"), conf);
       DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libautohbw.so#libautohbw.so"), conf);
-      DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libautohbw.so.0#libautohbw.so.0"), conf);
-      DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libautohbw.so.0.0.1#libautohbw.so.0.0.1"), conf);
       DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libmemkind.so#libmemkind.so"), conf);
       DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libmemkind.so.0#libmemkind.so.0"), conf);
-      DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libmemkind.so.0.0.1#libmemkind.so.0.0.1"), conf);
 
       if (args.length < 11) {
       System.err
