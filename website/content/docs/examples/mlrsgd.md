@@ -131,11 +131,48 @@ protected void mapCollective(KeyValReader reader, Context context) throws IOExce
 }
 ```
 
-## USAGE
+# Data
+
+The dataset used is the (RCV1-v2)[http://www.ai.mit.edu/projects/jmlr/papers/volume5/lewis04a/lyrl2004_rcv1v2_README.htm] dataset.
+
+# Run example
+
+### Compile
+
+Select the profile related to your hadoop version. For ex: hadoop-2.6.0. Supported hadoop versions are 2.6.0, 2.7.5 
+and 2.9.0
+```bash
+cd $HARP_ROOT_DIR
+mvn clean package -Phadoop-2.6.0
+```
 
 ```bash
-$ hadoop jar contrib-0.1.0.jar edu.iu.mlr.MLRMapCollective [alpha] [number of iteration] [number of features] [number of workers] [number of threads] [topic file path] [qrel file path] [input path in HDFS] [output path in HDFS]
-#e.g. hadoop jar contrib-0.1.0.jar edu.iu.mlr.MLRMapCollective 1.0 100 47236 2 16 /rcv1v2/rcv1.topics.txt /rcv1v2/rcv1-v2.topics.qrels /input /output
+cd $HARP_ROOT_DIR/contrib/target
+cp contrib-0.1.0.jar $HADOOP_HOME
+cd $HADOOP_HOME
+```
+
+### Put data on hdfs
+```bash
+hdfs dfs -mkdir /rcv1v2
+rm -rf data
+mkdir -p data
+cd data
+split -l 1000 $HARP_ROOT_DIR/datasets/tutorial/rcv1/lyrl2004_vectors_train.dat
+cd ..
+hdfs dfs -put data /rcv1v2
+hdfs dfs -put $HARP_ROOT_DIR/datasets/tutorial/rcv1/rcv1* /rcv1v2
+```
+
+### Run
+```bash
+hadoop jar contrib-0.1.0.jar edu.iu.mlr.MLRMapCollective [alpha] [number of iteration] [number of features] [number of workers] [number of threads] [topic file path] [qrel file path] [input path in HDFS] [output path in HDFS]
+```
+
+### Example
+```bash
+hadoop jar contrib-0.1.0.jar edu.iu.mlr.MLRMapCollective 1.0 100 47236 2 4 /rcv1v2/rcv1.topics.txt /rcv1v2/rcv1-v2.topics.qrels /rcv1v2 /output
 ```
 
 The output should be the weight matrix `W`.
+Please refer to the test scripts (mlr.sh) under test_scripts for more details.

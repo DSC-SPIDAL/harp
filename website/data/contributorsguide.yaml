@@ -1,0 +1,43 @@
+sections:
+  - name: Programming Guides
+    sublinks:
+      - name: Overview
+        url: /docs/programming/overview
+      - name: Data Interfaces and Types
+        url: /docs/programming/data-interface
+      - name: Schedulers
+        url: /docs/programming/scheduler
+      - name: Computation Models
+        url: /docs/programming/computation-models
+  - name: Collective Communication
+    sublinks:
+      - name: Broadcast
+        url: /docs/communications/broadcast
+      - name: Reduce
+        url: /docs/communications/reduce
+      - name: Allgather
+        url: /docs/communications/allgather
+      - name: Allreduce
+        url: /docs/communications/allreduce
+      - name: Regroup
+        url: /docs/communications/regroup
+      - name: Push & Pull
+        url: /docs/communications/pushandpull
+      - name: Rotate
+        url: /docs/communications/rotate
+  - name: Examples
+    sublinks:
+      - name: Overview
+        url: /docs/examples/overview
+      - name: K-Means
+        url: /docs/examples/kmeans
+      - name: Multiclass Logistic Regression
+        url: /docs/examples/mlrsgd
+      - name: Latent Dirichlet Allocation (CVB)
+        url: /docs/examples/lda
+      - name: Support Vector Machine
+        url: /docs/examples/svm
+      - name: Random Forests
+        url: /docs/examples/rf
+      - name: Neural Network
+        url: /docs/examples/nn

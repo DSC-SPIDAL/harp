@@ -8,7 +8,7 @@ title: Latent Dirichlet Allocation (CGS)
 
 <img src="/img/lda-description.png" width="100%" >
 
-### Pseudo code for SGD and CCD algorithm:
+### Pseudo code for CGS LDA algorithm:
 
 <img src="/img/cgs-algorithm.png" width="80%" >
 
@@ -37,7 +37,7 @@ Experiments are conducted on a 128-node Intel Haswell cluster at Indiana Univers
 
 We use one big dataset which is generated from "ClueWeb09" to test LDA both on Harp and Petuum.
 
-Through examining the model likelihood achieved by the training time, the results show that Harp consistently outperforms Petuum. We test Harp CGS and Petuum on "clueweb1" with 30 nodes × 30 threads and 60 nodes × 20 threads two configurations. Both results show that Harp CGS converges faster than Petuum. Concerning the convergence speed on the same dataset with different configurations, we observe that the fewer the number of cores used and the more computation per core, the faster Harp runs compare to Petuum. When the scale goes up, the difference of the convergence speed reduces. With 30 nodes × 30 threads Xeon E5-2699 v3 nodes, Harp is 45% faster than Petuum while with 60 nodes × 20 threads Xeon E5-2670 v3 nodes, Harp is 18% faster than Petuum when the model likelihood converges to −1.37 × 1011.
+Through examining the model likelihood achieved by the training time, the results show that Harp consistently outperforms Petuum. We test Harp CGS and Petuum on "clueweb1" with 30 nodes × 30 threads and 60 nodes × 20 threads two configurations. Both results show that Harp CGS converges faster than Petuum. Concerning the convergence speed on the same dataset with different configurations, we observe that the fewer the number of cores used and the more computation per core, the faster Harp runs compare to Petuum. When the scale goes up, the difference of the convergence speed reduces. With 30 nodes × 30 threads Xeon E5-2699 v3 nodes, Harp is 45% faster than Petuum while with 60 nodes × 20 threads Xeon E5-2670 v3 nodes, Harp is 18% faster than Petuum when the model likelihood converges to −1.37 × 10^11.
 
 # Run LDA example
 
@@ -53,6 +53,40 @@ doc2   545 1939 206863 773279 773279
 
 ## Usage
 ```bash
-hadoop jar harp-java-0.1.0.jar  edu.iu.lda.LDALauncher <doc dir> <num of topics> <alpha> <beta> <num of iterations> 
-<num of map tasks> <num of threads per worker> <timer> <num of model slices> <enable timer tuning> <work dir> <print model>
+hadoop jar harp-java-0.1.0.jar edu.iu.lda.LDALauncher <doc dir> <num of topics> <alpha> <beta> <num of iterations> <min training percentage> <max training percentage> <num of mappers> <num of threads per worker> <schedule ratio> <memory (MB)> <work dir> <print model>
+
+	<doc dir>			; input directory
+	<num of topics>		; K
+	<alpha> <beta>		; suggested setting as alpha = 50/K, beta = 0.01
+	<num of iterations> ; iteration number
+	<min training percentage>	; set the min/max training percentage to utilize timer control of synchronization
+	<max training percentage>	; 100,100 will set timer off, 40, 90 will works fine with timer on
+	<num of mappers>			; 
+	<num of threads per worker> ;
+	<schedule ratio>	; blocks partition ratio for dynamic scheduler, 2 means spliting to 2xThread# X 2xMapper# blocks
+	<memory (MB)>		; memory setting for JVM
+	<work dir>			; working directory, model saved in this directory
+	<print model>		; True/False, save model W if set to Ture
+
 ```
+
+### Example
+```bash
+#put data onto hdfs
+cp $HARP_ROOT_DIR/datasets/tutorial/nytimes-30k/nytimes-30K.mrlda .
+mkdir data
+cd data/
+split -l 1000 $HARP_ROOT_DIR/datasets/tutorial/nytimes-30k/nytimes-30K.mrlda
+cd ..
+hadoop fs -mkdir -p /harp-test/cgs/
+hadoop fs -put data /harp-test/cgs/
+
+#run lda training
+hadoop jar harp-java-0.1.0.jar edu.iu.lda.LDALauncher /harp-test/cgs/data 100 0.5 0.01 100 100 100 10 16 2 10000 /harp-test/cgsout True
+```
+
+
+
+
+
+
