@@ -49,9 +49,6 @@ import java.nio.DoubleBuffer;
 //import daal.jar API
 import com.intel.daal.algorithms.qr.*;
 import com.intel.daal.data_management.data.*;
-// import com.intel.daal.data_management.data.DataCollection;
-// import com.intel.daal.data_management.data.KeyValueDataCollection;
-// import com.intel.daal.data_management.data.NumericTable;
 import com.intel.daal.data_management.data_source.DataSource;
 import com.intel.daal.data_management.data_source.FileDataSource;
 import com.intel.daal.services.DaalContext;

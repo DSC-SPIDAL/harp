@@ -50,7 +50,6 @@ import java.nio.DoubleBuffer;
 import com.intel.daal.algorithms.covariance.*;
 import com.intel.daal.data_management.data.*;
 import com.intel.daal.services.DaalContext;
-
 import com.intel.daal.services.Environment;
 
 

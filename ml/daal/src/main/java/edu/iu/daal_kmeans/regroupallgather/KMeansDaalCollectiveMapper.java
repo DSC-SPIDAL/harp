@@ -43,7 +43,6 @@ import java.nio.DoubleBuffer;
 //import daa.jar API
 import com.intel.daal.algorithms.kmeans.*;
 import com.intel.daal.algorithms.kmeans.init.*;
-
 import com.intel.daal.data_management.data.NumericTable;
 import com.intel.daal.data_management.data.HomogenNumericTable;
 import com.intel.daal.services.DaalContext;

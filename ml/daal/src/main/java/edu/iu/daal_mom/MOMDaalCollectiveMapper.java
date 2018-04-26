@@ -50,7 +50,6 @@ import java.nio.DoubleBuffer;
 import com.intel.daal.algorithms.low_order_moments.*;
 import com.intel.daal.data_management.data.*;
 import com.intel.daal.services.DaalContext;
-
 import com.intel.daal.services.Environment;
 
 
