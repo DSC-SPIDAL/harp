@@ -26,6 +26,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.nio.DoubleBuffer;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Arrays;
@@ -51,9 +52,8 @@ import edu.iu.harp.resource.IntArray;
 import edu.iu.harp.resource.ByteArray;
 import edu.iu.harp.resource.LongArray;
 
-import edu.iu.data_transfer.*;
 import edu.iu.datasource.*;
-import java.nio.DoubleBuffer;
+import edu.iu.data_aux.*;
 
 // import DAAL Java API
 import com.intel.daal.algorithms.classifier.prediction.ModelInputId;
@@ -70,7 +70,6 @@ import com.intel.daal.data_management.data.HomogenNumericTable;
 import com.intel.daal.data_management.data.MergedNumericTable;
 import com.intel.daal.data_management.data_source.DataSource;
 import com.intel.daal.data_management.data_source.FileDataSource;
-// import com.intel.daal.examples.utils.Service;
 import com.intel.daal.services.DaalContext;
 import com.intel.daal.services.Environment;
 
@@ -195,7 +194,7 @@ public class SVMDaalCollectiveMapper
 	    // ---------- training and testing ----------
 	    trainModel();
 	    testModel();
-	    // printResults();
+	    printResults();
 	    daal_Context.dispose();
         }
 
@@ -207,15 +206,6 @@ public class SVMDaalCollectiveMapper
         twoClassPrediction = new com.intel.daal.algorithms.svm.prediction.PredictionBatch(
                 daal_Context, Double.class, com.intel.daal.algorithms.svm.prediction.PredictionMethod.defaultDense);
 
-        /* Retrieve the data from input data sets */
-	//TODO move this data read in to Harp side
-        // FileDataSource trainDataSource = new FileDataSource(context, trainDatasetFileName,
-        //         DataSource.DictionaryCreationFlag.DoDictionaryFromContext,
-        //         DataSource.NumericTableAllocationFlag.NotAllocateNumericTable);
-
-        /* Create Numeric Tables for training data and labels */
-        // NumericTable trainData = new HomogenNumericTable(daal_Context, Double.class, nFeatures, 0, NumericTable.AllocationFlag.DoNotAllocate);
-        // NumericTable trainGroundTruth = new HomogenNumericTable(daal_Context, Double.class, 1, 0, NumericTable.AllocationFlag.DoNotAllocate);
         NumericTable trainData = new HomogenNumericTable(daal_Context, Double.class, nFeatures, this.datasource.getTotalLines(), NumericTable.AllocationFlag.DoAllocate);
         NumericTable trainGroundTruth = new HomogenNumericTable(daal_Context, Double.class, 1, this.datasource.getTotalLines(), NumericTable.AllocationFlag.DoAllocate);
 
@@ -245,14 +235,7 @@ public class SVMDaalCollectiveMapper
     private void testModel() throws IOException
     {
 
-	//TODO replace the filedatasource by harp module
-        // FileDataSource testDataSource = new FileDataSource(context, testDatasetFileName,
-        //         DataSource.DictionaryCreationFlag.DoDictionaryFromContext,
-        //         DataSource.NumericTableAllocationFlag.NotAllocateNumericTable);
-
-        /* Create Numeric Tables for testing data and labels */
-        // NumericTable testData = new HomogenNumericTable(daal_Context, Double.class, nFeatures, 0, NumericTable.AllocationFlag.DoNotAllocate);
-        // testGroundTruth = new HomogenNumericTable(daal_Context, Double.class, 1, 0, NumericTable.AllocationFlag.DoNotAllocate);
+	// load test set from HDFS
 	this.datasource.loadTestFile(testFilePath, fileDim);
 
 	NumericTable testData = new HomogenNumericTable(daal_Context, Double.class, nFeatures, this.datasource.getTestRows(), NumericTable.AllocationFlag.DoAllocate);
@@ -262,8 +245,7 @@ public class SVMDaalCollectiveMapper
         mergedData.addNumericTable(testData);
         mergedData.addNumericTable(testGroundTruth);
 
-        /* Retrieve the data from an input file */
-        // testDataSource.loadDataBlock(mergedData);
+	// load test set to daal table
 	this.datasource.loadTestTable(mergedData);
 
         /* Create a numeric table to store the prediction results */
@@ -283,10 +265,10 @@ public class SVMDaalCollectiveMapper
 
     }   
 
-    // private void printResults() {
-    //     NumericTable predictionResults = predictionResult.get(PredictionResultId.prediction);
-    //     Service.printClassificationResult(testGroundTruth, predictionResults, "Ground truth", "Classification results",
-    //             "SVM multiclass classification results (first 20 observations):", 20);
-    // }
+    private void printResults() {
+        NumericTable predictionResults = predictionResult.get(PredictionResultId.prediction);
+        Service.printClassificationResult(testGroundTruth, predictionResults, "Ground truth", "Classification results",
+                "SVM multiclass classification results (first 20 observations):", 20);
+    }
 
 }

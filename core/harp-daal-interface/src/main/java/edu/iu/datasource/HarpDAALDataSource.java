@@ -122,17 +122,8 @@ public class HarpDAALDataSource
 	 for (int j=0;j<elemList.size();j++)
  		System.arraycopy(elemList.get(j), 0, rowblocks, j*dim, dim);
 
-	 //debug check 
-	 LOG.info(" Load datalist " + i + ": rowIdx: " + rowIdx + "; elementlist.size: " + elemList.size() + "; rowblocks size: " + rowblocks.length);
-	 LOG.info(" filedim: " + this.dim + "; mergedtable dim: " + dst_table.getNumberOfColumns());
-	 for(int j=0; j<rowblocks.length; j++)
-	    LOG.info("data " + j + ": " + rowblocks[j]);
-
 	 //copy rowblock to NumericTable
 	 dst_table.releaseBlockOfRows(rowIdx, elemList.size(), DoubleBuffer.wrap(rowblocks));
-
-	 LOG.info("Finish release task");
-
 	 rowIdx += elemList.size();
       }
 
