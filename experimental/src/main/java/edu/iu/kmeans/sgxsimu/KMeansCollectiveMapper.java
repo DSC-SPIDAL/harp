@@ -53,6 +53,7 @@ public class KMeansCollectiveMapper extends
   private String cenDir;
   private long mt_access_enclave;
   private long total_comm_time;
+  private boolean enable_simu;
 
   /**
    * Mapper configuration.
@@ -78,9 +79,11 @@ public class KMeansCollectiveMapper extends
     numIterations = configuration
       .getInt(Constants.NUM_ITERATIONS, 10);
 
+
     // get the cenTable size in communication
     // unit KB
-    cenTableSize = ((numCentroids*cenVecSize*Double.SIZE)/Byte.SIZE)/1024;
+    // cenTableSize = ((numCentroids*cenVecSize*Double.SIZE)/Byte.SIZE)/1024;
+    cenTableSize = dataDoubleSizeKB(numCentroids*cenVecSize); 
     mt_access_enclave = 0;
     total_comm_time = 0;
 
@@ -138,25 +141,23 @@ public class KMeansCollectiveMapper extends
       KMUtil.loadPoints(fileNames, this.vectorSize, conf, numThreads);
 
     // add overhead of creating an enclave of 96MB
-    long creation_enclave = (long)((Constants.creation_enclave_fix + 96*1024*Constants.creation_enclave_kb)*Constants.ms_per_kcycle); 
+    // per enclave*numThreads
+    // each thread holds a seperated sgx enclave
+    long creation_enclave = (long)((Constants.creation_enclave_fix + 96*1024*Constants.creation_enclave_kb)*Constants.ms_per_kcycle)*numThreads; 
     LOG.info("creation_enclave: " + creation_enclave);
 
-    try{
-	    Thread.sleep(creation_enclave);
-    }catch (Exception e)
-    {
-	    System.out.println(e);
-    }
+    if (Constants.enablesimu)
+    	simuOverhead(creation_enclave);
 
     // add overhead of local attestation on a single node
-    long local_attestation_enclave = (long)((numMappers-1)*Constants.local_attestation*Constants.ms_per_kcycle);
+    // for single mapper (process) simulation, we assume that enclave created by threads within the same mapper 
+    // still requires local attestation
+    // long local_attestation_enclave = (long)((numMappers-1)*Constants.local_attestation*Constants.ms_per_kcycle);
+    long local_attestation_enclave = (long)((comb(numThreads,2)+(numMappers-1)*numThreads)*Constants.local_attestation*Constants.ms_per_kcycle);
     LOG.info("local_attestation_enclave: " + local_attestation_enclave);
-    try{
-    	Thread.sleep(local_attestation_enclave);
-    }catch (Exception e)
-    {
-        System.out.println(e);
-    }
+
+    if (Constants.enablesimu)
+    	simuOverhead(local_attestation_enclave);
     
     // Initialize tasks
     List<CenCalcTask> cenCalcTasks =
@@ -215,23 +216,25 @@ public class KMeansCollectiveMapper extends
       // regroup-allgather 
       long t3 = System.currentTimeMillis();
       regroup("main", "regroup-" + i, cenTable,
-        new Partitioner(this.getNumWorkers()));
+      new Partitioner(this.getNumWorkers()));
 
-      // add overhead of cross-enclave
-      // transfer data in KB
-      // regroup operation
+      //add overhead of cross-enclave communiation
+      //data in the enclave of main thread of mapper A transfers to enclave of main thread of mapper B
+      //transfer data send (numMappers-1) + received data (numMappers-1)
       long transfer_data = (long)((cenTableSize/numMappers)*(2*numMappers-2)); 
       LOG.info("transfer_data: " + transfer_data);
-      long cross_enclave_overhead = (long)(((2*numMappers-2)*Constants.creation_enclave_fix +  transfer_data*Constants.creation_enclave_kb)*Constants.ms_per_kcycle);
 
-       LOG.info("regroup cross_enclave_overhead: " + cross_enclave_overhead);
-       try{
-	       Thread.sleep(cross_enclave_overhead);
-       }catch (Exception e)
-       {
-	       System.out.println(e);
-       }
+      long cross_enclave_overhead = (long)(((numMappers-1)*(Constants.Ocall + Constants.Ecall))*Constants.ms_per_kcycle);
+      cross_enclave_overhead += (long)(transfer_data*Constants.cross_enclave_per_kb*Constants.ms_per_kcycle);
 
+      LOG.info("regroup cross_enclave_overhead: " + cross_enclave_overhead);
+
+      if (Constants.enablesimu)
+      	simuOverhead(cross_enclave_overhead);
+
+      // compute the reduction results on each mapper
+      // communicated data already inside enclave of main thread
+      // no need to swap data across enclaves
       for (Partition<DoubleArray> partition : cenTable
         .getPartitions()) 
       {
@@ -252,15 +255,13 @@ public class KMeansCollectiveMapper extends
 
       //add overhead of cross-enclave
       //allgather operation
-      transfer_data = (long)((cenTableSize/numMappers)*(numMappers-1));
-      cross_enclave_overhead = (long)(((2*numMappers-2)*Constants.creation_enclave_fix +  transfer_data*Constants.creation_enclave_kb)*Constants.ms_per_kcycle);
+      transfer_data = (long)(cenTableSize);
+      cross_enclave_overhead = (long)((Constants.Ocall + Constants.Ecall*(numMappers-1))*Constants.ms_per_kcycle);
+      cross_enclave_overhead += (long)(transfer_data*Constants.cross_enclave_per_kb*Constants.ms_per_kcycle);
       LOG.info("allgather cross_enclave_overhead: " + cross_enclave_overhead);
-        try{
-	        Thread.sleep(cross_enclave_overhead);
-        }catch (Exception e)
-        {
-	        System.out.println(e);
-        }
+
+      if (Constants.enablesimu)
+      	simuOverhead(cross_enclave_overhead);
 
       for (CenCalcTask task : calcCompute.getTasks()) {
         task.update(cenTable);
@@ -269,14 +270,13 @@ public class KMeansCollectiveMapper extends
       long t4 = System.currentTimeMillis();
       
       // add overhead of concurrently enclave access by mutiple threads
-      long compute_time = ( t2 - t1 ); // in ms
-      double speedup_enclave = (-0.034)*Math.pow((double)numThreads,2) + 0.332*(double)numThreads + 0.814; 
-
-      if (speedup_enclave > (double) numThreads)
-	      speedup_enclave = numThreads;
-
-      LOG.info("speedup_enclave: " + speedup_enclave);
-      this.mt_access_enclave += ((1.0/speedup_enclave)*numThreads -1 )*compute_time;
+      // long compute_time = ( t2 - t1 ); // in ms
+      // double speedup_enclave = (-0.034)*Math.pow((double)numThreads,2) + 0.332*(double)numThreads + 0.814; 
+      //
+      // if (speedup_enclave > (double) numThreads)
+	//       speedup_enclave = numThreads;
+      // LOG.info("speedup_enclave: " + speedup_enclave);
+      // this.mt_access_enclave += ((1.0/speedup_enclave)*numThreads -1 )*compute_time;
 
       LOG.info("Compute: " + (t2 - t1)
         + ", Merge: " + (t3 - t2)
@@ -293,7 +293,9 @@ public class KMeansCollectiveMapper extends
     // end of iteration
     long end_iter = System.currentTimeMillis();
     // record execution time per iteration
-    long total_execution_time = (end_iter - start_iter + this.mt_access_enclave);
+    // long total_execution_time = (end_iter - start_iter + this.mt_access_enclave);
+    long total_execution_time = (end_iter - start_iter);
+    LOG.info("Total execution time for " + numIterations + " itrs : " + total_execution_time + " ms");
     LOG.info("Execution Time per iter: " + total_execution_time/(double)numIterations + "ms");
     LOG.info("Comm Ratio: " + this.total_comm_time/(double)total_execution_time);
 
@@ -410,5 +412,55 @@ public class KMeansCollectiveMapper extends
     if (!isSuccess) {
       throw new IOException("Fail to bcast");
     }
+  }
+
+  /**
+   * @brief calculate the data size in and out enclave (KB)
+   * double precision assumed
+   *
+   * @param size
+   *
+   * @return 
+   */
+  private int dataDoubleSizeKB(int size)
+  {
+     return size*Double.SIZE/Byte.SIZE/1024;
+  }
+
+  /**
+   * @brief simulate the overhead (ms)
+   * of a SGX-related operation
+   *
+   * @param time
+   *
+   * @return 
+   */
+  private void simuOverhead(long time)
+  {
+	  try{
+		  Thread.sleep(time);
+	  }catch (Exception e)
+	  {
+		  System.out.println(e);
+	  }
+  }
+
+  /**
+   * @brief compute combination
+   *
+   * @param n
+   * @param r
+   *
+   * @return 
+   */
+  private int comb(int n,int r)
+  {
+	  if (n < r)
+	     return 0;
+
+	  if( r== 0 || n == r )
+		  return 1;
+	  else
+		  return comb(n-1,r)+comb(n-1,r-1);
   }
 }

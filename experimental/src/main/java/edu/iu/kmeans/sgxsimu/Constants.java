@@ -36,7 +36,7 @@ public class Constants {
   public static final String WORK_DIR =
     "work_dir";
   // for enclave overhead simulation
-  // overhead is measured by 1000 cycles at 2.3 GHz SGX-enabled CPU
+  // overhead is measured by x1000 cycles at 2.3 GHz SGX-enabled CPU
   public static final double Ecall=8.5;
   public static final double Ocall=9.0;
   public static final double cross_enclave_per_kb=1.4;
@@ -44,7 +44,9 @@ public class Constants {
   public static final double creation_enclave_kb=22.677;
   public static final double local_attestation=80.0;
   public static final double remote_attestation=27200.0;
-  // public static final double ms_per_kcycle=0.000294117;
+  //for 2.3GHz SGX-enabled CPU
   public static final double ms_per_kcycle=0.000434782;
+  public static final boolean enablesimu=false;
+  // public static final boolean enablesimu=true;
 
 }
