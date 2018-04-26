@@ -60,16 +60,12 @@ import java.nio.DoubleBuffer;
 
 //import daa.jar API
 import com.intel.daal.algorithms.svd.*;
-// import com.intel.daal.algorithms.kmeans.init.*;
-
 import com.intel.daal.data_management.data.NumericTable;
 import com.intel.daal.data_management.data.HomogenNumericTable;
-// import com.intel.daal.data_management.data.HomogenBMNumericTable;
 import com.intel.daal.services.DaalContext;
 import com.intel.daal.data_management.data.DataCollection;
 import com.intel.daal.data_management.data.KeyValueDataCollection;
 import com.intel.daal.services.Environment;
-
 
 /**
  * @brief the Harp mapper for running K-means

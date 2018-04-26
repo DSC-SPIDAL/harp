@@ -396,7 +396,6 @@ CollectiveMapper<String, String, Object, Object>{
   private void testModel(String testFilePath, Configuration conf) throws java.io.FileNotFoundException, java.io.IOException {
     PredictionBatch algorithm = new PredictionBatch(daal_Context, Float.class, PredictionMethod.defaultDense, nClasses);
 
-    // NumericTable testData = getNumericTableHDFS(daal_Context, conf, testFilePath, vectorSize, num_test);
     algorithm.input.set(NumericTableInputId.data, testData);
     Model model = trainingResult.get(TrainingResultId.model);
     algorithm.input.set(ModelInputId.model, model);
@@ -418,6 +417,7 @@ CollectiveMapper<String, String, Object, Object>{
 
 private NumericTable getNumericTableHDFS(DaalContext daal_Context, Configuration conf, String inputFiles, int vectorSize, int numRows) 
         throws IOException{
+
             Path inputFilePaths = new Path(inputFiles);
             List<String> inputFileList = new LinkedList<>();
 
@@ -438,7 +438,6 @@ private NumericTable getNumericTableHDFS(DaalContext daal_Context, Configuration
                 LOG.error("Fail to get test files", e);
             }
             int dataSize = vectorSize*numRows;
-            // float[] data = new float[dataSize];
             double[] data = new double[dataSize];
             long[] dims = {numRows, vectorSize};
             int index = 0;
@@ -476,7 +475,6 @@ private NumericTable getNumericTableHDFS(DaalContext daal_Context, Configuration
                     {
                         if (index < dataSize)
                         {
-                            // data[index] = Float.parseFloat(lineData[t]);
                             data[index] = Double.parseDouble(lineData[t]);
                             index++;                                                          
                         }
@@ -498,9 +496,6 @@ private NumericTable getNumericTableHDFS(DaalContext daal_Context, Configuration
                 LOG.error("Incorrect total size of file: dataSize: " + dataSize + "; index val: " + index);
                 return null;
             }
-            //debug check the vals of data
-            // for(int p=0;p<60;p++)
-            //     LOG.info("data at: " + p + " is: " + data[p]);
             
             NumericTable predictionData = new HomogenNumericTable(daal_Context, data, vectorSize, numRows);
             return predictionData;

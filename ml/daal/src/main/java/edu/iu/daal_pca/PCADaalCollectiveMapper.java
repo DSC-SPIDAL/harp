@@ -61,7 +61,6 @@ import edu.iu.harp.resource.ByteArray;
 
 import com.intel.daal.data_management.data.NumericTable;
 import com.intel.daal.data_management.data.HomogenNumericTable;
-// import com.intel.daal.data_management.data.HomogenBMNumericTable;
 import com.intel.daal.services.DaalContext;
 import com.intel.daal.services.Environment;
 
