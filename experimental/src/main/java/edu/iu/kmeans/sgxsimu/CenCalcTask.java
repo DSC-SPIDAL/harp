@@ -34,7 +34,10 @@ public class CenCalcTask
   private final int cenVecSize;
 
   public CenCalcTask(Table<DoubleArray> cenTable,
-    int cenVecSize) {
+    int cenVecSize) 
+  {
+    //record sgx centroid data size
+    int sgxdatasize = 0;
     centroids =
       new double[cenTable.getNumPartitions()][];
     local = new double[centroids.length][];
@@ -45,8 +48,21 @@ public class CenCalcTask
       centroids[partitionID] = array.get();
       local[partitionID] =
         new double[array.size()];
+	
+      //record sgx centroid data size
+      sgxdatasize += array.size();
     }
+
+    //each thread fetches its centroids data from main memory into thread enclave
+    //each thread writes back centroids data from thread enclave to main memory after all tasks
+    long ecallOverhead = (long)((Constants.Ecall + dataDoubleSizeKB(sgxdatasize)*Constants.cross_enclave_per_kb)*Constants.ms_per_kcycle);
+    long ocallOverhead = (long)((Constants.Ocall + dataDoubleSizeKB(sgxdatasize)*Constants.cross_enclave_per_kb)*Constants.ms_per_kcycle);
+
+    if (Constants.enablesimu)
+    	simuOverhead(ecallOverhead + ocallOverhead);
+
     this.cenVecSize = cenVecSize;
+
   }
 
   public void
@@ -66,6 +82,15 @@ public class CenCalcTask
   @Override
   public Object run(double[] points)
     throws Exception {
+
+    //each thread fetch the data from enclave of main thread 
+    int datasize = dataDoubleSizeKB(points.length);
+    //simulate overhead of Ecall
+    long ecallOverhead = (long)((Constants.Ecall + datasize*Constants.cross_enclave_per_kb)*Constants.ms_per_kcycle);
+
+    if (Constants.enablesimu)
+    	simuOverhead(ecallOverhead);
+
     for (int i = 0; i < points.length;) {
       double minDistance = Double.MAX_VALUE;
       int minCenParID = 0;
@@ -98,6 +123,41 @@ public class CenCalcTask
           points[i++];
       }
     }
+
+    //no simulate overhead of Ocall
+    //training data is not changed 
+    
     return null;
+  }
+
+  /**
+   * @brief calculate the data size in and out enclave (KB)
+   * double precision assumed
+   *
+   * @param size
+   *
+   * @return 
+   */
+  private int dataDoubleSizeKB(int size)
+  {
+     return size*Double.SIZE/Byte.SIZE/1024;
+  }
+
+  /**
+   * @brief simulate the overhead (ms)
+   * of a SGX-related operation
+   *
+   * @param time
+   *
+   * @return 
+   */
+  private void simuOverhead(long time)
+  {
+	  try{
+		  Thread.sleep(time);
+	  }catch (Exception e)
+	  {
+		  System.out.println(e);
+	  }
   }
 }

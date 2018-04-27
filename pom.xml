@@ -14,7 +14,7 @@
 		<module>ml</module>
 		<!-- <module>contrib</module> -->
 		<!-- <module>distribution</module> -->
-		<!-- <module>experimental</module> -->
+		<module>experimental</module>
 	</modules>
 
 	<properties>
@@ -118,6 +118,8 @@
 				<configuration>
 					<source>1.8</source>
 					<excludes>
+					<exclude>**/daal_sgd/*</exclude>
+					<exclude>**/daal_subgraph/*</exclude>
 					</excludes>
 					<target>1.8</target>
 				</configuration>
