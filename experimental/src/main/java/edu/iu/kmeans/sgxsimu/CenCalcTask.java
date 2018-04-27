@@ -34,7 +34,10 @@ public class CenCalcTask
   private final int cenVecSize;
 
   public CenCalcTask(Table<DoubleArray> cenTable,
-    int cenVecSize) {
+    int cenVecSize) 
+  {
+    //record sgx centroid data size
+    int sgxdatasize = 0;
     centroids =
       new double[cenTable.getNumPartitions()][];
     local = new double[centroids.length][];
@@ -45,8 +48,21 @@ public class CenCalcTask
       centroids[partitionID] = array.get();
       local[partitionID] =
         new double[array.size()];
+	
+      //record sgx centroid data size
+      sgxdatasize += array.size();
     }
+
+    //each thread fetches its centroids data from main memory into thread enclave
+    //each thread writes back centroids data from thread enclave to main memory after all tasks
+    long ecallOverhead = (long)((Constants.Ecall + dataDoubleSizeKB(sgxdatasize)*Constants.cross_enclave_per_kb)*Constants.ms_per_kcycle);
+    long ocallOverhead = (long)((Constants.Ocall + dataDoubleSizeKB(sgxdatasize)*Constants.cross_enclave_per_kb)*Constants.ms_per_kcycle);
+
+    if (Constants.enablesimu)
+    	simuOverhead(ecallOverhead + ocallOverhead);
+
     this.cenVecSize = cenVecSize;
+
   }
 
   public void
@@ -108,12 +124,9 @@ public class CenCalcTask
       }
     }
 
-    //simulate overhead of Ocall
-    long ocallOverhead = (long)((Constants.Ocall + datasize*Constants.cross_enclave_per_kb)*Constants.ms_per_kcycle);
-
-    if (Constants.enablesimu)
-    	simuOverhead(ocallOverhead);
-
+    //no simulate overhead of Ocall
+    //training data is not changed 
+    
     return null;
   }
 
