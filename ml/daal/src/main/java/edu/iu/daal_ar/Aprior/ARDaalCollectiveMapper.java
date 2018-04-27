@@ -55,21 +55,15 @@ import edu.iu.harp.resource.LongArray;
 import edu.iu.datasource.*;
 import edu.iu.data_aux.*;
 
-// import DAAL Java API
-import com.intel.daal.algorithms.classifier.prediction.ModelInputId;
-import com.intel.daal.algorithms.classifier.prediction.NumericTableInputId;
-import com.intel.daal.algorithms.classifier.prediction.PredictionResult;
-import com.intel.daal.algorithms.classifier.prediction.PredictionResultId;
-import com.intel.daal.algorithms.classifier.training.InputId;
-import com.intel.daal.algorithms.classifier.training.TrainingResultId;
-import com.intel.daal.algorithms.multi_class_classifier.Model;
-import com.intel.daal.algorithms.multi_class_classifier.prediction.*;
-import com.intel.daal.algorithms.multi_class_classifier.training.*;
+// daal algorithm specific 
+import com.intel.daal.algorithms.association_rules.*;
+
+// daal data structure and service
+import com.intel.daal.data_management.data_source.DataSource;
+import com.intel.daal.data_management.data_source.FileDataSource;
 import com.intel.daal.data_management.data.NumericTable;
 import com.intel.daal.data_management.data.HomogenNumericTable;
 import com.intel.daal.data_management.data.MergedNumericTable;
-import com.intel.daal.data_management.data_source.DataSource;
-import com.intel.daal.data_management.data_source.FileDataSource;
 import com.intel.daal.services.DaalContext;
 import com.intel.daal.services.Environment;
 
@@ -85,12 +79,16 @@ public class ARDaalCollectiveMapper
         private int numThreads;
         private int harpThreads; 
 	private int fileDim;
-  	private String testFilePath;
+	private double minSupport; 	/* Minimum support */
+	private double minConfidence;   /* Minimum confidence */
 
-	private int nFeatures;
-    	private int nClasses;
+	private static HarpDAALDataSource datasource;
+	private static DaalContext daal_Context = new DaalContext();
 
-        //to measure the time
+	/* Apriori algorithm parameters */
+	private NumericTable input;
+
+	//to measure the time
         private long load_time = 0;
         private long convert_time = 0;
         private long total_time = 0;
@@ -100,16 +98,6 @@ public class ARDaalCollectiveMapper
         private long ts_end = 0;
         private long ts1 = 0;
         private long ts2 = 0;
-
-	private static HarpDAALDataSource datasource;
-
-	private static TrainingResult   trainingResult;
-	private static PredictionResult predictionResult;
-	private static NumericTable     testGroundTruth;
-
-	private static com.intel.daal.algorithms.svm.training.TrainingBatch twoClassTraining;
-	private static com.intel.daal.algorithms.svm.prediction.PredictionBatch twoClassPrediction;
-	private static DaalContext daal_Context = new DaalContext();
 
         /**
          * Mapper configuration.
@@ -123,19 +111,19 @@ public class ARDaalCollectiveMapper
         Configuration configuration =
             context.getConfiguration();
 
-	this.nFeatures = configuration.getInt(Constants.FEATURE_DIM, 10);
-	this.fileDim = configuration.getInt(Constants.FILE_DIM, 10);
-	this.nClasses = configuration.getInt(Constants.NUM_CLASS, 10);
-        this.numMappers = configuration.getInt(Constants.NUM_MAPPERS, 10);
+	this.numMappers = configuration.getInt(Constants.NUM_MAPPERS, 10);
         this.numThreads = configuration.getInt(Constants.NUM_THREADS, 10);
-        //always use the maximum hardware threads to load in data and convert data 
         this.harpThreads = Runtime.getRuntime().availableProcessors();
-	this.testFilePath = configuration.get(Constants.TEST_FILE_PATH,"");
+	this.fileDim = configuration.getInt(Constants.FILE_DIM, 10);
+	this.minSupport = configuration.getDouble(Constants.MIN_SUPPORT, 0.001);
+	this.minConfidence = configuration.getDouble(Constants.MIN_CONFIDENCE, 0.7);
 
         LOG.info("File Dim " + this.fileDim);
         LOG.info("Num Mappers " + this.numMappers);
         LOG.info("Num Threads " + this.numThreads);
         LOG.info("Num harp load data threads " + harpThreads);
+	LOG.info("Min Support " + this.minSupport);
+	LOG.info("Min Confidence " + this.minConfidence);
 
         long endTime = System.currentTimeMillis();
         LOG.info("config (ms) :"
@@ -189,11 +177,47 @@ public class ARDaalCollectiveMapper
          */
         private void runAR(Configuration conf, Context context) throws IOException 
 	{
-	    // ---------- load data ----------
-	    this.datasource.loadFiles();
-	    // ---------- training and testing ----------
-	    
-        }
+		// ---------- load data ----------
+		this.datasource.loadFiles();
+		// ---------- training and testing ----------
+		/* Retrieve the input data */
+		// FileDataSource dataSource = new FileDataSource(context, dataset,
+				// DataSource.DictionaryCreationFlag.DoDictionaryFromContext,
+				// DataSource.NumericTableAllocationFlag.DoAllocateNumericTable);
+		// dataSource.loadDataBlock();
+		input = new HomogenNumericTable(daal_Context, Double.class, this.fileDim, this.datasource.getTotalLines(), NumericTable.AllocationFlag.DoAllocate);
+        	this.datasource.loadDataBlock(input);
+
+		/* Create an algorithm to mine association rules using the Apriori method */
+		Batch alg = new Batch(daal_Context, Double.class, Method.apriori);
+
+		/* Set an input object for the algorithm */
+		// NumericTable input = dataSource.getNumericTable();
+		alg.input.set(InputId.data, input);
+
+		/* Set Apriori algorithm parameters */
+		alg.parameter.setMinSupport(minSupport);
+		alg.parameter.setMinConfidence(minConfidence);
+
+		/* Find large item sets and construct association rules */
+		Result res = alg.compute();
+
+		HomogenNumericTable largeItemsets = (HomogenNumericTable) res.get(ResultId.largeItemsets);
+		HomogenNumericTable largeItemsetsSupport = (HomogenNumericTable) res.get(ResultId.largeItemsetsSupport);
+
+		/* Print the large item sets */
+		Service.printAprioriItemsets(largeItemsets, largeItemsetsSupport);
+
+		HomogenNumericTable antecedentItemsets = (HomogenNumericTable) res.get(ResultId.antecedentItemsets);
+		HomogenNumericTable consequentItemsets = (HomogenNumericTable) res.get(ResultId.consequentItemsets);
+		HomogenNumericTable confidence = (HomogenNumericTable) res.get(ResultId.confidence);
+
+		/* Print the association rules */
+		Service.printAprioriRules(antecedentItemsets, consequentItemsets, confidence);
+
+		daal_Context.dispose();
+
+	}
 
 	
 

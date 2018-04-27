@@ -63,43 +63,42 @@ public class ARDaalLauncher extends Configured
       DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbbmalloc.so.2#libtbbmalloc.so.2"), conf);
       DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbbmalloc.so#libtbbmalloc.so"), conf);
 
-      if (args.length < 9) {
+      if (args.length < 8) {
       System.err
         .println("Usage: edu.iu.daal_svd.ARDaalLauncher "
-          + "<feature dim> "
           + "<file dim > "
-	  + "<nClass>"
+	  + "<min support>"
+	  + "<min confidence>"
 	  + "<number of map tasks>"
 	  + "<num threads> "
           + "<mem>"
           + "<input train dir>"
-          + "<input test dir>"
           + "<work dir>");
       ToolRunner
         .printGenericCommandUsage(System.err);
       return -1;
     }
-    int nFeature =
-      Integer.parseInt(args[0]);
-    int nFileDim = Integer.parseInt(args[1]);
-    int nClass = Integer.parseInt(args[2]);
+    int nFileDim = Integer.parseInt(args[0]);
+    double minSupport = Double.parseDouble(args[1]);
+    double minConfidence = Double.parseDouble(args[2]);
     int numMapTasks = Integer.parseInt(args[3]);
     int numThreads = Integer.parseInt(args[4]);
     int mem = Integer.parseInt(args[5]);
     String trainDataDir = args[6];
-    String testDataDir = args[7];
-    String workDir = args[8];
+    String workDir = args[7];
    
-    launch(nFeature, nFileDim, nClass, numMapTasks, numThreads, mem, trainDataDir, testDataDir, workDir);
+    launch(nFileDim, minSupport, minConfidence, numMapTasks, numThreads, mem, trainDataDir, workDir);
+
     return 0;
   }
 
-  private void launch(int nFeature, int nFileDim, int nClass, 
+  private void launch(int nFileDim, double minSupport, double minConfidence, 
 		      int numMapTasks, int numThreads, int mem, 
-		      String trainDataDir, String testDataDir, String workDir) throws IOException,
+		      String trainDataDir, String workDir) throws IOException,
     URISyntaxException, InterruptedException,
     ExecutionException, ClassNotFoundException 
   {
+
     Configuration configuration = getConf();
     FileSystem fs = FileSystem.get(configuration);
     Path dataDir = new Path(trainDataDir);
@@ -111,8 +110,8 @@ public class ARDaalLauncher extends Configured
 
     long startTime = System.currentTimeMillis();
 
-    runARMultiDense(nFeature, nFileDim, nClass, 
-		    numMapTasks, numThreads, mem, trainDataDir, testDataDir, dataDir, outDir, configuration);
+    runARMultiDense(nFileDim, minSupport, minConfidence, 
+		    numMapTasks, numThreads, mem, trainDataDir, dataDir, outDir, configuration);
 
     long endTime = System.currentTimeMillis();
     System.out
@@ -121,9 +120,9 @@ public class ARDaalLauncher extends Configured
   }
 
   private void runARMultiDense(
-    int nFeature, int nFileDim, int nClass, 
+    int nFileDim, double minSupport, double minConfidence, 
     int numMapTasks, int numThreads, int mem, 
-    String trainDataDir, String testDataDir,
+    String trainDataDir, 
     Path dataDir,
     Path outDir, Configuration configuration)
     throws IOException, URISyntaxException,
@@ -139,8 +138,8 @@ public class ARDaalLauncher extends Configured
             .getTime()));
 
     Job ARJob =
-      configureARJob(nFeature, nFileDim, nClass, 
-		    numMapTasks, numThreads, mem, trainDataDir, testDataDir, dataDir, outDir, configuration);
+      configureARJob(nFileDim, minSupport, minConfidence, 
+		    numMapTasks, numThreads, mem, trainDataDir, dataDir, outDir, configuration);
 
     System.out
       .println("Job"
@@ -168,9 +167,9 @@ public class ARDaalLauncher extends Configured
   }
 
   private Job configureARJob(
-    int nFeature, int nFileDim, int nClass, 
+    int nFileDim, double minSupport, double minConfidence, 
     int numMapTasks, int numThreads, int mem, 
-    String trainDataDir, String testDataDir,
+    String trainDataDir, 
     Path dataDir,
     Path outDir, Configuration configuration
     )
@@ -210,20 +209,17 @@ public class ARDaalLauncher extends Configured
     Configuration jobConfig =
       job.getConfiguration();
 
-
     // set constant
-    jobConfig.setInt(Constants.FEATURE_DIM,
-      nFeature);
     jobConfig.setInt(Constants.FILE_DIM,
       nFileDim);
-    jobConfig.setInt(Constants.NUM_CLASS,
-      nClass);
     jobConfig.setInt(Constants.NUM_MAPPERS,
       numMapTasks);
     jobConfig.setInt(Constants.NUM_THREADS,
       numThreads);
-    jobConfig.set(Constants.TEST_FILE_PATH,
-      testDataDir);
+    jobConfig.setDouble(Constants.MIN_SUPPORT,
+      minSupport);
+    jobConfig.setDouble(Constants.MIN_CONFIDENCE,
+      minConfidence);
 
     return job;
   }
