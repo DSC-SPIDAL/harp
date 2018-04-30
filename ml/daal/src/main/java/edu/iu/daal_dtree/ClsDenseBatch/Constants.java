@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package edu.iu.daal_svm.MultiClassDenseBatch;
+package edu.iu.daal_dtree.ClsDenseBatch;
 
 public class Constants {
   public static final String FEATURE_DIM =
@@ -33,5 +33,7 @@ public class Constants {
     "work_dir";
   public static final String TEST_FILE_PATH =
     "test_file_path";
+  public static final String PRUNE_FILE_PATH =
+    "prune_file_path";
  
 }
