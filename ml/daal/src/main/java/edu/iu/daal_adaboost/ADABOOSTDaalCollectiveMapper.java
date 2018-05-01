@@ -56,15 +56,15 @@ import edu.iu.datasource.*;
 import edu.iu.data_aux.*;
 
 // daal algorithm module
-import com.intel.daal.algorithms.kdtree_knn_classification.Model;
-import com.intel.daal.algorithms.kdtree_knn_classification.prediction.*;
-import com.intel.daal.algorithms.kdtree_knn_classification.training.*;
-import com.intel.daal.algorithms.classifier.training.InputId;
-import com.intel.daal.algorithms.classifier.training.TrainingResultId;
+import com.intel.daal.algorithms.adaboost.Model;
+import com.intel.daal.algorithms.adaboost.prediction.*;
+import com.intel.daal.algorithms.adaboost.training.*;
 import com.intel.daal.algorithms.classifier.prediction.ModelInputId;
 import com.intel.daal.algorithms.classifier.prediction.NumericTableInputId;
-import com.intel.daal.algorithms.classifier.prediction.PredictionResultId;
 import com.intel.daal.algorithms.classifier.prediction.PredictionResult;
+import com.intel.daal.algorithms.classifier.prediction.PredictionResultId;
+import com.intel.daal.algorithms.classifier.training.InputId;
+import com.intel.daal.algorithms.classifier.training.TrainingResultId;
 
 // daal data structure and service module
 import com.intel.daal.data_management.data.NumericTable;
