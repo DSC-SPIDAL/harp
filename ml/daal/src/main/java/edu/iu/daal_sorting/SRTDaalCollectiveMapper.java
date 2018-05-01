@@ -16,7 +16,7 @@
 
 */
 
-package edu.iu.daal_outlier.bacondensebatch;
+package edu.iu.daal_sorting;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -56,7 +56,11 @@ import edu.iu.datasource.*;
 import edu.iu.data_aux.*;
 
 // daal algorithm specific 
-import com.intel.daal.algorithms.bacon_outlier_detection.*;
+import com.intel.daal.algorithms.sorting.Batch;
+import com.intel.daal.algorithms.sorting.InputId;
+import com.intel.daal.algorithms.sorting.Method;
+import com.intel.daal.algorithms.sorting.Result;
+import com.intel.daal.algorithms.sorting.ResultId;
 
 // daal data structure and service
 import com.intel.daal.data_management.data_source.DataSource;
@@ -70,7 +74,7 @@ import com.intel.daal.services.Environment;
 /**
  * @brief the Harp mapper for running K-means
  */
-public class ODDaalCollectiveMapper
+public class SRTDaalCollectiveMapper
 	extends
 	CollectiveMapper<String, String, Object, Object> {
 
@@ -154,7 +158,7 @@ public class ODDaalCollectiveMapper
 				this.datasource = new HarpDAALDataSource(dataFiles, fileDim, harpThreads, conf);
 
 				// ----------------------- start the execution -----------------------
-				runOD(conf, context);
+				runSRT(conf, context);
 				this.freeMemory();
 				this.freeConn();
 				System.gc();
@@ -169,7 +173,7 @@ public class ODDaalCollectiveMapper
 		 *
 		 * @return 
 		 */
-		private void runOD(Configuration conf, Context context) throws IOException 
+		private void runSRT(Configuration conf, Context context) throws IOException 
 		{
 			// ---------- load data ----------
 			this.datasource.loadFiles();
@@ -178,19 +182,16 @@ public class ODDaalCollectiveMapper
 			input = new HomogenNumericTable(daal_Context, Double.class, this.fileDim, this.datasource.getTotalLines(), NumericTable.AllocationFlag.DoAllocate);
 			this.datasource.loadDataBlock(input);
 
-			/* Create an algorithm to detect outliers using the Bacon method */
-			Batch alg = new Batch(daal_Context, Double.class, Method.defaultDense);
+			/* Print the input observations matrix */
+			Service.printNumericTable("Initial matrix of observations:", input);
 
-			// NumericTable data = dataSource.getNumericTable();
-			alg.input.set(InputId.data, input);
+			/* Create an algorithm to sort data  */
+			Batch algorithm = new Batch(daal_Context, Double.class, Method.defaultDense);
+			algorithm.input.set(InputId.data, input);
 
-			/* Detect outliers */
-			Result result = alg.compute();
-
-			NumericTable weights = result.get(ResultId.weights);
-
-			Service.printNumericTable("Input data", input);
-			Service.printNumericTable("BACON outlier detection result ", weights);
+			/* Sort data observations */
+			Result res = algorithm.compute();
+			Service.printNumericTable("Sorted matrix of observations:", res.get(ResultId.sortedData));
 
 			daal_Context.dispose();
 
