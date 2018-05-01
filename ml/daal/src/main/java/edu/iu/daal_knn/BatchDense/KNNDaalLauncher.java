@@ -199,6 +199,8 @@ public class KNNDaalLauncher extends Configured
     int xmx = (int) Math.ceil((mem - 2000)*0.5);
     int xmn = (int) Math.ceil(0.25 * xmx);
 
+    jobConf.setInt("mapreduce.task.timeout", 60000000);
+
     jobConf.set(
       "mapreduce.map.collective.java.opts",
       "-Xmx" + xmx + "m -Xms" + xmx + "m"

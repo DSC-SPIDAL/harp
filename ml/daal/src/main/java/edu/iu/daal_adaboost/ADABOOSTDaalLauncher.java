@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package edu.iu.daal_svd;
+package edu.iu.daal_adaboost;
 
 import edu.iu.fileformat.MultiFileInputFormat;
 import org.apache.hadoop.conf.Configuration;
@@ -36,14 +36,14 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.concurrent.ExecutionException;
 
-public class SVDDaalLauncher extends Configured
+public class ADABOOSTDaalLauncher extends Configured
   implements Tool {
 
   public static void main(String[] argv)
     throws Exception {
     int res =
       ToolRunner.run(new Configuration(),
-        new SVDDaalLauncher(), argv);
+        new ADABOOSTDaalLauncher(), argv);
     System.exit(res);
   }
 
@@ -58,7 +58,6 @@ public class SVDDaalLauncher extends Configured
 
       DistributedCache.createSymlink(conf);
       DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libJavaAPI.so#libJavaAPI.so"), conf);
-
       DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbb.so.2#libtbb.so.2"), conf);
       DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbb.so#libtbb.so"), conf);
       DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbbmalloc.so.2#libtbbmalloc.so.2"), conf);
@@ -66,91 +65,64 @@ public class SVDDaalLauncher extends Configured
 
       if (args.length < 8) {
       System.err
-        .println("Usage: edu.iu.daal_svd.SVDDaalLauncher "
-          + "<num Of DataPoints> <vector size> "
-          + "<num of point files per worker>"
-          + "<number of map tasks> <num threads> "
+        .println("Usage: edu.iu.daal_svd.ADABOOSTDaalLauncher "
+          + "<feature dim> "
+          + "<file dim > "
+	  + "<number of map tasks>"
+	  + "<num threads> "
           + "<mem>"
-          + "<work dir> <local points dir>");
+          + "<input train dir>"
+          + "<input test dir>"
+          + "<work dir>");
       ToolRunner
         .printGenericCommandUsage(System.err);
       return -1;
     }
-    int numOfDataPoints =
+    int nFeature =
       Integer.parseInt(args[0]);
-    // int numCentroids = Integer.parseInt(args[1]);
-    int vectorSize = Integer.parseInt(args[1]);
-    int numPointFilePerWorker =
-      Integer.parseInt(args[2]);
-    int numMapTasks = Integer.parseInt(args[3]);
-    int numThreads = Integer.parseInt(args[4]);
-    int mem = Integer.parseInt(args[5]);
-    String workDir = args[6];
-    String localPointFilesDir = args[7];
-    boolean regenerateData = true;
-    if (args.length == 9) {
-      regenerateData =
-        Boolean.parseBoolean(args[8]);
-    }
-    System.out.println("Number of Map Tasks = "
-      + numMapTasks);
-    int numPointFiles =
-      numMapTasks * numPointFilePerWorker;
-    if (numOfDataPoints / numPointFiles == 0) {
-      return -1;
-    }
-    launch(numOfDataPoints,
-      vectorSize, numPointFiles, numMapTasks,
-      numThreads, mem, workDir,
-      localPointFilesDir, regenerateData);
+    int nFileDim = Integer.parseInt(args[1]);
+    int numMapTasks = Integer.parseInt(args[2]);
+    int numThreads = Integer.parseInt(args[3]);
+    int mem = Integer.parseInt(args[4]);
+    String trainDataDir = args[5];
+    String testDataDir = args[6];
+    String workDir = args[7];
+   
+    launch(nFeature, nFileDim, numMapTasks, numThreads, mem, trainDataDir, testDataDir, workDir);
     return 0;
   }
 
-  private void launch(int numOfDataPoints,
-   int vectorSize, int numPointFiles, int numMapTasks,
-    int numThreads, int mem,
-    String workDir, String localPointFilesDir,
-    boolean generateData) throws IOException,
+  private void launch(int nFeature, int nFileDim, 
+		      int numMapTasks, int numThreads, int mem, 
+		      String trainDataDir, String testDataDir, String workDir) throws IOException,
     URISyntaxException, InterruptedException,
-    ExecutionException, ClassNotFoundException {
+    ExecutionException, ClassNotFoundException 
+  {
     Configuration configuration = getConf();
-    Path workDirPath = new Path(workDir);
     FileSystem fs = FileSystem.get(configuration);
-    Path dataDir = new Path(workDirPath, "data");
-    // Path cenDir =
-    //   new Path(workDirPath, "centroids");
-    // if (fs.exists(cenDir)) {
-    //   fs.delete(cenDir, true);
-    // }
-    // fs.mkdirs(cenDir);
-    Path outDir = new Path(workDirPath, "out");
+    Path dataDir = new Path(trainDataDir);
+    Path outDir = new Path(workDir);
+
     if (fs.exists(outDir)) {
       fs.delete(outDir, true);
     }
-    if (generateData) {
-      System.out.println("Generate data.");
-      SVDUtil.generateData(numOfDataPoints,
-        vectorSize, numPointFiles,
-        configuration, fs, dataDir,
-        localPointFilesDir);
-    }
 
     long startTime = System.currentTimeMillis();
-    runSVDAllReduce(numOfDataPoints,
-      vectorSize, numPointFiles,
-      numMapTasks, numThreads, mem,
-      dataDir, outDir, configuration);
+
+    runADABOOSTMultiDense(nFeature, nFileDim, 
+		    numMapTasks, numThreads, mem, trainDataDir, testDataDir, dataDir, outDir, configuration);
+
     long endTime = System.currentTimeMillis();
     System.out
-      .println("Total SVD Execution Time: "
+      .println("Total ADABOOST Multi Dense Execution Time: "
         + (endTime - startTime));
   }
 
-  private void runSVDAllReduce(
-    int numOfDataPoints,
-    int vectorSize, int numPointFiles,
-    int numMapTasks, int numThreads,
-    int mem, Path dataDir,
+  private void runADABOOSTMultiDense(
+    int nFeature, int nFileDim,
+    int numMapTasks, int numThreads, int mem, 
+    String trainDataDir, String testDataDir,
+    Path dataDir,
     Path outDir, Configuration configuration)
     throws IOException, URISyntaxException,
     InterruptedException, ClassNotFoundException {
@@ -163,19 +135,20 @@ public class SVDDaalLauncher extends Configured
         + new SimpleDateFormat("HH:mm:ss.SSS")
           .format(Calendar.getInstance()
             .getTime()));
-    Job svdJob =
-      configureSVDJob(numOfDataPoints,
-        vectorSize, numPointFiles,
-        numMapTasks, numThreads,  mem,
-        dataDir, outDir, configuration);
+
+    Job ADABOOSTJob =
+      configureADABOOSTJob(nFeature, nFileDim,
+		    numMapTasks, numThreads, mem, trainDataDir, testDataDir, dataDir, outDir, configuration);
+
     System.out
       .println("Job"
         + " configure in "
         + (System.currentTimeMillis() - perJobSubmitTime)
         + " miliseconds.");
+
     // ----------------------------------------------------------
     boolean jobSuccess =
-      svdJob.waitForCompletion(true);
+      ADABOOSTJob.waitForCompletion(true);
     System.out
       .println("end Jod "
         + new SimpleDateFormat("HH:mm:ss.SSS")
@@ -188,27 +161,28 @@ public class SVDDaalLauncher extends Configured
         + " miliseconds.");
     // ---------------------------------------------------------
     if (!jobSuccess) {
-      System.out.println("SVD Job fails.");
+      System.out.println("ADABOOST Job fails.");
     }
   }
 
-  private Job configureSVDJob(
-    int numOfDataPoints,
-    int vectorSize, int numPointFiles,
-    int numMapTasks, int numThreads,
-    int mem, Path dataDir,
-    Path outDir, Configuration configuration)
+  private Job configureADABOOSTJob(
+    int nFeature, int nFileDim,
+    int numMapTasks, int numThreads, int mem, 
+    String trainDataDir, String testDataDir,
+    Path dataDir,
+    Path outDir, Configuration configuration
+    )
     throws IOException, URISyntaxException {
     Job job =
       Job
-        .getInstance(configuration, "svd_job");
+        .getInstance(configuration, "ADABOOST_job");
     FileInputFormat.setInputPaths(job, dataDir);
     FileOutputFormat.setOutputPath(job, outDir);
     job
       .setInputFormatClass(MultiFileInputFormat.class);
-    job.setJarByClass(SVDDaalLauncher.class);
+    job.setJarByClass(ADABOOSTDaalLauncher.class);
     job
-      .setMapperClass(SVDDaalCollectiveMapper.class);
+      .setMapperClass(ADABOOSTDaalCollectiveMapper.class);
     org.apache.hadoop.mapred.JobConf jobConf =
       (JobConf) job.getConfiguration();
     jobConf.set("mapreduce.framework.name",
@@ -223,25 +197,32 @@ public class SVDDaalLauncher extends Configured
       "mapreduce.map.collective.memory.mb", mem);
 
     jobConf.setInt("mapreduce.task.timeout", 60000000);
+
     int xmx = (int) Math.ceil((mem - 2000)*0.5);
     int xmn = (int) Math.ceil(0.25 * xmx);
+
     jobConf.set(
       "mapreduce.map.collective.java.opts",
       "-Xmx" + xmx + "m -Xms" + xmx + "m"
         + " -Xmn" + xmn + "m");
-    
 
     job.setNumReduceTasks(0);
     Configuration jobConfig =
       job.getConfiguration();
-    jobConfig.setInt(Constants.POINTS_PER_FILE,
-      numOfDataPoints / numPointFiles);
-    jobConfig.setInt(Constants.VECTOR_SIZE,
-      vectorSize);
+
+
+    // set constant
+    jobConfig.setInt(Constants.FEATURE_DIM,
+      nFeature);
+    jobConfig.setInt(Constants.FILE_DIM,
+      nFileDim);
     jobConfig.setInt(Constants.NUM_MAPPERS,
       numMapTasks);
     jobConfig.setInt(Constants.NUM_THREADS,
       numThreads);
+    jobConfig.set(Constants.TEST_FILE_PATH,
+      testDataDir);
+
     return job;
   }
 }
