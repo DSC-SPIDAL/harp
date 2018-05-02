@@ -16,7 +16,7 @@
 
  */
 
-package edu.iu.daal_knn.BatchDense;
+package edu.iu.daal_stump;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -56,15 +56,18 @@ import edu.iu.datasource.*;
 import edu.iu.data_aux.*;
 
 // daal algorithm module
-import com.intel.daal.algorithms.kdtree_knn_classification.Model;
-import com.intel.daal.algorithms.kdtree_knn_classification.prediction.*;
-import com.intel.daal.algorithms.kdtree_knn_classification.training.*;
-import com.intel.daal.algorithms.classifier.training.InputId;
-import com.intel.daal.algorithms.classifier.training.TrainingResultId;
 import com.intel.daal.algorithms.classifier.prediction.ModelInputId;
 import com.intel.daal.algorithms.classifier.prediction.NumericTableInputId;
-import com.intel.daal.algorithms.classifier.prediction.PredictionResultId;
 import com.intel.daal.algorithms.classifier.prediction.PredictionResult;
+import com.intel.daal.algorithms.classifier.prediction.PredictionResultId;
+import com.intel.daal.algorithms.classifier.training.InputId;
+import com.intel.daal.algorithms.classifier.training.TrainingResultId;
+import com.intel.daal.algorithms.stump.prediction.PredictionBatch;
+import com.intel.daal.algorithms.stump.prediction.PredictionMethod;
+import com.intel.daal.algorithms.stump.training.TrainingBatch;
+import com.intel.daal.algorithms.stump.training.TrainingMethod;
+import com.intel.daal.algorithms.weak_learner.Model;
+import com.intel.daal.algorithms.weak_learner.training.TrainingResult;
 
 // daal data structure and service module
 import com.intel.daal.data_management.data.NumericTable;
@@ -78,7 +81,7 @@ import com.intel.daal.services.Environment;
 /**
  * @brief the Harp mapper for running K nearest neighbors 
  */
-public class KNNDaalCollectiveMapper
+public class STUMPDaalCollectiveMapper
     extends
     CollectiveMapper<String, String, Object, Object> {
 
@@ -105,9 +108,9 @@ public class KNNDaalCollectiveMapper
 	private static HarpDAALDataSource datasource;
 	private static DaalContext daal_Context = new DaalContext();
 
-	private static Model        model;
-    	private static NumericTable results;
-    	private static NumericTable testGroundTruth;
+	private static TrainingResult   trainingResult;
+    	private static PredictionResult predictionResult;
+    	private static NumericTable     testGroundTruth;
 
         /**
          * Mapper configuration.
@@ -168,7 +171,7 @@ public class KNNDaalCollectiveMapper
 	    this.datasource = new HarpDAALDataSource(dataFiles, fileDim, harpThreads, conf);
 
 	    // ----------------------- start the execution -----------------------
-            runKNN(conf, context);
+            runSTUMP(conf, context);
             this.freeMemory();
             this.freeConn();
             System.gc();
@@ -183,7 +186,7 @@ public class KNNDaalCollectiveMapper
          *
          * @return 
          */
-        private void runKNN(Configuration conf, Context context) throws IOException 
+        private void runSTUMP(Configuration conf, Context context) throws IOException 
 	{
 		// ---------- load data ----------
 		this.datasource.loadFiles();
@@ -207,48 +210,49 @@ public class KNNDaalCollectiveMapper
 		/* Retrieve the data from an input file */
 		this.datasource.loadDataBlock(mergedData);
 
-		/* Create an algorithm object to train the k nearest neighbors model with the default dense method */
-		TrainingBatch kNearestNeighborsTrain = new TrainingBatch(daal_Context, Double.class, TrainingMethod.defaultDense);
+		/* Create algorithm objects to train the stump model */
+		TrainingBatch algorithm = new TrainingBatch(daal_Context, Double.class, TrainingMethod.defaultDense);
 
-		kNearestNeighborsTrain.input.set(InputId.data, trainData);
-		kNearestNeighborsTrain.input.set(InputId.labels, trainGroundTruth);
+		algorithm.input.set(InputId.data, trainData);
+		algorithm.input.set(InputId.labels, trainGroundTruth);
 
-		/* Build the k nearest neighbors model */
-		TrainingResult trainingResult = kNearestNeighborsTrain.compute();
-		model = trainingResult.get(TrainingResultId.model);
+		/* Train the stump model */
+		trainingResult = algorithm.compute();
+	}
+    
+	private void testModel() throws IOException
+	{
+		// load test set from HDFS
+		this.datasource.loadTestFile(testFilePath, fileDim);
+
+		/* Create Numeric Tables for testing data and labels */
+		NumericTable testData = new HomogenNumericTable(daal_Context, Double.class, nFeatures, this.datasource.getTestRows(), NumericTable.AllocationFlag.DoAllocate);
+		testGroundTruth = new HomogenNumericTable(daal_Context, Double.class, 1, this.datasource.getTestRows(), NumericTable.AllocationFlag.DoAllocate);
+		MergedNumericTable mergedData = new MergedNumericTable(daal_Context);
+		mergedData.addNumericTable(testData);
+		mergedData.addNumericTable(testGroundTruth);
+
+		/* Retrieve the data from an input file */
+		this.datasource.loadTestTable(mergedData);
+
+		/* Create algorithm objects to predict values with the fast method */
+		PredictionBatch algorithm = new PredictionBatch(daal_Context, Double.class, PredictionMethod.defaultDense);
+
+		Model model = trainingResult.get(TrainingResultId.model);
+
+		/* Pass a testing data set and the trained model to the algorithm */
+		algorithm.input.set(NumericTableInputId.data, testData);
+		algorithm.input.set(ModelInputId.model, model);
+
+		/* Compute the prediction results */
+		predictionResult = algorithm.compute();
 	}
 
-    private void testModel() throws IOException
-    {
+	private void printResults() 
+	{
+		NumericTable predictionResults = predictionResult.get(PredictionResultId.prediction);
+		Service.printClassificationResult(testGroundTruth, predictionResults, "Ground truth", "Classification results",
+				"Stump classification results (first 20 observations):", 20);
+	}
 
-	// load test set from HDFS
-	this.datasource.loadTestFile(testFilePath, fileDim);
-
-        /* Create Numeric Tables for testing data and labels */
-        NumericTable testData = new HomogenNumericTable(daal_Context, Double.class, nFeatures, this.datasource.getTestRows(), NumericTable.AllocationFlag.DoAllocate);
-        testGroundTruth = new HomogenNumericTable(daal_Context, Double.class, 1, this.datasource.getTestRows(), NumericTable.AllocationFlag.DoAllocate);
-        MergedNumericTable mergedData = new MergedNumericTable(daal_Context);
-        mergedData.addNumericTable(testData);
-        mergedData.addNumericTable(testGroundTruth);
-
-        /* Retrieve the data from an input file */
-	this.datasource.loadTestTable(mergedData);
-
-        /* Create algorithm objects to predict values of k nearest neighbors with the default method */
-        PredictionBatch kNearestNeighborsPredict = new PredictionBatch(daal_Context, Double.class,
-                PredictionMethod.defaultDense);
-
-        kNearestNeighborsPredict.input.set(NumericTableInputId.data, testData);
-        kNearestNeighborsPredict.input.set(ModelInputId.model, model);
-
-        /* Compute prediction results */
-        PredictionResult predictionResult = kNearestNeighborsPredict.compute();
-        results = predictionResult.get(PredictionResultId.prediction);
-    }
-
-    private void printResults() {
-        NumericTable expected = testGroundTruth;
-        Service.printNumericTable("Classification results (first 20 observations): ", results, 20);
-        Service.printNumericTable("KD-tree based kNN classification results (first 20 observations):", expected, 20);
-    }
 }
