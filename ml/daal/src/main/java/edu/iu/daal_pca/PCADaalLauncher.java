@@ -171,6 +171,8 @@ public class PCADaalLauncher extends Configured
     // mapreduce.map.collective.memory.mb
     // 125000
     jobConf.setInt("mapreduce.map.collective.memory.mb", mem);
+
+    jobConf.setInt("mapreduce.task.timeout", 60000000);
     int xmx = (int) Math.ceil((mem - 2000)*0.5);
     int xmn = (int) Math.ceil(0.25 * xmx);
     jobConf.set("mapreduce.map.collective.java.opts",

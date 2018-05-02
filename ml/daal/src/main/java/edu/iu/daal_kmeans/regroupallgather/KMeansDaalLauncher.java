@@ -236,6 +236,7 @@ public class KMeansDaalLauncher extends Configured
     jobConf.setInt(
       "mapreduce.map.collective.memory.mb", mem);
 
+    jobConf.setInt("mapreduce.task.timeout", 60000000);
     int xmx = (int) Math.ceil((mem)*0.5);
     int xmn = (int) Math.ceil(0.25 * xmx);
     jobConf.set(

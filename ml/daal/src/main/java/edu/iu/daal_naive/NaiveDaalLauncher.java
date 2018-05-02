@@ -224,6 +224,8 @@ private void runNaive(Path inputDir, String testDirPath, String testGroundTruthD
     // 125000
     jobConf.setInt(
       "mapreduce.map.collective.memory.mb", mem);
+
+    jobConf.setInt("mapreduce.task.timeout", 60000000);
     // mapreduce.map.collective.java.opts
     // -Xmx120000m -Xms120000m
     // int xmx = (mem - 5000) > (mem * 0.5)
