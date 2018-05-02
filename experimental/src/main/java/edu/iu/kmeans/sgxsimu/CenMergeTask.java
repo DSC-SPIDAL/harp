@@ -26,11 +26,15 @@ import java.util.List;
 public class CenMergeTask implements
   Task<Partition<DoubleArray>, Object> {
   private final List<CenCalcTask> cenCalcTasks;
+  private long sgxoverhead;
 
   public CenMergeTask(
     List<CenCalcTask> cenCalcTasks) {
     this.cenCalcTasks = cenCalcTasks;
+    this.sgxoverhead = 0;
   }
+
+  public long getSGXOverhead() { return this.sgxoverhead; }
 
   @Override
   public Object
@@ -45,7 +49,10 @@ public class CenMergeTask implements
     int datasize = dataDoubleSizeKB(centroids.length);
     long ecallOverhead = (long)((Constants.Ecall + datasize*Constants.cross_enclave_per_kb)*Constants.ms_per_kcycle);
     if (Constants.enablesimu)
+    {
 	 simuOverhead(ecallOverhead);
+	 this.sgxoverhead += ecallOverhead;
+    }
 
     // It is safe to iterate concurrently
     // because each task has its own iterator
@@ -75,7 +82,10 @@ public class CenMergeTask implements
     datasize = dataDoubleSizeKB(centroids.length);
     long ocallOverhead = (long)((Constants.Ocall + datasize*Constants.cross_enclave_per_kb)*Constants.ms_per_kcycle);
     if (Constants.enablesimu)
-	    simuOverhead(ocallOverhead);
+    {
+	 simuOverhead(ocallOverhead);
+	 this.sgxoverhead += ocallOverhead;
+    }
 
     return null;
   }

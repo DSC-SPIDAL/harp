@@ -32,12 +32,15 @@ public class CenCalcTask
   private double[][] centroids;
   private double[][] local;
   private final int cenVecSize;
+  private long sgxoverhead;
 
   public CenCalcTask(Table<DoubleArray> cenTable,
     int cenVecSize) 
   {
     //record sgx centroid data size
     int sgxdatasize = 0;
+    this.sgxoverhead = 0;
+
     centroids =
       new double[cenTable.getNumPartitions()][];
     local = new double[centroids.length][];
@@ -59,11 +62,16 @@ public class CenCalcTask
     long ocallOverhead = (long)((Constants.Ocall + dataDoubleSizeKB(sgxdatasize)*Constants.cross_enclave_per_kb)*Constants.ms_per_kcycle);
 
     if (Constants.enablesimu)
+    {
     	simuOverhead(ecallOverhead + ocallOverhead);
+	this.sgxoverhead += (ecallOverhead + ocallOverhead); 
+    }
 
     this.cenVecSize = cenVecSize;
 
   }
+
+  public long getSGXOverhead() { return this.sgxoverhead; }
 
   public void
     update(Table<DoubleArray> cenTable) {
@@ -89,7 +97,10 @@ public class CenCalcTask
     long ecallOverhead = (long)((Constants.Ecall + datasize*Constants.cross_enclave_per_kb)*Constants.ms_per_kcycle);
 
     if (Constants.enablesimu)
+    {
     	simuOverhead(ecallOverhead);
+	this.sgxoverhead += ecallOverhead;
+    }
 
     for (int i = 0; i < points.length;) {
       double minDistance = Double.MAX_VALUE;
