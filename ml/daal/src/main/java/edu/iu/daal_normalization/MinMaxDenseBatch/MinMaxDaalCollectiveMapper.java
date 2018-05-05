@@ -16,7 +16,7 @@
 
  */
 
-package edu.iu.daal_knn.BatchDense;
+package edu.iu.daal_normalization.MinMaxDenseBatch;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -55,30 +55,22 @@ import edu.iu.harp.resource.LongArray;
 import edu.iu.datasource.*;
 import edu.iu.data_aux.*;
 
-// daal algorithm module
-import com.intel.daal.algorithms.kdtree_knn_classification.Model;
-import com.intel.daal.algorithms.kdtree_knn_classification.prediction.*;
-import com.intel.daal.algorithms.kdtree_knn_classification.training.*;
-import com.intel.daal.algorithms.classifier.training.InputId;
-import com.intel.daal.algorithms.classifier.training.TrainingResultId;
-import com.intel.daal.algorithms.classifier.prediction.ModelInputId;
-import com.intel.daal.algorithms.classifier.prediction.NumericTableInputId;
-import com.intel.daal.algorithms.classifier.prediction.PredictionResultId;
-import com.intel.daal.algorithms.classifier.prediction.PredictionResult;
+// daal algorithm specific 
+import com.intel.daal.algorithms.normalization.minmax.*;
 
-// daal data structure and service module
+// daal data structure and service
+import com.intel.daal.data_management.data_source.DataSource;
+import com.intel.daal.data_management.data_source.FileDataSource;
 import com.intel.daal.data_management.data.NumericTable;
 import com.intel.daal.data_management.data.HomogenNumericTable;
 import com.intel.daal.data_management.data.MergedNumericTable;
-import com.intel.daal.data_management.data_source.DataSource;
-import com.intel.daal.data_management.data_source.FileDataSource;
 import com.intel.daal.services.DaalContext;
 import com.intel.daal.services.Environment;
 
 /**
- * @brief the Harp mapper for running K nearest neighbors 
+ * @brief the Harp mapper for running K-means
  */
-public class KNNDaalCollectiveMapper
+public class MinMaxDaalCollectiveMapper
     extends
     CollectiveMapper<String, String, Object, Object> {
 
@@ -87,11 +79,16 @@ public class KNNDaalCollectiveMapper
         private int numThreads;
         private int harpThreads; 
 	private int fileDim;
-  	private String testFilePath;
+	private double lowerBound; 	
+	private double upperBound;   
 
-	private int nFeatures;
+	private static HarpDAALDataSource datasource;
+	private static DaalContext daal_Context = new DaalContext();
 
-        //to measure the time
+	/* Apriori algorithm parameters */
+	private NumericTable input;
+
+	//to measure the time
         private long load_time = 0;
         private long convert_time = 0;
         private long total_time = 0;
@@ -101,13 +98,6 @@ public class KNNDaalCollectiveMapper
         private long ts_end = 0;
         private long ts1 = 0;
         private long ts2 = 0;
-
-	private static HarpDAALDataSource datasource;
-	private static DaalContext daal_Context = new DaalContext();
-
-	private static Model        model;
-    	private static NumericTable results;
-    	private static NumericTable testGroundTruth;
 
         /**
          * Mapper configuration.
@@ -121,22 +111,24 @@ public class KNNDaalCollectiveMapper
         Configuration configuration =
             context.getConfiguration();
 
-	this.fileDim = configuration.getInt(Constants.FILE_DIM, 10);
 	this.numMappers = configuration.getInt(Constants.NUM_MAPPERS, 10);
         this.numThreads = configuration.getInt(Constants.NUM_THREADS, 10);
         this.harpThreads = Runtime.getRuntime().availableProcessors();
-
-	this.nFeatures = configuration.getInt(Constants.FEATURE_DIM, 10);
-	this.testFilePath = configuration.get(Constants.TEST_FILE_PATH,"");
+	this.fileDim = configuration.getInt(Constants.FILE_DIM, 3);
+	this.lowerBound = configuration.getDouble(Constants.LOWER_BOUND, -1.0);
+	this.upperBound = configuration.getDouble(Constants.UPPER_BOUND, 1.0);
 
         LOG.info("File Dim " + this.fileDim);
         LOG.info("Num Mappers " + this.numMappers);
         LOG.info("Num Threads " + this.numThreads);
         LOG.info("Num harp load data threads " + harpThreads);
+	LOG.info("Lower Bound " + this.lowerBound);
+	LOG.info("Upper Bound " + this.upperBound);
 
         long endTime = System.currentTimeMillis();
         LOG.info("config (ms) :"
                 + (endTime - startTime));
+
         }
 
         // Assigns the reader to different nodes
@@ -168,14 +160,14 @@ public class KNNDaalCollectiveMapper
 	    this.datasource = new HarpDAALDataSource(dataFiles, fileDim, harpThreads, conf);
 
 	    // ----------------------- start the execution -----------------------
-            runKNN(conf, context);
+            runMinMax(conf, context);
             this.freeMemory();
             this.freeConn();
             System.gc();
         }
 
         /**
-         * @brief run SVD by invoking DAAL Java API
+         * @brief run Association Rules by invoking DAAL Java API
          *
          * @param fileNames
          * @param conf
@@ -183,72 +175,34 @@ public class KNNDaalCollectiveMapper
          *
          * @return 
          */
-        private void runKNN(Configuration conf, Context context) throws IOException 
+        private void runMinMax(Configuration conf, Context context) throws IOException 
 	{
 		// ---------- load data ----------
 		this.datasource.loadFiles();
-		// ---------- training and testing ----------
-		trainModel();
-		testModel();
-		printResults();
+		input = new HomogenNumericTable(daal_Context, Double.class, this.fileDim, this.datasource.getTotalLines(), NumericTable.AllocationFlag.DoAllocate);
+		this.datasource.loadDataBlock(input);
+
+		/* Create an algorithm */
+		Batch algorithm = new Batch(daal_Context, Double.class, Method.defaultDense);
+
+		/* Set lower and upper bounds for the algorithm */
+		algorithm.parameter.setLowerBound(this.lowerBound);
+		algorithm.parameter.setUpperBound(this.upperBound);
+
+		/* Set an input object for the algorithm */
+		algorithm.input.set(InputId.data, input);
+
+		/* Compute Min-max normalization function */
+		Result result = algorithm.compute();
+
+		/* Print the results of stage */
+		Service.printNumericTable("First 10 rows of the input data:", input, 10);
+		Service.printNumericTable("First 10 rows of the Min-max normalization result:", result.get(ResultId.normalizedData), 10);
+
 		daal_Context.dispose();
+
 	}
 
-	private void trainModel() 
-	{
+	
 
-		/* Create Numeric Tables for training data and labels */
-		NumericTable trainData = new HomogenNumericTable(daal_Context, Double.class, nFeatures, this.datasource.getTotalLines(), NumericTable.AllocationFlag.DoAllocate);
-		NumericTable trainGroundTruth = new HomogenNumericTable(daal_Context, Double.class, 1, this.datasource.getTotalLines(), NumericTable.AllocationFlag.DoAllocate);
-		MergedNumericTable mergedData = new MergedNumericTable(daal_Context);
-		mergedData.addNumericTable(trainData);
-		mergedData.addNumericTable(trainGroundTruth);
-
-		/* Retrieve the data from an input file */
-		this.datasource.loadDataBlock(mergedData);
-
-		/* Create an algorithm object to train the k nearest neighbors model with the default dense method */
-		TrainingBatch kNearestNeighborsTrain = new TrainingBatch(daal_Context, Double.class, TrainingMethod.defaultDense);
-
-		kNearestNeighborsTrain.input.set(InputId.data, trainData);
-		kNearestNeighborsTrain.input.set(InputId.labels, trainGroundTruth);
-
-		/* Build the k nearest neighbors model */
-		TrainingResult trainingResult = kNearestNeighborsTrain.compute();
-		model = trainingResult.get(TrainingResultId.model);
-	}
-
-    private void testModel() throws IOException
-    {
-
-	// load test set from HDFS
-	this.datasource.loadTestFile(testFilePath, fileDim);
-
-        /* Create Numeric Tables for testing data and labels */
-        NumericTable testData = new HomogenNumericTable(daal_Context, Double.class, nFeatures, this.datasource.getTestRows(), NumericTable.AllocationFlag.DoAllocate);
-        testGroundTruth = new HomogenNumericTable(daal_Context, Double.class, 1, this.datasource.getTestRows(), NumericTable.AllocationFlag.DoAllocate);
-        MergedNumericTable mergedData = new MergedNumericTable(daal_Context);
-        mergedData.addNumericTable(testData);
-        mergedData.addNumericTable(testGroundTruth);
-
-        /* Retrieve the data from an input file */
-	this.datasource.loadTestTable(mergedData);
-
-        /* Create algorithm objects to predict values of k nearest neighbors with the default method */
-        PredictionBatch kNearestNeighborsPredict = new PredictionBatch(daal_Context, Double.class,
-                PredictionMethod.defaultDense);
-
-        kNearestNeighborsPredict.input.set(NumericTableInputId.data, testData);
-        kNearestNeighborsPredict.input.set(ModelInputId.model, model);
-
-        /* Compute prediction results */
-        PredictionResult predictionResult = kNearestNeighborsPredict.compute();
-        results = predictionResult.get(PredictionResultId.prediction);
-    }
-
-    private void printResults() {
-        NumericTable expected = testGroundTruth;
-        Service.printNumericTable("Classification results (first 20 observations): ", results, 20);
-        Service.printNumericTable("KD-tree based kNN classification results (first 20 observations):", expected, 20);
-    }
 }
