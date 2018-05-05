@@ -26,15 +26,23 @@ import java.util.List;
 public class CenMergeTask implements
   Task<Partition<DoubleArray>, Object> {
   private final List<CenCalcTask> cenCalcTasks;
-  private long sgxoverhead;
+  private long sgxoverheadEcall;
+  private long sgxoverheadOcall;
 
   public CenMergeTask(
     List<CenCalcTask> cenCalcTasks) {
     this.cenCalcTasks = cenCalcTasks;
-    this.sgxoverhead = 0;
+    this.sgxoverheadEcall = 0;
+    this.sgxoverheadOcall = 0;
   }
 
-  public long getSGXOverhead() { return this.sgxoverhead; }
+  public long getSGXEcall() { return this.sgxoverheadEcall; }
+  public long getSGXOcall() { return this.sgxoverheadOcall; }
+
+  public void resetSGX() {
+     this.sgxoverheadEcall = 0;
+     this.sgxoverheadOcall = 0;
+  }
 
   @Override
   public Object
@@ -46,12 +54,16 @@ public class CenMergeTask implements
     Arrays.fill(centroids, 0.0);
 
     //simulate overhead of Ecall (from main memory cenPartition to thread enclave)
-    int datasize = dataDoubleSizeKB(centroids.length);
-    long ecallOverhead = (long)((Constants.Ecall + datasize*Constants.cross_enclave_per_kb)*Constants.ms_per_kcycle);
+    int datasize = 0;
+    long ecallOverhead = 0;
+    long ocallOverhead = 0;
+
     if (Constants.enablesimu)
     {
+	 datasize = dataDoubleSizeKB(centroids.length);
+    	 ecallOverhead = (long)((Constants.Ecall + datasize*Constants.cross_enclave_per_kb)*Constants.ms_per_kcycle);
 	 simuOverhead(ecallOverhead);
-	 this.sgxoverhead += ecallOverhead;
+	 this.sgxoverheadEcall += ecallOverhead;
     }
 
     // It is safe to iterate concurrently
@@ -78,13 +90,14 @@ public class CenMergeTask implements
 	    
     }
 
-    //simulate overhead of Ocall write cenPartition back to main memory
-    datasize = dataDoubleSizeKB(centroids.length);
-    long ocallOverhead = (long)((Constants.Ocall + datasize*Constants.cross_enclave_per_kb)*Constants.ms_per_kcycle);
+    
     if (Constants.enablesimu)
     {
+	 //simulate overhead of Ocall write cenPartition back to main memory
+    	 datasize = dataDoubleSizeKB(centroids.length);
+    	 ocallOverhead = (long)((Constants.Ocall + datasize*Constants.cross_enclave_per_kb)*Constants.ms_per_kcycle);
 	 simuOverhead(ocallOverhead);
-	 this.sgxoverhead += ocallOverhead;
+	 this.sgxoverheadOcall += ocallOverhead;
     }
 
     return null;

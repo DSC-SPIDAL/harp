@@ -32,14 +32,16 @@ public class CenCalcTask
   private double[][] centroids;
   private double[][] local;
   private final int cenVecSize;
-  private long sgxoverhead;
+  private long sgxoverheadEcall;
+  private long sgxoverheadOcall;
 
   public CenCalcTask(Table<DoubleArray> cenTable,
     int cenVecSize) 
   {
     //record sgx centroid data size
     int sgxdatasize = 0;
-    this.sgxoverhead = 0;
+    this.sgxoverheadEcall = 0;
+    this.sgxoverheadOcall = 0;
 
     centroids =
       new double[cenTable.getNumPartitions()][];
@@ -55,23 +57,25 @@ public class CenCalcTask
       //record sgx centroid data size
       sgxdatasize += array.size();
     }
-
-    //each thread fetches its centroids data from main memory into thread enclave
-    //each thread writes back centroids data from thread enclave to main memory after all tasks
-    long ecallOverhead = (long)((Constants.Ecall + dataDoubleSizeKB(sgxdatasize)*Constants.cross_enclave_per_kb)*Constants.ms_per_kcycle);
-    long ocallOverhead = (long)((Constants.Ocall + dataDoubleSizeKB(sgxdatasize)*Constants.cross_enclave_per_kb)*Constants.ms_per_kcycle);
-
+    
     if (Constants.enablesimu)
     {
-    	simuOverhead(ecallOverhead + ocallOverhead);
-	this.sgxoverhead += (ecallOverhead + ocallOverhead); 
+	    //each thread fetches its centroids data from main memory into thread enclave
+	    //each thread writes back centroids data from thread enclave to main memory after all tasks
+	    long ecallOverhead = (long)((Constants.Ecall + dataDoubleSizeKB(sgxdatasize)*Constants.cross_enclave_per_kb)*Constants.ms_per_kcycle);
+	    long ocallOverhead = (long)((Constants.Ocall + dataDoubleSizeKB(sgxdatasize)*Constants.cross_enclave_per_kb)*Constants.ms_per_kcycle);
+
+	    simuOverhead(ecallOverhead + ocallOverhead);
+	    this.sgxoverheadEcall += ecallOverhead; 
+	    this.sgxoverheadOcall += ocallOverhead;
     }
 
     this.cenVecSize = cenVecSize;
 
   }
 
-  public long getSGXOverhead() { return this.sgxoverhead; }
+  public long getSGXEcall() { return this.sgxoverheadEcall; }
+  public long getSGXOcall() { return this.sgxoverheadOcall; }
 
   public void
     update(Table<DoubleArray> cenTable) {
@@ -87,19 +91,25 @@ public class CenCalcTask
     return local;
   }
 
+  public void resetSGX() {
+     this.sgxoverheadEcall = 0;
+     this.sgxoverheadOcall = 0;
+  }
+
   @Override
   public Object run(double[] points)
     throws Exception {
 
-    //each thread fetch the data from enclave of main thread 
-    int datasize = dataDoubleSizeKB(points.length);
-    //simulate overhead of Ecall
-    long ecallOverhead = (long)((Constants.Ecall + datasize*Constants.cross_enclave_per_kb)*Constants.ms_per_kcycle);
-
+    
     if (Constants.enablesimu)
     {
-    	simuOverhead(ecallOverhead);
-	this.sgxoverhead += ecallOverhead;
+	    //each thread fetch the data from enclave of main thread 
+	    int datasize = dataDoubleSizeKB(points.length);
+	    //simulate overhead of Ecall
+	    long ecallOverhead = (long)((Constants.Ecall + datasize*Constants.cross_enclave_per_kb)*Constants.ms_per_kcycle);
+
+	    simuOverhead(ecallOverhead);
+	    this.sgxoverheadEcall += ecallOverhead;
     }
 
     for (int i = 0; i < points.length;) {
