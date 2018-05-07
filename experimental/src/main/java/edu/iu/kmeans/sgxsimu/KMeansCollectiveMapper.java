@@ -152,8 +152,12 @@ public class KMeansCollectiveMapper extends
     // Bcast centroids
     bcastCentroids(cenTable, this.getMasterID());
     // Load data points
-    List<double[]> pointArrays =
-      KMUtil.loadPoints(fileNames, this.vectorSize, conf, loadThreads);
+    // List<double[]> pointArrays =
+    //   KMUtil.loadPoints(fileNames, this.vectorSize, conf, loadThreads);
+    
+    //use a second read in method
+    List<double[][]> pointArrays =
+      KMUtil.loadPoints2(fileNames, this.vectorSize, conf, loadThreads);
 
     
     this.timer_start = System.currentTimeMillis();
@@ -186,16 +190,28 @@ public class KMeansCollectiveMapper extends
     this.total_sgx_init += (System.currentTimeMillis() - this.timer_start);
 
     // Initialize tasks
-    List<CenCalcTask> cenCalcTasks =
+    // List<CenCalcTask> cenCalcTasks =
+    //   new LinkedList<>();
+    // for (int i = 0; i < numThreads; i++) {
+    //   cenCalcTasks.add(
+    //     new CenCalcTask(cenTable, cenVecSize));
+    // }
+    //
+    // DynamicScheduler<double[], Object, CenCalcTask> calcCompute =
+    //   new DynamicScheduler<>(cenCalcTasks);
+
+    // calculate tasks
+    List<CenCalcTask2> cenCalcTasks =
       new LinkedList<>();
     for (int i = 0; i < numThreads; i++) {
       cenCalcTasks.add(
-        new CenCalcTask(cenTable, cenVecSize));
+        new CenCalcTask2(cenTable, cenVecSize));
     }
 
-    DynamicScheduler<double[], Object, CenCalcTask> calcCompute =
+    DynamicScheduler<double[][], Object, CenCalcTask2> calcCompute =
       new DynamicScheduler<>(cenCalcTasks);
 
+    // merge tasks
     List<CenMergeTask> tasks = new LinkedList<>();
 
     for (int i = 0; i < numThreads; i++) {
@@ -221,9 +237,13 @@ public class KMeansCollectiveMapper extends
       // Calculate new centroids
       this.timer_start = System.currentTimeMillis();
 
-      for (double[] points : pointArrays) {
+      // for (double[] points : pointArrays) {
+      //   calcCompute.submit(points);
+      // }
+      for (double[][] points : pointArrays) {
         calcCompute.submit(points);
       }
+
       while (calcCompute.hasOutput()) {
         calcCompute.waitForOutput();
       }
@@ -243,7 +263,7 @@ public class KMeansCollectiveMapper extends
 	      long accumu_calc_sgx_ecall = 0;
 	      long accumu_calc_sgx_ocall = 0;
 
-	      for (CenCalcTask taskcell : cenCalcTasks) 
+	      for (CenCalcTask2 taskcell : cenCalcTasks) 
 	      {
 		      accumu_calc_sgx_ecall += taskcell.getSGXEcall();
 		      accumu_calc_sgx_ocall += taskcell.getSGXOcall();
@@ -337,7 +357,7 @@ public class KMeansCollectiveMapper extends
       	      this.total_sgx_comm += (System.currentTimeMillis() - this.timer_start2);
       }
 
-      for (CenCalcTask task : calcCompute.getTasks()) {
+      for (CenCalcTask2 task : calcCompute.getTasks()) {
         task.update(cenTable);
       }
 

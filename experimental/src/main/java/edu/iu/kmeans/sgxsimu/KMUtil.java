@@ -213,6 +213,46 @@ public class KMUtil {
     return arrays;
   }
 
+  public static List<double[][]> loadPoints2(
+    List<String> fileNames,
+    int cenVecSize, Configuration conf,
+    int numThreads) {
+
+    long startTime = System.currentTimeMillis();
+
+    List<PointLoadTask2> tasks =
+      new LinkedList<>();
+
+    List<double[][]> arrays = new LinkedList<double[][]>();
+
+    for (int i = 0; i < numThreads; i++) {
+      tasks.add(new PointLoadTask2(
+        cenVecSize, conf));
+    }
+
+    DynamicScheduler<String, List<double[][]>, PointLoadTask2> compute =
+      new DynamicScheduler<>(tasks);
+    for (String fileName : fileNames) {
+      compute.submit(fileName);
+    }
+
+    compute.start();
+    compute.stop();
+
+    while (compute.hasOutput()) {
+      List<double[][]> output = compute.waitForOutput();
+      if (output != null) {
+        arrays.addAll(output);
+      }
+    }
+    long endTime = System.currentTimeMillis();
+    LOG.info(
+      "File read (ms): " + (endTime - startTime)
+        + ", number of point arrays: "
+        + arrays.size());
+    return arrays;
+  }
+
   public static void storeCentroids(
     Configuration configuration, String cenDir,
     Table<DoubleArray> cenTable, int cenVecSize,

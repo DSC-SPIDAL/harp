@@ -46,7 +46,7 @@ public class Constants {
   public static final double remote_attestation=27200.0;
   //for 2.3GHz SGX-enabled CPU
   public static final double ms_per_kcycle=0.000434782;
-  public static final boolean enablesimu=false;
-  // public static final boolean enablesimu=true;
+  // public static final boolean enablesimu=false;
+  public static final boolean enablesimu=true;
 
 }
