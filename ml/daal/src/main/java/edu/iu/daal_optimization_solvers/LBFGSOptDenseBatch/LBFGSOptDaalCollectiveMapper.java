@@ -16,7 +16,7 @@
 
 */
 
-package edu.iu.daal_optimization_solvers.AdaGradientOpt;
+package edu.iu.daal_optimization_solvers.LBFGSOptDenseBatch;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -56,7 +56,7 @@ import edu.iu.datasource.*;
 import edu.iu.data_aux.*;
 
 // daal algorithm specific 
-import com.intel.daal.algorithms.optimization_solver.adagrad.*;
+import com.intel.daal.algorithms.optimization_solver.lbfgs.*;
 import com.intel.daal.algorithms.optimization_solver.iterative_solver.Input;
 import com.intel.daal.algorithms.optimization_solver.iterative_solver.InputId;
 import com.intel.daal.algorithms.optimization_solver.iterative_solver.OptionalInputId;
@@ -77,7 +77,7 @@ import com.intel.daal.services.Environment;
 /**
  * @brief the Harp mapper for running K-means
  */
-public class ADAGDOptDaalCollectiveMapper
+public class LBFGSOptDaalCollectiveMapper
 	extends
 	CollectiveMapper<String, String, Object, Object> {
 
@@ -85,16 +85,16 @@ public class ADAGDOptDaalCollectiveMapper
 		private int numMappers;
 		private int numThreads;
 		private int harpThreads; 
-		private long nFeatures;
 		private int fileDim;
-	        private double accuracyThreshold;
-    		private long nIterations;
-    		private long batchSize;
-    		private double learningRate;
-    		private static double[] startPoint = {8, 2, 1, 4};
+		private int nFeatures;
+		private int nIterations;
+    		private double stepLength;
+	        private static double[] initialPoint  = {100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100};
+    		private static double[] expectedPoint = { 11,   1,   2,   3,   4,   5,   6,   7,   8,   9,  10};
 
 		private static HarpDAALDataSource datasource;
 		private static DaalContext daal_Context = new DaalContext();
+
 
 		//to measure the time
 		private long load_time = 0;
@@ -122,22 +122,15 @@ public class ADAGDOptDaalCollectiveMapper
 			this.numMappers = configuration.getInt(Constants.NUM_MAPPERS, 10);
 			this.numThreads = configuration.getInt(Constants.NUM_THREADS, 10);
 			this.harpThreads = Runtime.getRuntime().availableProcessors();
-			this.fileDim = configuration.getInt(Constants.FILE_DIM, 4);
-			this.nFeatures = configuration.getLong(Constants.FEATURE_DIM, 3);
-			this.accuracyThreshold = configuration.getDouble(Constants.ACC_THRESHOLD, 0.0000001);
-			this.nIterations = configuration.getLong(Constants.NUM_ITERATIONS, 1000);
-			this.batchSize = configuration.getLong(Constants.BATCH_SIZE, 1);
-			this.learningRate = configuration.getDouble(Constants.LEARNING_RATE, 1);
+			this.fileDim = configuration.getInt(Constants.FILE_DIM, 11);
+			this.nFeatures = configuration.getInt(Constants.FEATURE_DIM, 10);
+			this.nIterations = configuration.getInt(Constants.NUM_ITERATIONS, 1000);
+			this.stepLength = configuration.getDouble(Constants.STEP_LENGTH, 1.0e-4);
 
 			LOG.info("File Dim " + this.fileDim);
 			LOG.info("Num Mappers " + this.numMappers);
 			LOG.info("Num Threads " + this.numThreads);
 			LOG.info("Num harp load data threads " + harpThreads);
-			LOG.info("nfeatures " + this.nFeatures);
-			LOG.info("accuracyThreshold " + this.accuracyThreshold);
-			LOG.info("nIterations " + this.nIterations);
-			LOG.info("batchSize " + this.batchSize);
-			LOG.info("learningRate " + this.learningRate);
 
 			long endTime = System.currentTimeMillis();
 			LOG.info("config (ms) :"
@@ -174,7 +167,7 @@ public class ADAGDOptDaalCollectiveMapper
 				this.datasource = new HarpDAALDataSource(dataFiles, fileDim, harpThreads, conf);
 
 				// ----------------------- start the execution -----------------------
-				runADAGDOpt(conf, context);
+				runLBFGSOpt(conf, context);
 				this.freeMemory();
 				this.freeConn();
 				System.gc();
@@ -189,52 +182,55 @@ public class ADAGDOptDaalCollectiveMapper
 		 *
 		 * @return 
 		 */
-		private void runADAGDOpt(Configuration conf, Context context) throws IOException 
+		private void runLBFGSOpt(Configuration conf, Context context) throws IOException 
 		{
 			// ---------- load data ----------
 			this.datasource.loadFiles();
-			// ---------- training and testing ----------
-			/* Create Numeric Tables for data and values for dependent variable */
+			/* Create Numeric Tables for input data and dependent variables */
 			NumericTable data = new HomogenNumericTable(daal_Context, Double.class, nFeatures, this.datasource.getTotalLines(), NumericTable.AllocationFlag.DoAllocate);
-			NumericTable dataDependents = new HomogenNumericTable(daal_Context, Double.class, 1, this.datasource.getTotalLines(), NumericTable.AllocationFlag.DoAllocate);
+			NumericTable dependentVariables = new HomogenNumericTable(daal_Context, Double.class, 1, this.datasource.getTotalLines(),
+					NumericTable.AllocationFlag.DoAllocate);
 			MergedNumericTable mergedData = new MergedNumericTable(daal_Context);
 			mergedData.addNumericTable(data);
-			mergedData.addNumericTable(dataDependents);
+			mergedData.addNumericTable(dependentVariables);
 
-			/* Retrieve the data from an input file */
+			/* Retrieve the data from input file */
 			this.datasource.loadDataBlock(mergedData);
 
-			/* Create an MSE objective function to compute a Adagrad */
-			com.intel.daal.algorithms.optimization_solver.mse.Batch mseFunction =
+			/* Create an MSE objective function for LBFGS */
+			com.intel.daal.algorithms.optimization_solver.mse.Batch mseObjectiveFunction =
 				new com.intel.daal.algorithms.optimization_solver.mse.Batch(daal_Context, Double.class,
 						com.intel.daal.algorithms.optimization_solver.mse.Method.defaultDense, data.getNumberOfRows());
 
-			mseFunction.getInput().set(com.intel.daal.algorithms.optimization_solver.mse.InputId.data, data);
-			mseFunction.getInput().set(com.intel.daal.algorithms.optimization_solver.mse.InputId.dependentVariables, dataDependents);
+			mseObjectiveFunction.getInput().set(com.intel.daal.algorithms.optimization_solver.mse.InputId.data, data);
+			mseObjectiveFunction.getInput().set(com.intel.daal.algorithms.optimization_solver.mse.InputId.dependentVariables,
+					dependentVariables);
 
-			/* Create algorithm objects to compute Adagrad results */
-			Batch adagradAlgorithm = new Batch(daal_Context, Double.class, Method.defaultDense);
-			adagradAlgorithm.parameter.setFunction(mseFunction);
-			adagradAlgorithm.parameter.setLearningRate(new HomogenNumericTable(daal_Context, Double.class, 1, 1, NumericTable.AllocationFlag.DoAllocate, learningRate));
-			adagradAlgorithm.parameter.setNIterations(nIterations/2);
-			adagradAlgorithm.parameter.setAccuracyThreshold(accuracyThreshold);
-			adagradAlgorithm.parameter.setBatchSize(batchSize);
-			adagradAlgorithm.parameter.setOptionalResultRequired(true);
-			adagradAlgorithm.input.set(InputId.inputArgument, new HomogenNumericTable(daal_Context, startPoint, 1, nFeatures + 1));
+			/* Create objects to compute LBFGS result using the default method */
+			Batch algorithm = new Batch(daal_Context, Double.class, Method.defaultDense);
+			algorithm.parameter.setFunction(mseObjectiveFunction);
+			algorithm.parameter.setNIterations(nIterations/2);
+			algorithm.parameter.setStepLengthSequence(
+					new HomogenNumericTable(daal_Context, Double.class, 1, 1, NumericTable.AllocationFlag.DoAllocate, stepLength));
 
-			/* Compute the Adagrad result for MSE objective function matrix */
-			Result result = adagradAlgorithm.compute();
+			algorithm.parameter.setOptionalResultRequired(true);
+			algorithm.input.set(InputId.inputArgument, new HomogenNumericTable(daal_Context, initialPoint, 1, nFeatures + 1));
 
-			Service.printNumericTable("Minimum after first compute():",  result.get(ResultId.minimum));
-			Service.printNumericTable("Number of iterations performed:",  result.get(ResultId.nIterations));
+			/* Compute LBFGS result */
+			Result result = algorithm.compute();
+			Service.printNumericTable("Resulting coefficients after first compute():", result.get(ResultId.minimum));
+			Service.printNumericTable("Number of iterations performed:", result.get(ResultId.nIterations));
 
-			adagradAlgorithm.input.set(InputId.inputArgument, result.get(ResultId.minimum));
-			adagradAlgorithm.input.set(OptionalInputId.optionalArgument, result.get(OptionalResultId.optionalResult));
-			/* Compute the Adagrad result for MSE objective function matrix */
-			result = adagradAlgorithm.compute();
+			algorithm.input.set(InputId.inputArgument, result.get(ResultId.minimum));
+			algorithm.input.set(OptionalInputId.optionalArgument, result.get(OptionalResultId.optionalResult));
 
-			Service.printNumericTable("Minimum after second compute():",  result.get(ResultId.minimum));
-			Service.printNumericTable("Number of iterations performed:",  result.get(ResultId.nIterations));
+			/* Compute LBFGS result */
+			result = algorithm.compute();
+
+			NumericTable expected = new HomogenNumericTable(daal_Context, expectedPoint, 1, nFeatures + 1);
+			Service.printNumericTable("Expected coefficients:",          expected);
+			Service.printNumericTable("Resulting coefficients after second compute():", result.get(ResultId.minimum));
+			Service.printNumericTable("Number of iterations performed:", result.get(ResultId.nIterations));
 
 			daal_Context.dispose();
 
