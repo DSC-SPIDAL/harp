@@ -45,8 +45,9 @@ public class KMeansCollectiveMapper extends
   private int numCentroids;
   private int vectorSize;
   private int shadSize;
-  private int enclave_total_size;
-  private int enclave_task_size;
+  private int enclave_total_size; //MB
+  private int enclave_per_thd_size; //MB
+  private int enclave_task_size;  //MB
   private int numCenPars;
   private int cenVecSize;
   private int numMappers;
@@ -92,7 +93,15 @@ public class KMeansCollectiveMapper extends
       .getInt(Constants.NUM_THREADS, 10);
     numIterations = configuration
       .getInt(Constants.NUM_ITERATIONS, 10);
+    enclave_total_size = configuration
+      .getInt(Constants.ENCLAVE_TOTAL, 96);
+    enclave_per_thd_size = configuration
+      .getInt(Constants.ENCLAVE_PER_THD, 96);
+    enclave_task_size = configuration
+      .getInt(Constants.ENCLAVE_TASK, 8);
 
+    // point number in each shad (double precision)
+    shadSize = enclave_task_size*1024*1024/(vectorSize*8); 
     loadThreads = Runtime.getRuntime().availableProcessors(); 
 
     // get the cenTable size in communication
@@ -170,7 +179,7 @@ public class KMeansCollectiveMapper extends
 	    // add overhead of creating an enclave of 96MB
 	    // per enclave*numThreads
 	    // each thread holds a seperated sgx enclave
-	    long creation_enclave = (long)((Constants.creation_enclave_fix + 96*1024*Constants.creation_enclave_kb)*Constants.ms_per_kcycle)*numThreads; 
+	    long creation_enclave = (long)((Constants.creation_enclave_fix + this.enclave_total_size*1024*Constants.creation_enclave_kb)*Constants.ms_per_kcycle)*numThreads; 
 	    LOG.info("creation_enclave: " + creation_enclave);
 	    simuOverhead(creation_enclave);
     }
@@ -208,7 +217,7 @@ public class KMeansCollectiveMapper extends
       new LinkedList<>();
     for (int i = 0; i < numThreads; i++) {
       cenCalcTasks.add(
-        new CenCalcTask2(cenTable, cenVecSize));
+        new CenCalcTask2(cenTable, cenVecSize, enclave_per_thd_size));
     }
 
     DynamicScheduler<double[][], Object, CenCalcTask2> calcCompute =

@@ -32,18 +32,19 @@ public class CenCalcTask2
   private double[][] centroids;
   private double[][] local;
   private final int cenVecSize;
+  private int enclave_eff_per_thd;
   private long sgxoverheadEcall;
   private long sgxoverheadOcall;
 
   public CenCalcTask2(Table<DoubleArray> cenTable,
-    int cenVecSize) 
+    int cenVecSize, int enclave_eff_per_thd) 
   {
     //record sgx centroid data size
     int sgxdatasize = 0;
     this.sgxoverheadEcall = 0;
     this.sgxoverheadOcall = 0;
-
-        
+    this.cenVecSize = cenVecSize;
+    this.enclave_eff_per_thd = enclave_eff_per_thd;
 
     centroids =
       new double[cenTable.getNumPartitions()][];
@@ -76,7 +77,6 @@ public class CenCalcTask2
 	    this.sgxoverheadOcall += ocallOverhead;
     }
 
-    this.cenVecSize = cenVecSize;
 
   }
 
@@ -121,6 +121,10 @@ public class CenCalcTask2
 	    int datasize = dataDoubleSizeKB(points.length*ptearraysize);
 	    //simulate overhead of Ecall
 	    long ecallOverhead = (long)((Constants.Ecall + datasize*Constants.cross_enclave_per_kb)*Constants.ms_per_kcycle);
+
+	    //check overhead made by page swapping (default 4K page size)
+	    if (datasize > enclave_eff_per_thd*1024)
+		ecallOverhead += (long)(Constants.swap_page_penalty*(datasize/4)*Constants.ms_per_kcycle);
 
 	    simuOverhead(ecallOverhead);
 	    this.sgxoverheadEcall += ecallOverhead;

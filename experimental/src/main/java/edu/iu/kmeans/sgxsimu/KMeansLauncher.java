@@ -49,13 +49,16 @@ public class KMeansLauncher extends Configured
    */
   @Override
   public int run(String[] args) throws Exception {
-    if (args.length < 10) {
+    if (args.length < 13) {
       System.err.println(
         "Usage: edu.iu.kmeans.KMeansLauncher"
           + "<num Of DataPoints>" 
 	  + "<num of Centroids>" 
 	  + "<vector size>"
           + "<num of point files per worker>"
+	  + "<total enclave capacity MB>"
+	  + "<enclave capacity per thread MB>"
+	  + "<enclave usage per tasks MB>"
           + "<number of map tasks>" 
 	  + "<num threads>" 
 	  + "<mem MB per mapper>"
@@ -72,16 +75,19 @@ public class KMeansLauncher extends Configured
     int vectorSize = Integer.parseInt(args[2]);
     int numPointFilePerWorker =
       Integer.parseInt(args[3]);
-    int numMapTasks = Integer.parseInt(args[4]);
-    int numThreads = Integer.parseInt(args[5]);
-    int mem = Integer.parseInt(args[6]);
-    int numIteration = Integer.parseInt(args[7]);
-    String workDir = args[8];
-    String localPointFilesDir = args[9];
+    int enclave_total_size = Integer.parseInt(args[4]);
+    int enclave_eff_per_thd = Integer.parseInt(args[5]);
+    int enclave_task_size = Integer.parseInt(args[6]);
+    int numMapTasks = Integer.parseInt(args[7]);
+    int numThreads = Integer.parseInt(args[8]);
+    int mem = Integer.parseInt(args[9]);
+    int numIteration = Integer.parseInt(args[10]);
+    String workDir = args[11];
+    String localPointFilesDir = args[12];
     boolean regenerateData = true;
-    if (args.length == 11) {
+    if (args.length == 14) {
       regenerateData =
-        Boolean.parseBoolean(args[10]);
+        Boolean.parseBoolean(args[13]);
     }
     System.out.println(
       "Number of Map Tasks = " + numMapTasks);
@@ -95,7 +101,7 @@ public class KMeansLauncher extends Configured
       numIteration = 1;
     }
     launch(numOfDataPoints, numCentroids,
-      vectorSize, numPointFiles, numMapTasks,
+      vectorSize, numPointFiles, enclave_total_size, enclave_eff_per_thd, enclave_task_size,numMapTasks,
       numThreads, mem, numIteration, workDir,
       localPointFilesDir, regenerateData);
     return 0;
@@ -103,7 +109,7 @@ public class KMeansLauncher extends Configured
 
   private void launch(int numOfDataPoints,
     int numCentroids, int vectorSize,
-    int numPointFiles, int numMapTasks,
+    int numPointFiles, int enclave_total_size, int enclave_eff_per_thd, int enclave_task_size, int numMapTasks,
     int numThreads, int mem, int numIterations,
     String workDir, String localPointFilesDir,
     boolean generateData) throws IOException,
@@ -141,7 +147,7 @@ public class KMeansLauncher extends Configured
 
     long startTime = System.currentTimeMillis();
     runKMeansAllReduce(numOfDataPoints,
-      numCentroids, vectorSize, numPointFiles,
+      numCentroids, vectorSize, numPointFiles, enclave_total_size, enclave_eff_per_thd, enclave_task_size,
       numMapTasks, numThreads, mem,  numIterations,
       dataDir, cenDir, outDir, configuration);
     long endTime = System.currentTimeMillis();
@@ -152,7 +158,7 @@ public class KMeansLauncher extends Configured
 
   private void runKMeansAllReduce(
     int numOfDataPoints, int numCentroids,
-    int vectorSize, int numPointFiles,
+    int vectorSize, int numPointFiles, int enclave_total_size, int enclave_eff_per_thd, int enclave_task_size,
     int numMapTasks, int numThreads, int mem,
     int numIterations, Path dataDir, Path cenDir,
     Path outDir, Configuration configuration)
@@ -168,7 +174,7 @@ public class KMeansLauncher extends Configured
           Calendar.getInstance().getTime()));
     Job kmeansJob =
       configureKMeansJob(numOfDataPoints,
-        numCentroids, vectorSize, numPointFiles,
+        numCentroids, vectorSize, numPointFiles, enclave_total_size, enclave_eff_per_thd, enclave_task_size,
         numMapTasks, numThreads, mem, numIterations,
         dataDir, cenDir, outDir, configuration);
     System.out
@@ -198,7 +204,7 @@ public class KMeansLauncher extends Configured
 
   private Job configureKMeansJob(
     int numOfDataPoints, int numCentroids,
-    int vectorSize, int numPointFiles,
+    int vectorSize, int numPointFiles, int enclave_total_size, int enclave_eff_per_thd, int enclave_task_size,
     int numMapTasks, int numThreads, int mem,
     int numIterations, Path dataDir, Path cenDir,
     Path outDir, Configuration configuration)
@@ -243,6 +249,14 @@ public class KMeansLauncher extends Configured
       vectorSize);
     jobConfig.setInt(Constants.NUM_MAPPERS,
       numMapTasks);
+
+    jobConfig.setInt(Constants.ENCLAVE_TOTAL,
+      enclave_total_size);
+    jobConfig.setInt(Constants.ENCLAVE_PER_THD,
+      enclave_eff_per_thd);
+    jobConfig.setInt(Constants.ENCLAVE_TASK,
+      enclave_task_size);
+
     jobConfig.setInt(Constants.NUM_THREADS,
       numThreads);
     jobConfig.setInt(Constants.NUM_ITERATIONS,
