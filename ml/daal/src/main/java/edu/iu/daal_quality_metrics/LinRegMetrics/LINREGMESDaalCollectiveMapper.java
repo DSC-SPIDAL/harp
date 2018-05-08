@@ -204,11 +204,6 @@ public class LINREGMESDaalCollectiveMapper
 	private void trainModel() 
 	{
 
-		/* Initialize FileDataSource to retrieve the input data from a .csv file */
-		// FileDataSource trainDataSource = new FileDataSource(context, trainDatasetFileName,
-		//         DataSource.DictionaryCreationFlag.DoDictionaryFromContext,
-		//         DataSource.NumericTableAllocationFlag.NotAllocateNumericTable);
-
 		/* Create Numeric Tables for training data and labels */
 		trainData = new HomogenNumericTable(daal_Context, Double.class, nFeatures, this.datasource.getTotalLines(), NumericTable.AllocationFlag.DoAllocate);
 		expectedResponses = new HomogenNumericTable(daal_Context, Double.class, nDependentVariables, this.datasource.getTotalLines(),
