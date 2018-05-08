@@ -25,17 +25,10 @@ import java.util.List;
 
 public class CenMergeTask implements
   Task<Partition<DoubleArray>, Object> {
-  // private final List<CenCalcTask> cenCalcTasks;
+
   private final List<CenCalcTask2> cenCalcTasks;
   private long sgxoverheadEcall;
   private long sgxoverheadOcall;
-
-  // public CenMergeTask(
-  //   List<CenCalcTask> cenCalcTasks) {
-  //   this.cenCalcTasks = cenCalcTasks;
-  //   this.sgxoverheadEcall = 0;
-  //   this.sgxoverheadOcall = 0;
-  // }
 
   public CenMergeTask(
     List<CenCalcTask2> cenCalcTasks) {
@@ -76,7 +69,6 @@ public class CenMergeTask implements
 
     // It is safe to iterate concurrently
     // because each task has its own iterator
-    // for (CenCalcTask task : cenCalcTasks) 
     for (CenCalcTask2 task : cenCalcTasks) 
     {
 

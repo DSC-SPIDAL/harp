@@ -44,6 +44,9 @@ public class KMeansCollectiveMapper extends
   private int pointsPerFile;
   private int numCentroids;
   private int vectorSize;
+  private int shadSize;
+  private int enclave_total_size;
+  private int enclave_task_size;
   private int numCenPars;
   private int cenVecSize;
   private int numMappers;
@@ -157,7 +160,7 @@ public class KMeansCollectiveMapper extends
     
     //use a second read in method
     List<double[][]> pointArrays =
-      KMUtil.loadPoints2(fileNames, this.vectorSize, conf, loadThreads);
+      KMUtil.loadPoints2(fileNames, this.vectorSize, this.shadSize, conf, loadThreads);
 
     
     this.timer_start = System.currentTimeMillis();

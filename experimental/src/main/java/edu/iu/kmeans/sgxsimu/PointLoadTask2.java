@@ -37,11 +37,13 @@ public class PointLoadTask2
 
   private int pointsPerFile;
   private int cenVecSize;
+  private int shadSize;
   private Configuration conf;
 
-  public PointLoadTask2(int cenVecSize, Configuration conf) {
+  public PointLoadTask2(int cenVecSize, int shadSize, Configuration conf) {
     this.cenVecSize = cenVecSize;
     this.conf = conf;
+    this.shadSize = shadSize;
   }
 
   @Override
@@ -51,7 +53,7 @@ public class PointLoadTask2
     boolean isSuccess = false;
     do {
       try {
-         List<double[][]> array = DataLoader.loadPointsMMDense2(fileName, cenVecSize, conf);
+         List<double[][]> array = DataLoader.loadPointsMMDense2(fileName, cenVecSize, shadSize, conf);
         return array;
       } catch (Exception e) {
         LOG.error("load " + fileName

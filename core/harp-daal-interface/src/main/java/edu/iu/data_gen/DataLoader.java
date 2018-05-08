@@ -117,13 +117,13 @@ public final class DataLoader
 		return data_points;
 	}
 
-	public static List<double[][]> loadPointsMMDense2(String file, int cenVecSize,
+	public static List<double[][]> loadPointsMMDense2(String file, int cenVecSize, int shadsize,
 			Configuration conf) throws Exception 
 	{
 
 		System.out.println("filename: "+file );
+		System.out.println("Shad size: "+ shadsize);
 
-		int shadsize = 10000;
 		int shadptr = 0;
 		double[][] points = new double[shadsize][]; 
 

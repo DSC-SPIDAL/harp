@@ -73,7 +73,8 @@ public class KMUtil {
     }
     data = new double[numCentroids * vectorSize];
     for (int i = 0; i < data.length; i++) {
-      data[i] = random.nextDouble() * 1000;
+      // data[i] = random.nextDouble() * 1000;
+      data[i] = random.nextDouble()*2.0 - 1.0;
     }
     Path initClustersFile = new Path(cenDir,
       Constants.CENTROID_FILE_NAME);
@@ -215,7 +216,7 @@ public class KMUtil {
 
   public static List<double[][]> loadPoints2(
     List<String> fileNames,
-    int cenVecSize, Configuration conf,
+    int cenVecSize, int shadSize, Configuration conf,
     int numThreads) {
 
     long startTime = System.currentTimeMillis();
@@ -227,7 +228,7 @@ public class KMUtil {
 
     for (int i = 0; i < numThreads; i++) {
       tasks.add(new PointLoadTask2(
-        cenVecSize, conf));
+        cenVecSize, shadSize, conf));
     }
 
     DynamicScheduler<String, List<double[][]>, PointLoadTask2> compute =

@@ -27,7 +27,7 @@ public class CenCalcTask2
   implements Task<double[][], Object> {
 
   protected static final Log LOG =
-    LogFactory.getLog(CenCalcTask.class);
+    LogFactory.getLog(CenCalcTask2.class);
 
   private double[][] centroids;
   private double[][] local;
@@ -43,9 +43,15 @@ public class CenCalcTask2
     this.sgxoverheadEcall = 0;
     this.sgxoverheadOcall = 0;
 
+        
+
     centroids =
       new double[cenTable.getNumPartitions()][];
     local = new double[centroids.length][];
+
+    //debug output centroid length
+    LOG.info("Centroid length: " + cenTable.getNumPartitions());
+
     for (Partition<DoubleArray> partition : cenTable
       .getPartitions()) {
       int partitionID = partition.id();
@@ -103,6 +109,7 @@ public class CenCalcTask2
     double minDistance = Double.MAX_VALUE;
     double distance = 0.0;
     int minCenParID = 0;
+    int minOffset = 0;
     
     int ptearraysize = 0;
     if (points[0] != null)
@@ -128,63 +135,34 @@ public class CenCalcTask2
 
 	for (int j=0; j< centroids.length; j++)
 	{
-	   distance = 0.0;
-	   //compute one distance for each centroids
-	   for (int k=0;k<pte.length;k++)
+	   for(int k=0;k<centroids[j].length; k+=cenVecSize)
 	   {
-		   double diff = (pte[k] - centroids[j][k]);
-		   distance += diff*diff; 
-	   }
 
-	   if (distance < minDistance)
-	   {
-		   minDistance = distance;
-		   minCenParID = j;
+	   	   distance = 0.0;
+		   //compute one distance for each centroids
+		   for (int p=0;p<pte.length;p++)
+		   {
+			   // first element of centroid is jumpped
+			   double diff = (pte[p] - centroids[j][k+p+1]);
+			   distance += diff*diff; 
+		   }
+
+		   if (distance < minDistance)
+		   {
+			   minDistance = distance;
+			   minCenParID = j;
+			   minOffset = k; 
+		   }
 	   }
+	   
 	}
 
 	//add count of minCenParID
-	local[minCenParID][0]++;
+	local[minCenParID][minOffset]++;
 	for(int j=1; j<cenVecSize;j++)
-		local[minCenParID][j] += pte[j-1]; 
+		local[minCenParID][minOffset+j] += pte[j-1]; 
     }
-
-    // for (int i = 0; i < points.length;) {
-    //
-    //   double minDistance = Double.MAX_VALUE;
-    //   int minCenParID = 0;
-    //   int minOffset = 0;
-    //
-    //   for (int j = 0; j < centroids.length; j++) {
-    //     for (int k = 0; k < local[j].length;) {
-    //       int pStart = i;
-    //       k++;
-    //
-    //       double distance = 0.0;
-    //       for (int l = 1; l < cenVecSize; l++) {
-    //         double diff = (points[pStart++]
-    //           - centroids[j][l]);
-    //         distance += diff * diff;
-    //       }
-    //
-	//   k+= (cenVecSize - 1);
-    //       if (distance < minDistance) {
-    //         minDistance = distance;
-    //         minCenParID = j;
-    //         minOffset = k - cenVecSize;
-    //       }
-    //     }
-    //   }
-    //   // Count + 1
-    //   local[minCenParID][minOffset++]++;
-    //   // Add the point
-    //   for (int j = 1; j < cenVecSize; j++) {
-    //     local[minCenParID][minOffset++] +=
-    //       points[i++];
-    //   }
-    //
-    // }
-
+    
     // ---------------------- end of computation ----------------------
 
     //no simulate overhead of Ocall
