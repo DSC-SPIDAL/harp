@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package edu.iu.daal_cov;
+package edu.iu.daal_cov.csrdistri;
 
 import org.apache.commons.io.IOUtils;
 import java.io.BufferedReader;
@@ -29,6 +29,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.nio.DoubleBuffer;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -44,7 +45,9 @@ import edu.iu.harp.resource.DoubleArray;
 import edu.iu.harp.resource.ByteArray;
 import edu.iu.harp.schdynamic.DynamicScheduler;
 
-import java.nio.DoubleBuffer;
+import edu.iu.datasource.*;
+import edu.iu.data_aux.*;
+
 
 //import daal.jar API
 import com.intel.daal.algorithms.covariance.*;
@@ -54,7 +57,7 @@ import com.intel.daal.services.Environment;
 
 
 /**
- * @brief the Harp mapper for running Neural Network
+ * @brief the Harp mapper for running covariance 
  */
 
 
@@ -83,6 +86,7 @@ CollectiveMapper<String, String, Object, Object>{
   private long ts1 = 0;
   private long ts2 = 0;
 
+  private static HarpDAALDataSource datasource;
   private static DaalContext daal_Context = new DaalContext();
     /**
    * Mapper configuration.
@@ -137,7 +141,10 @@ CollectiveMapper<String, String, Object, Object>{
       FileSystem fs = pointFilePath.getFileSystem(conf);
       FSDataInputStream in = fs.open(pointFilePath);
 
-      runCOV(trainingDataFiles, conf, context);
+      //init data source
+      this.datasource = new HarpDAALDataSource(trainingDataFiles, harpThreads, conf);
+
+      runCOV(conf, context);
       LOG.info("Total iterations in master view: "
         + (System.currentTimeMillis() - startTime));
       this.freeMemory();
@@ -147,7 +154,7 @@ CollectiveMapper<String, String, Object, Object>{
 
 
 
-    private void runCOV(List<String> trainingDataFiles, Configuration conf, Context context) throws IOException {
+    private void runCOV(Configuration conf, Context context) throws IOException {
 
         //set thread number used in DAAL
         LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
@@ -156,51 +163,54 @@ CollectiveMapper<String, String, Object, Object>{
 
         ts_start = System.currentTimeMillis();
 
-        ts1 = System.currentTimeMillis();
-        // extracting points from csv files
-        List<double[]> pointArrays = COVUtil.loadPoints(trainingDataFiles, pointsPerFile,
-                vectorSize, conf, harpThreads);
-        ts2 = System.currentTimeMillis();
-        load_time += (ts2 - ts1);
+	//read in csr files with filenames in trainingDataFiles
+	NumericTable featureArray_daal = this.datasource.loadCSRNumericTable(daal_Context);
+
+        // ts1 = System.currentTimeMillis();
+
+        // // extracting points from csv files
+        // List<double[]> pointArrays = COVUtil.loadPoints(trainingDataFiles, pointsPerFile,
+        //         vectorSize, conf, harpThreads);
+        // ts2 = System.currentTimeMillis();
+        // load_time += (ts2 - ts1);
 
 
         // converting data to Numeric Table
-        ts1 = System.currentTimeMillis();
-
-        long nFeature = vectorSize;
-        long nLabel = 1;
-        long totalLengthFeature = 0;
-
-        long[] array_startP_feature = new long[pointArrays.size()];
-        double[][] array_data_feature = new double[pointArrays.size()][];
-
-        for(int k=0;k<pointArrays.size();k++)
-        {
-            array_data_feature[k] = pointArrays.get(k);
-            array_startP_feature[k] = totalLengthFeature;
-            totalLengthFeature += pointArrays.get(k).length;
-        }
-
-        long featuretableSize = totalLengthFeature/nFeature;
+        // ts1 = System.currentTimeMillis();
+        //
+        // long nFeature = vectorSize;
+        // long nLabel = 1;
+        // long totalLengthFeature = 0;
+        //
+        // long[] array_startP_feature = new long[pointArrays.size()];
+        // double[][] array_data_feature = new double[pointArrays.size()][];
+        //
+        // for(int k=0;k<pointArrays.size();k++)
+        // {
+        //     array_data_feature[k] = pointArrays.get(k);
+        //     array_startP_feature[k] = totalLengthFeature;
+        //     totalLengthFeature += pointArrays.get(k).length;
+        // }
+        //
+        // long featuretableSize = totalLengthFeature/nFeature;
 
         //initializing Numeric Table
 
-        NumericTable featureArray_daal = new HomogenNumericTable(daal_Context, Double.class, nFeature, featuretableSize, NumericTable.AllocationFlag.DoAllocate);
-
-        int row_idx_feature = 0;
-        int row_len_feature = 0;
-
-        for (int k=0; k<pointArrays.size(); k++) 
-        {
-            row_len_feature = (array_data_feature[k].length)/(int)nFeature;
-            //release data from Java side to native side
-            ((HomogenNumericTable)featureArray_daal).releaseBlockOfRows(row_idx_feature, row_len_feature, DoubleBuffer.wrap(array_data_feature[k]));
-            row_idx_feature += row_len_feature;
-        }
-
-        ts2 = System.currentTimeMillis();
-        convert_time += (ts2 - ts1);
-
+        // NumericTable featureArray_daal = new HomogenNumericTable(daal_Context, Double.class, nFeature, featuretableSize, NumericTable.AllocationFlag.DoAllocate);
+        //
+        // int row_idx_feature = 0;
+        // int row_len_feature = 0;
+        //
+        // for (int k=0; k<pointArrays.size(); k++) 
+        // {
+        //     row_len_feature = (array_data_feature[k].length)/(int)nFeature;
+        //     //release data from Java side to native side
+        //     ((HomogenNumericTable)featureArray_daal).releaseBlockOfRows(row_idx_feature, row_len_feature, DoubleBuffer.wrap(array_data_feature[k]));
+        //     row_idx_feature += row_len_feature;
+        // }
+        //
+        // ts2 = System.currentTimeMillis();
+        // convert_time += (ts2 - ts1);
         Table<ByteArray> partialResultTable = new Table<>(0, new ByteArrPlus());
 
         computeOnLocalNode(featureArray_daal, partialResultTable);
@@ -229,7 +239,7 @@ CollectiveMapper<String, String, Object, Object>{
 
     ts1 = System.currentTimeMillis();
     /* Create algorithm objects to compute a variance-covariance matrix in the distributed processing mode using the default method */
-    DistributedStep1Local algorithm = new DistributedStep1Local(daal_Context, Float.class, Method.defaultDense);
+    DistributedStep1Local algorithm = new DistributedStep1Local(daal_Context, Double.class, Method.fastCSR);
 
     /* Set input objects for the algorithm */
     algorithm.input.set(InputId.data, featureArray_daal);
@@ -256,7 +266,7 @@ CollectiveMapper<String, String, Object, Object>{
 
   private void computeOnMasterNode(Table<ByteArray> partialResultTable){
     int[] pid = partialResultTable.getPartitionIDs().toIntArray();
-    DistributedStep2Master algorithm = new DistributedStep2Master(daal_Context, Float.class, Method.defaultDense);
+    DistributedStep2Master algorithm = new DistributedStep2Master(daal_Context, Double.class, Method.fastCSR);
     ts1 = System.currentTimeMillis();
     for(int j = 0; j< pid.length; j++){
       try {

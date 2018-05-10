@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package edu.iu.daal_cov;
+package edu.iu.daal_cov.densedistri;
 
 import edu.iu.harp.example.DoubleArrPlus;
 import edu.iu.harp.partition.Partition;

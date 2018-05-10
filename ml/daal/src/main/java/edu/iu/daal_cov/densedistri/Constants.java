@@ -1,4 +1,4 @@
-package edu.iu.daal_cov;
+package edu.iu.daal_cov.densedistri;
 
 public class Constants {
   public static final String POINTS_PER_FILE =

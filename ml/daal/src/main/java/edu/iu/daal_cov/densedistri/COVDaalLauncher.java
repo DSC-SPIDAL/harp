@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package edu.iu.daal_cov;
+package edu.iu.daal_cov.densedistri;
 
 import edu.iu.fileformat.MultiFileInputFormat;
 import org.apache.hadoop.conf.Configuration;
