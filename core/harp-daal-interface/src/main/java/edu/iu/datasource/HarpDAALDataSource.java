@@ -48,6 +48,7 @@ import org.apache.hadoop.mapred.CollectiveMapper;
 import org.apache.hadoop.conf.Configuration;
 
 import com.intel.daal.data_management.data.HomogenNumericTable;
+import com.intel.daal.data_management.data.CSRNumericTable;
 import com.intel.daal.data_management.data.NumericTable;
 import com.intel.daal.data_management.data_source.*;
 import com.intel.daal.services.DaalContext;
@@ -72,6 +73,29 @@ public class HarpDAALDataSource
    {
 	this.hdfs_filenames = hdfs_filenames;
 	this.dim = dim;
+	this.harpthreads = harpthreads;
+	this.conf = conf;
+	this.datalist = null;
+	this.totallines = 0;
+	this.totalPoints = 0;
+	this.testData = null;
+	this.numTestRows = 0;
+   }
+
+   /**
+    * @brief harpdaal data source with unspecified 
+    * feature dimension
+    *
+    * @param hdfs_filenames
+    * @param harpthreads
+    * @param conf
+    *
+    * @return 
+    */
+   public HarpDAALDataSource(List<String> hdfs_filenames, int harpthreads, Configuration conf)
+   {
+	this.hdfs_filenames = hdfs_filenames;
+	this.dim = 0;
 	this.harpthreads = harpthreads;
 	this.conf = conf;
 	this.datalist = null;
@@ -130,7 +154,6 @@ public class HarpDAALDataSource
       this.datalist = null;
    }
 
-   // public void loadTestFile(NumericTable testTable, String inputFiles, int vectorSize) throws IOException
    public void loadTestFile(String inputFiles, int vectorSize) throws IOException
    {
 
@@ -208,6 +231,186 @@ public class HarpDAALDataSource
 	   // testTable.releaseBlockOfRows(0, points.size(), DoubleBuffer.wrap(data));
 	   points = null;
 
+   }
+
+   public NumericTable loadCSRNumericTable(DaalContext context) throws IOException
+   {
+	 if (this.hdfs_filenames.size() > 1)
+	 {
+		 LOG.info("CSR data shall be contained in a single file");
+		 return null;
+	 }
+
+	 return  loadCSRNumericTableImpl(this.hdfs_filenames.get(0), context);
+   }
+   
+   /**
+    * @brief Load in an external single csr file to create a daal CSRNumericTable
+    *
+    * @param inputFile
+    * @param context
+    *
+    * @return 
+    */
+   public NumericTable loadExternalCSRNumericTable(String inputFiles, DaalContext context) throws IOException
+   {
+
+	   Path inputFilePaths = new Path(inputFiles);
+	   List<String> inputFileList = new LinkedList<>();
+
+	   try {
+		   FileSystem fs =
+			   inputFilePaths.getFileSystem(conf);
+		   RemoteIterator<LocatedFileStatus> iterator =
+			   fs.listFiles(inputFilePaths, true);
+
+		   while (iterator.hasNext()) {
+			   String name =
+				   iterator.next().getPath().toUri()
+				   .toString();
+			   inputFileList.add(name);
+		   }
+
+	   } catch (IOException e) {
+		   LOG.error("Fail to get test files", e);
+	   }
+
+	   if (inputFileList.size() > 1)
+	   {
+		   LOG.info("Error CSR data shall be within a single file");
+	           return null;
+	   }
+
+	   String filename = inputFileList.get(0);
+	   return loadCSRNumericTableImpl(filename, context);
+   }
+
+   private NumericTable loadCSRNumericTableImpl(String filename, DaalContext context) throws IOException
+   {//{{{
+	   LOG.info("read in file name: " + filename);
+	   Path file_path = new Path(filename);
+
+	   FSDataInputStream in = null;
+	   try {
+
+		   FileSystem fs =
+			   file_path.getFileSystem(conf);
+		   in = fs.open(file_path);
+
+	   } catch (Exception e) {
+		   LOG.error("Fail to open file "+ e.toString());
+		   return null;
+	   }
+
+	   //read csr file content
+	   //assume a csr file contains three lines
+	   //1) row index line
+	   //2) colindex line
+	   //3) data line
+
+	   // read row indices
+	   String rowIndexLine = in.readLine();
+	   if (rowIndexLine == null) 
+		   return null;
+
+	   int nVectors = getRowLength(rowIndexLine);
+	   long[] rowOffsets = new long[nVectors];
+
+	   readRow(rowIndexLine, 0, nVectors, rowOffsets);
+	   nVectors = nVectors - 1;
+
+	   // read col indices
+	   String columnsLine = in.readLine();
+	   if (columnsLine == null) 
+		   return null;
+
+	   int nCols = getRowLength(columnsLine);
+	   long[] colIndices = new long[nCols];
+	   readRow(columnsLine, 0, nCols, colIndices);
+
+	   // read data 
+	   String valuesLine = in.readLine();
+	   if (valuesLine == null)
+		   return null;
+
+	   int nNonZeros = getRowLength(valuesLine);
+	   double[] data = new double[nNonZeros];
+
+	   readRow(valuesLine, 0, nNonZeros, data);
+
+	   in.close();
+
+	   // create the daal table
+	   long maxCol = 0;
+	   for (int i = 0; i < nCols; i++) {
+		   if (colIndices[i] > maxCol) {
+			   maxCol = colIndices[i];
+		   }
+	   }
+	   int nFeatures = (int) maxCol;
+
+	   if (nCols != nNonZeros || nNonZeros != (rowOffsets[nVectors] - 1) || nFeatures == 0 || nVectors == 0) {
+		   throw new IOException("Unable to read input dataset");
+	   }
+
+	   return new CSRNumericTable(context, data, colIndices, rowOffsets, nFeatures, nVectors);
+   }//}}}
+
+   /**
+    * @brief used in CSR file reading
+    *
+    * @param line
+    *
+    * @return 
+    */
+   private int getRowLength(String line) {
+        String[] elements = line.split(",");
+        return elements.length;
+   }
+
+   /**
+    * @brief readi in data vals in CSR file
+    *
+    * @param line
+    * @param offset
+    * @param nCols
+    * @param data
+    *
+    * @return 
+    */
+   private void readRow(String line, int offset, int nCols, double[] data) throws IOException 
+   {
+	   if (line == null) {
+		   throw new IOException("Unable to read input dataset");
+	   }
+
+	   String[] elements = line.split(",");
+	   for (int j = 0; j < nCols; j++) {
+		   data[offset + j] = Double.parseDouble(elements[j]);
+	   }
+
+   }
+
+   /**
+    * @brief read in index vals in CSR file
+    *
+    * @param line
+    * @param offset
+    * @param nCols
+    * @param data
+    *
+    * @return 
+    */
+   private void readRow(String line, int offset, int nCols, long[] data) throws IOException 
+   {
+        if (line == null) {
+            throw new IOException("Unable to read input dataset");
+        }
+
+        String[] elements = line.split(",");
+        for (int j = 0; j < nCols; j++) {
+            data[offset + j] = Long.parseLong(elements[j]);
+        }
    }
 
    public void loadTestTable(NumericTable testTable)
