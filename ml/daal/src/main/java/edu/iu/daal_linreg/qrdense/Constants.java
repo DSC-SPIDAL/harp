@@ -1,4 +1,4 @@
-package edu.iu.daal_linreg;
+package edu.iu.daal_linreg.qrdense;
 
 public class Constants {
   public static final String POINTS_PER_FILE =

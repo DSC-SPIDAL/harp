@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package edu.iu.daal_linreg;
+package edu.iu.daal_linreg.normaleq;
 
 import edu.iu.harp.example.DoubleArrPlus;
 import edu.iu.harp.partition.Partition;

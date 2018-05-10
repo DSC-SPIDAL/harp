@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package edu.iu.daal_linreg;
+package edu.iu.daal_linreg.normaleq;
 
 import org.apache.commons.io.IOUtils;
 import java.io.BufferedReader;
@@ -275,7 +275,7 @@ CollectiveMapper<String, String, Object, Object>{
 
     ts1 = System.currentTimeMillis();
     TrainingDistributedStep1Local linearRegressionTraining = new TrainingDistributedStep1Local(daal_Context, Float.class,
-                    TrainingMethod.qrDense);
+                    TrainingMethod.normEqDense);
     linearRegressionTraining.input.set(TrainingInputId.data, trainData);
     linearRegressionTraining.input.set(TrainingInputId.dependentVariable, trainDependentVariables);
 
@@ -299,7 +299,7 @@ CollectiveMapper<String, String, Object, Object>{
       
     if(this.isMaster()){
       TrainingDistributedStep2Master linearRegressionTrainingMaster = new TrainingDistributedStep2Master(daal_Context, Float.class,
-                TrainingMethod.qrDense);
+                TrainingMethod.normEqDense);
       ts1 = System.currentTimeMillis();
       int[] pid = partialResultTable.getPartitionIDs().toIntArray();
       for(int j = 0; j< pid.length; j++){

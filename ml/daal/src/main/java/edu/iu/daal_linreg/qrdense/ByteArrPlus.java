@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package edu.iu.daal_linreg;
+package edu.iu.daal_linreg.qrdense;
 
 import edu.iu.harp.partition.PartitionCombiner;
 import edu.iu.harp.partition.PartitionStatus;
