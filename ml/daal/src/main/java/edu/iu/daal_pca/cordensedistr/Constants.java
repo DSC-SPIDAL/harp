@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package edu.iu.daal_pca;
+package edu.iu.daal_pca.cordensedistr;
 
 public class Constants {
   public static final String POINTS_PER_FILE =

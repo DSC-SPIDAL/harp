@@ -21,7 +21,7 @@
  ////////////////////////////////////////////////////////////////////////////////
  */
 
-package edu.iu.daal_pca;
+package edu.iu.daal_pca.svddensedistr;
 
 import java.io.BufferedReader;
 import java.io.FileReader;

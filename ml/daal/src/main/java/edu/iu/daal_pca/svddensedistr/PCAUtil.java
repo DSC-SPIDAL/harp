@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package edu.iu.daal_pca;
+package edu.iu.daal_pca.svddensedistr;
 
 import it.unimi.dsi.fastutil.ints.IntArrays;
 

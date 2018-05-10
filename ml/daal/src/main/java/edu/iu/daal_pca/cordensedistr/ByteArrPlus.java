@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.iu.daal_pca;
+package edu.iu.daal_pca.cordensedistr;
 
 
 import edu.iu.harp.partition.PartitionCombiner;

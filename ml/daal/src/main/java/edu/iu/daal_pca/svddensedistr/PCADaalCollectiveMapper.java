@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package edu.iu.daal_pca;
+package edu.iu.daal_pca.svddensedistr;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -145,7 +145,7 @@ public class PCADaalCollectiveMapper extends
   {
     ts_start = System.currentTimeMillis();
     /*creating an object to store the partial results on each node*/
-    PartialCorrelationResult pres = new PartialCorrelationResult(daal_Context);
+    // PartialResult pres = new PartialResult(daal_Context);
 
     //set thread number used in DAAL
     LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
@@ -195,8 +195,8 @@ public class PCADaalCollectiveMapper extends
     ts2 = System.currentTimeMillis();
     convert_time += (ts2 - ts2);
 
-    /* Create an algorithm to compute PCA decomposition using the correlation method on local nodes */
-    DistributedStep1Local pcaLocal = new DistributedStep1Local(daal_Context, Double.class, Method.correlationDense);
+    /* Create an algorithm to compute PCA decomposition using the svd method on local nodes */
+    DistributedStep1Local pcaLocal = new DistributedStep1Local(daal_Context, Double.class, Method.svdDense);
 
     /* Set the input data on local nodes */
     pcaLocal.input.set(InputId.data, pointsArray_daal);
@@ -204,7 +204,7 @@ public class PCADaalCollectiveMapper extends
     
     ts1 = System.currentTimeMillis();
     /*Compute the partial results on the local data nodes*/
-    pres = (PartialCorrelationResult)pcaLocal.compute();
+    PartialResult pres = (PartialResult)pcaLocal.compute();
     ts2 = System.currentTimeMillis();
     compute_time += (ts2 - ts1);
 
@@ -218,7 +218,7 @@ public class PCADaalCollectiveMapper extends
     if(this.isMaster())
     {
         /*create a new algorithm for the master node computations*/
-        DistributedStep2Master pcaMaster = new DistributedStep2Master(daal_Context, Double.class, Method.correlationDense);
+        DistributedStep2Master pcaMaster = new DistributedStep2Master(daal_Context, Double.class, Method.svdDense);
 
         try
         {
@@ -226,7 +226,7 @@ public class PCADaalCollectiveMapper extends
             for (int i = 0; i < this.getNumWorkers(); i++)
             {
                 /*get the partial results from the local nodes and deserialize*/
-                PartialCorrelationResult step1LocalResultNew = deserializeStep1Result(step1LocalResult_table.getPartition(i).get().get());
+                PartialResult step1LocalResultNew = deserializeStep1Result(step1LocalResult_table.getPartition(i).get().get());
 
                 /*add the partial results from the loacl nodes to the master node input*/
                 pcaMaster.input.add(MasterInputId.partialResults, step1LocalResultNew);
@@ -280,7 +280,7 @@ public class PCADaalCollectiveMapper extends
    *
    * @return step1LocalResult_table
    */
-  public Table<ByteArray> communicate(PartialCorrelationResult res) throws IOException
+  public Table<ByteArray> communicate(PartialResult res) throws IOException
   {
     try
     {
@@ -299,13 +299,13 @@ public class PCADaalCollectiveMapper extends
   }
 
   /**
-   * @brief Serialize the PartialCorrelationResult by invoking Harp Java API
+   * @brief Serialize the PartialResult by invoking Harp Java API
    *
    * @param res
    *
    * @return buffer
    */
-  private byte[] serializeStep1Result(PartialCorrelationResult res) throws IOException
+  private byte[] serializeStep1Result(PartialResult res) throws IOException
   {
     ByteArrayOutputStream outputByteStream = new ByteArrayOutputStream();
     ObjectOutputStream outputStream = new ObjectOutputStream(outputByteStream);
@@ -323,11 +323,11 @@ public class PCADaalCollectiveMapper extends
    *
    * @return restoredRes
    */
-  private PartialCorrelationResult deserializeStep1Result(byte[] buffer) throws IOException, ClassNotFoundException
+  private PartialResult deserializeStep1Result(byte[] buffer) throws IOException, ClassNotFoundException
   {
     ByteArrayInputStream inputByteStream = new ByteArrayInputStream(buffer);
     ObjectInputStream inputStream = new ObjectInputStream(inputByteStream);
-    PartialCorrelationResult restoredRes = (PartialCorrelationResult)inputStream.readObject();
+    PartialResult restoredRes = (PartialResult)inputStream.readObject();
     restoredRes.unpack(daal_Context);
     return restoredRes;
   }

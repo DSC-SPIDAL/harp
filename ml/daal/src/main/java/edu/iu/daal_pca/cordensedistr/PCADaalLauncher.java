@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package edu.iu.daal_pca;
+package edu.iu.daal_pca.cordensedistr;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
