@@ -166,47 +166,6 @@ CollectiveMapper<String, String, Object, Object>{
 	//read in csr files with filenames in trainingDataFiles
 	NumericTable featureArray_daal = this.datasource.loadCSRNumericTable(daal_Context);
 
-        // ts1 = System.currentTimeMillis();
-        // // extracting points from csv files
-        // List<double[]> pointArrays = MOMUtil.loadPoints(trainingDataFiles, pointsPerFile,
-        //         vectorSize, conf, harpThreads);
-        // ts2 = System.currentTimeMillis();
-        // load_time += (ts2 - ts1);
-        //
-        // // converting data to Numeric Table
-        // ts1 = System.currentTimeMillis();
-        // long nFeature = vectorSize;
-        // long nLabel = 1;
-        // long totalLengthFeature = 0;
-        //
-        // long[] array_startP_feature = new long[pointArrays.size()];
-        // double[][] array_data_feature = new double[pointArrays.size()][];
-        //
-        // for(int k=0;k<pointArrays.size();k++)
-        // {
-        //     array_data_feature[k] = pointArrays.get(k);
-        //     array_startP_feature[k] = totalLengthFeature;
-        //     totalLengthFeature += pointArrays.get(k).length;
-        // }
-        //
-        // long featuretableSize = totalLengthFeature/nFeature;
-        //
-        // //initializing Numeric Table
-        // NumericTable featureArray_daal = new HomogenNumericTable(daal_Context, Double.class, nFeature, featuretableSize, NumericTable.AllocationFlag.DoAllocate);
-        //
-        // int row_idx_feature = 0;
-        // int row_len_feature = 0;
-        //
-        // for (int k=0; k<pointArrays.size(); k++) 
-        // {
-        //     row_len_feature = (array_data_feature[k].length)/(int)nFeature;
-        //     //release data from Java side to native side
-        //     ((HomogenNumericTable)featureArray_daal).releaseBlockOfRows(row_idx_feature, row_len_feature, DoubleBuffer.wrap(array_data_feature[k]));
-        //     row_idx_feature += row_len_feature;
-        // }
-        // ts2 = System.currentTimeMillis();
-        // convert_time += (ts2 - ts1);
-
         Table<ByteArray> partialResultTable = new Table<>(0, new ByteArrPlus());
 
         computeOnLocalNode(featureArray_daal, partialResultTable);
@@ -306,30 +265,7 @@ CollectiveMapper<String, String, Object, Object>{
 	  Service.printNumericTable("Variance:", variance);
 	  Service.printNumericTable("StandartDeviation:", standardDeviation);
 	  Service.printNumericTable("Variation:", variation);
-
-	  // NumericTable minimum = result.get(ResultId.minimum);
-	  // NumericTable maximum = result.get(ResultId.maximum);
-	  // NumericTable sum = result.get(ResultId.sum);
-	  // NumericTable sumSquares = result.get(ResultId.sumSquares);
-	  // NumericTable sumSquaresCentered = result.get(ResultId.sumSquaresCentered);
-	  // NumericTable mean = result.get(ResultId.mean);
-	  // NumericTable secondOrderRawMoment = result.get(ResultId.secondOrderRawMoment);
-	  // NumericTable variance = result.get(ResultId.variance);
-	  // NumericTable standardDeviation = result.get(ResultId.standardDeviation);
-	  // NumericTable variation = result.get(ResultId.variation);
-	  //
-	  // System.out.println("Low order moments:");
-	  // Service.printNumericTable("Min:", minimum);
-	  // Service.printNumericTable("Max:", maximum);
-	  // Service.printNumericTable("Sum:", sum);
-	  // Service.printNumericTable("SumSquares:", sumSquares);
-	  // Service.printNumericTable("SumSquaredDiffFromMean:", sumSquaresCentered);
-	  // Service.printNumericTable("Mean:", mean);
-	  // Service.printNumericTable("SecondOrderRawMoment:", secondOrderRawMoment);
-	  // Service.printNumericTable("Variance:", variance);
-	  // Service.printNumericTable("StandartDeviation:", standardDeviation);
-	  // Service.printNumericTable("Variation:", variation);
-
+	  
   }
 
   private static ByteArray serializePartialResult(PartialResult partialResult) throws IOException {
