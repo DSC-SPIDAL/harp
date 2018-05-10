@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package edu.iu.daal_mom;
+package edu.iu.daal_mom.csrdistri;
 
 import it.unimi.dsi.fastutil.ints.IntArrays;
 

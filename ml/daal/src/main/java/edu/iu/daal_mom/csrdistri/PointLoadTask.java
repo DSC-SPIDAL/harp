@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package edu.iu.daal_mom;
+package edu.iu.daal_mom.csrdistri;
 
 import java.io.IOException;
 import java.lang.*;

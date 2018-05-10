@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package edu.iu.daal_mom;
+package edu.iu.daal_mom.csrdistri;
 
 import edu.iu.harp.partition.PartitionCombiner;
 import edu.iu.harp.partition.PartitionStatus;
