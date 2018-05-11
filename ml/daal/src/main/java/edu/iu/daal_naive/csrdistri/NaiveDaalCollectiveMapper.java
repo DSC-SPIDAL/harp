@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package edu.iu.daal_naive;
+package edu.iu.daal_naive.csrdistri;
 
 import org.apache.commons.io.IOUtils;
 import java.io.BufferedReader;
@@ -46,6 +46,8 @@ import edu.iu.harp.partition.Table;
 import edu.iu.harp.resource.DoubleArray;
 import edu.iu.harp.resource.ByteArray;
 import edu.iu.harp.schdynamic.DynamicScheduler;
+import edu.iu.datasource.*;
+import edu.iu.data_aux.*;
 
 import java.nio.DoubleBuffer;
 

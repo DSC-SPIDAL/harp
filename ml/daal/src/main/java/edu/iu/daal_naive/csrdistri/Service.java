@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package edu.iu.daal_naive;
+package edu.iu.daal_naive.csrdistri;
 
 import edu.iu.harp.example.DoubleArrPlus;
 import edu.iu.harp.partition.Partition;

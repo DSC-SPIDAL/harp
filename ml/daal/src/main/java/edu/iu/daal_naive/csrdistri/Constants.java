@@ -1,4 +1,4 @@
-package edu.iu.daal_naive;
+package edu.iu.daal_naive.csrdistri;
 
 public class Constants {
   public static final String POINTS_PER_FILE =
