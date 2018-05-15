@@ -1,8 +1,6 @@
 ---
 title: Quick Start Guide
 description: Run a single-node Harp on your machine
-aliases:
-  - /docs/install.html
 ---
 
 These instructions have only been tested on:
@@ -11,16 +9,6 @@ These instructions have only been tested on:
 * Ubuntu
 
 If you are using windows, we suggest you to install an Ubuntu system on a virtualization software (e.g. VirtualBox) with at least 4GB memory in it.
-
-## Prerequisites
-
-1. Vim (or any other text editor)
-
-2. Java
-
-3. [Maven](https://maven.apache.org/install.html) 
-
-4. ssh
 
 **Select the Hadoop distribution of your choice. Supported Hadoop versions are 2.6.0, 2.7.5 and 2.9.0.**  
 

@@ -1,0 +1,9 @@
+sections:
+  - name: Applications
+    sublinks:
+      - name: Latent Dirichlet Allocation (CGS)
+        url: /docs/applications/lda-cgs
+      - name: Matrix Factorization
+        url: /docs/applications/mf
+      - name: Subgraph Counting
+        url: /docs/applications/sahad

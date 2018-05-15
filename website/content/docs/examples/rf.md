@@ -31,80 +31,125 @@ The following is the procedure of Harp Random Forests training:
 
 The predicting part will use these decision trees to predict `K` results. For regression, the result is the average of each tree's result and for classification, the majority vote will be the output.
 
-## Step 0 --- Data preprocessing
+This tutorial extends a random forest implementation of a popular java machine learning library [javaml](http://java-ml.sourceforge.net/) from a shared memory version into a distributed version.
 
+## Step 0 --- Data Bootstraping
 ```Java
-// In the case of merging the data from different location, main process needs to create bootstrap samples.
-// So here, the main process loads all the data and creates the bootstrap samples.
-if(doBootstrapSampling) {                                     
-    //Load each of the training files under train folder                
-    for(i = 0; i < RandomForestConstants.NUM_GLOBAL; i++) {
-        files.add(trainFileFolder + File.separator + trainNameFormat + i + ".csv");
-    }
-    System.out.println("Loading the training data...");
-    loadData(trainData,files);
-    System.out.println("Data size: " + trainData.size());
-    files.clear();
-    ArrayList<Integer> positions;
-    //Create the bootstrapped samples and write to local disk
-    for(i = 0; i < RandomForestConstants.NUM_MAPPERS; i ++) {
-        positions = DoBootStrapSampling(trainData.size());
-        System.out.println("Sampled data for: "+ i +"; size: " + positions.size());
-        createMapperFiles(trainData,testData,fs,localDirStr,i,positions);
-        positions = null;
-    }
-} else {
-    //Load each of the training files under train folder                
-    for(i = 0; i < RandomForestConstants.NUM_MAPPERS; i ++){
-        System.out.println("Loading the training data for " + i + "...");
-        files.add(trainFileFolder+File.separator+trainNameFormat+i+".csv");
-        loadData(trainData,files);
-        System.out.println("Unsampled data for: "+ i +"; size: " + trainData.size());
-        createMapperFiles(trainData,testData,fs,localDirStr,i,null);
-        files.clear();
-        trainData.clear();
-    }
-} 
+// create bootstrap samples for each tree
+Dataset baggingDataset = new DefaultDataset();
+Random rand = new Random();
+for (int i = 0; i < dataset.size(); i++) {
+	baggingDataset.add(dataset
+		.get(rand.nextInt(dataset.size())));
+}
 ```
 
 ## Step 1 ---Train forests
 ```Java
-// Create the Random Forest classifier that uses 5 neighbors to make decisions
-Classifier rf = new RandomForest(numTrees, false, numAttributes, new Random());
-// Learn the forest
-rf.buildClassifier(trainDataPoints);
+// each thread build one decision tree 
+Classifier rf = new RandomForest(1, false,
+  numFeatures, new Random());
+rf.buildClassifier(dataset);
 ```
+
+```Java
+//private DynamicScheduler<Dataset, Classifier, RFTask> rfScheduler;
+
+rfScheduler.start(); 
+for (int i = 0; i < numTrees
+		/ numMapTasks; i++) {
+	Dataset baggingDataset =
+		Util.doBagging(trainDataset);
+	rfScheduler.submit(trainDataset);
+} 
+
+while (rfScheduler.hasOutput()) {
+	rfClassifier 
+	.add(rfScheduler.waitForOutput());
+
+}
+rfScheduler.stop();
+
+```
+
 
 ## Step 2 --- Synchronize majority vote
 ```Java
-for (Instance inst : testDataPoints) {
-    // This will hold this random forest's class vote for this data point
-    //IntArray votes = IntArray.create(C, false);
-    IntArray votes = IntArray.create(RandomForestConstants.NUM_CLASSES, false);
-    // Get the prediction class from this Random Forest
-    Object predictedClassValue = rf.classify(inst);
-    // Get the true value
-    Object realClassValue = inst.classValue();
-    //int predIndex = Integer.parseInt(preds.get(dp));
-    // Check which class was predicted
-    for (int i = 0; i < RandomForestConstants.NUM_CLASSES; i++) {
-        // Check to see if this index matches the class that was predicted
-        if (predictedClassValue.equals(Integer.toString(i))) {
-            // log.info("i: " + i + "; predictedClassValue: " + predictedClassValue + "; condition: " + predictedClassValue.equals(Integer.toString(i)));
-            votes.get()[i] = 1;
-        } else {
-            votes.get()[i] = 0;
-        }
-    }
-    // Add the voting results to the partition
-    Partition<IntArray> dpP = new Partition<IntArray>(dp, votes);
-    predTable.addPartition(dpP);
-    // Move onto the next data point
-    dp++;
+for (Instance testData : testDataset) {
+	IntArray votes = IntArray.create(2, false);
+	for (Classifier rf : rfClassifier) {
+		Object classValue = rf.classify(testData);
+		if (classValue.toString().equals("0")) {
+			votes.get()[0] += 1;
+		} else {
+			votes.get()[1] += 1;
+		}
+	}
+	Partition<IntArray> partition =
+		new Partition<IntArray>(partitionId,
+				votes);
+	predictTable.addPartition(partition);
+	partitionId += 1;
+
 }
-log.info("Done populating predTable\n");
-// All Reduce from all Mappers
-log.info("Before allreduce!!!!");
-allreduce("main", "allreduce", predTable);
-log.info("After allreduce!!!!");
+
+reduce("main", "reduce", predictTable, 0);
+if (this.isMaster()) {
+	printResults(predictTable, testDataset);
+
+}
+
 ```
+
+# Run example
+
+### Data
+The dataset used is sampled from [Aireline](http://stat-computing.org/dataexpo/2009/) dataset. Refer to the [dataset](https://github.com/DSC-SPIDAL/harp/tree/master/datasets/tutorial/airline) directory for more details.
+
+The format for the data should be a list of \<DAY_OF_WEEK DEP_DELAY DEP_DELAY_NEW DEP_DELAY_GROUP ARR_DELAY ARR_DELAY_NEW UNIQUE_CARRIER_ID ORIGIN_STATE_ABR_ID DEST_STATE_ABR_ID CLASS\>. For example,
+```bash
+1 14 14 0 10 10 15 10 20 0
+1 -3 0 -1 -24 0 15 10 20 0
+```
+
+### Put data on hdfs
+```bash
+hdfs dfs -mkdir /data/airline
+rm -rf data
+mkdir -p data
+cd data
+split -l 74850 $HARP_ROOT_DIR/datasets/tutorial/airline/train.csv
+cd ..
+hdfs dfs -put data /data/airline
+hdfs dfs -put $HARP_ROOT_DIR/datasets/tutorial/airline/test.csv /data/airline/
+```
+
+### Compile
+
+Select the profile related to your hadoop version. For ex: hadoop-2.6.0. Supported hadoop versions are 2.6.0, 2.7.5 
+and 2.9.0
+```bash
+cd $HARP_ROOT_DIR
+mvn clean package -Phadoop-2.6.0
+```
+
+```bash
+cd $HARP_ROOT_DIR/contrib/target
+cp contrib-0.1.0.jar $HADOOP_HOME
+cp $HARP_ROOT_DIR/third_parity/javaml-0.1.7.jar $HADOOP_HOME/share/hadoop/mapreduce
+cp $HARP_ROOT_DIR/third_parity/ajt-2.11.jar $HADOOP_HOME/share/hadoop/mapreduce
+cd $HADOOP_HOME
+```
+
+### Run
+```bash
+hadoop jar contrib-0.1.0.jar edu.iu.rf.RFMapCollective 
+Usage: edu.iu.rf.RFMapCollective <numTrees> <numMapTasks> <numThreads> <trainPath> <testPath> <outputPath>
+```
+
+### Example
+```bash
+hadoop jar contrib-0.1.0.jar edu.iu.rf.RFMapCollective 32 2 16 /data/airline/data/ /data/airline/test.csv /out
+```
+
+This will start 2 mappers with 16 threads in each mapper to build 32 decision trees. The accuracy of prediction on the test dataset is the output.
