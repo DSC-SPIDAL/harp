@@ -196,10 +196,7 @@ private void runNaive(int nClasses, int numMapTasks, int numThreads, int mem, Pa
       "mapreduce.map.collective.memory.mb", mem);
 
     jobConf.setInt("mapreduce.task.timeout", 60000000);
-    // mapreduce.map.collective.java.opts
-    // -Xmx120000m -Xms120000m
-    // int xmx = (mem - 5000) > (mem * 0.5)
-    //   ? (mem - 5000) : (int) Math.ceil(mem * 0.5);
+
     int xmx = (int) Math.ceil((mem - 5000)*0.5);
     int xmn = (int) Math.ceil(0.25 * xmx);
     jobConf.set(
