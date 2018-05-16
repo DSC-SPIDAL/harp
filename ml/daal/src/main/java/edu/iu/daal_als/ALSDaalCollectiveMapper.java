@@ -360,11 +360,6 @@ public class ALSDaalCollectiveMapper
             NumericTable userOffsets;
             NumericTable itemOffsets;
 
-            //local var
-            // KeyValueDataCollection usersOutBlocks; 
-            //local var
-            // KeyValueDataCollection itemsOutBlocks;
-            
             // for Step 1
             //local var, sync on master node
             KeyValueDataCollection initStep1LocalResult = null;
@@ -456,11 +451,7 @@ public class ALSDaalCollectiveMapper
                 usersPartition_test[j+1] = usersPartition_test[j] + dataTable_partition.getPartition(j).get().get()[0];  
                 itemsPartition_test[j+1] = itemsPartition_test[j] + dataTable_partition.getPartition(j).get().get()[1];
             }
-            //
-            // //compute out blocks
-            // usersOutBlocks = computeOutBlocks(daal_Context, workerNum, trainDaalTable, itemsPartition);
-            // itemsOutBlocks = computeOutBlocks(daal_Context, workerNum, trainDaalTableTran, usersPartition);
-
+            
             testModelInitRMSEMulti(usersPartition_test, itemsPartition_test, dataTableRows, testDataMap, row_mapping, col_mapping);
 
             // ------------------------------ Training Model Start ------------------------------

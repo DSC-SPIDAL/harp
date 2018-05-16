@@ -47,6 +47,7 @@ import edu.iu.harp.schdynamic.DynamicScheduler;
 
 import edu.iu.datasource.*;
 import edu.iu.data_aux.*;
+import edu.iu.data_comm.*;
 
 
 //import daal.jar API
@@ -68,6 +69,7 @@ CollectiveMapper<String, String, Object, Object>{
 
 
   private PartialResult partialResult;
+  private SerializableBase[] partialResult_comm;
   private Result result;
   private int pointsPerFile = 50;
   private int vectorSize = 10;
@@ -87,7 +89,9 @@ CollectiveMapper<String, String, Object, Object>{
   private long ts2 = 0;
 
   private static HarpDAALDataSource datasource;
+  private static HarpDAALComm harpcomm;	
   private static DaalContext daal_Context = new DaalContext();
+
     /**
    * Mapper configuration.
    */
@@ -143,6 +147,8 @@ CollectiveMapper<String, String, Object, Object>{
 
       //init data source
       this.datasource = new HarpDAALDataSource(trainingDataFiles, harpThreads, conf);
+      // create communicator
+      this.harpcomm= new HarpDAALComm(this.getSelfID(), this.getMasterID(), this.numMappers, daal_Context, this);
 
       runCOV(conf, context);
       LOG.info("Total iterations in master view: "
@@ -151,8 +157,6 @@ CollectiveMapper<String, String, Object, Object>{
       this.freeConn();
       System.gc();
     }
-
-
 
     private void runCOV(Configuration conf, Context context) throws IOException {
 
@@ -165,12 +169,12 @@ CollectiveMapper<String, String, Object, Object>{
 
 	//read in csr files with filenames in trainingDataFiles
 	NumericTable featureArray_daal = this.datasource.loadCSRNumericTable(daal_Context);
-        
-        Table<ByteArray> partialResultTable = new Table<>(0, new ByteArrPlus());
+	// compute on local nodes
+        computeOnLocalNode(featureArray_daal);
 
-        computeOnLocalNode(featureArray_daal, partialResultTable);
+	// compute on master node
         if(this.isMaster()){
-            computeOnMasterNode(partialResultTable);
+            computeOnMasterNode();
             HomogenNumericTable covariance = (HomogenNumericTable) result.get(ResultId.covariance);
             HomogenNumericTable mean = (HomogenNumericTable) result.get(ResultId.mean);
             Service.printNumericTable("Covariance matrix:", covariance);
@@ -190,7 +194,7 @@ CollectiveMapper<String, String, Object, Object>{
         LOG.info("Misc Time of Cov: "+ (total_time - load_time - compute_time - comm_time - convert_time));
     }
 
-  private void computeOnLocalNode(NumericTable featureArray_daal, Table<ByteArray> partialResultTable) throws java.io.IOException {
+  private void computeOnLocalNode(NumericTable featureArray_daal) throws java.io.IOException {
 
     ts1 = System.currentTimeMillis();
     /* Create algorithm objects to compute a variance-covariance matrix in the distributed processing mode using the default method */
@@ -204,35 +208,21 @@ CollectiveMapper<String, String, Object, Object>{
     ts2 = System.currentTimeMillis();
     compute_time += (ts2 - ts1);
 
+    // reduce the partial result
     ts1 = System.currentTimeMillis();
-    partialResultTable.addPartition(new Partition<>(this.getSelfID(), serializePartialResult(partialResult)));
-    boolean reduceStatus = false;
-    reduceStatus = this.reduce("cov", "sync-partialresult", partialResultTable, this.getMasterID()); 
+    this.partialResult_comm = this.harpcomm.harpdaal_reduce(partialResult, "Covariance", "local-reduce");
     ts2 = System.currentTimeMillis();
     comm_time += (ts2 - ts1);
-
-    if(!reduceStatus){
-      System.out.println("reduce not successful");
-    }
-    else{
-      System.out.println("reduce successful");
-    }
+    
   }
 
-  private void computeOnMasterNode(Table<ByteArray> partialResultTable){
-    int[] pid = partialResultTable.getPartitionIDs().toIntArray();
+  private void computeOnMasterNode(){
+
     DistributedStep2Master algorithm = new DistributedStep2Master(daal_Context, Double.class, Method.fastCSR);
     ts1 = System.currentTimeMillis();
-    for(int j = 0; j< pid.length; j++){
-      try {
-        algorithm.input.add(DistributedStep2MasterInputId.partialResults,
-          deserializePartialResult(partialResultTable.getPartition(pid[j]).get())); 
-      } catch (Exception e) 
-      {  
-        System.out.println("Fail to deserilize partialResultTable" + e.toString());
-        e.printStackTrace();
-      }
-    }
+    for(int j=0;j<this.numMappers; j++)
+	algorithm.input.add(DistributedStep2MasterInputId.partialResults, (PartialResult)(partialResult_comm[j])); 
+    
     ts2 = System.currentTimeMillis();
     comm_time += (ts2 - ts1);
 
@@ -242,35 +232,6 @@ CollectiveMapper<String, String, Object, Object>{
     ts2 = System.currentTimeMillis();
     compute_time += (ts2 - ts1);
   }
-
-
-  private static ByteArray serializePartialResult(PartialResult partialResult) throws IOException {
-    /* Create an output stream to serialize the numeric table */
-    ByteArrayOutputStream outputByteStream = new ByteArrayOutputStream();
-    ObjectOutputStream outputStream = new ObjectOutputStream(outputByteStream);
-
-    /* Serialize the numeric table into the output stream */
-    partialResult.pack();
-    outputStream.writeObject(partialResult);
-
-    /* Store the serialized data in an array */
-    byte[] serializedPartialResult = outputByteStream.toByteArray();
-
-    ByteArray partialResultHarp = new ByteArray(serializedPartialResult, 0, serializedPartialResult.length);
-    return partialResultHarp;
-  }
-
-  private static PartialResult deserializePartialResult(ByteArray byteArray) throws IOException, ClassNotFoundException {
-    /* Create an input stream to deserialize the numeric table from the array */
-    byte[] buffer = byteArray.get();
-    ByteArrayInputStream inputByteStream = new ByteArrayInputStream(buffer);
-    ObjectInputStream inputStream = new ObjectInputStream(inputByteStream);
-
-    /* Create a numeric table object */
-    PartialResult restoredDataTable = (PartialResult) inputStream.readObject();
-    restoredDataTable.unpack(daal_Context);
-
-    return restoredDataTable;
-  } 
+   
 
 }
