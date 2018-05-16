@@ -50,6 +50,7 @@ import edu.iu.harp.schdynamic.DynamicScheduler;
 
 import edu.iu.datasource.*;
 import edu.iu.data_aux.*;
+import edu.iu.data_comm.*;
 
 
 //import daal api for algorithms 
@@ -102,6 +103,7 @@ public class KmeansDaalCollectiveMapper
 		private long ts2 = 0;
 
 		private static HarpDAALDataSource datasource;
+		private static HarpDAALComm harpcomm;	
 		private static DaalContext daal_Context = new DaalContext();
 
 		/**
@@ -168,6 +170,8 @@ public class KmeansDaalCollectiveMapper
 
 				// create data source
 				this.datasource = new HarpDAALDataSource(trainingDataFiles, harpThreads, conf);
+				// create communicator
+				this.harpcomm= new HarpDAALComm(this.getSelfID(), this.getMasterID(), this.numMappers, daal_Context, this);
 
 				runKmeans(conf, context);
 				// LOG.info("Total time of iterations in master view: "
@@ -217,7 +221,13 @@ public class KmeansDaalCollectiveMapper
             		initPres = initLocal.compute();
 	
 			// reduce init pres
-			reduce_initpres();
+			SerializableBase[] initPres_comm = this.harpcomm.harpdaal_reduce(this.initPres, "Kmeans", "reduce_initPres");
+			if (this.isMaster() && initPres_comm != null)
+			{
+				for (int i=0; i<numMappers; i++)
+				   initMaster.input.add(InitDistributedStep2MasterInputId.partialResults, (InitPartialResult)(initPres_comm[i]));
+			}
+
 			this.barrier("kmeans", "finish comm init pres");
 
 			if (this.isMaster())
@@ -230,7 +240,8 @@ public class KmeansDaalCollectiveMapper
 			this.barrier("kmeans", "finish compute init pres");
 
 			//broadcaset centroids 
-			broadcast_numerictable();
+			this.centroids = (NumericTable)(this.harpcomm.harpdaal_braodcast(this.centroids, "kmeans", "bcast", true));
+			
 		}//}}}
 
 		private void calcCentroids() throws IOException
@@ -252,7 +263,14 @@ public class KmeansDaalCollectiveMapper
 			   pres = algorithm.compute();
 
 			   //reduce pres results to master mapper
-			   reduce_pres();
+			   SerializableBase[] pres_comm = this.harpcomm.harpdaal_reduce(this.pres, "Kmeans", "reduce_Pres");
+			   if (this.isMaster() && pres_comm != null)
+			   {
+				   for (int i=0; i<numMappers; i++)
+					masterAlgorithm.input.add(DistributedStep2MasterInputId.partialResults, (PartialResult)(pres_comm[i]));
+			   }
+
+			   this.barrier("kmeans", "barrier reduce pres");
 
 			   if (this.isMaster())
 			   {
@@ -267,7 +285,7 @@ public class KmeansDaalCollectiveMapper
 
 			   this.barrier("kmeans", "finish_one_iter");
 			   //broadcast centroids
-			   broadcast_numerictable();
+			   this.centroids = (NumericTable)(this.harpcomm.harpdaal_braodcast(this.centroids, "kmeans", "bcast", true));
 
 		   }
 
@@ -281,209 +299,6 @@ public class KmeansDaalCollectiveMapper
             		algorithm.input.set(InputId.inputCentroids, centroids);
 			Result result = algorithm.compute();
 			assignments = result.get(ResultId.assignments);
-		}//}}}
-
-		// reduce initpartialresult to master mapper
-		private void reduce_initpres() throws IOException
-		{//{{{
-			Table<ByteArray> initpresTable = new Table<>(0, new ByteArrPlus());
-			initpresTable.addPartition(new Partition<>(this.getSelfID(), serializeInitPres(initPres)));
-
-			boolean reduceStatus = false;
-			reduceStatus = this.reduce("kmeans", "sync-initPres", initpresTable, this.getMasterID());
-			this.barrier("kmeans", "barrier-initPres");
-
-			if(!reduceStatus){
-				System.out.println("reduce not successful");
-			}
-			else{
-				System.out.println("reduce successful");
-			}
-
-			try {
-				//deserialize and add results
-				if (this.isMaster())
-				{
-					for (int i=0; i<numMappers; i++)
-					{
-						initMaster.input.add(InitDistributedStep2MasterInputId.partialResults, 
-								deserializeInitPres(initpresTable.getPartition(i).get()));
-					}
-
-				}
-
-			}catch (Exception e) 
-			{  
-				System.out.println("Fail to deserilize" + e.toString());
-				e.printStackTrace();
-			}
-
-		}//}}}
-
-		private void reduce_pres() throws IOException
-		{//{{{
-
-			Table<ByteArray> presTable = new Table<>(0, new ByteArrPlus());
-			presTable.addPartition(new Partition<>(this.getSelfID(), serializePres(pres)));
-
-			boolean reduceStatus = false;
-			reduceStatus = this.reduce("kmeans", "sync-Pres", presTable, this.getMasterID());
-			this.barrier("kmeans", "barrier-Pres");
-
-			if(!reduceStatus){
-				System.out.println("reduce not successful");
-			}
-			else{
-				System.out.println("reduce successful");
-			}
-
-			try {
-				//deserialize and add results
-				if (this.isMaster())
-				{
-					for (int i=0; i<numMappers; i++)
-					{
-                				masterAlgorithm.input.add(DistributedStep2MasterInputId.partialResults, 
-								deserializePres(presTable.getPartition(i).get()));
-					}
-
-				}
-
-			}catch (Exception e) 
-			{  
-				System.out.println("Fail to deserilize" + e.toString());
-				e.printStackTrace();
-			}
-
-			this.barrier("kmeans", "barrier reduce pres");
-
-		}//}}}
-
-		// broadcast centroids from master to all mappers
-		private void broadcast_numerictable() throws IOException
-		{//{{{
-		    Table<ByteArray> comm_table = new Table<>(0, new ByteArrPlus());
-		    if (this.isMaster())
-		       comm_table.addPartition(new Partition<>(this.getMasterID(), serializeNTable(centroids)));
-
-		    this.barrier("kmeans", "bcast add centroids");
-
-		    boolean bcastStatus = false;
-		    bcastStatus = this.broadcast("kmeans", "bcast-centroids", comm_table, this.getMasterID(), true);
-		    this.barrier("kmeans", "bcast-centorids-finish");
-
-		    if(!bcastStatus){
-			    System.out.println("bcast not successful");
-		    }
-		    else{
-			    System.out.println("bcast successful");
-		    }
-
-		    try{
-
-			 centroids = deserializeNTable(comm_table.getPartition(this.getMasterID()).get());
-
-		    }catch (Exception e)
-		    {
-			    System.out.println("Fail to deserilize" + e.toString());
-				e.printStackTrace();
-		    }
-
-		}//}}}
-
-		private static ByteArray serializeInitPres(InitPartialResult initpres) throws IOException 
-		{//{{{
-
-			/* Create an output stream to serialize the numeric table */
-			ByteArrayOutputStream outputByteStream = new ByteArrayOutputStream();
-			ObjectOutputStream outputStream = new ObjectOutputStream(outputByteStream);
-
-			/* Serialize the numeric table into the output stream */
-			initpres.pack();
-			outputStream.writeObject(initpres);
-
-			/* Store the serialized data in an array */
-			byte[] serializedInitPres = outputByteStream.toByteArray();
-
-		 	return new ByteArray(serializedInitPres, 0, serializedInitPres.length);
-		}//}}}
-
-		private static ByteArray serializePres(PartialResult pres) throws IOException 
-		{//{{{
-
-			/* Create an output stream to serialize the numeric table */
-			ByteArrayOutputStream outputByteStream = new ByteArrayOutputStream();
-			ObjectOutputStream outputStream = new ObjectOutputStream(outputByteStream);
-
-			/* Serialize the numeric table into the output stream */
-			pres.pack();
-			outputStream.writeObject(pres);
-
-			/* Store the serialized data in an array */
-			byte[] serializedPres = outputByteStream.toByteArray();
-
-		 	return new ByteArray(serializedPres, 0, serializedPres.length);
-		}//}}}
-
-		private static InitPartialResult deserializeInitPres(ByteArray byteArray) throws IOException, ClassNotFoundException 
-		{//{{{
-			/* Create an input stream to deserialize the numeric table from the array */
-			byte[] buffer = byteArray.get();
-			ByteArrayInputStream inputByteStream = new ByteArrayInputStream(buffer);
-			ObjectInputStream inputStream = new ObjectInputStream(inputByteStream);
-
-			/* Create a numeric table object */
-			InitPartialResult restoredDataTable = (InitPartialResult) inputStream.readObject();
-			restoredDataTable.unpack(daal_Context);
-
-			return restoredDataTable;
-		}//}}}
-
-		private static PartialResult deserializePres(ByteArray byteArray) throws IOException, ClassNotFoundException 
-		{//{{{
-			/* Create an input stream to deserialize the numeric table from the array */
-			byte[] buffer = byteArray.get();
-			ByteArrayInputStream inputByteStream = new ByteArrayInputStream(buffer);
-			ObjectInputStream inputStream = new ObjectInputStream(inputByteStream);
-
-			/* Create a numeric table object */
-			PartialResult restoredDataTable = (PartialResult) inputStream.readObject();
-			restoredDataTable.unpack(daal_Context);
-
-			return restoredDataTable;
-		}//}}}
-
-	        private static ByteArray serializeNTable(NumericTable inputTable) throws IOException 
-		{//{{{
-
-			/* Create an output stream to serialize the numeric table */
-			ByteArrayOutputStream outputByteStream = new ByteArrayOutputStream();
-			ObjectOutputStream outputStream = new ObjectOutputStream(outputByteStream);
-
-			/* Serialize the numeric table into the output stream */
-			inputTable.pack();
-			outputStream.writeObject(inputTable);
-
-			/* Store the serialized data in an array */
-			byte[] serializedTable = outputByteStream.toByteArray();
-
-		 	return new ByteArray(serializedTable, 0, serializedTable.length);
-
-		}//}}}
-
-		private static NumericTable deserializeNTable(ByteArray byteArray) throws IOException, ClassNotFoundException 
-		{//{{{
-			/* Create an input stream to deserialize the numeric table from the array */
-			byte[] buffer = byteArray.get();
-			ByteArrayInputStream inputByteStream = new ByteArrayInputStream(buffer);
-			ObjectInputStream inputStream = new ObjectInputStream(inputByteStream);
-
-			/* Create a numeric table object */
-			NumericTable restoredDataTable = (NumericTable) inputStream.readObject();
-			restoredDataTable.unpack(daal_Context);
-
-			return restoredDataTable;
-
 		}//}}}
 
 
