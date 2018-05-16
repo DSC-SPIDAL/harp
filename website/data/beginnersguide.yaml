@@ -1,0 +1,5 @@
+sections:
+  - name: Beginners Guide
+    sublinks:
+      - name: Multiclass Logistic Regression
+        url: /docs/beginnersguide/mlr
