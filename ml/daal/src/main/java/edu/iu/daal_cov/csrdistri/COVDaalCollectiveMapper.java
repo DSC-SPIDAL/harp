@@ -102,9 +102,9 @@ CollectiveMapper<String, String, Object, Object>{
       Configuration configuration =
       context.getConfiguration();
       numMappers = configuration
-      .getInt(Constants.NUM_MAPPERS, 10);
+      .getInt(HarpDAALConstants.NUM_MAPPERS, 10);
       numThreads = configuration
-      .getInt(Constants.NUM_THREADS, 10);
+      .getInt(HarpDAALConstants.NUM_THREADS, 10);
 
       //always use the maximum hardware threads to load in data and convert data 
       harpThreads = Runtime.getRuntime().availableProcessors();
