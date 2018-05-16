@@ -56,7 +56,7 @@ implements Tool {
   public int run(String[] args) throws Exception {
 
     Configuration conf = this.getConf();
-    Initialize init = new Initialize(conf, args, 0);
+    Initialize init = new Initialize(conf, args);
 
     /* Put shared libraries into the distributed cache */
     init.loadDistributedLibs();

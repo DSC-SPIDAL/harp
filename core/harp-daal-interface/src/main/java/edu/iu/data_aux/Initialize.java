@@ -41,7 +41,6 @@ public class Initialize {
 
 	private Configuration conf;
 	private String[] args;
-	private int app_args_num;
 	private int sys_args_num; 
 	private int num_mapper;
 	private int num_thread;
@@ -53,11 +52,10 @@ public class Initialize {
 	private Path workPath;
 	private Path outputPath;
 
-	public Initialize(Configuration conf, String[] args, int app_args_num)
+	public Initialize(Configuration conf, String[] args)
 	{
 		this.conf = conf;
 		this.args = args;
-		this.app_args_num = app_args_num;
 		// num_mappers, 
 		// num_threads per mapper, 
 		// memory per node, 
@@ -77,6 +75,8 @@ public class Initialize {
 		DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbbmalloc.so.2#libtbbmalloc.so.2"), this.conf);
 		DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbbmalloc.so#libtbbmalloc.so"), this.conf);
 	}
+
+	public int getSysArgNum() {return this.sys_args_num;}
 
 	public boolean loadSysArgs() throws IOException, URISyntaxException, InterruptedException,
 			ExecutionException, ClassNotFoundException 
@@ -113,6 +113,7 @@ public class Initialize {
 
 		return true;
 	}
+
 
 	public Job createJob(String job_name, java.lang.Class<?> launcherCls, 
 		java.lang.Class<? extends org.apache.hadoop.mapreduce.Mapper> mapperCls) 

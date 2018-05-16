@@ -27,7 +27,15 @@ public class HarpDAALConstants {
     "num_iterations";
   public static final String WORK_DIR =
     "work_dir";
+
   // application specific
+  public static final String FEATURE_DIM =
+    "vector_size";
+  public static final String FILE_DIM =
+    "file_dimension";
+  public static final String NUM_FACTOR =
+    "nFactors";
+
   public static final String TEST_FILE_PATH =
   "test_file_path";
   public static final String TEST_TRUTH_PATH =
