@@ -121,13 +121,13 @@ public class KNNDaalCollectiveMapper
         Configuration configuration =
             context.getConfiguration();
 
-	this.fileDim = configuration.getInt(Constants.FILE_DIM, 10);
-	this.numMappers = configuration.getInt(Constants.NUM_MAPPERS, 10);
-        this.numThreads = configuration.getInt(Constants.NUM_THREADS, 10);
+	this.fileDim = configuration.getInt(HarpDAALConstants.FILE_DIM, 10);
+	this.numMappers = configuration.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
+        this.numThreads = configuration.getInt(HarpDAALConstants.NUM_THREADS, 10);
         this.harpThreads = Runtime.getRuntime().availableProcessors();
 
-	this.nFeatures = configuration.getInt(Constants.FEATURE_DIM, 10);
-	this.testFilePath = configuration.get(Constants.TEST_FILE_PATH,"");
+	this.nFeatures = configuration.getInt(HarpDAALConstants.FEATURE_DIM, 10);
+	this.testFilePath = configuration.get(HarpDAALConstants.TEST_FILE_PATH,"");
 
         LOG.info("File Dim " + this.fileDim);
         LOG.info("Num Mappers " + this.numMappers);

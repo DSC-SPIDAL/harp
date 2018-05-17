@@ -111,12 +111,12 @@ public class RbfDenseDaalCollectiveMapper
         Configuration configuration =
             context.getConfiguration();
 
-	this.fileDim = configuration.getInt(Constants.FILE_DIM, 4);
-	this.numMappers = configuration.getInt(Constants.NUM_MAPPERS, 10);
-        this.numThreads = configuration.getInt(Constants.NUM_THREADS, 10);
+	this.fileDim = configuration.getInt(HarpDAALConstants.FILE_DIM, 4);
+	this.numMappers = configuration.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
+        this.numThreads = configuration.getInt(HarpDAALConstants.NUM_THREADS, 10);
         this.harpThreads = Runtime.getRuntime().availableProcessors();
 
-	this.nFeatures = configuration.getInt(Constants.FEATURE_DIM, 4);
+	this.nFeatures = configuration.getInt(HarpDAALConstants.FEATURE_DIM, 4);
 	this.sigma = configuration.getDouble(Constants.SIGMA, 1.0);
 
 	this.rightfilepath = configuration.get(Constants.RIGHT_FILE_PATH,"");

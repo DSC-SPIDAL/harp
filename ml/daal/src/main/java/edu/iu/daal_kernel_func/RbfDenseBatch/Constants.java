@@ -17,20 +17,9 @@
 package edu.iu.daal_kernel_func.RbfDenseBatch;
 
 public class Constants {
-  public static final String FEATURE_DIM =
-    "vector_size";
-  public static final String FILE_DIM =
-    "file_dimension";
+
   public static final String SIGMA =
     "sigma";
-  public static final String NUM_MAPPERS =
-    "num_mappers";
-  public static final String NUM_THREADS =
-    "num_threads";
-  public static final String MAX_ITERATIONS =
-    "max_iterations";
-  public static final String WORK_DIR =
-    "work_dir";
   public static final String RIGHT_FILE_PATH =
     "right file path";
   

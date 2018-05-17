@@ -141,13 +141,13 @@ public class DTREGTAVDaalCollectiveMapper
         Configuration configuration =
             context.getConfiguration();
 
-	this.nFeatures = configuration.getInt(Constants.FEATURE_DIM, 5);
-	this.fileDim = configuration.getInt(Constants.FILE_DIM, 6);
-        this.numMappers = configuration.getInt(Constants.NUM_MAPPERS, 10);
-        this.numThreads = configuration.getInt(Constants.NUM_THREADS, 10);
+	this.nFeatures = configuration.getInt(HarpDAALConstants.FEATURE_DIM, 5);
+	this.fileDim = configuration.getInt(HarpDAALConstants.FILE_DIM, 6);
+        this.numMappers = configuration.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
+        this.numThreads = configuration.getInt(HarpDAALConstants.NUM_THREADS, 10);
         //always use the maximum hardware threads to load in data and convert data 
         this.harpThreads = Runtime.getRuntime().availableProcessors();
-	this.pruneFilePath = configuration.get(Constants.PRUNE_FILE_PATH,"");
+	this.pruneFilePath = configuration.get(HarpDAALConstants.TRAIN_PRUNE_PATH,"");
 
         LOG.info("File Dim " + this.fileDim);
         LOG.info("Num Mappers " + this.numMappers);

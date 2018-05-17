@@ -117,16 +117,16 @@ public class KmeansDaalCollectiveMapper
 			Configuration configuration =
 				context.getConfiguration();
 			numMappers = configuration
-				.getInt(Constants.NUM_MAPPERS, 10);
+				.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
 			numThreads = configuration
-				.getInt(Constants.NUM_THREADS, 10);
+				.getInt(HarpDAALConstants.NUM_THREADS, 10);
 			nClasses = configuration
-				.getLong(Constants.NUM_CLASS, 20);
+				.getLong(HarpDAALConstants.NUM_CLASS, 20);
 
 			nVectorsInBlock = configuration
 				.getInt(Constants.NUM_VEC_BLOCK, 8000);
 			nIterations = configuration
-				.getInt(Constants.NUM_ITERATIONS, 5);
+				.getInt(HarpDAALConstants.NUM_ITERATIONS, 5);
 
 			//always use the maximum hardware threads to load in data and convert data 
 			harpThreads = Runtime.getRuntime().availableProcessors();

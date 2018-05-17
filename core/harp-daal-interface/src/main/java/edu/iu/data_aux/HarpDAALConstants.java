@@ -35,10 +35,16 @@ public class HarpDAALConstants {
     "file_dimension";
   public static final String NUM_FACTOR =
     "nFactors";
+  public static final String NUM_CLASS =
+    "nClass";
 
   public static final String TEST_FILE_PATH =
   "test_file_path";
+  public static final String TRAIN_PRUNE_PATH =
+  "train_prune_path";
   public static final String TEST_TRUTH_PATH =
+  "ground_truth_file_path";
+  public static final String TEST_PRUNE_PATH =
   "ground_truth_file_path";
   public static final String BATCH_SIZE =
   "batch size";

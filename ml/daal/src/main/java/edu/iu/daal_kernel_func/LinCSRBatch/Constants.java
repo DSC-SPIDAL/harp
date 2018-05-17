@@ -21,14 +21,6 @@ public class Constants {
     "k";
   public static final String B =
     "b";
-  public static final String NUM_MAPPERS =
-    "num_mappers";
-  public static final String NUM_THREADS =
-    "num_threads";
-  public static final String MAX_ITERATIONS =
-    "max_iterations";
-  public static final String WORK_DIR =
-    "work_dir";
   public static final String RIGHT_FILE_PATH =
     "right file path";
   

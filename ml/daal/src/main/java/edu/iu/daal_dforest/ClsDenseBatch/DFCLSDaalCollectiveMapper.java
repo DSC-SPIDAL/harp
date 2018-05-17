@@ -124,17 +124,17 @@ public class DFCLSDaalCollectiveMapper
         Configuration configuration =
             context.getConfiguration();
 
-	this.nFeatures = configuration.getInt(Constants.FEATURE_DIM, 3);
-	this.fileDim = configuration.getInt(Constants.FILE_DIM, 4);
-	this.nClasses = configuration.getInt(Constants.NUM_CLASS, 5);
+	this.nFeatures = configuration.getInt(HarpDAALConstants.FEATURE_DIM, 3);
+	this.fileDim = configuration.getInt(HarpDAALConstants.FILE_DIM, 4);
+	this.nClasses = configuration.getInt(HarpDAALConstants.NUM_CLASS, 5);
 	this.nTrees = configuration.getInt(Constants.NUM_TREES, 10);
 	this.minObservationsInLeafNode = configuration.getInt(Constants.MIN_OBS_LEAFNODE, 8);
 
-        this.numMappers = configuration.getInt(Constants.NUM_MAPPERS, 10);
-        this.numThreads = configuration.getInt(Constants.NUM_THREADS, 10);
+        this.numMappers = configuration.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
+        this.numThreads = configuration.getInt(HarpDAALConstants.NUM_THREADS, 10);
         //always use the maximum hardware threads to load in data and convert data 
         this.harpThreads = Runtime.getRuntime().availableProcessors();
-	this.testFilePath = configuration.get(Constants.TEST_FILE_PATH,"");
+	this.testFilePath = configuration.get(HarpDAALConstants.TEST_FILE_PATH,"");
 
         LOG.info("File Dim " + this.fileDim);
         LOG.info("Num Mappers " + this.numMappers);

@@ -138,12 +138,12 @@ public class DFREGTAVDaalCollectiveMapper
         Configuration configuration =
             context.getConfiguration();
 
-	this.nFeatures = configuration.getInt(Constants.FEATURE_DIM, 13);
-	this.fileDim = configuration.getInt(Constants.FILE_DIM, 14);
+	this.nFeatures = configuration.getInt(HarpDAALConstants.FEATURE_DIM, 13);
+	this.fileDim = configuration.getInt(HarpDAALConstants.FILE_DIM, 14);
 	this.nTrees = configuration.getInt(Constants.NUM_TREES, 2);
 
-        this.numMappers = configuration.getInt(Constants.NUM_MAPPERS, 10);
-        this.numThreads = configuration.getInt(Constants.NUM_THREADS, 10);
+        this.numMappers = configuration.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
+        this.numThreads = configuration.getInt(HarpDAALConstants.NUM_THREADS, 10);
         //always use the maximum hardware threads to load in data and convert data 
         this.harpThreads = Runtime.getRuntime().availableProcessors();
 
