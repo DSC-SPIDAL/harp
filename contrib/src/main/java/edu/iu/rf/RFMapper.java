@@ -73,6 +73,7 @@ public class RFMapper extends
 
     numFeatures = trainDataset.noAttributes();
 
+	LOG.info("Building trees start...");
     rfScheduler.start();
 
     for (int i = 0; i < numTrees
@@ -89,6 +90,8 @@ public class RFMapper extends
     context.progress();
 
     rfScheduler.stop();
+
+	LOG.info("Building trees complete!");
 
     Table<IntArray> predictTable =
       new Table<>(0, new IntArrPlus());
@@ -112,6 +115,8 @@ public class RFMapper extends
     }
 
     reduce("main", "reduce", predictTable, 0);
+
+	LOG.info("Prediction complete!");
 
     if (this.isMaster()) {
       printResults(predictTable, testDataset);

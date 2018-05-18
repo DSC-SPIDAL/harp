@@ -10,12 +10,31 @@
     </formats>
 
     <files>
+        <!--README.md-->
         <file>
             <source>${main.basedir}/README.md</source>
             <outputDirectory>/</outputDirectory>
             <fileMode>644</fileMode>
         </file>
+        <!--third-party daal jar-->
+        <file>
+            <source>${main.basedir}/third_party/daal-2018/lib/daal.jar</source>
+            <outputDirectory>/third_party/daal-2018/lib/</outputDirectory>
+            <fileMode>644</fileMode>
+        </file>
     </files>
+
+
+    <fileSets>
+        <!--other third-party jars-->
+        <fileSet>
+            <directory>${main.basedir}/third_party/</directory>
+            <includes>
+                <include>*.jar</include>
+            </includes>
+            <outputDirectory>third_party</outputDirectory>
+        </fileSet>
+    </fileSets>
 
     <dependencySets>
         <!--core libraries-->

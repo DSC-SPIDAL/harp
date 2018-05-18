@@ -111,10 +111,10 @@ public class ARDaalCollectiveMapper
         Configuration configuration =
             context.getConfiguration();
 
-	this.numMappers = configuration.getInt(Constants.NUM_MAPPERS, 10);
-        this.numThreads = configuration.getInt(Constants.NUM_THREADS, 10);
+	this.numMappers = configuration.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
+        this.numThreads = configuration.getInt(HarpDAALConstants.NUM_THREADS, 10);
         this.harpThreads = Runtime.getRuntime().availableProcessors();
-	this.fileDim = configuration.getInt(Constants.FILE_DIM, 10);
+	this.fileDim = configuration.getInt(HarpDAALConstants.FILE_DIM, 10);
 	this.minSupport = configuration.getDouble(Constants.MIN_SUPPORT, 0.001);
 	this.minConfidence = configuration.getDouble(Constants.MIN_CONFIDENCE, 0.7);
 

@@ -30,7 +30,7 @@ mnist.data = preprocessing.scale(mnist.data)
 
 target = np.zeros((rows, labels))
 for r in range(rows):
-    target[r, mnist.target[r]] = 1.
+    target[r, int(mnist.target[r])] = 1.
 
 #save
 #np.savetxt("mnist_data.txt",mnist.data, fmt='%.8f')

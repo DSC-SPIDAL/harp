@@ -17,24 +17,9 @@
 package edu.iu.daal_dforest.ClsDenseBatch;
 
 public class Constants {
-  public static final String FEATURE_DIM =
-    "vector_size";
-  public static final String FILE_DIM =
-    "file_dimension";
-  public static final String NUM_CLASS =
-    "multi_class";
+  
   public static final String NUM_TREES =
     "num_trees";
   public static final String MIN_OBS_LEAFNODE =
     "min_observation_leafnodes";
-  public static final String NUM_MAPPERS =
-    "num_mappers";
-  public static final String NUM_THREADS =
-    "num_threads";
-  public static final String NUM_ITERATIONS =
-    "num_iterations";
-  public static final String WORK_DIR =
-    "work_dir";
-  public static final String TEST_FILE_PATH =
-    "test_file_path";
 }

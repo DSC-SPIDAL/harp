@@ -10,7 +10,7 @@ In machine learning, support vector machines (SVM) are supervised learning model
 
 In addition to performing linear classification, SVMs can efficiently perform a non-linear classification using what is called the kernel trick, implicitly mapping their inputs into high-dimensional feature spaces.
 
-In this project, Harp won't touch the core code base of computing SVM. It will use LibSVM, which is an open source library and does parallel around LibSVM. And it is developed at the National Taiwan University and written in C++ with other programming languages' APIs. LibSVM implements the SMO algorithm for kernelized support vector machines (SVMs), supporting classification and regression.
+In this tutorial, Harp won't touch the core code base of computing SVM. It will use [LibSVM](https://www.csie.ntu.edu.tw/~cjlin/libsvm/), which is an open source library and does parallel around LibSVM. And it is developed at the National Taiwan University and written in C++ with other programming languages' APIs. LibSVM implements the SMO algorithm for kernelized support vector machines (SVMs), supporting classification and regression.
 
 ## METHOD
 
@@ -38,12 +38,6 @@ Harp SVM will follow LibSVM's data format. Each data point in a file is represen
 * `<label>` which is 1 or -1
 * `<fid>` is a positive feature id
 * `<feature>` is the feature value
-
-After preprocessing, push the data set into HDFS by the following commands.
-```bash
-hdfs dfs -mkdir /input
-hdfs dfs -put input_data/* /input
-```
 
 ## Step 1 --- Initialize and load data
 ```Java
@@ -90,12 +84,13 @@ for (int i = 0;i < vy.size();i++) {
 //initial svm paramter
 svmParameter = new svm_parameter();
 svmParameter.svm_type = svm_parameter.C_SVC;
-svmParameter.kernel_type = svm_parameter.RBF;
-svmParameter.degree = 3;
+//svmParameter.kernel_type = svm_parameter.RBF;
+//svmParameter.degree = 3;
+svmParameter.kernel_type = svm_parameter.LINEAR;
 svmParameter.gamma = 0;
 svmParameter.coef0 = 0;
 svmParameter.nu = 0.5;
-svmParameter.cache_size = 100;
+svmParameter.cache_size = 60000;
 svmParameter.C = 1;
 svmParameter.eps = 1e-3;
 svmParameter.p = 0.1;
@@ -159,12 +154,53 @@ for (String line : svString) {
 }
 ```
 
-## USAGE
-Run Harp SVM:
+# Run example
+
+### Data
+The dataset used is a subset of (MNIST)[https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass.html#mnist] with 6000 examples selected.
+
+### Compile
+
+Select the profile related to your hadoop version. For ex: hadoop-2.6.0. Supported hadoop versions are 2.6.0, 2.7.5 
+and 2.9.0
 ```bash
-$ hadoop jar contrib-0.1.0.jar edu.iu.svm.IterativeSVM <number of mappers> <number of iteration> <output path in HDFS> <data set path>
+cd $HARP_ROOT_DIR
+mvn clean package -Phadoop-2.6.0
 ```
+
+```bash
+cd $HARP_ROOT_DIR/contrib/target
+cp contrib-0.1.0.jar $HADOOP_HOME
+cd $HADOOP_HOME
+```
+
+### Get the dataset and put data onto hdfs
+```bash
+wget https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass/mnist.t.bz2
+bunzip2 mnist.t.bz2
+hdfs dfs -mkdir -p /harp-test/svm/data
+rm -rf data
+mkdir -p data
+cd data
+split -l 5000 ../mnist.t
+cd ..
+hdfs dfs -put data /harp-test/svm/
+```
+
+### Run
+```bash
+hadoop jar contrib-0.1.0.jar edu.iu.svm.IterativeSVM <number of mappers> <number of iteration> <work path in HDFS> <local data set path>
+```
+
+### Example
+```bash
+hadoop jar contrib-0.1.0.jar edu.iu.svm.IterativeSVM 2 5 /harp-test/svm nolocalfile
+```
+
 Fetch the result:
 ```bash
-$ hdfs dfs -get <output path in HDFS> <path you want to store the output>
+hdfs dfs -get /harp-test/svm/out
 ```
+The result is the support vectors.
+
+

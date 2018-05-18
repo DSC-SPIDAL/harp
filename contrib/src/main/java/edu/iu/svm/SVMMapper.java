@@ -118,12 +118,13 @@ public class SVMMapper extends
     // initial svm paramter
     svmParameter = new svm_parameter();
     svmParameter.svm_type = svm_parameter.C_SVC;
-    svmParameter.kernel_type = svm_parameter.RBF;
-    svmParameter.degree = 3;
+    //svmParameter.kernel_type = svm_parameter.RBF;
+    //svmParameter.degree = 3;
+    svmParameter.kernel_type = svm_parameter.LINEAR;
     svmParameter.gamma = 0;
     svmParameter.coef0 = 0;
     svmParameter.nu = 0.5;
-    svmParameter.cache_size = 100;
+    svmParameter.cache_size = 60000;
     svmParameter.C = 1;
     svmParameter.eps = 1e-3;
     svmParameter.p = 0.1;
@@ -175,33 +176,39 @@ public class SVMMapper extends
       svmModel =
         svm.svm_train(svmProblem, svmParameter);
 
+	  LOG.info("svm train: " + iter);
+
       Table<HarpString> svTable =
         new Table(0, new HarpStringPlus());
 
       HarpString harpString = new HarpString();
-      harpString.s = "";
+	  StringBuilder sb = new StringBuilder(512*1024);
+
       for (int i = 0; i < svmModel.l; i++) {
-        harpString.s +=
-          svmProblem.y[svmModel.sv_indices[i] - 1]
-            + " ";
+        sb.append(svmProblem.y[svmModel.sv_indices[i] - 1]);
+        sb.append(" ");
         for (int j = 0; j < svmModel.SV[i].length
           - 1; j++) {
-          harpString.s += svmModel.SV[i][j].index
-            + ":" + svmModel.SV[i][j].value + " ";
+          sb.append(svmModel.SV[i][j].index);
+		  sb.append(":");
+		  sb.append(svmModel.SV[i][j].value);
+		  sb.append(" ");
         }
-        harpString.s +=
-          svmModel.SV[i][svmModel.SV[i].length
-            - 1].index + ":"
-            + svmModel.SV[i][svmModel.SV[i].length
-              - 1].value
-            + "\n";
+        sb.append(svmModel.SV[i][svmModel.SV[i].length - 1].index);
+		sb.append(":");
+		sb.append(svmModel.SV[i][svmModel.SV[i].length - 1].value);
+		sb.append("\n");
       }
+
+	  harpString.s = sb.toString();
       Partition<HarpString> pa =
         new Partition<HarpString>(0, harpString);
       svTable.addPartition(pa);
 
+	  LOG.info("Iteration:" + iter + "start allreduce");
       allreduce("main", "allreduce_" + iter,
         svTable);
+	  LOG.info("Iteration:" + iter + "end allreduce");
 
       supportVectors = new HashSet<String>();
       String[] svString = svTable.getPartition(0)
@@ -211,6 +218,9 @@ public class SVMMapper extends
           supportVectors.add(line);
         }
       }
+
+	  LOG.info("Iteration:" + iter + "supportVector Size:" + svString.length);
+
     }
 
     // output support vectors
