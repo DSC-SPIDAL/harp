@@ -52,8 +52,8 @@ public class Constants {
   public static final double local_attestation=80.0;
   public static final double remote_attestation=27200.0;
   public static final double swap_page_penalty=40;
-  //for 2.3GHz SGX-enabled CPU
-  public static final double ms_per_kcycle=0.000434782;
+  //for 3.4GHz SGX-enabled CPU
+  public static final double ms_per_kcycle=0.0002941;
   // public static final boolean enablesimu=false;
   public static final boolean enablesimu=true;
 

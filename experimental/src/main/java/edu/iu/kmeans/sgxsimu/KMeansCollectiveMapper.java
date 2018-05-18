@@ -61,6 +61,7 @@ public class KMeansCollectiveMapper extends
   private long total_comp_time;
   private long total_sgx_comm;
   private long total_sgx_comp_ecall;
+  private long total_sgx_comp_mem;
   private long total_sgx_comp_ocall;
   private long total_sgx_init;
 
@@ -111,6 +112,7 @@ public class KMeansCollectiveMapper extends
     total_comp_time = 0;
     total_sgx_comm = 0;
     total_sgx_comp_ecall = 0;
+    total_sgx_comp_mem = 0;
     total_sgx_comp_ocall = 0;
     total_sgx_init = 0;
 
@@ -274,15 +276,18 @@ public class KMeansCollectiveMapper extends
 	      //fetch sgx overhead from every tasks
 	      long accumu_calc_sgx_ecall = 0;
 	      long accumu_calc_sgx_ocall = 0;
+	      long accumu_calc_sgx_mem = 0;
 
 	      for (CenCalcTask2 taskcell : cenCalcTasks) 
 	      {
 		      accumu_calc_sgx_ecall += taskcell.getSGXEcall();
 		      accumu_calc_sgx_ocall += taskcell.getSGXOcall();
+		      accumu_calc_sgx_mem += taskcell.getSGXMem();
 		      taskcell.resetSGX();
 	      }
 
 	      this.total_sgx_comp_ecall += (accumu_calc_sgx_ecall/cenCalcTasks.size());
+	      this.total_sgx_comp_mem += (accumu_calc_sgx_mem/cenCalcTasks.size());
 	      this.total_sgx_comp_ocall += (accumu_calc_sgx_ocall/cenCalcTasks.size());
 
 	      long accumu_merge_sgx_ecall = 0;
@@ -391,6 +396,7 @@ public class KMeansCollectiveMapper extends
     LOG.info("Compute: " +this.total_comp_time+ " ms ; " + this.total_comp_time/(double)numIterations+" ms per itr");
     LOG.info("Comm: " +this.total_comm_time+ " ms ; " + this.total_comm_time/(double)numIterations+" ms per itr");
     LOG.info("Compute SGX overheadEcall: " +this.total_sgx_comp_ecall+ " ms ; " + this.total_sgx_comp_ecall/(double)numIterations+" ms per itr");
+    LOG.info("Compute SGX overheadMem: " +this.total_sgx_comp_mem+ " ms ; " + this.total_sgx_comp_mem/(double)numIterations+" ms per itr");
     LOG.info("Compute SGX overheadOcall: " +this.total_sgx_comp_ocall+ " ms ; " + this.total_sgx_comp_ocall/(double)numIterations+" ms per itr");
     LOG.info("Comm SGX overhead: " +this.total_sgx_comm+ " ms ; " + this.total_sgx_comm/(double)numIterations+" ms per itr");
     LOG.info("Init SGX overhead: " +this.total_sgx_init+ " ms ; " + this.total_sgx_init/(double)numIterations+" ms per itr");

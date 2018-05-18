@@ -22,6 +22,7 @@ import edu.iu.harp.resource.DoubleArray;
 import edu.iu.harp.schdynamic.Task;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import java.lang.*;
 
 public class CenCalcTask2
   implements Task<double[][], Object> {
@@ -34,6 +35,7 @@ public class CenCalcTask2
   private final int cenVecSize;
   private int enclave_eff_per_thd;
   private long sgxoverheadEcall;
+  private long sgxoverheadMem;
   private long sgxoverheadOcall;
 
   public CenCalcTask2(Table<DoubleArray> cenTable,
@@ -42,6 +44,7 @@ public class CenCalcTask2
     //record sgx centroid data size
     int sgxdatasize = 0;
     this.sgxoverheadEcall = 0;
+    this.sgxoverheadMem = 0;
     this.sgxoverheadOcall = 0;
     this.cenVecSize = cenVecSize;
     this.enclave_eff_per_thd = enclave_eff_per_thd;
@@ -82,6 +85,7 @@ public class CenCalcTask2
 
   public long getSGXEcall() { return this.sgxoverheadEcall; }
   public long getSGXOcall() { return this.sgxoverheadOcall; }
+  public long getSGXMem() { return this.sgxoverheadMem; }
 
   public void
     update(Table<DoubleArray> cenTable) {
@@ -100,6 +104,7 @@ public class CenCalcTask2
   public void resetSGX() {
      this.sgxoverheadEcall = 0;
      this.sgxoverheadOcall = 0;
+     this.sgxoverheadMem = 0;
   }
 
   @Override
@@ -114,21 +119,25 @@ public class CenCalcTask2
     int ptearraysize = 0;
     if (points[0] != null)
 	  ptearraysize = points[0].length;
-    
+
+    long ecallOverhead = 0;
+
     if (Constants.enablesimu)
     {
-	    //each thread fetch the data from enclave of main thread 
-	    int datasize = dataDoubleSizeKB(points.length*ptearraysize);
-	    //simulate overhead of Ecall
-	    long ecallOverhead = (long)((Constants.Ecall + datasize*Constants.cross_enclave_per_kb)*Constants.ms_per_kcycle);
+         //each thread fetch the data from enclave of main thread 
+         int datasize = dataDoubleSizeKB(points.length*ptearraysize);
+         //simulate overhead of Ecall
+         ecallOverhead = (long)((Constants.Ecall + datasize*Constants.cross_enclave_per_kb)*Constants.ms_per_kcycle);
 
-	    //check overhead made by page swapping (default 4K page size)
-	    if (datasize > enclave_eff_per_thd*1024)
-		ecallOverhead += (long)(Constants.swap_page_penalty*(datasize/4)*Constants.ms_per_kcycle);
+         //check overhead made by page swapping (default 4K page size)
+         // if (datasize > enclave_eff_per_thd*1024)
+     		// ecallOverhead += (long)(Constants.swap_page_penalty*(datasize/4)*Constants.ms_per_kcycle);
 
-	    simuOverhead(ecallOverhead);
-	    this.sgxoverheadEcall += ecallOverhead;
+         simuOverhead(ecallOverhead);
+         this.sgxoverheadEcall += ecallOverhead;
     }
+
+    long start_thd = System.currentTimeMillis();
 
     // -------------------- main body of computation for k-means --------------------
     for (int i=0; i < points.length; i++)
@@ -169,10 +178,36 @@ public class CenCalcTask2
     
     // ---------------------- end of computation ----------------------
 
+    // computation time in ms
+    if (Constants.enablesimu)
+    {
+	    long effec_time_overhead = (System.currentTimeMillis() - start_thd);
+	    int datasize = dataDoubleSizeKB(points.length*ptearraysize);
+	    long additional_sgx_overhead = (long)(effec_time_overhead*sgx_overhead_func(datasize));
+	    additional_sgx_overhead -= ecallOverhead;
+	    if (additional_sgx_overhead < 0)
+		additional_sgx_overhead = 0;
+
+	    simuOverhead(additional_sgx_overhead);
+	    this.sgxoverheadMem += additional_sgx_overhead;
+    }
+
     //no simulate overhead of Ocall
     //training data is not changed 
     
     return null;
+  }
+
+  private double sgx_overhead_func(int datasize)
+  {
+      //in MB
+      double simu_size = (double)datasize/10.0/1024.0;
+      // double ratio = (-0.000592887941*Math.pow(simu_size,3.0) + 0.03776145898*Math.pow(simu_size, 2.0) - 0.172624736*simu_size
+	      // + 0.08813241271);
+      double ratio = (-0.000592887941*simu_size*simu_size*simu_size + 0.03776145898*simu_size*simu_size - 0.172624736*simu_size
+	      + 0.08813241271);
+
+      return ratio;
   }
 
   /**
