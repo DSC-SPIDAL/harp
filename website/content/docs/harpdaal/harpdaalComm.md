@@ -26,11 +26,10 @@ where the arguments are defined as follows
 * DaalContext context: the DAAL context handle to initialize DAAL data structures
 * CollectiveMapper mapper: the handle of mapper object that invokes this function
 
-There are four types of communication operations supported by Harp-DAAL 
+There are three types of communication operations wrapped by Harp-DAAL Communication Module 
 
 * harpdaal_broadcast
-* harpdaal_reduce
-* harpdaal_allreduce
+* harpdaal_gather
 * harpdaal_allgather
 
 ## Broadcast
@@ -53,27 +52,27 @@ SerializableBase output = comm.harpdaal_braodcast(input, root_id, contextName, o
 
 and the *input* object is broadcast from *mapper root_id* to all the other mappers. 
 
-## Reduce
+## Gather
 
-To reduce *input* object from all the mappers to the master mapper: 
+To gather *input* object from all the mappers to the master mapper: 
 
 ```java
-SerializableBase[] outputs = comm.harpdaal_reduce(input, contextName, operationName);
+SerializableBase[] outputs = comm.harpdaal_gather(input, contextName, operationName);
 ```
 
 where, the *outputs* is an array of *SerializableBase* from all the mappers. Similarly, the users may provide the *root_id* other than master mapper ID.
 
 ```java
-SerializableBase[] outputs = comm.harpdaal_reduce(input, root_id, contextName, operationName);
+SerializableBase[] outputs = comm.harpdaal_gather(input, root_id, contextName, operationName);
 ```
 
-## Allreduce
+## Allgather
 
-*Allreduce* operation first reduces the data from all mappers to the master mapper, and then it broadcasts the output from the master mapper back to all the 
+*Allgather* operation first gathers the data from all mappers to the master mapper, and then it broadcasts the output from the master mapper back to all the 
 worker mappers.
 
 ```java
-SerializableBase[] outputs = comm.harpdaal_allreduce(input, contextName, operationName);
+SerializableBase[] outputs = comm.harpdaal_allgather(input, contextName, operationName);
 ```
 
 
