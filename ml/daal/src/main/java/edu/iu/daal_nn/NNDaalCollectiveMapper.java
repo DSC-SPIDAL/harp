@@ -48,6 +48,8 @@ import edu.iu.harp.resource.DoubleArray;
 import edu.iu.harp.resource.ByteArray;
 import edu.iu.harp.schdynamic.DynamicScheduler;
 
+import edu.iu.data_aux.*;
+
 import java.nio.DoubleBuffer;
 
 //import daal.jar API
@@ -120,19 +122,19 @@ CollectiveMapper<String, String, Object, Object>{
             Configuration configuration =
             context.getConfiguration();
             numMappers = configuration
-            .getInt(Constants.NUM_MAPPERS, 10);
+            .getInt(HarpDAALConstants.NUM_MAPPERS, 10);
             numThreads = configuration
-            .getInt(Constants.NUM_THREADS, 10);
+            .getInt(HarpDAALConstants.NUM_THREADS, 10);
 
             batchSizeLocal = configuration
-            .getInt(Constants.BATCH_SIZE, 10);
+            .getInt(HarpDAALConstants.BATCH_SIZE, 10);
 
             numWbPars = numThreads;
             testFilePath =
-            configuration.get(Constants.TEST_FILE_PATH,"");
+            configuration.get(HarpDAALConstants.TEST_FILE_PATH,"");
 
             testGroundTruthPath =
-            configuration.get(Constants.TEST_TRUTH_PATH,"");
+            configuration.get(HarpDAALConstants.TEST_TRUTH_PATH,"");
 
             //always use the maximum hardware threads to load in data and convert data 
             harpThreads = Runtime.getRuntime().availableProcessors();

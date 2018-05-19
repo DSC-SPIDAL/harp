@@ -111,10 +111,10 @@ public class MinMaxDaalCollectiveMapper
         Configuration configuration =
             context.getConfiguration();
 
-	this.numMappers = configuration.getInt(Constants.NUM_MAPPERS, 10);
-        this.numThreads = configuration.getInt(Constants.NUM_THREADS, 10);
+	this.numMappers = configuration.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
+        this.numThreads = configuration.getInt(HarpDAALConstants.NUM_THREADS, 10);
         this.harpThreads = Runtime.getRuntime().availableProcessors();
-	this.fileDim = configuration.getInt(Constants.FILE_DIM, 3);
+	this.fileDim = configuration.getInt(HarpDAALConstants.FILE_DIM, 3);
 	this.lowerBound = configuration.getDouble(Constants.LOWER_BOUND, -1.0);
 	this.upperBound = configuration.getDouble(Constants.UPPER_BOUND, 1.0);
 

@@ -110,14 +110,14 @@ CollectiveMapper<String, String, Object, Object>{
       context.getConfiguration();
 
       numMappers = configuration
-      .getInt(Constants.NUM_MAPPERS, 10);
+      .getInt(HarpDAALConstants.NUM_MAPPERS, 10);
       numThreads = configuration
-      .getInt(Constants.NUM_THREADS, 10);
+      .getInt(HarpDAALConstants.NUM_THREADS, 10);
       nClasses = configuration
-      .getInt(Constants.NUM_CLASS, 20);
+      .getInt(HarpDAALConstants.NUM_CLASS, 20);
 
-      testFilePath = configuration.get(Constants.TEST_FILE_PATH,"");
-      testGroundTruth =configuration.get(Constants.TEST_TRUTH_PATH,"");
+      testFilePath = configuration.get(HarpDAALConstants.TEST_FILE_PATH,"");
+      testGroundTruth =configuration.get(HarpDAALConstants.TEST_TRUTH_PATH,"");
 
       //always use the maximum hardware threads to load in data and convert data 
       harpThreads = Runtime.getRuntime().availableProcessors();

@@ -237,6 +237,45 @@ public class HarpDAALDataSource
    }
 
    
+   public NumericTable createDenseNumericTableInput(DaalContext context) throws IOException
+   {
+	  this.loadFiles();
+	  NumericTable inputTable = new HomogenNumericTable(context, Double.class, this.dim, this.getTotalLines(), NumericTable.AllocationFlag.DoAllocate);
+	  this.loadDataBlock(inputTable);
+
+	  return inputTable;
+   }
+
+   public NumericTable createCSRNumericTableInput(DaalContext context) throws IOException
+   {
+	 if (this.hdfs_filenames.size() > 1)
+	 {
+		 LOG.info("CSR data shall be contained in a single file");
+		 return null;
+	 }
+
+	 return  loadCSRNumericTableImpl(this.hdfs_filenames.get(0), context);
+   }
+
+   public NumericTable createDenseNumericTable(String filePath, int fileDim, DaalContext context) throws IOException
+   {
+	this.loadTestFile(filePath, fileDim);
+	NumericTable table = new HomogenNumericTable(context, Double.class, fileDim, this.getTestRows(), NumericTable.AllocationFlag.DoAllocate);
+	this.loadTestTable(table);
+	return table;
+   }
+   
+   public NumericTable createCSRNumericTable(List<String> filenames, DaalContext context) throws IOException
+   {
+	 if (filenames.size() > 1)
+	 {
+		 LOG.info("CSR data shall be contained in a single file");
+		 return null;
+	 }
+
+	 return  loadCSRNumericTableImpl(filenames.get(0), context);
+   }
+
    public NumericTable loadCSRNumericTable(DaalContext context) throws IOException
    {
 	 if (this.hdfs_filenames.size() > 1)

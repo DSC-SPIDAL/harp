@@ -43,6 +43,8 @@ import edu.iu.harp.partition.Table;
 import edu.iu.harp.resource.DoubleArray;
 import edu.iu.harp.resource.ByteArray;
 import edu.iu.harp.schdynamic.DynamicScheduler;
+import edu.iu.datasource.*;
+import edu.iu.data_aux.*;
 
 import java.nio.DoubleBuffer;
 
@@ -51,6 +53,7 @@ import com.intel.daal.algorithms.low_order_moments.*;
 import com.intel.daal.data_management.data.*;
 import com.intel.daal.services.DaalContext;
 import com.intel.daal.services.Environment;
+
 
 
 /**
@@ -94,9 +97,9 @@ CollectiveMapper<String, String, Object, Object>{
       Configuration configuration =
       context.getConfiguration();
       numMappers = configuration
-      .getInt(Constants.NUM_MAPPERS, 10);
+      .getInt(HarpDAALConstants.NUM_MAPPERS, 10);
       numThreads = configuration
-      .getInt(Constants.NUM_THREADS, 10);
+      .getInt(HarpDAALConstants.NUM_THREADS, 10);
 
       //always use the maximum hardware threads to load in data and convert data 
       harpThreads = Runtime.getRuntime().availableProcessors();

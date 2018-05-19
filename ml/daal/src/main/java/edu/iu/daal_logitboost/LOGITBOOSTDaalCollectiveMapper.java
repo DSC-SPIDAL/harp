@@ -124,17 +124,17 @@ public class LOGITBOOSTDaalCollectiveMapper
         Configuration configuration =
             context.getConfiguration();
 
-	this.fileDim = configuration.getInt(Constants.FILE_DIM, 21);
-	this.numMappers = configuration.getInt(Constants.NUM_MAPPERS, 10);
-        this.numThreads = configuration.getInt(Constants.NUM_THREADS, 10);
+	this.fileDim = configuration.getInt(HarpDAALConstants.FILE_DIM, 21);
+	this.numMappers = configuration.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
+        this.numThreads = configuration.getInt(HarpDAALConstants.NUM_THREADS, 10);
         this.harpThreads = Runtime.getRuntime().availableProcessors();
 
-	this.nFeatures = configuration.getInt(Constants.FEATURE_DIM, 20);
-	this.nClasses = configuration.getInt(Constants.NUM_CLASS, 5);
-	this.maxIterations = configuration.getInt(Constants.MAX_ITERATIONS, 100);
-	this.accuracyThreshold = configuration.getDouble(Constants.ACC_THRESHOLD, 0.01);
+	this.nFeatures = configuration.getInt(HarpDAALConstants.FEATURE_DIM, 20);
+	this.nClasses = configuration.getInt(HarpDAALConstants.NUM_CLASS, 5);
+	this.maxIterations = configuration.getInt(HarpDAALConstants.MAX_ITERATIONS, 100);
+	this.accuracyThreshold = configuration.getDouble(HarpDAALConstants.ACC_THRESHOLD, 0.01);
 
-	this.testFilePath = configuration.get(Constants.TEST_FILE_PATH,"");
+	this.testFilePath = configuration.get(HarpDAALConstants.TEST_FILE_PATH,"");
 
         LOG.info("File Dim " + this.fileDim);
         LOG.info("Num Mappers " + this.numMappers);

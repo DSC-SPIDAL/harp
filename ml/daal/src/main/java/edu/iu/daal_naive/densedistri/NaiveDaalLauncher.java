@@ -33,6 +33,8 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
+import edu.iu.data_aux.*;
+
 import org.apache.hadoop.filecache.DistributedCache;
 import java.net.URI;
 
@@ -58,99 +60,99 @@ implements Tool {
     /* Put shared libraries into the distributed cache */
     Configuration conf = this.getConf();
 
-    DistributedCache.createSymlink(conf);
-    DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libJavaAPI.so#libJavaAPI.so"), conf);
-    DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbb.so.2#libtbb.so.2"), conf);
-    DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbb.so#libtbb.so"), conf);
-    DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbbmalloc.so.2#libtbbmalloc.so.2"), conf);
-    DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbbmalloc.so#libtbbmalloc.so"), conf);
-
-    if (args.length < 13) {
-      System.err.println("Usage: edu.iu.daal_naive "
-                + "<input train dir> "
-                + "<input test dir>"
-                + "<input ground truth dir>"
-                + "<workDirPath> "
-                + "<mem per mapper>"
-                + "<vec size>"
-                + "<num classes>"
-                + "<num testpoints>"
-                + "<num mappers> <thread per worker>"
-				+ "<generateData>" 
-				+ "<num of generated train points"
-				+ "<num of train files");
-      ToolRunner.printGenericCommandUsage(System.err);
-      return -1;
-    }
-
-    String inputDirPath = args[0];            
-    String testDirPath = args[1];            
-    String testGroundTruthDirPath = args[2];            
-    String workDirPath = args[3];    
-    int mem = Integer.parseInt(args[4]);
-    int vecsize = Integer.parseInt(args[5]);
-    int num_class = Integer.parseInt(args[6]);
-    int num_test = Integer.parseInt(args[7]);
-    int numMapTasks = Integer.parseInt(args[8]);      
-    int numThreadsPerWorker = Integer.parseInt(args[9]);
-	boolean generateData = Boolean.parseBoolean(args[10]);
-	int num_train_points = Integer.parseInt(args[11]);
-	int numfiles = Integer.parseInt(args[12]);
-
-    System.out.println("Mem (MB) per mapper = "+ mem);
-    System.out.println("Feature dim = "+ vecsize);
-    System.out.println("num of classes = "+ num_class);
-    System.out.println("num of testpoints = "+ num_test);
-    System.out.println("Number of Map Tasks = "+ numMapTasks);
-    System.out.println("Threads per mapper = "+ numThreadsPerWorker);
-
-    launch(inputDirPath, testDirPath, testGroundTruthDirPath, workDirPath, mem, vecsize, num_class, num_test, numMapTasks, 
+     DistributedCache.createSymlink(conf);
+     DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libJavaAPI.so#libJavaAPI.so"), conf);
+     DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbb.so.2#libtbb.so.2"), conf);
+     DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbb.so#libtbb.so"), conf);
+     DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbbmalloc.so.2#libtbbmalloc.so.2"), conf);
+     DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbbmalloc.so#libtbbmalloc.so"), conf);
+    
+     if (args.length < 13) {
+       System.err.println("Usage: edu.iu.daal_naive "
+                 + "<input train dir> "
+                 + "<input test dir>"
+                 + "<input ground truth dir>"
+                 + "<workDirPath> "
+                 + "<mem per mapper>"
+                 + "<vec size>"
+                 + "<num classes>"
+                 + "<num testpoints>"
+                 + "<num mappers> <thread per worker>"
+	 			+ "<generateData>" 
+	 			+ "<num of generated train points"
+	 			+ "<num of train files");
+       ToolRunner.printGenericCommandUsage(System.err);
+       return -1;
+     }
+    
+     String inputDirPath = args[0];            
+     String testDirPath = args[1];            
+     String testGroundTruthDirPath = args[2];            
+     String workDirPath = args[3];    
+     int mem = Integer.parseInt(args[4]);
+     int vecsize = Integer.parseInt(args[5]);
+     int num_class = Integer.parseInt(args[6]);
+     int num_test = Integer.parseInt(args[7]);
+     int numMapTasks = Integer.parseInt(args[8]);      
+     int numThreadsPerWorker = Integer.parseInt(args[9]);
+     boolean generateData = Boolean.parseBoolean(args[10]);
+     int num_train_points = Integer.parseInt(args[11]);
+     int numfiles = Integer.parseInt(args[12]);
+    
+     System.out.println("Mem (MB) per mapper = "+ mem);
+     System.out.println("Feature dim = "+ vecsize);
+     System.out.println("num of classes = "+ num_class);
+     System.out.println("num of testpoints = "+ num_test);
+     System.out.println("Number of Map Tasks = "+ numMapTasks);
+     System.out.println("Threads per mapper = "+ numThreadsPerWorker);
+    
+     launch(inputDirPath, testDirPath, testGroundTruthDirPath, workDirPath, mem, vecsize, num_class, num_test, numMapTasks, 
 			numThreadsPerWorker, generateData, num_train_points, numfiles);
     return 0;
 }
 
 private void launch(String inputDirPath, 
-  String testDirPath, 
-  String testGroundTruthDirPath, 
-  String workDirPath, int mem, int vecsize, int num_class, int num_test, 
-  int numMapTasks, int numThreadsPerWorker, boolean generateData, int num_train_points,
-  int numfiles) throws IOException,
-URISyntaxException, InterruptedException,
-ExecutionException, ClassNotFoundException {
+		String testDirPath, 
+		String testGroundTruthDirPath, 
+		String workDirPath, int mem, int vecsize, int num_class, int num_test, 
+		int numMapTasks, int numThreadsPerWorker, boolean generateData, int num_train_points,
+		int numfiles) throws IOException,
+	URISyntaxException, InterruptedException,
+	ExecutionException, ClassNotFoundException {
 
-  Configuration configuration = getConf();
-  FileSystem fs = FileSystem.get(configuration);
-  Path inputDir = new Path(inputDirPath);
-  Path testDir = new Path(testDirPath);
-  Path testGroundTruthDir = new Path(testGroundTruthDirPath);
+		Configuration configuration = getConf();
+		FileSystem fs = FileSystem.get(configuration);
+		Path inputDir = new Path(inputDirPath);
+		Path testDir = new Path(testDirPath);
+		Path testGroundTruthDir = new Path(testGroundTruthDirPath);
 
-  Path workDir = new Path(workDirPath);
-  if (fs.exists(workDir)) {
-    fs.delete(workDir, true);
-    fs.mkdirs(workDir);
-  }
-  Path modelDir = new Path(workDirPath, "model");
-  fs.mkdirs(modelDir);
-    // Do not make output dir
-  Path outputDir = new Path(workDirPath, "output");
-  long startTime = System.currentTimeMillis();
+		Path workDir = new Path(workDirPath);
+		if (fs.exists(workDir)) {
+			fs.delete(workDir, true);
+			fs.mkdirs(workDir);
+		}
+		Path modelDir = new Path(workDirPath, "model");
+		fs.mkdirs(modelDir);
+		// Do not make output dir
+		Path outputDir = new Path(workDirPath, "output");
+		long startTime = System.currentTimeMillis();
 
-  //test and generate training datasets
-  if (generateData)
-  {
-	  System.out.println("Generate Naive Baytes Training datasets.");
-	  NaiveUtil.generateData(num_train_points, num_test, vecsize, numfiles, num_class,
-			  fs, "/tmp/naive", inputDir, testDir, testGroundTruthDir);
-  }
+		//test and generate training datasets
+		if (generateData)
+		{
+			System.out.println("Generate Naive Baytes Training datasets.");
+			NaiveUtil.generateData(num_train_points, num_test, vecsize, numfiles, num_class,
+					fs, "/tmp/naive", inputDir, testDir, testGroundTruthDir);
+		}
 
-  runNaive(inputDir, testDirPath, testGroundTruthDirPath, mem, vecsize, num_class, num_test, numMapTasks,
-      numThreadsPerWorker, modelDir,
-      outputDir, configuration);
+		runNaive(inputDir, testDirPath, testGroundTruthDirPath, mem, vecsize, num_class, num_test, numMapTasks,
+				numThreadsPerWorker, modelDir,
+				outputDir, configuration);
 
-    long endTime = System.currentTimeMillis();
-    System.out
-      .println("Total Naive Execution Time: "
-        + (endTime - startTime));
+		long endTime = System.currentTimeMillis();
+		System.out
+			.println("Total Naive Execution Time: "
+					+ (endTime - startTime));
 }
 
 private void runNaive(Path inputDir, String testDirPath, String testGroundTruthDirPath, int mem, int vecsize, int num_class, int num_test, 
@@ -248,7 +250,7 @@ private void runNaive(Path inputDir, String testDirPath, String testGroundTruthD
     job.setJarByClass(NaiveDaalLauncher.class);
     job.setMapperClass(NaiveDaalCollectiveMapper.class);
     job.setNumReduceTasks(0);
-    
+
     System.out.println("Launcher launched");
     return job;
   }

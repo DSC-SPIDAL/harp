@@ -29,6 +29,8 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
+import edu.iu.data_aux.*;
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -56,186 +58,38 @@ public class ADAGDDaalLauncher extends Configured
       /* Put shared libraries into the distributed cache */
       Configuration conf = this.getConf();
 
-      DistributedCache.createSymlink(conf);
-      DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libJavaAPI.so#libJavaAPI.so"), conf);
-      DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbb.so.2#libtbb.so.2"), conf);
-      DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbb.so#libtbb.so"), conf);
-      DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbbmalloc.so.2#libtbbmalloc.so.2"), conf);
-      DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbbmalloc.so#libtbbmalloc.so"), conf);
+      Initialize init = new Initialize(conf, args);
 
-      if (args.length < 11) {
-      System.err
-        .println("Usage: edu.iu.daal_svd.ADAGDDaalLauncher "
-          + "<file dim > "
-	  + "<nfeature>"
-	  + "<accuracyThreshold>"
-	  + "<nIterations>"
-	  + "<batchSize>"
-	  + "<learningRate>"
-	  + "<number of map tasks>"
-	  + "<num threads> "
-          + "<mem>"
-          + "<input train dir>"
-          + "<work dir>");
-      ToolRunner
-        .printGenericCommandUsage(System.err);
-      return -1;
-    }
-    int nFileDim = Integer.parseInt(args[0]);
-    long nFeatures = Long.parseLong(args[1]);
-    double accuracyThreshold = Double.parseDouble(args[2]);
-    long nIterations = Long.parseLong(args[3]);
-    long batchSize = Long.parseLong(args[4]);
-    double learningRate = Double.parseDouble(args[5]);
-    int numMapTasks = Integer.parseInt(args[6]);
-    int numThreads = Integer.parseInt(args[7]);
-    int mem = Integer.parseInt(args[8]);
-    String trainDataDir = args[9];
-    String workDir = args[10];
-   
-    launch(nFileDim, nFeatures, accuracyThreshold, nIterations, batchSize, learningRate, numMapTasks, numThreads, mem, trainDataDir, workDir);
+      /* Put shared libraries into the distributed cache */
+      init.loadDistributedLibs();
+
+      // load args
+      init.loadSysArgs();
+
+      conf.setInt(HarpDAALConstants.FILE_DIM, Integer.parseInt(args[init.getSysArgNum()]));
+      conf.setInt(HarpDAALConstants.FEATURE_DIM, Integer.parseInt(args[init.getSysArgNum()+1]));
+      conf.setInt(HarpDAALConstants.BATCH_SIZE, Integer.parseInt(args[init.getSysArgNum()+2]));
+      conf.setDouble(HarpDAALConstants.ACC_THRESHOLD, Double.parseDouble(args[init.getSysArgNum()+3]));
+      conf.setDouble(HarpDAALConstants.LEARNING_RATE, Double.parseDouble(args[init.getSysArgNum()+4]));
+
+      // launch job
+      System.out.println("Starting Job");
+      long perJobSubmitTime = System.currentTimeMillis();
+      System.out.println("Start Job#"  + " "+ new SimpleDateFormat("HH:mm:ss.SSS").format(Calendar.getInstance().getTime()));
+
+      Job adagdJob = init.createJob("adagdJob", ADAGDDaalLauncher.class, ADAGDDaalCollectiveMapper.class); 
+
+      // finish job
+      boolean jobSuccess = adagdJob.waitForCompletion(true);
+      System.out.println("End Job#"  + " "+ new SimpleDateFormat("HH:mm:ss.SSS").format(Calendar.getInstance().getTime()));
+      System.out.println("| Job#"  + " Finished in " + (System.currentTimeMillis() - perJobSubmitTime)+ " miliseconds |");
+      if (!jobSuccess) {
+	      adagdJob.killJob();
+	      System.out.println("adagdJob failed");
+      }
 
     return 0;
   }
 
-  private void launch(int nFileDim, long nFeatures, double accuracyThreshold, long nIterations, 
-		  long batchSize, double learningRate, int numMapTasks, int numThreads, int mem, 
-		      String trainDataDir, String workDir) throws IOException,
-    URISyntaxException, InterruptedException,
-    ExecutionException, ClassNotFoundException 
-  {
 
-    Configuration configuration = getConf();
-    FileSystem fs = FileSystem.get(configuration);
-    Path dataDir = new Path(trainDataDir);
-    Path outDir = new Path(workDir);
-
-    if (fs.exists(outDir)) {
-      fs.delete(outDir, true);
-    }
-
-    long startTime = System.currentTimeMillis();
-
-    runADAGD(nFileDim, nFeatures, accuracyThreshold, nIterations, batchSize, learningRate, 
-		    numMapTasks, numThreads, mem, trainDataDir, dataDir, outDir, configuration);
-
-    long endTime = System.currentTimeMillis();
-    System.out
-      .println("Total ADAGD Multi Dense Execution Time: "
-        + (endTime - startTime));
-  }
-
-  private void runADAGD(
-    int nFileDim, long nFeatures, double accuracyThreshold, long nIterations, long batchSize, 
-    double learningRate, int numMapTasks, int numThreads, int mem, 
-    String trainDataDir, 
-    Path dataDir,
-    Path outDir, Configuration configuration)
-    throws IOException, URISyntaxException,
-    InterruptedException, ClassNotFoundException {
-    System.out.println("Starting Job");
-    // ----------------------------------------------------------------------
-    long perJobSubmitTime =
-      System.currentTimeMillis();
-    System.out
-      .println("Start Job "
-        + new SimpleDateFormat("HH:mm:ss.SSS")
-          .format(Calendar.getInstance()
-            .getTime()));
-
-    Job ADAGDJob =
-      configureADAGDJob(nFileDim, nFeatures, accuracyThreshold, nIterations, batchSize, learningRate,
-		    numMapTasks, numThreads, mem, trainDataDir, dataDir, outDir, configuration);
-
-    System.out
-      .println("Job"
-        + " configure in "
-        + (System.currentTimeMillis() - perJobSubmitTime)
-        + " miliseconds.");
-
-    // ----------------------------------------------------------
-    boolean jobSuccess =
-      ADAGDJob.waitForCompletion(true);
-    System.out
-      .println("end job "
-        + new SimpleDateFormat("HH:mm:ss.SSS")
-          .format(Calendar.getInstance()
-            .getTime()));
-    System.out
-      .println("Job"
-        + " finishes in "
-        + (System.currentTimeMillis() - perJobSubmitTime)
-        + " miliseconds.");
-    // ---------------------------------------------------------
-    if (!jobSuccess) {
-      System.out.println("ADAGD Job fails.");
-    }
-  }
-
-  private Job configureADAGDJob(
-    int nFileDim, long nFeatures, double accuracyThreshold, 
-    long nIterations, long batchSize, double learningRate,
-    int numMapTasks, int numThreads, int mem, 
-    String trainDataDir, 
-    Path dataDir,
-    Path outDir, Configuration configuration
-    )
-    throws IOException, URISyntaxException {
-    Job job =
-      Job
-        .getInstance(configuration, "ADAGD_job");
-    FileInputFormat.setInputPaths(job, dataDir);
-    FileOutputFormat.setOutputPath(job, outDir);
-    job
-      .setInputFormatClass(MultiFileInputFormat.class);
-    job.setJarByClass(ADAGDDaalLauncher.class);
-    job
-      .setMapperClass(ADAGDDaalCollectiveMapper.class);
-    org.apache.hadoop.mapred.JobConf jobConf =
-      (JobConf) job.getConfiguration();
-    jobConf.set("mapreduce.framework.name",
-      "map-collective");
-    jobConf.setNumMapTasks(numMapTasks);
-    jobConf.setInt(
-      "mapreduce.job.max.split.locations", 10000);
-
-    // mapreduce.map.collective.memory.mb
-    // 125000
-    jobConf.setInt(
-      "mapreduce.map.collective.memory.mb", mem);
-
-    jobConf.setInt("mapreduce.task.timeout", 60000000);
-
-    int xmx = (int) Math.ceil((mem - 2000)*0.5);
-    int xmn = (int) Math.ceil(0.25 * xmx);
-
-    jobConf.set(
-      "mapreduce.map.collective.java.opts",
-      "-Xmx" + xmx + "m -Xms" + xmx + "m"
-        + " -Xmn" + xmn + "m");
-
-    job.setNumReduceTasks(0);
-    Configuration jobConfig =
-      job.getConfiguration();
-
-    // set constant
-    jobConfig.setInt(Constants.FILE_DIM,
-      nFileDim);
-    jobConfig.setInt(Constants.NUM_MAPPERS,
-      numMapTasks);
-    jobConfig.setInt(Constants.NUM_THREADS,
-      numThreads);
-    jobConfig.setLong(Constants.FEATURE_DIM,
-      nFeatures);
-    jobConfig.setDouble(Constants.ACC_THRESHOLD,
-      accuracyThreshold);
-    jobConfig.setDouble(Constants.LEARNING_RATE,
-      learningRate);
-    jobConfig.setLong(Constants.NUM_ITERATIONS,
-      nIterations);
-    jobConfig.setLong(Constants.BATCH_SIZE,
-      batchSize);
-
-    return job;
-  }
 }

@@ -37,6 +37,12 @@ public class HarpDAALConstants {
     "nFactors";
   public static final String NUM_CLASS =
     "nClass";
+  public static final String MAX_ITERATIONS =
+    "max_num_iterations";
+  public static final String ACC_THRESHOLD =
+    "accuracy_threshold";
+  public static final String LEARNING_RATE =
+    "learning_rate";
 
   public static final String TEST_FILE_PATH =
   "test_file_path";

@@ -122,7 +122,52 @@ public class HarpDAALComm
 
 	}//}}}
 
-	public SerializableBase[] harpdaal_reduce(SerializableBase input, String contextName, String operationName)
+	public SerializableBase harpdaal_braodcast(SerializableBase input, int root_id, String contextName, String operationName, boolean useSpanTree)
+	{//{{{
+		// clear the previous table content
+		this.comm_table.free();
+
+		// serialize the input obj
+		if (this.self_id == root_id)
+		{
+
+			try{
+				this.comm_table.addPartition(new Partition<>(root_id, serializeInput(input)));
+			} catch (Exception e)
+			{
+				System.out.println("Fail to serialize" + e.toString());
+				e.printStackTrace();
+			}
+
+		}
+
+		// broadcast via harp 
+		this.mapper.barrier("barrier", "broadcast");
+		boolean bcastStatus = false;
+		bcastStatus = this.mapper.broadcast(contextName, operationName, this.comm_table, root_id, useSpanTree);
+		this.mapper.barrier("barrier", "broadcast");
+
+		if(!bcastStatus){
+			System.out.println("bcast not successful");
+		}
+		else{
+			System.out.println("bcast successful");
+		}
+
+		// deserialization
+		try{
+			return deserializeOutput(this.comm_table.getPartition(root_id).get());
+
+		}catch (Exception e)
+		{
+			System.out.println("Fail to deserilize" + e.toString());
+			e.printStackTrace();
+			return null;
+		}
+
+	}//}}}
+
+	public SerializableBase[] harpdaal_gather(SerializableBase input, String contextName, String operationName)
 	{//{{{
 		// clear the previous table content
 		this.comm_table.free();
@@ -164,6 +209,106 @@ public class HarpDAALComm
 			}
 			else
 				return null;
+
+		}catch (Exception e)
+		{
+			System.out.println("Fail to deserilize" + e.toString());
+			e.printStackTrace();
+			return null;
+		}
+
+	}//}}}
+
+	public SerializableBase[] harpdaal_gather(SerializableBase input, int root_id, String contextName, String operationName)
+	{//{{{
+		// clear the previous table content
+		this.comm_table.free();
+
+		// serialize the input obj
+		try{
+			this.comm_table.addPartition(new Partition<>(this.self_id, serializeInput(input)));
+		} catch (Exception e)
+		{
+			System.out.println("Fail to serialize" + e.toString());
+			e.printStackTrace();
+		}
+
+		// reduce via harp 
+		this.mapper.barrier("barrier", "reduce");
+		boolean reduceStatus = false;
+		reduceStatus = this.mapper.reduce(contextName, operationName, this.comm_table, root_id);
+		this.mapper.barrier("barrier", "reduce");
+
+		if(!reduceStatus){
+			System.out.println("reduce not successful");
+		}
+		else{
+			System.out.println("reducebcast successful");
+		}
+
+		// deserialization
+	        SerializableBase[] output = new SerializableBase[this.num_workers];	
+		try{
+
+			if (this.self_id == root_id)
+			{
+				for (int i=0; i<this.num_workers; i++)
+				{
+				    output[i] = (SerializableBase)deserializeOutput(comm_table.getPartition(i).get());
+				}
+
+				return output;
+			}
+			else
+				return null;
+
+		}catch (Exception e)
+		{
+			System.out.println("Fail to deserilize" + e.toString());
+			e.printStackTrace();
+			return null;
+		}
+
+	}//}}}
+
+	public SerializableBase[] harpdaal_allgather(SerializableBase input, String contextName, String operationName)
+	{//{{{
+		// clear the previous table content
+		this.comm_table.free();
+
+		// serialize the input obj
+		try{
+			this.comm_table.addPartition(new Partition<>(this.self_id, serializeInput(input)));
+		} catch (Exception e)
+		{
+			System.out.println("Fail to serialize" + e.toString());
+			e.printStackTrace();
+		}
+
+		// reduce via harp 
+		this.mapper.barrier("barrier", "allreduce");
+		boolean allreduceStatus = false;
+		allreduceStatus = this.mapper.allreduce(contextName, operationName, this.comm_table);
+		this.mapper.barrier("barrier", "allreduce");
+
+		if(!allreduceStatus){
+			System.out.println("allreduce not successful");
+		}
+		else{
+			System.out.println("allreduce successful");
+		}
+
+		// deserialization
+	        SerializableBase[] output = new SerializableBase[this.num_workers];	
+		try{
+
+			for (int i=0; i<this.num_workers; i++)
+			{
+				output[i] = (SerializableBase)deserializeOutput(comm_table.getPartition(i).get());
+			}
+
+			return output;
+
 
 		}catch (Exception e)
 		{

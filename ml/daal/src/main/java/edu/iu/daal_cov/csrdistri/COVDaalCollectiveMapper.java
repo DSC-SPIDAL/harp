@@ -208,9 +208,9 @@ CollectiveMapper<String, String, Object, Object>{
     ts2 = System.currentTimeMillis();
     compute_time += (ts2 - ts1);
 
-    // reduce the partial result
+    // gather the partial result
     ts1 = System.currentTimeMillis();
-    this.partialResult_comm = this.harpcomm.harpdaal_reduce(partialResult, "Covariance", "local-reduce");
+    this.partialResult_comm = this.harpcomm.harpdaal_gather(partialResult, "Covariance", "local-reduce");
     ts2 = System.currentTimeMillis();
     comm_time += (ts2 - ts1);
     

@@ -18,16 +18,6 @@ package edu.iu.daal_normalization.MinMaxDenseBatch;
 
 public class Constants {
 
-  public static final String FILE_DIM =
-    "file_dimension";
-  public static final String NUM_MAPPERS =
-    "num_mappers";
-  public static final String NUM_THREADS =
-    "num_threads";
-  public static final String NUM_ITERATIONS =
-    "num_iterations";
-  public static final String WORK_DIR =
-    "work_dir";
   public static final String LOWER_BOUND =
     "lower_bound";
   public static final String UPPER_BOUND =

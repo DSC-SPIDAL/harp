@@ -221,7 +221,7 @@ public class KmeansDaalCollectiveMapper
             		initPres = initLocal.compute();
 	
 			// reduce init pres
-			SerializableBase[] initPres_comm = this.harpcomm.harpdaal_reduce(this.initPres, "Kmeans", "reduce_initPres");
+			SerializableBase[] initPres_comm = this.harpcomm.harpdaal_gather(this.initPres, "Kmeans", "reduce_initPres");
 			if (this.isMaster() && initPres_comm != null)
 			{
 				for (int i=0; i<numMappers; i++)
@@ -263,7 +263,7 @@ public class KmeansDaalCollectiveMapper
 			   pres = algorithm.compute();
 
 			   //reduce pres results to master mapper
-			   SerializableBase[] pres_comm = this.harpcomm.harpdaal_reduce(this.pres, "Kmeans", "reduce_Pres");
+			   SerializableBase[] pres_comm = this.harpcomm.harpdaal_gather(this.pres, "Kmeans", "reduce_Pres");
 			   if (this.isMaster() && pres_comm != null)
 			   {
 				   for (int i=0; i<numMappers; i++)

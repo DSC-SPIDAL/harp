@@ -54,6 +54,7 @@ import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.nio.DoubleBuffer;
 
 import com.intel.daal.data_management.data.CSRNumericTable;
 import com.intel.daal.data_management.data.HomogenNumericTable;
@@ -616,5 +617,31 @@ public class Service {
         inputTensor.releaseSubtensor(fDims, (long)startPos, (long)nElements, dataFloatSubtensor);
 
         return new HomogenTensor(context, dims, subtensorData);
+    }
+
+    public static Tensor readTensorFromNumericTable(DaalContext context, NumericTable nt, boolean allowOneColumn) {
+        int nRows = (int)nt.getNumberOfRows();
+        int nCols = (int)nt.getNumberOfColumns();
+        if (nCols > 1 || allowOneColumn) {
+            long[] dims = {nRows, nCols};
+            float[] data = new float[nRows * nCols];
+            DoubleBuffer buffer = DoubleBuffer.allocate(nRows * nCols);
+            buffer = nt.getBlockOfRows(0, nRows, buffer);
+            for (int i = 0; i < nRows * nCols; i++) {
+                data[i] = (float)buffer.get(i);
+            }
+
+            return new HomogenTensor(context, dims, data);
+        } else {
+            long[] dims = {nRows};
+            float[] data = new float[nRows];
+            DoubleBuffer buffer = DoubleBuffer.allocate(nRows);
+            buffer = nt.getBlockOfRows(0, nRows, buffer);
+            for (int i = 0; i < nRows; i++) {
+                data[i] = (float)buffer.get(i);
+            }
+
+            return new HomogenTensor(context, dims, data);
+        }
     }
 }

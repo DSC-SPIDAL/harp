@@ -181,10 +181,6 @@ public class ARDaalCollectiveMapper
 		this.datasource.loadFiles();
 		// ---------- training and testing ----------
 		/* Retrieve the input data */
-		// FileDataSource dataSource = new FileDataSource(context, dataset,
-				// DataSource.DictionaryCreationFlag.DoDictionaryFromContext,
-				// DataSource.NumericTableAllocationFlag.DoAllocateNumericTable);
-		// dataSource.loadDataBlock();
 		input = new HomogenNumericTable(daal_Context, Double.class, this.fileDim, this.datasource.getTotalLines(), NumericTable.AllocationFlag.DoAllocate);
         	this.datasource.loadDataBlock(input);
 
