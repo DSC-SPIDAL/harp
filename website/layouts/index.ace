@@ -151,46 +151,46 @@ html lang={{.Site.LanguageCode}}
                   br
                   a href=docs/applications/mf/ Matrix Factorization
                   br
-                  a href=docs/applications/sahad/ Subgraph Counting 
+                  a href=docs/applications/sahad/ Subgraph Counting
                 .col-sm-2
                   h4 Harp-DAAL
                   a href=docs/harpdaal/harpdaal/ Overview
                   br
-                  a href=docs/harpdaal/kmeans/ K-means 
+                  a href=docs/harpdaal/kmeans/ K-means
                   br
-                  a href=docs/harpdaal/mfsgd/ Matrix Factorization (SGD) 
+                  a href=docs/harpdaal/mfsgd/ Matrix Factorization (SGD)
                   br
-                  a href=docs/harpdaal/als/ Recommender System (ALS) 
+                  a href=docs/harpdaal/als/ Recommender System (ALS)
                   br
-                  a href=docs/harpdaal/svd/ Single Value Decomposition (SVD) 
+                  a href=docs/harpdaal/svd/ Single Value Decomposition (SVD)
                   br
-                  a href=docs/harpdaal/pca/ Principal Component Analysis (PCA) 
+                  a href=docs/harpdaal/pca/ Principal Component Analysis (PCA)
                   br
-                  a href=docs/harpdaal/nn/ Neural Network 
+                  a href=docs/harpdaal/nn/ Neural Network
                   br
-                  a href=docs/harpdaal/qr/ QR Decomposition 
+                  a href=docs/harpdaal/qr/ QR Decomposition
                   br
-                  a href=docs/harpdaal/covariance/ Covariance 
+                  a href=docs/harpdaal/covariance/ Covariance
                   br
-                  a href=docs/harpdaal/moments/ Low Order Moments 
+                  a href=docs/harpdaal/moments/ Low Order Moments
                   br
-                  a href=docs/harpdaal/naive_bayes/ Naive Bayes 
+                  a href=docs/harpdaal/naive_bayes/ Naive Bayes
                   br
-                  a href=docs/harpdaal/linear_regression/ Linear Regression 
+                  a href=docs/harpdaal/linear_regression/ Linear Regression
                   br
-                  a href=docs/harpdaal/ridge_regression/ Ridge Regression 
+                  a href=docs/harpdaal/ridge_regression/ Ridge Regression
                   br
-                  a href=docs/harpdaal/subgraph/ Subgraph Counting 
+                  a href=docs/harpdaal/subgraph/ Subgraph Counting
                 .col-sm-2
                   h4 Contributors
                   a href=docs/contributors/community/ Community
                   br
                   a href=docs/contributors/contributors/ Contributors
                   br
-                  a href=docs/survey/ User Feedback 
+                  a href=docs/survey/ User Feedback
         .row.text-center
           p Copyright © {{.Now.Year}} Indiana Universty
-   
+
       {{partial "index/google-analytics.html" .}}
 
       script src=https://code.jquery.com/jquery-2.2.1.min.js
