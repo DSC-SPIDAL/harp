@@ -11,6 +11,10 @@ sections:
         url: /docs/harpdaal/harpdaalIO
       - name: Communication Module 
         url: /docs/harpdaal/harpdaalComm
+      - name: Batch Mode Code Walk Through 
+        url: /docs/harpdaal/BatchModeEg
+      - name: Distributed Mode Code Walk Through 
+        url: /docs/harpdaal/DistriModeEg
   - name: Algorithms Stable
     sublinks:
       - name: Association Rule
