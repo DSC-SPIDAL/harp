@@ -1,5 +1,5 @@
 ---
-title: Harp-DAAL-Subgraph 
+title: Subgraph Counting based on Color-Coding 
 ---
 
 <img src="/img/sahad/subgraph-counting-illustration.png" width="50%"  >

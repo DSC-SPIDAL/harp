@@ -1,6 +1,6 @@
----
-title: Single 
----
+# Harp - DAAL - Singular Value Decomposition
+
+<img src="/img/harpdaal/SVD.png" width="80%" >
 
 ## Overview
 
