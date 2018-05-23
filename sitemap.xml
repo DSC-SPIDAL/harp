@@ -2,11 +2,6 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
-    <loc>https://dsc-spidal.github.io/harp/</loc>
-    <priority>0</priority>
-  </url>
-  
-  <url>
     <loc>https://dsc-spidal.github.io/harp/docs/applications/dataset-lda/</loc>
   </url>
   
@@ -15,7 +10,7 @@
   </url>
   
   <url>
-    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/svd/</loc>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/olddoc/svd-old/</loc>
   </url>
   
   <url>
@@ -31,7 +26,31 @@
   </url>
   
   <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/AssociationRule/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/Boosting/</loc>
+  </url>
+  
+  <url>
     <loc>https://dsc-spidal.github.io/harp/docs/communications/broadcast/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/Cholesky/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/BatchModeEg/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/DistriModeEg/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/harpdaalComm/</loc>
   </url>
   
   <url>
@@ -39,7 +58,19 @@
   </url>
   
   <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/Covariance/</loc>
+  </url>
+  
+  <url>
     <loc>https://dsc-spidal.github.io/harp/docs/programming/data-interface/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/Dforest/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/Dtree/</loc>
   </url>
   
   <url>
@@ -47,7 +78,16 @@
   </url>
   
   <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/</loc>
+    <priority>0</priority>
+  </url>
+  
+  <url>
     <loc>https://dsc-spidal.github.io/harp/docs/examples/overview/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/EM/</loc>
   </url>
   
   <url>
@@ -83,7 +123,7 @@
   </url>
   
   <url>
-    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/als/</loc>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/olddoc/als-old/</loc>
   </url>
   
   <url>
@@ -91,47 +131,47 @@
   </url>
   
   <url>
-    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/covariance/</loc>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/olddoc/covariance-old/</loc>
   </url>
   
   <url>
-    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/kmeans/</loc>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/olddoc/kmeans-old/</loc>
   </url>
   
   <url>
-    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/linear_regression/</loc>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/olddoc/linear_regression-old/</loc>
   </url>
   
   <url>
-    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/moments/</loc>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/olddoc/moments-old/</loc>
   </url>
   
   <url>
-    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/nn/</loc>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/olddoc/nn-old/</loc>
   </url>
   
   <url>
-    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/naive_bayes/</loc>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/olddoc/naive_bayes-old/</loc>
   </url>
   
   <url>
-    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/pca/</loc>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/olddoc/qr-old/</loc>
   </url>
   
   <url>
-    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/qr/</loc>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/olddoc/ridge_regression-old/</loc>
   </url>
   
   <url>
-    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/ridge_regression/</loc>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/harpdaalIO/</loc>
   </url>
   
   <url>
-    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/mfsgd/</loc>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/ALS/</loc>
   </url>
   
   <url>
-    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/subgraph/</loc>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/harpdaalInit/</loc>
   </url>
   
   <url>
@@ -143,6 +183,18 @@
   </url>
   
   <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/KmeansClustering/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/Knn/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/Kernel-Functions/</loc>
+  </url>
+  
+  <url>
     <loc>https://dsc-spidal.github.io/harp/docs/examples/lda/</loc>
   </url>
   
@@ -151,11 +203,63 @@
   </url>
   
   <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/LinearRegression/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/beginnersguide/mlr/</loc>
+  </url>
+  
+  <url>
     <loc>https://dsc-spidal.github.io/harp/docs/applications/mf/</loc>
   </url>
   
   <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/LowOrderMom/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/NaiveBayes/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/NN/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/Normalization/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/Optimization-Solvers/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/OutlierDetection/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/PQR/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/PCA/</loc>
+  </url>
+  
+  <url>
     <loc>https://dsc-spidal.github.io/harp/docs/communications/pushandpull/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/QR/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/Quality-Metrics/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/Quantile/</loc>
   </url>
   
   <url>
@@ -167,11 +271,19 @@
   </url>
   
   <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/MF-SGD/</loc>
+  </url>
+  
+  <url>
     <loc>https://dsc-spidal.github.io/harp/docs/communications/reduce/</loc>
   </url>
   
   <url>
     <loc>https://dsc-spidal.github.io/harp/docs/communications/regroup/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/RidgeRegression/</loc>
   </url>
   
   <url>
@@ -183,7 +295,32 @@
   </url>
   
   <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/SVD/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/Sorting/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/Stump/</loc>
+  </url>
+  
+  <url>
     <loc>https://dsc-spidal.github.io/harp/docs/applications/sahad/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/Subgraph/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/harpdaal/SVM/</loc>
+  </url>
+  
+  <url>
+    <loc>https://dsc-spidal.github.io/harp/</loc>
+    <priority>0</priority>
   </url>
   
 </urlset>
