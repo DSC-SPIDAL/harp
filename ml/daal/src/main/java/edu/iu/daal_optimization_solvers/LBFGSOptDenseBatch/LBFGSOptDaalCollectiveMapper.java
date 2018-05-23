@@ -119,13 +119,13 @@ public class LBFGSOptDaalCollectiveMapper
 			Configuration configuration =
 				context.getConfiguration();
 
-			this.numMappers = configuration.getInt(Constants.NUM_MAPPERS, 10);
-			this.numThreads = configuration.getInt(Constants.NUM_THREADS, 10);
+			this.numMappers = configuration.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
+			this.numThreads = configuration.getInt(HarpDAALConstants.NUM_THREADS, 10);
 			this.harpThreads = Runtime.getRuntime().availableProcessors();
-			this.fileDim = configuration.getInt(Constants.FILE_DIM, 11);
-			this.nFeatures = configuration.getInt(Constants.FEATURE_DIM, 10);
-			this.nIterations = configuration.getInt(Constants.NUM_ITERATIONS, 1000);
-			this.stepLength = configuration.getDouble(Constants.STEP_LENGTH, 1.0e-4);
+			this.fileDim = configuration.getInt(HarpDAALConstants.FILE_DIM, 11);
+			this.nFeatures = configuration.getInt(HarpDAALConstants.FEATURE_DIM, 10);
+			this.nIterations = configuration.getInt(HarpDAALConstants.NUM_ITERATIONS, 1000);
+			this.stepLength = configuration.getDouble(HarpDAALConstants.STEP_LENGTH, 1.0e-4);
 
 			LOG.info("File Dim " + this.fileDim);
 			LOG.info("Num Mappers " + this.numMappers);

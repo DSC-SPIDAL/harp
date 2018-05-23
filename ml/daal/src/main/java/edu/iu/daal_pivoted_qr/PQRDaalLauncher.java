@@ -29,6 +29,8 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
+import edu.iu.data_aux.*;
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -56,165 +58,35 @@ public class PQRDaalLauncher extends Configured
       /* Put shared libraries into the distributed cache */
       Configuration conf = this.getConf();
 
-      DistributedCache.createSymlink(conf);
-      DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libJavaAPI.so#libJavaAPI.so"), conf);
-      DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbb.so.2#libtbb.so.2"), conf);
-      DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbb.so#libtbb.so"), conf);
-      DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbbmalloc.so.2#libtbbmalloc.so.2"), conf);
-      DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbbmalloc.so#libtbbmalloc.so"), conf);
+      Initialize init = new Initialize(conf, args);
 
-      if (args.length < 6) {
-      System.err
-        .println("Usage: edu.iu.daal_svd.PQRDaalLauncher "
-          + "<file dim > "
-	  + "<number of map tasks>"
-	  + "<num threads> "
-          + "<mem>"
-          + "<input train dir>"
-          + "<work dir>");
-      ToolRunner
-        .printGenericCommandUsage(System.err);
-      return -1;
-    }
-    int nFileDim = Integer.parseInt(args[0]);
-    int numMapTasks = Integer.parseInt(args[1]);
-    int numThreads = Integer.parseInt(args[2]);
-    int mem = Integer.parseInt(args[3]);
-    String trainDataDir = args[4];
-    String workDir = args[5];
-   
-    launch(nFileDim, numMapTasks, numThreads, mem, trainDataDir, workDir);
+      /* Put shared libraries into the distributed cache */
+      init.loadDistributedLibs();
+
+      // load args
+      init.loadSysArgs();
+
+      conf.setInt(HarpDAALConstants.FILE_DIM, Integer.parseInt(args[init.getSysArgNum()]));
+
+      // launch job
+      System.out.println("Starting Job");
+      long perJobSubmitTime = System.currentTimeMillis();
+      System.out.println("Start Job#"  + " "+ new SimpleDateFormat("HH:mm:ss.SSS").format(Calendar.getInstance().getTime()));
+
+      Job pqrJob = init.createJob("pqrJob", PQRDaalLauncher.class, PQRDaalCollectiveMapper.class); 
+
+      // finish job
+      boolean jobSuccess = pqrJob.waitForCompletion(true);
+      System.out.println("End Job#"  + " "+ new SimpleDateFormat("HH:mm:ss.SSS").format(Calendar.getInstance().getTime()));
+      System.out.println("| Job#"  + " Finished in " + (System.currentTimeMillis() - perJobSubmitTime)+ " miliseconds |");
+      if (!jobSuccess) {
+	      pqrJob.killJob();
+	      System.out.println("pqrJob failed");
+      }
+
 
     return 0;
   }
 
-  private void launch(int nFileDim,
-		      int numMapTasks, int numThreads, int mem, 
-		      String trainDataDir, String workDir) throws IOException,
-    URISyntaxException, InterruptedException,
-    ExecutionException, ClassNotFoundException 
-  {
 
-    Configuration configuration = getConf();
-    FileSystem fs = FileSystem.get(configuration);
-    Path dataDir = new Path(trainDataDir);
-    Path outDir = new Path(workDir);
-
-    if (fs.exists(outDir)) {
-      fs.delete(outDir, true);
-    }
-
-    long startTime = System.currentTimeMillis();
-
-    runPQR(nFileDim, 
-		    numMapTasks, numThreads, mem, trainDataDir, dataDir, outDir, configuration);
-
-    long endTime = System.currentTimeMillis();
-    System.out
-      .println("Total PQR Multi Dense Execution Time: "
-        + (endTime - startTime));
-  }
-
-  private void runPQR(
-    int nFileDim,
-    int numMapTasks, int numThreads, int mem, 
-    String trainDataDir, 
-    Path dataDir,
-    Path outDir, Configuration configuration)
-    throws IOException, URISyntaxException,
-    InterruptedException, ClassNotFoundException {
-    System.out.println("Starting Job");
-    // ----------------------------------------------------------------------
-    long perJobSubmitTime =
-      System.currentTimeMillis();
-    System.out
-      .println("Start Job "
-        + new SimpleDateFormat("HH:mm:ss.SSS")
-          .format(Calendar.getInstance()
-            .getTime()));
-
-    Job PQRJob =
-      configurePQRJob(nFileDim,
-		    numMapTasks, numThreads, mem, trainDataDir, dataDir, outDir, configuration);
-
-    System.out
-      .println("Job"
-        + " configure in "
-        + (System.currentTimeMillis() - perJobSubmitTime)
-        + " miliseconds.");
-
-    // ----------------------------------------------------------
-    boolean jobSuccess =
-      PQRJob.waitForCompletion(true);
-    System.out
-      .println("end job "
-        + new SimpleDateFormat("HH:mm:ss.SSS")
-          .format(Calendar.getInstance()
-            .getTime()));
-    System.out
-      .println("Job"
-        + " finishes in "
-        + (System.currentTimeMillis() - perJobSubmitTime)
-        + " miliseconds.");
-    // ---------------------------------------------------------
-    if (!jobSuccess) {
-      System.out.println("PQR Job fails.");
-    }
-  }
-
-  private Job configurePQRJob(
-    int nFileDim,
-    int numMapTasks, int numThreads, int mem, 
-    String trainDataDir, 
-    Path dataDir,
-    Path outDir, Configuration configuration
-    )
-    throws IOException, URISyntaxException {
-    Job job =
-      Job
-        .getInstance(configuration, "PQR_job");
-    FileInputFormat.setInputPaths(job, dataDir);
-    FileOutputFormat.setOutputPath(job, outDir);
-    job
-      .setInputFormatClass(MultiFileInputFormat.class);
-    job.setJarByClass(PQRDaalLauncher.class);
-    job
-      .setMapperClass(PQRDaalCollectiveMapper.class);
-    org.apache.hadoop.mapred.JobConf jobConf =
-      (JobConf) job.getConfiguration();
-    jobConf.set("mapreduce.framework.name",
-      "map-collective");
-    jobConf.setNumMapTasks(numMapTasks);
-    jobConf.setInt(
-      "mapreduce.job.max.split.locations", 10000);
-
-    // mapreduce.map.collective.memory.mb
-    // 125000
-    jobConf.setInt(
-      "mapreduce.map.collective.memory.mb", mem);
-
-    jobConf.setInt("mapreduce.task.timeout", 60000000);
-
-    int xmx = (int) Math.ceil((mem - 2000)*0.5);
-    int xmn = (int) Math.ceil(0.25 * xmx);
-
-    jobConf.set(
-      "mapreduce.map.collective.java.opts",
-      "-Xmx" + xmx + "m -Xms" + xmx + "m"
-        + " -Xmn" + xmn + "m");
-
-    job.setNumReduceTasks(0);
-    Configuration jobConfig =
-      job.getConfiguration();
-
-    // set constant
-    jobConfig.setInt(Constants.FILE_DIM,
-      nFileDim);
-    jobConfig.setInt(Constants.NUM_MAPPERS,
-      numMapTasks);
-    jobConfig.setInt(Constants.NUM_THREADS,
-      numThreads);
-
-    return job;
-  }
 }

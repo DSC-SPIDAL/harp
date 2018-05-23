@@ -29,6 +29,8 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
+import edu.iu.data_aux.*;
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -56,176 +58,38 @@ public class SVMMultiMESDaalLauncher extends Configured
       /* Put shared libraries into the distributed cache */
       Configuration conf = this.getConf();
 
-      DistributedCache.createSymlink(conf);
-      DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libJavaAPI.so#libJavaAPI.so"), conf);
-      DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbb.so.2#libtbb.so.2"), conf);
-      DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbb.so#libtbb.so"), conf);
-      DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbbmalloc.so.2#libtbbmalloc.so.2"), conf);
-      DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbbmalloc.so#libtbbmalloc.so"), conf);
+      Initialize init = new Initialize(conf, args);
 
-      if (args.length < 9) {
-      System.err
-        .println("Usage: edu.iu.daal_svd.SVMMultiMESDaalLauncher "
-          + "<feature dim> "
-          + "<file dim > "
-	  + "<nClasses>"
-	  + "<number of map tasks>"
-	  + "<num threads> "
-          + "<mem>"
-          + "<input train dir>"
-          + "<input test dir>"
-          + "<work dir>");
-      ToolRunner
-        .printGenericCommandUsage(System.err);
-      return -1;
-    }
-    int nFeature =
-      Integer.parseInt(args[0]);
-    int nFileDim = Integer.parseInt(args[1]);
-    int nClasses = Integer.parseInt(args[2]);
-    int numMapTasks = Integer.parseInt(args[3]);
-    int numThreads = Integer.parseInt(args[4]);
-    int mem = Integer.parseInt(args[5]);
-    String trainDataDir = args[6];
-    String testDataDir = args[7];
-    String workDir = args[8];
-   
-    launch(nFeature, nFileDim, nClasses, numMapTasks, numThreads, mem, trainDataDir, testDataDir, workDir);
+      /* Put shared libraries into the distributed cache */
+      init.loadDistributedLibs();
+
+      // load args
+      init.loadSysArgs();
+
+      conf.setInt(HarpDAALConstants.FILE_DIM, Integer.parseInt(args[init.getSysArgNum()]));
+      conf.setInt(HarpDAALConstants.FEATURE_DIM, Integer.parseInt(args[init.getSysArgNum()+1]));
+      conf.setInt(HarpDAALConstants.NUM_CLASS, Integer.parseInt(args[init.getSysArgNum()+2]));
+      conf.set(HarpDAALConstants.TEST_FILE_PATH, args[init.getSysArgNum()+3]);
+
+
+      // launch job
+      System.out.println("Starting Job");
+      long perJobSubmitTime = System.currentTimeMillis();
+      System.out.println("Start Job#"  + " "+ new SimpleDateFormat("HH:mm:ss.SSS").format(Calendar.getInstance().getTime()));
+
+      Job meJob = init.createJob("meJob", SVMMultiMESDaalLauncher.class, SVMMultiMESDaalCollectiveMapper.class); 
+
+      // finish job
+      boolean jobSuccess = meJob.waitForCompletion(true);
+      System.out.println("End Job#"  + " "+ new SimpleDateFormat("HH:mm:ss.SSS").format(Calendar.getInstance().getTime()));
+      System.out.println("| Job#"  + " Finished in " + (System.currentTimeMillis() - perJobSubmitTime)+ " miliseconds |");
+      if (!jobSuccess) {
+	      meJob.killJob();
+	      System.out.println("meJob failed");
+      }
+
     return 0;
   }
 
-  private void launch(int nFeature, int nFileDim, int nClasses,
-		      int numMapTasks, int numThreads, int mem, 
-		      String trainDataDir, String testDataDir, String workDir) throws IOException,
-    URISyntaxException, InterruptedException,
-    ExecutionException, ClassNotFoundException 
-  {
-    Configuration configuration = getConf();
-    FileSystem fs = FileSystem.get(configuration);
-    Path dataDir = new Path(trainDataDir);
-    Path outDir = new Path(workDir);
 
-    if (fs.exists(outDir)) {
-      fs.delete(outDir, true);
-    }
-
-    long startTime = System.currentTimeMillis();
-
-    runSVMMulti(nFeature, nFileDim, nClasses,
-		    numMapTasks, numThreads, mem, trainDataDir, testDataDir, dataDir, outDir, configuration);
-
-    long endTime = System.currentTimeMillis();
-    System.out
-      .println("Total SVMMulti Multi Dense Execution Time: "
-        + (endTime - startTime));
-  }
-
-  private void runSVMMulti(
-    int nFeature, int nFileDim, int nClasses,
-    int numMapTasks, int numThreads, int mem, 
-    String trainDataDir, String testDataDir,
-    Path dataDir,
-    Path outDir, Configuration configuration)
-    throws IOException, URISyntaxException,
-    InterruptedException, ClassNotFoundException {
-    System.out.println("Starting Job");
-    // ----------------------------------------------------------------------
-    long perJobSubmitTime =
-      System.currentTimeMillis();
-    System.out
-      .println("Start Job "
-        + new SimpleDateFormat("HH:mm:ss.SSS")
-          .format(Calendar.getInstance()
-            .getTime()));
-
-    Job SVMMultiJob =
-      configureSVMMultiJob(nFeature, nFileDim, nClasses,
-		    numMapTasks, numThreads, mem, trainDataDir, testDataDir, dataDir, outDir, configuration);
-
-    System.out
-      .println("Job"
-        + " configure in "
-        + (System.currentTimeMillis() - perJobSubmitTime)
-        + " miliseconds.");
-
-    // ----------------------------------------------------------
-    boolean jobSuccess =
-      SVMMultiJob.waitForCompletion(true);
-    System.out
-      .println("end Jod "
-        + new SimpleDateFormat("HH:mm:ss.SSS")
-          .format(Calendar.getInstance()
-            .getTime()));
-    System.out
-      .println("Job"
-        + " finishes in "
-        + (System.currentTimeMillis() - perJobSubmitTime)
-        + " miliseconds.");
-    // ---------------------------------------------------------
-    if (!jobSuccess) {
-      System.out.println("SVMMulti Job fails.");
-    }
-  }
-
-  private Job configureSVMMultiJob(
-    int nFeature, int nFileDim, int nClasses,
-    int numMapTasks, int numThreads, int mem, 
-    String trainDataDir, String testDataDir,
-    Path dataDir,
-    Path outDir, Configuration configuration
-    )
-    throws IOException, URISyntaxException {
-    Job job =
-      Job
-        .getInstance(configuration, "SVMMulti_job");
-    FileInputFormat.setInputPaths(job, dataDir);
-    FileOutputFormat.setOutputPath(job, outDir);
-    job
-      .setInputFormatClass(MultiFileInputFormat.class);
-    job.setJarByClass(SVMMultiMESDaalLauncher.class);
-    job
-      .setMapperClass(SVMMultiMESDaalCollectiveMapper.class);
-    org.apache.hadoop.mapred.JobConf jobConf =
-      (JobConf) job.getConfiguration();
-    jobConf.set("mapreduce.framework.name",
-      "map-collective");
-    jobConf.setNumMapTasks(numMapTasks);
-    jobConf.setInt(
-      "mapreduce.job.max.split.locations", 10000);
-
-    // mapreduce.map.collective.memory.mb
-    // 125000
-    jobConf.setInt(
-      "mapreduce.map.collective.memory.mb", mem);
-
-    jobConf.setInt("mapreduce.task.timeout", 60000000);
-    int xmx = (int) Math.ceil((mem - 2000)*0.5);
-    int xmn = (int) Math.ceil(0.25 * xmx);
-
-    jobConf.set(
-      "mapreduce.map.collective.java.opts",
-      "-Xmx" + xmx + "m -Xms" + xmx + "m"
-        + " -Xmn" + xmn + "m");
-
-    job.setNumReduceTasks(0);
-    Configuration jobConfig =
-      job.getConfiguration();
-
-
-    // set constant
-    jobConfig.setInt(Constants.FEATURE_DIM,
-      nFeature);
-    jobConfig.setInt(Constants.FILE_DIM,
-      nFileDim);
-    jobConfig.setInt(Constants.NUM_CLASS,
-      nClasses);
-    jobConfig.setInt(Constants.NUM_MAPPERS,
-      numMapTasks);
-    jobConfig.setInt(Constants.NUM_THREADS,
-      numThreads);
-    jobConfig.set(Constants.TEST_FILE_PATH,
-      testDataDir);
-
-    return job;
-  }
 }

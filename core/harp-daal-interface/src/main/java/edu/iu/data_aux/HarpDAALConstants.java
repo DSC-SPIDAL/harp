@@ -48,10 +48,17 @@ public class HarpDAALConstants {
   "test_file_path";
   public static final String TRAIN_PRUNE_PATH =
   "train_prune_path";
+  public static final String TRAIN_TRUTH_PATH =
+  "train_truth_path";
   public static final String TEST_TRUTH_PATH =
   "ground_truth_file_path";
   public static final String TEST_PRUNE_PATH =
   "ground_truth_file_path";
   public static final String BATCH_SIZE =
   "batch size";
+  public static final String STEP_LENGTH =
+  "step_length";
+  public static final String NUM_DEPVAR =
+  "nDependentVariables";
+
 }

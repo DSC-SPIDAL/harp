@@ -101,10 +101,8 @@ public class PCADaalCollectiveMapper extends
   {
     long startTime = System.currentTimeMillis();
     Configuration configuration = context.getConfiguration();
-    pointsPerFile = configuration.getInt(Constants.POINTS_PER_FILE, 20);
-    vectorSize = configuration.getInt(Constants.VECTOR_SIZE, 20);
-    numMappers = configuration.getInt(Constants.NUM_MAPPERS, 10);
-    numThreads = configuration.getInt(Constants.NUM_THREADS, 10);
+    numMappers = configuration.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
+    numThreads = configuration.getInt(HarpDAALConstants.NUM_THREADS, 10);
 
     //always use the maximum hardware threads to load in data and convert data 
     harpThreads = Runtime.getRuntime().availableProcessors();
@@ -161,49 +159,6 @@ public class PCADaalCollectiveMapper extends
 
     //read in csr files with filenames in trainingDataFiles
     NumericTable pointsArray_daal = this.datasource.loadCSRNumericTable(daal_Context);
-
-    // //load data
-    // ts1 = System.currentTimeMillis();
-    // // use maximum hardware threads to load data
-    // int loadThreads = Runtime.getRuntime().availableProcessors();
-    // List<double[]> pointArrays = PCAUtil.loadPoints(fileNames, pointsPerFile, vectorSize, conf, harpThreads);
-    // ts2 = System.currentTimeMillis();
-    // load_time += (ts2 - ts1);
-    //
-    // //create the daal table for pointsArrays
-    // ts1 = System.currentTimeMillis();
-    //
-    // long nFeature = vectorSize;
-    // long totalLength = 0;
-    //
-    // long[] array_startP = new long[pointArrays.size()];
-    // double[][] array_data = new double[pointArrays.size()][];
-    //
-    // for(int k=0;k<pointArrays.size();k++)
-    // {
-    //   array_data[k] = pointArrays.get(k);
-    //   array_startP[k] = totalLength;
-    //   totalLength += pointArrays.get(k).length;
-    // }
-    //
-    // long tableSize = totalLength/nFeature;
-    // // NumericTable pointsArray_daal = new HomogenBMNumericTable(daal_Context, Double.class, nFeature, tableSize, NumericTable.AllocationFlag.DoAllocate);
-    // NumericTable pointsArray_daal = new HomogenNumericTable(daal_Context, Double.class, nFeature, tableSize, NumericTable.AllocationFlag.DoAllocate);
-    //
-    // int row_idx = 0;
-    // int row_len = 0;
-    // for (int k=0; k<pointArrays.size(); k++)
-    // {
-    //   row_len = (array_data[k].length)/(int)nFeature;
-    //   //release data from Java side to native side
-    //   // ((HomogenBMNumericTable)pointsArray_daal).releaseBlockOfRowsByte(row_idx, row_len, array_data[k]);
-    //   DoubleBuffer array_data_buf = DoubleBuffer.wrap(array_data[k]);
-    //   pointsArray_daal.releaseBlockOfRows(row_idx, row_len, array_data_buf);
-    //   row_idx += row_len;
-    // }
-    //
-    // ts2 = System.currentTimeMillis();
-    // convert_time += (ts2 - ts2);
 
     /* Create an algorithm to compute PCA decomposition using the correlation method on local nodes */
     DistributedStep1Local pcaLocal = new DistributedStep1Local(daal_Context, Double.class, Method.correlationDense);

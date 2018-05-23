@@ -71,13 +71,11 @@ CollectiveMapper<String, String, Object, Object>{
   private PartialResult partialResult;
   private SerializableBase[] partialResult_comm;
   private Result result;
-  private int pointsPerFile = 50;
-  private int vectorSize = 10;
   private int numMappers;
   private int numThreads;
   private int harpThreads; 
 
-    //to measure the time
+  //to measure the time
   private long load_time = 0;
   private long convert_time = 0;
   private long total_time = 0;

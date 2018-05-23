@@ -33,6 +33,8 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
+import edu.iu.data_aux.*;
+
 import org.apache.hadoop.filecache.DistributedCache;
 import java.net.URI;
 
@@ -55,14 +57,40 @@ implements Tool {
   @Override
   public int run(String[] args) throws Exception {
 
-    /* Put shared libraries into the distributed cache */
-    Configuration conf = this.getConf();
+	  /* Put shared libraries into the distributed cache */
+	  Configuration conf = this.getConf();
 
-    DistributedCache.createSymlink(conf);
-    DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libJavaAPI.so#libJavaAPI.so"), conf);
+	  // Initialize init = new Initialize(conf, args);
+          //
+	  // /* Put shared libraries into the distributed cache */
+	  // init.loadDistributedLibs();
+          //
+	  // // load args
+	  // init.loadSysArgs();
+          //
+	  // conf.setInt(HarpDAALConstants.FILE_DIM, Integer.parseInt(args[init.getSysArgNum()]));
+          //
+	  // // launch job
+	  // System.out.println("Starting Job");
+	  // long perJobSubmitTime = System.currentTimeMillis();
+	  // System.out.println("Start Job#"  + " "+ new SimpleDateFormat("HH:mm:ss.SSS").format(Calendar.getInstance().getTime()));
+          //
+	  // Job qrJob = init.createJob("qrJob", QRDaalLauncher.class, QRDaalCollectiveMapper.class); 
+          //
+	  // // finish job
+	  // boolean jobSuccess = qrJob.waitForCompletion(true);
+	  // System.out.println("End Job#"  + " "+ new SimpleDateFormat("HH:mm:ss.SSS").format(Calendar.getInstance().getTime()));
+	  // System.out.println("| Job#"  + " Finished in " + (System.currentTimeMillis() - perJobSubmitTime)+ " miliseconds |");
+	  // if (!jobSuccess) {
+		//   qrJob.killJob();
+		//   System.out.println("qrJob failed");
+	  // }
 
-    DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbb.so.2#libtbb.so.2"), conf);
-    DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbb.so#libtbb.so"), conf);
+	    DistributedCache.createSymlink(conf);
+	    DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libJavaAPI.so#libJavaAPI.so"), conf);
+
+	    DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbb.so.2#libtbb.so.2"), conf);
+	    DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbb.so#libtbb.so"), conf);
     DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbbmalloc.so.2#libtbbmalloc.so.2"), conf);
     DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbbmalloc.so#libtbbmalloc.so"), conf);
 
@@ -198,7 +226,7 @@ private void runQR(Path inputDir, int mem,
     //   numMapTasks);
     // jobConfig.setInt(Constants.NUM_THREADS,
     //   numThreadsPerWorker);
-    
+
     FileInputFormat.setInputPaths(job, inputDir);                         
     FileOutputFormat.setOutputPath(job, outputDir);
     job.setInputFormatClass(MultiFileInputFormat.class);

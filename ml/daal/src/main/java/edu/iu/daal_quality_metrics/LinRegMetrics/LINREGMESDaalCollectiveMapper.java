@@ -124,14 +124,14 @@ public class LINREGMESDaalCollectiveMapper
         Configuration configuration =
             context.getConfiguration();
 
-	this.nFeatures = configuration.getInt(Constants.FEATURE_DIM, 10);
-	this.fileDim = configuration.getInt(Constants.FILE_DIM, 12);
-	this.nDependentVariables = configuration.getInt(Constants.NUM_DEPVAR, 2);
+	this.nFeatures = configuration.getInt(HarpDAALConstants.FEATURE_DIM, 10);
+	this.fileDim = configuration.getInt(HarpDAALConstants.FILE_DIM, 12);
+	this.nDependentVariables = configuration.getInt(HarpDAALConstants.NUM_DEPVAR, 2);
 	this.iBeta1 = configuration.getInt(Constants.IBETA_ONE, 2);
 	this.iBeta2 = configuration.getInt(Constants.IBETA_TWO, 10);
 
-        this.numMappers = configuration.getInt(Constants.NUM_MAPPERS, 10);
-        this.numThreads = configuration.getInt(Constants.NUM_THREADS, 10);
+        this.numMappers = configuration.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
+        this.numThreads = configuration.getInt(HarpDAALConstants.NUM_THREADS, 10);
         //always use the maximum hardware threads to load in data and convert data 
         this.harpThreads = Runtime.getRuntime().availableProcessors();
 

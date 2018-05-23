@@ -114,14 +114,14 @@ public class SGDDaalCollectiveMapper
 			Configuration configuration =
 				context.getConfiguration();
 
-			this.numMappers = configuration.getInt(Constants.NUM_MAPPERS, 10);
-			this.numThreads = configuration.getInt(Constants.NUM_THREADS, 10);
+			this.numMappers = configuration.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
+			this.numThreads = configuration.getInt(HarpDAALConstants.NUM_THREADS, 10);
 			this.harpThreads = Runtime.getRuntime().availableProcessors();
-			this.fileDim = configuration.getInt(Constants.FILE_DIM, 4);
-			this.nFeatures = configuration.getLong(Constants.FEATURE_DIM, 3);
-			this.accuracyThreshold = configuration.getDouble(Constants.ACC_THRESHOLD, 0.0000001);
-			this.nIterations = configuration.getLong(Constants.NUM_ITERATIONS, 1000);
-			this.learningRate = configuration.getDouble(Constants.LEARNING_RATE, 1);
+			this.fileDim = configuration.getInt(HarpDAALConstants.FILE_DIM, 4);
+			this.nFeatures = configuration.getLong(HarpDAALConstants.FEATURE_DIM, 3);
+			this.accuracyThreshold = configuration.getDouble(HarpDAALConstants.ACC_THRESHOLD, 0.0000001);
+			this.nIterations = configuration.getLong(HarpDAALConstants.NUM_ITERATIONS, 1000);
+			this.learningRate = configuration.getDouble(HarpDAALConstants.LEARNING_RATE, 1);
 
 			LOG.info("File Dim " + this.fileDim);
 			LOG.info("Num Mappers " + this.numMappers);

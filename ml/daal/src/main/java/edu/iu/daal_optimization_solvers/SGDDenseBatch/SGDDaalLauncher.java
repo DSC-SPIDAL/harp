@@ -29,6 +29,8 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
+import edu.iu.data_aux.*;
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -56,182 +58,37 @@ public class SGDDaalLauncher extends Configured
       /* Put shared libraries into the distributed cache */
       Configuration conf = this.getConf();
 
-      DistributedCache.createSymlink(conf);
-      DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libJavaAPI.so#libJavaAPI.so"), conf);
-      DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbb.so.2#libtbb.so.2"), conf);
-      DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbb.so#libtbb.so"), conf);
-      DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbbmalloc.so.2#libtbbmalloc.so.2"), conf);
-      DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbbmalloc.so#libtbbmalloc.so"), conf);
+      Initialize init = new Initialize(conf, args);
 
-      if (args.length < 10) {
-      System.err
-        .println("Usage: edu.iu.daal_svd.SGDDaalLauncher "
-          + "<file dim > "
-	  + "<nfeature>"
-	  + "<accuracyThreshold>"
-	  + "<nIterations>"
-	  + "<learningRate>"
-	  + "<number of map tasks>"
-	  + "<num threads> "
-          + "<mem>"
-          + "<input train dir>"
-          + "<work dir>");
-      ToolRunner
-        .printGenericCommandUsage(System.err);
-      return -1;
-    }
-    int nFileDim = Integer.parseInt(args[0]);
-    long nFeatures = Long.parseLong(args[1]);
-    double accuracyThreshold = Double.parseDouble(args[2]);
-    long nIterations = Long.parseLong(args[3]);
-    double learningRate = Double.parseDouble(args[4]);
-    int numMapTasks = Integer.parseInt(args[5]);
-    int numThreads = Integer.parseInt(args[6]);
-    int mem = Integer.parseInt(args[7]);
-    String trainDataDir = args[8];
-    String workDir = args[9];
-   
-    launch(nFileDim, nFeatures, accuracyThreshold, nIterations, learningRate, numMapTasks, numThreads, mem, trainDataDir, workDir);
+      /* Put shared libraries into the distributed cache */
+      init.loadDistributedLibs();
+
+      // load args
+      init.loadSysArgs();
+
+      conf.setInt(HarpDAALConstants.FILE_DIM, Integer.parseInt(args[init.getSysArgNum()]));
+      conf.setInt(HarpDAALConstants.FEATURE_DIM, Integer.parseInt(args[init.getSysArgNum()+1]));
+      conf.setDouble(HarpDAALConstants.ACC_THRESHOLD, Double.parseDouble(args[init.getSysArgNum()+2]));
+      conf.setDouble(HarpDAALConstants.LEARNING_RATE, Double.parseDouble(args[init.getSysArgNum()+3]));
+
+      // launch job
+      System.out.println("Starting Job");
+      long perJobSubmitTime = System.currentTimeMillis();
+      System.out.println("Start Job#"  + " "+ new SimpleDateFormat("HH:mm:ss.SSS").format(Calendar.getInstance().getTime()));
+
+      Job sgdJob = init.createJob("sgdJob", SGDDaalLauncher.class, SGDDaalCollectiveMapper.class); 
+
+      // finish job
+      boolean jobSuccess = sgdJob.waitForCompletion(true);
+      System.out.println("End Job#"  + " "+ new SimpleDateFormat("HH:mm:ss.SSS").format(Calendar.getInstance().getTime()));
+      System.out.println("| Job#"  + " Finished in " + (System.currentTimeMillis() - perJobSubmitTime)+ " miliseconds |");
+      if (!jobSuccess) {
+	      sgdJob.killJob();
+	      System.out.println("sgdJob failed");
+      }
 
     return 0;
   }
 
-  private void launch(int nFileDim, long nFeatures, double accuracyThreshold, long nIterations, 
-		   double learningRate, int numMapTasks, int numThreads, int mem, 
-		      String trainDataDir, String workDir) throws IOException,
-    URISyntaxException, InterruptedException,
-    ExecutionException, ClassNotFoundException 
-  {
 
-    Configuration configuration = getConf();
-    FileSystem fs = FileSystem.get(configuration);
-    Path dataDir = new Path(trainDataDir);
-    Path outDir = new Path(workDir);
-
-    if (fs.exists(outDir)) {
-      fs.delete(outDir, true);
-    }
-
-    long startTime = System.currentTimeMillis();
-
-    runSGD(nFileDim, nFeatures, accuracyThreshold, nIterations, learningRate, 
-		    numMapTasks, numThreads, mem, trainDataDir, dataDir, outDir, configuration);
-
-    long endTime = System.currentTimeMillis();
-    System.out
-      .println("Total SGD Multi Dense Execution Time: "
-        + (endTime - startTime));
-  }
-
-  private void runSGD(
-    int nFileDim, long nFeatures, double accuracyThreshold, long nIterations,  
-    double learningRate, int numMapTasks, int numThreads, int mem, 
-    String trainDataDir, 
-    Path dataDir,
-    Path outDir, Configuration configuration)
-    throws IOException, URISyntaxException,
-    InterruptedException, ClassNotFoundException {
-    System.out.println("Starting Job");
-    // ----------------------------------------------------------------------
-    long perJobSubmitTime =
-      System.currentTimeMillis();
-    System.out
-      .println("Start Job "
-        + new SimpleDateFormat("HH:mm:ss.SSS")
-          .format(Calendar.getInstance()
-            .getTime()));
-
-    Job SGDJob =
-      configureSGDJob(nFileDim, nFeatures, accuracyThreshold, nIterations,  learningRate,
-		    numMapTasks, numThreads, mem, trainDataDir, dataDir, outDir, configuration);
-
-    System.out
-      .println("Job"
-        + " configure in "
-        + (System.currentTimeMillis() - perJobSubmitTime)
-        + " miliseconds.");
-
-    // ----------------------------------------------------------
-    boolean jobSuccess =
-      SGDJob.waitForCompletion(true);
-    System.out
-      .println("end job "
-        + new SimpleDateFormat("HH:mm:ss.SSS")
-          .format(Calendar.getInstance()
-            .getTime()));
-    System.out
-      .println("Job"
-        + " finishes in "
-        + (System.currentTimeMillis() - perJobSubmitTime)
-        + " miliseconds.");
-    // ---------------------------------------------------------
-    if (!jobSuccess) {
-      System.out.println("SGD Job fails.");
-    }
-  }
-
-  private Job configureSGDJob(
-    int nFileDim, long nFeatures, double accuracyThreshold, 
-    long nIterations,  double learningRate,
-    int numMapTasks, int numThreads, int mem, 
-    String trainDataDir, 
-    Path dataDir,
-    Path outDir, Configuration configuration
-    )
-    throws IOException, URISyntaxException {
-    Job job =
-      Job
-        .getInstance(configuration, "SGD_job");
-    FileInputFormat.setInputPaths(job, dataDir);
-    FileOutputFormat.setOutputPath(job, outDir);
-    job
-      .setInputFormatClass(MultiFileInputFormat.class);
-    job.setJarByClass(SGDDaalLauncher.class);
-    job
-      .setMapperClass(SGDDaalCollectiveMapper.class);
-    org.apache.hadoop.mapred.JobConf jobConf =
-      (JobConf) job.getConfiguration();
-    jobConf.set("mapreduce.framework.name",
-      "map-collective");
-    jobConf.setNumMapTasks(numMapTasks);
-    jobConf.setInt(
-      "mapreduce.job.max.split.locations", 10000);
-
-    // mapreduce.map.collective.memory.mb
-    // 125000
-    jobConf.setInt(
-      "mapreduce.map.collective.memory.mb", mem);
-
-    jobConf.setInt("mapreduce.task.timeout", 60000000);
-
-    int xmx = (int) Math.ceil((mem - 2000)*0.5);
-    int xmn = (int) Math.ceil(0.25 * xmx);
-
-    jobConf.set(
-      "mapreduce.map.collective.java.opts",
-      "-Xmx" + xmx + "m -Xms" + xmx + "m"
-        + " -Xmn" + xmn + "m");
-
-    job.setNumReduceTasks(0);
-    Configuration jobConfig =
-      job.getConfiguration();
-
-    // set constant
-    jobConfig.setInt(Constants.FILE_DIM,
-      nFileDim);
-    jobConfig.setInt(Constants.NUM_MAPPERS,
-      numMapTasks);
-    jobConfig.setInt(Constants.NUM_THREADS,
-      numThreads);
-    jobConfig.setLong(Constants.FEATURE_DIM,
-      nFeatures);
-    jobConfig.setDouble(Constants.ACC_THRESHOLD,
-      accuracyThreshold);
-    jobConfig.setDouble(Constants.LEARNING_RATE,
-      learningRate);
-    jobConfig.setLong(Constants.NUM_ITERATIONS,
-      nIterations);
-    
-    return job;
-  }
 }

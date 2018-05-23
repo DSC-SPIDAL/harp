@@ -136,15 +136,15 @@ public class SVMDaalCollectiveMapper
 
 	// this.nFeatures = configuration.getInt(Constants.FEATURE_DIM, 10);
 	// this.fileDim = configuration.getInt(Constants.FILE_DIM, 10);
-	this.nClasses = configuration.getInt(Constants.NUM_CLASS, 5);
-        this.numMappers = configuration.getInt(Constants.NUM_MAPPERS, 10);
-        this.numThreads = configuration.getInt(Constants.NUM_THREADS, 10);
+	this.nClasses = configuration.getInt(HarpDAALConstants.NUM_CLASS, 5);
+        this.numMappers = configuration.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
+        this.numThreads = configuration.getInt(HarpDAALConstants.NUM_THREADS, 10);
         //always use the maximum hardware threads to load in data and convert data 
         this.harpThreads = Runtime.getRuntime().availableProcessors();
 
-	this.testFilePath = configuration.get(Constants.TEST_FILE_PATH,"");
-	this.trainGroundTruthPath = configuration.get(Constants.TRAIN_TRUTH,"");
-	this.testGroundTruthPath = configuration.get(Constants.TEST_TRUTH,"");
+	this.testFilePath = configuration.get(HarpDAALConstants.TEST_FILE_PATH,"");
+	this.trainGroundTruthPath = configuration.get(HarpDAALConstants.TRAIN_TRUTH_PATH,"");
+	this.testGroundTruthPath = configuration.get(HarpDAALConstants.TEST_TRUTH_PATH,"");
 
         LOG.info("Num Mappers " + this.numMappers);
         LOG.info("Num Threads " + this.numThreads);
