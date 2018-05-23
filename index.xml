@@ -1096,7 +1096,9 @@ In your pull request clearly describe your change.&lt;/p&gt;&lt;/li&gt;
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://dsc-spidal.github.io/harp/docs/harpdaal/Covariance/</guid>
-      <description>&lt;p&gt;Covariance, in probability theory and statistics, is a measure of the joint variability of two random variables. The sign of the covariance
+      <description>&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/harpdaal/Covariance.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
+
+&lt;p&gt;Covariance, in probability theory and statistics, is a measure of the joint variability of two random variables. The sign of the covariance
 shows the tendency in the linear relationship between the variables. The correlation is the covariance normalized to be between -1 and +1.
 A positive correlation indicates the extent to which variables increase or decrease simultaneously.
 A negative correlation indicates the extent to which one variable increases while the other one decreases.&lt;/p&gt;
