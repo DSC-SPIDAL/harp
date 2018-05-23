@@ -2,6 +2,8 @@
 title: Covariance and Correlation
 ---
 
+<img src="/img/harpdaal/Covariance.png" width="80%" >
+
 Covariance, in probability theory and statistics, is a measure of the joint variability of two random variables. The sign of the covariance 
 shows the tendency in the linear relationship between the variables. The correlation is the covariance normalized to be between -1 and +1. 
 A positive correlation indicates the extent to which variables increase or decrease simultaneously. 

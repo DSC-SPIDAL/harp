@@ -2,6 +2,8 @@
 title: Linear Regression 
 ---
 
+<img src="/img/harpdaal/linear_regression.png" width="80%" >
+
 In statistics, linear regression is an approach for modelling the relationship between a scalar dependent variable y and one or more explanatory variables (or independent variables) denoted X. In linear regression, the relationships are modeled using linear predictor functions whose unknown model parameters are estimated from the data. Such models are called linear models.
 
 Harp-DAAL currently supports distributed mode of linear regression for dense input datasets.
