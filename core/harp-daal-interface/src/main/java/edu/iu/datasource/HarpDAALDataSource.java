@@ -199,7 +199,7 @@ public class HarpDAALDataSource
 	   return row_mapping;
    }//}}}
 
-   public Table<COOGroup> regroupCOOList(HashMap<Long,COOGroup> input_map, HashMap<Long, Integer> remap_idx, CollectiveMapper mapper)
+   public Table<COOGroup> regroupCOOList(HashMap<Long,COOGroup> input_map, HashMap<Long, Integer> remap_idx, CollectiveMapper mapper, int[] maxCompactRowID)
    {//{{{
            int maxRowID = -1;
            Table<COOGroup> regroup_table = new Table<>(0, new COOGroupCombiner(), input_map.size());
@@ -229,6 +229,7 @@ public class HarpDAALDataSource
 	   maxRowTable.release();
 	   maxRowTable = null;
 	   LOG.info("Num pars before regroup " + num_par_prev + ", global compact maxRowID " + maxRowID);
+	   maxCompactRowID[0] = maxRowID;
 
 	   //debug
 	   // int[] route_numbers = new int[maxRowID+1];

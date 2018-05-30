@@ -20,6 +20,9 @@ import java.util.Arrays;
 import java.lang.System;
 import java.util.LinkedList;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntArrays;
@@ -39,13 +42,16 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import edu.iu.harp.schdynamic.Task;
 
-public class ComputeRMSE implements Task<VRowCol, Object> 
+import edu.iu.datasource.*;
+import edu.iu.data_aux.*;
+
+public class ComputeRMSE implements Task<COOGroup, Object> 
 {
 
     private int numWorker;
     private int selfID;
-    private int[] row_mapping;
-    private int[] col_mapping;
+    private HashMap<Long, Integer> row_mapping;
+    private HashMap<Long, Integer> col_mapping;
     private long startRowIndex;
     private long endRowIndex;
     private long[] itemsPartition;
@@ -56,7 +62,7 @@ public class ComputeRMSE implements Task<VRowCol, Object>
     private int dim;
     private double[] rmse_vals; 
 
-    public ComputeRMSE(int numWorker, int selfID, int[] row_mapping, int[] col_mapping, long startRowIndex, long endRowIndex, 
+    public ComputeRMSE(int numWorker, int selfID, HashMap<Long, Integer> row_mapping, HashMap<Long, Integer> col_mapping, long startRowIndex, long endRowIndex, 
             long[] itemsPartition, double[] userModelTestData, double[][] itemModelTestData, double alpha, int dim, double[] rmse_vals) {
 
 
@@ -75,25 +81,31 @@ public class ComputeRMSE implements Task<VRowCol, Object>
     }
 
   @Override
-  public Object run(VRowCol obj) throws Exception {
+  public Object run(COOGroup obj) throws Exception {
 
-      int row_idx_map = this.row_mapping[obj.id] - 1; //starts from 0 
+      // int row_idx_map = this.row_mapping[obj.id] - 1; //starts from 0 
+      int row_idx_map = this.row_mapping.get(obj.getGID()).intValue() - 1; //starts from 0 
 
       if (row_idx_map >= this.startRowIndex && row_idx_map < this.endRowIndex)
       {
           int index_row = row_idx_map - (int)this.startRowIndex;
           int index_col = 0;
 
-          for(int j=0;j<obj.numV;j++)
+          for(int j=0;j<obj.getNumEntry();j++)
           {
 
               int item_buck = -1;
-              if (obj.ids[j] >= this.col_mapping.length || this.col_mapping[obj.ids[j]] == 0)
-                  continue;
+              // if (obj.ids[j] >= this.col_mapping.length || this.col_mapping[obj.ids[j]] == 0)
+              //     continue;
 
-              index_col = this.col_mapping[obj.ids[j]] - 1;
+              if (this.col_mapping.get(obj.getIds()[j]) == null || this.col_mapping.get(obj.getIds()[j]).intValue() == 0)
+		      continue;
 
-              double rating = obj.v[j];
+              // index_col = this.col_mapping[obj.ids[j]] - 1;
+              index_col = this.col_mapping.get(obj.getIds()[j]).intValue() - 1;
+
+              // double rating = obj.v[j];
+              double rating = obj.getVals()[j];
 
               //get the relative itemblock that contains index_col
               for(int k=0;k<this.numWorker;k++)

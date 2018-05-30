@@ -259,27 +259,25 @@ public class ALSDaalCollectiveMapper
             LOG.info("Load ALS training points in COO format");
 
             //----------------------- load the train dataset-----------------------
-            // grouped by row ids
-            Int2ObjectOpenHashMap<VRowCol> trainDataMap = SGDUtil.loadVMapRow(vFilePaths, numThreads_harp, configuration);
-            // grouped by row ids
-            Int2ObjectOpenHashMap<VRowCol> trainDataMapTran = SGDUtil.loadVMapTran(vFilePaths, numThreads_harp, configuration);
-
-
+            // // grouped by row ids
+            // Int2ObjectOpenHashMap<VRowCol> trainDataMap = SGDUtil.loadVMapRow(vFilePaths, numThreads_harp, configuration);
+            // // grouped by row ids
+            // Int2ObjectOpenHashMap<VRowCol> trainDataMapTran = SGDUtil.loadVMapTran(vFilePaths, numThreads_harp, configuration);
 
             //sync the number of rows/columns and row/col ids among all the mappers
-            int[] rowIds = new int[trainDataMap.size()];
-            int[] colIds = new int[trainDataMapTran.size()];
+            // int[] rowIds = new int[trainDataMap.size()];
+            // int[] colIds = new int[trainDataMapTran.size()];
 
-            rowIds = trainDataMap.keySet().toArray(rowIds); 
-            colIds = trainDataMapTran.keySet().toArray(colIds); 
+            // rowIds = trainDataMap.keySet().toArray(rowIds); 
+            // colIds = trainDataMapTran.keySet().toArray(colIds); 
 
             //remapping row ids
-            ReMapRowColID remapper_row = new ReMapRowColID(rowIds, this.getSelfID(), this.getNumWorkers(), this);
-            int[] row_mapping = remapper_row.getRemapping();
+            // ReMapRowColID remapper_row = new ReMapRowColID(rowIds, this.getSelfID(), this.getNumWorkers(), this);
+            // int[] row_mapping = remapper_row.getRemapping();
 
             //remapping col ids
-            ReMapRowColID remapper_col = new ReMapRowColID(colIds, this.getSelfID(), this.getNumWorkers(), this);
-            int[] col_mapping = remapper_col.getRemapping();
+            // ReMapRowColID remapper_col = new ReMapRowColID(colIds, this.getSelfID(), this.getNumWorkers(), this);
+            // int[] col_mapping = remapper_col.getRemapping();
 
 	    //------------------- Start debug new APIs -------------------
 	    List<COO> coo_data = this.datasource.loadCOOFiles(" ");
@@ -328,31 +326,41 @@ public class ALSDaalCollectiveMapper
 	    // }
 	    
 	    // regroup ids
-	    Table<COOGroup> regrouped_table = this.datasource.regroupCOOList(coo_group, gid_remap, this); 
-	    Table<COOGroup> regrouped_table_tran = this.datasource.regroupCOOList(coo_group_tran, gid_remap_tran, this); 
+	    int[] maxCompactID = new int[1];
+	    Table<COOGroup> regrouped_table = this.datasource.regroupCOOList(coo_group, gid_remap, this, maxCompactID); 
+
+	    int[] maxCompactIDTran = new int[1];
+	    Table<COOGroup> regrouped_table_tran = this.datasource.regroupCOOList(coo_group_tran, gid_remap_tran, this, maxCompactIDTran); 
+
+	    this.maxRowID = maxCompactID[0];
+	    LOG.info("MAX ROW ID is: " + this.maxRowID);
 
 	    //create the CSRNumericTable
-	    CSRNumericTable regroup_table_daal = this.datasource.COOToCSR(regrouped_table, gid_remap_tran, daal_Context);
-	    CSRNumericTable regroup_table_daal_tran = this.datasource.COOToCSR(regrouped_table_tran, gid_remap, daal_Context);
+	    // CSRNumericTable regroup_table_daal = this.datasource.COOToCSR(regrouped_table, gid_remap_tran, daal_Context);
+	    // CSRNumericTable regroup_table_daal_tran = this.datasource.COOToCSR(regrouped_table_tran, gid_remap, daal_Context);
+	    CSRNumericTable trainDaalTable = this.datasource.COOToCSR(regrouped_table, gid_remap_tran, daal_Context);
+	    CSRNumericTable trainDaalTableTran = this.datasource.COOToCSR(regrouped_table_tran, gid_remap, daal_Context);
 
 	    //------------------- End debug new APIs -------------------
 	    
             //regroup among all the mappers by row
-            Table<VSet> trainDataTable = TrainDataRGroupByRow(trainDataMap, row_mapping, numThreads_harp, false);
+            // Table<VSet> trainDataTable = TrainDataRGroupByRow(trainDataMap, row_mapping, numThreads_harp, false);
             //regroup among all the mappers by col
-            Table<VSet> trainDataTableTran = TrainDataRGroupByRow(trainDataMapTran, col_mapping, numThreads_harp, true);
+            // Table<VSet> trainDataTableTran = TrainDataRGroupByRow(trainDataMapTran, col_mapping, numThreads_harp, true);
 
             // ------------------------ load test dataset ------------------------
             // -------------------------- each node has the whole dataset --------------------------
-            Int2ObjectOpenHashMap<VRowCol> testDataMap = SGDUtil.loadTMapRow(testFilePath, numThreads_harp, configuration);
+            // Int2ObjectOpenHashMap<VRowCol> testDataMap = SGDUtil.loadTMapRow(testFilePath, numThreads_harp, configuration);
+	    List<COO> coo_data_test = this.datasource.loadCOOFiles(testFilePath, " ");
+	    HashMap<Long, COOGroup> testDataMap = this.datasource.groupCOOByIDs(coo_data_test, true);
 
             long start_spmat = System.currentTimeMillis();
             //convert coo format of training dataset to CSR format
-            COOToCSR converter = new COOToCSR(trainDataTable, col_mapping);
-            CSRNumericTable trainDaalTable = converter.convert();
+            // COOToCSR converter = new COOToCSR(trainDataTable, col_mapping);
+            // CSRNumericTable trainDaalTable = converter.convert();
 
-            COOToCSR converter_tran = new COOToCSR(trainDataTableTran, row_mapping);
-            CSRNumericTable trainDaalTableTran = converter_tran.convert();
+            // COOToCSR converter_tran = new COOToCSR(trainDataTableTran, row_mapping);
+            // CSRNumericTable trainDaalTableTran = converter_tran.convert();
 
             long end_spmat = System.currentTimeMillis();
 
@@ -361,7 +369,7 @@ public class ALSDaalCollectiveMapper
                     + trainDaalTable.getNumberOfColumns() + " CSR datasize: " 
                     + trainDaalTable.getDataSize() 
                     + "CSR table tran rows: " + trainDaalTableTran.getNumberOfRows() + " CSR table tran cols: " 
-                    + trainDaalTableTran.getNumberOfColumns() + " CSRi tran datasize: " 
+                    + trainDaalTableTran.getNumberOfColumns() + " CSR tran datasize: " 
                     + trainDaalTableTran.getDataSize()
                     + " conversion time: " + (end_spmat - start_spmat));
 
@@ -469,7 +477,7 @@ public class ALSDaalCollectiveMapper
                 itemsPartition_test[j+1] = itemsPartition_test[j] + dataTable_partition.getPartition(j).get().get()[1];
             }
             
-            testModelInitRMSEMulti(usersPartition_test, itemsPartition_test, dataTableRows, testDataMap, row_mapping, col_mapping);
+            testModelInitRMSEMulti(usersPartition_test, itemsPartition_test, dataTableRows, testDataMap, gid_remap, gid_remap_tran);
 
             // ------------------------------ Training Model Start ------------------------------
             LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
@@ -679,7 +687,8 @@ public class ALSDaalCollectiveMapper
                 System.gc();
 
                 //test model after this iteration
-                testModelMulti(iteration, usersPartition_test, itemsPartition_test, usersPartialResultLocal, itemsPartialResultLocal, testDataMap, row_mapping, col_mapping);
+                // testModelMulti(iteration, usersPartition_test, itemsPartition_test, usersPartialResultLocal, itemsPartialResultLocal, testDataMap, row_mapping, col_mapping);
+                testModelMulti(iteration, usersPartition_test, itemsPartition_test, usersPartialResultLocal, itemsPartialResultLocal, testDataMap, gid_remap, gid_remap_tran);
 
             }
 
@@ -884,8 +893,8 @@ public class ALSDaalCollectiveMapper
                              long[] itemsPartition,
                              DistributedPartialResultStep4 usersPartialResultLocal,
                              DistributedPartialResultStep4 itemsPartialResultLocal, 
-                             Int2ObjectOpenHashMap<VRowCol> testDataMap,
-                             int[] row_mapping, int[] col_mapping) throws Exception
+                             HashMap<Long, COOGroup> testDataMap,
+                             HashMap<Long, Integer> row_mapping, HashMap<Long, Integer> col_mapping) throws Exception
         {//{{{
 
             // ------------------------------ Predicting Model Start ------------------------------
@@ -944,22 +953,25 @@ public class ALSDaalCollectiveMapper
                             userModelTestData, itemModelTestData, alpha, r, rmse_vals[j]));
             }
 
-            DynamicScheduler<VRowCol, Object, ComputeRMSE> rmse_schedule =
+            // DynamicScheduler<VRowCol, Object, ComputeRMSE> rmse_schedule =
+            //     new DynamicScheduler<>(rmse_compute_tasks);
+            DynamicScheduler<COOGroup, Object, ComputeRMSE> rmse_schedule =
                 new DynamicScheduler<>(rmse_compute_tasks);
 
+	    for(COOGroup entry : testDataMap.values())
+	    {
+                rmse_schedule.submit(entry);
+	    }
             //row id and col id in test data in COO format starts from 0
-            ObjectIterator<Int2ObjectMap.Entry<VRowCol>> iterator =
-                testDataMap.int2ObjectEntrySet().fastIterator();
-
-            // int testVLocalNum = 0;
-            
-            while (iterator.hasNext()) {
-
-                Int2ObjectMap.Entry<VRowCol> entry =
-                    iterator.next();
-                // VRowCol vRowCol = entry.getValue();
-                rmse_schedule.submit(entry.getValue());
-            }
+            // ObjectIterator<Int2ObjectMap.Entry<VRowCol>> iterator =
+            //     testDataMap.int2ObjectEntrySet().fastIterator();
+            //
+            // while (iterator.hasNext()) {
+            //
+            //     Int2ObjectMap.Entry<VRowCol> entry =
+            //         iterator.next();
+            //     rmse_schedule.submit(entry.getValue());
+            // }
 
             rmse_schedule.start();
             rmse_schedule.stop();
@@ -1165,8 +1177,8 @@ public class ALSDaalCollectiveMapper
         private void testModelInitRMSEMulti(long[] usersPartition,
                                        long[] itemsPartition,
                                        long userNum,
-                                       Int2ObjectOpenHashMap<VRowCol> testDataMap,
-                                       int[] row_mapping, int[] col_mapping) throws Exception
+                                       HashMap<Long, COOGroup> testDataMap,
+                                       HashMap<Long, Integer> row_mapping, HashMap<Long, Integer> col_mapping) throws Exception
         {//{{{
 
             // ------------------------------ Predicting Model Start ------------------------------
@@ -1216,21 +1228,23 @@ public class ALSDaalCollectiveMapper
                             userModelTestData, itemModelTestData, alpha, r, rmse_vals[j]));
             }
 
-            DynamicScheduler<VRowCol, Object, ComputeRMSE> rmse_schedule =
+            DynamicScheduler<COOGroup, Object, ComputeRMSE> rmse_schedule =
                 new DynamicScheduler<>(rmse_compute_tasks);
 
+	    for(COOGroup entry : testDataMap.values())
+		rmse_schedule.submit(entry);
             //row id and col id in test data in COO format starts from 0
-            ObjectIterator<Int2ObjectMap.Entry<VRowCol>> iterator =
-                testDataMap.int2ObjectEntrySet().fastIterator();
-
-            while (iterator.hasNext()) {
-
-                Int2ObjectMap.Entry<VRowCol> entry =
-                    iterator.next();
-
-                rmse_schedule.submit(entry.getValue());
-
-            }
+            // ObjectIterator<Int2ObjectMap.Entry<VRowCol>> iterator =
+            //     testDataMap.int2ObjectEntrySet().fastIterator();
+            //
+            // while (iterator.hasNext()) {
+            //
+            //     Int2ObjectMap.Entry<VRowCol> entry =
+            //         iterator.next();
+            //
+            //     rmse_schedule.submit(entry.getValue());
+            //
+            // }
 
             rmse_schedule.start();
             rmse_schedule.stop();
