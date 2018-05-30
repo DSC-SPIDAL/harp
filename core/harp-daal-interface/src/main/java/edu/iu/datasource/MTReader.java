@@ -30,6 +30,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -58,7 +60,7 @@ public class MTReader{
 	}
 
 	/**
-	 * @brief read files from HDFS in parallel (multi-threading)
+	 * @brief read dense matrix files from HDFS in parallel (multi-threading)
 	 * file format is dense vector (matrix)
 	 *
 	 * @param fileNames: filenames in HDFS
@@ -71,7 +73,8 @@ public class MTReader{
 	public List<double[]>[] readfiles(
 			List<String> fileNames,
 			int dim, Configuration conf,
-			int numThreads) {
+			int numThreads) 
+	{
 
 		List<ReadParaTask> tasks = new LinkedList<>();
 		List<double[]>[] arrays = new List[fileNames.size()];
@@ -105,6 +108,103 @@ public class MTReader{
 
 		return arrays;
 	} 
+
+	public List<COO> readCOO(List<String> fileNames, String regex, Configuration conf, int numThreads)
+	{//{{{
+
+		List<ReadCOOTask> tasks = new LinkedList<>();
+		List<COO> outputRes = new LinkedList<>();
+		
+		for (int i = 0; i < numThreads; i++) {
+		   tasks.add(new ReadCOOTask(regex, conf));
+		}
+
+		DynamicScheduler<String, List<COO>, ReadCOOTask> compute =
+			new DynamicScheduler<>(tasks);
+
+		for (String fileName : fileNames) {
+			compute.submit(fileName);
+		}
+
+		compute.start();
+		compute.stop();
+
+		this.totalLine = 0;
+		this.totalPoints = 0;
+		while (compute.hasOutput()) 
+		{
+
+			List<COO> output = compute.waitForOutput();
+			if (output != null) {
+				outputRes.addAll(output);
+				totalLine += output.size();
+				totalPoints += output.size()*3;
+			}
+		}
+
+		return outputRes;
+
+	}//}}}
+
+	/**
+	 * @brief group COO entries by their row Ids or column ids
+	 *
+	 * @param inputData
+	 * @param isRow
+	 * @param conf
+	 * @param numThreads
+	 *
+	 * @return 
+	 */
+	public HashMap<Long, COOGroup> regroupCOO(List<COO> inputData, boolean isRow, Configuration conf, int numThreads)
+	{//{{{
+		List<RegroupCOOTask> tasks = new LinkedList<>();
+		for (int i = 0; i < numThreads; i++) 
+		   tasks.add(new RegroupCOOTask(conf, isRow));
+
+		DynamicScheduler<List<COO>, Integer, RegroupCOOTask> compute =
+			new DynamicScheduler<>(tasks);
+
+		//split inputData into sublists and submit the tasks
+		int start_idx = 0;
+		int end_idx = 0;
+		int total_elem = inputData.size();
+		int idx_interval = (total_elem + numThreads - 1)/numThreads; 
+		while(start_idx < total_elem)
+		{
+			end_idx = (start_idx + idx_interval <= total_elem) ? (start_idx+idx_interval) : total_elem;
+			compute.submit(inputData.subList(start_idx, end_idx));
+			start_idx = end_idx;
+		}
+		
+		// launch the tasks
+		compute.start();
+		compute.stop();
+
+		while (compute.hasOutput()) 
+		  compute.waitForOutput();
+
+		//retrieval the group_maps from each thread tasks and merge them
+		HashMap<Long, COOGroup> base_map = tasks.get(0).getMap();
+		for(int j=1; j<numThreads;j++)
+		{
+		 	HashMap<Long, COOGroup> add_map = tasks.get(j).getMap(); 
+			for(Map.Entry<Long, COOGroup> entry : add_map.entrySet())
+			{
+				Long key = entry.getKey();
+				COOGroup val = entry.getValue();
+
+				COOGroup base_entry = base_map.get(key);
+				if (base_entry == null)
+					base_map.put(key, val);
+				else
+					base_entry.add(val);
+			}
+		}
+
+		return base_map;
+
+	}//}}}
 
 	public int getTotalLines() {return this.totalLine; }
 	public int getTotalPoints() {return this.totalPoints; }

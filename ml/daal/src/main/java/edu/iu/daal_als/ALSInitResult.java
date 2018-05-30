@@ -40,6 +40,8 @@ import edu.iu.harp.resource.ByteArray;
 import edu.iu.harp.resource.LongArray;
 
 import edu.iu.data_transfer.*;
+import edu.iu.datasource.*;
+import edu.iu.data_aux.*;
 
 // packages from Daal 
 import com.intel.daal.algorithms.implicit_als.*;

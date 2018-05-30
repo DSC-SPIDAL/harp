@@ -14,30 +14,30 @@
  * limitations under the License.
  */
 
-package edu.iu.daal_als;
+package edu.iu.data_aux;
 
 import edu.iu.harp.partition.PartitionCombiner;
 import edu.iu.harp.partition.PartitionStatus;
-import edu.iu.harp.resource.ByteArray;
+import edu.iu.harp.resource.IntArray;
 
-public class ByteArrPlus extends
-  PartitionCombiner<ByteArray> {
+public class IntArrMax extends
+  PartitionCombiner<IntArray> {
 
   @Override
   public PartitionStatus combine(
-    ByteArray curPar, ByteArray newPar) {
-    // long[] longs1 = curPar.get();
-    // int size1 = curPar.size();
-    // long[] longs2 = newPar.get();
-    // int size2 = newPar.size();
-    // if (size1 != size2) {
-    //   // throw new Exception("size1: " + size1
-    //   // + ", size2: " + size2);
-    //   return PartitionStatus.COMBINE_FAILED;
-    // }
-    // for (int i = 0; i < size2; i++) {
-    //   longs1[i] += longs2[i];
-    // }
+    IntArray curPar, IntArray newPar) {
+    int[] ints1 = curPar.get();
+    int size1 = curPar.size();
+    int[] ints2 = newPar.get();
+    int size2 = newPar.size();
+    if (size1 != size2) {
+      return PartitionStatus.COMBINE_FAILED;
+    }
+    for (int i = 0; i < size1; i++) {
+      if (ints1[i] < ints2[i]) {
+        ints1[i] = ints2[i];
+      }
+    }
     return PartitionStatus.COMBINED;
   }
 }

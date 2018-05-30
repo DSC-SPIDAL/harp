@@ -61,4 +61,5 @@ public class HarpDAALConstants {
   public static final String NUM_DEPVAR =
   "nDependentVariables";
 
+  public static final int ARR_LEN = 1000;
 }

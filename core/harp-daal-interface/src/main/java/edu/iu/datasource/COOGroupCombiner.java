@@ -14,17 +14,18 @@
  * limitations under the License.
  */
 
-package edu.iu.daal_als;
+package edu.iu.datasource;
 
-import java.util.LinkedList;
-import java.util.List;
+import edu.iu.harp.partition.PartitionCombiner;
+import edu.iu.harp.partition.PartitionStatus;
 
-public class VSetSplit {
-  public int splitID;
-  public List<VSet> list;
+public class COOGroupCombiner extends
+  PartitionCombiner<COOGroup> {
 
-  public VSetSplit(int i) {
-    splitID = i;
-    list = new LinkedList<>();
+  @Override
+  public PartitionStatus combine(
+    COOGroup curPartition, COOGroup newPartition) {
+    curPartition.add(newPartition);
+    return PartitionStatus.COMBINED;
   }
 }

@@ -29,13 +29,21 @@ import java.util.List;
 import java.util.LinkedList;
 import java.util.Arrays;
 import java.util.ListIterator;
+import java.util.HashMap;
+import java.util.Map;
 
 import edu.iu.dymoro.*;
 import edu.iu.harp.partition.Partition;
+import edu.iu.harp.partition.Partitioner;
 import edu.iu.harp.partition.Table;
 import edu.iu.harp.resource.Simple;
 import edu.iu.harp.resource.Array;
+import edu.iu.harp.resource.LongArray;
+import edu.iu.harp.resource.IntArray;
+import edu.iu.harp.resource.DoubleArray;
+import edu.iu.harp.resource.ByteArray;
 import edu.iu.harp.schstatic.StaticScheduler;
+import edu.iu.data_aux.*;
 
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
@@ -44,6 +52,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.RemoteIterator;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.commons.lang3.*;
 import org.apache.hadoop.mapred.CollectiveMapper;
 import org.apache.hadoop.conf.Configuration;
 
@@ -107,6 +116,220 @@ public class HarpDAALDataSource
 	this.numTestRows = 0;
 	this.csrlabels = null;
    }
+
+   public List<COO> loadCOOFiles(String regex)
+   {//{{{
+      	MTReader reader = new MTReader();
+	List<COO> output = reader.readCOO(this.hdfs_filenames, regex, this.conf, this.harpthreads);
+	this.totallines = reader.getTotalLines();
+	this.totalPoints = reader.getTotalPoints();
+	return output;
+   }//}}}
+
+   public List<COO> loadCOOFiles(String FilePath, String regex)
+   {//{{{
+	   List<String> FilePathsList = new LinkedList<>();
+	   Path path = new Path(FilePath);
+	   try {
+		   FileSystem fs =
+			   path.getFileSystem(this.conf);
+		   RemoteIterator<LocatedFileStatus> iterator =
+			   fs.listFiles(path, true);
+		   while (iterator.hasNext()) {
+			   String name =
+				   iterator.next().getPath().toUri()
+				   .toString();
+			   FilePathsList.add(name);
+		   }
+	   } catch (IOException e) {
+		   LOG.error("Fail to get test files", e);
+	   }
+
+	   MTReader reader = new MTReader();
+	   List<COO> output = reader.readCOO(FilePathsList, regex, this.conf, this.harpthreads);
+	   this.totallines = reader.getTotalLines();
+	   this.totalPoints = reader.getTotalPoints();
+	   return output;
+   }//}}}
+
+   public HashMap<Long, COOGroup> groupCOOByIDs(List<COO> inputData, boolean isRow)
+   {//{{{
+	   //regroup by multi-threading
+      	   MTReader reader = new MTReader();
+	   HashMap<Long, COOGroup> output_map = reader.regroupCOO(inputData, isRow, this.conf, this.harpthreads);
+	   return output_map;
+   }//}}}
+
+   public HashMap<Long, Integer> remapCOOIDs(HashMap<Long, COOGroup> input_map, int mapper_id, int num_mappers, CollectiveMapper mapper)
+   {//{{{
+
+	   long[] inputIDs = new long[input_map.keySet().size()]; 
+	   int id_itr = 0;
+	   for(Long key : input_map.keySet())
+		   inputIDs[id_itr++] = key;
+
+	   Table<LongArray> RowInfo_Table = new Table<>(0, new LongArrPlus());
+	   LongArray RowInfo_array = new LongArray(inputIDs, 0, inputIDs.length); 
+
+	   RowInfo_Table.addPartition(new Partition<>(mapper_id, RowInfo_array));
+	   mapper.allgather("coo", "remap_ids", RowInfo_Table);
+
+	   long[][] row_ids_all = new long[num_mappers][];
+
+	   for(int j=0;j<num_mappers; j++)
+	   {
+		   row_ids_all[j] = RowInfo_Table.getPartition(j).get().get();
+	   }
+
+	   HashMap<Long, Integer> row_mapping = new HashMap<>();
+	   int row_pos = 1; //CSR pos start from 1
+	   for(int j=0;j<num_mappers;j++)
+	   {
+		   for(int k=0;k<row_ids_all[j].length;k++)
+		   {
+			   if (row_mapping.get(row_ids_all[j][k]) == null)
+			   {
+				   row_mapping.put(row_ids_all[j][k], row_pos);
+				   row_pos++;
+			   }
+			   
+		   }
+	   }
+
+	   return row_mapping;
+   }//}}}
+
+   public Table<COOGroup> regroupCOOList(HashMap<Long,COOGroup> input_map, HashMap<Long, Integer> remap_idx, CollectiveMapper mapper)
+   {//{{{
+           int maxRowID = -1;
+           Table<COOGroup> regroup_table = new Table<>(0, new COOGroupCombiner(), input_map.size());
+
+	   for(Map.Entry<Long, COOGroup> entry : input_map.entrySet())
+	   {
+		   Long key = entry.getKey();
+		   COOGroup val = entry.getValue();
+		   int remapID = remap_idx.get(key);
+		   regroup_table.addPartition(new Partition<>(remapID, val));
+		   if (remapID > maxRowID)
+			   maxRowID = remapID;
+
+	   }
+
+	   int num_par_prev = regroup_table.getNumPartitions();
+	   Table<IntArray> maxRowTable = new Table<>(0, new IntArrMax());
+
+	   IntArray maxrowArray = IntArray.create(1, false);
+	   maxrowArray.get()[0] = maxRowID;
+	   maxRowTable.addPartition(new Partition<>(0, maxrowArray));
+
+	   mapper.allreduce("coo", "get-max-rowID", maxRowTable);
+
+	   // from local max row id to global max row id
+	   maxRowID = maxRowTable.getPartition(0).get().get()[0];
+	   maxRowTable.release();
+	   maxRowTable = null;
+	   LOG.info("Num pars before regroup " + num_par_prev + ", global compact maxRowID " + maxRowID);
+
+	   //debug
+	   // int[] route_numbers = new int[maxRowID+1];
+    	   // int num_pernode = (route_numbers.length + mapper.getNumWorkers())/mapper.getNumWorkers();
+           // for (int i = 1; i < route_numbers.length; i++) 
+        	// route_numbers[i] = i/num_pernode;
+	   //
+	   // int transfer_item = 0;
+           //
+	   // for(Partition<COOGroup> par : regroup_table.getPartitions())
+	   // {
+           //
+		//    int par_id = par.id(); 
+		//    int route_dst = -1;
+		//    if (par_id >= 0 && par_id < route_numbers.length) 
+		// 	   route_dst =  route_numbers[par_id];
+		//    else if (par_id >= route_numbers.length) 
+		// 	   route_dst  = route_numbers[par_id - route_numbers.length];
+		//    else
+		// 	   route_dst =  0;
+           //
+		//    //check route_dst
+		//    if (route_dst < 0 || route_dst >= mapper.getNumWorkers())
+		// 	   LOG.info("Error routing destination");
+           //
+		//    if (route_dst != mapper.getSelfID())
+		// 	   transfer_item++;
+           //
+	   // }
+
+	   // LOG.info("Transferred items: " + transfer_item);
+
+           mapper.regroup("coo", "regroup-coo", regroup_table, new COORegroupPartitioner(maxRowID, mapper.getNumWorkers()));
+	   mapper.barrier("coo", "finish-regroup");
+
+	   int num_par_cur = regroup_table.getNumPartitions();
+	   LOG.info("Num pars after regroup " + num_par_cur);
+	   return regroup_table;
+   }//}}}
+
+   public CSRNumericTable COOToCSR(Table<COOGroup> inputTable, HashMap<Long, Integer> remapIDs, DaalContext daal_Context)
+   {//{{{
+	   int num_pars = inputTable.getNumPartitions();
+	   int num_cols = 0;
+	   int num_vals = 0;
+	   long[] rowOffset = new long[num_pars+1];
+	   rowOffset[0] = 1;
+
+	   //here partition id starts from 1
+	   IntArray idArray = IntArray.create(num_pars, false);
+	   inputTable.getPartitionIDs().toArray(idArray.get());
+	   Arrays.sort(idArray.get(), 0, idArray.size());
+	   int[] ids = idArray.get();
+
+	   // write the rowoffset
+	   for (int i = 0; i < idArray.size(); i++) 
+	   {
+		   COOGroup elem = inputTable.getPartition(ids[i]).get();
+		   rowOffset[i+1] = rowOffset[i] + elem.getNumEntry(); 
+		   num_cols += elem.getNumEntry();
+	   }
+
+	   num_vals =  num_cols;
+
+	   long[] colIndex = new long[num_cols];
+	   double[] data = new double[num_vals];
+
+	   int itr_pos = 0;
+	   int itr_ids = 0;
+	   long maxCol = 0;
+
+	   //write colIndex and CSR data
+	   for (int i = 0; i < idArray.size(); i++) 
+	   {
+		   COOGroup elem_g = inputTable.getPartition(ids[i]).get();
+		   long[] Ids = elem_g.getIds();
+		   int num_entry = elem_g.getNumEntry(); 
+
+		   for(int j=0;j<num_entry;j++)
+		   {
+			   colIndex[itr_ids] = remapIDs.get(Ids[j]); //CSR format colIndex start from 1
+			   if (colIndex[itr_ids] > maxCol)
+				   maxCol = colIndex[itr_ids];
+
+			   itr_ids++;
+		   }
+
+		   System.arraycopy(elem_g.getVals(), 0, data, itr_pos, num_entry);
+		   itr_pos += num_entry;
+	   }
+
+	   long nFeatures = maxCol;
+	   //check CSR table 
+	   if ((rowOffset[num_pars] - 1) != num_vals || nFeatures == 0 || num_pars == 0) {
+		   LOG.info("Wrong CSR format: ");
+		   return null;
+	   }
+	   else
+		   return new CSRNumericTable(daal_Context, data, colIndex, rowOffset, nFeatures, num_pars);
+
+   }//}}}
 
    public void loadFiles()
    {

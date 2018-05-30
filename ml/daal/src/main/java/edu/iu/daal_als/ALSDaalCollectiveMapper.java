@@ -30,6 +30,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -53,6 +55,9 @@ import java.util.Collections;
 import java.lang.Thread;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+
+import edu.iu.datasource.*;
+import edu.iu.data_aux.*;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapred.CollectiveMapper;
@@ -95,32 +100,16 @@ public class ALSDaalCollectiveMapper
     extends
     CollectiveMapper<String, String, Object, Object> {
 
-        //feature dimension
-        private int r;
-        private double oneOverSqrtR;
-        //lambda parameter in update
-        private double lambda;
-        //learning rate
-        private double epsilon;
-        //num of training iterations
+	   
+	//command line args
         private int numIterations;
-        //num of threads in computation
-        private int numThreads;
-        private int numThreads_harp = 60;
-        private String modelDirPath;
-        //time value used by timer
-        private double time;
-        //use or not use timer tuning
-        private boolean enableTuning;
-        //number of pipelines in model rotation
-        private int numModelSlices;
-        //iteration interval of doing rmse test
-        private int rmseIteInterval;
-        //iteration interval of freeing cached data in model rotation
-        private int freeInterval;
-        //final RMSE value of test
-        private double rmse;
+	private int numThreads;
+        private int numThreads_harp;
+        private int r; //feature dimension
+        private double alpha = 40.0;
+        private double lambda_als = 0.06;
         private String testFilePath;
+
         //time of total trainining 
         private long trainTime = 0;
         //time of computing time of each step 
@@ -128,22 +117,29 @@ public class ALSDaalCollectiveMapper
         private long computeTime_step2 = 0;
         private long computeTime_step3 = 0;
         private long computeTime_step4 = 0;
-
         private long commTime_step1 = 0;
         private long commTime_step2 = 0;
         private long commTime_step3 = 0;
         private long commTime_step4 = 0;
-
         //time of parallel tasks 
         private long computeTaskTime = 0;
         //time spent in waiting rotated model data in each itr
         private long waitTime = 0;
         //timestamp of each training iteration
         private long itrTimeStamp;
-        //num of trained training points 
+        //training time per iteration
+        public double trainTimePerIter = 0;
+
+       
+        //max global row ids
+        private long maxRowID = 0;
+	// app paras
+        private double oneOverSqrtR;
+        //final RMSE value of test
+        private double rmse;
+	//num of trained training points 
         private long numVTrained;
-        
-        //random generator 
+	//random generator 
         private Random random;
         //total num of training data from all the workers
         private long totalNumTrain;
@@ -151,16 +147,10 @@ public class ALSDaalCollectiveMapper
         private long totalNumCols;
         //computed test points in test process
         private long effectiveTestV;
-        //training time per iteration
-        public double trainTimePerIter = 0;
 
-        //DAAL related
+	//DAAL related
         private static DaalContext daal_Context = new DaalContext();
-        //max global row ids
-        private long maxRowID = 0;
-        private double alpha = 40.0;
-        private double lambda_als = 0.06;
-        // private double alpha = 20.0;
+	private static HarpDAALDataSource datasource;
 
         /**
          * Mapper configuration.
@@ -173,41 +163,19 @@ public class ALSDaalCollectiveMapper
                         .format(Calendar.getInstance()
                             .getTime()));
             long startTime = System.currentTimeMillis();
+
             Configuration configuration =
                 context.getConfiguration();
-            r = configuration.getInt(Constants.R, 100);
-            lambda =
-                configuration.getDouble(Constants.LAMBDA,
-                        0.001);
-            epsilon =
-                configuration.getDouble(Constants.EPSILON,
-                        0.001);
-            numIterations =
-                configuration.getInt(
-                        Constants.NUM_ITERATIONS, 100);
-            numThreads =
-                configuration.getInt(Constants.NUM_THREADS,
-                        16);
-            modelDirPath =
-                configuration.get(Constants.MODEL_DIR, "");
 
-            enableTuning = configuration
-                    .getBoolean(Constants.ENABLE_TUNING, true);
+            this.r = configuration.getInt(HarpDAALConstants.NUM_FACTOR, 100);
+            this.numIterations = configuration.getInt(HarpDAALConstants.NUM_ITERATIONS, 100);
+            this.numThreads = configuration.getInt(HarpDAALConstants.NUM_THREADS, 16);
+            this.testFilePath = configuration.get(HarpDAALConstants.TEST_FILE_PATH,"");
+	    this.alpha = configuration.getDouble(Constants.ALPHA, 40.0);
+	    this.lambda_als = configuration.getDouble(Constants.LAMBDA, 0.06);
+            this.numThreads_harp = Runtime.getRuntime().availableProcessors();
 
-            time = enableTuning ? 1000L : 1000000000L;
-           
-            numModelSlices = 2;
-           
-            testFilePath =
-                configuration.get(Constants.TEST_FILE_PATH,
-                        "");
-            String javaOpts =
-                configuration.get(
-                        "mapreduce.map.collective.java.opts", "");
-            rmseIteInterval = 1;
-            freeInterval = 20;
             rmse = 0.0;
-            // computeTime = 0L;
             computeTaskTime = 0L;
             itrTimeStamp = 0L;
             waitTime = 0L;
@@ -215,23 +183,15 @@ public class ALSDaalCollectiveMapper
             totalNumTrain = 0L;
             totalNumCols = 0L;
             effectiveTestV = 0L;
-            oneOverSqrtR = 1.0 / Math.sqrt(r);
-            random =
-                new Random(System.currentTimeMillis());
+            oneOverSqrtR = 1.0/Math.sqrt(r);
+            random = new Random(System.currentTimeMillis());
+
             long endTime = System.currentTimeMillis();
-            LOG.info("config (ms): "
-                    + (endTime - startTime));
+            LOG.info("config (ms): "+ (endTime - startTime));
             LOG.info("R " + r);
-            LOG.info("Lambda " + lambda);
-            LOG.info("Epsilon " + epsilon);
             LOG.info("Num Iterations " + numIterations);
             LOG.info("Num Threads " + numThreads);
-            LOG.info("Timer " + time);
-            LOG.info("Model Slices " + numModelSlices);
-            LOG.info("Model Dir Path " + modelDirPath);
             LOG.info("TEST FILE PATH " + testFilePath);
-            LOG.info("JAVA OPTS " + javaOpts);
-            LOG.info("Time Tuning " + enableTuning);
         }
 
         /**
@@ -247,9 +207,10 @@ public class ALSDaalCollectiveMapper
             throws IOException, InterruptedException {
             long startTime = System.currentTimeMillis();
             LinkedList<String> vFiles = getVFiles(reader);
+	    this.datasource = new HarpDAALDataSource(vFiles, this.r, this.numThreads_harp, context.getConfiguration());
+
             try {
-                runALS(vFiles, context.getConfiguration(),
-                        context);
+                runALS(vFiles, context.getConfiguration(), context);
             } catch (Exception e) {
                 LOG.error("Fail to run SGD.", e);
             }
@@ -300,9 +261,10 @@ public class ALSDaalCollectiveMapper
             //----------------------- load the train dataset-----------------------
             // grouped by row ids
             Int2ObjectOpenHashMap<VRowCol> trainDataMap = SGDUtil.loadVMapRow(vFilePaths, numThreads_harp, configuration);
-
             // grouped by row ids
             Int2ObjectOpenHashMap<VRowCol> trainDataMapTran = SGDUtil.loadVMapTran(vFilePaths, numThreads_harp, configuration);
+
+
 
             //sync the number of rows/columns and row/col ids among all the mappers
             int[] rowIds = new int[trainDataMap.size()];
@@ -319,9 +281,64 @@ public class ALSDaalCollectiveMapper
             ReMapRowColID remapper_col = new ReMapRowColID(colIds, this.getSelfID(), this.getNumWorkers(), this);
             int[] col_mapping = remapper_col.getRemapping();
 
+	    //------------------- Start debug new APIs -------------------
+	    List<COO> coo_data = this.datasource.loadCOOFiles(" ");
+	    LOG.info("Test APIs: loaded coo elem number: " + coo_data.size());
+	    // for(int k=0;k<10;k++)
+	    // {
+		//     COO coo_elem = coo_data.get(k);
+		//     LOG.info("COO rowId: " + coo_elem.getRowId() + " colId: " + coo_elem.getColId());
+	    // }
+
+	    HashMap<Long, COOGroup> coo_group = this.datasource.groupCOOByIDs(coo_data, true);
+	    HashMap<Long, COOGroup> coo_group_tran = this.datasource.groupCOOByIDs(coo_data, false);
+
+	    // int testcount = 0;
+	    // for(Map.Entry<Long, COOGroup> entry : coo_group.entrySet())
+	    // {
+		//     if (testcount < 10)
+		//     {
+		// 	    Long key = entry.getKey();
+		//    	    COOGroup val = entry.getValue();
+		// 	    LOG.info("key: " + key.longValue() + " gId: " + val.getGID() + " val_num: " + val.getNumEntry());
+		//     }
+		//     else
+		// 	    break;
+            //
+		//     testcount++;
+	    // }    
+
+	    //remapping row ids
+	    HashMap<Long, Integer> gid_remap = this.datasource.remapCOOIDs(coo_group, this.getSelfID(), this.getNumWorkers(), this);
+	    HashMap<Long, Integer> gid_remap_tran = this.datasource.remapCOOIDs(coo_group_tran, this.getSelfID(), this.getNumWorkers(), this);
+
+	    // int remap_count = 0;
+	    // for(Map.Entry<Long, Integer> entry : gid_remap.entrySet())
+	    // {
+		//     if (remap_count < 10)
+		//     {
+		// 	    Long key = entry.getKey();
+		//    	    Integer val = entry.getValue();
+		// 	    LOG.info("key: " + key.longValue() + " compact new id: " + val.intValue());
+		//     }
+		//     else
+		// 	    break;
+            //
+		//     remap_count++;
+	    // }
+	    
+	    // regroup ids
+	    Table<COOGroup> regrouped_table = this.datasource.regroupCOOList(coo_group, gid_remap, this); 
+	    Table<COOGroup> regrouped_table_tran = this.datasource.regroupCOOList(coo_group_tran, gid_remap_tran, this); 
+
+	    //create the CSRNumericTable
+	    CSRNumericTable regroup_table_daal = this.datasource.COOToCSR(regrouped_table, gid_remap_tran, daal_Context);
+	    CSRNumericTable regroup_table_daal_tran = this.datasource.COOToCSR(regrouped_table_tran, gid_remap, daal_Context);
+
+	    //------------------- End debug new APIs -------------------
+	    
             //regroup among all the mappers by row
             Table<VSet> trainDataTable = TrainDataRGroupByRow(trainDataMap, row_mapping, numThreads_harp, false);
-
             //regroup among all the mappers by col
             Table<VSet> trainDataTableTran = TrainDataRGroupByRow(trainDataMapTran, col_mapping, numThreads_harp, true);
 

@@ -29,6 +29,8 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
+import edu.iu.data_aux.*;
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -56,198 +58,37 @@ public class ALSDaalLauncher extends Configured
       /* Put shared libraries into the distributed cache */
       Configuration conf = this.getConf();
 
-      DistributedCache.createSymlink(conf);
-      DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libJavaAPI.so#libJavaAPI.so"), conf);
-      DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbb.so.2#libtbb.so.2"), conf);
-      DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbb.so#libtbb.so"), conf);
-      DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbbmalloc.so.2#libtbbmalloc.so.2"), conf);
-      DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbbmalloc.so#libtbbmalloc.so"), conf);
-      // DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libiomp5.so#libiomp5.so"), conf);
-      // DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libhdfs.so#libhdfs.so"), conf);
-      // DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libhdfs.so.0.0.0#libhdfs.so.0.0.0"), conf);
+      Initialize init = new Initialize(conf, args);
 
-      if (args.length < 11) {
-      System.err
-        .println("Usage: edu.iu.als.ALSLauncher "
-          + "<input dir> "
-          + "<r> <lambda> <epsilon> <num of iterations> "
-          + "<timer tuning> "
-          + "<num of map tasks> <num of threads per worker> "
-          + "<memory (MB)> "
-          + "<work dir> <test dir>");
-      ToolRunner
-        .printGenericCommandUsage(System.err);
-      return -1;
-    }
-    String inputDirPath = args[0];
-    int r = Integer.parseInt(args[1]);
-    double lambda = Double.parseDouble(args[2]);
-    double epsilon = Double.parseDouble(args[3]);
-    int numIteration = Integer.parseInt(args[4]);
-    boolean enableTuning =
-      Boolean.parseBoolean(args[5]);
-    int numMapTasks = Integer.parseInt(args[6]);
-    int numThreadsPerWorker =
-      Integer.parseInt(args[7]);
-    int mem = Integer.parseInt(args[8]);
-    String workDirPath = args[9];
-    String testFilePath = args[10];
-    System.out.println(
-      "Number of Map Tasks = " + numMapTasks);
-    if (numIteration <= 0) {
-      numIteration = 1;
-    }
-    if (mem < 1000) {
-      return -1;
-    }
-    launch(inputDirPath, r, lambda, epsilon,
-      numIteration, enableTuning, numMapTasks,
-      numThreadsPerWorker, mem, workDirPath,
-      testFilePath);
+      /* Put shared libraries into the distributed cache */
+      init.loadDistributedLibs();
+
+      // load args
+      init.loadSysArgs();
+
+      conf.setInt(HarpDAALConstants.NUM_FACTOR, Integer.parseInt(args[init.getSysArgNum()]));
+      conf.setDouble(Constants.ALPHA, Double.parseDouble(args[init.getSysArgNum()+1]));
+      conf.setDouble(Constants.LAMBDA, Double.parseDouble(args[init.getSysArgNum()+2]));
+      conf.set(HarpDAALConstants.TEST_FILE_PATH, args[init.getSysArgNum()+3]);
+
+      // launch job
+      System.out.println("Starting Job");
+      long perJobSubmitTime = System.currentTimeMillis();
+      System.out.println("Start Job#"  + " "+ new SimpleDateFormat("HH:mm:ss.SSS").format(Calendar.getInstance().getTime()));
+
+      Job alsJob = init.createJob("alsJob", ALSDaalLauncher.class, ALSDaalCollectiveMapper.class); 
+
+      // finish job
+      boolean jobSuccess = alsJob.waitForCompletion(true);
+      System.out.println("End Job#"  + " "+ new SimpleDateFormat("HH:mm:ss.SSS").format(Calendar.getInstance().getTime()));
+      System.out.println("| Job#"  + " Finished in " + (System.currentTimeMillis() - perJobSubmitTime)+ " miliseconds |");
+      if (!jobSuccess) {
+	      alsJob.killJob();
+	      System.out.println("alsJob failed");
+      }
+
+
     return 0;
-  }
-
-  private void launch(String inputDirPath, int r,
-    double lambda, double epsilon,
-    int numIterations, boolean enableTuning,
-    int numMapTasks, int numThreadsPerWorker,
-    int mem, String workDirPath,
-    String testFilePath) throws IOException,
-    URISyntaxException, InterruptedException,
-    ExecutionException, ClassNotFoundException {
-    Configuration configuration = getConf();
-    FileSystem fs = FileSystem.get(configuration);
-    Path inputDir = new Path(inputDirPath);
-    Path workDir = new Path(workDirPath);
-    if (fs.exists(workDir)) {
-      fs.delete(workDir, true);
-      fs.mkdirs(workDir);
-    }
-    Path modelDir =
-      new Path(workDirPath, "model");
-    fs.mkdirs(modelDir);
-    // Do not make output dir
-    Path outputDir =
-      new Path(workDirPath, "output");
-    long startTime = System.currentTimeMillis();
-
-    runALS(inputDir, r, lambda, epsilon,
-      numIterations, enableTuning, numMapTasks,
-      numThreadsPerWorker, mem, modelDir,
-      outputDir, testFilePath, configuration);
-
-    long endTime = System.currentTimeMillis();
-    System.out
-      .println("Total ALS Execution Time: "
-        + (endTime - startTime));
-  }
-
-  private void runALS(Path inputDir, int r,
-    double lambda, double epsilon,
-    int numIterations, boolean enableTuning,
-    int numMapTasks, int numThreadsPerWorker,
-    int mem, Path modelDir, Path outputDir,
-    String testFilePath,
-    Configuration configuration)
-    throws IOException, URISyntaxException,
-    InterruptedException, ClassNotFoundException {
-    System.out.println("Starting Job");
-    int jobID = 0;
-    long perJobSubmitTime =
-      System.currentTimeMillis();
-    System.out.println("Start Job#" + jobID + " "
-      + new SimpleDateFormat("HH:mm:ss.SSS")
-        .format(
-          Calendar.getInstance().getTime()));
-
-    Job alsJob =
-      configureALSJob(inputDir, r, lambda,
-        epsilon, numIterations, enableTuning,
-        numMapTasks, numThreadsPerWorker, mem,
-        modelDir, outputDir, testFilePath,
-        configuration, jobID);
-
-    boolean jobSuccess =
-      alsJob.waitForCompletion(true);
-
-    System.out.println("End Jod#" + jobID + " "
-      + new SimpleDateFormat("HH:mm:ss.SSS")
-        .format(
-          Calendar.getInstance().getTime()));
-
-    System.out
-      .println(
-        "| Job#" + jobID + " Finished in "
-          + (System.currentTimeMillis()
-            - perJobSubmitTime)
-          + " miliseconds |");
-    // ----------------------------------------
-    if (!jobSuccess) {
-      alsJob.killJob();
-      System.out.println(
-        "ALS Job failed. Job ID:" + jobID);
-    }
-  }
-
-  private Job configureALSJob(Path inputDir,
-    int r, double lambda, double epsilon,
-    int numIterations, boolean enableTuning,
-    int numMapTasks, int numThreadsPerWorker,
-    int mem, Path modelDir, Path outputDir,
-    String testFilePath,
-    Configuration configuration, int jobID)
-    throws IOException, URISyntaxException {
-    configuration.setInt(Constants.R, r);
-    configuration.setDouble(Constants.LAMBDA,
-      lambda);
-    configuration.setDouble(Constants.EPSILON,
-      epsilon);
-    configuration.setInt(Constants.NUM_ITERATIONS,
-      numIterations);
-    configuration.setBoolean(
-      Constants.ENABLE_TUNING, enableTuning);
-    configuration.setInt(Constants.NUM_THREADS,
-      numThreadsPerWorker);
-    configuration.set(Constants.MODEL_DIR,
-      modelDir.toString());
-    configuration.set(Constants.TEST_FILE_PATH,
-      testFilePath);
-
-    Job job = Job.getInstance(configuration,
-      "sgd_job_" + jobID);
-    JobConf jobConf =
-      (JobConf) job.getConfiguration();
-    jobConf.set("mapreduce.framework.name",
-      "map-collective");
-
-    // mapreduce.map.collective.memory.mb
-    // 125000
-    jobConf.setInt(
-      "mapreduce.map.collective.memory.mb", mem);
-
-    jobConf.setInt("mapreduce.task.timeout", 60000000);
-
-    int xmx = (int) Math.ceil((mem - 2000)*0.5);
-    int xmn = (int) Math.ceil(0.25 * xmx);
-    jobConf.set(
-      "mapreduce.map.collective.java.opts",
-      "-Xmx" + xmx + "m -Xms" + xmx + "m"
-        + " -Xmn" + xmn + "m");
-
-    jobConf.setNumMapTasks(numMapTasks);
-
-    jobConf.setInt(
-      "mapreduce.job.max.split.locations", 10000);
-
-    FileInputFormat.setInputPaths(job, inputDir);
-    FileOutputFormat.setOutputPath(job,
-      outputDir);
-    job.setInputFormatClass(
-      MultiFileInputFormat.class);
-    job.setJarByClass(ALSDaalLauncher.class);
-    job.setMapperClass(ALSDaalCollectiveMapper.class);
-    job.setNumReduceTasks(0);
-    return job;
   }
   
 }
