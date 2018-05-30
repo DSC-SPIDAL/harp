@@ -83,7 +83,6 @@ public class ComputeRMSE implements Task<COOGroup, Object>
   @Override
   public Object run(COOGroup obj) throws Exception {
 
-      // int row_idx_map = this.row_mapping[obj.id] - 1; //starts from 0 
       int row_idx_map = this.row_mapping.get(obj.getGID()).intValue() - 1; //starts from 0 
 
       if (row_idx_map >= this.startRowIndex && row_idx_map < this.endRowIndex)
@@ -95,16 +94,11 @@ public class ComputeRMSE implements Task<COOGroup, Object>
           {
 
               int item_buck = -1;
-              // if (obj.ids[j] >= this.col_mapping.length || this.col_mapping[obj.ids[j]] == 0)
-              //     continue;
-
               if (this.col_mapping.get(obj.getIds()[j]) == null || this.col_mapping.get(obj.getIds()[j]).intValue() == 0)
 		      continue;
 
-              // index_col = this.col_mapping[obj.ids[j]] - 1;
               index_col = this.col_mapping.get(obj.getIds()[j]).intValue() - 1;
 
-              // double rating = obj.v[j];
               double rating = obj.getVals()[j];
 
               //get the relative itemblock that contains index_col

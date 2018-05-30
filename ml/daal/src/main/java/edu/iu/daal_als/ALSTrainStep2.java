@@ -39,9 +39,9 @@ import edu.iu.harp.resource.IntArray;
 import edu.iu.harp.resource.ByteArray;
 import edu.iu.harp.resource.LongArray;
 
-import edu.iu.data_transfer.*;
 import edu.iu.datasource.*;
 import edu.iu.data_aux.*;
+import edu.iu.data_comm.*;
 
 // packages from Daal 
 import com.intel.daal.algorithms.implicit_als.PartialModel;
@@ -49,15 +49,9 @@ import com.intel.daal.algorithms.implicit_als.prediction.ratings.*;
 import com.intel.daal.algorithms.implicit_als.training.*;
 import com.intel.daal.algorithms.implicit_als.training.init.*;
 
-import com.intel.daal.data_management.data.NumericTable;
-import com.intel.daal.data_management.data.CSRNumericTable;
-import com.intel.daal.data_management.data.HomogenNumericTable;
-import com.intel.daal.data_management.data.SOANumericTable;
-import com.intel.daal.data_management.data.KeyValueDataCollection;
-
-import com.intel.daal.data_management.data_source.DataSource;
-import com.intel.daal.data_management.data_source.FileDataSource;
 import com.intel.daal.services.DaalContext;
+import com.intel.daal.data_management.data.*;
+import com.intel.daal.data_management.data_source.*;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -67,118 +61,42 @@ public class ALSTrainStep2 {
     private DistributedStep2Master algo;
     private long nFactor;
     private long numThreads;
-    private Table<ByteArray> inputData;
+    private int num_mappers;
+    private DistributedPartialResultStep1[] inputData;
     private static DaalContext daal_Context = new DaalContext();
-    private ALSDaalCollectiveMapper collect_mapper;
+    private HarpDAALComm harpcomm;
 
     protected static final Log LOG = LogFactory.getLog(ALSTrainStep2.class);
 
-    public ALSTrainStep2(long nFactor, long numThreads, 
-            Table<ByteArray> inputData, ALSDaalCollectiveMapper collect_mapper)
+    public ALSTrainStep2(long nFactor, long numThreads, int num_mappers, 
+            DistributedPartialResultStep1[] inputData, HarpDAALComm harpcomm)
     {
         this.algo = new DistributedStep2Master(daal_Context, Double.class, TrainingMethod.fastCSR);
         this.nFactor = nFactor;
         this.numThreads = numThreads;
+	this.num_mappers = num_mappers;
         this.inputData = inputData;
-        this.collect_mapper = collect_mapper;
+        this.harpcomm = harpcomm;
 
         this.algo.parameter.setNFactors(this.nFactor);
-        // this.algo.parameter.setNumThreads(this.numThreads);
     }
 
     public NumericTable compute()
     {
 
-        try {
-
-            for (int j = 0; j < this.collect_mapper.getNumWorkers(); j++)
-            {
-                DistributedPartialResultStep1 step1LocalResultNew =  deserializeStep1Result(inputData.getPartition(j).get().get());
-                this.algo.input.add(MasterInputId.inputOfStep2FromStep1, step1LocalResultNew);
-            }
+	    for (int j = 0; j < this.num_mappers; j++)
+                this.algo.input.add(MasterInputId.inputOfStep2FromStep1, this.inputData[j]);
 
             return this.algo.compute().get(DistributedPartialResultStep2Id.outputOfStep2ForStep4);
-
-        } catch (Exception e) 
-        {
-            LOG.error("Fail to serilization.", e);
-            return null;
-        }
 
     }
 
     public NumericTable communicate(NumericTable input_res) throws IOException
     {
-
-        try {
-
-            Table<ByteArray> step2Result_table = new Table<>(0, new ByteArrPlus());
-
-            if (this.collect_mapper.getSelfID() == 0)
-            {
-                byte[] serialStep2MasterResult = serializeStep2MResult((HomogenNumericTable)input_res);
-                ByteArray step2MasterResult_harp = new ByteArray(serialStep2MasterResult, 0, serialStep2MasterResult.length);
-                step2Result_table.addPartition(new Partition<>(this.collect_mapper.getSelfID(), step2MasterResult_harp));
-            }
-            else
-            {
-                byte[] dummyRes = new byte[1];
-                ByteArray step2LocalResult_harp = new ByteArray(dummyRes, 0, 1);
-                step2Result_table.addPartition(new Partition<>(this.collect_mapper.getSelfID(), step2LocalResult_harp));
-            }
-
-            this.collect_mapper.allgather("als", "sync-step2-master", step2Result_table);
-
-            return deserializeStep2MResult(step2Result_table.getPartition(0).get().get());
-
-
-        } catch (Exception e) 
-        {
-            LOG.error("Fail to serilization.", e);
-            return null;
-        }
-
+	//broadcast input_res from master_mapper
+	SerializableBase res_out = this.harpcomm.harpdaal_braodcast(input_res, "als", "broadcast_step2", true);
+	return (NumericTable)res_out;
     }
-
-    private DistributedPartialResultStep1 deserializeStep1Result(byte[] buffer) throws IOException, ClassNotFoundException 
-    {
-        // Create an input stream to deserialize the numeric table from the array 
-        ByteArrayInputStream inputByteStream = new ByteArrayInputStream(buffer);
-        ObjectInputStream inputStream = new ObjectInputStream(inputByteStream);
-
-        // Create a numeric table object 
-        DistributedPartialResultStep1 restoredRes = (DistributedPartialResultStep1)inputStream.readObject();
-        restoredRes.unpack(daal_Context);
-
-        return restoredRes;
-    }
-
-    private byte[] serializeStep2MResult(HomogenNumericTable res) throws IOException {
-        // Create an output stream to serialize the numeric table 
-        ByteArrayOutputStream outputByteStream = new ByteArrayOutputStream();
-        ObjectOutputStream outputStream = new ObjectOutputStream(outputByteStream);
-
-        // Serialize the partialResult table into the output stream 
-        res.pack();
-        outputStream.writeObject(res);
-
-        // Store the serialized data in an array 
-        byte[] buffer = outputByteStream.toByteArray();
-        return buffer;
-    }
-
-    private HomogenNumericTable deserializeStep2MResult(byte[] buffer) throws IOException, ClassNotFoundException 
-    {
-
-        // Create an input stream to deserialize the numeric table from the array 
-        ByteArrayInputStream inputByteStream = new ByteArrayInputStream(buffer);
-        ObjectInputStream inputStream = new ObjectInputStream(inputByteStream);
-
-        // Create a numeric table object 
-        HomogenNumericTable restoredRes = (HomogenNumericTable)inputStream.readObject();
-        restoredRes.unpack(daal_Context);
-
-        return restoredRes;
-    }
+    
 }
 

@@ -47,14 +47,12 @@ Task<List<COO>, Integer> {
 
 	private Configuration conf;
 	private long threadId;
-	// private Int2ObjectOpenHashMap<COOGroup> group_map; 
 	private HashMap<Long, COOGroup> group_map; 
 	private boolean isRow;
 
 	public RegroupCOOTask(Configuration conf, boolean isRow) {
 		this.conf = conf;
 		this.threadId = 0;
-		// this.group_map = new Int2ObjectOpenHashMap<COOGroup>();
 		this.group_map = new HashMap<>();
 		this.isRow = isRow;
 	}

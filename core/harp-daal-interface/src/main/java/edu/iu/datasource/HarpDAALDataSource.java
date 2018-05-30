@@ -231,37 +231,6 @@ public class HarpDAALDataSource
 	   LOG.info("Num pars before regroup " + num_par_prev + ", global compact maxRowID " + maxRowID);
 	   maxCompactRowID[0] = maxRowID;
 
-	   //debug
-	   // int[] route_numbers = new int[maxRowID+1];
-    	   // int num_pernode = (route_numbers.length + mapper.getNumWorkers())/mapper.getNumWorkers();
-           // for (int i = 1; i < route_numbers.length; i++) 
-        	// route_numbers[i] = i/num_pernode;
-	   //
-	   // int transfer_item = 0;
-           //
-	   // for(Partition<COOGroup> par : regroup_table.getPartitions())
-	   // {
-           //
-		//    int par_id = par.id(); 
-		//    int route_dst = -1;
-		//    if (par_id >= 0 && par_id < route_numbers.length) 
-		// 	   route_dst =  route_numbers[par_id];
-		//    else if (par_id >= route_numbers.length) 
-		// 	   route_dst  = route_numbers[par_id - route_numbers.length];
-		//    else
-		// 	   route_dst =  0;
-           //
-		//    //check route_dst
-		//    if (route_dst < 0 || route_dst >= mapper.getNumWorkers())
-		// 	   LOG.info("Error routing destination");
-           //
-		//    if (route_dst != mapper.getSelfID())
-		// 	   transfer_item++;
-           //
-	   // }
-
-	   // LOG.info("Transferred items: " + transfer_item);
-
            mapper.regroup("coo", "regroup-coo", regroup_table, new COORegroupPartitioner(maxRowID, mapper.getNumWorkers()));
 	   mapper.barrier("coo", "finish-regroup");
 

@@ -39,9 +39,9 @@ import edu.iu.harp.resource.IntArray;
 import edu.iu.harp.resource.ByteArray;
 import edu.iu.harp.resource.LongArray;
 
-import edu.iu.data_transfer.*;
 import edu.iu.datasource.*;
 import edu.iu.data_aux.*;
+import edu.iu.data_comm.*;
 
 // packages from Daal 
 import com.intel.daal.algorithms.implicit_als.PartialModel;
@@ -49,14 +49,9 @@ import com.intel.daal.algorithms.implicit_als.prediction.ratings.*;
 import com.intel.daal.algorithms.implicit_als.training.*;
 import com.intel.daal.algorithms.implicit_als.training.init.*;
 
-import com.intel.daal.data_management.data.NumericTable;
-import com.intel.daal.data_management.data.CSRNumericTable;
-import com.intel.daal.data_management.data.HomogenNumericTable;
-import com.intel.daal.data_management.data.SOANumericTable;
-import com.intel.daal.data_management.data.KeyValueDataCollection;
+import com.intel.daal.data_management.data.*;
+import com.intel.daal.data_management.data_source.*;
 
-import com.intel.daal.data_management.data_source.DataSource;
-import com.intel.daal.data_management.data_source.FileDataSource;
 import com.intel.daal.services.DaalContext;
 
 import org.apache.commons.logging.Log;
@@ -67,25 +62,24 @@ public class ALSTrainStep1 {
     private DistributedStep1Local algo;
     private long nFactor;
     private long numThreads;
-    private int self_id;
+    private int num_mappers;
     private DistributedPartialResultStep4 inputData;
     private static DaalContext daal_Context = new DaalContext();
-    private ALSDaalCollectiveMapper collect_mapper;
+    private HarpDAALComm harpcomm;
 
     protected static final Log LOG = LogFactory.getLog(ALSTrainStep1.class);
 
-    public ALSTrainStep1(long nFactor, long numThreads, 
-            DistributedPartialResultStep4 inputData, ALSDaalCollectiveMapper collect_mapper)
+    public ALSTrainStep1(long nFactor, long numThreads, int num_mappers, 
+            DistributedPartialResultStep4 inputData, HarpDAALComm harpcomm)
     {
         this.algo = new DistributedStep1Local(daal_Context, Double.class, TrainingMethod.fastCSR);
         this.nFactor = nFactor;
         this.numThreads = numThreads;
-        this.self_id = self_id;
+	this.num_mappers = num_mappers;
         this.inputData = inputData;
-        this.collect_mapper = collect_mapper;
+        this.harpcomm = harpcomm;
 
         this.algo.parameter.setNFactors(this.nFactor);
-        // this.algo.parameter.setNumThreads(this.numThreads);
 
         // Set input objects for the algorithm 
         this.algo.input.set(PartialModelInputId.partialModel,
@@ -98,40 +92,14 @@ public class ALSTrainStep1 {
         return this.algo.compute();
     }
 
-    public Table<ByteArray> communicate(DistributedPartialResultStep1 res) throws IOException
+    public DistributedPartialResultStep1[] communicate(DistributedPartialResultStep1 res) throws IOException
     {
+	    SerializableBase[] des_ouput = this.harpcomm.harpdaal_allgather(res, "als", "comm_train_step1");
+	    DistributedPartialResultStep1[] res_out = new DistributedPartialResultStep1[this.num_mappers];
+	    for(int i=0;i<this.num_mappers;i++)
+		    res_out[i] = (DistributedPartialResultStep1)(des_ouput[i]);
 
-        try {
-
-            byte[] serialStep1LocalResult = serializeStep1Result(res);
-            ByteArray step1LocalResult_harp = new ByteArray(serialStep1LocalResult, 0, serialStep1LocalResult.length);
-            Table<ByteArray> step1LocalResult_table = new Table<>(0, new ByteArrPlus());
-            step1LocalResult_table.addPartition(new Partition<>(this.collect_mapper.getSelfID(), step1LocalResult_harp));
-
-            //reduce to master node with id 0
-            this.collect_mapper.allgather("als", "sync-partial-res", step1LocalResult_table);
-            return step1LocalResult_table;
-
-        } catch (Exception e) 
-        {
-            LOG.error("Fail to serilization.", e);
-            return null;
-        }
-
-    }
-
-    private byte[] serializeStep1Result(DistributedPartialResultStep1 res) throws IOException {
-        // Create an output stream to serialize the numeric table 
-        ByteArrayOutputStream outputByteStream = new ByteArrayOutputStream();
-        ObjectOutputStream outputStream = new ObjectOutputStream(outputByteStream);
-
-        // Serialize the partialResult table into the output stream 
-        res.pack();
-        outputStream.writeObject(res);
-
-        // Store the serialized data in an array 
-        byte[] buffer = outputByteStream.toByteArray();
-        return buffer;
+	    return res_out;
     }
 
 }

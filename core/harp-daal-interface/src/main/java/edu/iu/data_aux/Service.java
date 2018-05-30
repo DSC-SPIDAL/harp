@@ -55,6 +55,7 @@ import java.nio.IntBuffer;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.nio.DoubleBuffer;
+import java.util.Random;
 
 import com.intel.daal.data_management.data.CSRNumericTable;
 import com.intel.daal.data_management.data.HomogenNumericTable;
@@ -643,5 +644,17 @@ public class Service {
 
             return new HomogenTensor(context, dims, data);
         }
+    }
+
+    public static void randomize(Random random, double[] row, int size, double oneOverSqrtR)
+    {
+	    // Non-zero initialization
+	    for (int i = 0; i < size; i++) {
+		    double rowi = 0.0;
+		    do {
+			    rowi = random.nextDouble();
+		    } while (rowi == 0.0);
+		    row[i] = rowi * oneOverSqrtR;
+	    }
     }
 }

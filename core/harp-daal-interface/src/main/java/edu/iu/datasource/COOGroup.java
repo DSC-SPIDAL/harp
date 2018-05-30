@@ -123,7 +123,6 @@ public class COOGroup extends Writable
 
 		if (this.num_entry + other.getNumEntry() > this.Ids.length) 
 		{
-			// int len = this.num_entry + other.getNumEntry(); 
       			int len = getArrLen(this.num_entry + other.getNumEntry());
 			long[] newIDs = new long[len];
 			double[] newVals = new double[len];

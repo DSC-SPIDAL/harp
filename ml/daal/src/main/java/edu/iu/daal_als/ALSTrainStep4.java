@@ -95,14 +95,12 @@ public class ALSTrainStep4 {
         this.collect_mapper = collect_mapper;
 
         this.algo.parameter.setNFactors(this.nFactor);
-        // this.algo.parameter.setNumThreads(this.numThreads);
 
         LOG.info("Default Alpha: " + this.algo.parameter.getAlpha());
         this.algo.parameter.setAlpha(this.alpha);
         LOG.info("Current Alpha: " + this.algo.parameter.getAlpha());
 
         LOG.info("Default Lambda: " + this.algo.parameter.getLambda());
-        // this.algo.parameter.setLambda(this.lambda_als);
         LOG.info("Current Lambda: " + this.algo.parameter.getLambda());
 
         this.algo.input.set(Step4LocalPartialModelsInputId.partialModels,        this.step4_local_input);

@@ -39,9 +39,9 @@ import edu.iu.harp.resource.IntArray;
 import edu.iu.harp.resource.ByteArray;
 import edu.iu.harp.resource.LongArray;
 
-import edu.iu.data_transfer.*;
 import edu.iu.datasource.*;
 import edu.iu.data_aux.*;
+import edu.iu.data_comm.*;
 
 // packages from Daal 
 import com.intel.daal.algorithms.implicit_als.PartialModel;
@@ -49,15 +49,9 @@ import com.intel.daal.algorithms.implicit_als.prediction.ratings.*;
 import com.intel.daal.algorithms.implicit_als.training.*;
 import com.intel.daal.algorithms.implicit_als.training.init.*;
 
-import com.intel.daal.data_management.data.NumericTable;
-import com.intel.daal.data_management.data.CSRNumericTable;
-import com.intel.daal.data_management.data.HomogenNumericTable;
-import com.intel.daal.data_management.data.SOANumericTable;
-import com.intel.daal.data_management.data.KeyValueDataCollection;
-
-import com.intel.daal.data_management.data_source.DataSource;
-import com.intel.daal.data_management.data_source.FileDataSource;
 import com.intel.daal.services.DaalContext;
+import com.intel.daal.data_management.data.*;
+import com.intel.daal.data_management.data_source.*;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -67,8 +61,10 @@ public class ALSTrainStep3 {
     private DistributedStep3Local algo;
     private long nFactor;
     private long numThreads;
+    private int self_id;
+    private int num_mappers;
     private static DaalContext daal_Context = new DaalContext();
-    private ALSDaalCollectiveMapper collect_mapper;
+    private HarpDAALComm harpcomm;
 
     private DistributedPartialResultStep4 inputData;
     private KeyValueDataCollection inputDataOut;
@@ -76,22 +72,23 @@ public class ALSTrainStep3 {
 
     protected static final Log LOG = LogFactory.getLog(ALSTrainStep3.class);
 
-    public ALSTrainStep3(long nFactor, long numThreads, 
+    public ALSTrainStep3(long nFactor, long numThreads, int self_id, int num_mappers, 
                          NumericTable inputOffset,
                          DistributedPartialResultStep4 inputData, 
                          KeyValueDataCollection inputDataOut, 
-                         ALSDaalCollectiveMapper collect_mapper)
+                         HarpDAALComm harpcomm)
     {
         this.algo = new DistributedStep3Local(daal_Context, Double.class, TrainingMethod.fastCSR);
         this.nFactor = nFactor;
         this.numThreads = numThreads;
+	this.self_id = self_id;
+	this.num_mappers = num_mappers;
         this.inputOffset = inputOffset;
         this.inputData = inputData;
         this.inputDataOut = inputDataOut;
-        this.collect_mapper = collect_mapper;
+        this.harpcomm = harpcomm;
 
         this.algo.parameter.setNFactors(this.nFactor);
-        // this.algo.parameter.setNumThreads(this.numThreads);
 
         this.algo.input.set(PartialModelInputId.partialModel,
                         this.inputData.get(DistributedPartialResultStep4Id.outputOfStep4ForStep3));
@@ -106,59 +103,17 @@ public class ALSTrainStep3 {
         return this.algo.compute(); 
     }
 
-    public KeyValueDataCollection communicate(KeyValueDataCollection step3_res, KeyValueDataCollection step4_input, 
-            Table<ByteArray> step3LocalResult_table) throws IOException
+    public KeyValueDataCollection communicate(KeyValueDataCollection step3_res, KeyValueDataCollection step4_input) throws IOException
     {
+	SerializableBase[] des_ouput = this.harpcomm.harpdaal_allgather(step3_res, "als", "broadcast_step3");
+	for(int i=0;i<this.num_mappers;i++)
+	{
+	   KeyValueDataCollection res_out = (KeyValueDataCollection)(des_ouput[i]);
+	   step4_input.set(i, res_out.get(this.self_id));
+	}
 
-        try {
+	return step4_input;
 
-            byte[] serialStep3LocalResult = serializeStep3Result(step3_res);
-            ByteArray step3LocalResult_harp = new ByteArray(serialStep3LocalResult, 0, serialStep3LocalResult.length);
-            // Table<ByteArray> step3LocalResult_table = new Table<>(0, new ByteArrPlus());
-            step3LocalResult_table.addPartition(new Partition<>(this.collect_mapper.getSelfID(), step3LocalResult_harp));
-            this.collect_mapper.allgather("als", "sync-partial-step3-res", step3LocalResult_table);
-
-            for(int j=0;j<this.collect_mapper.getNumWorkers();j++)
-            {
-                step4_input.set(j, (deserializeStep3Result(step3LocalResult_table.getPartition(j).get().get())).get(this.collect_mapper.getSelfID()));
-            }
-
-            return step4_input; 
-
-        } catch (Exception e) 
-        {
-            LOG.error("Fail to serilization.", e);
-            return null;
-        }
-
-    }
-
-    private byte[] serializeStep3Result(KeyValueDataCollection res) throws IOException {
-        // Create an output stream to serialize the numeric table 
-        ByteArrayOutputStream outputByteStream = new ByteArrayOutputStream();
-        ObjectOutputStream outputStream = new ObjectOutputStream(outputByteStream);
-
-        // Serialize the partialResult table into the output stream 
-        res.pack();
-        outputStream.writeObject(res);
-
-        // Store the serialized data in an array 
-        byte[] buffer = outputByteStream.toByteArray();
-        return buffer;
-    }
-
-    private KeyValueDataCollection deserializeStep3Result(byte[] buffer) throws IOException, ClassNotFoundException 
-    {
-
-        // Create an input stream to deserialize the numeric table from the array 
-        ByteArrayInputStream inputByteStream = new ByteArrayInputStream(buffer);
-        ObjectInputStream inputStream = new ObjectInputStream(inputByteStream);
-
-        // Create a numeric table object 
-        KeyValueDataCollection restoredRes = (KeyValueDataCollection)inputStream.readObject();
-        restoredRes.unpack(daal_Context);
-
-        return restoredRes;
     }
 
 }

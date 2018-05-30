@@ -58,6 +58,7 @@ import org.apache.hadoop.fs.Path;
 
 import edu.iu.datasource.*;
 import edu.iu.data_aux.*;
+import edu.iu.data_comm.*;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapred.CollectiveMapper;
@@ -85,14 +86,10 @@ import com.intel.daal.algorithms.implicit_als.PartialModel;
 import com.intel.daal.algorithms.implicit_als.prediction.ratings.*;
 import com.intel.daal.algorithms.implicit_als.training.*;
 import com.intel.daal.algorithms.implicit_als.training.init.*;
-import com.intel.daal.data_management.data.NumericTable;
-import com.intel.daal.data_management.data.CSRNumericTable;
-import com.intel.daal.data_management.data.HomogenNumericTable;
-import com.intel.daal.data_management.data.KeyValueDataCollection;
 
-import com.intel.daal.data_management.data.SOANumericTable;
-import com.intel.daal.data_management.data_source.DataSource;
-import com.intel.daal.data_management.data_source.FileDataSource;
+import com.intel.daal.data_management.data.*;
+import com.intel.daal.data_management.data_source.*;
+
 import com.intel.daal.services.DaalContext;
 import com.intel.daal.services.Environment;
 
@@ -149,6 +146,7 @@ public class ALSDaalCollectiveMapper
         private long effectiveTestV;
 
 	//DAAL related
+  	private static HarpDAALComm harpcomm;	
         private static DaalContext daal_Context = new DaalContext();
 	private static HarpDAALDataSource datasource;
 
@@ -208,6 +206,8 @@ public class ALSDaalCollectiveMapper
             long startTime = System.currentTimeMillis();
             LinkedList<String> vFiles = getVFiles(reader);
 	    this.datasource = new HarpDAALDataSource(vFiles, this.r, this.numThreads_harp, context.getConfiguration());
+	    // create communicator
+            this.harpcomm= new HarpDAALComm(this.getSelfID(), this.getMasterID(), this.getNumWorkers(), daal_Context, this);
 
             try {
                 runALS(vFiles, context.getConfiguration(), context);
@@ -256,76 +256,20 @@ public class ALSDaalCollectiveMapper
                 final Context context) throws Exception 
         {//{{{
 
+	    // load COO files from HDFS
             LOG.info("Load ALS training points in COO format");
-
-            //----------------------- load the train dataset-----------------------
-            // // grouped by row ids
-            // Int2ObjectOpenHashMap<VRowCol> trainDataMap = SGDUtil.loadVMapRow(vFilePaths, numThreads_harp, configuration);
-            // // grouped by row ids
-            // Int2ObjectOpenHashMap<VRowCol> trainDataMapTran = SGDUtil.loadVMapTran(vFilePaths, numThreads_harp, configuration);
-
-            //sync the number of rows/columns and row/col ids among all the mappers
-            // int[] rowIds = new int[trainDataMap.size()];
-            // int[] colIds = new int[trainDataMapTran.size()];
-
-            // rowIds = trainDataMap.keySet().toArray(rowIds); 
-            // colIds = trainDataMapTran.keySet().toArray(colIds); 
-
-            //remapping row ids
-            // ReMapRowColID remapper_row = new ReMapRowColID(rowIds, this.getSelfID(), this.getNumWorkers(), this);
-            // int[] row_mapping = remapper_row.getRemapping();
-
-            //remapping col ids
-            // ReMapRowColID remapper_col = new ReMapRowColID(colIds, this.getSelfID(), this.getNumWorkers(), this);
-            // int[] col_mapping = remapper_col.getRemapping();
-
-	    //------------------- Start debug new APIs -------------------
 	    List<COO> coo_data = this.datasource.loadCOOFiles(" ");
-	    LOG.info("Test APIs: loaded coo elem number: " + coo_data.size());
-	    // for(int k=0;k<10;k++)
-	    // {
-		//     COO coo_elem = coo_data.get(k);
-		//     LOG.info("COO rowId: " + coo_elem.getRowId() + " colId: " + coo_elem.getColId());
-	    // }
+	    LOG.info("loaded coo elem number: " + coo_data.size());
 
+	    // group local COO data points by rows and cols 
 	    HashMap<Long, COOGroup> coo_group = this.datasource.groupCOOByIDs(coo_data, true);
 	    HashMap<Long, COOGroup> coo_group_tran = this.datasource.groupCOOByIDs(coo_data, false);
 
-	    // int testcount = 0;
-	    // for(Map.Entry<Long, COOGroup> entry : coo_group.entrySet())
-	    // {
-		//     if (testcount < 10)
-		//     {
-		// 	    Long key = entry.getKey();
-		//    	    COOGroup val = entry.getValue();
-		// 	    LOG.info("key: " + key.longValue() + " gId: " + val.getGID() + " val_num: " + val.getNumEntry());
-		//     }
-		//     else
-		// 	    break;
-            //
-		//     testcount++;
-	    // }    
-
-	    //remapping row ids
+	    // remapping row and col ids into a compact form
 	    HashMap<Long, Integer> gid_remap = this.datasource.remapCOOIDs(coo_group, this.getSelfID(), this.getNumWorkers(), this);
 	    HashMap<Long, Integer> gid_remap_tran = this.datasource.remapCOOIDs(coo_group_tran, this.getSelfID(), this.getNumWorkers(), this);
 
-	    // int remap_count = 0;
-	    // for(Map.Entry<Long, Integer> entry : gid_remap.entrySet())
-	    // {
-		//     if (remap_count < 10)
-		//     {
-		// 	    Long key = entry.getKey();
-		//    	    Integer val = entry.getValue();
-		// 	    LOG.info("key: " + key.longValue() + " compact new id: " + val.intValue());
-		//     }
-		//     else
-		// 	    break;
-            //
-		//     remap_count++;
-	    // }
-	    
-	    // regroup ids
+	    // regroup data points according to the remapped compact IDs 
 	    int[] maxCompactID = new int[1];
 	    Table<COOGroup> regrouped_table = this.datasource.regroupCOOList(coo_group, gid_remap, this, maxCompactID); 
 
@@ -335,32 +279,16 @@ public class ALSDaalCollectiveMapper
 	    this.maxRowID = maxCompactID[0];
 	    LOG.info("MAX ROW ID is: " + this.maxRowID);
 
-	    //create the CSRNumericTable
-	    // CSRNumericTable regroup_table_daal = this.datasource.COOToCSR(regrouped_table, gid_remap_tran, daal_Context);
-	    // CSRNumericTable regroup_table_daal_tran = this.datasource.COOToCSR(regrouped_table_tran, gid_remap, daal_Context);
-	    CSRNumericTable trainDaalTable = this.datasource.COOToCSR(regrouped_table, gid_remap_tran, daal_Context);
-	    CSRNumericTable trainDaalTableTran = this.datasource.COOToCSR(regrouped_table_tran, gid_remap, daal_Context);
-
-	    //------------------- End debug new APIs -------------------
-	    
-            //regroup among all the mappers by row
-            // Table<VSet> trainDataTable = TrainDataRGroupByRow(trainDataMap, row_mapping, numThreads_harp, false);
-            //regroup among all the mappers by col
-            // Table<VSet> trainDataTableTran = TrainDataRGroupByRow(trainDataMapTran, col_mapping, numThreads_harp, true);
-
-            // ------------------------ load test dataset ------------------------
+	    // ------------------------ load test dataset ------------------------
             // -------------------------- each node has the whole dataset --------------------------
-            // Int2ObjectOpenHashMap<VRowCol> testDataMap = SGDUtil.loadTMapRow(testFilePath, numThreads_harp, configuration);
 	    List<COO> coo_data_test = this.datasource.loadCOOFiles(testFilePath, " ");
 	    HashMap<Long, COOGroup> testDataMap = this.datasource.groupCOOByIDs(coo_data_test, true);
 
+	    //create the CSRNumericTable
             long start_spmat = System.currentTimeMillis();
-            //convert coo format of training dataset to CSR format
-            // COOToCSR converter = new COOToCSR(trainDataTable, col_mapping);
-            // CSRNumericTable trainDaalTable = converter.convert();
 
-            // COOToCSR converter_tran = new COOToCSR(trainDataTableTran, row_mapping);
-            // CSRNumericTable trainDaalTableTran = converter_tran.convert();
+	    CSRNumericTable trainDaalTable = this.datasource.COOToCSR(regrouped_table, gid_remap_tran, daal_Context);
+	    CSRNumericTable trainDaalTableTran = this.datasource.COOToCSR(regrouped_table_tran, gid_remap, daal_Context);
 
             long end_spmat = System.currentTimeMillis();
 
@@ -414,7 +342,6 @@ public class ALSDaalCollectiveMapper
             InitDistributedStep1Local initAlgorithm = new  InitDistributedStep1Local(daal_Context, Double.class, InitMethod.fastCSR);
             initAlgorithm.parameter.setFullNUsers(this.maxRowID + 1);
             initAlgorithm.parameter.setNFactors(r);
-            // initAlgorithm.parameter.setNumThreads(numThreads);
             initAlgorithm.parameter.setSeed(initAlgorithm.parameter.getSeed() + this.getSelfID());
             initAlgorithm.parameter.setPartition(new HomogenNumericTable(daal_Context, usersPartition, 1, usersPartition.length));
 
@@ -434,43 +361,35 @@ public class ALSDaalCollectiveMapper
             //initStep1LocalResult shall be broadcasted to each node
             initStep1LocalResult = initPartialResult.get(InitPartialResultCollectionId.outputOfStep1ForStep2);
             initStep2LocalInput = new KeyValueDataCollection(daal_Context);
-
-            ALSInitResult init_res = new ALSInitResult(initStep1LocalResult, initStep2LocalInput, this.getSelfID(), this);
+            ALSInitResult init_res = new ALSInitResult(initStep1LocalResult, initStep2LocalInput, this.getSelfID(), this.getNumWorkers(), this.harpcomm);
             init_res.communicate();
-            init_res.compute();
 
             //initialize step 2 
             InitDistributedStep2Local initAlgorithm_step2 = new InitDistributedStep2Local(daal_Context, Double.class, InitMethod.fastCSR);
-
             initAlgorithm_step2.input.set(InitStep2LocalInputId.inputOfStep2FromStep1, initStep2LocalInput);
 
-            /* Compute partial results of the second step on local nodes */
+            // Compute partial results of the second step on local nodes 
             InitDistributedPartialResultStep2 initPartialResult_step2 = initAlgorithm_step2.compute();
-
             trainDaalTable = (CSRNumericTable)(initPartialResult_step2.get(InitDistributedPartialResultStep2Id.transposedData));
             userStep3LocalInput = initPartialResult_step2.get(InitPartialResultBaseId.outputOfInitForComputeStep3);
             itemOffsets = initPartialResult_step2.get(InitPartialResultBaseId.offsets, this.getSelfID());
 
             // ------------------------------ initialization end ------------------------------
-
             // ------------------------------ compute initial RMSE from test dataset ------------------------------
             long dataTableRows = trainDaalTable.getNumberOfRows();
             long dataTableTranRows = trainDaalTableTran.getNumberOfRows();
-            //
+            
             //allreduce to get the users and items partition table
             Table<LongArray> dataTable_partition = new Table<>(0, new LongArrPlus());
-            //
             LongArray partition_array = LongArray.create(2, false);
             partition_array.get()[0] = dataTableRows;
             partition_array.get()[1] = dataTableTranRows;
-            //
             dataTable_partition.addPartition(new Partition<>(this.getSelfID(), partition_array));
-
             this.allgather("als", "get-partition-info", dataTable_partition);
-            //
+            
             usersPartition_test[0] = 0;
             itemsPartition_test[0] = 0;
-            //
+            
             for (int j=0;j<workerNum;j++) 
             {
                 usersPartition_test[j+1] = usersPartition_test[j] + dataTable_partition.getPartition(j).get().get()[0];  
@@ -501,8 +420,7 @@ public class ALSDaalCollectiveMapper
                 long start = System.currentTimeMillis();
 
                 //step1 on local slave nodes 
-                ALSTrainStep1 algo_step1 = new ALSTrainStep1(r, numThreads, itemsPartialResultLocal, this);
-
+                ALSTrainStep1 algo_step1 = new ALSTrainStep1(r, numThreads, this.getNumWorkers(), itemsPartialResultLocal, this.harpcomm);
                 //compute step 1
                 step1LocalResult = algo_step1.compute();
                 long end = System.currentTimeMillis();
@@ -510,13 +428,12 @@ public class ALSDaalCollectiveMapper
 
                 //communication step 1
                 start = System.currentTimeMillis();
-                Table<ByteArray> step1LocalResult_table = algo_step1.communicate(step1LocalResult);
+                DistributedPartialResultStep1[] step1LocalResult_table = algo_step1.communicate(step1LocalResult);
                 end = System.currentTimeMillis();
                 comm_time_itr_step1 += (end - start);
                 
                 //step 2 on master node
-                ALSTrainStep2 algo_step2 = new ALSTrainStep2(r, numThreads, step1LocalResult_table, this);
-
+                ALSTrainStep2 algo_step2 = new ALSTrainStep2(r, numThreads, this.getNumWorkers(), step1LocalResult_table, this.harpcomm);
                 if (this.getSelfID() == 0)
                 {
                     start = System.currentTimeMillis();
@@ -524,7 +441,6 @@ public class ALSDaalCollectiveMapper
                     end = System.currentTimeMillis();
                     compute_time_itr_step2 += (end - start);
                 }
-
                 //free up memory 
                 step1LocalResult_table = null;
                 step1LocalResult = null;
@@ -536,11 +452,10 @@ public class ALSDaalCollectiveMapper
                 comm_time_itr_step2 += (end - start);
 
                 // ----------------------------------------- step3 on local node -----------------------------------------
-                ALSTrainStep3 algo_step3 = new ALSTrainStep3(r, numThreads, itemOffsets, itemsPartialResultLocal, itemStep3LocalInput, this);
+                ALSTrainStep3 algo_step3 = new ALSTrainStep3(r, numThreads, this.getSelfID(), this.getNumWorkers(), 
+				itemOffsets, itemsPartialResultLocal, itemStep3LocalInput, this.harpcomm);
                 start = System.currentTimeMillis();
-
                 DistributedPartialResultStep3 partialResult_step3 = algo_step3.compute();
-
                 end = System.currentTimeMillis();
                 compute_time_itr_step3 += (end - start);
 
@@ -548,17 +463,13 @@ public class ALSDaalCollectiveMapper
                 start = System.currentTimeMillis();
                 // Prepare input objects for the fourth step of the distributed algorithm 
                 step3LocalResult = partialResult_step3.get(DistributedPartialResultStep3Id.outputOfStep3ForStep4);
-
-                Table<ByteArray> step3LocalResult_table = new Table<>(0, new ByteArrPlus());
-
-                step4LocalInput = algo_step3.communicate(step3LocalResult, step4LocalInput, step3LocalResult_table);
+                step4LocalInput = algo_step3.communicate(step3LocalResult, step4LocalInput);
 
                 end = System.currentTimeMillis();
                 comm_time_itr_step3 += (end - start);
 
-                // // ----------------------------------------- step4 on local node -----------------------------------------
+                // ----------------------------------------- step4 on local node -----------------------------------------
                 start = System.currentTimeMillis();
-
                 ALSTrainStep4 algo_step4 = new ALSTrainStep4(r, numThreads, alpha, lambda_als, step4LocalInput, trainDaalTable, 
                         step2MasterResult, this);
 
@@ -566,7 +477,6 @@ public class ALSDaalCollectiveMapper
 
                 //free up memory 
                 step2MasterResult = null;
-                step3LocalResult_table = null;
 
                 end = System.currentTimeMillis();
                 compute_time_itr_step4 += (end - start);
@@ -584,7 +494,7 @@ public class ALSDaalCollectiveMapper
                 //step1 on local slave nodes 
                 // Create an algorithm object to perform first step of the implicit ALS training algorithm on local-node data 
                 start = System.currentTimeMillis();
-                algo_step1 = new ALSTrainStep1(r, numThreads, usersPartialResultLocal, this);
+                algo_step1 = new ALSTrainStep1(r, numThreads, this.getNumWorkers(), usersPartialResultLocal, this.harpcomm);
                 //compute step 1
                 step1LocalResult = algo_step1.compute();
                 end = System.currentTimeMillis();
@@ -595,7 +505,7 @@ public class ALSDaalCollectiveMapper
                 end = System.currentTimeMillis();
                 comm_time_itr_step1 += (end - start);
 
-                algo_step2 = new ALSTrainStep2(r, numThreads, step1LocalResult_table, this);
+                algo_step2 = new ALSTrainStep2(r, numThreads, this.getNumWorkers(), step1LocalResult_table, this.harpcomm);
                 //step 2 on master node
                 if (this.getSelfID() == 0)
                 {
@@ -617,7 +527,9 @@ public class ALSDaalCollectiveMapper
                 comm_time_itr_step2 += (end - start);
 
                 // ----------------------------------------- step3 on local node update item  -----------------------------------------
-                algo_step3 = new ALSTrainStep3(r, numThreads, userOffsets, usersPartialResultLocal, userStep3LocalInput, this);
+                algo_step3 = new ALSTrainStep3(r, numThreads, this.getSelfID(), this.getNumWorkers(), userOffsets, 
+				usersPartialResultLocal, userStep3LocalInput, this.harpcomm);
+
                 start = System.currentTimeMillis();
                 
                 if (partialResult_step3 != null)
@@ -631,11 +543,7 @@ public class ALSDaalCollectiveMapper
                 start = System.currentTimeMillis();
                 step3LocalResult = partialResult_step3.get(DistributedPartialResultStep3Id.outputOfStep3ForStep4);
 
-                if (step3LocalResult_table != null)
-                    step3LocalResult_table = null;
-
-                step3LocalResult_table = new Table<>(0, new ByteArrPlus());
-                step4LocalInput = algo_step3.communicate(step3LocalResult, step4LocalInput, step3LocalResult_table);
+                step4LocalInput = algo_step3.communicate(step3LocalResult, step4LocalInput);
                 end = System.currentTimeMillis();
                 comm_time_itr_step3 += (end - start);
                 
@@ -651,7 +559,6 @@ public class ALSDaalCollectiveMapper
 
                 //free up memory 
                 step2MasterResult = null;
-                step3LocalResult_table = null;
 
                 algo_step1 = null;
                 algo_step2 = null;
@@ -687,7 +594,6 @@ public class ALSDaalCollectiveMapper
                 System.gc();
 
                 //test model after this iteration
-                // testModelMulti(iteration, usersPartition_test, itemsPartition_test, usersPartialResultLocal, itemsPartialResultLocal, testDataMap, row_mapping, col_mapping);
                 testModelMulti(iteration, usersPartition_test, itemsPartition_test, usersPartialResultLocal, itemsPartialResultLocal, testDataMap, gid_remap, gid_remap_tran);
 
             }
@@ -714,167 +620,6 @@ public class ALSDaalCollectiveMapper
 
 
         /**
-         * @brief computing RMSE values in sequential order
-         *
-         * @param itr
-         * @param usersPartition
-         * @param itemsPartition
-         * @param usersPartialResultLocal
-         * @param itemsPartialResultLocal
-         * @param testDataMap
-         * @param row_mapping
-         * @param col_mapping
-         *
-         * @return 
-         */
-        private void testModel(int itr,
-                             long[] usersPartition,
-                             long[] itemsPartition,
-                             DistributedPartialResultStep4 usersPartialResultLocal,
-                             DistributedPartialResultStep4 itemsPartialResultLocal, 
-                             Int2ObjectOpenHashMap<VRowCol> testDataMap,
-                             int[] row_mapping, int[] col_mapping) throws Exception
-        {//{{{
-
-            // ------------------------------ Predicting Model Start ------------------------------
-            //broadcast itemsPartialResult 
-            byte[] serialItemsPartial = serializeItemRes(itemsPartialResultLocal);
-
-            //deserialize itemsPartialResultLocal
-            itemsPartialResultLocal.unpack(daal_Context);
-
-            ByteArray itemsPartialResultLocal_harp = new ByteArray(serialItemsPartial, 0, serialItemsPartial.length);
-            Table<ByteArray> itemsPartialResultLocal_table = new Table<>(0, new ByteArrPlus());
-            itemsPartialResultLocal_table.addPartition(new Partition<>(this.getSelfID(), itemsPartialResultLocal_harp));
-            this.allgather("als", "sync-partial-step4-res", itemsPartialResultLocal_table);
-
-            LOG.info("Start Predicting");
-            long start = System.currentTimeMillis();
-
-            DistributedPartialResultStep4[] itemsRemoteResults = new DistributedPartialResultStep4[this.getNumWorkers()]; 
-            for (int j=0; j<this.getNumWorkers();j++ ) 
-                itemsRemoteResults[j] = deserializeItemRes(itemsPartialResultLocal_table.getPartition(j).get().get());
-
-            
-            //itemsPartition records the offset of item indices
-            long startRowIndex = usersPartition[this.getSelfID()]; 
-            long endRowIndex = usersPartition[this.getSelfID() + 1];
-            
-            //retrieve user model data
-            HomogenNumericTable userModelTest = (HomogenNumericTable)(usersPartialResultLocal.get(DistributedPartialResultStep4Id.outputOfStep4).getFactors());
-            long userModelTestRowNum = userModelTest.getNumberOfRows();
-            long userModelTestColNum = userModelTest.getNumberOfColumns();
-            double[] userModelTestData = userModelTest.getDoubleArray();
-
-            //retrieve item model data
-            long[][] itemRowColNum = new long[this.getNumWorkers()][];
-            double[][] itemModelTestData = new double[this.getNumWorkers()][];
-
-            for (int j=0; j<this.getNumWorkers(); j++) 
-            {
-                HomogenNumericTable itemModelTest = (HomogenNumericTable)(itemsRemoteResults[j].get(DistributedPartialResultStep4Id.outputOfStep4).getFactors());
-                itemRowColNum[j] = new long[2];
-                itemRowColNum[j][0] = itemModelTest.getNumberOfRows();
-                itemRowColNum[j][1] = itemModelTest.getNumberOfColumns();
-                itemModelTestData[j] = itemModelTest.getDoubleArray();
-            }
-
-            //row id and col id in test data in COO format starts from 0
-            ObjectIterator<Int2ObjectMap.Entry<VRowCol>> iterator =
-                testDataMap.int2ObjectEntrySet().fastIterator();
-
-            int testVLocalNum = 0;
-            double rmse_local = 0;
-            double rmse_effect_num = 0;
-
-            while (iterator.hasNext()) {
-
-                Int2ObjectMap.Entry<VRowCol> entry =
-                    iterator.next();
-
-                VRowCol vRowCol = entry.getValue();
-
-                int row_idx_map = row_mapping[vRowCol.id] - 1; //starts from 0 
-
-                if (row_idx_map >= startRowIndex && row_idx_map < endRowIndex)
-                {
-                    int index_row = row_idx_map - (int)startRowIndex;
-                    int index_col = 0;
-
-                    for(int j=0;j<vRowCol.numV;j++)
-                    {
-
-                        int item_buck = -1;
-                        if (vRowCol.ids[j] >= col_mapping.length || col_mapping[vRowCol.ids[j]] == 0)
-                            continue;
-
-                        index_col = col_mapping[vRowCol.ids[j]] - 1;
-
-                        double rating = vRowCol.v[j];
-
-                        //get the relative itemblock that contains index_col
-                        for(int k=0;k<this.getNumWorkers();k++)
-                        {
-                            if (index_col < (int)itemsPartition[k+1])
-                            {
-                                item_buck = k;
-                                break;
-                            }
-                        }
-
-                        if (item_buck >= 0)
-                        {
-                            index_col = index_col - (int)itemsPartition[item_buck];
-                            //get the item buck data
-                            double[] item_calc = itemModelTestData[item_buck]; 
-                            double[] user_calc = userModelTestData;
-
-                            double predict = 0;
-                            for (int k=0;k<r;k++)
-                            {
-                                predict += (user_calc[index_row*r + k]*item_calc[index_col*r + k]); 
-                            }
-
-                            rmse_local += (((1.0 - predict)*(1.0 - predict))*(1+alpha*rating));
-                            rmse_effect_num++;
-
-                        }
-                        
-                    }
-
-                    // testVLocalNum++;
-                }
-
-            }
-
-            // LOG.info("Test Points on this worker: " + rmse_effect_num + ", rmse value: " + rmse_local);
-
-            //allreduce to get the RMSE value 
-            Table<DoubleArray> rmse_table = new Table<>(0, new DoubleArrPlus());
-            DoubleArray rmse_array = DoubleArray.create(2, false);
-
-            rmse_array.get()[0] = rmse_local;
-            rmse_array.get()[1] = rmse_effect_num;
-            rmse_table.addPartition(new Partition<>(this.getSelfID(), rmse_array));
-            this.allgather("als", "get-rmse-info", rmse_table);
-
-            //calculate out the RMSE of all the nodes
-            double total_rmse = 0;
-            double total_rmse_num = 0;
-
-            for(int j=0;j<this.getNumWorkers();j++)
-            {
-                total_rmse += rmse_table.getPartition(j).get().get()[0];
-                total_rmse_num += rmse_table.getPartition(j).get().get()[1];
-            }
-            
-            long end = System.currentTimeMillis();
-            LOG.info("Test model takes: " + (end - start));
-            LOG.info("RMSE after Iteration: " + itr + " is : " + Math.sqrt(total_rmse/total_rmse_num));
-
-        }//}}}
-
-        /**
          * @brief compute RMSE values in parallel (multi-threading)
          *
          * @param itr
@@ -898,25 +643,17 @@ public class ALSDaalCollectiveMapper
         {//{{{
 
             // ------------------------------ Predicting Model Start ------------------------------
-            //broadcast itemsPartialResult 
-            byte[] serialItemsPartial = serializeItemRes(itemsPartialResultLocal);
-
-            //deserialize itemsPartialResultLocal
+	    // collect local partial results
+	    SerializableBase[] des_ouput = this.harpcomm.harpdaal_allgather(itemsPartialResultLocal, "als", "allgather_itemsPartialRes");
             itemsPartialResultLocal.unpack(daal_Context);
 
-            ByteArray itemsPartialResultLocal_harp = new ByteArray(serialItemsPartial, 0, serialItemsPartial.length);
-            Table<ByteArray> itemsPartialResultLocal_table = new Table<>(0, new ByteArrPlus());
-            itemsPartialResultLocal_table.addPartition(new Partition<>(this.getSelfID(), itemsPartialResultLocal_harp));
-            this.allgather("als", "sync-partial-step4-res", itemsPartialResultLocal_table);
-
-            LOG.info("Start Predicting");
+	    LOG.info("Start Predicting");
             long start = System.currentTimeMillis();
 
             DistributedPartialResultStep4[] itemsRemoteResults = new DistributedPartialResultStep4[this.getNumWorkers()]; 
-            for (int j=0; j<this.getNumWorkers();j++ ) 
-                itemsRemoteResults[j] = deserializeItemRes(itemsPartialResultLocal_table.getPartition(j).get().get());
+ 	    for (int j=0; j<this.getNumWorkers();j++ ) 
+                itemsRemoteResults[j] = (DistributedPartialResultStep4)(des_ouput[j]); 
 
-            
             //itemsPartition records the offset of item indices
             long startRowIndex = usersPartition[this.getSelfID()]; 
             long endRowIndex = usersPartition[this.getSelfID() + 1];
@@ -953,25 +690,11 @@ public class ALSDaalCollectiveMapper
                             userModelTestData, itemModelTestData, alpha, r, rmse_vals[j]));
             }
 
-            // DynamicScheduler<VRowCol, Object, ComputeRMSE> rmse_schedule =
-            //     new DynamicScheduler<>(rmse_compute_tasks);
             DynamicScheduler<COOGroup, Object, ComputeRMSE> rmse_schedule =
                 new DynamicScheduler<>(rmse_compute_tasks);
 
 	    for(COOGroup entry : testDataMap.values())
-	    {
                 rmse_schedule.submit(entry);
-	    }
-            //row id and col id in test data in COO format starts from 0
-            // ObjectIterator<Int2ObjectMap.Entry<VRowCol>> iterator =
-            //     testDataMap.int2ObjectEntrySet().fastIterator();
-            //
-            // while (iterator.hasNext()) {
-            //
-            //     Int2ObjectMap.Entry<VRowCol> entry =
-            //         iterator.next();
-            //     rmse_schedule.submit(entry.getValue());
-            // }
 
             rmse_schedule.start();
             rmse_schedule.stop();
@@ -986,8 +709,6 @@ public class ALSDaalCollectiveMapper
                 rmse_local += rmse_vals[j][0]; 
                 rmse_effect_num += rmse_vals[j][1];
             }
-
-            // LOG.info("Test Points on this worker: " + rmse_effect_num + ", rmse value: " + rmse_local);
 
             //allreduce to get the RMSE value 
             Table<DoubleArray> rmse_table = new Table<>(0, new DoubleArrPlus());
@@ -1011,153 +732,6 @@ public class ALSDaalCollectiveMapper
             long end = System.currentTimeMillis();
             LOG.info("Test model takes: " + (end - start));
             LOG.info("RMSE after Iteration: " + itr + " is : " + Math.sqrt(total_rmse/total_rmse_num));
-
-        }//}}}
-
-
-        /**
-         * @brief compute RMSE values prior to training process in 
-         * sequential order
-         *
-         * @param usersPartition
-         * @param itemsPartition
-         * @param userNum
-         * @param testDataMap
-         * @param row_mapping
-         * @param col_mapping
-         *
-         * @return 
-         */
-        private void testModelInitRMSE(long[] usersPartition,
-                                       long[] itemsPartition,
-                                       long userNum,
-                                       Int2ObjectOpenHashMap<VRowCol> testDataMap,
-                                       int[] row_mapping, int[] col_mapping) throws Exception
-        {//{{{
-
-            // ------------------------------ Predicting Model Start ------------------------------
-            
-            long start = System.currentTimeMillis();
-            Random rand = new Random(System.currentTimeMillis());
-
-            //itemsPartition records the offset of item indices
-            long startRowIndex = usersPartition[this.getSelfID()];
-            long endRowIndex = usersPartition[this.getSelfID() + 1];
-            
-            //retrieve user model data
-            // HomogenNumericTable userModelTest = (HomogenNumericTable)(usersPartialResultLocal.get(DistributedPartialResultStep4Id.outputOfStep4).getFactors());
-            // long userModelTestRowNum = userModelTest.getNumberOfRows();
-            // long userModelTestColNum = userModelTest.getNumberOfColumns();
-            double[] userModelTestData = new double[(int)userNum*r];
-            //randomize user model values
-            SGDUtil.randomize(rand, userModelTestData, (int)userNum*r, oneOverSqrtR);
-
-            //retrieve item model data
-            long[][] itemRowColNum = new long[this.getNumWorkers()][];
-            double[][] itemModelTestData = new double[this.getNumWorkers()][];
-
-            for (int j=0; j<this.getNumWorkers(); j++) 
-            {
-                // HomogenNumericTable itemModelTest = (HomogenNumericTable)(itemsRemoteResults[j].get(DistributedPartialResultStep4Id.outputOfStep4).getFactors());
-                itemRowColNum[j] = new long[2];
-                itemRowColNum[j][0] = itemsPartition[j+1] - itemsPartition[j]; //num of items on each worker
-                itemRowColNum[j][1] = r;
-                itemModelTestData[j] = new double[(int)itemRowColNum[j][0]*r];
-                //randomize items model values
-                SGDUtil.randomize(rand, itemModelTestData[j], (int)itemRowColNum[j][0]*r, oneOverSqrtR);
-
-            }
-
-            //row id and col id in test data in COO format starts from 0
-            ObjectIterator<Int2ObjectMap.Entry<VRowCol>> iterator =
-                testDataMap.int2ObjectEntrySet().fastIterator();
-
-            int testVLocalNum = 0;
-            double rmse_local = 0;
-            long rmse_effect_num = 0;
-
-            while (iterator.hasNext()) {
-
-                Int2ObjectMap.Entry<VRowCol> entry =
-                    iterator.next();
-
-                VRowCol vRowCol = entry.getValue();
-                int row_idx_map = row_mapping[vRowCol.id] - 1;
-
-                if (row_idx_map >= startRowIndex && row_idx_map < endRowIndex)
-                {
-                    int index_row = row_idx_map - (int)startRowIndex;
-                    int index_col = 0;
-
-                    for(int j=0;j<vRowCol.numV;j++)
-                    {
-                        int item_buck = -1;
-
-                        if (vRowCol.ids[j] >= col_mapping.length || col_mapping[vRowCol.ids[j]] == 0)
-                            continue;
-
-                        index_col = col_mapping[vRowCol.ids[j]] - 1;
-
-                        double rating = vRowCol.v[j];
-
-                        //get the relative itemblock that contains index_col
-                        for(int k=0;k<this.getNumWorkers();k++)
-                        {
-                            if (index_col < (int)itemsPartition[k+1])
-                            {
-                                item_buck = k;
-                                break;
-                            }
-                        }
-
-                        if (item_buck >= 0)
-                        {
-                            index_col = index_col - (int)itemsPartition[item_buck];
-                            //get the item buck data
-                            double[] item_calc = itemModelTestData[item_buck]; 
-                            double[] user_calc = userModelTestData;
-
-                            double predict = 0;
-                            for (int k=0;k<r;k++)
-                            {
-                                predict += (user_calc[index_row*r + k]*item_calc[index_col*r + k]); 
-                            }
-
-                            rmse_local += (((1.0 - predict)*(1.0 - predict))*(1+alpha*rating));
-                            rmse_effect_num++;
-
-                        }
-                        
-                    }
-
-                }
-
-            }
-
-            // LOG.info("Test Points on this worker: " + rmse_effect_num + ", rmse value: " + rmse_local);
-
-            //allreduce to get the RMSE value 
-            Table<DoubleArray> rmse_table = new Table<>(0, new DoubleArrPlus());
-            DoubleArray rmse_array = DoubleArray.create(2, false);
-
-            rmse_array.get()[0] = rmse_local;
-            rmse_array.get()[1] = (double)rmse_effect_num;
-            rmse_table.addPartition(new Partition<>(this.getSelfID(), rmse_array));
-            this.allgather("als", "get-rmse-info", rmse_table);
-
-            //calculate out the RMSE of all the nodes
-            double total_rmse = 0;
-            double total_rmse_num = 0;
-
-            for(int j=0;j<this.getNumWorkers();j++)
-            {
-                total_rmse += rmse_table.getPartition(j).get().get()[0];
-                total_rmse_num += rmse_table.getPartition(j).get().get()[1];
-            }
-            
-            long end = System.currentTimeMillis();
-            LOG.info("Test model takes: " + (end - start));
-            LOG.info("RMSE before Iteration is : " + Math.sqrt(total_rmse/total_rmse_num));
 
         }//}}}
 
@@ -1191,12 +765,9 @@ public class ALSDaalCollectiveMapper
             long endRowIndex = usersPartition[this.getSelfID() + 1];
             
             //retrieve user model data
-            // HomogenNumericTable userModelTest = (HomogenNumericTable)(usersPartialResultLocal.get(DistributedPartialResultStep4Id.outputOfStep4).getFactors());
-            // long userModelTestRowNum = userModelTest.getNumberOfRows();
-            // long userModelTestColNum = userModelTest.getNumberOfColumns();
             double[] userModelTestData = new double[(int)userNum*r];
             //randomize user model values
-            SGDUtil.randomize(rand, userModelTestData, (int)userNum*r, oneOverSqrtR);
+            Service.randomize(rand, userModelTestData, (int)userNum*r, oneOverSqrtR);
 
             //retrieve item model data
             long[][] itemRowColNum = new long[this.getNumWorkers()][];
@@ -1204,13 +775,12 @@ public class ALSDaalCollectiveMapper
 
             for (int j=0; j<this.getNumWorkers(); j++) 
             {
-                // HomogenNumericTable itemModelTest = (HomogenNumericTable)(itemsRemoteResults[j].get(DistributedPartialResultStep4Id.outputOfStep4).getFactors());
                 itemRowColNum[j] = new long[2];
                 itemRowColNum[j][0] = itemsPartition[j+1] - itemsPartition[j]; //num of items on each worker
                 itemRowColNum[j][1] = r;
                 itemModelTestData[j] = new double[(int)itemRowColNum[j][0]*r];
                 //randomize items model values
-                SGDUtil.randomize(rand, itemModelTestData[j], (int)itemRowColNum[j][0]*r, oneOverSqrtR);
+                Service.randomize(rand, itemModelTestData[j], (int)itemRowColNum[j][0]*r, oneOverSqrtR);
 
             }
 
@@ -1233,18 +803,6 @@ public class ALSDaalCollectiveMapper
 
 	    for(COOGroup entry : testDataMap.values())
 		rmse_schedule.submit(entry);
-            //row id and col id in test data in COO format starts from 0
-            // ObjectIterator<Int2ObjectMap.Entry<VRowCol>> iterator =
-            //     testDataMap.int2ObjectEntrySet().fastIterator();
-            //
-            // while (iterator.hasNext()) {
-            //
-            //     Int2ObjectMap.Entry<VRowCol> entry =
-            //         iterator.next();
-            //
-            //     rmse_schedule.submit(entry.getValue());
-            //
-            // }
 
             rmse_schedule.start();
             rmse_schedule.stop();
@@ -1259,8 +817,6 @@ public class ALSDaalCollectiveMapper
                 rmse_local += rmse_vals[j][0]; 
                 rmse_effect_num += rmse_vals[j][1];
             }
-
-            // LOG.info("Test Points on this worker: " + rmse_effect_num + ", rmse value: " + rmse_local);
 
             //allreduce to get the RMSE value 
             Table<DoubleArray> rmse_table = new Table<>(0, new DoubleArrPlus());
@@ -1287,49 +843,7 @@ public class ALSDaalCollectiveMapper
 
         }//}}}
 
-        /**
-         * @brief serialization of model data for broadcasting to other nodes
-         *
-         * @param res
-         *
-         * @return 
-         */
-        private byte[] serializeItemRes(DistributedPartialResultStep4 res) throws IOException 
-        {//{{{
-            // Create an output stream to serialize the numeric table 
-            ByteArrayOutputStream outputByteStream = new ByteArrayOutputStream();
-            ObjectOutputStream outputStream = new ObjectOutputStream(outputByteStream);
-
-            // Serialize the partialResult table into the output stream 
-            res.pack();
-            outputStream.writeObject(res);
-
-            // Store the serialized data in an array 
-            byte[] buffer = outputByteStream.toByteArray();
-            return buffer;
-        }//}}}
-
-        /**
-         * @brief deserialization after receiving model data from other nodes 
-         *
-         * @param buffer
-         *
-         * @return 
-         */
-        private DistributedPartialResultStep4 deserializeItemRes(byte[] buffer) throws IOException, ClassNotFoundException 
-        {//{{{
-
-            // Create an input stream to deserialize the numeric table from the array 
-            ByteArrayInputStream inputByteStream = new ByteArrayInputStream(buffer);
-            ObjectInputStream inputStream = new ObjectInputStream(inputByteStream);
-
-            // Create a numeric table object 
-            DistributedPartialResultStep4 restoredRes = (DistributedPartialResultStep4)inputStream.readObject();
-            restoredRes.unpack(daal_Context);
-
-            return restoredRes;
-        }//}}}
-
+        
         /**
          * @brief compute the indices of columns/rows in training dataset that
          * shall be sent to other nodes
@@ -1394,86 +908,6 @@ public class ALSDaalCollectiveMapper
                 result.set(i, indicesTable);
             }
             return result;
-        }//}}}
-
-        /**
-         * @brief regroup the ALS training data by rows
-         *
-         * @param vRowMap
-         * @param numThreads
-         *
-         * @return 
-         */
-        private Table<VSet> TrainDataRGroupByRow(Int2ObjectOpenHashMap<VRowCol> vRowMap, int[] mapping, int numThreads, boolean isTran)
-        {//{{{
-
-            // maximum row ids 
-            int maxRowID = Integer.MIN_VALUE;
-
-            VRowCol[] values = vRowMap.values().toArray(new VRowCol[0]);
-
-            // Clean the data
-            vRowMap.clear();
-            vRowMap.trim();
-
-            //export data from hashmap to daal table
-            Table<VSet> vSetTable = new Table<>(0, new VSetCombiner(), values.length);
-            for (int i = 0; i < values.length; i++) 
-            {
-                VRowCol vRowCol = values[i];
-                vSetTable.addPartition(new Partition<>(
-                            mapping[vRowCol.id], new VSet(vRowCol.id,
-                                vRowCol.ids, vRowCol.v, vRowCol.numV)));
-                if ((i + 1) % 1000000 == 0) {
-                    LOG.info("Processed " + (i + 1));
-                }
-
-                if (mapping[vRowCol.id] > maxRowID) {
-                    maxRowID = mapping[vRowCol.id];
-                }
-            }
-
-            values = null;
-
-            //regroup by row ids, partition in a range
-            int oldNumRows = vSetTable.getNumPartitions();
-            Table<LongArray> maxRowTable =
-                new Table<>(0, new LongArrMax());
-
-            LongArray maxrowArray = LongArray.create(1, false);
-            maxrowArray.get()[0] = (long) maxRowID;
-            maxRowTable.addPartition(new Partition<>(0, maxrowArray));
-
-            //get the global maxRow id
-            this.allreduce("als", "get-max-rowID", maxRowTable);
-
-            maxRowID = (int) maxRowTable.getPartition(0).get().get()[0];
-            // seed = seedTable.getPartition(0).get().get()[1];
-            maxRowTable.release();
-            maxRowTable = null;
-
-            LOG.info("Regroup data by rows " + oldNumRows
-                    + ", new compact maxRowID " + maxRowID);
-
-            long start = System.currentTimeMillis();
-
-            if (isTran == false)
-                this.maxRowID = maxRowID;
-
-            regroup("sgd", "regroup-vw", vSetTable,
-                    new ALSRowPartitioner(maxRowID, this.getNumWorkers()));
-
-            long end = System.currentTimeMillis();
-
-            int newNumRows = vSetTable.getNumPartitions();
-
-            LOG.info("Regroup data by rows took: "
-                    + (end - start)
-                    + ", old number of rows: "
-                    + oldNumRows + " new num of rows: " + newNumRows);
-
-            return vSetTable;
-
         }//}}}
 
              
