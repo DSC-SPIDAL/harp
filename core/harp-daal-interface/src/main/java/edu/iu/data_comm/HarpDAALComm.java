@@ -271,6 +271,61 @@ public class HarpDAALComm
 
 	}//}}}
 
+	public SerializableBase[] harpdaal_gather(SerializableBase input, int local_id, int root_id, String contextName, String operationName)
+	{//{{{
+
+		// clear the previous table content
+		this.comm_table.free();
+
+		// serialize the input obj
+		try{
+			this.comm_table.addPartition(new Partition<>(local_id, serializeInput(input)));
+		} catch (Exception e)
+		{
+			System.out.println("Fail to serialize" + e.toString());
+			e.printStackTrace();
+		}
+
+		// reduce via harp 
+		this.mapper.barrier("barrier", "reduce");
+		boolean reduceStatus = false;
+		reduceStatus = this.mapper.reduce(contextName, operationName, this.comm_table, root_id);
+		this.mapper.barrier("barrier", "reduce");
+
+		if(!reduceStatus){
+			System.out.println("reduce not successful");
+		}
+		else{
+			System.out.println("reducebcast successful");
+		}
+
+		// deserialization
+	        SerializableBase[] output = new SerializableBase[this.num_workers];	
+		try{
+
+			if (this.self_id == root_id)
+			{
+
+			    	int[] pid = comm_table.getPartitionIDs().toIntArray();
+				for (int i=0; i<pid.length; i++)
+				{
+				    output[i] = (SerializableBase)deserializeOutput(comm_table.getPartition(pid[i]).get());
+				}
+
+				return output;
+			}
+			else
+				return null;
+
+		}catch (Exception e)
+		{
+			System.out.println("Fail to deserilize" + e.toString());
+			e.printStackTrace();
+			return null;
+		}
+
+	}//}}}
+
 	public SerializableBase[] harpdaal_allgather(SerializableBase input, String contextName, String operationName)
 	{//{{{
 		// clear the previous table content

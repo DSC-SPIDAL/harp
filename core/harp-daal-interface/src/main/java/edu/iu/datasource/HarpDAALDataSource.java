@@ -56,9 +56,7 @@ import org.apache.commons.lang3.*;
 import org.apache.hadoop.mapred.CollectiveMapper;
 import org.apache.hadoop.conf.Configuration;
 
-import com.intel.daal.data_management.data.HomogenNumericTable;
-import com.intel.daal.data_management.data.CSRNumericTable;
-import com.intel.daal.data_management.data.NumericTable;
+import com.intel.daal.data_management.data.*;
 import com.intel.daal.data_management.data_source.*;
 import com.intel.daal.services.DaalContext;
 import com.intel.daal.services.Environment;
@@ -457,7 +455,17 @@ public class HarpDAALDataSource
 	this.loadTestTable(table);
 	return table;
    }
-   
+
+   public Tensor createDenseTensor(String filePath, int fileDim, DaalContext context) throws IOException
+   {
+	this.loadTestFile(filePath, fileDim);
+        long[] dims = {this.getTestRows(), fileDim};
+	// NumericTable table = new HomogenNumericTable(context, Double.class, fileDim, this.getTestRows(), NumericTable.AllocationFlag.DoAllocate);
+	// this.loadTestTable(table);
+        Tensor tsr = new HomogenTensor(context, dims, this.testData);
+	return tsr;
+   }
+
    public NumericTable createCSRNumericTable(List<String> filenames, DaalContext context) throws IOException
    {
 	 if (filenames.size() > 1)

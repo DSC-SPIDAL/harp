@@ -57,8 +57,6 @@ import com.intel.daal.data_management.data_source.*;
 import com.intel.daal.services.DaalContext;
 import com.intel.daal.services.Environment;
 
-
-
 /**
  * @brief the Harp mapper for running Neural Network
  */
