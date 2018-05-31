@@ -68,6 +68,9 @@ implements Tool {
     // load args
     init.loadSysArgs();
 
+    conf.setInt(HarpDAALConstants.FILE_DIM, Integer.parseInt(args[init.getSysArgNum()]));
+    conf.setInt(HarpDAALConstants.FEATURE_DIM, Integer.parseInt(args[init.getSysArgNum()+1]));
+
     // launch job
     System.out.println("Starting Job");
     long perJobSubmitTime = System.currentTimeMillis();

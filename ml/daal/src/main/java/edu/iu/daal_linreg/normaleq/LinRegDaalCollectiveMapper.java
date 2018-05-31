@@ -73,7 +73,6 @@ public class LinRegDaalCollectiveMapper
 extends
 CollectiveMapper<String, String, Object, Object>{
 
-  private int pointsPerFile = 250;                             //change
   private int fileDim; 
   private int vectorSize; 
   private int nDependentVariables; 
