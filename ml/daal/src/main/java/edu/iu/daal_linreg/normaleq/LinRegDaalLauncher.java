@@ -69,8 +69,11 @@ implements Tool {
     init.loadSysArgs();
 
     //load app args
-    conf.set(HarpDAALConstants.TEST_FILE_PATH, args[init.getSysArgNum()]);
-    conf.set(HarpDAALConstants.TEST_TRUTH_PATH, args[init.getSysArgNum()+1]);
+    conf.setInt(HarpDAALConstants.FILE_DIM, Integer.parseInt(args[init.getSysArgNum()]));
+    conf.setInt(HarpDAALConstants.FEATURE_DIM, Integer.parseInt(args[init.getSysArgNum()+1]));
+    conf.setInt(HarpDAALConstants.NUM_DEPVAR, Integer.parseInt(args[init.getSysArgNum()+2]));
+    conf.set(HarpDAALConstants.TEST_FILE_PATH, args[init.getSysArgNum()+3]);
+    conf.set(HarpDAALConstants.TEST_TRUTH_PATH, args[init.getSysArgNum()+4]);
 
     // launch job
     System.out.println("Starting Job");

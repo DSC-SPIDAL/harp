@@ -70,7 +70,6 @@ CollectiveMapper<String, String, Object, Object>{
 
   private PartialResult partialResult;
   private Result result;
-  private int pointsPerFile = 50;
   private int fileDim;
   private int nFeature;
   private int num_mappers;
