@@ -43,8 +43,12 @@ import edu.iu.harp.partition.Table;
 import edu.iu.harp.resource.DoubleArray;
 import edu.iu.harp.resource.ByteArray;
 import edu.iu.harp.schdynamic.DynamicScheduler;
+import edu.iu.datasource.*;
+import edu.iu.data_aux.*;
+import edu.iu.data_comm.*;
 
 import java.nio.DoubleBuffer;
+
 
 //import daal.jar API
 import com.intel.daal.algorithms.covariance.*;
@@ -67,8 +71,9 @@ CollectiveMapper<String, String, Object, Object>{
   private PartialResult partialResult;
   private Result result;
   private int pointsPerFile = 50;
-  private int vectorSize = 10;
-  private int numMappers;
+  private int fileDim;
+  private int nFeature;
+  private int num_mappers;
   private int numThreads;
   private int harpThreads; 
 
@@ -83,6 +88,8 @@ CollectiveMapper<String, String, Object, Object>{
   private long ts1 = 0;
   private long ts2 = 0;
 
+  private static HarpDAALDataSource datasource;
+  private static HarpDAALComm harpcomm;	
   private static DaalContext daal_Context = new DaalContext();
     /**
    * Mapper configuration.
@@ -90,18 +97,18 @@ CollectiveMapper<String, String, Object, Object>{
     @Override
     protected void setup(Context context)
     throws IOException, InterruptedException {
-      long startTime = System.currentTimeMillis();
-      Configuration configuration =
-      context.getConfiguration();
-      numMappers = configuration
-      .getInt(Constants.NUM_MAPPERS, 10);
-      numThreads = configuration
-      .getInt(Constants.NUM_THREADS, 10);
 
+      long startTime = System.currentTimeMillis();
+
+      Configuration configuration = context.getConfiguration();
+      this.num_mappers = configuration.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
+      this.numThreads = configuration.getInt(HarpDAALConstants.NUM_THREADS, 10);
+      this.fileDim = configuration.getInt(HarpDAALConstants.FILE_DIM, 10);
+      this.nFeature = configuration.getInt(HarpDAALConstants.FEATURE_DIM, 10);
       //always use the maximum hardware threads to load in data and convert data 
       harpThreads = Runtime.getRuntime().availableProcessors();
 
-      LOG.info("Num Mappers " + numMappers);
+      LOG.info("Num Mappers " + num_mappers);
       LOG.info("Num Threads " + numThreads);
       LOG.info("Num harp load data threads " + harpThreads);
 
@@ -131,13 +138,17 @@ CollectiveMapper<String, String, Object, Object>{
       }
 
       Configuration conf = context.getConfiguration();
-
       Path pointFilePath = new Path(trainingDataFiles.get(0));
       System.out.println("path = "+ pointFilePath.getName());
       FileSystem fs = pointFilePath.getFileSystem(conf);
       FSDataInputStream in = fs.open(pointFilePath);
 
-      runCOV(trainingDataFiles, conf, context);
+      //init data source
+      this.datasource = new HarpDAALDataSource(trainingDataFiles, this.fileDim, harpThreads, conf);
+      // create communicator
+      this.harpcomm= new HarpDAALComm(this.getSelfID(), this.getMasterID(), this.num_mappers, daal_Context, this);
+
+      runCOV(conf, context);
       LOG.info("Total iterations in master view: "
         + (System.currentTimeMillis() - startTime));
       this.freeMemory();
@@ -145,67 +156,26 @@ CollectiveMapper<String, String, Object, Object>{
       System.gc();
     }
 
-
-
-    private void runCOV(List<String> trainingDataFiles, Configuration conf, Context context) throws IOException {
+    private void runCOV(Configuration conf, Context context) throws IOException {
 
         //set thread number used in DAAL
         LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
         Environment.setNumberOfThreads(numThreads);
         LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
 
-        ts_start = System.currentTimeMillis();
+	ts_start = System.currentTimeMillis();
 
-        ts1 = System.currentTimeMillis();
-        // extracting points from csv files
-        List<double[]> pointArrays = COVUtil.loadPoints(trainingDataFiles, pointsPerFile,
-                vectorSize, conf, harpThreads);
-        ts2 = System.currentTimeMillis();
-        load_time += (ts2 - ts1);
+	// ---------- load data ----------
+	this.datasource.loadFiles();
 
+	// // ---------- training and testing ----------
+	NumericTable featureArray_daal = new HomogenNumericTable(daal_Context, Double.class, this.nFeature, this.datasource.getTotalLines(), NumericTable.AllocationFlag.DoAllocate);
+	this.datasource.loadDataBlock(featureArray_daal);
 
-        // converting data to Numeric Table
-        ts1 = System.currentTimeMillis();
+        PartialResult[] outcome = computeOnLocalNode(featureArray_daal);
 
-        long nFeature = vectorSize;
-        long nLabel = 1;
-        long totalLengthFeature = 0;
-
-        long[] array_startP_feature = new long[pointArrays.size()];
-        double[][] array_data_feature = new double[pointArrays.size()][];
-
-        for(int k=0;k<pointArrays.size();k++)
-        {
-            array_data_feature[k] = pointArrays.get(k);
-            array_startP_feature[k] = totalLengthFeature;
-            totalLengthFeature += pointArrays.get(k).length;
-        }
-
-        long featuretableSize = totalLengthFeature/nFeature;
-
-        //initializing Numeric Table
-
-        NumericTable featureArray_daal = new HomogenNumericTable(daal_Context, Double.class, nFeature, featuretableSize, NumericTable.AllocationFlag.DoAllocate);
-
-        int row_idx_feature = 0;
-        int row_len_feature = 0;
-
-        for (int k=0; k<pointArrays.size(); k++) 
-        {
-            row_len_feature = (array_data_feature[k].length)/(int)nFeature;
-            //release data from Java side to native side
-            ((HomogenNumericTable)featureArray_daal).releaseBlockOfRows(row_idx_feature, row_len_feature, DoubleBuffer.wrap(array_data_feature[k]));
-            row_idx_feature += row_len_feature;
-        }
-
-        ts2 = System.currentTimeMillis();
-        convert_time += (ts2 - ts1);
-
-        Table<ByteArray> partialResultTable = new Table<>(0, new ByteArrPlus());
-
-        computeOnLocalNode(featureArray_daal, partialResultTable);
         if(this.isMaster()){
-            computeOnMasterNode(partialResultTable);
+            computeOnMasterNode(outcome);
             HomogenNumericTable covariance = (HomogenNumericTable) result.get(ResultId.covariance);
             HomogenNumericTable mean = (HomogenNumericTable) result.get(ResultId.mean);
             Service.printNumericTable("Covariance matrix:", covariance);
@@ -225,11 +195,11 @@ CollectiveMapper<String, String, Object, Object>{
         LOG.info("Misc Time of Cov: "+ (total_time - load_time - compute_time - comm_time - convert_time));
     }
 
-  private void computeOnLocalNode(NumericTable featureArray_daal, Table<ByteArray> partialResultTable) throws java.io.IOException {
+  private PartialResult[] computeOnLocalNode(NumericTable featureArray_daal) throws java.io.IOException {
 
     ts1 = System.currentTimeMillis();
     /* Create algorithm objects to compute a variance-covariance matrix in the distributed processing mode using the default method */
-    DistributedStep1Local algorithm = new DistributedStep1Local(daal_Context, Float.class, Method.defaultDense);
+    DistributedStep1Local algorithm = new DistributedStep1Local(daal_Context, Double.class, Method.defaultDense);
 
     /* Set input objects for the algorithm */
     algorithm.input.set(InputId.data, featureArray_daal);
@@ -240,36 +210,28 @@ CollectiveMapper<String, String, Object, Object>{
     compute_time += (ts2 - ts1);
 
     ts1 = System.currentTimeMillis();
-    partialResultTable.addPartition(new Partition<>(this.getSelfID(), serializePartialResult(partialResult)));
-    boolean reduceStatus = false;
-    reduceStatus = this.reduce("cov", "sync-partialresult", partialResultTable, this.getMasterID()); 
+
+    //comm gather
+    SerializableBase[] partial_res = this.harpcomm.harpdaal_gather(partialResult, this.getMasterID(), "COV", "gather_partial_res");
+    PartialResult[] partial_output = new PartialResult[this.num_mappers];
+    if (this.isMaster() == true)
+    {
+	    for(int j=0;j<this.num_mappers;j++)
+		    partial_output[j] = (PartialResult)(partial_res[j]);
+    }
+
     ts2 = System.currentTimeMillis();
     comm_time += (ts2 - ts1);
 
-    if(!reduceStatus){
-      System.out.println("reduce not successful");
-    }
-    else{
-      System.out.println("reduce successful");
-    }
+    return partial_output;
+    
   }
 
-  private void computeOnMasterNode(Table<ByteArray> partialResultTable){
-    int[] pid = partialResultTable.getPartitionIDs().toIntArray();
-    DistributedStep2Master algorithm = new DistributedStep2Master(daal_Context, Float.class, Method.defaultDense);
-    ts1 = System.currentTimeMillis();
-    for(int j = 0; j< pid.length; j++){
-      try {
-        algorithm.input.add(DistributedStep2MasterInputId.partialResults,
-          deserializePartialResult(partialResultTable.getPartition(pid[j]).get())); 
-      } catch (Exception e) 
-      {  
-        System.out.println("Fail to deserilize partialResultTable" + e.toString());
-        e.printStackTrace();
-      }
-    }
-    ts2 = System.currentTimeMillis();
-    comm_time += (ts2 - ts1);
+  private void computeOnMasterNode(PartialResult[] partialResultTable)
+  {
+    DistributedStep2Master algorithm = new DistributedStep2Master(daal_Context, Double.class, Method.defaultDense);
+    for(int j=0;j<this.num_mappers;j++)
+    	algorithm.input.add(DistributedStep2MasterInputId.partialResults,partialResultTable[j]); 
 
     ts1 = System.currentTimeMillis();
     algorithm.compute();
@@ -277,35 +239,5 @@ CollectiveMapper<String, String, Object, Object>{
     ts2 = System.currentTimeMillis();
     compute_time += (ts2 - ts1);
   }
-
-
-  private static ByteArray serializePartialResult(PartialResult partialResult) throws IOException {
-    /* Create an output stream to serialize the numeric table */
-    ByteArrayOutputStream outputByteStream = new ByteArrayOutputStream();
-    ObjectOutputStream outputStream = new ObjectOutputStream(outputByteStream);
-
-    /* Serialize the numeric table into the output stream */
-    partialResult.pack();
-    outputStream.writeObject(partialResult);
-
-    /* Store the serialized data in an array */
-    byte[] serializedPartialResult = outputByteStream.toByteArray();
-
-    ByteArray partialResultHarp = new ByteArray(serializedPartialResult, 0, serializedPartialResult.length);
-    return partialResultHarp;
-  }
-
-  private static PartialResult deserializePartialResult(ByteArray byteArray) throws IOException, ClassNotFoundException {
-    /* Create an input stream to deserialize the numeric table from the array */
-    byte[] buffer = byteArray.get();
-    ByteArrayInputStream inputByteStream = new ByteArrayInputStream(buffer);
-    ObjectInputStream inputStream = new ObjectInputStream(inputByteStream);
-
-    /* Create a numeric table object */
-    PartialResult restoredDataTable = (PartialResult) inputStream.readObject();
-    restoredDataTable.unpack(daal_Context);
-
-    return restoredDataTable;
-  } 
 
 }
