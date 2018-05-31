@@ -47,16 +47,18 @@ import edu.iu.harp.resource.DoubleArray;
 import edu.iu.harp.resource.ByteArray;
 import edu.iu.harp.schdynamic.DynamicScheduler;
 
-import java.nio.DoubleBuffer;
+import edu.iu.datasource.*;
+import edu.iu.data_aux.*;
+import edu.iu.data_comm.*;
+
 
 //import daal.jar API
 import com.intel.daal.algorithms.ridge_regression.Model;
 import com.intel.daal.algorithms.ridge_regression.prediction.*;
 import com.intel.daal.algorithms.ridge_regression.training.*;
 import com.intel.daal.data_management.data.*;
-import com.intel.daal.services.DaalContext;
 import com.intel.daal.data_management.data_source.*;
-
+import com.intel.daal.services.DaalContext;
 import com.intel.daal.services.Environment;
 
 
@@ -69,20 +71,21 @@ public class RidgeRegDaalCollectiveMapper
 extends
 CollectiveMapper<String, String, Object, Object>{
 
-  private int pointsPerFile = 250;                             //change
+  private int fileDim = 12;
   private int vectorSize = 10;
   private int nDependentVariables  = 2;
-  private int numMappers;
+  private int num_mappers;
   private int numThreads;
   private int harpThreads; 
-  private TrainingResult trainingResult;
-  private PredictionResult predictionResult;
   private String testFilePath;
   private String testGroundTruth;
+
+  private TrainingResult trainingResult;
+  private PredictionResult predictionResult;
   private Model model;
   private NumericTable results;
 
-    //to measure the time
+  //to measure the time
   private long load_time = 0;
   private long convert_time = 0;
   private long total_time = 0;
@@ -93,7 +96,10 @@ CollectiveMapper<String, String, Object, Object>{
   private long ts1 = 0;
   private long ts2 = 0;
 
+  private static HarpDAALDataSource datasource;
+  private static HarpDAALComm harpcomm;	
   private static DaalContext daal_Context = new DaalContext();
+
     /**
    * Mapper configuration.
    */
@@ -101,21 +107,20 @@ CollectiveMapper<String, String, Object, Object>{
     protected void setup(Context context)
     throws IOException, InterruptedException {
       long startTime = System.currentTimeMillis();
-      Configuration configuration =
-      context.getConfiguration();
-      numMappers = configuration
-      .getInt(Constants.NUM_MAPPERS, 10);
-      numThreads = configuration
-      .getInt(Constants.NUM_THREADS, 10);
-      testFilePath =
-            configuration.get(Constants.TEST_FILE_PATH,"");
-      testGroundTruth =
-      configuration.get(Constants.TEST_TRUTH_PATH,"");
+
+      Configuration configuration = context.getConfiguration();
+      this.num_mappers = configuration.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
+      this.numThreads = configuration.getInt(HarpDAALConstants.NUM_THREADS, 10);
+      this.fileDim = configuration.getInt(HarpDAALConstants.FILE_DIM, 12);
+      this.vectorSize = configuration.getInt(HarpDAALConstants.FEATURE_DIM, 10);
+      this.nDependentVariables = configuration.getInt(HarpDAALConstants.NUM_DEPVAR, 2);
+      this.testFilePath = configuration.get(HarpDAALConstants.TEST_FILE_PATH,"");
+      this.testGroundTruth = configuration.get(HarpDAALConstants.TEST_TRUTH_PATH,"");
 
       //always use the maximum hardware threads to load in data and convert data 
       harpThreads = Runtime.getRuntime().availableProcessors();
 
-      LOG.info("Num Mappers " + numMappers);
+      LOG.info("Num Mappers " + num_mappers);
       LOG.info("Num Threads " + numThreads);
       LOG.info("Num harp load data threads " + harpThreads);
       long endTime = System.currentTimeMillis();
@@ -150,7 +155,12 @@ CollectiveMapper<String, String, Object, Object>{
       FileSystem fs = pointFilePath.getFileSystem(conf);
       FSDataInputStream in = fs.open(pointFilePath);
 
-      runRidgeReg(trainingDataFiles, conf, context);
+      //init data source
+      this.datasource = new HarpDAALDataSource(trainingDataFiles, this.fileDim, harpThreads, conf);
+      // create communicator
+      this.harpcomm= new HarpDAALComm(this.getSelfID(), this.getMasterID(), this.num_mappers, daal_Context, this);
+
+      runRidgeReg(conf, context);
       LOG.info("Total iterations in master view: "
         + (System.currentTimeMillis() - startTime));
       this.freeMemory();
@@ -158,120 +168,54 @@ CollectiveMapper<String, String, Object, Object>{
       System.gc();
     }
 
-  private void runRidgeReg(List<String> trainingDataFiles, Configuration conf, Context context) throws IOException {
+  private void runRidgeReg(Configuration conf, Context context) throws IOException 
+  {
 
-      ts_start = System.currentTimeMillis();
+	  ts_start = System.currentTimeMillis();
 
-      ts1 = System.currentTimeMillis();
-    // extracting points from csv files
-      List<List<double[]>> pointArrays = RidgeRegUtil.loadPoints(trainingDataFiles, pointsPerFile,
-                    vectorSize, nDependentVariables, conf, harpThreads);
-      List<double[]> featurePoints = new LinkedList<>();
-      for(int i = 0; i<pointArrays.size(); i++){
-          featurePoints.add(pointArrays.get(i).get(0));
-      }
-      List<double[]> labelPoints = new LinkedList<>();
-      for(int i = 0; i<pointArrays.size(); i++){
-          labelPoints.add(pointArrays.get(i).get(1));
-      }
+	  this.datasource.loadFiles();
 
-      ts2 = System.currentTimeMillis();
-      load_time += (ts2 - ts1);
+	  NumericTable featureArray_daal = new HomogenNumericTable(daal_Context, Double.class, this.vectorSize, this.datasource.getTotalLines(), 
+			  NumericTable.AllocationFlag.DoAllocate);
+	  NumericTable labelArray_daal = new HomogenNumericTable(daal_Context, Double.class, this.nDependentVariables, this.datasource.getTotalLines(), 
+			  NumericTable.AllocationFlag.DoAllocate);
+	  MergedNumericTable mergedData = new MergedNumericTable(daal_Context);
+	  mergedData.addNumericTable(featureArray_daal);
+	  mergedData.addNumericTable(labelArray_daal);
 
+	  /* Retrieve the data from an input file */
+	  this.datasource.loadDataBlock(mergedData);
 
+	  trainModel(featureArray_daal, labelArray_daal);
 
-    // converting data to Numeric Table
-      ts1 = System.currentTimeMillis();
+	  if(this.isMaster()){
+		  testModel(testFilePath, conf);
+		  printResults(testGroundTruth, predictionResult, conf);
+	  }
 
-      long nFeature = vectorSize;
-      long nLabel = nDependentVariables;
-      long totalLengthFeature = 0;
-      long totalLengthLabel = 0;
+	  daal_Context.dispose();
 
-      long[] array_startP_feature = new long[pointArrays.size()];
-      double[][] array_data_feature = new double[pointArrays.size()][];
-      long[] array_startP_label = new long[labelPoints.size()];
-      double[][] array_data_label = new double[labelPoints.size()][];
+	  ts_end = System.currentTimeMillis();
+	  total_time = (ts_end - ts_start);
 
-      for(int k=0;k<featurePoints.size();k++)
-            {
-                array_data_feature[k] = featurePoints.get(k);
-                array_startP_feature[k] = totalLengthFeature;
-                totalLengthFeature += featurePoints.get(k).length;
-            }
-
-      for(int k=0;k<labelPoints.size();k++)
-      {
-          array_data_label[k] = labelPoints.get(k);
-          array_startP_label[k] = totalLengthLabel;
-          totalLengthLabel += labelPoints.get(k).length;
-      }
-
-    long featuretableSize = totalLengthFeature/nFeature;
-    long labeltableSize = totalLengthLabel/nLabel;
-
-   //initializing Numeric Table
-
-
-    NumericTable featureArray_daal = new HomogenNumericTable(daal_Context, Double.class, nFeature, featuretableSize, NumericTable.AllocationFlag.DoAllocate);
-    NumericTable labelArray_daal = new HomogenNumericTable(daal_Context, Double.class, nLabel, labeltableSize, NumericTable.AllocationFlag.DoAllocate);
-
-
-    int row_idx_feature = 0;
-    int row_len_feature = 0;
-
-    for (int k=0; k<featurePoints.size(); k++) 
-      {
-          row_len_feature = (array_data_feature[k].length)/(int)nFeature;
-          //release data from Java side to native side
-          ((HomogenNumericTable)featureArray_daal).releaseBlockOfRows(row_idx_feature, row_len_feature, DoubleBuffer.wrap(array_data_feature[k]));
-          row_idx_feature += row_len_feature;
-      }
-
-    int row_idx_label = 0;
-    int row_len_label = 0;
-
-    for (int k=0; k<labelPoints.size(); k++) 
-    {
-        row_len_label = (array_data_label[k].length)/(int)nLabel;
-        //release data from Java side to native side
-        ((HomogenNumericTable)labelArray_daal).releaseBlockOfRows(row_idx_label, row_len_label, DoubleBuffer.wrap(array_data_label[k]));
-        row_idx_label += row_len_label;
-    }
-
-    ts2 = System.currentTimeMillis();
-    convert_time += (ts2 - ts1);
-
-    Table<ByteArray> partialResultTable = new Table<>(0, new ByteArrPlus());
-
-    trainModel(featureArray_daal, labelArray_daal, partialResultTable);
-    if(this.isMaster()){
-      testModel(testFilePath, conf);
-      printResults(testGroundTruth, predictionResult, conf);
-    }
-    
-    daal_Context.dispose();
-
-    ts_end = System.currentTimeMillis();
-    total_time = (ts_end - ts_start);
-    
-    LOG.info("Total Execution Time of RidgeReg: "+ total_time);
-    LOG.info("Loading Data Time of RidgeReg: "+ load_time);
-    LOG.info("Computation Time of RidgeReg: "+ compute_time);
-    LOG.info("Comm Time of RidgeReg: "+ comm_time);
-    LOG.info("DataType Convert Time of RidgeReg: "+ convert_time);
-    LOG.info("Misc Time of RidgeReg: "+ (total_time - load_time - compute_time - comm_time - convert_time));
-}
+	  LOG.info("Total Execution Time of RidgeReg: "+ total_time);
+	  LOG.info("Loading Data Time of RidgeReg: "+ load_time);
+	  LOG.info("Computation Time of RidgeReg: "+ compute_time);
+	  LOG.info("Comm Time of RidgeReg: "+ comm_time);
+	  LOG.info("DataType Convert Time of RidgeReg: "+ convert_time);
+	  LOG.info("Misc Time of RidgeReg: "+ (total_time - load_time - compute_time - comm_time - convert_time));
+  }
   
-  private void trainModel(NumericTable trainData, NumericTable trainDependentVariables, Table<ByteArray> partialResultTable) throws java.io.IOException {
+  private void trainModel(NumericTable trainData, NumericTable trainDependentVariables) throws java.io.IOException {
 
     LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
     Environment.setNumberOfThreads(numThreads);
     LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
 
     ts1 = System.currentTimeMillis();
-    TrainingDistributedStep1Local ridgeRegressionTraining = new TrainingDistributedStep1Local(daal_Context, Float.class,
+    TrainingDistributedStep1Local ridgeRegressionTraining = new TrainingDistributedStep1Local(daal_Context, Double.class,
                     TrainingMethod.normEqDense);
+
     ridgeRegressionTraining.input.set(TrainingInputId.data, trainData);
     ridgeRegressionTraining.input.set(TrainingInputId.dependentVariable, trainDependentVariables);
 
@@ -279,37 +223,20 @@ CollectiveMapper<String, String, Object, Object>{
     ts2 = System.currentTimeMillis();
     compute_time += (ts2 - ts1);
 
-    ts1 = System.currentTimeMillis();
-    partialResultTable.addPartition(new Partition<>(this.getSelfID(), serializePartialResult(pres)));
-    boolean reduceStatus = false;
-    reduceStatus = this.reduce("ridgereg", "sync-partialresult", partialResultTable, this.getMasterID());
-    ts2 = System.currentTimeMillis();
-    comm_time += (ts2 - ts1); 
+    //gather the pres to master mappers
+    SerializableBase[] gather_out = this.harpcomm.harpdaal_gather(pres, this.getMasterID(), "RidgeReg", "gather_pres");
 
-    if(!reduceStatus){
-      System.out.println("reduce not successful");
-    }
-    else{
-      System.out.println("reduce successful");
-    }
-      
-    if(this.isMaster()){
-      TrainingDistributedStep2Master ridgeRegressionTrainingMaster = new TrainingDistributedStep2Master(daal_Context, Float.class,
+    if(this.isMaster())
+    {
+
+      TrainingDistributedStep2Master ridgeRegressionTrainingMaster = new TrainingDistributedStep2Master(daal_Context, Double.class,
                 TrainingMethod.normEqDense);
-      ts1 = System.currentTimeMillis();
-      int[] pid = partialResultTable.getPartitionIDs().toIntArray();
-      for(int j = 0; j< pid.length; j++){
-        try {
-          ridgeRegressionTrainingMaster.input.add(MasterInputId.partialModels,
-          deserializePartialResult(partialResultTable.getPartition(pid[j]).get())); 
-        } catch (Exception e) 
-          {  
-            System.out.println("Fail to deserilize partialResultTable" + e.toString());
-            e.printStackTrace();
-          }
+
+      for(int j=0;j<this.num_mappers;j++)
+      {
+	      PartialResult pres_entry = (PartialResult)(gather_out[j]); 
+	      ridgeRegressionTrainingMaster.input.add(MasterInputId.partialModels, pres_entry); 
       }
-      ts2 = System.currentTimeMillis();
-      comm_time += (ts2 - ts1);
 
       ts1 = System.currentTimeMillis();
       ridgeRegressionTrainingMaster.compute();
@@ -321,9 +248,25 @@ CollectiveMapper<String, String, Object, Object>{
 
   }
 
-  private void testModel(String testFilePath, Configuration conf) throws java.io.FileNotFoundException, java.io.IOException {
-    PredictionBatch ridgeRegressionPredict = new PredictionBatch(daal_Context, Float.class, PredictionMethod.defaultDense);
-    NumericTable testData = getNumericTableHDFS(daal_Context, conf, testFilePath, 10, 250);
+  private void testModel(String testFilePath, Configuration conf) throws java.io.FileNotFoundException, java.io.IOException 
+  {
+
+    //load test data
+    this.datasource.loadTestFile(testFilePath, this.fileDim);
+
+    NumericTable testData = new HomogenNumericTable(daal_Context, Double.class, this.vectorSize, this.datasource.getTestRows(), 
+		    NumericTable.AllocationFlag.DoAllocate);
+    NumericTable testLabel = new HomogenNumericTable(daal_Context, Double.class, this.nDependentVariables, this.datasource.getTestRows(), 
+		    NumericTable.AllocationFlag.DoAllocate);
+
+    MergedNumericTable mergedData = new MergedNumericTable(daal_Context);
+    mergedData.addNumericTable(testData);
+    mergedData.addNumericTable(testLabel);
+    this.datasource.loadTestTable(mergedData);
+
+
+    PredictionBatch ridgeRegressionPredict = new PredictionBatch(daal_Context, Double.class, PredictionMethod.defaultDense);
+
     ridgeRegressionPredict.input.set(PredictionInputId.data, testData);
     ridgeRegressionPredict.input.set(PredictionInputId.model, model);
 
@@ -336,132 +279,19 @@ CollectiveMapper<String, String, Object, Object>{
 
   }
 
-  private void printResults(String testGroundTruth, PredictionResult predictionResult, Configuration conf) throws java.io.FileNotFoundException, java.io.IOException {
-        NumericTable beta = model.getBeta();
-        NumericTable expected = getNumericTableHDFS(daal_Context, conf, testGroundTruth, 2, 250);
-        Service.printNumericTable("Coefficients: ", beta);
-        Service.printNumericTable("First 10 rows of results (obtained): ", results, 10);
-        Service.printNumericTable("First 10 rows of results (expected): ", expected, 10);
-    }
+  private void printResults(String testGroundTruth, PredictionResult predictionResult, Configuration conf) throws java.io.FileNotFoundException, java.io.IOException 
+  {
 
-private NumericTable getNumericTableHDFS(DaalContext daal_Context, Configuration conf, String inputFiles, int vectorSize, int numRows) 
-        throws IOException{
-            Path inputFilePaths = new Path(inputFiles);
-            List<String> inputFileList = new LinkedList<>();
+	  NumericTable beta = model.getBeta();
+	  //load the test groudtruth 
+	  this.datasource.loadTestFile(testGroundTruth, this.nDependentVariables);
+	  NumericTable expected = new HomogenNumericTable(daal_Context, Double.class, this.nDependentVariables, this.datasource.getTestRows(), 
+			  NumericTable.AllocationFlag.DoAllocate);
+	  this.datasource.loadTestTable(expected);
 
-            try {
-                FileSystem fs =
-                inputFilePaths.getFileSystem(conf);
-                RemoteIterator<LocatedFileStatus> iterator =
-                fs.listFiles(inputFilePaths, true);
-
-                while (iterator.hasNext()) {
-                    String name =
-                    iterator.next().getPath().toUri()
-                    .toString();
-                    inputFileList.add(name);
-                }
-
-            } catch (IOException e) {
-                LOG.error("Fail to get test files", e);
-            }
-            int dataSize = vectorSize*numRows;
-            // float[] data = new float[dataSize];
-            double[] data = new double[dataSize];
-            long[] dims = {numRows, vectorSize};
-            int index = 0;
-
-            FSDataInputStream in = null;
-
-            //loop over all the files in the list
-            ListIterator<String> file_itr = inputFileList.listIterator();
-            while (file_itr.hasNext())
-            {
-                String file_name = file_itr.next();
-                LOG.info("read in file name: " + file_name);
-
-                Path file_path = new Path(file_name);
-                try {
-
-                    FileSystem fs =
-                    file_path.getFileSystem(conf);
-                    in = fs.open(file_path);
-
-                } catch (Exception e) {
-                    LOG.error("Fail to open file "+ e.toString());
-                    return null;
-                }
-
-                //read file content
-                while(true)
-                {
-                    String line = in.readLine();
-                    if (line == null) break;
-
-                    String[] lineData = line.split(",");
-
-                    for(int t =0 ; t< vectorSize; t++)
-                    {
-                        if (index < dataSize)
-                        {
-                            // data[index] = Float.parseFloat(lineData[t]);
-                            data[index] = Double.parseDouble(lineData[t]);
-                            index++;                                                          
-                        }
-                        else
-                        {
-                            LOG.error("Incorrect size of file: dataSize: " + dataSize + "; index val: " + index);
-                            return null;
-                        }
-                        
-                    }
-                }
-
-                in.close();
-
-            }
-
-            if ( index  != dataSize )
-            {
-                LOG.error("Incorrect total size of file: dataSize: " + dataSize + "; index val: " + index);
-                return null;
-            }
-            //debug check the vals of data
-            // for(int p=0;p<60;p++)
-            //     LOG.info("data at: " + p + " is: " + data[p]);
-            
-            NumericTable predictionData = new HomogenNumericTable(daal_Context, data, vectorSize, numRows);
-            return predictionData;
-
-        }
-
-    private static ByteArray serializePartialResult(PartialResult partialResult) throws IOException {
-          /* Create an output stream to serialize the numeric table */
-          ByteArrayOutputStream outputByteStream = new ByteArrayOutputStream();
-          ObjectOutputStream outputStream = new ObjectOutputStream(outputByteStream);
-
-          /* Serialize the numeric table into the output stream */
-          partialResult.pack();
-          outputStream.writeObject(partialResult);
-
-          /* Store the serialized data in an array */
-          byte[] serializedPartialResult = outputByteStream.toByteArray();
-
-          ByteArray partialResultHarp = new ByteArray(serializedPartialResult, 0, serializedPartialResult.length);
-          return partialResultHarp;
-      }
-
-      private static PartialResult deserializePartialResult(ByteArray byteArray) throws IOException, ClassNotFoundException {
-          /* Create an input stream to deserialize the numeric table from the array */
-          byte[] buffer = byteArray.get();
-          ByteArrayInputStream inputByteStream = new ByteArrayInputStream(buffer);
-          ObjectInputStream inputStream = new ObjectInputStream(inputByteStream);
-
-          /* Create a numeric table object */
-          PartialResult restoredDataTable = (PartialResult) inputStream.readObject();
-          restoredDataTable.unpack(daal_Context);
-
-          return restoredDataTable;
-      }
+	  Service.printNumericTable("Coefficients: ", beta);
+	  Service.printNumericTable("First 10 rows of results (obtained): ", results, 10);
+	  Service.printNumericTable("First 10 rows of results (expected): ", expected, 10);
+  }
 
 }
