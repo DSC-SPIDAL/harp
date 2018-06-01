@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package edu.iu.data_gen;
+package edu.iu.datasource;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -46,9 +46,8 @@ public final class DataLoader
 	 * @return
 	 * @throws IOException
 	 */
-	public static double[] loadPoints(String file,
-			int pointsPerFile, int cenVecSize,
-			Configuration conf) throws Exception {
+	public static double[] loadPoints(String file, int pointsPerFile, int cenVecSize, Configuration conf) throws Exception 
+	{//{{{
 		double[] points =
 			new double[pointsPerFile * cenVecSize];
 		Path pointFilePath = new Path(file);
@@ -65,7 +64,7 @@ public final class DataLoader
 			in.close();
 		}
 		return points;
-	}
+	}//}}}
 
 	/**
 	 * @brief read in data points with seperator ","
@@ -77,8 +76,8 @@ public final class DataLoader
 	 *
 	 * @return 
 	 */
-	public static double[] loadPointsMMDense(String file, int cenVecSize,
-			Configuration conf) throws Exception {
+	public static double[] loadPointsMMDense(String file, int cenVecSize, Configuration conf) throws Exception 
+	{//{{{
 
 		System.out.println("filename: "+file );
 		List<double[]> points = new LinkedList<double[]>();
@@ -115,11 +114,10 @@ public final class DataLoader
 		}
 
 		return data_points;
-	}
+	}//}}}
 
-	public static List<double[][]> loadPointsMMDense2(String file, int cenVecSize, int shadsize,
-			Configuration conf) throws Exception 
-	{
+	public static List<double[][]> loadPointsMMDense2(String file, int cenVecSize, int shadsize, Configuration conf) throws Exception 
+	{//{{{
 
 		System.out.println("filename: "+file );
 		System.out.println("Shad size: "+ shadsize);
@@ -156,15 +154,61 @@ public final class DataLoader
 
 			}
 
-			
+		} finally{
+			in.close();
+		}
 
-			// int num_array = points.size();
-			// data_points = new double[num_array*cenVecSize];
-			// for(int i=0; i<num_array; i++)
-			// 	System.arraycopy(points.get(i), 0, data_points, i*cenVecSize, cenVecSize);
+		if (shadptr > 0)
+		{
+			//compress the last shad
+			double[][] lastshad = new double[shadptr][];
+			for(int j=0;j<shadptr;j++)
+				lastshad[j] = points[j];
 
+			outputlist.add(lastshad);
+			points = null;
+		}
 
-			// points = null;
+		return outputlist;
+	}//}}}
+
+	public static List<double[][]> loadPointsMMDenseSharding(String file, String sep, int cenVecSize, int shardsize, Configuration conf) throws Exception 
+	{//{{{
+
+		System.out.println("filename: "+file );
+		System.out.println("Shad size: "+ shardsize);
+
+		int shadptr = 0;
+		double[][] points = new double[shardsize][]; 
+
+		List<double[][]> outputlist = new LinkedList<double[][]>();
+
+		Path pointFilePath = new Path(file);
+		FileSystem fs =
+			pointFilePath.getFileSystem(conf);
+		FSDataInputStream in = fs.open(pointFilePath);
+		String readline = null;
+
+		try{
+
+			while ((readline = in.readLine()) != null)
+			{
+				String[] line = readline.split(sep);
+				double[] trainpoint = new double[cenVecSize];
+				for(int j = 0; j < cenVecSize; j++)
+					trainpoint[j] = Double.parseDouble(line[j]);
+
+				// points.add(trainpoint);
+				points[shadptr++] = trainpoint;
+
+				if (shadptr == shardsize)
+				{
+					outputlist.add(points);
+					points = new double[shardsize][];
+					shadptr = 0;
+				}
+
+			}
 
 		} finally{
 			in.close();
@@ -172,15 +216,16 @@ public final class DataLoader
 
 		if (shadptr > 0)
 		{
-		   //compress the last shad
-		   double[][] lastshad = new double[shadptr][];
-		   for(int j=0;j<shadptr;j++)
-			   lastshad[j] = points[j];
+			//compress the last shad
+			double[][] lastshad = new double[shadptr][];
+			for(int j=0;j<shadptr;j++)
+				lastshad[j] = points[j];
 
-		   outputlist.add(lastshad);
-		   points = null;
+			outputlist.add(lastshad);
+			points = null;
 		}
 
 		return outputlist;
-	}
+	}//}}}
+
 }

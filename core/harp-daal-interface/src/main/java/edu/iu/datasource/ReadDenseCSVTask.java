@@ -30,18 +30,20 @@ import java.util.List;
 
 import edu.iu.harp.schdynamic.Task;
 
-public class ReadParaTask implements
+public class ReadDenseCSVTask implements
 Task<String, List<double[]>> {
 
 	protected static final Log LOG = LogFactory
-		.getLog(ReadParaTask.class);
+		.getLog(ReadDenseCSVTask.class);
 
 	private int valperline;
 	private Configuration conf;
 	private long threadId;
+	private String sep;
 
-	public ReadParaTask(int valperline, Configuration conf) {
+	public ReadDenseCSVTask(int valperline, String sep, Configuration conf) {
 		this.valperline = valperline;
+		this.sep = sep;
 		this.conf = conf;
 		this.threadId = 0;
 	}
@@ -84,7 +86,7 @@ Task<String, List<double[]>> {
 		return null;
 	}
 
-	public static List<double[]> loadPoints(String file, int valperline,
+	private List<double[]> loadPoints(String file, int valperline,
 			Configuration conf) throws Exception {
 
 		System.out.println("filename: "+file );
@@ -101,7 +103,7 @@ Task<String, List<double[]>> {
 
 			while ((readline = in.readLine()) != null)
 			{
-				String[] line = readline.split(",");
+				String[] line = readline.split(this.sep);
 				double[] cell = new double[valperline];
 				for(int j = 0; j < valperline; j++)
 					cell[j] = Double.parseDouble(line[j]);

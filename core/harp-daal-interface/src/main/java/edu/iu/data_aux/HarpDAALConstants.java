@@ -43,6 +43,12 @@ public class HarpDAALConstants {
     "accuracy_threshold";
   public static final String LEARNING_RATE =
     "learning_rate";
+  public static final String NUM_CENTROIDS =
+    "centroids";
+  public static final String CEN_DIR =
+    "centroids_dir";
+  public static final String CENTROID_FILE_NAME =
+    "centroids_file";
 
   public static final String TEST_FILE_PATH =
   "test_file_path";

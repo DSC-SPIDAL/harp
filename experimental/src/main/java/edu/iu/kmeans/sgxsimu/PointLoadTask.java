@@ -25,6 +25,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
 import edu.iu.data_gen.*;
+import edu.iu.datasource.*;
 import java.io.IOException;
 
 public class PointLoadTask

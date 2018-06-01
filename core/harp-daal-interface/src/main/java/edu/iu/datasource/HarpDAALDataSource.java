@@ -115,6 +115,7 @@ public class HarpDAALDataSource
 	this.csrlabels = null;
    }
 
+   // -------------- COO files I/O --------------
    public List<COO> loadCOOFiles(String regex)
    {//{{{
       	MTReader reader = new MTReader();
@@ -299,31 +300,28 @@ public class HarpDAALDataSource
 
    }//}}}
 
+   // -------------- Dense CSV file I/O --------------
    public void loadFiles()
-   {
+   {//{{{
      	MTReader reader = new MTReader();
 	this.datalist = reader.readfiles(this.hdfs_filenames, this.dim, this.conf, this.harpthreads); 
 	this.totallines = reader.getTotalLines();
 	this.totalPoints = reader.getTotalPoints();
-   }
+   }//}}}
 
-   public int getTotalLines()
-   {
-	   return this.totallines;
-   }
+   public List<double[]> loadDenseCSVFiles(String sep)
+   {//{{{
 
-   public int getTestRows()
-   {
-	   return this.numTestRows;
-   }
+     	MTReader reader = new MTReader();
+	List<double[]> output = reader.readDenseCSV(this.hdfs_filenames, this.dim, sep, this.conf, this.harpthreads);
+	this.totallines = reader.getTotalLines();
+	this.totalPoints = reader.getTotalPoints();
+	return output;
 
-   /**
-    * @brief loading data from source to dst daal table
-    *
-    * @return 
-    */
+   }//}}}
+
    public void loadDataBlock(NumericTable dst_table)
-   {
+   {//{{{
       // check the datalist obj
       if (this.datalist == null)
       {
@@ -346,10 +344,10 @@ public class HarpDAALDataSource
       }
 
       this.datalist = null;
-   }
+   }//}}}
 
    public void loadTestFile(String inputFiles, int vectorSize) throws IOException
-   {
+   {//{{{
 
 	   Path inputFilePaths = new Path(inputFiles);
 	   List<String> inputFileList = new LinkedList<>();
@@ -425,8 +423,10 @@ public class HarpDAALDataSource
 	   // testTable.releaseBlockOfRows(0, points.size(), DoubleBuffer.wrap(data));
 	   points = null;
 
-   }
+   }//}}}
 
+   public int getTotalLines() { return this.totallines;}
+   public int getTestRows() { return this.numTestRows;}
    
    public NumericTable createDenseNumericTableInput(DaalContext context) throws IOException
    {
@@ -460,8 +460,6 @@ public class HarpDAALDataSource
    {
 	this.loadTestFile(filePath, fileDim);
         long[] dims = {this.getTestRows(), fileDim};
-	// NumericTable table = new HomogenNumericTable(context, Double.class, fileDim, this.getTestRows(), NumericTable.AllocationFlag.DoAllocate);
-	// this.loadTestTable(table);
         Tensor tsr = new HomogenTensor(context, dims, this.testData);
 	return tsr;
    }
@@ -499,14 +497,6 @@ public class HarpDAALDataSource
 	 return  loadCSRNumericTableAndLabelImpl(this.hdfs_filenames.get(0), context);
    }
 
-   /**
-    * @brief Load in an external single csr file to create a daal CSRNumericTable
-    *
-    * @param inputFile
-    * @param context
-    *
-    * @return 
-    */
    public NumericTable loadExternalCSRNumericTable(String inputFiles, DaalContext context) throws IOException
    {//{{{
 
@@ -734,30 +724,11 @@ public class HarpDAALDataSource
 	   return new CSRNumericTable(context, data, colIndices, rowOffsets, nFeatures, nVectors);
    }//}}}
 
-   
-
-   /**
-    * @brief used in CSR file reading
-    *
-    * @param line
-    *
-    * @return 
-    */
    private int getRowLength(String line) {
         String[] elements = line.split(",");
         return elements.length;
    }
 
-   /**
-    * @brief readi in data vals in CSR file
-    *
-    * @param line
-    * @param offset
-    * @param nCols
-    * @param data
-    *
-    * @return 
-    */
    private void readRow(String line, int offset, int nCols, double[] data) throws IOException 
    {
 	   if (line == null) {

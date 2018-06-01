@@ -52,6 +52,7 @@ public class MTReader{
 
 	private int totalLine;
 	private int totalPoints;
+	private String sep=",";
 
 	public MTReader()
 	{
@@ -59,6 +60,12 @@ public class MTReader{
 	   this.totalPoints = 0;
 	}
 
+	public MTReader(String sep)
+	{
+	   this.totalLine = 0;
+	   this.totalPoints = 0;
+	   this.sep = sep;
+	}
 	/**
 	 * @brief read dense matrix files from HDFS in parallel (multi-threading)
 	 * file format is dense vector (matrix)
@@ -74,16 +81,16 @@ public class MTReader{
 			List<String> fileNames,
 			int dim, Configuration conf,
 			int numThreads) 
-	{
+	{//{{{
 
-		List<ReadParaTask> tasks = new LinkedList<>();
+		List<ReadDenseCSVTask> tasks = new LinkedList<>();
 		List<double[]>[] arrays = new List[fileNames.size()];
 
 		for (int i = 0; i < numThreads; i++) {
-		   tasks.add(new ReadParaTask(dim, conf));
+		   tasks.add(new ReadDenseCSVTask(dim, this.sep, conf));
 		}
 
-		DynamicScheduler<String, List<double[]>, ReadParaTask> compute =
+		DynamicScheduler<String, List<double[]>, ReadDenseCSVTask> compute =
 			new DynamicScheduler<>(tasks);
 
 		for (String fileName : fileNames) {
@@ -107,7 +114,89 @@ public class MTReader{
 		}
 
 		return arrays;
-	} 
+	} //}}}
+
+	public List<double[]> readDenseCSV(
+			List<String> fileNames,
+			int dim, String seper, Configuration conf,
+			int numThreads) 
+	{//{{{
+
+		List<ReadDenseCSVTask> tasks = new LinkedList<>();
+		List<double[]> arrays = new LinkedList<>();
+
+		for (int i = 0; i < numThreads; i++) {
+		   tasks.add(new ReadDenseCSVTask(dim, seper, conf));
+		}
+
+		DynamicScheduler<String, List<double[]>, ReadDenseCSVTask> compute =
+			new DynamicScheduler<>(tasks);
+
+		for (String fileName : fileNames) {
+			compute.submit(fileName);
+		}
+
+		compute.start();
+		compute.stop();
+
+		this.totalLine = 0;
+		this.totalPoints = 0;
+		while (compute.hasOutput()) {
+
+			List<double[]> output = compute.waitForOutput();
+			if (output != null) {
+				totalLine += output.size();
+				totalPoints += output.size()*dim;
+				arrays.addAll(output);
+			}
+		}
+
+		return arrays;
+	} //}}}
+
+	public List<double[][]> readDenseCSVSharding(
+			List<String> fileNames,
+			int dim, int shardsize, String seper, Configuration conf,
+			int numThreads) 
+	{//{{{
+
+		List<ReadDenseCSVShardingTask> tasks = new LinkedList<>();
+		List<double[][]> arrays = new LinkedList<>();
+
+		for (int i = 0; i < numThreads; i++) {
+		   tasks.add(new ReadDenseCSVShardingTask(dim, shardsize, seper, conf));
+		}
+
+		DynamicScheduler<String, List<double[][]>, ReadDenseCSVShardingTask> compute =
+			new DynamicScheduler<>(tasks);
+
+		for (String fileName : fileNames) {
+			compute.submit(fileName);
+		}
+
+		compute.start();
+		compute.stop();
+
+		this.totalLine = 0;
+		this.totalPoints = 0;
+		while (compute.hasOutput()) {
+
+			List<double[][]> output = compute.waitForOutput();
+			if (output != null) {
+
+				for(double[][] elem : output)
+				{
+				   totalLine += elem.length;
+				   totalPoints += elem.length*dim;
+				}
+
+				arrays.addAll(output);
+			}
+		}
+
+		return arrays;
+
+	} //}}}
 
 	public List<COO> readCOO(List<String> fileNames, String regex, Configuration conf, int numThreads)
 	{//{{{

@@ -77,10 +77,12 @@ public class Initialize {
 	}
 
 	public int getSysArgNum() {return this.sys_args_num;}
+	public Path getInputPath() {return this.inputPath;}
+	public Path getWorkPath() {return this.workPath;}
 
 	public boolean loadSysArgs() throws IOException, URISyntaxException, InterruptedException,
 			ExecutionException, ClassNotFoundException 
-	{
+	{//{{{
 		if (this.args.length < this.sys_args_num) 
 		{
 			System.err.println("Wrong Command line args number");
@@ -112,13 +114,13 @@ public class Initialize {
 		this.conf.setInt(HarpDAALConstants.NUM_ITERATIONS, this.iterations);
 
 		return true;
-	}
+	}//}}}
 
 
 	public Job createJob(String job_name, java.lang.Class<?> launcherCls, 
 		java.lang.Class<? extends org.apache.hadoop.mapreduce.Mapper> mapperCls) 
 			throws IOException, URISyntaxException
-	{
+	{//{{{
 		Job thisjob = Job.getInstance(this.conf, job_name);
 		JobConf thisjobConf = (JobConf) thisjob.getConfiguration();
 
@@ -148,7 +150,7 @@ public class Initialize {
 
 		return thisjob;
 
-	}
+	}//}}}
 
 	
 

@@ -119,8 +119,10 @@ public class KMUtil {
     String localInputDir, FileSystem fs,
     Path dataDir) throws IOException,
     InterruptedException, ExecutionException {
+
     int pointsPerFile =
       numOfDataPoints / numPointFiles;
+
     System.out.println("Writing " + pointsPerFile
       + " vectors to a file");
     // Check data directory

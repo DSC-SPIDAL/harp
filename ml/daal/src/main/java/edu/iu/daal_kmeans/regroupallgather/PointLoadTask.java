@@ -27,6 +27,7 @@ import org.apache.hadoop.fs.Path;
 
 import edu.iu.harp.schdynamic.Task;
 import edu.iu.data_gen.*;
+import edu.iu.datasource.*;
 
 public class PointLoadTask implements
   Task<String, double[]> {
