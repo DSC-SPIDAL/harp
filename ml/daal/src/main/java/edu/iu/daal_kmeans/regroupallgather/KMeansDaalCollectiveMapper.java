@@ -16,19 +16,27 @@
 
 package edu.iu.daal_kmeans.regroupallgather;
 
+
+
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
+
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Arrays;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.CollectiveMapper;
+
+import it.unimi.dsi.fastutil.ints.IntArrays;
 
 import edu.iu.harp.example.DoubleArrPlus;
 import edu.iu.harp.partition.Partition;
@@ -89,6 +97,7 @@ public class KMeansDaalCollectiveMapper extends CollectiveMapper<String, String,
 	private static HarpDAALDataSource datasource;
 	private static HarpDAALComm harpcomm;	
 	private static DaalContext daal_Context = new DaalContext();
+	private List<String> inputFiles;
 
 	/**
 	 * Mapper configuration.
@@ -139,8 +148,9 @@ public class KMeansDaalCollectiveMapper extends CollectiveMapper<String, String,
 			}
 
 			this.conf = context.getConfiguration();
+			this.inputFiles = pointFiles;
 			//init data source
-			this.datasource = new HarpDAALDataSource(pointFiles, this.fileDim, this.harpThreads, this.conf);
+			this.datasource = new HarpDAALDataSource(this.harpThreads, this.conf);
 			// create communicator
 			this.harpcomm= new HarpDAALComm(this.getSelfID(), this.getMasterID(), this.num_mappers, daal_Context, this);
 
@@ -159,18 +169,17 @@ public class KMeansDaalCollectiveMapper extends CollectiveMapper<String, String,
 	 * @return 
 	 */
 	private void runKmeans(List<String> fileNames) throws IOException 
-	{
+	{//{{{
 
 		long start_execution = System.currentTimeMillis();
 		this.fileNames = fileNames;
 
 		// ---------------- load in training data ----------------
-		List<double[]> pointArrays = this.datasource.loadDenseCSVFiles(","); 
+		NumericTable trainingdata_daal = this.datasource.createDenseNumericTable(this.inputFiles, this.vectorSize, ",", this.daal_Context);
 
 		// ---------- load in centroids (model) data ----------
 		// create a table to hold centroids data
 		Table<DoubleArray> cenTable = new Table<>(0, new DoubleArrPlus());
-		//
 		if (this.isMaster()) 
 		{
 			createCenTable(cenTable);
@@ -179,8 +188,6 @@ public class KMeansDaalCollectiveMapper extends CollectiveMapper<String, String,
 
 		// Bcast centroids to other mappers
 		bcastCentroids(cenTable, this.getMasterID());
-		// convert training data fro harp to daal
-		NumericTable trainingdata_daal = convertTrainData(pointArrays);
 		// create a daal kmeans kernel object
 		DistributedStep1Local kmeansLocal = new DistributedStep1Local(daal_Context, Double.class, Method.defaultDense, this.numCentroids);
 		// set up input training data
@@ -213,28 +220,14 @@ public class KMeansDaalCollectiveMapper extends CollectiveMapper<String, String,
 
 		// Write out centroids
 		if (this.isMaster()) {
-			KMUtil.storeCentroids(this.conf, this.cenDir,
+			storeCentroids(this.conf, this.cenDir,
 					cenTable, this.cenVecSize, "output");
 		}
 
 		cenTable.release();
 		LOG.info("Execution Time: " + (System.currentTimeMillis() - start_execution));
 
-	}
-
-	/**
-	 * @brief Load training data from hdfs to harp
-	 *
-	 * @return linkedlist of data points (vector) 
-	 */
-	private List<double[]> LoadTrainingData()
-	{
-		List<double[]> pointArrays = KMUtil.loadPoints(this.fileNames,
-				this.vectorSize, this.conf, this.numThreads);
-		LOG.info("read in pointArray size: " + pointArrays.size());
-		return pointArrays;
-	}
-
+	}//}}}
 
 	/**
 	 * @brief create a harp table to hold centroids
@@ -329,72 +322,25 @@ public class KMeansDaalCollectiveMapper extends CollectiveMapper<String, String,
 	 *
 	 * @return 
 	 */
-	private void bcastCentroids(
-			Table<DoubleArray> table, int bcastID)
-			throws IOException {
-			long startTime = System.currentTimeMillis();
-			boolean isSuccess = false;
-			try {
-				isSuccess =
-					this.broadcast("main",
-							"broadcast-centroids", table, bcastID,
-							false);
-			} catch (Exception e) {
-				LOG.error("Fail to bcast.", e);
-			}
-			long endTime = System.currentTimeMillis();
-			LOG.info("Bcast centroids (ms): "
-					+ (endTime - startTime));
-			if (!isSuccess) {
-				throw new IOException("Fail to bcast");
-			}
-			}
-
-
-	/**
-	 * @brief convert training data from harp to daal
-	 *
-	 * @param pointArrays
-	 *
-	 * @return 
-	 */
-	private NumericTable convertTrainData(List<double[]> pointArrays)
-	{
-
-		//---------------- convert cenTable and pointArrays to Daal table ------------------
-		LOG.info("Convert pointArray size: " + pointArrays.size());
-
-		//create the daal table for pointsArrays
-		long nFeature = this.vectorSize;
-		long totalLength = 0;
-		//
-		long[] array_startP = new long[pointArrays.size()];
-		double[][] array_data = new double[pointArrays.size()][];
-		//
-		for(int k=0;k<pointArrays.size();k++)
-		{
-			array_data[k] = pointArrays.get(k);
-			array_startP[k] = totalLength;
-			totalLength += pointArrays.get(k).length;
+	private void bcastCentroids(Table<DoubleArray> table, int bcastID) throws IOException 
+	{//{{{
+		long startTime = System.currentTimeMillis();
+		boolean isSuccess = false;
+		try {
+			isSuccess =
+				this.broadcast("main",
+						"broadcast-centroids", table, bcastID,
+						false);
+		} catch (Exception e) {
+			LOG.error("Fail to bcast.", e);
 		}
-
-		long tableSize = totalLength/nFeature;
-		LOG.info("Table size of training daal table: " + tableSize);
-		NumericTable pointsArray_daal = new HomogenNumericTable(daal_Context, Double.class, nFeature, tableSize, NumericTable.AllocationFlag.DoAllocate);
-
-		int row_idx = 0;
-		int row_len = 0;
-		for (int k=0; k<pointArrays.size(); k++) 
-		{
-			row_len = (array_data[k].length)/(int)nFeature;
-			DoubleBuffer array_data_buf = DoubleBuffer.wrap(array_data[k]);
-			pointsArray_daal.releaseBlockOfRows(row_idx, row_len, array_data_buf);
-			row_idx += row_len;
+		long endTime = System.currentTimeMillis();
+		LOG.info("Bcast centroids (ms): "
+				+ (endTime - startTime));
+		if (!isSuccess) {
+			throw new IOException("Fail to bcast");
 		}
-
-		return pointsArray_daal;
-	}
-
+	}//}}}
 
 	/**
 	 * @brief create centroid table at DAAL side
@@ -402,7 +348,7 @@ public class KMeansDaalCollectiveMapper extends CollectiveMapper<String, String,
 	 * @return NumericTable at DAAL side 
 	 */
 	private NumericTable createCenTableDAAL()
-	{
+	{//{{{
 		//create daal table for cenTable first 
 		long nFeature_cen = this.vectorSize;
 		long totalLength_cen = this.numCentroids*nFeature_cen;
@@ -410,7 +356,7 @@ public class KMeansDaalCollectiveMapper extends CollectiveMapper<String, String,
 		NumericTable cenTable_daal = new HomogenNumericTable(daal_Context, Double.class, nFeature_cen, tableSize_cen, NumericTable.AllocationFlag.DoAllocate);
 		this.buffer_array_cen = new double[(int)totalLength_cen];
 		return cenTable_daal;
-	}
+	}//}}}
 
 
 	/**
@@ -422,7 +368,7 @@ public class KMeansDaalCollectiveMapper extends CollectiveMapper<String, String,
 	 * @return 
 	 */
 	private void convertCenTableHarpToDAAL(Table<DoubleArray> cenTable, NumericTable cenTable_daal)
-	{
+	{//{{{
 
 		long nFeature_cen = cenTable_daal.getNumberOfColumns(); 
 		long tableSize_cen = cenTable_daal.getNumberOfRows();
@@ -472,7 +418,7 @@ public class KMeansDaalCollectiveMapper extends CollectiveMapper<String, String,
 		DoubleBuffer array_cen_buf = DoubleBuffer.wrap(this.buffer_array_cen);
 		cenTable_daal.releaseBlockOfRows(0, tableSize_cen, array_cen_buf);
 
-	}
+	}//}}}
 
 
 	/**
@@ -485,7 +431,7 @@ public class KMeansDaalCollectiveMapper extends CollectiveMapper<String, String,
 	 * @return 
 	 */
 	private void convertCenTableDAALToHarp(Table<DoubleArray> cenTable, PartialResult pres)
-	{
+	{//{{{
 
 		int cenTableNumPartition = cenTable.getNumPartitions();
 		double[] partialSum = (double[]) ((HomogenNumericTable)pres.get(PartialResultId.partialSums)).getDoubleArray();
@@ -511,7 +457,7 @@ public class KMeansDaalCollectiveMapper extends CollectiveMapper<String, String,
 				System.out.println("Thread interrupted.");
 			}
 		}
-	}
+	}//}}}
 
 	/**
 	 * @brief comm centroids data among mappers by using regroup and allgather operations
@@ -522,13 +468,13 @@ public class KMeansDaalCollectiveMapper extends CollectiveMapper<String, String,
 	 * @return 
 	 */
 	private void comm_regroup_allgather(Table<DoubleArray> cenTable, PartialResult pres)
-	{
+	{//{{{
 		convertCenTableDAALToHarp(cenTable, pres);
 		regroup("main", "regroup", cenTable, new Partitioner(this.getNumWorkers()));
 		calculateAvgCenTable(cenTable);
 		allgather("main", "allgather", cenTable);
 		this.barrier("main", "regroupallgather-sync");
-	}
+	}//}}}
 
 	/**
 	 * @brief comm centroids data among mappers by using an allreduce operation 
@@ -539,12 +485,12 @@ public class KMeansDaalCollectiveMapper extends CollectiveMapper<String, String,
 	 * @return 
 	 */
 	private void comm_allreduce(Table<DoubleArray> cenTable, PartialResult pres)
-	{
+	{//{{{
 		convertCenTableDAALToHarp(cenTable, pres);
 		allreduce("main", "allreduce", cenTable);
 		this.barrier("main", "allreduce-sync");
 		calculateAvgCenTable(cenTable);
-	}
+	}//}}}
 
 	/**
 	 * @brief comm centroids data among mappers by first reducing centroids to the master 
@@ -556,7 +502,7 @@ public class KMeansDaalCollectiveMapper extends CollectiveMapper<String, String,
 	 * @return 
 	 */
 	private void comm_broadcastreduce(Table<DoubleArray> cenTable, PartialResult pres)
-	{
+	{//{{{
 		convertCenTableDAALToHarp(cenTable, pres);
 		reduce("main", "reduce", cenTable, this.getMasterID());
 
@@ -565,7 +511,7 @@ public class KMeansDaalCollectiveMapper extends CollectiveMapper<String, String,
 
 		broadcast("main", "bcast", cenTable, this.getMasterID(), false);
 		this.barrier("main", "braodcast-sync");
-	}
+	}//}}}
 
 	/**
 	 * @brief clean contents of dataTable
@@ -575,10 +521,10 @@ public class KMeansDaalCollectiveMapper extends CollectiveMapper<String, String,
 	 * @return 
 	 */
 	private void cleanTableContent(Table<DoubleArray> dataTable)
-	{
+	{//{{{
 		for(Partition<DoubleArray> ap : dataTable.getPartitions())
 			Arrays.fill(ap.get().get(), 0);
-	}
+	}//}}}
 
 	/**
 	 * @brief comm centroids data among mappers by first push local centroids table to a 
@@ -591,7 +537,7 @@ public class KMeansDaalCollectiveMapper extends CollectiveMapper<String, String,
 	 * @return 
 	 */
 	private void comm_push_pull(Table<DoubleArray> cenTable, PartialResult pres)
-	{
+	{//{{{
 		convertCenTableDAALToHarp(cenTable, pres);
 		if (pushpullGlobal == null)
 		{
@@ -618,7 +564,7 @@ public class KMeansDaalCollectiveMapper extends CollectiveMapper<String, String,
 		pull("main", "pull", cenTable, pushpullGlobal, false);
 		this.barrier("main", "pullsync");
 
-	}
+	}//}}}
 
 	/**
 	 * @brief calculate the centroids by averaging the values from all
@@ -629,7 +575,7 @@ public class KMeansDaalCollectiveMapper extends CollectiveMapper<String, String,
 	 * @return 
 	 */
 	private void calculateAvgCenTable(Table<DoubleArray> cenTable)
-	{
+	{//{{{
 
 		LinkedList<AvgCalcTask> avg_tasks = new LinkedList<>();
 		for (int i = 0; i < this.numThreads; i++) {
@@ -652,7 +598,7 @@ public class KMeansDaalCollectiveMapper extends CollectiveMapper<String, String,
 			avg_compute.waitForOutput();
 		}
 
-	}
+	}//}}}
 
 	/**
 	 * @brief print out the centroids table 
@@ -665,7 +611,7 @@ public class KMeansDaalCollectiveMapper extends CollectiveMapper<String, String,
 	 * @return 
 	 */
 	private void printTable(Table<DoubleArray> dataTable, int row, int dim, int iter) 
-	{
+	{//{{{
 		// print header
 		System.out.println("Centroids values in iteration: " + iter);
 
@@ -686,10 +632,10 @@ public class KMeansDaalCollectiveMapper extends CollectiveMapper<String, String,
 				System.out.println();
 			}
 		}
-	}
+	}//}}}
 
 	private void printTableAll(Table<DoubleArray> dataTable, int dim, int iter) 
-	{
+	{//{{{
 		// print header
 		System.out.println("Centroids values in iteration: " + iter);
 		int col_print = 0; 
@@ -707,7 +653,7 @@ public class KMeansDaalCollectiveMapper extends CollectiveMapper<String, String,
 			System.out.println();
 		}
 		// }
-	}
+	}//}}}
 	/**
 	 * @brief print out a single row of centroids table (a single centroid)
 	 *
@@ -718,7 +664,7 @@ public class KMeansDaalCollectiveMapper extends CollectiveMapper<String, String,
 	 * @return 
 	 */
 	private void printTableRow(Table<DoubleArray> dataTable, int row_id, int dim) 
-	{
+	{//{{{
 		int col_print = 0; 
 		// only print out a specified number of centroids
 		Partition<DoubleArray> ap = dataTable.getPartition(row_id);
@@ -732,5 +678,37 @@ public class KMeansDaalCollectiveMapper extends CollectiveMapper<String, String,
 				System.out.print(res[i] + "\t");
 			System.out.println();
 		}
+	}//}}}
+
+	private void storeCentroids(Configuration configuration, String cenDir, Table<DoubleArray> cenTable, int cenVecSize, String name) throws IOException 
+	{
+		String cFile = cenDir + File.separator + "out" + File.separator + name;
+		Path cPath = new Path(cFile);
+		LOG.info("centroids path: " + cPath.toString());
+		FileSystem fs = FileSystem.get(configuration);
+		fs.delete(cPath, true);
+		FSDataOutputStream out = fs.create(cPath);
+		BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(out));
+		int linePos = 0;
+		int[] idArray = cenTable.getPartitionIDs().toArray(new int[0]);
+		IntArrays.quickSort(idArray);
+		for (int i = 0; i < idArray.length; i++) {
+			Partition<DoubleArray> partition =
+				cenTable.getPartition(idArray[i]);
+			for (int j = 0; j < partition.get().size(); j++) {
+				linePos = j % cenVecSize;
+				if (linePos == (cenVecSize - 1)) {
+					bw.write(partition.get().get()[j]
+							+ "\n");
+				} else if (linePos > 0) {
+					// Every row with vectorSize + 1 length,
+					// the first one is a count,
+					// ignore it in output
+					bw.write(partition.get().get()[j] + " ");
+				}
+			}
+		}
+		bw.flush();
+		bw.close();
 	}
 }

@@ -141,15 +141,19 @@ public class MTReader{
 
 		this.totalLine = 0;
 		this.totalPoints = 0;
+
 		while (compute.hasOutput()) {
 
 			List<double[]> output = compute.waitForOutput();
 			if (output != null) {
-				totalLine += output.size();
-				totalPoints += output.size()*dim;
+				// totalLine += output.size();
+				// totalPoints += output.size()*dim;
 				arrays.addAll(output);
 			}
 		}
+
+		this.totalLine = arrays.size();
+		this.totalPoints = arrays.size()*dim;
 
 		return arrays;
 	} //}}}

@@ -63,11 +63,11 @@ import com.intel.daal.services.Environment;
 
 public class HarpDAALDataSource
 {
-   private List<String> hdfs_filenames;
+   private List<String> hdfs_filenames; //to remove
    private int harpthreads; // threads used in parallel data reading/transfer
-   private List<double[]>[] datalist;
+   private List<double[]>[] datalist; // to remove
    private Configuration conf; 
-   private int dim;
+   private int dim; // to remove
    private int totallines;
    private int totalPoints;
    private double[] testData;
@@ -113,6 +113,20 @@ public class HarpDAALDataSource
 	this.testData = null;
 	this.numTestRows = 0;
 	this.csrlabels = null;
+   }
+
+   public HarpDAALDataSource(int harpthreads, Configuration conf)
+   {
+	// this.hdfs_filenames = hdfs_filenames;
+	this.harpthreads = harpthreads;
+	this.conf = conf;
+	// this.dim = 0;
+	// this.datalist = null;
+	this.totallines = 0;
+	this.totalPoints = 0;
+	// this.testData = null;
+	// this.numTestRows = 0;
+	// this.csrlabels = null;
    }
 
    // -------------- COO files I/O --------------
@@ -309,16 +323,6 @@ public class HarpDAALDataSource
 	this.totalPoints = reader.getTotalPoints();
    }//}}}
 
-   public List<double[]> loadDenseCSVFiles(String sep)
-   {//{{{
-
-     	MTReader reader = new MTReader();
-	List<double[]> output = reader.readDenseCSV(this.hdfs_filenames, this.dim, sep, this.conf, this.harpthreads);
-	this.totallines = reader.getTotalLines();
-	this.totalPoints = reader.getTotalPoints();
-	return output;
-
-   }//}}}
 
    public void loadDataBlock(NumericTable dst_table)
    {//{{{
@@ -436,6 +440,86 @@ public class HarpDAALDataSource
 
 	  return inputTable;
    }
+
+   /**
+    * @brief create a HomogenNumericTable from a list of dense CSV files with fixed feature dimension
+    *
+    * @param inputFiles
+    * @param nFeatures
+    * @param sep
+    * @param context
+    *
+    * @return 
+    */
+   public NumericTable createDenseNumericTable(List<String> inputFiles, int nFeatures, String sep, DaalContext context) throws IOException
+   {//{{{
+	  //load in data block
+	  List<double[]> inputData = this.loadDenseCSVFiles(inputFiles, nFeatures, sep);
+
+	  // create daal table
+	  NumericTable inputTable = new HomogenNumericTable(context, Double.class, nFeatures, inputData.size(), NumericTable.AllocationFlag.DoAllocate);
+	  
+	  // load data blk to daal table
+	  this.loadDataBlock(inputTable, inputData, nFeatures);
+	  return inputTable;
+   }//}}}
+
+   public List<double[]> loadDenseCSVFiles(List<String> inputFiles, int nFeatures, String sep)
+   {//{{{
+
+     	MTReader reader = new MTReader();
+	List<double[]> output = reader.readDenseCSV(inputFiles, nFeatures, sep, this.conf, this.harpthreads);
+	return output;
+
+   }//}}}
+
+   private void loadDataBlock(NumericTable dst_table, List<double[]> inputData, int nFeatures)
+   {//{{{
+
+      // check the datalist obj
+      if (inputData == null)
+      {
+	 LOG.info("Error no hdfs data to load");
+	 return;
+      }
+
+      int totalRows = inputData.size();
+      int rowBlkStart = 0;
+      int rowBlkEnd = 0;
+      int rowBlkSize = totalRows/this.harpthreads; 
+      while(rowBlkEnd < totalRows)
+      {
+	      // get a sublist
+	      rowBlkEnd = (rowBlkStart + rowBlkSize) > totalRows ? totalRows : (rowBlkStart + rowBlkSize);
+	      List<double[]> blk_elem = inputData.subList(rowBlkStart, rowBlkEnd);
+
+	      double[] rowblocks = new double[blk_elem.size()*nFeatures]; 
+	      for (int j=0;j<blk_elem.size();j++)
+		      System.arraycopy(blk_elem.get(j), 0, rowblocks, j*nFeatures, nFeatures);
+
+	      //copy rowblock to NumericTable
+	      dst_table.releaseBlockOfRows(rowBlkStart, blk_elem.size(), DoubleBuffer.wrap(rowblocks));
+
+	      rowBlkStart = rowBlkEnd;
+      }
+
+      //copy block of rows from this.datalist to DAAL NumericTable 
+      // int rowIdx = 0; 
+      // for(int i=0;i<inputData.length;i++)
+      // {
+	//  List<double[]> elemList = this.datalist[i];
+	//  double[] rowblocks = new double[elemList.size()*this.dim]; 
+	//  for (int j=0;j<elemList.size();j++)
+ 	// 	System.arraycopy(elemList.get(j), 0, rowblocks, j*dim, dim);
+      //
+	//  //copy rowblock to NumericTable
+	//  dst_table.releaseBlockOfRows(rowIdx, elemList.size(), DoubleBuffer.wrap(rowblocks));
+	//  rowIdx += elemList.size();
+      // }
+      //
+      // this.datalist = null;
+
+   }//}}}
 
    public NumericTable createCSRNumericTableInput(DaalContext context) throws IOException
    {
