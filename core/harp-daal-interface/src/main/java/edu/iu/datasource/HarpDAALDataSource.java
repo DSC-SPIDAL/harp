@@ -464,12 +464,145 @@ public class HarpDAALDataSource
 	  return inputTable;
    }//}}}
 
+   public NumericTable createDenseNumericTable(String inputFile, int nFeatures, String sep, DaalContext context) throws IOException
+   {//{{{
+	  //load in data block
+	  List<double[]> inputData = this.loadDenseCSVFiles(inputFile, nFeatures, sep);
+
+	  // create daal table
+	  NumericTable inputTable = new HomogenNumericTable(context, Double.class, nFeatures, inputData.size(), NumericTable.AllocationFlag.DoAllocate);
+	  
+	  // load data blk to daal table
+	  this.loadDataBlock(inputTable, inputData, nFeatures);
+	  return inputTable;
+
+   }//}}}
+
+   public NumericTable[] createDenseNumericTableSplit(List<String> inputFiles, int nFeature1, int nFeature2, String sep, DaalContext context) throws IOException
+   {//{{{
+
+	   //load in data block
+	   List<double[]> inputData = this.loadDenseCSVFiles(inputFiles, (nFeature1+nFeature2), sep);
+
+	   // create daal table
+	   NumericTable[] inputTable = new NumericTable[2];
+	   inputTable[0] = new HomogenNumericTable(context, Double.class, nFeature1, inputData.size(), NumericTable.AllocationFlag.DoAllocate);
+	   inputTable[1] = new HomogenNumericTable(context, Double.class, nFeature2, inputData.size(), NumericTable.AllocationFlag.DoAllocate);
+
+	   MergedNumericTable mergedTable = new MergedNumericTable(context);
+	   mergedTable.addNumericTable(inputTable[0]);
+	   mergedTable.addNumericTable(inputTable[1]);
+
+	   // load data blk to daal table
+	   this.loadDataBlock(mergedTable, inputData, (nFeature1+nFeature2));
+
+	   return inputTable;
+
+   }//}}}
+
+   public NumericTable[] createDenseNumericTableSplit(String inputFile, int nFeature1, int nFeature2, String sep, DaalContext context) throws IOException
+   {//{{{
+
+	   //load in data block
+	   List<double[]> inputData = this.loadDenseCSVFiles(inputFile, (nFeature1+nFeature2), sep);
+
+	   // create daal table
+	   NumericTable[] inputTable = new NumericTable[2];
+	   inputTable[0] = new HomogenNumericTable(context, Double.class, nFeature1, inputData.size(), NumericTable.AllocationFlag.DoAllocate);
+	   inputTable[1] = new HomogenNumericTable(context, Double.class, nFeature2, inputData.size(), NumericTable.AllocationFlag.DoAllocate);
+
+	   MergedNumericTable mergedTable = new MergedNumericTable(context);
+	   mergedTable.addNumericTable(inputTable[0]);
+	   mergedTable.addNumericTable(inputTable[1]);
+
+	   // load data blk to daal table
+	   this.loadDataBlock(mergedTable, inputData, (nFeature1+nFeature2));
+
+	   return inputTable;
+
+   }//}}}
+
    public List<double[]> loadDenseCSVFiles(List<String> inputFiles, int nFeatures, String sep)
    {//{{{
 
      	MTReader reader = new MTReader();
 	List<double[]> output = reader.readDenseCSV(inputFiles, nFeatures, sep, this.conf, this.harpthreads);
 	return output;
+
+   }//}}}
+
+   public List<double[]> loadDenseCSVFiles(String inputFile, int nFeatures, String sep)
+   {//{{{
+
+	   Path inputFilePaths = new Path(inputFile);
+	   List<String> inputFileList = new LinkedList<>();
+
+	   try {
+		   FileSystem fs =
+			   inputFilePaths.getFileSystem(conf);
+		   RemoteIterator<LocatedFileStatus> iterator =
+			   fs.listFiles(inputFilePaths, true);
+
+		   while (iterator.hasNext()) {
+			   String name =
+				   iterator.next().getPath().toUri()
+				   .toString();
+			   inputFileList.add(name);
+		   }
+
+	   } catch (IOException e) {
+		   LOG.error("Fail to get test files", e);
+	   }
+
+	   List<double[]> points = new LinkedList<double[]>();
+
+	   FSDataInputStream in = null;
+
+	   //loop over all the files in the list
+	   ListIterator<String> file_itr = inputFileList.listIterator();
+	   while (file_itr.hasNext())
+	   {
+		   String file_name = file_itr.next();
+		   LOG.info("read in file name: " + file_name);
+
+		   Path file_path = new Path(file_name);
+		   try {
+
+			   FileSystem fs =
+				   file_path.getFileSystem(conf);
+			   in = fs.open(file_path);
+
+		   } catch (Exception e) {
+			   LOG.error("Fail to open file "+ e.toString());
+			   return null;
+		   }
+
+		   //read file content
+		   try {
+			   while(true)
+			   {
+				   String line = in.readLine();
+				   if (line == null) break;
+
+				   String[] lineData = line.split(sep);
+				   double[] cell = new double[nFeatures];
+
+				   for(int t =0 ; t< nFeatures; t++)
+					   cell[t] = Double.parseDouble(lineData[t]);
+
+				   points.add(cell);
+			   }
+
+			   in.close();
+
+		   } catch (Exception e) {
+			   LOG.error("Fail to read data "+ e.toString());
+			   return null;
+		   }
+
+	   }
+
+	   return points;
 
    }//}}}
 

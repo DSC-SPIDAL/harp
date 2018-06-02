@@ -33,7 +33,10 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
+import edu.iu.datasource.*;
 import edu.iu.data_aux.*;
+import edu.iu.data_comm.*;
+import edu.iu.data_gen.*;
 
 import org.apache.hadoop.filecache.DistributedCache;
 import java.net.URI;
@@ -55,203 +58,70 @@ implements Tool {
    * Launches all the tasks in order.
    */
   @Override
-  public int run(String[] args) throws Exception {
+  public int run(String[] args) throws Exception 
+  {
 
-    /* Put shared libraries into the distributed cache */
-    Configuration conf = this.getConf();
+	  /* Put shared libraries into the distributed cache */
+	  Configuration conf = this.getConf();
+	  Initialize init = new Initialize(conf, args);
 
-     DistributedCache.createSymlink(conf);
-     DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libJavaAPI.so#libJavaAPI.so"), conf);
-     DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbb.so.2#libtbb.so.2"), conf);
-     DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbb.so#libtbb.so"), conf);
-     DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbbmalloc.so.2#libtbbmalloc.so.2"), conf);
-     DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbbmalloc.so#libtbbmalloc.so"), conf);
-    
-     if (args.length < 13) {
-       System.err.println("Usage: edu.iu.daal_naive "
-                 + "<input train dir> "
-                 + "<input test dir>"
-                 + "<input ground truth dir>"
-                 + "<workDirPath> "
-                 + "<mem per mapper>"
-                 + "<vec size>"
-                 + "<num classes>"
-                 + "<num testpoints>"
-                 + "<num mappers> <thread per worker>"
-	 			+ "<generateData>" 
-	 			+ "<num of generated train points"
-	 			+ "<num of train files");
-       ToolRunner.printGenericCommandUsage(System.err);
-       return -1;
-     }
-    
-     String inputDirPath = args[0];            
-     String testDirPath = args[1];            
-     String testGroundTruthDirPath = args[2];            
-     String workDirPath = args[3];    
-     int mem = Integer.parseInt(args[4]);
-     int vecsize = Integer.parseInt(args[5]);
-     int num_class = Integer.parseInt(args[6]);
-     int num_test = Integer.parseInt(args[7]);
-     int numMapTasks = Integer.parseInt(args[8]);      
-     int numThreadsPerWorker = Integer.parseInt(args[9]);
-     boolean generateData = Boolean.parseBoolean(args[10]);
-     int num_train_points = Integer.parseInt(args[11]);
-     int numfiles = Integer.parseInt(args[12]);
-    
-     System.out.println("Mem (MB) per mapper = "+ mem);
-     System.out.println("Feature dim = "+ vecsize);
-     System.out.println("num of classes = "+ num_class);
-     System.out.println("num of testpoints = "+ num_test);
-     System.out.println("Number of Map Tasks = "+ numMapTasks);
-     System.out.println("Threads per mapper = "+ numThreadsPerWorker);
-    
-     launch(inputDirPath, testDirPath, testGroundTruthDirPath, workDirPath, mem, vecsize, num_class, num_test, numMapTasks, 
-			numThreadsPerWorker, generateData, num_train_points, numfiles);
-    return 0;
-}
+	  /* Put shared libraries into the distributed cache */
+	  init.loadDistributedLibs();
+	  // load args
+	  init.loadSysArgs();
 
-private void launch(String inputDirPath, 
-		String testDirPath, 
-		String testGroundTruthDirPath, 
-		String workDirPath, int mem, int vecsize, int num_class, int num_test, 
-		int numMapTasks, int numThreadsPerWorker, boolean generateData, int num_train_points,
-		int numfiles) throws IOException,
-	URISyntaxException, InterruptedException,
-	ExecutionException, ClassNotFoundException {
+	  //load app args
+	  conf.setInt(HarpDAALConstants.FILE_DIM, Integer.parseInt(args[init.getSysArgNum()]));
+	  conf.setInt(HarpDAALConstants.FEATURE_DIM, Integer.parseInt(args[init.getSysArgNum()+1]));
+	  conf.setInt(HarpDAALConstants.NUM_CLASS, Integer.parseInt(args[init.getSysArgNum()+2]));
+    	  conf.set(HarpDAALConstants.TEST_FILE_PATH, args[init.getSysArgNum()+3]);
+    	  conf.set(HarpDAALConstants.TEST_TRUTH_PATH, args[init.getSysArgNum()+4]);
 
-		Configuration configuration = getConf();
-		FileSystem fs = FileSystem.get(configuration);
-		Path inputDir = new Path(inputDirPath);
-		Path testDir = new Path(testDirPath);
-		Path testGroundTruthDir = new Path(testGroundTruthDirPath);
+	  // config job
+	  System.out.println("Starting Job");
+	  long perJobSubmitTime = System.currentTimeMillis();
+	  System.out.println("Start Job#"  + " "+ new SimpleDateFormat("HH:mm:ss.SSS").format(Calendar.getInstance().getTime()));
+	  Job naiveJob = init.createJob("naiveJob", NaiveDaalLauncher.class, NaiveDaalCollectiveMapper.class); 
 
-		Path workDir = new Path(workDirPath);
-		if (fs.exists(workDir)) {
-			fs.delete(workDir, true);
-			fs.mkdirs(workDir);
-		}
-		Path modelDir = new Path(workDirPath, "model");
-		fs.mkdirs(modelDir);
-		// Do not make output dir
-		Path outputDir = new Path(workDirPath, "output");
-		long startTime = System.currentTimeMillis();
+	  // initialize centroids data
+	  JobConf thisjobConf = (JobConf) naiveJob.getConfiguration();
+	  FileSystem fs = FileSystem.get(conf);
+	  int nFeatures = Integer.parseInt(args[init.getSysArgNum()+1]);
 
-		//test and generate training datasets
-		if (generateData)
-		{
-			System.out.println("Generate Naive Baytes Training datasets.");
-			NaiveUtil.generateData(num_train_points, num_test, vecsize, numfiles, num_class,
-					fs, "/tmp/naive", inputDir, testDir, testGroundTruthDir);
-		}
+	  //generate Data if required
+	  boolean generateData = Boolean.parseBoolean(args[init.getSysArgNum()+5]); 
+	  if (generateData)
+	  {
+		  Path inputPath = init.getInputPath();
+		  int nClass = Integer.parseInt(args[init.getSysArgNum()+2]);
+		  int total_points = Integer.parseInt(args[init.getSysArgNum()+6]);
+		  int total_files = Integer.parseInt(args[init.getSysArgNum()+7]);
 
-		runNaive(inputDir, testDirPath, testGroundTruthDirPath, mem, vecsize, num_class, num_test, numMapTasks,
-				numThreadsPerWorker, modelDir,
-				outputDir, configuration);
+		  Path testPath = new Path(args[init.getSysArgNum()+3]); 
+		  int total_test_points = Integer.parseInt(args[init.getSysArgNum()+8]);
+		  Path testGroundTruthPath = new Path(args[init.getSysArgNum()+4]); 
+		  String tmpDirPathName = args[init.getSysArgNum()+9];
 
-		long endTime = System.currentTimeMillis();
-		System.out
-			.println("Total Naive Execution Time: "
-					+ (endTime - startTime));
-}
+		  // replace it with naive specific data generator
+		  // generate training data
+		  DataGenerator.generateDenseDataAndIntLabelMulti(total_points, nFeatures, total_files, 2, 1, nClass, ",", inputPath, tmpDirPathName, fs);
+		  // generate test data a single file
+		  DataGenerator.generateDenseDataAndIntLabelMulti(total_test_points, nFeatures, 1, 2, 1, nClass, ",", testPath, tmpDirPathName, fs);
+		  // generate test groundtruth data a single file nFeature==1
+		  DataGenerator.generateDenseLabelMulti(total_test_points, 1, 1, nClass, ",", testGroundTruthPath, tmpDirPathName, fs);
+	  }
 
-private void runNaive(Path inputDir, String testDirPath, String testGroundTruthDirPath, int mem, int vecsize, int num_class, int num_test, 
-    int numMapTasks, int numThreadsPerWorker,
-     Path modelDir, Path outputDir,
-    Configuration configuration)
-    throws IOException, URISyntaxException,
-    InterruptedException, ClassNotFoundException {
+	  // finish job
+	  boolean jobSuccess = naiveJob.waitForCompletion(true);
+	  System.out.println("End Job#"  + " "+ new SimpleDateFormat("HH:mm:ss.SSS").format(Calendar.getInstance().getTime()));
+	  System.out.println("| Job#"  + " Finished in " + (System.currentTimeMillis() - perJobSubmitTime)+ " miliseconds |");
+	  if (!jobSuccess) {
+		  naiveJob.killJob();
+		  System.out.println("naiveJob failed");
+	  }
 
-    System.out.println("Starting Job");
-
-    long perJobSubmitTime =
-      System.currentTimeMillis();
-    System.out.println("Start Job#"  + " "
-      + new SimpleDateFormat("HH:mm:ss.SSS")
-        .format(
-          Calendar.getInstance().getTime()));
-
-    Job naiveJob =
-      configureNaiveJob(inputDir, testDirPath, testGroundTruthDirPath, mem, vecsize, num_class, num_test,
-        numMapTasks, numThreadsPerWorker,
-        modelDir, outputDir, configuration);
-
-    boolean jobSuccess =
-      naiveJob.waitForCompletion(true);
-
-    System.out.println("End Job#"  + " "
-      + new SimpleDateFormat("HH:mm:ss.SSS")
-        .format(
-          Calendar.getInstance().getTime()));
-
-    System.out
-      .println(
-        "| Job#"  + " Finished in "
-          + (System.currentTimeMillis()
-            - perJobSubmitTime)
-          + " miliseconds |");
-    // ----------------------------------------
-    if (!jobSuccess) {
-      naiveJob.killJob();
-      System.out.println(
-        "Naive Job failed");
-    }
+	  return 0;
   }
 
-  private Job configureNaiveJob(Path inputDir,
-    String testDirPath, String testGroundTruthDirPath,
-    int mem, int vecsize, int num_class, int num_test, int numMapTasks, int numThreadsPerWorker,
-    Path modelDir, Path outputDir,
-    Configuration configuration)
-    throws IOException, URISyntaxException {
 
-    configuration.set(Constants.TEST_FILE_PATH, testDirPath);
-    configuration.set(Constants.TEST_TRUTH_PATH, testGroundTruthDirPath);
-    configuration.setInt(Constants.NUM_MAPPERS, numMapTasks);
-    configuration.setInt(Constants.NUM_THREADS, numThreadsPerWorker);
-    configuration.setInt(Constants.VECTOR_SIZE, vecsize);
-    configuration.setInt(Constants.NUM_CLASS, num_class);
-    configuration.setInt(Constants.NUM_TEST, num_test);
-
-    Job job = Job.getInstance(configuration, "naive_job");
-    JobConf jobConf = (JobConf) job.getConfiguration();
-
-    jobConf.set("mapreduce.framework.name",
-      "map-collective");
-
-    jobConf.setInt(
-      "mapreduce.job.max.split.locations", 10000);
-
-    // mapreduce.map.collective.memory.mb
-    // 125000
-    jobConf.setInt(
-      "mapreduce.map.collective.memory.mb", mem);
-
-    jobConf.setInt("mapreduce.task.timeout", 60000000);
-    // mapreduce.map.collective.java.opts
-    // -Xmx120000m -Xms120000m
-    // int xmx = (mem - 5000) > (mem * 0.5)
-    //   ? (mem - 5000) : (int) Math.ceil(mem * 0.5);
-    int xmx = (int) Math.ceil((mem - 5000)*0.5);
-    int xmn = (int) Math.ceil(0.25 * xmx);
-    jobConf.set(
-      "mapreduce.map.collective.java.opts",
-      "-Xmx" + xmx + "m -Xms" + xmx + "m"
-        + " -Xmn" + xmn + "m");
-
-	jobConf.setInt("mapred.task.timeout", 1800000);
-
-    jobConf.setNumMapTasks(numMapTasks);
-
-    FileInputFormat.setInputPaths(job, inputDir);                         
-    FileOutputFormat.setOutputPath(job, outputDir);
-
-    job.setInputFormatClass(MultiFileInputFormat.class);
-    job.setJarByClass(NaiveDaalLauncher.class);
-    job.setMapperClass(NaiveDaalCollectiveMapper.class);
-    job.setNumReduceTasks(0);
-
-    System.out.println("Launcher launched");
-    return job;
-  }
 }

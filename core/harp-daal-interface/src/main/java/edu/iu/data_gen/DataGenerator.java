@@ -113,6 +113,120 @@ public class DataGenerator
 
 	}//}}}
 
+	public static void generateDenseLabelMulti(int num_points, int nFeatures, int num_files, int labelRange, 
+			String sep, Path dataDir, String tmpDirName, FileSystem fs) 
+			throws IOException, InterruptedException, ExecutionException
+	{//{{{
+
+		int pointsPerFile = num_points/num_files;
+		// clean data dir content 
+		if (fs.exists(dataDir)) {
+			fs.delete(dataDir, true);
+		}
+
+		// clean tmp local dir
+		File tmpDir = new File(tmpDirName);
+		if (tmpDir.exists() && tmpDir.isDirectory()) 
+		{
+			for (File file : tmpDir.listFiles()) 
+				file.delete();
+
+			tmpDir.delete();
+		}
+
+		boolean success = tmpDir.mkdir();
+		if (success) 
+			System.out.println("Directory: " + tmpDirName + " created");
+
+		if (pointsPerFile == 0) 
+			throw new IOException("No point to write.");
+
+		// create parallel Java threads pool 
+		int poolSize = Runtime.getRuntime().availableProcessors();
+		ExecutorService service = Executors.newFixedThreadPool(poolSize);
+
+		List<Future<?>> futures = new LinkedList<Future<?>>();
+
+		// generate each file in parallel
+		for (int k = 0; k < num_files; k++) 
+		{
+			Future<?> f =  service.submit(new DataGenMMDenseLabelTask(pointsPerFile, 
+				tmpDirName, Integer.toString(k), nFeatures, labelRange, sep));
+
+			futures.add(f); // add a new thread
+
+		}
+
+		for (Future<?> f : futures) {
+			f.get();
+		}
+
+		// Shut down the executor service so that this
+		// thread can exit
+		service.shutdownNow();
+		Path tmpDirPath = new Path(tmpDirName);
+		fs.copyFromLocalFile(tmpDirPath, dataDir);
+		DeleteFileFolder(tmpDirName);
+
+	}//}}}
+
+	public static void generateDenseDataAndIntLabelMulti(int num_points, int nFeatures, int num_files, double norm, 
+			double offset, int labelRange, String sep, Path dataDir, String tmpDirName, FileSystem fs) 
+			throws IOException, InterruptedException, ExecutionException
+	{//{{{
+
+		int pointsPerFile = num_points/num_files;
+		// clean data dir content 
+		if (fs.exists(dataDir)) {
+			fs.delete(dataDir, true);
+		}
+
+		// clean tmp local dir
+		File tmpDir = new File(tmpDirName);
+		if (tmpDir.exists() && tmpDir.isDirectory()) 
+		{
+			for (File file : tmpDir.listFiles()) 
+				file.delete();
+
+			tmpDir.delete();
+		}
+
+		boolean success = tmpDir.mkdir();
+		if (success) 
+			System.out.println("Directory: " + tmpDirName + " created");
+
+		if (pointsPerFile == 0) 
+			throw new IOException("No point to write.");
+
+		// create parallel Java threads pool 
+		int poolSize = Runtime.getRuntime().availableProcessors();
+		ExecutorService service = Executors.newFixedThreadPool(poolSize);
+
+		List<Future<?>> futures = new LinkedList<Future<?>>();
+
+		// generate each file in parallel
+		for (int k = 0; k < num_files; k++) 
+		{
+			Future<?> f =  service.submit(new DataGenMMDenseAndIntLabelTask(pointsPerFile, 
+				tmpDirName, Integer.toString(k), nFeatures, norm, offset, labelRange, sep));
+
+			futures.add(f); // add a new thread
+
+		}
+
+		for (Future<?> f : futures) {
+			f.get();
+		}
+
+		// Shut down the executor service so that this
+		// thread can exit
+		service.shutdownNow();
+		Path tmpDirPath = new Path(tmpDirName);
+		fs.copyFromLocalFile(tmpDirPath, dataDir);
+		DeleteFileFolder(tmpDirName);
+
+	}//}}}
+
 	public static void generateDenseDataSingle(int num_points, int nFeatures, double norm, double offset,
 			String sep, Path dataDir, FileSystem fs) throws IOException
 	{//{{{
