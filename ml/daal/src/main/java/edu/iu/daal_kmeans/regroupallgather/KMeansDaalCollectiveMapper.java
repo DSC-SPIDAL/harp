@@ -77,7 +77,6 @@ public class KMeansDaalCollectiveMapper extends CollectiveMapper<String, String,
 	private int harpThreads;
 	private int numIterations;
 	private Configuration conf;
-	private List<String> fileNames;
 	private String cenDir;
 	private String cenDirInit;
 
@@ -154,7 +153,7 @@ public class KMeansDaalCollectiveMapper extends CollectiveMapper<String, String,
 			// create communicator
 			this.harpcomm= new HarpDAALComm(this.getSelfID(), this.getMasterID(), this.num_mappers, daal_Context, this);
 
-			runKmeans(pointFiles);
+			runKmeans();
 			LOG.info("Total iterations in master view: "
 					+ (System.currentTimeMillis() - startTime));
 			}
@@ -162,17 +161,15 @@ public class KMeansDaalCollectiveMapper extends CollectiveMapper<String, String,
 	/**
 	 * @brief run K-means by invoking DAAL Java API
 	 *
-	 * @param fileNames
 	 * @param conf
 	 * @param context
 	 *
 	 * @return 
 	 */
-	private void runKmeans(List<String> fileNames) throws IOException 
+	private void runKmeans() throws IOException 
 	{//{{{
 
 		long start_execution = System.currentTimeMillis();
-		this.fileNames = fileNames;
 
 		// ---------------- load in training data ----------------
 		NumericTable trainingdata_daal = this.datasource.createDenseNumericTable(this.inputFiles, this.vectorSize, ",", this.daal_Context);
