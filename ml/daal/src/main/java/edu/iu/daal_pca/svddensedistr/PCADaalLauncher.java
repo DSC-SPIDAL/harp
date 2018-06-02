@@ -37,6 +37,10 @@ import org.apache.hadoop.filecache.DistributedCache;
 import java.net.URI;
 
 import edu.iu.fileformat.MultiFileInputFormat;
+import edu.iu.datasource.*;
+import edu.iu.data_aux.*;
+import edu.iu.data_comm.*;
+import edu.iu.data_gen.*;
 
 public class PCADaalLauncher extends Configured
   implements Tool {
@@ -53,138 +57,56 @@ public class PCADaalLauncher extends Configured
   @Override
   public int run(String[] args) throws Exception
   {
-    /* Put shared libraries into the distributed cache */
-    Configuration conf = this.getConf();
+	  /* Put shared libraries into the distributed cache */
+	  Configuration conf = this.getConf();
 
-    DistributedCache.createSymlink(conf);
-    DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libJavaAPI.so#libJavaAPI.so"), conf);
-    DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbb.so.2#libtbb.so.2"), conf);
-    DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbb.so#libtbb.so"), conf);
-    DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbbmalloc.so.2#libtbbmalloc.so.2"), conf);
-    DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbbmalloc.so#libtbbmalloc.so"), conf);
+	  Initialize init = new Initialize(conf, args);
 
-    if (args.length < 8)
-    {
-      System.err.println("Usage: edu.iu.pca.PCADaalLauncher "
-        + "<num Of DataPoints> <vector size> "
-        + "<num of point files per worker>"
-        + "<number of map tasks> <num threads>"
-        + "<mem>"
-        + "<work dir> <local points dir>");
-      ToolRunner.printGenericCommandUsage(System.err);
-      return -1;
-    }
+	  /* Put shared libraries into the distributed cache */
+	  init.loadDistributedLibs();
 
-    int numOfDataPoints = Integer.parseInt(args[0]);
-    int vectorSize = Integer.parseInt(args[1]);
-    int numPointFilePerWorker = Integer.parseInt(args[2]);
-    int numMapTasks = Integer.parseInt(args[3]);
-    int numThreads = Integer.parseInt(args[4]);
-    int mem = Integer.parseInt(args[5]);
-    String workDir = args[6];
-    String localPointFilesDir = args[7];
+	  // load args
+	  init.loadSysArgs();
 
-    boolean regenerateData = true;
-    if (args.length == 9)
-    {
-      regenerateData = Boolean.parseBoolean(args[8]);
-    }
+	  //load app args
+	  conf.setInt(HarpDAALConstants.FILE_DIM, Integer.parseInt(args[init.getSysArgNum()]));
+	  conf.setInt(HarpDAALConstants.FEATURE_DIM, Integer.parseInt(args[init.getSysArgNum()+1]));
 
-    System.out.println("Number of Map Tasks =" + numMapTasks);
+	  // config job
+	  System.out.println("Starting Job");
+	  long perJobSubmitTime = System.currentTimeMillis();
+	  System.out.println("Start Job#"  + " "+ new SimpleDateFormat("HH:mm:ss.SSS").format(Calendar.getInstance().getTime()));
+	  Job pcaJob = init.createJob("pcaJob", PCADaalLauncher.class, PCADaalCollectiveMapper.class); 
 
-    int numPointFiles = numMapTasks * numPointFilePerWorker;
-    if (numOfDataPoints / numPointFiles == 0)
-    {
-      return -1;
-    }
+	  // initialize centroids data
+	  JobConf thisjobConf = (JobConf) pcaJob.getConfiguration();
+	  FileSystem fs = FileSystem.get(conf);
+	  int nFeatures = Integer.parseInt(args[init.getSysArgNum()+1]);
+	  Path workPath = init.getWorkPath();
 
-    launch(numOfDataPoints, vectorSize, numPointFiles, numMapTasks, numThreads, mem, workDir, localPointFilesDir, regenerateData);
-    return 0;
+	  //generate Data if required
+	  boolean generateData = Boolean.parseBoolean(args[init.getSysArgNum()+2]); 
+	  if (generateData)
+	  {
+		  Path inputPath = init.getInputPath();
+		  int total_points = Integer.parseInt(args[init.getSysArgNum()+3]);
+		  int total_files = Integer.parseInt(args[init.getSysArgNum()+4]);
+		  String tmpDirPathName = args[init.getSysArgNum()+5];
+
+		  DataGenerator.generateDenseDataMulti(total_points, nFeatures, total_files, 2, 1, ",", inputPath, tmpDirPathName, fs);
+	  }
+
+	  // finish job
+	  boolean jobSuccess = pcaJob.waitForCompletion(true);
+	  System.out.println("End Job#"  + " "+ new SimpleDateFormat("HH:mm:ss.SSS").format(Calendar.getInstance().getTime()));
+	  System.out.println("| Job#"  + " Finished in " + (System.currentTimeMillis() - perJobSubmitTime)+ " miliseconds |");
+	  if (!jobSuccess) {
+		  pcaJob.killJob();
+		  System.out.println("pcaJob failed");
+	  }
+
+	  return 0;
   }
 
-  private void launch(int numOfDataPoints, int vectorSize, int numPointFiles, int numMapTasks,
-    int numThreads, int mem, String workDir, String localPointFilesDir, boolean generateData)
-  throws IOException, URISyntaxException, InterruptedException, ExecutionException, ClassNotFoundException
-  {
-    Configuration configuration = getConf();
-    Path workDirPath = new Path(workDir);
-    FileSystem fs = FileSystem.get(configuration);
-    Path dataDir = workDirPath;
 
-    Path outDir = new Path(workDirPath, "out");
-    if (fs.exists(outDir))
-    {
-      fs.delete(outDir, true);
-    }
-
-    if(generateData)
-    {
-      System.out.println("Generate data:");
-      PCAUtil.generateData(numOfDataPoints, vectorSize, numPointFiles,
-                        configuration, fs, dataDir, localPointFilesDir);
-
-    }
-
-    long startTime = System.currentTimeMillis();
-    runharpPCA(numOfDataPoints, vectorSize, numPointFiles, numMapTasks, numThreads, mem, dataDir, outDir, configuration);
-  }
-
-  private void runharpPCA( int numOfDataPoints, int vectorSize, int numPointFiles, int numMapTasks, int numThreads,
-    int mem, Path dataDir, Path outDir, Configuration configuration)
-    throws IOException, URISyntaxException, InterruptedException, ClassNotFoundException
-  {
-    System.out.println("Starting Job");
-    // ----------------------------------------------------------------------
-    long perJobSubmitTime = System.currentTimeMillis();
-    System.out.println("Start Job " + new SimpleDateFormat("HH:mm:ss.SSS").format(Calendar.getInstance().getTime()));
-    Job pcaJob = configurePCAJob(numOfDataPoints, vectorSize, numPointFiles, numMapTasks, numThreads, mem, dataDir, outDir, configuration);
-    System.out.println("Job" + " configure in " + (System.currentTimeMillis() - perJobSubmitTime) + " miliseconds.");
-    // ----------------------------------------------------------
-    boolean jobSuccess = pcaJob.waitForCompletion(true);
-    System.out.println("end Jod " + new SimpleDateFormat("HH:mm:ss.SSS").format(Calendar.getInstance().getTime()));
-    System.out.println("Job" + " finishes in " + (System.currentTimeMillis() - perJobSubmitTime)+ " miliseconds.");
-    // ---------------------------------------------------------
-    if (!jobSuccess)
-    {
-      System.out.println("PCA Job fails.");
-    }
-  }
-
-  private Job configurePCAJob(int numOfDataPoints,
-    int vectorSize, int numPointFiles, int numMapTasks, int numThreads,
-    int mem, Path dataDir, Path outDir, Configuration configuration)
-    throws IOException, URISyntaxException
-  {
-    Job job = Job.getInstance(configuration, "PCA_job");
-
-    FileInputFormat.setInputPaths(job, dataDir);
-    FileOutputFormat.setOutputPath(job, outDir);
-
-    job.setInputFormatClass(MultiFileInputFormat.class);
-    job.setJarByClass(PCADaalLauncher.class);
-    job.setMapperClass(PCADaalCollectiveMapper.class);
-    org.apache.hadoop.mapred.JobConf jobConf = (JobConf) job.getConfiguration();
-    jobConf.set("mapreduce.framework.name", "map-collective");
-    jobConf.setNumMapTasks(numMapTasks);
-    jobConf.setInt("mapreduce.job.max.split.locations", 10000);
-
-    // mapreduce.map.collective.memory.mb
-    // 125000
-    jobConf.setInt("mapreduce.map.collective.memory.mb", mem);
-
-    jobConf.setInt("mapreduce.task.timeout", 60000000);
-    int xmx = (int) Math.ceil((mem - 2000)*0.5);
-    int xmn = (int) Math.ceil(0.25 * xmx);
-    jobConf.set("mapreduce.map.collective.java.opts",
-      "-Xmx" + xmx + "m -Xms" + xmx + "m"
-        + " -Xmn" + xmn + "m");
-
-    job.setNumReduceTasks(0);
-    Configuration jobConfig = job.getConfiguration();
-    jobConfig.setInt(Constants.POINTS_PER_FILE, numOfDataPoints / numPointFiles);
-    jobConfig.setInt(Constants.VECTOR_SIZE, vectorSize);
-    jobConfig.setInt(Constants.NUM_MAPPERS, numMapTasks);
-    jobConfig.setInt(Constants.NUM_THREADS, numThreads);
-    return job;
-  }
 }
