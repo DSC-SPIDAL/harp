@@ -77,6 +77,16 @@ public class HarpDAALDataSource
    protected static final Log LOG = LogFactory
 		.getLog(HarpDAALDataSource.class);
 
+   /**
+    * @brief deprecated
+    *
+    * @param hdfs_filenames
+    * @param dim
+    * @param harpthreads
+    * @param conf
+    *
+    * @return 
+    */
    public HarpDAALDataSource(List<String> hdfs_filenames, int dim, int harpthreads, Configuration conf)
    {
 	this.hdfs_filenames = hdfs_filenames;
@@ -93,6 +103,7 @@ public class HarpDAALDataSource
 
    /**
     * @brief harpdaal data source with unspecified 
+    * deprecated
     * feature dimension
     *
     * @param hdfs_filenames
@@ -117,330 +128,14 @@ public class HarpDAALDataSource
 
    public HarpDAALDataSource(int harpthreads, Configuration conf)
    {
-	// this.hdfs_filenames = hdfs_filenames;
 	this.harpthreads = harpthreads;
 	this.conf = conf;
-	// this.dim = 0;
-	// this.datalist = null;
 	this.totallines = 0;
 	this.totalPoints = 0;
-	// this.testData = null;
-	// this.numTestRows = 0;
-	// this.csrlabels = null;
    }
 
-   // -------------- COO files I/O --------------
-   public List<COO> loadCOOFiles(String regex)
-   {//{{{
-      	MTReader reader = new MTReader();
-	List<COO> output = reader.readCOO(this.hdfs_filenames, regex, this.conf, this.harpthreads);
-	this.totallines = reader.getTotalLines();
-	this.totalPoints = reader.getTotalPoints();
-	return output;
-   }//}}}
-
-   public List<COO> loadCOOFiles(String FilePath, String regex)
-   {//{{{
-	   List<String> FilePathsList = new LinkedList<>();
-	   Path path = new Path(FilePath);
-	   try {
-		   FileSystem fs =
-			   path.getFileSystem(this.conf);
-		   RemoteIterator<LocatedFileStatus> iterator =
-			   fs.listFiles(path, true);
-		   while (iterator.hasNext()) {
-			   String name =
-				   iterator.next().getPath().toUri()
-				   .toString();
-			   FilePathsList.add(name);
-		   }
-	   } catch (IOException e) {
-		   LOG.error("Fail to get test files", e);
-	   }
-
-	   MTReader reader = new MTReader();
-	   List<COO> output = reader.readCOO(FilePathsList, regex, this.conf, this.harpthreads);
-	   this.totallines = reader.getTotalLines();
-	   this.totalPoints = reader.getTotalPoints();
-	   return output;
-   }//}}}
-
-   public HashMap<Long, COOGroup> groupCOOByIDs(List<COO> inputData, boolean isRow)
-   {//{{{
-	   //regroup by multi-threading
-      	   MTReader reader = new MTReader();
-	   HashMap<Long, COOGroup> output_map = reader.regroupCOO(inputData, isRow, this.conf, this.harpthreads);
-	   return output_map;
-   }//}}}
-
-   public HashMap<Long, Integer> remapCOOIDs(HashMap<Long, COOGroup> input_map, int mapper_id, int num_mappers, CollectiveMapper mapper)
-   {//{{{
-
-	   long[] inputIDs = new long[input_map.keySet().size()]; 
-	   int id_itr = 0;
-	   for(Long key : input_map.keySet())
-		   inputIDs[id_itr++] = key;
-
-	   Table<LongArray> RowInfo_Table = new Table<>(0, new LongArrPlus());
-	   LongArray RowInfo_array = new LongArray(inputIDs, 0, inputIDs.length); 
-
-	   RowInfo_Table.addPartition(new Partition<>(mapper_id, RowInfo_array));
-	   mapper.allgather("coo", "remap_ids", RowInfo_Table);
-
-	   long[][] row_ids_all = new long[num_mappers][];
-
-	   for(int j=0;j<num_mappers; j++)
-	   {
-		   row_ids_all[j] = RowInfo_Table.getPartition(j).get().get();
-	   }
-
-	   HashMap<Long, Integer> row_mapping = new HashMap<>();
-	   int row_pos = 1; //CSR pos start from 1
-	   for(int j=0;j<num_mappers;j++)
-	   {
-		   for(int k=0;k<row_ids_all[j].length;k++)
-		   {
-			   if (row_mapping.get(row_ids_all[j][k]) == null)
-			   {
-				   row_mapping.put(row_ids_all[j][k], row_pos);
-				   row_pos++;
-			   }
-			   
-		   }
-	   }
-
-	   return row_mapping;
-   }//}}}
-
-   public Table<COOGroup> regroupCOOList(HashMap<Long,COOGroup> input_map, HashMap<Long, Integer> remap_idx, CollectiveMapper mapper, int[] maxCompactRowID)
-   {//{{{
-           int maxRowID = -1;
-           Table<COOGroup> regroup_table = new Table<>(0, new COOGroupCombiner(), input_map.size());
-
-	   for(Map.Entry<Long, COOGroup> entry : input_map.entrySet())
-	   {
-		   Long key = entry.getKey();
-		   COOGroup val = entry.getValue();
-		   int remapID = remap_idx.get(key);
-		   regroup_table.addPartition(new Partition<>(remapID, val));
-		   if (remapID > maxRowID)
-			   maxRowID = remapID;
-
-	   }
-
-	   int num_par_prev = regroup_table.getNumPartitions();
-	   Table<IntArray> maxRowTable = new Table<>(0, new IntArrMax());
-
-	   IntArray maxrowArray = IntArray.create(1, false);
-	   maxrowArray.get()[0] = maxRowID;
-	   maxRowTable.addPartition(new Partition<>(0, maxrowArray));
-
-	   mapper.allreduce("coo", "get-max-rowID", maxRowTable);
-
-	   // from local max row id to global max row id
-	   maxRowID = maxRowTable.getPartition(0).get().get()[0];
-	   maxRowTable.release();
-	   maxRowTable = null;
-	   LOG.info("Num pars before regroup " + num_par_prev + ", global compact maxRowID " + maxRowID);
-	   maxCompactRowID[0] = maxRowID;
-
-           mapper.regroup("coo", "regroup-coo", regroup_table, new COORegroupPartitioner(maxRowID, mapper.getNumWorkers()));
-	   mapper.barrier("coo", "finish-regroup");
-
-	   int num_par_cur = regroup_table.getNumPartitions();
-	   LOG.info("Num pars after regroup " + num_par_cur);
-	   return regroup_table;
-   }//}}}
-
-   public CSRNumericTable COOToCSR(Table<COOGroup> inputTable, HashMap<Long, Integer> remapIDs, DaalContext daal_Context)
-   {//{{{
-	   int num_pars = inputTable.getNumPartitions();
-	   int num_cols = 0;
-	   int num_vals = 0;
-	   long[] rowOffset = new long[num_pars+1];
-	   rowOffset[0] = 1;
-
-	   //here partition id starts from 1
-	   IntArray idArray = IntArray.create(num_pars, false);
-	   inputTable.getPartitionIDs().toArray(idArray.get());
-	   Arrays.sort(idArray.get(), 0, idArray.size());
-	   int[] ids = idArray.get();
-
-	   // write the rowoffset
-	   for (int i = 0; i < idArray.size(); i++) 
-	   {
-		   COOGroup elem = inputTable.getPartition(ids[i]).get();
-		   rowOffset[i+1] = rowOffset[i] + elem.getNumEntry(); 
-		   num_cols += elem.getNumEntry();
-	   }
-
-	   num_vals =  num_cols;
-
-	   long[] colIndex = new long[num_cols];
-	   double[] data = new double[num_vals];
-
-	   int itr_pos = 0;
-	   int itr_ids = 0;
-	   long maxCol = 0;
-
-	   //write colIndex and CSR data
-	   for (int i = 0; i < idArray.size(); i++) 
-	   {
-		   COOGroup elem_g = inputTable.getPartition(ids[i]).get();
-		   long[] Ids = elem_g.getIds();
-		   int num_entry = elem_g.getNumEntry(); 
-
-		   for(int j=0;j<num_entry;j++)
-		   {
-			   colIndex[itr_ids] = remapIDs.get(Ids[j]); //CSR format colIndex start from 1
-			   if (colIndex[itr_ids] > maxCol)
-				   maxCol = colIndex[itr_ids];
-
-			   itr_ids++;
-		   }
-
-		   System.arraycopy(elem_g.getVals(), 0, data, itr_pos, num_entry);
-		   itr_pos += num_entry;
-	   }
-
-	   long nFeatures = maxCol;
-	   //check CSR table 
-	   if ((rowOffset[num_pars] - 1) != num_vals || nFeatures == 0 || num_pars == 0) {
-		   LOG.info("Wrong CSR format: ");
-		   return null;
-	   }
-	   else
-		   return new CSRNumericTable(daal_Context, data, colIndex, rowOffset, nFeatures, num_pars);
-
-   }//}}}
-
-   // -------------- Dense CSV file I/O --------------
-   public void loadFiles()
-   {//{{{
-     	MTReader reader = new MTReader();
-	this.datalist = reader.readfiles(this.hdfs_filenames, this.dim, this.conf, this.harpthreads); 
-	this.totallines = reader.getTotalLines();
-	this.totalPoints = reader.getTotalPoints();
-   }//}}}
-
-
-   public void loadDataBlock(NumericTable dst_table)
-   {//{{{
-      // check the datalist obj
-      if (this.datalist == null)
-      {
-	 LOG.info("Error no hdfs data to load");
-	 return;
-      }
-
-      //copy block of rows from this.datalist to DAAL NumericTable 
-      int rowIdx = 0; 
-      for(int i=0;i<this.datalist.length;i++)
-      {
-	 List<double[]> elemList = this.datalist[i];
-	 double[] rowblocks = new double[elemList.size()*this.dim]; 
-	 for (int j=0;j<elemList.size();j++)
- 		System.arraycopy(elemList.get(j), 0, rowblocks, j*dim, dim);
-
-	 //copy rowblock to NumericTable
-	 dst_table.releaseBlockOfRows(rowIdx, elemList.size(), DoubleBuffer.wrap(rowblocks));
-	 rowIdx += elemList.size();
-      }
-
-      this.datalist = null;
-   }//}}}
-
-   public void loadTestFile(String inputFiles, int vectorSize) throws IOException
-   {//{{{
-
-	   Path inputFilePaths = new Path(inputFiles);
-	   List<String> inputFileList = new LinkedList<>();
-
-	   try {
-		   FileSystem fs =
-			   inputFilePaths.getFileSystem(conf);
-		   RemoteIterator<LocatedFileStatus> iterator =
-			   fs.listFiles(inputFilePaths, true);
-
-		   while (iterator.hasNext()) {
-			   String name =
-				   iterator.next().getPath().toUri()
-				   .toString();
-			   inputFileList.add(name);
-		   }
-
-	   } catch (IOException e) {
-		   LOG.error("Fail to get test files", e);
-	   }
-
-	   List<double[]> points = new LinkedList<double[]>();
-	   
-	   FSDataInputStream in = null;
-
-	   //loop over all the files in the list
-	   ListIterator<String> file_itr = inputFileList.listIterator();
-	   while (file_itr.hasNext())
-	   {
-		   String file_name = file_itr.next();
-		   LOG.info("read in file name: " + file_name);
-
-		   Path file_path = new Path(file_name);
-		   try {
-
-			   FileSystem fs =
-				   file_path.getFileSystem(conf);
-			   in = fs.open(file_path);
-
-		   } catch (Exception e) {
-			   LOG.error("Fail to open file "+ e.toString());
-			   return;
-		   }
-
-		   //read file content
-		   while(true)
-		   {
-			   String line = in.readLine();
-			   if (line == null) break;
-
-			   String[] lineData = line.split(",");
-			   double[] cell = new double[vectorSize];
-
-			   for(int t =0 ; t< vectorSize; t++)
-			      cell[t] = Double.parseDouble(lineData[t]);
-
-			   points.add(cell);
-		   }
-
-		   in.close();
-	   }
-
-	   //copy points to block of data
-	   int dataSize = vectorSize*points.size();
-	   double[] data = new double[dataSize];
-
-	   for(int i=0; i< points.size(); i++)
-		System.arraycopy(points.get(i), 0, data, i*vectorSize, vectorSize);
-
-	   this.testData = data;
-	   this.numTestRows = points.size();
-	   //copy data to daal table
-	   // testTable.releaseBlockOfRows(0, points.size(), DoubleBuffer.wrap(data));
-	   points = null;
-
-   }//}}}
-
-   public int getTotalLines() { return this.totallines;}
-   public int getTestRows() { return this.numTestRows;}
+   // ------------------------------  Start Dense CSV files I/O ------------------------------
    
-   public NumericTable createDenseNumericTableInput(DaalContext context) throws IOException
-   {
-	  this.loadFiles();
-	  NumericTable inputTable = new HomogenNumericTable(context, Double.class, this.dim, this.getTotalLines(), NumericTable.AllocationFlag.DoAllocate);
-	  this.loadDataBlock(inputTable);
-
-	  return inputTable;
-   }
-
    /**
     * @brief create a HomogenNumericTable from a list of dense CSV files with fixed feature dimension
     *
@@ -459,11 +154,21 @@ public class HarpDAALDataSource
 		   //load in data block
 		   List<double[]> inputData = this.loadDenseCSVFiles(inputFiles, nFeatures, sep);
 
+		   //debug
+		   LOG.info("Finish loading csv files");
+
 		   // create daal table
 		   NumericTable inputTable = new HomogenNumericTable(context, Double.class, nFeatures, inputData.size(), NumericTable.AllocationFlag.DoAllocate);
 
+		   //debug
+		   LOG.info("Finish creating daal table");
+
 		   // load data blk to daal table
 		   this.loadDataBlock(inputTable, inputData, nFeatures);
+
+		   //debug
+		   LOG.info("Finish loading daal table");
+
 		   return inputTable;
 
 	   } catch (Exception e)
@@ -650,7 +355,7 @@ public class HarpDAALDataSource
       int totalRows = inputData.size();
       int rowBlkStart = 0;
       int rowBlkEnd = 0;
-      int rowBlkSize = totalRows/this.harpthreads; 
+      int rowBlkSize = (totalRows/this.harpthreads) > 0 ? (totalRows/this.harpthreads) : totalRows; 
       while(rowBlkEnd < totalRows)
       {
 	      // get a sublist
@@ -667,23 +372,337 @@ public class HarpDAALDataSource
 	      rowBlkStart = rowBlkEnd;
       }
 
-      //copy block of rows from this.datalist to DAAL NumericTable 
-      // int rowIdx = 0; 
-      // for(int i=0;i<inputData.length;i++)
-      // {
-	//  List<double[]> elemList = this.datalist[i];
-	//  double[] rowblocks = new double[elemList.size()*this.dim]; 
-	//  for (int j=0;j<elemList.size();j++)
- 	// 	System.arraycopy(elemList.get(j), 0, rowblocks, j*dim, dim);
-      //
-	//  //copy rowblock to NumericTable
-	//  dst_table.releaseBlockOfRows(rowIdx, elemList.size(), DoubleBuffer.wrap(rowblocks));
-	//  rowIdx += elemList.size();
-      // }
-      //
-      // this.datalist = null;
+   }//}}}
+
+   // ------------------------------  End Dense CSV files I/O ------------------------------
+   
+   // ------------------------------  Start COO files I/O ------------------------------
+   public List<COO> loadCOOFiles(List<String> FilePaths, String regex)
+   {//{{{
+
+	   try {
+
+		   MTReader reader = new MTReader();
+		   List<COO> output = reader.readCOO(FilePaths, regex, this.conf, this.harpthreads);
+		   // this.totallines = reader.getTotalLines();
+		   // this.totalPoints = reader.getTotalPoints();
+		   return output;
+
+	   } catch (Exception e)
+	   {
+		   LOG.error("Fail to read COO files", e);
+		   return null;
+	   }
+   }//}}}
+
+   public List<COO> loadCOOFiles(String FilePath, String regex)
+   {//{{{
+	   List<String> FilePathsList = new LinkedList<>();
+	   Path path = new Path(FilePath);
+	   try {
+		   FileSystem fs =
+			   path.getFileSystem(this.conf);
+		   RemoteIterator<LocatedFileStatus> iterator =
+			   fs.listFiles(path, true);
+		   while (iterator.hasNext()) {
+			   String name =
+				   iterator.next().getPath().toUri()
+				   .toString();
+			   FilePathsList.add(name);
+		   }
+	   } catch (IOException e) {
+		   LOG.error("Fail to get test files", e);
+	   }
+
+	   MTReader reader = new MTReader();
+	   List<COO> output = reader.readCOO(FilePathsList, regex, this.conf, this.harpthreads);
+	   // this.totallines = reader.getTotalLines();
+	   // this.totalPoints = reader.getTotalPoints();
+	   return output;
+   }//}}}
+
+   public HashMap<Long, COOGroup> groupCOOByIDs(List<COO> inputData, boolean isRow)
+   {//{{{
+	   //regroup by multi-threading
+      	   MTReader reader = new MTReader();
+	   HashMap<Long, COOGroup> output_map = reader.regroupCOO(inputData, isRow, this.conf, this.harpthreads);
+	   return output_map;
+   }//}}}
+
+   public HashMap<Long, Integer> remapCOOIDs(HashMap<Long, COOGroup> input_map, int mapper_id, int num_mappers, CollectiveMapper mapper)
+   {//{{{
+
+	   long[] inputIDs = new long[input_map.keySet().size()]; 
+	   int id_itr = 0;
+	   for(Long key : input_map.keySet())
+		   inputIDs[id_itr++] = key;
+
+	   Table<LongArray> RowInfo_Table = new Table<>(0, new LongArrPlus());
+	   LongArray RowInfo_array = new LongArray(inputIDs, 0, inputIDs.length); 
+
+	   RowInfo_Table.addPartition(new Partition<>(mapper_id, RowInfo_array));
+	   mapper.allgather("coo", "remap_ids", RowInfo_Table);
+
+	   long[][] row_ids_all = new long[num_mappers][];
+
+	   for(int j=0;j<num_mappers; j++)
+	   {
+		   row_ids_all[j] = RowInfo_Table.getPartition(j).get().get();
+	   }
+
+	   HashMap<Long, Integer> row_mapping = new HashMap<>();
+	   int row_pos = 1; //CSR pos start from 1
+	   for(int j=0;j<num_mappers;j++)
+	   {
+		   for(int k=0;k<row_ids_all[j].length;k++)
+		   {
+			   if (row_mapping.get(row_ids_all[j][k]) == null)
+			   {
+				   row_mapping.put(row_ids_all[j][k], row_pos);
+				   row_pos++;
+			   }
+			   
+		   }
+	   }
+
+	   return row_mapping;
+   }//}}}
+
+   public Table<COOGroup> regroupCOOList(HashMap<Long,COOGroup> input_map, HashMap<Long, Integer> remap_idx, CollectiveMapper mapper, int[] maxCompactRowID)
+   {//{{{
+
+           int maxRowID = -1;
+           Table<COOGroup> regroup_table = new Table<>(0, new COOGroupCombiner(), input_map.size());
+
+	   for(Map.Entry<Long, COOGroup> entry : input_map.entrySet())
+	   {
+		   Long key = entry.getKey();
+		   COOGroup val = entry.getValue();
+		   int remapID = remap_idx.get(key);
+		   regroup_table.addPartition(new Partition<>(remapID, val));
+		   if (remapID > maxRowID)
+			   maxRowID = remapID;
+
+	   }
+
+	   int num_par_prev = regroup_table.getNumPartitions();
+	   Table<IntArray> maxRowTable = new Table<>(0, new IntArrMax());
+
+	   IntArray maxrowArray = IntArray.create(1, false);
+	   maxrowArray.get()[0] = maxRowID;
+	   maxRowTable.addPartition(new Partition<>(0, maxrowArray));
+
+	   mapper.allreduce("coo", "get-max-rowID", maxRowTable);
+
+	   // from local max row id to global max row id
+	   maxRowID = maxRowTable.getPartition(0).get().get()[0];
+	   maxRowTable.release();
+	   maxRowTable = null;
+	   LOG.info("Num pars before regroup " + num_par_prev + ", global compact maxRowID " + maxRowID);
+	   maxCompactRowID[0] = maxRowID;
+
+           mapper.regroup("coo", "regroup-coo", regroup_table, new COORegroupPartitioner(maxRowID, mapper.getNumWorkers()));
+	   mapper.barrier("coo", "finish-regroup");
+
+	   int num_par_cur = regroup_table.getNumPartitions();
+	   LOG.info("Num pars after regroup " + num_par_cur);
+	   return regroup_table;
 
    }//}}}
+
+   public CSRNumericTable COOToCSR(Table<COOGroup> inputTable, HashMap<Long, Integer> remapIDs, DaalContext daal_Context)
+   {//{{{
+	   int num_pars = inputTable.getNumPartitions();
+	   int num_cols = 0;
+	   int num_vals = 0;
+	   long[] rowOffset = new long[num_pars+1];
+	   rowOffset[0] = 1;
+
+	   //here partition id starts from 1
+	   IntArray idArray = IntArray.create(num_pars, false);
+	   inputTable.getPartitionIDs().toArray(idArray.get());
+	   Arrays.sort(idArray.get(), 0, idArray.size());
+	   int[] ids = idArray.get();
+
+	   // write the rowoffset
+	   for (int i = 0; i < idArray.size(); i++) 
+	   {
+		   COOGroup elem = inputTable.getPartition(ids[i]).get();
+		   rowOffset[i+1] = rowOffset[i] + elem.getNumEntry(); 
+		   num_cols += elem.getNumEntry();
+	   }
+
+	   num_vals =  num_cols;
+
+	   long[] colIndex = new long[num_cols];
+	   double[] data = new double[num_vals];
+
+	   int itr_pos = 0;
+	   int itr_ids = 0;
+	   long maxCol = 0;
+
+	   //write colIndex and CSR data
+	   for (int i = 0; i < idArray.size(); i++) 
+	   {
+		   COOGroup elem_g = inputTable.getPartition(ids[i]).get();
+		   long[] Ids = elem_g.getIds();
+		   int num_entry = elem_g.getNumEntry(); 
+
+		   for(int j=0;j<num_entry;j++)
+		   {
+			   colIndex[itr_ids] = remapIDs.get(Ids[j]); //CSR format colIndex start from 1
+			   if (colIndex[itr_ids] > maxCol)
+				   maxCol = colIndex[itr_ids];
+
+			   itr_ids++;
+		   }
+
+		   System.arraycopy(elem_g.getVals(), 0, data, itr_pos, num_entry);
+		   itr_pos += num_entry;
+	   }
+
+	   long nFeatures = maxCol;
+	   //check CSR table 
+	   if ((rowOffset[num_pars] - 1) != num_vals || nFeatures == 0 || num_pars == 0) {
+		   LOG.info("Wrong CSR format: ");
+		   return null;
+	   }
+	   else
+		   return new CSRNumericTable(daal_Context, data, colIndex, rowOffset, nFeatures, num_pars);
+
+   }//}}}
+
+   // ------------------------------  end COO files I/O ------------------------------
+   
+   // ------------------------------  Start CSR files I/O ------------------------------
+   
+   // ------------------------------  End CSR files I/O ------------------------------
+  
+   // -------------- Deprecated I/O API --------------
+   public void loadFiles()
+   {//{{{
+     	MTReader reader = new MTReader();
+	this.datalist = reader.readfiles(this.hdfs_filenames, this.dim, this.conf, this.harpthreads); 
+	this.totallines = reader.getTotalLines();
+	this.totalPoints = reader.getTotalPoints();
+   }//}}}
+
+   public void loadDataBlock(NumericTable dst_table)
+   {//{{{
+      // check the datalist obj
+      if (this.datalist == null)
+      {
+	 LOG.info("Error no hdfs data to load");
+	 return;
+      }
+
+      //copy block of rows from this.datalist to DAAL NumericTable 
+      int rowIdx = 0; 
+      for(int i=0;i<this.datalist.length;i++)
+      {
+	 List<double[]> elemList = this.datalist[i];
+	 double[] rowblocks = new double[elemList.size()*this.dim]; 
+	 for (int j=0;j<elemList.size();j++)
+ 		System.arraycopy(elemList.get(j), 0, rowblocks, j*dim, dim);
+
+	 //copy rowblock to NumericTable
+	 dst_table.releaseBlockOfRows(rowIdx, elemList.size(), DoubleBuffer.wrap(rowblocks));
+	 rowIdx += elemList.size();
+      }
+
+      this.datalist = null;
+   }//}}}
+
+   public void loadTestFile(String inputFiles, int vectorSize) throws IOException
+   {//{{{
+
+	   Path inputFilePaths = new Path(inputFiles);
+	   List<String> inputFileList = new LinkedList<>();
+
+	   try {
+		   FileSystem fs =
+			   inputFilePaths.getFileSystem(conf);
+		   RemoteIterator<LocatedFileStatus> iterator =
+			   fs.listFiles(inputFilePaths, true);
+
+		   while (iterator.hasNext()) {
+			   String name =
+				   iterator.next().getPath().toUri()
+				   .toString();
+			   inputFileList.add(name);
+		   }
+
+	   } catch (IOException e) {
+		   LOG.error("Fail to get test files", e);
+	   }
+
+	   List<double[]> points = new LinkedList<double[]>();
+	   
+	   FSDataInputStream in = null;
+
+	   //loop over all the files in the list
+	   ListIterator<String> file_itr = inputFileList.listIterator();
+	   while (file_itr.hasNext())
+	   {
+		   String file_name = file_itr.next();
+		   LOG.info("read in file name: " + file_name);
+
+		   Path file_path = new Path(file_name);
+		   try {
+
+			   FileSystem fs =
+				   file_path.getFileSystem(conf);
+			   in = fs.open(file_path);
+
+		   } catch (Exception e) {
+			   LOG.error("Fail to open file "+ e.toString());
+			   return;
+		   }
+
+		   //read file content
+		   while(true)
+		   {
+			   String line = in.readLine();
+			   if (line == null) break;
+
+			   String[] lineData = line.split(",");
+			   double[] cell = new double[vectorSize];
+
+			   for(int t =0 ; t< vectorSize; t++)
+			      cell[t] = Double.parseDouble(lineData[t]);
+
+			   points.add(cell);
+		   }
+
+		   in.close();
+	   }
+
+	   //copy points to block of data
+	   int dataSize = vectorSize*points.size();
+	   double[] data = new double[dataSize];
+
+	   for(int i=0; i< points.size(); i++)
+		System.arraycopy(points.get(i), 0, data, i*vectorSize, vectorSize);
+
+	   this.testData = data;
+	   this.numTestRows = points.size();
+	   //copy data to daal table
+	   // testTable.releaseBlockOfRows(0, points.size(), DoubleBuffer.wrap(data));
+	   points = null;
+
+   }//}}}
+
+   public int getTotalLines() { return this.totallines;}
+   public int getTestRows() { return this.numTestRows;}
+   
+   public NumericTable createDenseNumericTableInput(DaalContext context) throws IOException
+   {
+	  this.loadFiles();
+	  NumericTable inputTable = new HomogenNumericTable(context, Double.class, this.dim, this.getTotalLines(), NumericTable.AllocationFlag.DoAllocate);
+	  this.loadDataBlock(inputTable);
+
+	  return inputTable;
+   }
 
    public NumericTable createCSRNumericTableInput(DaalContext context) throws IOException
    {

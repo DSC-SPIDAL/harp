@@ -83,6 +83,8 @@ public class ALSBatchDaalCollectiveMapper
         private int harpThreads; 
 	private int fileDim;
 	private long nFactors; 	
+	private List<String> inputFiles;
+	private Configuration conf;
 
 	private static HarpDAALDataSource datasource;
 	private static DaalContext daal_Context = new DaalContext();
@@ -90,7 +92,7 @@ public class ALSBatchDaalCollectiveMapper
 	/* Apriori algorithm parameters */
 	private Model        initialModel;
     	private Model        trainedModel;
-    	private NumericTable data;
+    	private NumericTable data = null;
 
 	//to measure the time
         private long load_time = 0;
@@ -112,17 +114,21 @@ public class ALSBatchDaalCollectiveMapper
 
         long startTime = System.currentTimeMillis();
 
-        Configuration configuration =
-            context.getConfiguration();
+        this.conf = context.getConfiguration();
 
-	this.numMappers = configuration.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
-        this.numThreads = configuration.getInt(HarpDAALConstants.NUM_THREADS, 10);
+	this.numMappers = this.conf.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
+        this.numThreads = this.conf.getInt(HarpDAALConstants.NUM_THREADS, 10);
         this.harpThreads = Runtime.getRuntime().availableProcessors();
-	this.fileDim = configuration.getInt(HarpDAALConstants.FILE_DIM, 21);
-	this.nFactors = configuration.getLong(HarpDAALConstants.NUM_FACTOR, 2);
+	this.fileDim = this.conf.getInt(HarpDAALConstants.FILE_DIM, 21);
+	this.nFactors = this.conf.getLong(HarpDAALConstants.NUM_FACTOR, 2);
 
-        LOG.info("File Dim " + this.fileDim);
-        LOG.info("Num Mappers " + this.numMappers);
+	//set thread number used in DAAL
+	LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
+	Environment.setNumberOfThreads(numThreads);
+	LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
+
+	LOG.info("File Dim " + this.fileDim);
+	LOG.info("Num Mappers " + this.numMappers);
         LOG.info("Num Threads " + this.numThreads);
         LOG.info("Num harp load data threads " + harpThreads);
 	LOG.info("nFactors " + this.nFactors);
@@ -140,29 +146,20 @@ public class ALSBatchDaalCollectiveMapper
             long startTime = System.currentTimeMillis();
 
 	    // read data file names from HDFS
-            List<String> dataFiles =
-                new LinkedList<String>();
+            this.inputFiles = new LinkedList<String>();
             while (reader.nextKeyValue()) {
                 String key = reader.getCurrentKey();
                 String value = reader.getCurrentValue();
                 LOG.info("Key: " + key + ", Value: "
                         + value);
                 LOG.info("file name: " + value);
-                dataFiles.add(value);
+                this.inputFiles.add(value);
             }
             
-            Configuration conf = context.getConfiguration();
-
-	    // ----------------------- runtime settings -----------------------
-            //set thread number used in DAAL
-            LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
-            Environment.setNumberOfThreads(numThreads);
-            LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
-
-	    this.datasource = new HarpDAALDataSource(dataFiles, fileDim, harpThreads, conf);
+	    this.datasource = new HarpDAALDataSource(this.harpThreads, this.conf);
 
 	    // ----------------------- start the execution -----------------------
-            runALSBatch(conf, context);
+            runALSBatch(context);
             this.freeMemory();
             this.freeConn();
             System.gc();
@@ -177,15 +174,12 @@ public class ALSBatchDaalCollectiveMapper
          *
          * @return 
          */
-        private void runALSBatch(Configuration conf, Context context) throws IOException 
+        private void runALSBatch(Context context) throws IOException 
 	{
-		// ---------- load data ----------
-		this.datasource.loadFiles();
 
 		initializeModel();
 		trainModel();
 		testModel();
-
 		
 		daal_Context.dispose();
 
@@ -194,8 +188,8 @@ public class ALSBatchDaalCollectiveMapper
 	private void initializeModel() 
 	{
 
-		data = new HomogenNumericTable(daal_Context, Double.class, this.fileDim, this.datasource.getTotalLines(), NumericTable.AllocationFlag.DoAllocate);
-		this.datasource.loadDataBlock(data);
+		// load training data
+		this.data = this.datasource.createDenseNumericTable(this.inputFiles, this.fileDim, "," , this.daal_Context);
 
 		/* Create an algorithm object to initialize the implicit ALS model with the default method */
 		InitBatch initAlgorithm = new InitBatch(daal_Context, Double.class, InitMethod.defaultDense);

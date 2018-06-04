@@ -101,33 +101,14 @@ public class ALSDaalCollectiveMapper
         private int numIterations;
 	private int numThreads;
         private int numThreads_harp;
-        private int r; 
+        private int nFactors; 
         private double alpha;
         private double lambda_als;
         private String testFilePath;
 	private List<String> inputFiles;
+	private Configuration conf;
 
-        //time of total trainining 
-        private long trainTime = 0;
-        //time of computing time of each step 
-        private long computeTime_step1 = 0;
-        private long computeTime_step2 = 0;
-        private long computeTime_step3 = 0;
-        private long computeTime_step4 = 0;
-        private long commTime_step1 = 0;
-        private long commTime_step2 = 0;
-        private long commTime_step3 = 0;
-        private long commTime_step4 = 0;
-        //time of parallel tasks 
-        private long computeTaskTime = 0;
-        //time spent in waiting rotated model data in each itr
-        private long waitTime = 0;
-        //timestamp of each training iteration
-        private long itrTimeStamp;
-        //training time per iteration
-        public double trainTimePerIter = 0;
-
-       
+             
         //max global row ids
         private long maxRowID = 0;
 	// app paras
@@ -150,27 +131,42 @@ public class ALSDaalCollectiveMapper
         private static DaalContext daal_Context = new DaalContext();
 	private static HarpDAALDataSource datasource;
 
+	//time of total trainining 
+        private long trainTime = 0;
+        //time of computing time of each step 
+        private long computeTime_step1 = 0;
+        private long computeTime_step2 = 0;
+        private long computeTime_step3 = 0;
+        private long computeTime_step4 = 0;
+        private long commTime_step1 = 0;
+        private long commTime_step2 = 0;
+        private long commTime_step3 = 0;
+        private long commTime_step4 = 0;
+        //time of parallel tasks 
+        private long computeTaskTime = 0;
+        //time spent in waiting rotated model data in each itr
+        private long waitTime = 0;
+        //timestamp of each training iteration
+        private long itrTimeStamp;
+        //training time per iteration
+        public double trainTimePerIter = 0;
+
         /**
          * Mapper configuration.
          */
         @Override
         protected void setup(Context context) {
-            LOG
-                .info("start setup: "
-                        + new SimpleDateFormat("yyyyMMdd_HHmmss")
-                        .format(Calendar.getInstance()
-                            .getTime()));
+
+            LOG.info("start setup: " + new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime()));
             long startTime = System.currentTimeMillis();
+            this.conf = context.getConfiguration();
 
-            Configuration configuration =
-                context.getConfiguration();
-
-            this.r = configuration.getInt(HarpDAALConstants.NUM_FACTOR, 100);
-            this.numIterations = configuration.getInt(HarpDAALConstants.NUM_ITERATIONS, 100);
-            this.numThreads = configuration.getInt(HarpDAALConstants.NUM_THREADS, 16);
-            this.testFilePath = configuration.get(HarpDAALConstants.TEST_FILE_PATH,"");
-	    this.alpha = configuration.getDouble(Constants.ALPHA, 40.0);
-	    this.lambda_als = configuration.getDouble(Constants.LAMBDA, 0.06);
+            this.nFactors = this.conf.getInt(HarpDAALConstants.NUM_FACTOR, 100);
+            this.numIterations = this.conf.getInt(HarpDAALConstants.NUM_ITERATIONS, 100);
+            this.numThreads = this.conf.getInt(HarpDAALConstants.NUM_THREADS, 16);
+            this.testFilePath = this.conf.get(HarpDAALConstants.TEST_FILE_PATH,"");
+	    this.alpha = this.conf.getDouble(Constants.ALPHA, 40.0);
+	    this.lambda_als = this.conf.getDouble(Constants.LAMBDA, 0.06);
             this.numThreads_harp = Runtime.getRuntime().availableProcessors();
 
             rmse = 0.0;
@@ -181,12 +177,12 @@ public class ALSDaalCollectiveMapper
             totalNumTrain = 0L;
             totalNumCols = 0L;
             effectiveTestV = 0L;
-            oneOverSqrtR = 1.0/Math.sqrt(r);
+            oneOverSqrtR = 1.0/Math.sqrt(nFactors);
             random = new Random(System.currentTimeMillis());
 
             long endTime = System.currentTimeMillis();
             LOG.info("config (ms): "+ (endTime - startTime));
-            LOG.info("R " + r);
+            LOG.info("nFactors " + nFactors);
             LOG.info("Num Iterations " + numIterations);
             LOG.info("Num Threads " + numThreads);
             LOG.info("TEST FILE PATH " + testFilePath);
@@ -203,14 +199,16 @@ public class ALSDaalCollectiveMapper
         protected void mapCollective(
                 KeyValReader reader, Context context)
             throws IOException, InterruptedException {
+
             long startTime = System.currentTimeMillis();
-            LinkedList<String> vFiles = getVFiles(reader);
-	    this.datasource = new HarpDAALDataSource(vFiles, this.r, this.numThreads_harp, context.getConfiguration());
+            this.inputFiles = getVFiles(reader);
+
+	    this.datasource = new HarpDAALDataSource(this.numThreads_harp, this.conf);
 	    // create communicator
-            this.harpcomm= new HarpDAALComm(this.getSelfID(), this.getMasterID(), this.getNumWorkers(), daal_Context, this);
+            this.harpcomm= new HarpDAALComm(this.getSelfID(), this.getMasterID(), this.getNumWorkers(), this.daal_Context, this);
 
             try {
-                runALS(vFiles, context.getConfiguration(), context);
+                runALS(context);
             } catch (Exception e) {
                 LOG.error("Fail to run SGD.", e);
             }
@@ -250,15 +248,12 @@ public class ALSDaalCollectiveMapper
          *
          * @return 
          */
-        private void runALS(
-                final LinkedList<String> vFilePaths,
-                final Configuration configuration,
-                final Context context) throws Exception 
+        private void runALS(final Context context) throws Exception 
         {//{{{
 
 	    // load COO files from HDFS
             LOG.info("Load ALS training points in COO format");
-	    List<COO> coo_data = this.datasource.loadCOOFiles(" ");
+	    List<COO> coo_data = this.datasource.loadCOOFiles(this.inputFiles," ");
 	    LOG.info("loaded coo elem number: " + coo_data.size());
 
 	    // group local COO data points by rows and cols 
@@ -341,7 +336,7 @@ public class ALSDaalCollectiveMapper
 
             InitDistributedStep1Local initAlgorithm = new  InitDistributedStep1Local(daal_Context, Double.class, InitMethod.fastCSR);
             initAlgorithm.parameter.setFullNUsers(this.maxRowID + 1);
-            initAlgorithm.parameter.setNFactors(r);
+            initAlgorithm.parameter.setNFactors(nFactors);
             initAlgorithm.parameter.setSeed(initAlgorithm.parameter.getSeed() + this.getSelfID());
             initAlgorithm.parameter.setPartition(new HomogenNumericTable(daal_Context, usersPartition, 1, usersPartition.length));
 
@@ -420,7 +415,7 @@ public class ALSDaalCollectiveMapper
                 long start = System.currentTimeMillis();
 
                 //step1 on local slave nodes 
-                ALSTrainStep1 algo_step1 = new ALSTrainStep1(r, numThreads, this.getNumWorkers(), itemsPartialResultLocal, this.harpcomm);
+                ALSTrainStep1 algo_step1 = new ALSTrainStep1(nFactors, numThreads, this.getNumWorkers(), itemsPartialResultLocal, this.harpcomm);
                 //compute step 1
                 step1LocalResult = algo_step1.compute();
                 long end = System.currentTimeMillis();
@@ -433,7 +428,7 @@ public class ALSDaalCollectiveMapper
                 comm_time_itr_step1 += (end - start);
                 
                 //step 2 on master node
-                ALSTrainStep2 algo_step2 = new ALSTrainStep2(r, numThreads, this.getNumWorkers(), step1LocalResult_table, this.harpcomm);
+                ALSTrainStep2 algo_step2 = new ALSTrainStep2(nFactors, numThreads, this.getNumWorkers(), step1LocalResult_table, this.harpcomm);
                 if (this.getSelfID() == 0)
                 {
                     start = System.currentTimeMillis();
@@ -452,7 +447,7 @@ public class ALSDaalCollectiveMapper
                 comm_time_itr_step2 += (end - start);
 
                 // ----------------------------------------- step3 on local node -----------------------------------------
-                ALSTrainStep3 algo_step3 = new ALSTrainStep3(r, numThreads, this.getSelfID(), this.getNumWorkers(), 
+                ALSTrainStep3 algo_step3 = new ALSTrainStep3(nFactors, numThreads, this.getSelfID(), this.getNumWorkers(), 
 				itemOffsets, itemsPartialResultLocal, itemStep3LocalInput, this.harpcomm);
                 start = System.currentTimeMillis();
                 DistributedPartialResultStep3 partialResult_step3 = algo_step3.compute();
@@ -470,7 +465,7 @@ public class ALSDaalCollectiveMapper
 
                 // ----------------------------------------- step4 on local node -----------------------------------------
                 start = System.currentTimeMillis();
-                ALSTrainStep4 algo_step4 = new ALSTrainStep4(r, numThreads, alpha, lambda_als, step4LocalInput, trainDaalTable, 
+                ALSTrainStep4 algo_step4 = new ALSTrainStep4(nFactors, numThreads, alpha, lambda_als, step4LocalInput, trainDaalTable, 
                         step2MasterResult, this);
 
                 usersPartialResultLocal = algo_step4.compute();
@@ -494,7 +489,7 @@ public class ALSDaalCollectiveMapper
                 //step1 on local slave nodes 
                 // Create an algorithm object to perform first step of the implicit ALS training algorithm on local-node data 
                 start = System.currentTimeMillis();
-                algo_step1 = new ALSTrainStep1(r, numThreads, this.getNumWorkers(), usersPartialResultLocal, this.harpcomm);
+                algo_step1 = new ALSTrainStep1(nFactors, numThreads, this.getNumWorkers(), usersPartialResultLocal, this.harpcomm);
                 //compute step 1
                 step1LocalResult = algo_step1.compute();
                 end = System.currentTimeMillis();
@@ -505,7 +500,7 @@ public class ALSDaalCollectiveMapper
                 end = System.currentTimeMillis();
                 comm_time_itr_step1 += (end - start);
 
-                algo_step2 = new ALSTrainStep2(r, numThreads, this.getNumWorkers(), step1LocalResult_table, this.harpcomm);
+                algo_step2 = new ALSTrainStep2(nFactors, numThreads, this.getNumWorkers(), step1LocalResult_table, this.harpcomm);
                 //step 2 on master node
                 if (this.getSelfID() == 0)
                 {
@@ -527,7 +522,7 @@ public class ALSDaalCollectiveMapper
                 comm_time_itr_step2 += (end - start);
 
                 // ----------------------------------------- step3 on local node update item  -----------------------------------------
-                algo_step3 = new ALSTrainStep3(r, numThreads, this.getSelfID(), this.getNumWorkers(), userOffsets, 
+                algo_step3 = new ALSTrainStep3(nFactors, numThreads, this.getSelfID(), this.getNumWorkers(), userOffsets, 
 				usersPartialResultLocal, userStep3LocalInput, this.harpcomm);
 
                 start = System.currentTimeMillis();
@@ -549,7 +544,7 @@ public class ALSDaalCollectiveMapper
                 
                 // // ----------------------------------------- step4 on local node to update items-----------------------------------------
                 start = System.currentTimeMillis();
-                algo_step4 = new ALSTrainStep4(r, numThreads, alpha, lambda_als, step4LocalInput, trainDaalTableTran, 
+                algo_step4 = new ALSTrainStep4(nFactors, numThreads, alpha, lambda_als, step4LocalInput, trainDaalTableTran, 
                         step2MasterResult, this);
 
                 itemsPartialResultLocal = algo_step4.compute();
@@ -687,7 +682,7 @@ public class ALSDaalCollectiveMapper
                 //rmse_vals[0] is rmse val, and rmse_vals[1] is test point counts
                 rmse_vals[j] = new double[2];
                 rmse_compute_tasks.add(new ComputeRMSE(this.getNumWorkers(), this.getSelfID(), row_mapping, col_mapping, startRowIndex, endRowIndex, itemsPartition, 
-                            userModelTestData, itemModelTestData, alpha, r, rmse_vals[j]));
+                            userModelTestData, itemModelTestData, alpha, nFactors, rmse_vals[j]));
             }
 
             DynamicScheduler<COOGroup, Object, ComputeRMSE> rmse_schedule =
@@ -765,9 +760,9 @@ public class ALSDaalCollectiveMapper
             long endRowIndex = usersPartition[this.getSelfID() + 1];
             
             //retrieve user model data
-            double[] userModelTestData = new double[(int)userNum*r];
+            double[] userModelTestData = new double[(int)userNum*nFactors];
             //randomize user model values
-            Service.randomize(rand, userModelTestData, (int)userNum*r, oneOverSqrtR);
+            Service.randomize(rand, userModelTestData, (int)userNum*nFactors, oneOverSqrtR);
 
             //retrieve item model data
             long[][] itemRowColNum = new long[this.getNumWorkers()][];
@@ -777,10 +772,10 @@ public class ALSDaalCollectiveMapper
             {
                 itemRowColNum[j] = new long[2];
                 itemRowColNum[j][0] = itemsPartition[j+1] - itemsPartition[j]; //num of items on each worker
-                itemRowColNum[j][1] = r;
-                itemModelTestData[j] = new double[(int)itemRowColNum[j][0]*r];
+                itemRowColNum[j][1] = nFactors;
+                itemModelTestData[j] = new double[(int)itemRowColNum[j][0]*nFactors];
                 //randomize items model values
-                Service.randomize(rand, itemModelTestData[j], (int)itemRowColNum[j][0]*r, oneOverSqrtR);
+                Service.randomize(rand, itemModelTestData[j], (int)itemRowColNum[j][0]*nFactors, oneOverSqrtR);
 
             }
 
@@ -795,7 +790,7 @@ public class ALSDaalCollectiveMapper
                 //rmse_vals[0] is rmse val, and rmse_vals[1] is test point counts
                 rmse_vals[j] = new double[2];
                 rmse_compute_tasks.add(new ComputeRMSE(this.getNumWorkers(), this.getSelfID(), row_mapping, col_mapping, startRowIndex, endRowIndex, itemsPartition, 
-                            userModelTestData, itemModelTestData, alpha, r, rmse_vals[j]));
+                            userModelTestData, itemModelTestData, alpha, nFactors, rmse_vals[j]));
             }
 
             DynamicScheduler<COOGroup, Object, ComputeRMSE> rmse_schedule =
