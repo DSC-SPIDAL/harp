@@ -7,6 +7,8 @@ title: Algorithms in Harp-DAAL
 </a>
 ## **Association Rule**
 
+<img src="/img/daalAlgos/association-rule-apriori.png" width="80%" >
+
 Association rule learning is a rule-based learning method for discovering relations between variables in databases. 
 It is intended to identify strong rules discovered in databases using some measures of interestingness.
 
@@ -18,7 +20,7 @@ More details from Intel DAAL kernel is found [here](https://software.intel.com/e
 </a>
 ## **Covariance**
 
-<img src="/img/harpdaal/Covariance.png" width="80%" >
+<img src="/img/daalAlgos/Covariance.png" width="80%" >
 
 Covariance, in probability theory and statistics, is a measure of the joint variability of two random variables. The sign of the covariance 
 shows the tendency in the linear relationship between the variables. The correlation is the covariance normalized to be between -1 and +1. 
@@ -32,6 +34,8 @@ Algorithmic details from Intel DAAL are found [here](https://software.intel.com/
     <h1 style="padding-top: 60px; margin-top: -60px;"></h1>
 </a>
 ## **Boosting**
+
+<img src="/img/daalAlgos/boosting.png" width="80%" >
 
 Boosting is a group of algorithms aiming to construct a strong classifier from a set of weighted weak classifiers 
 through iterative re-weighting based on accuracy measurement for weak classifiers. A weak classifier typically has only slightly better 
@@ -61,6 +65,9 @@ More details are from [Intel DAAL Documentation](https://software.intel.com/en-u
     <h1 style="padding-top: 60px; margin-top: -60px;"></h1>
 </a>
 ## **Naive Bayes Classifier**
+
+<img src="/img/daalAlgos/naive-bayes.png" width="80%" >
+
 Naïve Bayes is a set of simple and powerful classification methods often used for text classification, 
 medical diagnosis, and other classification problems. In spite of their main assumption about independence between features, 
 Naïve Bayes classifiers often work well when this assumption does not hold. 
@@ -73,6 +80,8 @@ More details from Intel DAAL Documentation is [here](https://software.intel.com/
     <h1 style="padding-top: 60px; margin-top: -60px;"></h1>
 </a>
 ## **K-means Clustering**
+
+<img src="/img/daalAlgos/kmeans-clustering.jpg" width="80%" >
 
 K-means is a widely used clustering algorithm in machine learning community. It iteratively computes the distance between each 
 training point to every centroids, re-assigns the training point to new cluster and re-compute the new centroid of each cluster. 
@@ -88,6 +97,8 @@ More algorithmic details from Intel DAAL Documentation is [here](https://softwar
 </a>
 ## **Expectation Maximization**
 
+<img src="/img/daalAlgos/em.png" width="80%" >
+
 Expectation-Maximization (EM) algorithm is an iterative method for finding the maximum likelihood and maximum a posteriori estimates of parameters in models that typically depend on hidden variables.
 
 Harp-DAAL currently supports batch mode of EM [^fn4][^fn5] for dense input datasets.
@@ -98,6 +109,8 @@ More algorithmic details from Intel DAAL documentation is [here](https://softwar
     <h1 style="padding-top: 60px; margin-top: -60px;"></h1>
 </a>
 ## **Principle Component Analysis**
+
+<img src="/img/daalAlgos/pca.png" width="80%" >
 
 Principle Component Analysis (PCA) is a widely used statistical procedure that uses an orthogonal transformation to convert a set of observations of possibly correlated variables into a set of values of linearly uncorrelated variables called principal components (or sometimes, principal modes of variation). 
 PCA can be done by two methods:
@@ -128,7 +141,7 @@ Harp-DAAL provides distributed mode for Correlation based PCA for both of dense 
 </a>
 ## **Single Value Decomposition**
 
-<img src="/img/harpdaal/SVD.png" width="80%" >
+<img src="/img/daalAlgos/SVD.png" width="80%" >
 
 Singular Value Decomposition is a method which seeks to reduce the rank of a data matrix, thus finding the unique vectors, features, or characteristics of the data matrix at hand. This algorithm has been used in, but is not limited to signal processing, weather prediction, hotspot detection, and recommender systems.
 
@@ -141,7 +154,7 @@ More algorithmic details from Intel DAAL documentation is [here](https://softwar
 </a>
 ## **QR Decomposition**
 
-<img src="/img/harpdaal/QR.png" width="80%" >
+<img src="/img/daalAlgos/QR.png" width="80%" >
 
 The QR decomposition or QR factorization of a matrix is a decomposition of the matrix into an orthogonal matrix and a triangular matrix. A QR decomposition of a real square matrix A is a decomposition of A as A = QR, where Q is an orthogonal matrix (its columns are orthogonal unit vectors meaning Q<sup>T</sup>Q = I) 
 and R is an upper triangular matrix (also called right triangular matrix).
@@ -155,8 +168,6 @@ More algorithmic details from Intel DAAL documentation is [here](https://softwar
 </a>
 ## **Pivoted QR Decomposition**
 
-<img src="/img/harpdaal/QR.png" width="80%" >
-
 QR decomposition with column pivoting introduces a permutation matrix P and convert the original 
 *A=QR* to *AP=QR*. Column pivoting is useful when A is (nearly) rank deficient, or is suspected of being so. It can also improve numerical accuracy. 
 
@@ -169,6 +180,8 @@ More algorithmic details from Intel DAAL documentation is [here](https://softwar
 </a>
 ## **Cholesky Decomposition**
 
+<img src="/img/daalAlgos/cholesky-decomposition.png" width="80%" >
+
 Cholesky decomposition is a matrix factorization technique that decomposes a symmetric positive-definite matrix into a product of a lower triangular matrix and its conjugate transpose.
 
 Harp-DAAL currently supports batch mode of Cholesky for dense input datasets.
@@ -179,6 +192,8 @@ More algorithmic details from Intel DAAL documentation is [here](https://softwar
     <h1 style="padding-top: 60px; margin-top: -60px;"></h1>
 </a>
 ## **Moments of Low Order**
+
+<img src="/img/daalAlgos/low-order-moments.png" width="80%" >
 
 Moments are basic quantitative measures of data set characteristics such as location and dispersion. 
 We compute the following low order characteristics: minimums/maximums, sums, means, sums of squares, sums of squared differences from the means, second order raw moments, variances, standard deviations, and variations.
@@ -191,6 +206,8 @@ More algorithmic details from Intel DAAL documentation is found [here](https://s
     <h1 style="padding-top: 60px; margin-top: -60px;"></h1>
 </a>
 ## **Outlier Detection**
+
+<img src="/img/daalAlgos/outlier-detection.png" width="80%" >
 
 Outlier detection methods aim to identify observation points that are abnormally distant from other observation points. 
 
@@ -213,6 +230,8 @@ Harp-DAAL currently supports batch mode of outlier detection for dense input dat
 </a>
 ## **Sorting** 
 
+<img src="/img/daalAlgos/sorting.png" width="80%" >
+
 Sorting is an algorithm to sort the observations by each feature (column) in the ascending order.
 
 Harp-DAAL currently supports batch mode of sorting for dense input datasets.
@@ -223,6 +242,8 @@ More algorithmic details from Intel DAAL documentation is [here](https://softwar
     <h1 style="padding-top: 60px; margin-top: -60px;"></h1>
 </a>
 ## **Quantile** 
+
+<img src="/img/daalAlgos/quantile.png" width="80%" >
 
 Quantile is an algorithm to analyze the distribution of observations. Quantiles are the values that divide the distribution so that a given portion of observations is below the quantile.
 
@@ -235,6 +256,8 @@ More algorithmic details from Intel DAAL documentation is [here](https://softwar
 </a>
 ## **Quality Metrics**
 
+<img src="/img/daalAlgos/quality-metrics.png" width="80%" >
+
 A quality metric is a numerical characteristic or a set of connected numerical characteristics that represents 
 the qualitative aspect of the result returned by an algorithm: a computed statistical estimate, model, or result of decision making.
 
@@ -246,6 +269,8 @@ More algorithmic details from Intel DAAL documentation is [here](https://softwar
     <h1 style="padding-top: 60px; margin-top: -60px;"></h1>
 </a>
 ## **Optimization Solvers**
+
+<img src="/img/daalAlgos/sgd-optimization.png" width="80%" >
 
 An optimization solver is an algorithm to solve an optimization problem, which is to find the maximum or minimum of an 
 objective function in the presence of constraints on its variables. 
@@ -284,6 +309,8 @@ More algorithmic details from Intel DAAL documentation is [here](https://softwar
 </a>
 ## **Normalization**
 
+<img src="/img/daalAlgos/normalization.png" width="80%" >
+
 In statistics and applications of statistics, normalization can have a range of meanings. 
 In the simplest cases, normalization of ratings means adjusting values measured on different scales to a notionally common scale, often prior to averaging. 
 In more complicated cases, normalization may refer to more sophisticated adjustments where the intention is to bring the entire probability distributions of adjusted values into alignment.
@@ -308,6 +335,8 @@ More algorithmic details from Intel DAAL documentation is [here](https://softwar
 </a>
 ## **Support Vector Machine Classifier**
 
+<img src="/img/daalAlgos/svm.jpeg" width="80%" >
+
 Support Vector Machine (SVM) is among popular classification algorithms. 
 It belongs to a family of generalized linear classification problems. 
 Because SVM covers binary classification problems only in the multi-class case, SVM must be used in conjunction with multi-class classifier methods.
@@ -321,6 +350,8 @@ More algorithmic details from Intel DAAL documentation is [here](https://softwar
 </a>
 ## **K-Nearest Neighbors Classifier**
 
+<img src="/img/daalAlgos/knn.png" width="80%" >
+
 k-Nearest Neighbors (kNN) classification is a non-parametric classification algorithm. The model of the kNN classifier is based on feature vectors and class labels from the training data set. This classifier induces the class of the query vector from the labels of the feature vectors in the training data set to which the query vector is similar. A similarity between feature vectors is determined by the type of distance (for example, Euclidian) in a multidimensional feature space.
 
 Harp-DAAL currently supports batch mode of K-NN [^fn12][^fn13] for dense input datasets.
@@ -331,6 +362,8 @@ More algorithmic details from Intel DAAL documentation is [here](https://softwar
     <h1 style="padding-top: 60px; margin-top: -60px;"></h1>
 </a>
 ## **Decision Tree**
+
+<img src="/img/daalAlgos/dtree.jpg" width="80%" >
 
 Decision trees partition the feature space into a set of hypercubes, and then fit a simple model in each hypercube. The simple model can be a prediction model, which ignores all predictors and predicts the majority (most frequent) class (or the mean of a dependent variable for regression), also known as 0-R or constant classifier.
 
@@ -346,6 +379,8 @@ More algorithmic details from Intel DAAL documentation is [here](https://softwar
 </a>
 ## **Decision Forest** 
 
+<img src="/img/daalAlgos/dforest.jpeg" width="80%" >
+
 Decision forest classification and regression algorithms are based on an ensemble of tree-structured classifiers (decision trees) 
 built using the general technique of bootstrap aggregation (bagging) and random choice of features.
 
@@ -360,6 +395,8 @@ More algorithmic details from Intel DAAL documentation is [here](https://softwar
     <h1 style="padding-top: 60px; margin-top: -60px;"></h1>
 </a>
 ## **Kernel Functions** 
+
+<img src="/img/daalAlgos/kernel-function.png" width="80%" >
 
 Kernel functions form a class of algorithms for pattern analysis. The main characteristic of kernel functions is a distinct approach to this problem. 
 Instead of reducing the dimension of the original data, kernel functions map the data into higher-dimensional spaces 
@@ -384,6 +421,8 @@ More algorithmic details from Intel DAAL documentation is [here](https://softwar
 </a>
 ## **Stump Weak Learner Classifier**
 
+<img src="/img/daalAlgos/stump-weaklearner.png" width="80%" >
+
 A decision stump is a model that consists of a one-level decision tree [^fn14] where the root is connected to terminal nodes (leaves).
 
 Harp-DAAL currently supports batch mode of Stump for dense input datasets.
@@ -395,7 +434,7 @@ More algorithmic details from Intel DAAL documentation is [here](https://softwar
 </a>
 ## **Linear Regression** 
 
-<img src="/img/harpdaal/linear_regression.png" width="80%" >
+<img src="/img/daalAlgos/linear_regression.png" width="80%" >
 
 In statistics, linear regression is an approach for modelling the relationship between a scalar dependent variable y and one or more explanatory variables (or independent variables) denoted X. In linear regression, the relationships are modeled using linear predictor functions whose unknown model parameters are estimated from the data. Such models are called linear models.
 
@@ -412,6 +451,8 @@ More algorithmic details from Intel DAAL documentation is [here](https://softwar
 </a>
 ## **Ridge Regression**
 
+<img src="/img/daalAlgos/ridge-regression.png" width="80%" >
+
 Ridge Regression is a technique for analyzing multiple regression data that suffer from multicollinearity. When
 multicollinearity occurs, least squares estimates are unbiased, but their variances are large so they may be far from
 the true value. By adding a degree of bias to the regression estimates, ridge regression reduces the standard errors.
@@ -425,6 +466,8 @@ More algorithmic details from Intel DAAL documentation is [here](https://softwar
     <h1 style="padding-top: 60px; margin-top: -60px;"></h1>
 </a>
 ## **Implicit Alternating Least Squares**
+
+<img src="/img/daalAlgos/als.png" width="80%" >
 
 Alternating least squares (ALS) is an algorithm used in recommender systems, 
 which trains the model data X and Y to minimize the cost function as below
@@ -456,7 +499,7 @@ More algorithmic details from Intel DAAL documentation is [here](https://softwar
 </a>
 ## **Neural Networks**
 
-<img src="/img/nn.png" width="60%"  >
+<img src="/img/daalAlgos/nn.png" width="80%" >
 
 Neural Networks are a beautiful biologically-inspired programming paradigm which enable a computer to learn from observational data.
 The motivation for the development of neural network technology stemmed from the desire to develop an artificial system that could perform "intelligent" tasks similar to those performed by the human brain.
