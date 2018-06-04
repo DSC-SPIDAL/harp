@@ -82,26 +82,14 @@ public class ADABOOSTDaalCollectiveMapper
     extends
     CollectiveMapper<String, String, Object, Object> {
 
-	//cmd args
         private int numMappers;
         private int numThreads;
         private int harpThreads; 
 	private int fileDim;
-  	private String testFilePath;
-
 	private int nFeatures;
-
-        //to measure the time
-        private long load_time = 0;
-        private long convert_time = 0;
-        private long total_time = 0;
-        private long compute_time = 0;
-        private long comm_time = 0;
-        private long ts_start = 0;
-        private long ts_end = 0;
-        private long ts1 = 0;
-        private long ts2 = 0;
-
+	private List<String> inputFiles;
+  	private String testFilePath;
+	private Configuration conf;
 	private static HarpDAALDataSource datasource;
 	private static DaalContext daal_Context = new DaalContext();
 
@@ -109,70 +97,62 @@ public class ADABOOSTDaalCollectiveMapper
 	private static PredictionResult predictionResult;
 	private static NumericTable     testGroundTruth;
 
+        //to measure the time
+        private long load_time = 0;
+        private long compute_time = 0;
+        private long comm_time = 0;
+        private long total_time = 0;
+
         /**
          * Mapper configuration.
          */
         @Override
         protected void setup(Context context)
-        throws IOException, InterruptedException {
+		throws IOException, InterruptedException {
 
-        long startTime = System.currentTimeMillis();
+		long ts_start = System.currentTimeMillis();
 
-        Configuration configuration =
-            context.getConfiguration();
+		this.conf = context.getConfiguration();
+		this.fileDim = this.conf.getInt(HarpDAALConstants.FILE_DIM, 21);
+		this.numMappers = this.conf.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
+		this.numThreads = this.conf.getInt(HarpDAALConstants.NUM_THREADS, 10);
+		this.nFeatures = this.conf.getInt(HarpDAALConstants.FEATURE_DIM, 20);
+		this.testFilePath = this.conf.get(HarpDAALConstants.TEST_FILE_PATH,"");
+		this.harpThreads = Runtime.getRuntime().availableProcessors();
 
-	this.fileDim = configuration.getInt(HarpDAALConstants.FILE_DIM, 21);
-	this.numMappers = configuration.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
-        this.numThreads = configuration.getInt(HarpDAALConstants.NUM_THREADS, 10);
-        this.harpThreads = Runtime.getRuntime().availableProcessors();
+		//set thread number used in DAAL
+		LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
+		Environment.setNumberOfThreads(numThreads);
 
-	this.nFeatures = configuration.getInt(HarpDAALConstants.FEATURE_DIM, 20);
-	this.testFilePath = configuration.get(HarpDAALConstants.TEST_FILE_PATH,"");
+		LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
+		LOG.info("Num Mappers " + this.numMappers);
+		LOG.info("Num Threads " + this.numThreads);
+		LOG.info("Num harp load data threads " + harpThreads);
+		LOG.info("config (ms) :" + (System.currentTimeMillis() - ts_start));
 
-        LOG.info("File Dim " + this.fileDim);
-        LOG.info("Num Mappers " + this.numMappers);
-        LOG.info("Num Threads " + this.numThreads);
-        LOG.info("Num harp load data threads " + harpThreads);
-
-        long endTime = System.currentTimeMillis();
-        LOG.info("config (ms) :"
-                + (endTime - startTime));
-        }
+	}
 
         // Assigns the reader to different nodes
-        protected void mapCollective(
-                KeyValReader reader, Context context)
-            throws IOException, InterruptedException {
-            long startTime = System.currentTimeMillis();
+        protected void mapCollective(KeyValReader reader, Context context) throws IOException, InterruptedException 
+	{
+		// read data file names from HDFS
+		this.inputFiles = new LinkedList<String>();
+		while (reader.nextKeyValue()) 
+		{
+			String key = reader.getCurrentKey();
+			String value = reader.getCurrentValue();
+			LOG.info("Key: " + key + ", Value: " + value);
+			LOG.info("file name: " + value);
+			this.inputFiles.add(value);
+		}
 
-	    // read data file names from HDFS
-            List<String> dataFiles =
-                new LinkedList<String>();
-            while (reader.nextKeyValue()) {
-                String key = reader.getCurrentKey();
-                String value = reader.getCurrentValue();
-                LOG.info("Key: " + key + ", Value: "
-                        + value);
-                LOG.info("file name: " + value);
-                dataFiles.add(value);
-            }
-            
-            Configuration conf = context.getConfiguration();
-
-	    // ----------------------- runtime settings -----------------------
-            //set thread number used in DAAL
-            LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
-            Environment.setNumberOfThreads(numThreads);
-            LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
-
-	    this.datasource = new HarpDAALDataSource(dataFiles, fileDim, harpThreads, conf);
-
-	    // ----------------------- start the execution -----------------------
-            runADABOOST(conf, context);
-            this.freeMemory();
-            this.freeConn();
-            System.gc();
-        }
+		this.datasource = new HarpDAALDataSource(harpThreads, conf);
+		// ----------------------- start the execution -----------------------
+		runADABOOST();
+		this.freeMemory();
+		this.freeConn();
+		System.gc();
+	}
 
         /**
          * @brief run SVD by invoking DAAL Java API
@@ -183,29 +163,29 @@ public class ADABOOSTDaalCollectiveMapper
          *
          * @return 
          */
-        private void runADABOOST(Configuration conf, Context context) throws IOException 
+        private void runADABOOST() throws IOException 
 	{
-		// ---------- load data ----------
-		this.datasource.loadFiles();
 		// ---------- training and testing ----------
+		long total_start = System.currentTimeMillis();
 		trainModel();
 		testModel();
 		printResults();
 		daal_Context.dispose();
+		this.total_time += (System.currentTimeMillis() - total_start); 
+		LOG.info("Data Loading time: " + this.load_time);
+		LOG.info("Compute time: " + this.compute_time);
+		LOG.info("Total time: " + this.total_time);
 	}
 
 	private void trainModel() 
 	{
-		/* Create Numeric Tables for training data and labels */
-		NumericTable trainData = new HomogenNumericTable(daal_Context, Double.class, nFeatures, this.datasource.getTotalLines(), NumericTable.AllocationFlag.DoAllocate);
-		NumericTable trainGroundTruth = new HomogenNumericTable(daal_Context, Double.class, 1, this.datasource.getTotalLines(), NumericTable.AllocationFlag.DoAllocate);
-		MergedNumericTable mergedData = new MergedNumericTable(daal_Context);
-		mergedData.addNumericTable(trainData);
-		mergedData.addNumericTable(trainGroundTruth);
+		long ts_start = System.currentTimeMillis();
+		NumericTable[] load_table = this.datasource.createDenseNumericTableSplit(this.inputFiles, nFeatures, 1, ",", this.daal_Context);
+		NumericTable trainData = load_table[0];
+		NumericTable trainGroundTruth = load_table[1];
+		this.load_time += (System.currentTimeMillis() - ts_start); 
 
-		/* Retrieve the data from an input file */
-        	this.datasource.loadDataBlock(mergedData);
-
+		ts_start = System.currentTimeMillis();
 		/* Create algorithm objects to train the AdaBoost model */
 		TrainingBatch algorithm = new TrainingBatch(daal_Context, Double.class, TrainingMethod.defaultDense);
 
@@ -215,24 +195,16 @@ public class ADABOOSTDaalCollectiveMapper
 
 		/* Train the AdaBoost model */
 		trainingResult = algorithm.compute();
+		this.compute_time += (System.currentTimeMillis() - ts_start); 
 	}
 
  
 	private void testModel() throws IOException
 	{
 
-		// load test set from HDFS
-		this.datasource.loadTestFile(testFilePath, fileDim);
-
-		/* Create Numeric Tables for testing data and labels */
-		NumericTable testData = new HomogenNumericTable(daal_Context, Double.class, nFeatures, this.datasource.getTestRows(), NumericTable.AllocationFlag.DoAllocate);
-		testGroundTruth = new HomogenNumericTable(daal_Context, Double.class, 1, this.datasource.getTestRows(), NumericTable.AllocationFlag.DoAllocate);
-		MergedNumericTable mergedData = new MergedNumericTable(daal_Context);
-		mergedData.addNumericTable(testData);
-		mergedData.addNumericTable(testGroundTruth);
-
-		/* Retrieve the data from an input file */
-		this.datasource.loadTestTable(mergedData);
+		NumericTable[] load_table = this.datasource.createDenseNumericTableSplit(this.testFilePath, this.nFeatures, 1, ",", this.daal_Context);
+		NumericTable testData = load_table[0];
+		this.testGroundTruth = load_table[1];
 
 		/* Create algorithm objects for AdaBoost prediction with the fast method */
 		PredictionBatch algorithm = new PredictionBatch(daal_Context, Double.class, PredictionMethod.defaultDense);

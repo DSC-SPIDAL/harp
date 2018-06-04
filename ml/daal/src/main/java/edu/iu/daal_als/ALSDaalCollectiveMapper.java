@@ -97,15 +97,15 @@ public class ALSDaalCollectiveMapper
     extends
     CollectiveMapper<String, String, Object, Object> {
 
-	   
 	//command line args
         private int numIterations;
 	private int numThreads;
         private int numThreads_harp;
-        private int r; //feature dimension
-        private double alpha = 40.0;
-        private double lambda_als = 0.06;
+        private int r; 
+        private double alpha;
+        private double lambda_als;
         private String testFilePath;
+	private List<String> inputFiles;
 
         //time of total trainining 
         private long trainTime = 0;

@@ -451,75 +451,106 @@ public class HarpDAALDataSource
     *
     * @return 
     */
-   public NumericTable createDenseNumericTable(List<String> inputFiles, int nFeatures, String sep, DaalContext context) throws IOException
+   public NumericTable createDenseNumericTable(List<String> inputFiles, int nFeatures, String sep, DaalContext context)
    {//{{{
-	  //load in data block
-	  List<double[]> inputData = this.loadDenseCSVFiles(inputFiles, nFeatures, sep);
 
-	  // create daal table
-	  NumericTable inputTable = new HomogenNumericTable(context, Double.class, nFeatures, inputData.size(), NumericTable.AllocationFlag.DoAllocate);
-	  
-	  // load data blk to daal table
-	  this.loadDataBlock(inputTable, inputData, nFeatures);
-	  return inputTable;
+	   try {
+
+		   //load in data block
+		   List<double[]> inputData = this.loadDenseCSVFiles(inputFiles, nFeatures, sep);
+
+		   // create daal table
+		   NumericTable inputTable = new HomogenNumericTable(context, Double.class, nFeatures, inputData.size(), NumericTable.AllocationFlag.DoAllocate);
+
+		   // load data blk to daal table
+		   this.loadDataBlock(inputTable, inputData, nFeatures);
+		   return inputTable;
+
+	   } catch (Exception e)
+	   {
+		   LOG.error("Fail to create dense numeric table", e);
+		   return null;
+	   }
    }//}}}
 
-   public NumericTable createDenseNumericTable(String inputFile, int nFeatures, String sep, DaalContext context) throws IOException
+   public NumericTable createDenseNumericTable(String inputFile, int nFeatures, String sep, DaalContext context) 
    {//{{{
-	  //load in data block
-	  List<double[]> inputData = this.loadDenseCSVFiles(inputFile, nFeatures, sep);
 
-	  // create daal table
-	  NumericTable inputTable = new HomogenNumericTable(context, Double.class, nFeatures, inputData.size(), NumericTable.AllocationFlag.DoAllocate);
-	  
-	  // load data blk to daal table
-	  this.loadDataBlock(inputTable, inputData, nFeatures);
-	  return inputTable;
+	   try {
+
+		   //load in data block
+		   List<double[]> inputData = this.loadDenseCSVFiles(inputFile, nFeatures, sep);
+
+		   // create daal table
+		   NumericTable inputTable = new HomogenNumericTable(context, Double.class, nFeatures, inputData.size(), NumericTable.AllocationFlag.DoAllocate);
+
+		   // load data blk to daal table
+		   this.loadDataBlock(inputTable, inputData, nFeatures);
+		   return inputTable;
+
+	   } catch (Exception e)
+	   {
+		   LOG.error("Fail to create dense numeric table", e);
+		   return null;
+	   }
+   }//}}}
+
+   public NumericTable[] createDenseNumericTableSplit(List<String> inputFiles, int nFeature1, int nFeature2, String sep, DaalContext context)
+   {//{{{
+
+	   try {
+
+		   //load in data block
+		   List<double[]> inputData = this.loadDenseCSVFiles(inputFiles, (nFeature1+nFeature2), sep);
+
+		   // create daal table
+		   NumericTable[] inputTable = new NumericTable[2];
+		   inputTable[0] = new HomogenNumericTable(context, Double.class, nFeature1, inputData.size(), NumericTable.AllocationFlag.DoAllocate);
+		   inputTable[1] = new HomogenNumericTable(context, Double.class, nFeature2, inputData.size(), NumericTable.AllocationFlag.DoAllocate);
+
+		   MergedNumericTable mergedTable = new MergedNumericTable(context);
+		   mergedTable.addNumericTable(inputTable[0]);
+		   mergedTable.addNumericTable(inputTable[1]);
+
+		   // load data blk to daal table
+		   this.loadDataBlock(mergedTable, inputData, (nFeature1+nFeature2));
+	   	   return inputTable;
+
+	   } catch (Exception e)
+	   {
+		LOG.error("Fail to create dense numeric table", e);
+		return null;
+	   }
 
    }//}}}
 
-   public NumericTable[] createDenseNumericTableSplit(List<String> inputFiles, int nFeature1, int nFeature2, String sep, DaalContext context) throws IOException
+   public NumericTable[] createDenseNumericTableSplit(String inputFile, int nFeature1, int nFeature2, String sep, DaalContext context)
    {//{{{
 
-	   //load in data block
-	   List<double[]> inputData = this.loadDenseCSVFiles(inputFiles, (nFeature1+nFeature2), sep);
+	   try {
 
-	   // create daal table
-	   NumericTable[] inputTable = new NumericTable[2];
-	   inputTable[0] = new HomogenNumericTable(context, Double.class, nFeature1, inputData.size(), NumericTable.AllocationFlag.DoAllocate);
-	   inputTable[1] = new HomogenNumericTable(context, Double.class, nFeature2, inputData.size(), NumericTable.AllocationFlag.DoAllocate);
+		   //load in data block
+		   List<double[]> inputData = this.loadDenseCSVFiles(inputFile, (nFeature1+nFeature2), sep);
 
-	   MergedNumericTable mergedTable = new MergedNumericTable(context);
-	   mergedTable.addNumericTable(inputTable[0]);
-	   mergedTable.addNumericTable(inputTable[1]);
+		   // create daal table
+		   NumericTable[] inputTable = new NumericTable[2];
+		   inputTable[0] = new HomogenNumericTable(context, Double.class, nFeature1, inputData.size(), NumericTable.AllocationFlag.DoAllocate);
+		   inputTable[1] = new HomogenNumericTable(context, Double.class, nFeature2, inputData.size(), NumericTable.AllocationFlag.DoAllocate);
 
-	   // load data blk to daal table
-	   this.loadDataBlock(mergedTable, inputData, (nFeature1+nFeature2));
+		   MergedNumericTable mergedTable = new MergedNumericTable(context);
+		   mergedTable.addNumericTable(inputTable[0]);
+		   mergedTable.addNumericTable(inputTable[1]);
 
-	   return inputTable;
+		   // load data blk to daal table
+		   this.loadDataBlock(mergedTable, inputData, (nFeature1+nFeature2));
 
-   }//}}}
+		   return inputTable;
 
-   public NumericTable[] createDenseNumericTableSplit(String inputFile, int nFeature1, int nFeature2, String sep, DaalContext context) throws IOException
-   {//{{{
-
-	   //load in data block
-	   List<double[]> inputData = this.loadDenseCSVFiles(inputFile, (nFeature1+nFeature2), sep);
-
-	   // create daal table
-	   NumericTable[] inputTable = new NumericTable[2];
-	   inputTable[0] = new HomogenNumericTable(context, Double.class, nFeature1, inputData.size(), NumericTable.AllocationFlag.DoAllocate);
-	   inputTable[1] = new HomogenNumericTable(context, Double.class, nFeature2, inputData.size(), NumericTable.AllocationFlag.DoAllocate);
-
-	   MergedNumericTable mergedTable = new MergedNumericTable(context);
-	   mergedTable.addNumericTable(inputTable[0]);
-	   mergedTable.addNumericTable(inputTable[1]);
-
-	   // load data blk to daal table
-	   this.loadDataBlock(mergedTable, inputData, (nFeature1+nFeature2));
-
-	   return inputTable;
-
+	   } catch (Exception e)
+	   {
+		   LOG.error("Fail to create dense numeric table", e);
+		   return null;
+	   }
    }//}}}
 
    public List<double[]> loadDenseCSVFiles(List<String> inputFiles, int nFeatures, String sep)
