@@ -471,6 +471,118 @@ In the &lt;em&gt;&lt;strong&gt;init&lt;/strong&gt;&lt;/em&gt; function, tune the
     </item>
     
     <item>
+      <title>Algorithms in Harp-DAAL</title>
+      <link>https://dsc-spidal.github.io/harp/docs/harpdaal/algorithms/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://dsc-spidal.github.io/harp/docs/harpdaal/algorithms/</guid>
+      <description>
+
+&lt;p&gt;&lt;a name=&#34;arpos&#34;&gt;
+    &lt;h1 style=&#34;padding-top: 60px; margin-top: -60px;&#34;&gt;&lt;/h1&gt;
+&lt;/a&gt;&lt;/p&gt;
+
+&lt;h2 id=&#34;association-rule&#34;&gt;&lt;strong&gt;Association Rule&lt;/strong&gt;&lt;/h2&gt;
+
+&lt;p&gt;Association rule learning is a rule-based learning method for discovering relations between variables in databases.
+It is intended to identify strong rules discovered in databases using some measures of interestingness.&lt;/p&gt;
+
+&lt;p&gt;Harp-DAAL support a Batch mode of Association Rules based on the &lt;em&gt;Apriori&lt;/em&gt; algorithm &lt;sup class=&#34;footnote-ref&#34; id=&#34;fnref:fn1&#34;&gt;&lt;a rel=&#34;footnote&#34; href=&#34;#fn:fn1&#34;&gt;1&lt;/a&gt;&lt;/sup&gt;. provided by
+More details from Intel DAAL kernel is found &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-10&#34;&gt;here&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;a name=&#34;covpos&#34;&gt;
+    &lt;h1 style=&#34;padding-top: 60px; margin-top: -60px;&#34;&gt;&lt;/h1&gt;
+&lt;/a&gt;&lt;/p&gt;
+
+&lt;h2 id=&#34;covariance&#34;&gt;&lt;strong&gt;Covariance&lt;/strong&gt;&lt;/h2&gt;
+
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/harpdaal/Covariance.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
+
+&lt;p&gt;Covariance, in probability theory and statistics, is a measure of the joint variability of two random variables. The sign of the covariance
+shows the tendency in the linear relationship between the variables. The correlation is the covariance normalized to be between -1 and +1.
+A positive correlation indicates the extent to which variables increase or decrease simultaneously.
+A negative correlation indicates the extent to which one variable increases while the other one decreases.&lt;/p&gt;
+
+&lt;p&gt;Harp-DAAL supports distributed modes of Covariance for both of dense and sparse (CSR format) input data.
+Algorithmic details from Intel DAAL are found &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-2&#34;&gt;here&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;a name=&#34;boostpos&#34;&gt;
+    &lt;h1 style=&#34;padding-top: 60px; margin-top: -60px;&#34;&gt;&lt;/h1&gt;
+&lt;/a&gt;&lt;/p&gt;
+
+&lt;h2 id=&#34;boosting&#34;&gt;&lt;strong&gt;Boosting&lt;/strong&gt;&lt;/h2&gt;
+
+&lt;p&gt;Boosting is a group of algorithms aiming to construct a strong classifier from a set of weighted weak classifiers
+through iterative re-weighting based on accuracy measurement for weak classifiers. A weak classifier typically has only slightly better
+performance than random guessing, which are very simple, fast, and focusing on specific feature classification.
+Harp-DAAL supports batch modes of the following three boosting algorithms.&lt;/p&gt;
+
+&lt;h3 id=&#34;adaboost-classifier&#34;&gt;AdaBoost Classifier&lt;/h3&gt;
+
+&lt;p&gt;AdaBoost algorithm performs well on a variety of data sets except some noisy data &lt;sup class=&#34;footnote-ref&#34; id=&#34;fnref:fn2&#34;&gt;&lt;a rel=&#34;footnote&#34; href=&#34;#fn:fn2&#34;&gt;2&lt;/a&gt;&lt;/sup&gt;.
+More details are from &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-29&#34;&gt;Intel DAAL Documentation&lt;/a&gt;
+AdaBoost in Harp-DAAL is a binary classifier.&lt;/p&gt;
+
+&lt;h3 id=&#34;brownboost-classifier&#34;&gt;BrownBoost Classifier&lt;/h3&gt;
+
+&lt;p&gt;BrownBoost is a boosting classification algorithm. It is more robust to noisy data sets than other boosting classification algorithms.
+More details are from &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-30&#34;&gt;Intel DAAL Documentation&lt;/a&gt;
+BrownBoost in Harp-DAAL is a binary classifier.&lt;/p&gt;
+
+&lt;h3 id=&#34;logitboost-classifier&#34;&gt;LogitBoost Classifier&lt;/h3&gt;
+
+&lt;p&gt;LogitBoost and AdaBoost are close to each other in the sense that both perform an additive logistic regression. The difference is that AdaBoost minimizes the exponential loss, whereas LogitBoost minimizes the logistic loss.&lt;/p&gt;
+
+&lt;p&gt;LogitBoost in Harp-DAAL is a multi-class classifier.
+More details are from &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-31&#34;&gt;Intel DAAL Documentation&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;a name=&#34;naivepos&#34;&gt;
+    &lt;h1 style=&#34;padding-top: 40px; margin-top: -40px;&#34;&gt;&lt;/h1&gt;
+&lt;/a&gt;&lt;/p&gt;
+
+&lt;h2 id=&#34;naive-bayes-classifier&#34;&gt;&lt;strong&gt;Naive Bayes Classifier&lt;/strong&gt;&lt;/h2&gt;
+
+&lt;p&gt;Naïve Bayes is a set of simple and powerful classification methods often used for text classification,
+medical diagnosis, and other classification problems. In spite of their main assumption about independence between features,
+Naïve Bayes classifiers often work well when this assumption does not hold.
+An advantage of this method is that it requires only a small amount of training data to estimate model parameters.&lt;/p&gt;
+
+&lt;p&gt;Harp-DAAL currently supports distributed mode of Multinomial Naive Bayes &lt;sup class=&#34;footnote-ref&#34; id=&#34;fnref:fn3&#34;&gt;&lt;a rel=&#34;footnote&#34; href=&#34;#fn:fn3&#34;&gt;3&lt;/a&gt;&lt;/sup&gt; for both of dense and sparse (CSR format) input datasets.
+More details from Intel DAAL Documentation is &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-28&#34;&gt;here&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;a name=&#34;kmeanspos&#34;&gt;
+    &lt;h1 style=&#34;padding-top: 60px; margin-top: -60px;&#34;&gt;&lt;/h1&gt;
+&lt;/a&gt;&lt;/p&gt;
+
+&lt;h2 id=&#34;k-means-clustering&#34;&gt;&lt;strong&gt;K-means Clustering&lt;/strong&gt;&lt;/h2&gt;
+
+&lt;p&gt;K-means is a widely used clustering algorithm in machine learning community. It iteratively computes the distance between each
+training point to every centroids, re-assigns the training point to new cluster and re-compute the new centroid of each cluster.
+In other words, the clustering methods enable reducing the problem of analysis of the entire data set to the analysis of clusters.&lt;/p&gt;
+
+&lt;p&gt;Harp-DAAL currently supports distributed mode of K-means clustering for both of dense and sparse (CSR format)
+input datasets.&lt;/p&gt;
+
+&lt;p&gt;More algorithmic details from Intel DAAL Documentation is &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-5&#34;&gt;here&lt;/a&gt;.&lt;/p&gt;
+
+&lt;h2 id=&#34;references&#34;&gt;&lt;strong&gt;References&lt;/strong&gt;&lt;/h2&gt;
+&lt;div class=&#34;footnotes&#34;&gt;
+
+&lt;hr /&gt;
+
+&lt;ol&gt;
+&lt;li id=&#34;fn:fn1&#34;&gt;Rakesh Agrawal, Ramakrishnan Srikant. Fast Algorithms for Mining Association Rules. Proceedings of the 20th VLDB Conference Santiago, Chile, 1994.
+ &lt;a class=&#34;footnote-return&#34; href=&#34;#fnref:fn1&#34;&gt;&lt;sup&gt;[return]&lt;/sup&gt;&lt;/a&gt;&lt;/li&gt;
+&lt;li id=&#34;fn:fn2&#34;&gt;Yoav Freund, Robert E. Schapire. Additive Logistic regression: a statistical view of boosting. Journal of Japanese Society for Artificial Intelligence (14(5)), 771-780, 1999.
+ &lt;a class=&#34;footnote-return&#34; href=&#34;#fnref:fn2&#34;&gt;&lt;sup&gt;[return]&lt;/sup&gt;&lt;/a&gt;&lt;/li&gt;
+&lt;li id=&#34;fn:fn3&#34;&gt;Jason D.M. Rennie, Lawrence, Shih, Jaime Teevan, David R. Karget. Tackling the Poor Assumptions of Naïve Bayes Text classifiers. Proceedings of the Twentieth International Conference on Machine Learning (ICML-2003), Washington DC, 2003.
+ &lt;a class=&#34;footnote-return&#34; href=&#34;#fnref:fn3&#34;&gt;&lt;sup&gt;[return]&lt;/sup&gt;&lt;/a&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/div&gt;
+</description>
+    </item>
+    
+    <item>
       <title>Allgather</title>
       <link>https://dsc-spidal.github.io/harp/docs/communications/allgather/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
@@ -1106,169 +1218,6 @@ A negative correlation indicates the extent to which one variable increases whil
 &lt;p&gt;Harp-DAAL supports distributed modes of Covariance for both of dense and sparse (CSR format) input data.&lt;/p&gt;
 
 &lt;p&gt;Algorithmic details from Intel DAAL are found &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-2&#34;&gt;here&lt;/a&gt;&lt;/p&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>Data Interfaces and Types</title>
-      <link>https://dsc-spidal.github.io/harp/docs/programming/data-interface/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>https://dsc-spidal.github.io/harp/docs/programming/data-interface/</guid>
-      <description>
-
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/2-2-1.png&#34; alt=&#34;data-abstraction&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Harp provides three levels of data structures: arrays and objects, partition, and table. Arrays and Serializable objects are the basic data structures, which include:&lt;/p&gt;
-
-&lt;ol&gt;
-&lt;li&gt;&lt;p&gt;&lt;code&gt;ByteArray&lt;/code&gt;: an array with byte-type elements&lt;/p&gt;&lt;/li&gt;
-
-&lt;li&gt;&lt;p&gt;&lt;code&gt;ShortArray&lt;/code&gt;: an array with short-type elements&lt;/p&gt;&lt;/li&gt;
-
-&lt;li&gt;&lt;p&gt;&lt;code&gt;IntArray&lt;/code&gt;: an array with int-type elements&lt;/p&gt;&lt;/li&gt;
-
-&lt;li&gt;&lt;p&gt;&lt;code&gt;FloatArray&lt;/code&gt;: an array with float-type elements&lt;/p&gt;&lt;/li&gt;
-
-&lt;li&gt;&lt;p&gt;&lt;code&gt;LongArray&lt;/code&gt;: an array with long-type elements&lt;/p&gt;&lt;/li&gt;
-
-&lt;li&gt;&lt;p&gt;&lt;code&gt;DoubleArray&lt;/code&gt;: an array with double-type elements&lt;/p&gt;&lt;/li&gt;
-
-&lt;li&gt;&lt;p&gt;&lt;code&gt;Writable&lt;/code&gt;: serializable object&lt;/p&gt;&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;&lt;code&gt;Partition&lt;/code&gt; is a wraper of the data structures shown above. Every partition has an ID. In collective communication, partitions from different processors with the same ID will be merged. The merge operation is defined by &lt;code&gt;PartitionCombiner&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;code&gt;Table&lt;/code&gt; is a container for partitions. It is a high-level data structure and the unit for collective communication.&lt;/p&gt;
-
-&lt;h1 id=&#34;table-and-partitions&#34;&gt;Table and Partitions&lt;/h1&gt;
-
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/3-1-2.png&#34; alt=&#34;table-partition&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;An example of how to construct a table is:&lt;/p&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;Table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;DoubleArray&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;table&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&amp;gt;(&lt;/span&gt;&lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;DoubleArrPlus&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;());&lt;/span&gt;
-&lt;span style=&#34;color: #66d9ef&#34;&gt;for&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;numPartitions&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;++)&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-    &lt;span style=&#34;color: #f8f8f2&#34;&gt;DoubleArray&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;array&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;DoubleArray&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;create&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;size&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;false&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-    &lt;span style=&#34;color: #f8f8f2&#34;&gt;table&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;addPartition&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Partition&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&amp;gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;array&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;));&lt;/span&gt;
-&lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
-
-&lt;p&gt;In this example, it initiliazes a table which carries &lt;code&gt;DoubleArray&lt;/code&gt; as the primitive data type. &lt;code&gt;DoubleArrPlus&lt;/code&gt; is a &lt;code&gt;PartitionCombiner&lt;/code&gt; used to define the merging operation of two partitions.&lt;/p&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;DoubleArrPlus&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;extends&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;PartitionCombiner&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;DoubleArray&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-    &lt;span style=&#34;color: #66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;PartitionStatus&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;combine&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;DoubleArray&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;curPar&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;DoubleArray&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;newPar&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-        &lt;span style=&#34;color: #66d9ef&#34;&gt;double&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[]&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;doubles1&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;curPar&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;get&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;size1&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;curPar&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;size&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
-        &lt;span style=&#34;color: #66d9ef&#34;&gt;double&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[]&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;doubles2&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;newPar&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;get&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;size2&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;newPar&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;size&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
-        &lt;span style=&#34;color: #66d9ef&#34;&gt;if&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;size1&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;!=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;size2&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;            &lt;span style=&#34;color: #66d9ef&#34;&gt;return&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;PartitionStatus&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;COMBINE_FAILED&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-        &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
-        &lt;span style=&#34;color: #66d9ef&#34;&gt;for&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;size2&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;++)&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-            &lt;span style=&#34;color: #f8f8f2&#34;&gt;doubles1&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;doubles1&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;]&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;doubles2&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;];&lt;/span&gt;
-        &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
-        &lt;span style=&#34;color: #66d9ef&#34;&gt;return&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;PartitionStatus&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;COMBINED&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-   &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
-&lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
-
-&lt;h1 id=&#34;data-abstraction&#34;&gt;Data Abstraction&lt;/h1&gt;
-
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/3-1-3.png&#34; alt=&#34;data-types&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;The data abstraction is shown above. &lt;code&gt;Transferable&lt;/code&gt; is ae higher interface compare to other data structures and &lt;code&gt;Simple&lt;/code&gt; is the sub-interface for all primitive data structures. Here is an example of the primitive data strucutres.&lt;/p&gt;
-&lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #75715e&#34;&gt;/*&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt; * Copyright 2013-2016 Indiana University&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt; * &lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt; * Licensed under the Apache License, Version 2.0 (the &amp;quot;License&amp;quot;);&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt; * you may not use this file except in compliance with the License.&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt; * You may obtain a copy of the License at&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt; *&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt; *     http://www.apache.org/licenses/LICENSE-2.0&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt; *&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt; * Unless required by applicable law or agreed to in writing, software&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt; * distributed under the License is distributed on an &amp;quot;AS IS&amp;quot; BASIS,&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt; * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt; * See the License for the specific language governing permissions and&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt; * limitations under the License.&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt; */&lt;/span&gt;
-
-&lt;span style=&#34;color: #f92672&#34;&gt;package&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;edu.iu.harp.resource&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-
-&lt;span style=&#34;color: #f92672&#34;&gt;import&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;java.io.DataOutput&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-&lt;span style=&#34;color: #f92672&#34;&gt;import&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;java.io.IOException&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-
-&lt;span style=&#34;color: #f92672&#34;&gt;import&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;edu.iu.harp.io.DataType&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-&lt;span style=&#34;color: #f92672&#34;&gt;import&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;edu.iu.harp.resource.Array&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-
-&lt;span style=&#34;color: #75715e&#34;&gt;/*******************************************************&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt; * IntArray class for managing int[] data.&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt; ******************************************************/&lt;/span&gt;
-&lt;span style=&#34;color: #66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;final&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;IntArray&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;extends&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Array&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[]&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-
-    &lt;span style=&#34;color: #66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;IntArray&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[]&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;arr&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;start&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;size&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-	&lt;span style=&#34;color: #66d9ef&#34;&gt;super&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;arr&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;start&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;size&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-    &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
-
-    &lt;span style=&#34;color: #75715e&#34;&gt;/**&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt;     * Get the number of Bytes of encoded data. One byte for storing DataType,&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt;     * four bytes for storing the size, size*4 bytes for storing the data.&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt;     */&lt;/span&gt;
-    &lt;span style=&#34;color: #a6e22e&#34;&gt;@Override&lt;/span&gt;
-    &lt;span style=&#34;color: #66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;getNumEnocdeBytes&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;()&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-	&lt;span style=&#34;color: #66d9ef&#34;&gt;return&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;size&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;*&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;4&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;5&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-    &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
-
-    &lt;span style=&#34;color: #75715e&#34;&gt;/**&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt;     * Encode the array as DataOutput&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt;     */&lt;/span&gt;
-    &lt;span style=&#34;color: #a6e22e&#34;&gt;@Override&lt;/span&gt;
-    &lt;span style=&#34;color: #66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;encode&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;DataOutput&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;out&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;throws&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;IOException&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-	&lt;span style=&#34;color: #f8f8f2&#34;&gt;out&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;writeByte&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;DataType&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;INT_ARRAY&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-	&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;len&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;start&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;size&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-	&lt;span style=&#34;color: #f8f8f2&#34;&gt;out&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;writeInt&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;size&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-	&lt;span style=&#34;color: #66d9ef&#34;&gt;for&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;start&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;len&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;++)&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-	    &lt;span style=&#34;color: #f8f8f2&#34;&gt;out&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;writeInt&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;array&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;i&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;]);&lt;/span&gt;
-	&lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
-    &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
-
-    &lt;span style=&#34;color: #75715e&#34;&gt;/**&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt;     * Create an array. Firstly try to get an array from ResourcePool; if&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt;     * failed, new an array.&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt;     * &lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt;     * @param len&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt;     * @param approximate&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt;     * @return&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt;     */&lt;/span&gt;
-    &lt;span style=&#34;color: #66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;static&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;IntArray&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;create&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;len&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;boolean&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;approximate&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-	&lt;span style=&#34;color: #66d9ef&#34;&gt;if&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;len&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-	    &lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[]&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;ints&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;ResourcePool&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;get&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;().&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getIntsPool&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;().&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getArray&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;len&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;approximate&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-	    &lt;span style=&#34;color: #66d9ef&#34;&gt;if&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;ints&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;!=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;null&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-		&lt;span style=&#34;color: #66d9ef&#34;&gt;return&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;IntArray&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;ints&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;len&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-	    &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;else&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-		&lt;span style=&#34;color: #66d9ef&#34;&gt;return&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;null&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-	    &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
-	&lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;else&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-	    &lt;span style=&#34;color: #66d9ef&#34;&gt;return&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;null&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-	&lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
-    &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
-
-    &lt;span style=&#34;color: #75715e&#34;&gt;/**&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt;     * Release the array from the ResourcePool&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt;     */&lt;/span&gt;
-    &lt;span style=&#34;color: #a6e22e&#34;&gt;@Override&lt;/span&gt;
-    &lt;span style=&#34;color: #66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;release&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;()&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-	&lt;span style=&#34;color: #f8f8f2&#34;&gt;ResourcePool&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;get&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;().&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getIntsPool&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;().&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;releaseArray&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;array&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-	&lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;reset&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
-    &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
-
-    &lt;span style=&#34;color: #75715e&#34;&gt;/**&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt;     * Free the array from the ResourcePool&lt;/span&gt;
-&lt;span style=&#34;color: #75715e&#34;&gt;     */&lt;/span&gt;
-    &lt;span style=&#34;color: #a6e22e&#34;&gt;@Override&lt;/span&gt;
-    &lt;span style=&#34;color: #66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;free&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;()&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-	&lt;span style=&#34;color: #f8f8f2&#34;&gt;ResourcePool&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;get&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;().&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getIntsPool&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;().&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;freeArray&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;array&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-	&lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;reset&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
-
-    &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
-&lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
 </description>
     </item>
     
