@@ -55,8 +55,7 @@ import java.nio.DoubleBuffer;
 //import daa.jar API
 import com.intel.daal.algorithms.kmeans.*;
 import com.intel.daal.algorithms.kmeans.init.*;
-import com.intel.daal.data_management.data.NumericTable;
-import com.intel.daal.data_management.data.HomogenNumericTable;
+import com.intel.daal.data_management.data.*;
 import com.intel.daal.services.DaalContext;
 import com.intel.daal.services.Environment;
 
@@ -76,9 +75,10 @@ public class KMeansDaalCollectiveMapper extends CollectiveMapper<String, String,
 	private int numThreads;
 	private int harpThreads;
 	private int numIterations;
-	private Configuration conf;
 	private String cenDir;
 	private String cenDirInit;
+	private List<String> inputFiles;
+	private Configuration conf;
 
 	private long[] array_startP_cen;
 	private long[] sentinel_startP_cen;
@@ -87,16 +87,9 @@ public class KMeansDaalCollectiveMapper extends CollectiveMapper<String, String,
 	private double[] buffer_array_cen;
 	private Table<DoubleArray> pushpullGlobal = null;
 
-	//to measure the time
-	private long convert_time = 0;
-	private long train_time = 0;
-	private long compute_time = 0;
-	private long comm_time = 0;
-
 	private static HarpDAALDataSource datasource;
 	private static HarpDAALComm harpcomm;	
 	private static DaalContext daal_Context = new DaalContext();
-	private List<String> inputFiles;
 
 	/**
 	 * Mapper configuration.
@@ -106,18 +99,18 @@ public class KMeansDaalCollectiveMapper extends CollectiveMapper<String, String,
 		throws IOException, InterruptedException {
 		long startTime = System.currentTimeMillis();
 
-		Configuration configuration = context.getConfiguration();
+		this.conf = context.getConfiguration();
 
-		this.numCentroids =configuration.getInt(HarpDAALConstants.NUM_CENTROIDS, 20);
-		this.vectorSize = configuration.getInt(HarpDAALConstants.FEATURE_DIM,20);
-		this.fileDim = configuration.getInt(HarpDAALConstants.FILE_DIM, 20);
-		this.num_mappers = configuration.getInt(HarpDAALConstants.NUM_MAPPERS,10);
+		this.numCentroids =this.conf.getInt(HarpDAALConstants.NUM_CENTROIDS, 20);
+		this.vectorSize = this.conf.getInt(HarpDAALConstants.FEATURE_DIM,20);
+		this.fileDim = this.conf.getInt(HarpDAALConstants.FILE_DIM, 20);
+		this.num_mappers = this.conf.getInt(HarpDAALConstants.NUM_MAPPERS,10);
 		this.cenVecSize = vectorSize + 1;
-		this.numThreads = configuration.getInt(HarpDAALConstants.NUM_THREADS,10);
+		this.numThreads = this.conf.getInt(HarpDAALConstants.NUM_THREADS,10);
 		this.numCenPars = numThreads;
-		this.numIterations = configuration.getInt(HarpDAALConstants.NUM_ITERATIONS, 10);
-		this.cenDir = configuration.get(HarpDAALConstants.CEN_DIR);
-		this.cenDirInit = configuration.get(HarpDAALConstants.CENTROID_FILE_NAME);
+		this.numIterations = this.conf.getInt(HarpDAALConstants.NUM_ITERATIONS, 10);
+		this.cenDir = this.conf.get(HarpDAALConstants.CEN_DIR);
+		this.cenDirInit = this.conf.get(HarpDAALConstants.CENTROID_FILE_NAME);
 		//always use the maximum hardware threads to load in data and convert data 
       		this.harpThreads = Runtime.getRuntime().availableProcessors();
 
@@ -132,31 +125,27 @@ public class KMeansDaalCollectiveMapper extends CollectiveMapper<String, String,
 				+ (endTime - startTime));
 	}
 
-	protected void mapCollective(
-			KeyValReader reader, Context context)
-			throws IOException, InterruptedException {
-			long startTime = System.currentTimeMillis();
-			List<String> pointFiles =
-				new LinkedList<String>();
-			while (reader.nextKeyValue()) {
-				String key = reader.getCurrentKey();
-				String value = reader.getCurrentValue();
-				LOG.info("Key: " + key + ", Value: "
-						+ value);
-				pointFiles.add(value);
-			}
+	protected void mapCollective(KeyValReader reader, Context context) throws IOException, InterruptedException 
+	{
+		long startTime = System.currentTimeMillis();
+		this.inputFiles =
+			new LinkedList<String>();
+		while (reader.nextKeyValue()) {
+			String key = reader.getCurrentKey();
+			String value = reader.getCurrentValue();
+			LOG.info("Key: " + key + ", Value: "
+					+ value);
+			this.inputFiles.add(value);
+		}
 
-			this.conf = context.getConfiguration();
-			this.inputFiles = pointFiles;
-			//init data source
-			this.datasource = new HarpDAALDataSource(this.harpThreads, this.conf);
-			// create communicator
-			this.harpcomm= new HarpDAALComm(this.getSelfID(), this.getMasterID(), this.num_mappers, daal_Context, this);
+		//init data source
+		this.datasource = new HarpDAALDataSource(this.harpThreads, this.conf);
+		// create communicator
+		this.harpcomm= new HarpDAALComm(this.getSelfID(), this.getMasterID(), this.num_mappers, daal_Context, this);
 
-			runKmeans();
-			LOG.info("Total iterations in master view: "
-					+ (System.currentTimeMillis() - startTime));
-			}
+		runKmeans(context);
+		LOG.info("Total iterations in master view: " + (System.currentTimeMillis() - startTime));
+	}
 
 	/**
 	 * @brief run K-means by invoking DAAL Java API
@@ -166,7 +155,7 @@ public class KMeansDaalCollectiveMapper extends CollectiveMapper<String, String,
 	 *
 	 * @return 
 	 */
-	private void runKmeans() throws IOException 
+	private void runKmeans(Context context) throws IOException 
 	{//{{{
 
 		long start_execution = System.currentTimeMillis();
@@ -217,8 +206,7 @@ public class KMeansDaalCollectiveMapper extends CollectiveMapper<String, String,
 
 		// Write out centroids
 		if (this.isMaster()) {
-			storeCentroids(this.conf, this.cenDir,
-					cenTable, this.cenVecSize, "output");
+			storeCentroids(this.cenDir, cenTable, this.cenVecSize, "output");
 		}
 
 		cenTable.release();
@@ -236,25 +224,20 @@ public class KMeansDaalCollectiveMapper extends CollectiveMapper<String, String,
 	private void createCenTable(Table<DoubleArray> cenTable)
 	{//{{{
 
-		int cenParSize =
-			this.numCentroids / this.numCenPars;
-
+		int cenParSize = this.numCentroids / this.numCenPars;
 		int cenRest = this.numCentroids % this.numCenPars;
 
-		for (int i = 0; i < this.numCenPars; i++) {
+		for (int i = 0; i < this.numCenPars; i++) 
+		{
 			if (cenRest > 0) {
 				int size = (cenParSize + 1) * this.cenVecSize;
-				DoubleArray array =
-					DoubleArray.create(size, false);
-				cenTable.addPartition(new Partition<>(i,
-							array));
+				DoubleArray array = DoubleArray.create(size, false);
+				cenTable.addPartition(new Partition<>(i, array));
 				cenRest--;
 			} else if (cenParSize > 0) {
 				int size = cenParSize * cenVecSize;
-				DoubleArray array =
-					DoubleArray.create(size, false);
-				cenTable.addPartition(new Partition<>(i,
-							array));
+				DoubleArray array = DoubleArray.create(size, false);
+				cenTable.addPartition(new Partition<>(i, array));
 			} else {
 				break;
 			}
@@ -278,35 +261,34 @@ public class KMeansDaalCollectiveMapper extends CollectiveMapper<String, String,
 		Path cPath = new Path(cFileName);
 		FileSystem fs = FileSystem.get(this.conf);
 		FSDataInputStream in = fs.open(cPath);
-		BufferedReader br =
-			new BufferedReader(
-					new InputStreamReader(in));
+		BufferedReader br = new BufferedReader(new InputStreamReader(in));
 		String[] curLine = null;
 		int curPos = 0;
-		for (Partition<DoubleArray> partition : cenTable
-				.getPartitions()) {
+		for (Partition<DoubleArray> partition : cenTable.getPartitions()) 
+		{
 			DoubleArray array = partition.get();
 			double[] cData = array.get();
 			int start = array.start();
 			int size = array.size();
-			for (int i = start; i < (start + size); i++) {
+			for (int i = start; i < (start + size); i++) 
+			{
 				// Don't set the first element in each row
-				if (i % cenVecSize != 0) {
-					if (curLine == null
-							|| curPos == curLine.length) {
+				if (i % cenVecSize != 0) 
+				{
+					if (curLine == null || curPos == curLine.length) 
+					{
 						curLine = br.readLine().split(" ");
 						curPos = 0;
-							}
-					cData[i] =
-						Double.parseDouble(curLine[curPos]);
+					}
+					cData[i] = Double.parseDouble(curLine[curPos]);
 					curPos++;
 				}
 			}
-				}
+		}
+
 		br.close();
 		long endTime = System.currentTimeMillis();
-		LOG.info("Load centroids (ms): "
-				+ (endTime - startTime));
+		LOG.info("Load centroids (ms): " + (endTime - startTime));
 	}//}}}
 
 
@@ -677,12 +659,12 @@ public class KMeansDaalCollectiveMapper extends CollectiveMapper<String, String,
 		}
 	}//}}}
 
-	private void storeCentroids(Configuration configuration, String cenDir, Table<DoubleArray> cenTable, int cenVecSize, String name) throws IOException 
+	private void storeCentroids(String cenDir, Table<DoubleArray> cenTable, int cenVecSize, String name) throws IOException 
 	{
 		String cFile = cenDir + File.separator + "out" + File.separator + name;
 		Path cPath = new Path(cFile);
 		LOG.info("centroids path: " + cPath.toString());
-		FileSystem fs = FileSystem.get(configuration);
+		FileSystem fs = FileSystem.get(this.conf);
 		fs.delete(cPath, true);
 		FSDataOutputStream out = fs.create(cPath);
 		BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(out));

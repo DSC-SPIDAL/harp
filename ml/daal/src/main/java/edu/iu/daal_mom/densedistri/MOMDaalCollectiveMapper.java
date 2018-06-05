@@ -73,17 +73,8 @@ CollectiveMapper<String, String, Object, Object>{
   private int num_mappers;
   private int numThreads;
   private int harpThreads; 
-
-    //to measure the time
-  private long load_time = 0;
-  private long convert_time = 0;
-  private long total_time = 0;
-  private long compute_time = 0;
-  private long comm_time = 0;
-  private long ts_start = 0;
-  private long ts_end = 0;
-  private long ts1 = 0;
-  private long ts2 = 0;
+  private List<String> inputFiles;
+  private Configuration conf;
 
   private static HarpDAALDataSource datasource;
   private static HarpDAALComm harpcomm;	
@@ -96,14 +87,19 @@ CollectiveMapper<String, String, Object, Object>{
     protected void setup(Context context)
     throws IOException, InterruptedException {
       long startTime = System.currentTimeMillis();
-      Configuration configuration = context.getConfiguration();
-      this.num_mappers = configuration.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
-      this.numThreads = configuration.getInt(HarpDAALConstants.NUM_THREADS, 10);
-      this.fileDim = configuration.getInt(HarpDAALConstants.FILE_DIM, 10);
-      this.vectorSize = configuration.getInt(HarpDAALConstants.FEATURE_DIM, 10);
+      this.conf = context.getConfiguration();
+      this.num_mappers = this.conf.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
+      this.numThreads = this.conf.getInt(HarpDAALConstants.NUM_THREADS, 10);
+      this.fileDim = this.conf.getInt(HarpDAALConstants.FILE_DIM, 10);
+      this.vectorSize = this.conf.getInt(HarpDAALConstants.FEATURE_DIM, 10);
 
       //always use the maximum hardware threads to load in data and convert data 
       harpThreads = Runtime.getRuntime().availableProcessors();
+
+      //set thread number used in DAAL
+      LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
+      Environment.setNumberOfThreads(numThreads);
+      LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
 
       LOG.info("Num Mappers " + num_mappers);
       LOG.info("Num Threads " + numThreads);
@@ -119,7 +115,7 @@ CollectiveMapper<String, String, Object, Object>{
       KeyValReader reader, Context context)
     throws IOException, InterruptedException {
       long startTime = System.currentTimeMillis();
-      List<String> trainingDataFiles =
+      this.inputFiles =
       new LinkedList<String>();
 
       //splitting files between mapper
@@ -129,22 +125,15 @@ CollectiveMapper<String, String, Object, Object>{
         LOG.info("Key: " + key + ", Value: "
           + value);
         System.out.println("file name : " + value);
-        trainingDataFiles.add(value);
+        this.inputFiles.add(value);
       }
 
-      Configuration conf = context.getConfiguration();
-
-      Path pointFilePath = new Path(trainingDataFiles.get(0));
-      System.out.println("path = "+ pointFilePath.getName());
-      FileSystem fs = pointFilePath.getFileSystem(conf);
-      FSDataInputStream in = fs.open(pointFilePath);
-
       //init data source
-      this.datasource = new HarpDAALDataSource(trainingDataFiles, this.fileDim, harpThreads, conf);
+      this.datasource = new HarpDAALDataSource(harpThreads, conf);
       // create communicator
       this.harpcomm= new HarpDAALComm(this.getSelfID(), this.getMasterID(), this.num_mappers, daal_Context, this);
 
-      runMOM(conf, context);
+      runMOM(context);
       LOG.info("Total iterations in master view: "
         + (System.currentTimeMillis() - startTime));
       this.freeMemory();
@@ -152,103 +141,81 @@ CollectiveMapper<String, String, Object, Object>{
       System.gc();
     }
 
-    private void runMOM(Configuration conf, Context context) throws IOException {
+    private void runMOM(Context context) throws IOException 
+    {
 
-        //set thread number used in DAAL
-        LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
-        Environment.setNumberOfThreads(numThreads);
-        LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
+	    // ---------- load data ----------
+	    NumericTable featureArray_daal = this.datasource.createDenseNumericTable(this.inputFiles, this.vectorSize, "," , this.daal_Context);
 
-        ts_start = System.currentTimeMillis();
+	    PartialResult[] outcome = computeOnLocalNode(featureArray_daal);
 
-	// ---------- load data ----------
-	this.datasource.loadFiles();
-	NumericTable featureArray_daal = new HomogenNumericTable(daal_Context, Double.class, this.vectorSize, this.datasource.getTotalLines(), 
-			NumericTable.AllocationFlag.DoAllocate);
-	this.datasource.loadDataBlock(featureArray_daal);
-    
-        PartialResult[] outcome = computeOnLocalNode(featureArray_daal);
+	    if(this.isMaster()){
+		    computeOnMasterNode(outcome);
+		    printResults(result);
+	    }
 
-        if(this.isMaster()){
-            computeOnMasterNode(outcome);
-            printResults(result);
-        }
+	    daal_Context.dispose();
 
-        daal_Context.dispose();
 
-        ts_end = System.currentTimeMillis();
-        total_time = (ts_end - ts_start);
-
-        LOG.info("Total Execution Time of MOM: "+ total_time);
-        LOG.info("Loading Data Time of MOM: "+ load_time);
-        LOG.info("Computation Time of MOM: "+ compute_time);
-        LOG.info("Comm Time of MOM: "+ comm_time);
-        LOG.info("DataType Convert Time of MOM: "+ convert_time);
-        LOG.info("Misc Time of MOM: "+ (total_time - load_time - compute_time - comm_time - convert_time));
     }
 
   private PartialResult[] computeOnLocalNode(NumericTable featureArray_daal) throws java.io.IOException 
   {
 
-    ts1 = System.currentTimeMillis();
-    /* Create algorithm objects to compute a variance-covariance matrix in the distributed processing mode using the default method */
-    DistributedStep1Local algorithm = new DistributedStep1Local(daal_Context, Double.class, Method.defaultDense);
-    /* Set input objects for the algorithm */
-    algorithm.input.set(InputId.data, featureArray_daal);
+	  /* Create algorithm objects to compute a variance-covariance matrix in the distributed processing mode using the default method */
+	  DistributedStep1Local algorithm = new DistributedStep1Local(daal_Context, Double.class, Method.defaultDense);
+	  /* Set input objects for the algorithm */
+	  algorithm.input.set(InputId.data, featureArray_daal);
 
-    /* Compute partial estimates on nodes */
-    partialResult = algorithm.compute();
-    ts2 = System.currentTimeMillis();
-    compute_time += (ts2 - ts1);
+	  /* Compute partial estimates on nodes */
+	  partialResult = algorithm.compute();
 
-    //comm gather
-    SerializableBase[] partial_res = this.harpcomm.harpdaal_gather(partialResult, this.getMasterID(), "MOM", "gather_partial_res");
-    PartialResult[] partial_output = new PartialResult[this.num_mappers];
-    if (this.isMaster() == true)
-    {
-	    for(int j=0;j<this.num_mappers;j++)
-		    partial_output[j] = (PartialResult)(partial_res[j]);
-    }
+	  //comm gather
+	  SerializableBase[] partial_res = this.harpcomm.harpdaal_gather(partialResult, this.getMasterID(), "MOM", "gather_partial_res");
+	  PartialResult[] partial_output = new PartialResult[this.num_mappers];
+	  if (this.isMaster() == true)
+	  {
+		  for(int j=0;j<this.num_mappers;j++)
+			  partial_output[j] = (PartialResult)(partial_res[j]);
+	  }
 
-    return partial_output;
+	  return partial_output;
   }
 
   private void computeOnMasterNode(PartialResult[] partialResultTable)
   {
-    DistributedStep2Master algorithm = new DistributedStep2Master(daal_Context, Double.class, Method.defaultDense);
-    for(int j=0; j<this.num_mappers;j++)
-	algorithm.input.add(DistributedStep2MasterInputId.partialResults, partialResultTable[j]);
+	  DistributedStep2Master algorithm = new DistributedStep2Master(daal_Context, Double.class, Method.defaultDense);
+	  for(int j=0; j<this.num_mappers;j++)
+		  algorithm.input.add(DistributedStep2MasterInputId.partialResults, partialResultTable[j]);
 
-    ts1 = System.currentTimeMillis();
-    algorithm.compute();
-    result = algorithm.finalizeCompute();
-    ts2 = System.currentTimeMillis();
-    compute_time += (ts2 - ts1);
+	  algorithm.compute();
+	  result = algorithm.finalizeCompute();
   }
 
-  private void printResults(Result result){
-    NumericTable minimum = result.get(ResultId.minimum);
-    NumericTable maximum = result.get(ResultId.maximum);
-    NumericTable sum = result.get(ResultId.sum);
-    NumericTable sumSquares = result.get(ResultId.sumSquares);
-    NumericTable sumSquaresCentered = result.get(ResultId.sumSquaresCentered);
-    NumericTable mean = result.get(ResultId.mean);
-    NumericTable secondOrderRawMoment = result.get(ResultId.secondOrderRawMoment);
-    NumericTable variance = result.get(ResultId.variance);
-    NumericTable standardDeviation = result.get(ResultId.standardDeviation);
-    NumericTable variation = result.get(ResultId.variation);
+  private void printResults(Result result)
+  {
+	  NumericTable minimum = result.get(ResultId.minimum);
+	  NumericTable maximum = result.get(ResultId.maximum);
+	  NumericTable sum = result.get(ResultId.sum);
+	  NumericTable sumSquares = result.get(ResultId.sumSquares);
+	  NumericTable sumSquaresCentered = result.get(ResultId.sumSquaresCentered);
+	  NumericTable mean = result.get(ResultId.mean);
+	  NumericTable secondOrderRawMoment = result.get(ResultId.secondOrderRawMoment);
+	  NumericTable variance = result.get(ResultId.variance);
+	  NumericTable standardDeviation = result.get(ResultId.standardDeviation);
+	  NumericTable variation = result.get(ResultId.variation);
 
-    System.out.println("Low order moments:");
-    Service.printNumericTable("Min:", minimum);
-    Service.printNumericTable("Max:", maximum);
-    Service.printNumericTable("Sum:", sum);
-    Service.printNumericTable("SumSquares:", sumSquares);
-    Service.printNumericTable("SumSquaredDiffFromMean:", sumSquaresCentered);
-    Service.printNumericTable("Mean:", mean);
-    Service.printNumericTable("SecondOrderRawMoment:", secondOrderRawMoment);
-    Service.printNumericTable("Variance:", variance);
-    Service.printNumericTable("StandartDeviation:", standardDeviation);
-    Service.printNumericTable("Variation:", variation);
+	  System.out.println("Low order moments:");
+	  Service.printNumericTable("Min:", minimum);
+	  Service.printNumericTable("Max:", maximum);
+	  Service.printNumericTable("Sum:", sum);
+	  Service.printNumericTable("SumSquares:", sumSquares);
+	  Service.printNumericTable("SumSquaredDiffFromMean:", sumSquaresCentered);
+	  Service.printNumericTable("Mean:", mean);
+	  Service.printNumericTable("SecondOrderRawMoment:", secondOrderRawMoment);
+	  Service.printNumericTable("Variance:", variance);
+	  Service.printNumericTable("StandartDeviation:", standardDeviation);
+	  Service.printNumericTable("Variation:", variation);
 
   }
 

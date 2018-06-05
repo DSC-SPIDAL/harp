@@ -71,16 +71,16 @@ public class KmeansDaalCollectiveMapper
 	extends
 	CollectiveMapper<String, String, Object, Object>{
 
-		private long nClasses = 20;
-		private int  nVectorsInBlock = 8000;
-		private int  nIterations = 5;
-
-		private int numMappers;
+		private long nClasses;
+		private int nVectorsInBlock;
+		private int nIterations;
+		private int num_mappers;
 		private int numThreads; //used in computation
 		private int harpThreads; //used in data conversion
+		private List<String> inputFiles;
+		private Configuration conf;
 
 		private NumericTable trainData;
-
 		private InitDistributedStep1Local initLocal;
 		private InitPartialResult initPres;
 		private InitResult initResult;
@@ -91,17 +91,6 @@ public class KmeansDaalCollectiveMapper
 		private NumericTable objectiveFunction = null;
 		private DistributedStep2Master masterAlgorithm = null;
 
-		//to measure the time
-		private long load_time = 0;
-		private long convert_time = 0;
-		private long total_time = 0;
-		private long compute_time = 0;
-		private long comm_time = 0;
-		private long ts_start = 0;
-		private long ts_end = 0;
-		private long ts1 = 0;
-		private long ts2 = 0;
-
 		private static HarpDAALDataSource datasource;
 		private static HarpDAALComm harpcomm;	
 		private static DaalContext daal_Context = new DaalContext();
@@ -110,28 +99,27 @@ public class KmeansDaalCollectiveMapper
 		 * Mapper configuration.
 		 */
 		@Override
-		protected void setup(Context context)
-			throws IOException, InterruptedException {
+		protected void setup(Context context) throws IOException, InterruptedException 
+		{
+
 			long startTime = System.currentTimeMillis();
 
-			Configuration configuration =
-				context.getConfiguration();
-			numMappers = configuration
-				.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
-			numThreads = configuration
-				.getInt(HarpDAALConstants.NUM_THREADS, 10);
-			nClasses = configuration
-				.getLong(HarpDAALConstants.NUM_CLASS, 20);
-
-			nVectorsInBlock = configuration
-				.getInt(Constants.NUM_VEC_BLOCK, 8000);
-			nIterations = configuration
-				.getInt(HarpDAALConstants.NUM_ITERATIONS, 5);
+			this.conf = context.getConfiguration();
+			this.num_mappers = this.conf.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
+			this.numThreads = this.conf.getInt(HarpDAALConstants.NUM_THREADS, 10);
+			this.nClasses = this.conf.getLong(HarpDAALConstants.NUM_CLASS, 20);
+			this.nVectorsInBlock = this.conf.getInt(Constants.NUM_VEC_BLOCK, 8000);
+			this.nIterations = this.conf.getInt(HarpDAALConstants.NUM_ITERATIONS, 5);
 
 			//always use the maximum hardware threads to load in data and convert data 
 			harpThreads = Runtime.getRuntime().availableProcessors();
 
-			LOG.info("Num Mappers " + numMappers);
+			//set thread number used in DAAL
+			LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
+			Environment.setNumberOfThreads(numThreads);
+			LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
+
+			LOG.info("Num Mappers " + num_mappers);
 			LOG.info("Num Threads " + numThreads);
 			LOG.info("Num classes " + nClasses);
 			LOG.info("Num harp load data threads " + harpThreads);
@@ -142,47 +130,32 @@ public class KmeansDaalCollectiveMapper
 
 		}
 
-		protected void mapCollective(
-				KeyValReader reader, Context context)
-				throws IOException, InterruptedException 
-			{
-
-				// long startTime = System.currentTimeMillis();
-				List<String> trainingDataFiles =
-					new LinkedList<String>();
-
-				//splitting files between mapper
-				while (reader.nextKeyValue()) {
-					String key = reader.getCurrentKey();
-					String value = reader.getCurrentValue();
-					LOG.info("Key: " + key + ", Value: "
-							+ value);
-					System.out.println("file name : " + value);
-					trainingDataFiles.add(value);
-				}
-
-				Configuration conf = context.getConfiguration();
-
-				Path pointFilePath = new Path(trainingDataFiles.get(0));
-				System.out.println("path = "+ pointFilePath.getName());
-				FileSystem fs = pointFilePath.getFileSystem(conf);
-				FSDataInputStream in = fs.open(pointFilePath);
-
-				// create data source
-				this.datasource = new HarpDAALDataSource(trainingDataFiles, harpThreads, conf);
-				// create communicator
-				this.harpcomm= new HarpDAALComm(this.getSelfID(), this.getMasterID(), this.numMappers, daal_Context, this);
-
-				runKmeans(conf, context);
-				// LOG.info("Total time of iterations in master view: "
-				//   + (System.currentTimeMillis() - startTime));
-				this.freeMemory();
-				this.freeConn();
-				System.gc();
-
+		protected void mapCollective(KeyValReader reader, Context context) throws IOException, InterruptedException 
+		{
+			this.inputFiles = new LinkedList<String>();
+			//splitting files between mapper
+			while (reader.nextKeyValue()) {
+				String key = reader.getCurrentKey();
+				String value = reader.getCurrentValue();
+				LOG.info("Key: " + key + ", Value: "
+						+ value);
+				System.out.println("file name : " + value);
+				this.inputFiles.add(value);
 			}
 
-		private void runKmeans(Configuration conf, Context context) throws IOException 
+			// create data source
+			this.datasource = new HarpDAALDataSource(harpThreads, conf);
+			// create communicator
+			this.harpcomm= new HarpDAALComm(this.getSelfID(), this.getMasterID(), this.num_mappers, daal_Context, this);
+
+			runKmeans(context);
+			this.freeMemory();
+			this.freeConn();
+			System.gc();
+
+		}
+
+		private void runKmeans(Context context) throws IOException 
 		{
 
 			initDataCentroids();
@@ -203,29 +176,29 @@ public class KmeansDaalCollectiveMapper
 
 		private void initDataCentroids() throws IOException
 		{//{{{
-			if (this.isMaster())
-			{
-				initMaster = new InitDistributedStep2Master(daal_Context, Double.class,
-						InitMethod.randomCSR, nClasses);
-			}
-
-			this.barrier("kmeans", "init-master");
+			
 
 			//load csr training table
-			trainData = this.datasource.loadCSRNumericTable(daal_Context);
+			this.trainData = this.datasource.loadCSRNumericTable(this.inputFiles, ",", daal_Context);
 			initLocal = new InitDistributedStep1Local(daal_Context, Double.class,
-                    	InitMethod.randomCSR, nClasses, numMappers*nVectorsInBlock, this.getSelfID()*nVectorsInBlock);
+                    	InitMethod.randomCSR, nClasses, num_mappers*nVectorsInBlock, this.getSelfID()*nVectorsInBlock);
 
 			/* Set the input data to the algorithm */
             		initLocal.input.set(InitInputId.data, trainData);
             		initPres = initLocal.compute();
 	
+			if (this.isMaster())
+			{
+				this.initMaster = new InitDistributedStep2Master(daal_Context, Double.class,
+						InitMethod.randomCSR, nClasses);
+			}
+
 			// reduce init pres
 			SerializableBase[] initPres_comm = this.harpcomm.harpdaal_gather(this.initPres, "Kmeans", "reduce_initPres");
 			if (this.isMaster() && initPres_comm != null)
 			{
-				for (int i=0; i<numMappers; i++)
-				   initMaster.input.add(InitDistributedStep2MasterInputId.partialResults, (InitPartialResult)(initPres_comm[i]));
+				for (int i=0; i<num_mappers; i++)
+				   this.initMaster.input.add(InitDistributedStep2MasterInputId.partialResults, (InitPartialResult)(initPres_comm[i]));
 			}
 
 			this.barrier("kmeans", "finish comm init pres");
@@ -250,7 +223,6 @@ public class KmeansDaalCollectiveMapper
 		   if (this.isMaster())
 		     masterAlgorithm = new DistributedStep2Master(daal_Context, Double.class, Method.lloydCSR, nClasses);
 
-
 		   //start the iterations
         	   for (int it = 0; it < nIterations; it++) 
 		   {
@@ -266,7 +238,7 @@ public class KmeansDaalCollectiveMapper
 			   SerializableBase[] pres_comm = this.harpcomm.harpdaal_gather(this.pres, "Kmeans", "reduce_Pres");
 			   if (this.isMaster() && pres_comm != null)
 			   {
-				   for (int i=0; i<numMappers; i++)
+				   for (int i=0; i<num_mappers; i++)
 					masterAlgorithm.input.add(DistributedStep2MasterInputId.partialResults, (PartialResult)(pres_comm[i]));
 			   }
 
