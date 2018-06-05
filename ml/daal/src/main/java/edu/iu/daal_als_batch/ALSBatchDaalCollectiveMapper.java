@@ -75,7 +75,7 @@ public class ALSBatchDaalCollectiveMapper
     CollectiveMapper<String, String, Object, Object> {
 
 	//cmd args
-        private int numMappers;
+        private int num_mappers;
         private int numThreads;
         private int harpThreads; 
 	private int fileDim;
@@ -102,7 +102,7 @@ public class ALSBatchDaalCollectiveMapper
 
 		this.conf = context.getConfiguration();
 
-		this.numMappers = this.conf.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
+		this.num_mappers = this.conf.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
 		this.numThreads = this.conf.getInt(HarpDAALConstants.NUM_THREADS, 10);
 		this.harpThreads = Runtime.getRuntime().availableProcessors();
 		this.fileDim = this.conf.getInt(HarpDAALConstants.FILE_DIM, 21);
@@ -114,7 +114,7 @@ public class ALSBatchDaalCollectiveMapper
 		LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
 
 		LOG.info("File Dim " + this.fileDim);
-		LOG.info("Num Mappers " + this.numMappers);
+		LOG.info("Num Mappers " + this.num_mappers);
 		LOG.info("Num Threads " + this.numThreads);
 		LOG.info("Num harp load data threads " + harpThreads);
 		LOG.info("nFactors " + this.nFactors);

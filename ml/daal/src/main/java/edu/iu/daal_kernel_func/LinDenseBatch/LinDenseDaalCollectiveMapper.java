@@ -60,11 +60,8 @@ import com.intel.daal.algorithms.kernel_function.InputId;
 import com.intel.daal.algorithms.kernel_function.ResultId;
 
 // daal data structure and service module
-import com.intel.daal.data_management.data.NumericTable;
-import com.intel.daal.data_management.data.HomogenNumericTable;
-import com.intel.daal.data_management.data.MergedNumericTable;
-import com.intel.daal.data_management.data_source.DataSource;
-import com.intel.daal.data_management.data_source.FileDataSource;
+import com.intel.daal.data_management.data.*;
+import com.intel.daal.data_management.data_source.*;
 import com.intel.daal.services.DaalContext;
 import com.intel.daal.services.Environment;
 
@@ -76,7 +73,7 @@ public class LinDenseDaalCollectiveMapper
     CollectiveMapper<String, String, Object, Object> {
 
 	//cmd args
-        private int numMappers;
+        private int num_mappers;
         private int numThreads;
         private int harpThreads; 
 	private int fileDim;
@@ -86,16 +83,8 @@ public class LinDenseDaalCollectiveMapper
 	private double k;
 	private double b;
 
-        //to measure the time
-        private long load_time = 0;
-        private long convert_time = 0;
-        private long total_time = 0;
-        private long compute_time = 0;
-        private long comm_time = 0;
-        private long ts_start = 0;
-        private long ts_end = 0;
-        private long ts1 = 0;
-        private long ts2 = 0;
+	private List<String> inputFiles;
+	private Configuration conf;
 
 	private static HarpDAALDataSource datasource;
 	private static DaalContext daal_Context = new DaalContext();
@@ -109,22 +98,21 @@ public class LinDenseDaalCollectiveMapper
 
         long startTime = System.currentTimeMillis();
 
-        Configuration configuration =
-            context.getConfiguration();
+        this.conf = context.getConfiguration();
 
-	this.fileDim = configuration.getInt(HarpDAALConstants.FILE_DIM, 4);
-	this.numMappers = configuration.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
-        this.numThreads = configuration.getInt(HarpDAALConstants.NUM_THREADS, 10);
+	this.fileDim = this.conf.getInt(HarpDAALConstants.FILE_DIM, 4);
+	this.num_mappers = this.conf.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
+        this.numThreads = this.conf.getInt(HarpDAALConstants.NUM_THREADS, 10);
         this.harpThreads = Runtime.getRuntime().availableProcessors();
 
-	this.nFeatures = configuration.getInt(HarpDAALConstants.FEATURE_DIM, 4);
-	this.k = configuration.getDouble(Constants.K, 1.0);
-	this.b = configuration.getDouble(Constants.B, 0.0);
+	this.nFeatures = this.conf.getInt(HarpDAALConstants.FEATURE_DIM, 4);
+	this.k = this.conf.getDouble(Constants.K, 1.0);
+	this.b = this.conf.getDouble(Constants.B, 0.0);
 
-	this.rightfilepath = configuration.get(Constants.RIGHT_FILE_PATH,"");
+	this.rightfilepath = this.conf.get(Constants.RIGHT_FILE_PATH,"");
 
         LOG.info("File Dim " + this.fileDim);
-        LOG.info("Num Mappers " + this.numMappers);
+        LOG.info("Num Mappers " + this.num_mappers);
         LOG.info("Num Threads " + this.numThreads);
         LOG.info("Num harp load data threads " + harpThreads);
 
@@ -140,7 +128,7 @@ public class LinDenseDaalCollectiveMapper
             long startTime = System.currentTimeMillis();
 
 	    // read data file names from HDFS
-            List<String> dataFiles =
+            this.inputFiles =
                 new LinkedList<String>();
             while (reader.nextKeyValue()) {
                 String key = reader.getCurrentKey();
@@ -148,10 +136,9 @@ public class LinDenseDaalCollectiveMapper
                 LOG.info("Key: " + key + ", Value: "
                         + value);
                 LOG.info("file name: " + value);
-                dataFiles.add(value);
+                this.inputFiles.add(value);
             }
             
-            Configuration conf = context.getConfiguration();
 
 	    // ----------------------- runtime settings -----------------------
             //set thread number used in DAAL
@@ -159,10 +146,10 @@ public class LinDenseDaalCollectiveMapper
             Environment.setNumberOfThreads(numThreads);
             LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
 
-	    this.datasource = new HarpDAALDataSource(dataFiles, fileDim, harpThreads, conf);
+	    this.datasource = new HarpDAALDataSource(harpThreads, conf);
 
 	    // ----------------------- start the execution -----------------------
-            runLinDense(conf, context);
+            runLinDense(context);
             this.freeMemory();
             this.freeConn();
             System.gc();
@@ -177,21 +164,11 @@ public class LinDenseDaalCollectiveMapper
          *
          * @return 
          */
-        private void runLinDense(Configuration conf, Context context) throws IOException 
+        private void runLinDense(Context context) throws IOException 
 	{
-		// ---------- load data ----------
-		this.datasource.loadFiles();
-		// ---------- training and testing ----------
-		NumericTable inputX = new HomogenNumericTable(daal_Context, Double.class, nFeatures, this.datasource.getTotalLines(), NumericTable.AllocationFlag.DoAllocate);
-
-		this.datasource.loadDataBlock(inputX);
-
-		this.datasource.loadTestFile(rightfilepath, fileDim);
-
-		NumericTable inputY = new HomogenNumericTable(daal_Context, Double.class, nFeatures, this.datasource.getTestRows(), NumericTable.AllocationFlag.DoAllocate);
-
-		this.datasource.loadTestTable(inputY);
-
+		// // ---------- load data ----------
+		NumericTable inputX = this.datasource.createDenseNumericTable(this.inputFiles, this.nFeatures, "," , this.daal_Context);
+		NumericTable inputY = this.datasource.createDenseNumericTable(this.rightfilepath, this.nFeatures, "," , this.daal_Context);
 		/* Create an algorithm */
 		com.intel.daal.algorithms.kernel_function.linear.Batch algorithm = new com.intel.daal.algorithms.kernel_function.linear.Batch(daal_Context, Double.class);
 

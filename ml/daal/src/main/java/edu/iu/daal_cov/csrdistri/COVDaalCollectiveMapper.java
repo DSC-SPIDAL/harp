@@ -143,7 +143,7 @@ CollectiveMapper<String, String, Object, Object>{
     private void runCOV(Context context) throws IOException {
 
 	//read in csr files with filenames in trainingDataFiles
-	NumericTable featureArray_daal = this.datasource.loadCSRNumericTable(this.inputFiles, daal_Context);
+	NumericTable featureArray_daal = this.datasource.loadCSRNumericTable(this.inputFiles, ",", daal_Context);
 	// compute on local nodes
         computeOnLocalNode(featureArray_daal);
 
