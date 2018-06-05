@@ -62,171 +62,148 @@ import com.intel.daal.algorithms.optimization_solver.iterative_solver.Result;
 import com.intel.daal.algorithms.optimization_solver.iterative_solver.ResultId;
 
 // daal data structure and service
-import com.intel.daal.data_management.data_source.DataSource;
-import com.intel.daal.data_management.data_source.FileDataSource;
-import com.intel.daal.data_management.data.NumericTable;
-import com.intel.daal.data_management.data.HomogenNumericTable;
-import com.intel.daal.data_management.data.MergedNumericTable;
+import com.intel.daal.data_management.data_source.*;
+import com.intel.daal.data_management.data.*;
 import com.intel.daal.services.DaalContext;
 import com.intel.daal.services.Environment;
 
 /**
  * @brief the Harp mapper for running K-means
  */
-public class ADAGDDaalCollectiveMapper
-	extends
-	CollectiveMapper<String, String, Object, Object> {
+public class ADAGDDaalCollectiveMapper extends CollectiveMapper<String, String, Object, Object> 
+{
 
-		//cmd args
-		private int numMappers;
-		private int numThreads;
-		private int harpThreads; 
-		private long nFeatures;
-		private int fileDim;
-	        private double accuracyThreshold;
-    		private long nIterations;
-    		private long batchSize;
-    		private double learningRate;
-    		private static double[] startPoint = {8, 2, 1, 4};
+	//cmd args
+	private int num_mappers;
+	private int numThreads;
+	private int harpThreads; 
+	private int nFeatures;
+	private int fileDim;
+	private double accuracyThreshold;
+	private long nIterations;
+	private long batchSize;
+	private double learningRate;
+	private static double[] startPoint = {8, 2, 1, 4};
+	private List<String> inputFiles;
+	private Configuration conf;
 
-		private static HarpDAALDataSource datasource;
-		private static DaalContext daal_Context = new DaalContext();
+	private static HarpDAALDataSource datasource;
+	private static DaalContext daal_Context = new DaalContext();
 
-		//to measure the time
-		private long load_time = 0;
-		private long convert_time = 0;
-		private long total_time = 0;
-		private long compute_time = 0;
-		private long comm_time = 0;
-		private long ts_start = 0;
-		private long ts_end = 0;
-		private long ts1 = 0;
-		private long ts2 = 0;
+	/**
+	 * Mapper configuration.
+	 */
+	@Override
+	protected void setup(Context context)
+		throws IOException, InterruptedException {
 
-		/**
-		 * Mapper configuration.
-		 */
-		@Override
-		protected void setup(Context context)
-			throws IOException, InterruptedException {
+		long startTime = System.currentTimeMillis();
 
-			long startTime = System.currentTimeMillis();
+		this.conf = context.getConfiguration();
 
-			Configuration configuration =
-				context.getConfiguration();
+		this.num_mappers = this.conf.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
+		this.numThreads = this.conf.getInt(HarpDAALConstants.NUM_THREADS, 10);
+		this.harpThreads = Runtime.getRuntime().availableProcessors();
+		this.fileDim = this.conf.getInt(HarpDAALConstants.FILE_DIM, 4);
+		this.nFeatures = this.conf.getInt(HarpDAALConstants.FEATURE_DIM, 3);
+		this.accuracyThreshold = this.conf.getDouble(HarpDAALConstants.ACC_THRESHOLD, 0.0000001);
+		this.nIterations = this.conf.getLong(HarpDAALConstants.NUM_ITERATIONS, 1000);
+		this.batchSize = this.conf.getLong(HarpDAALConstants.BATCH_SIZE, 1);
+		this.learningRate = this.conf.getDouble(HarpDAALConstants.LEARNING_RATE, 1);
 
-			this.numMappers = configuration.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
-			this.numThreads = configuration.getInt(HarpDAALConstants.NUM_THREADS, 10);
-			this.harpThreads = Runtime.getRuntime().availableProcessors();
-			this.fileDim = configuration.getInt(HarpDAALConstants.FILE_DIM, 4);
-			this.nFeatures = configuration.getLong(HarpDAALConstants.FEATURE_DIM, 3);
-			this.accuracyThreshold = configuration.getDouble(HarpDAALConstants.ACC_THRESHOLD, 0.0000001);
-			this.nIterations = configuration.getLong(HarpDAALConstants.NUM_ITERATIONS, 1000);
-			this.batchSize = configuration.getLong(HarpDAALConstants.BATCH_SIZE, 1);
-			this.learningRate = configuration.getDouble(HarpDAALConstants.LEARNING_RATE, 1);
+		//set thread number used in DAAL
+		LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
+		Environment.setNumberOfThreads(numThreads);
+		LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
 
-			LOG.info("File Dim " + this.fileDim);
-			LOG.info("Num Mappers " + this.numMappers);
-			LOG.info("Num Threads " + this.numThreads);
-			LOG.info("Num harp load data threads " + harpThreads);
-			LOG.info("nfeatures " + this.nFeatures);
-			LOG.info("accuracyThreshold " + this.accuracyThreshold);
-			LOG.info("nIterations " + this.nIterations);
-			LOG.info("batchSize " + this.batchSize);
-			LOG.info("learningRate " + this.learningRate);
+		LOG.info("File Dim " + this.fileDim);
+		LOG.info("Num Mappers " + this.num_mappers);
+		LOG.info("Num Threads " + this.numThreads);
+		LOG.info("Num harp load data threads " + harpThreads);
+		LOG.info("nfeatures " + this.nFeatures);
+		LOG.info("accuracyThreshold " + this.accuracyThreshold);
+		LOG.info("nIterations " + this.nIterations);
+		LOG.info("batchSize " + this.batchSize);
+		LOG.info("learningRate " + this.learningRate);
 
-			long endTime = System.currentTimeMillis();
-			LOG.info("config (ms) :"
-					+ (endTime - startTime));
-
-		}
-
-		// Assigns the reader to different nodes
-		protected void mapCollective(
-				KeyValReader reader, Context context)
-				throws IOException, InterruptedException {
-				long startTime = System.currentTimeMillis();
-
-				// read data file names from HDFS
-				List<String> dataFiles =
-					new LinkedList<String>();
-				while (reader.nextKeyValue()) {
-					String key = reader.getCurrentKey();
-					String value = reader.getCurrentValue();
-					LOG.info("Key: " + key + ", Value: "
-							+ value);
-					LOG.info("file name: " + value);
-					dataFiles.add(value);
-				}
-
-				Configuration conf = context.getConfiguration();
-
-				// ----------------------- runtime settings -----------------------
-				//set thread number used in DAAL
-				LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
-				Environment.setNumberOfThreads(numThreads);
-				LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
-
-				this.datasource = new HarpDAALDataSource(dataFiles, fileDim, harpThreads, conf);
-
-				// ----------------------- start the execution -----------------------
-				runADAGD(conf, context);
-				this.freeMemory();
-				this.freeConn();
-				System.gc();
-				}
-
-		/**
-		 * @brief run Association Rules by invoking DAAL Java API
-		 *
-		 * @param fileNames
-		 * @param conf
-		 * @param context
-		 *
-		 * @return 
-		 */
-		private void runADAGD(Configuration conf, Context context) throws IOException 
-		{
-			// ---------- load data ----------
-			this.datasource.loadFiles();
-			// ---------- training and testing ----------
-			/* Create Numeric Tables for data and values for dependent variable */
-			NumericTable data = new HomogenNumericTable(daal_Context, Double.class, nFeatures, this.datasource.getTotalLines(), NumericTable.AllocationFlag.DoAllocate);
-			NumericTable dataDependents = new HomogenNumericTable(daal_Context, Double.class, 1, this.datasource.getTotalLines(), NumericTable.AllocationFlag.DoAllocate);
-			MergedNumericTable mergedData = new MergedNumericTable(daal_Context);
-			mergedData.addNumericTable(data);
-			mergedData.addNumericTable(dataDependents);
-
-			/* Retrieve the data from an input file */
-			this.datasource.loadDataBlock(mergedData);
-
-			/* Create an MSE objective function to compute a Adagrad */
-			com.intel.daal.algorithms.optimization_solver.mse.Batch mseFunction =
-				new com.intel.daal.algorithms.optimization_solver.mse.Batch(daal_Context, Double.class,
-						com.intel.daal.algorithms.optimization_solver.mse.Method.defaultDense, data.getNumberOfRows());
-
-			mseFunction.getInput().set(com.intel.daal.algorithms.optimization_solver.mse.InputId.data, data);
-			mseFunction.getInput().set(com.intel.daal.algorithms.optimization_solver.mse.InputId.dependentVariables, dataDependents);
-
-			/* Create algorithm objects to compute Adagrad results */
-			Batch adagradAlgorithm = new Batch(daal_Context, Double.class, Method.defaultDense);
-			adagradAlgorithm.parameter.setFunction(mseFunction);
-			adagradAlgorithm.parameter.setLearningRate(new HomogenNumericTable(daal_Context, Double.class, 1, 1, NumericTable.AllocationFlag.DoAllocate, learningRate));
-			adagradAlgorithm.parameter.setNIterations(nIterations);
-			adagradAlgorithm.parameter.setAccuracyThreshold(accuracyThreshold);
-			adagradAlgorithm.parameter.setBatchSize(batchSize);
-			adagradAlgorithm.input.set(InputId.inputArgument, new HomogenNumericTable(daal_Context, startPoint, 1, nFeatures + 1));
-
-			/* Compute the Adagrad result for MSE objective function matrix */
-			Result result = adagradAlgorithm.compute();
-
-			Service.printNumericTable("Minimum:",  result.get(ResultId.minimum));
-			Service.printNumericTable("Number of iterations performed:",  result.get(ResultId.nIterations));
-
-			daal_Context.dispose();
-
-		}
-
-
+		long endTime = System.currentTimeMillis();
+		LOG.info("config (ms) :"
+				+ (endTime - startTime));
 
 	}
+
+	// Assigns the reader to different nodes
+	protected void mapCollective(
+			KeyValReader reader, Context context)
+			throws IOException, InterruptedException {
+			long startTime = System.currentTimeMillis();
+
+			// read data file names from HDFS
+			this.inputFiles =
+				new LinkedList<String>();
+			while (reader.nextKeyValue()) {
+				String key = reader.getCurrentKey();
+				String value = reader.getCurrentValue();
+				LOG.info("Key: " + key + ", Value: "
+						+ value);
+				LOG.info("file name: " + value);
+				this.inputFiles.add(value);
+			}
+
+			
+
+			this.datasource = new HarpDAALDataSource(harpThreads, conf);
+
+			// ----------------------- start the execution -----------------------
+			runADAGD(context);
+			this.freeMemory();
+			this.freeConn();
+			System.gc();
+			}
+
+	/**
+	 * @brief run Association Rules by invoking DAAL Java API
+	 *
+	 * @param fileNames
+	 * @param conf
+	 * @param context
+	 *
+	 * @return 
+	 */
+	private void runADAGD(Context context) throws IOException 
+	{
+		// ---------- load data ----------
+		NumericTable[] load_table = this.datasource.createDenseNumericTableSplit(this.inputFiles, nFeatures, 1, ",", this.daal_Context);
+		NumericTable data = load_table[0];
+		NumericTable dataDependents = load_table[1];
+
+		/* Create an MSE objective function to compute a Adagrad */
+		com.intel.daal.algorithms.optimization_solver.mse.Batch mseFunction =
+			new com.intel.daal.algorithms.optimization_solver.mse.Batch(daal_Context, Double.class,
+					com.intel.daal.algorithms.optimization_solver.mse.Method.defaultDense, data.getNumberOfRows());
+
+		mseFunction.getInput().set(com.intel.daal.algorithms.optimization_solver.mse.InputId.data, data);
+		mseFunction.getInput().set(com.intel.daal.algorithms.optimization_solver.mse.InputId.dependentVariables, dataDependents);
+
+		/* Create algorithm objects to compute Adagrad results */
+		Batch adagradAlgorithm = new Batch(daal_Context, Double.class, Method.defaultDense);
+		adagradAlgorithm.parameter.setFunction(mseFunction);
+		adagradAlgorithm.parameter.setLearningRate(new HomogenNumericTable(daal_Context, Double.class, 1, 1, NumericTable.AllocationFlag.DoAllocate, learningRate));
+		adagradAlgorithm.parameter.setNIterations(nIterations);
+		adagradAlgorithm.parameter.setAccuracyThreshold(accuracyThreshold);
+		adagradAlgorithm.parameter.setBatchSize(batchSize);
+		adagradAlgorithm.input.set(InputId.inputArgument, new HomogenNumericTable(daal_Context, startPoint, 1, nFeatures + 1));
+
+		/* Compute the Adagrad result for MSE objective function matrix */
+		Result result = adagradAlgorithm.compute();
+
+		Service.printNumericTable("Minimum:",  result.get(ResultId.minimum));
+		Service.printNumericTable("Number of iterations performed:",  result.get(ResultId.nIterations));
+
+		daal_Context.dispose();
+
+	}
+
+
+
+}

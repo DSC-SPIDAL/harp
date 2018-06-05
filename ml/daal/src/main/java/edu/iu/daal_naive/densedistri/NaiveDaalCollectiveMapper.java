@@ -89,24 +89,12 @@ CollectiveMapper<String, String, Object, Object>{
   private int harpThreads; 
   private String testFilePath;
   private String testGroundTruth;
+  private List<String> inputFiles;
+  private Configuration conf;
 
   private TrainingResult trainingResult;
   private PredictionResult predictionResult;
   private NumericTable testData;
-
-  //to measure the time
-  private long load_time = 0;
-  private long convert_time = 0;
-  private long total_time = 0;
-  private long compute_time = 0;
-  private long comm_time = 0;
-  private long ts_start = 0;
-  private long ts_end = 0;
-  private long ts1 = 0;
-  private long ts2 = 0;
-
-  private List<String> inputFiles;
-  private Configuration conf;
 
   private static HarpDAALDataSource datasource;
   private static HarpDAALComm harpcomm;
@@ -129,6 +117,9 @@ CollectiveMapper<String, String, Object, Object>{
 
       //always use the maximum hardware threads to load in data and convert data 
       this.harpThreads = Runtime.getRuntime().availableProcessors();
+      LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
+      Environment.setNumberOfThreads(numThreads);
+      LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
 
       LOG.info("Num Mappers " + num_mappers);
       LOG.info("Num Threads " + numThreads);
@@ -147,7 +138,7 @@ CollectiveMapper<String, String, Object, Object>{
       KeyValReader reader, Context context)
     throws IOException, InterruptedException {
 
-      List<String> trainingDataFiles =
+      this.inputFiles =
       new LinkedList<String>();
 
 	  //splitting files between mapper
@@ -157,28 +148,22 @@ CollectiveMapper<String, String, Object, Object>{
         LOG.info("Key: " + key + ", Value: "
           + value);
         System.out.println("file name : " + value);
-        trainingDataFiles.add(value);
+        this.inputFiles.add(value);
       }
 
-      this.inputFiles = trainingDataFiles;
       //init data source
       this.datasource = new HarpDAALDataSource(this.harpThreads, this.conf);
       // create communicator
       this.harpcomm= new HarpDAALComm(this.getSelfID(), this.getMasterID(), this.num_mappers, this.daal_Context, this);
 
-      runNaive();
+      runNaive(context);
       this.freeMemory();
       this.freeConn();
       System.gc();
     }
 
-  private void runNaive() throws IOException 
+  private void runNaive(Context context) throws IOException 
   {//{{{
-	  ts1 = System.currentTimeMillis();
-
-	  LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
-	  Environment.setNumberOfThreads(numThreads);
-	  LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
 
 	  // load training data/labels
 	  NumericTable[] train_data_table = this.datasource.createDenseNumericTableSplit(this.inputFiles, this.vectorSize, 1, ",", this.daal_Context);
@@ -191,47 +176,32 @@ CollectiveMapper<String, String, Object, Object>{
 
 	  trainModel(featureArray_daal, labelArray_daal);
 	  if(this.isMaster()){
-		  testModel(testFilePath, conf);
-		  printResults(testGroundTruth, predictionResult, conf);
+		  testModel();
+		  printResults(testGroundTruth, predictionResult);
 	  }
 
 	  this.barrier("naive", "testmodel-sync");
 
 	  daal_Context.dispose();
 
-	  ts_end = System.currentTimeMillis();
-	  total_time = (ts_end - ts_start);
 
-	  LOG.info("Loading Data Time of Naive: "+ load_time);
-	  LOG.info("Total Execution Time of Naive: "+ total_time);
-	  LOG.info("Computation Time of Naive: "+ compute_time);
-	  LOG.info("Comm Time of Naive: "+ comm_time);
-	  LOG.info("DataType Convert Time of Naive: "+ convert_time);
-	  LOG.info("Misc Time of Naive: "+ (total_time - compute_time - comm_time - convert_time));
   }//}}}
   
   private void trainModel(NumericTable featureArray_daal, NumericTable labelArray_daal) throws java.io.IOException 
   {//{{{
 
-	  ts1 = System.currentTimeMillis();
 	  TrainingDistributedStep1Local algorithm = new TrainingDistributedStep1Local(daal_Context, Double.class, TrainingMethod.defaultDense, nClasses);
 	  algorithm.input.set(InputId.data, featureArray_daal);
 	  algorithm.input.set(InputId.labels, labelArray_daal);
 
 	  TrainingPartialResult pres = algorithm.compute();
 
-	  ts2 = System.currentTimeMillis();
-	  compute_time += (ts2 - ts1);
-
 	  //gather pres to master mapper
 	  SerializableBase[] gather_output = this.harpcomm.harpdaal_gather(pres, this.getMasterID(), "NaiveBayes", "gather_pres");
 
 	  if(this.isMaster())
 	  {
-		  ts1 = System.currentTimeMillis();
 		  TrainingDistributedStep2Master masterAlgorithm = new TrainingDistributedStep2Master(daal_Context, Double.class, TrainingMethod.defaultDense, nClasses);
-		  ts2 = System.currentTimeMillis();
-		  compute_time += (ts2 - ts1);
 
 		  for(int j=0;j<this.num_mappers; j++)
 		  {
@@ -239,18 +209,15 @@ CollectiveMapper<String, String, Object, Object>{
 			  masterAlgorithm.input.add(TrainingDistributedInputId.partialModels, des_output);
 		  }
 
-		  ts1 = System.currentTimeMillis();
 		  masterAlgorithm.compute();
 		  trainingResult = masterAlgorithm.finalizeCompute();
-		  ts2 = System.currentTimeMillis();
-		  compute_time += (ts2 - ts1);
 	  }
 
 	  this.barrier("naive", "master-compute-sync");
 
   }//}}}
 
-  private void testModel(String testFilePath, Configuration conf) throws java.io.FileNotFoundException, java.io.IOException 
+  private void testModel() throws java.io.FileNotFoundException, java.io.IOException 
   {//{{{
 
 	  PredictionBatch algorithm = new PredictionBatch(daal_Context, Double.class, PredictionMethod.defaultDense, nClasses);
@@ -260,14 +227,11 @@ CollectiveMapper<String, String, Object, Object>{
 	  algorithm.input.set(ModelInputId.model, model);
 
 	  /* Compute the prediction results */
-	  ts1 = System.currentTimeMillis();
 	  predictionResult = algorithm.compute();
-	  ts2 = System.currentTimeMillis();
-	  compute_time += (ts2 - ts1);
 
   }//}}}
 
-  private void printResults(String testGroundTruth, PredictionResult predictionResult, Configuration conf) throws java.io.FileNotFoundException, java.io.IOException 
+  private void printResults(String testGroundTruth, PredictionResult predictionResult) throws java.io.FileNotFoundException, java.io.IOException 
   {//{{{
 	  NumericTable expected = this.datasource.createDenseNumericTable(testGroundTruth, 1, "," , this.daal_Context);
 	  NumericTable prediction = predictionResult.get(PredictionResultId.prediction);

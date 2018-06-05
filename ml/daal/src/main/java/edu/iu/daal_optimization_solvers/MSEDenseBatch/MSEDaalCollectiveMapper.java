@@ -62,168 +62,126 @@ import com.intel.daal.algorithms.optimization_solver.objective_function.ResultId
 import com.intel.daal.algorithms.optimization_solver.objective_function.ResultsToComputeId;
 
 // daal data structure and service
-import com.intel.daal.data_management.data_source.DataSource;
-import com.intel.daal.data_management.data_source.FileDataSource;
-import com.intel.daal.data_management.data.NumericTable;
-import com.intel.daal.data_management.data.HomogenNumericTable;
-import com.intel.daal.data_management.data.MergedNumericTable;
+import com.intel.daal.data_management.data_source.*;
+import com.intel.daal.data_management.data.*;
 import com.intel.daal.services.DaalContext;
 import com.intel.daal.services.Environment;
 
 /**
  * @brief the Harp mapper for running K-means
  */
-public class MSEDaalCollectiveMapper
-	extends
-	CollectiveMapper<String, String, Object, Object> {
+public class MSEDaalCollectiveMapper extends CollectiveMapper<String, String, Object, Object> 
+{
 
-		//cmd args
-		private int numMappers;
-		private int numThreads;
-		private int harpThreads; 
-		private int fileDim;
-		private int nFeatures;
-    		private static double[] point = { -1, 0.1, 0.15, -0.5};
+	//cmd args
+	private int num_mappers;
+	private int numThreads;
+	private int harpThreads; 
+	private int fileDim;
+	private int nFeatures;
+	private static double[] point = { -1, 0.1, 0.15, -0.5};
 
-		private static HarpDAALDataSource datasource;
-		private static DaalContext daal_Context = new DaalContext();
+	private List<String> inputFiles;
+	private Configuration conf;
 
+	private static HarpDAALDataSource datasource;
+	private static DaalContext daal_Context = new DaalContext();
 
-		//to measure the time
-		private long load_time = 0;
-		private long convert_time = 0;
-		private long total_time = 0;
-		private long compute_time = 0;
-		private long comm_time = 0;
-		private long ts_start = 0;
-		private long ts_end = 0;
-		private long ts1 = 0;
-		private long ts2 = 0;
+	/**
+	 * Mapper configuration.
+	 */
+	@Override
+	protected void setup(Context context)
+		throws IOException, InterruptedException {
 
-		/**
-		 * Mapper configuration.
-		 */
-		@Override
-		protected void setup(Context context)
-			throws IOException, InterruptedException {
+		long startTime = System.currentTimeMillis();
 
-			long startTime = System.currentTimeMillis();
+		this.conf = context.getConfiguration();
 
-			Configuration configuration =
-				context.getConfiguration();
+		this.num_mappers = this.conf.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
+		this.numThreads = this.conf.getInt(HarpDAALConstants.NUM_THREADS, 10);
+		this.harpThreads = Runtime.getRuntime().availableProcessors();
+		this.fileDim = this.conf.getInt(HarpDAALConstants.FILE_DIM, 4);
+		this.nFeatures = this.conf.getInt(HarpDAALConstants.FEATURE_DIM, 3);
 
-			this.numMappers = configuration.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
-			this.numThreads = configuration.getInt(HarpDAALConstants.NUM_THREADS, 10);
-			this.harpThreads = Runtime.getRuntime().availableProcessors();
-			this.fileDim = configuration.getInt(HarpDAALConstants.FILE_DIM, 4);
-			this.nFeatures = configuration.getInt(HarpDAALConstants.FEATURE_DIM, 3);
+		//set thread number used in DAAL
+		LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
+		Environment.setNumberOfThreads(numThreads);
+		LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
 
-			LOG.info("File Dim " + this.fileDim);
-			LOG.info("Num Mappers " + this.numMappers);
-			LOG.info("Num Threads " + this.numThreads);
-			LOG.info("Num harp load data threads " + harpThreads);
+		LOG.info("File Dim " + this.fileDim);
+		LOG.info("Num Mappers " + this.num_mappers);
+		LOG.info("Num Threads " + this.numThreads);
+		LOG.info("Num harp load data threads " + harpThreads);
 
-			long endTime = System.currentTimeMillis();
-			LOG.info("config (ms) :"
-					+ (endTime - startTime));
-
-		}
-
-		// Assigns the reader to different nodes
-		protected void mapCollective(
-				KeyValReader reader, Context context)
-				throws IOException, InterruptedException {
-				long startTime = System.currentTimeMillis();
-
-				// read data file names from HDFS
-				List<String> dataFiles =
-					new LinkedList<String>();
-				while (reader.nextKeyValue()) {
-					String key = reader.getCurrentKey();
-					String value = reader.getCurrentValue();
-					LOG.info("Key: " + key + ", Value: "
-							+ value);
-					LOG.info("file name: " + value);
-					dataFiles.add(value);
-				}
-
-				Configuration conf = context.getConfiguration();
-
-				// ----------------------- runtime settings -----------------------
-				//set thread number used in DAAL
-				LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
-				Environment.setNumberOfThreads(numThreads);
-				LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
-
-				this.datasource = new HarpDAALDataSource(dataFiles, fileDim, harpThreads, conf);
-
-				// ----------------------- start the execution -----------------------
-				runMSE(conf, context);
-				this.freeMemory();
-				this.freeConn();
-				System.gc();
-				}
-
-		/**
-		 * @brief run Association Rules by invoking DAAL Java API
-		 *
-		 * @param fileNames
-		 * @param conf
-		 * @param context
-		 *
-		 * @return 
-		 */
-		private void runMSE(Configuration conf, Context context) throws IOException 
-		{
-			// ---------- load data ----------
-			this.datasource.loadFiles();
-
-			/* Create Numeric Tables for data and values for dependent variable */
-			NumericTable data = new HomogenNumericTable(daal_Context, Double.class, nFeatures, this.datasource.getTotalLines(), NumericTable.AllocationFlag.DoAllocate);
-			NumericTable dataDependents = new HomogenNumericTable(daal_Context, Double.class, 1, this.datasource.getTotalLines(), NumericTable.AllocationFlag.DoAllocate);
-			MergedNumericTable mergedData = new MergedNumericTable(daal_Context);
-			mergedData.addNumericTable(data);
-			mergedData.addNumericTable(dataDependents);
-
-			/* Retrieve the data from an input file */
-			this.datasource.loadDataBlock(mergedData);
-
-			/* Create an algorithm to compute a MSE */
-			Batch algorithm = new Batch(daal_Context, Double.class, Method.defaultDense, data.getNumberOfRows());
-			algorithm.getInput().set(InputId.data, data);
-			algorithm.getInput().set(InputId.dependentVariables, dataDependents);
-			algorithm.getInput().set(InputId.argument, new HomogenNumericTable(daal_Context, point, 1, nFeatures + 1));
-			algorithm.parameter.setResultsToCompute(ResultsToComputeId.gradient | ResultsToComputeId.value | ResultsToComputeId.hessian);
-
-			/* Compute the MSE value and gradient */
-			Result result = algorithm.compute();
-
-			Service.printNumericTable("Gradient:", result.get(ResultId.gradientIdx));
-			Service.printNumericTable("Value:", result.get(ResultId.valueIdx));
-			Service.printNumericTable("Hessian:", result.get(ResultId.hessianIdx));
-
-			// // ---------- training and testing ----------
-			// /* Retrieve the input data */
-			// input = new HomogenNumericTable(daal_Context, Double.class, this.fileDim, this.datasource.getTotalLines(), NumericTable.AllocationFlag.DoAllocate);
-			// this.datasource.loadDataBlock(input);
-			//
-			// /* Create an algorithm */
-			// Batch algorithm = new Batch(daal_Context, Double.class, Method.defaultDense);
-			//
-			// /* Set an input object for the algorithm */
-			// algorithm.input.set(InputId.data, input);
-			//
-			// /* Compute Z-score normalization function */
-			// Result result = algorithm.compute();
-			//
-			// /* Print the results of stage */
-			// Service.printNumericTable("First 10 rows of the input data:", input, 10);
-			// Service.printNumericTable("First 10 rows of the z-score normalization result:", result.get(ResultId.normalizedData), 10);
-
-			daal_Context.dispose();
-
-		}
-
-
+		long endTime = System.currentTimeMillis();
+		LOG.info("config (ms) :"
+				+ (endTime - startTime));
 
 	}
+
+	// Assigns the reader to different nodes
+	protected void mapCollective(KeyValReader reader, Context context) throws IOException, InterruptedException 
+	{
+		long startTime = System.currentTimeMillis();
+
+		// read data file names from HDFS
+		this.inputFiles =
+			new LinkedList<String>();
+		while (reader.nextKeyValue()) {
+			String key = reader.getCurrentKey();
+			String value = reader.getCurrentValue();
+			LOG.info("Key: " + key + ", Value: "
+					+ value);
+			LOG.info("file name: " + value);
+			this.inputFiles.add(value);
+		}
+
+
+
+		this.datasource = new HarpDAALDataSource(harpThreads, conf);
+
+		// ----------------------- start the execution -----------------------
+		runMSE(context);
+		this.freeMemory();
+		this.freeConn();
+		System.gc();
+	}
+
+	/**
+	 * @brief run Association Rules by invoking DAAL Java API
+	 *
+	 * @param fileNames
+	 * @param conf
+	 * @param context
+	 *
+	 * @return 
+	 */
+	private void runMSE(Context context) throws IOException 
+	{
+		// ---------- load data ----------
+		NumericTable[] load_table = this.datasource.createDenseNumericTableSplit(this.inputFiles, nFeatures, 1, ",", this.daal_Context);
+		NumericTable data = load_table[0];
+		NumericTable dataDependents = load_table[1];
+
+		/* Create an algorithm to compute a MSE */
+		Batch algorithm = new Batch(daal_Context, Double.class, Method.defaultDense, data.getNumberOfRows());
+		algorithm.getInput().set(InputId.data, data);
+		algorithm.getInput().set(InputId.dependentVariables, dataDependents);
+		algorithm.getInput().set(InputId.argument, new HomogenNumericTable(daal_Context, point, 1, nFeatures + 1));
+		algorithm.parameter.setResultsToCompute(ResultsToComputeId.gradient | ResultsToComputeId.value | ResultsToComputeId.hessian);
+
+		/* Compute the MSE value and gradient */
+		Result result = algorithm.compute();
+
+		Service.printNumericTable("Gradient:", result.get(ResultId.gradientIdx));
+		Service.printNumericTable("Value:", result.get(ResultId.valueIdx));
+		Service.printNumericTable("Hessian:", result.get(ResultId.hessianIdx));
+
+		daal_Context.dispose();
+
+	}
+
+
+
+}

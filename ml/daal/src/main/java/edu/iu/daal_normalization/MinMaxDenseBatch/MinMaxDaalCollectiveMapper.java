@@ -59,11 +59,8 @@ import edu.iu.data_aux.*;
 import com.intel.daal.algorithms.normalization.minmax.*;
 
 // daal data structure and service
-import com.intel.daal.data_management.data_source.DataSource;
-import com.intel.daal.data_management.data_source.FileDataSource;
-import com.intel.daal.data_management.data.NumericTable;
-import com.intel.daal.data_management.data.HomogenNumericTable;
-import com.intel.daal.data_management.data.MergedNumericTable;
+import com.intel.daal.data_management.data_source.*;
+import com.intel.daal.data_management.data.*;
 import com.intel.daal.services.DaalContext;
 import com.intel.daal.services.Environment;
 
@@ -75,29 +72,20 @@ public class MinMaxDaalCollectiveMapper
     CollectiveMapper<String, String, Object, Object> {
 
 	//cmd args
-        private int numMappers;
+        private int num_mappers;
         private int numThreads;
         private int harpThreads; 
 	private int fileDim;
 	private double lowerBound; 	
 	private double upperBound;   
+	private List<String> inputFiles;
+	private Configuration conf;
 
 	private static HarpDAALDataSource datasource;
 	private static DaalContext daal_Context = new DaalContext();
 
 	/* Apriori algorithm parameters */
 	private NumericTable input;
-
-	//to measure the time
-        private long load_time = 0;
-        private long convert_time = 0;
-        private long total_time = 0;
-        private long compute_time = 0;
-        private long comm_time = 0;
-        private long ts_start = 0;
-        private long ts_end = 0;
-        private long ts1 = 0;
-        private long ts2 = 0;
 
         /**
          * Mapper configuration.
@@ -108,18 +96,22 @@ public class MinMaxDaalCollectiveMapper
 
         long startTime = System.currentTimeMillis();
 
-        Configuration configuration =
-            context.getConfiguration();
+        this.conf = context.getConfiguration();
 
-	this.numMappers = configuration.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
-        this.numThreads = configuration.getInt(HarpDAALConstants.NUM_THREADS, 10);
+	this.num_mappers = this.conf.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
+        this.numThreads = this.conf.getInt(HarpDAALConstants.NUM_THREADS, 10);
         this.harpThreads = Runtime.getRuntime().availableProcessors();
-	this.fileDim = configuration.getInt(HarpDAALConstants.FILE_DIM, 3);
-	this.lowerBound = configuration.getDouble(Constants.LOWER_BOUND, -1.0);
-	this.upperBound = configuration.getDouble(Constants.UPPER_BOUND, 1.0);
+	this.fileDim = this.conf.getInt(HarpDAALConstants.FILE_DIM, 3);
+	this.lowerBound = this.conf.getDouble(Constants.LOWER_BOUND, -1.0);
+	this.upperBound = this.conf.getDouble(Constants.UPPER_BOUND, 1.0);
 
-        LOG.info("File Dim " + this.fileDim);
-        LOG.info("Num Mappers " + this.numMappers);
+	//set thread number used in DAAL
+	LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
+	Environment.setNumberOfThreads(numThreads);
+	LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
+
+	LOG.info("File Dim " + this.fileDim);
+        LOG.info("Num Mappers " + this.num_mappers);
         LOG.info("Num Threads " + this.numThreads);
         LOG.info("Num harp load data threads " + harpThreads);
 	LOG.info("Lower Bound " + this.lowerBound);
@@ -138,7 +130,7 @@ public class MinMaxDaalCollectiveMapper
             long startTime = System.currentTimeMillis();
 
 	    // read data file names from HDFS
-            List<String> dataFiles =
+            this.inputFiles =
                 new LinkedList<String>();
             while (reader.nextKeyValue()) {
                 String key = reader.getCurrentKey();
@@ -146,21 +138,13 @@ public class MinMaxDaalCollectiveMapper
                 LOG.info("Key: " + key + ", Value: "
                         + value);
                 LOG.info("file name: " + value);
-                dataFiles.add(value);
+                this.inputFiles.add(value);
             }
             
-            Configuration conf = context.getConfiguration();
-
-	    // ----------------------- runtime settings -----------------------
-            //set thread number used in DAAL
-            LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
-            Environment.setNumberOfThreads(numThreads);
-            LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
-
-	    this.datasource = new HarpDAALDataSource(dataFiles, fileDim, harpThreads, conf);
+	    this.datasource = new HarpDAALDataSource(harpThreads, conf);
 
 	    // ----------------------- start the execution -----------------------
-            runMinMax(conf, context);
+            runMinMax(context);
             this.freeMemory();
             this.freeConn();
             System.gc();
@@ -175,12 +159,13 @@ public class MinMaxDaalCollectiveMapper
          *
          * @return 
          */
-        private void runMinMax(Configuration conf, Context context) throws IOException 
+        private void runMinMax(Context context) throws IOException 
 	{
 		// ---------- load data ----------
-		this.datasource.loadFiles();
-		input = new HomogenNumericTable(daal_Context, Double.class, this.fileDim, this.datasource.getTotalLines(), NumericTable.AllocationFlag.DoAllocate);
-		this.datasource.loadDataBlock(input);
+		// this.datasource.loadFiles();
+		// input = new HomogenNumericTable(daal_Context, Double.class, this.fileDim, this.datasource.getTotalLines(), NumericTable.AllocationFlag.DoAllocate);
+		// this.datasource.loadDataBlock(input);
+		this.input = this.datasource.createDenseNumericTable(this.inputFiles, this.fileDim, "," , this.daal_Context);
 
 		/* Create an algorithm */
 		Batch algorithm = new Batch(daal_Context, Double.class, Method.defaultDense);

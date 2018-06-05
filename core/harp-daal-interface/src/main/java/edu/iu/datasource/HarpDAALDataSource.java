@@ -258,6 +258,26 @@ public class HarpDAALDataSource
 	   }
    }//}}}
 
+   public Tensor createDenseTensor(String inputFile, int nFeatures, String sep, DaalContext context) 
+   {
+	   try {
+
+		   List<double[]> inputData =  loadDenseCSVFiles(inputFile, nFeatures, sep);
+		   long[] dims = {inputData.size(), nFeatures};
+		   double[] data_array = new double[nFeatures*inputData.size()];
+		   for(int j=0;j<inputData.size();j++)
+			   System.arraycopy(inputData.get(j), 0, data_array, j*nFeatures, nFeatures);
+
+		   Tensor tsr = new HomogenTensor(context, dims, data_array);
+		   return tsr;
+
+	   } catch (Exception e)
+	   {
+		   LOG.error("Fail to create dense numeric tensor", e);
+		   return null;
+	   }
+   }
+
    public List<double[]> loadDenseCSVFiles(List<String> inputFiles, int nFeatures, String sep)
    {//{{{
 
@@ -619,6 +639,52 @@ public class HarpDAALDataSource
 	   return loadCSRNumericTableImpl(filename, sep, context);
    }//}}}
 
+   public NumericTable[] loadCSRNumericTableAndLabel(List<String> inputFiles, String sep, DaalContext context) throws IOException
+   {//{{{
+	 if (inputFiles.size() > 1)
+	 {
+		 LOG.info("CSR data shall be contained in a single file");
+		 return null;
+	 }
+
+	 return  loadCSRNumericTableAndLabelImpl(inputFiles.get(0), sep, context);
+   }//}}}
+
+   public NumericTable[] loadCSRNumericTableAndLabel(String inputFiles, String sep, DaalContext context) throws IOException
+   {//{{{
+
+	   Path inputFilePaths = new Path(inputFiles);
+	   List<String> inputFileList = new LinkedList<>();
+
+	   try {
+		   FileSystem fs =
+			   inputFilePaths.getFileSystem(conf);
+		   RemoteIterator<LocatedFileStatus> iterator =
+			   fs.listFiles(inputFilePaths, true);
+
+		   while (iterator.hasNext()) {
+			   String name =
+				   iterator.next().getPath().toUri()
+				   .toString();
+			   inputFileList.add(name);
+		   }
+
+	   } catch (IOException e) {
+		   LOG.error("Fail to get test files", e);
+	   }
+
+	   if (inputFileList.size() > 1)
+	   {
+		   LOG.info("Error CSR data shall be within a single file");
+	           return null;
+	   }
+
+	   String filename = inputFileList.get(0);
+
+	   return  loadCSRNumericTableAndLabelImpl(filename, sep, context);
+
+   }//}}}
+
    private NumericTable loadCSRNumericTableImpl(String filename, String sep, DaalContext context) throws IOException
    {//{{{
 	   LOG.info("read in file name: " + filename);
@@ -688,6 +754,102 @@ public class HarpDAALDataSource
 	   }
 
 	   return new CSRNumericTable(context, data, colIndices, rowOffsets, nFeatures, nVectors);
+
+   }//}}}
+
+   private NumericTable[] loadCSRNumericTableAndLabelImpl(String filename, String sep, DaalContext context) throws IOException
+   {//{{{
+
+	   LOG.info("read in file name: " + filename);
+	   Path file_path = new Path(filename);
+
+	   FSDataInputStream in = null;
+	   try {
+
+		   FileSystem fs =
+			   file_path.getFileSystem(conf);
+		   in = fs.open(file_path);
+
+	   } catch (Exception e) {
+		   LOG.error("Fail to open file "+ e.toString());
+		   return null;
+	   }
+
+	   //read csr file content
+	   //assume a csr file contains three lines
+	   //1) row index line
+	   //2) colindex line
+	   //3) data line
+	   //4) Labels one label per line
+
+	   // read row indices
+	   String rowIndexLine = in.readLine();
+	   if (rowIndexLine == null) 
+		   return null;
+
+	   int nVectors = getRowLength(rowIndexLine, sep);
+	   long[] rowOffsets = new long[nVectors];
+
+	   readRow(rowIndexLine, sep, 0, nVectors, rowOffsets);
+	   nVectors = nVectors - 1;
+
+	   // read col indices
+	   String columnsLine = in.readLine();
+	   if (columnsLine == null) 
+		   return null;
+
+	   int nCols = getRowLength(columnsLine, sep);
+	   long[] colIndices = new long[nCols];
+	   readRow(columnsLine, sep, 0, nCols, colIndices);
+
+	   // read data 
+	   String valuesLine = in.readLine();
+	   if (valuesLine == null)
+		   return null;
+
+	   int nNonZeros = getRowLength(valuesLine, sep);
+	   double[] data = new double[nNonZeros];
+
+	   readRow(valuesLine, sep, 0, nNonZeros, data);
+
+	   // create the daal table
+	   long maxCol = 0;
+	   for (int i = 0; i < nCols; i++) {
+		   if (colIndices[i] > maxCol) {
+			   maxCol = colIndices[i];
+		   }
+	   }
+	   int nFeatures = (int) maxCol;
+
+	   if (nCols != nNonZeros || nNonZeros != (rowOffsets[nVectors] - 1) || nFeatures == 0 || nVectors == 0) {
+		   throw new IOException("Unable to read input dataset");
+	   }
+
+           CSRNumericTable dataTable = new CSRNumericTable(context, data, colIndices, rowOffsets, nFeatures, nVectors);
+
+	   // read labels appended to the CSR content
+	   double[] labelData = new double[nVectors];
+
+	   //read file content
+	   for (int j=0;j<nVectors; j++) 
+	   {
+		   String line = in.readLine();
+		   if (line == null) break;
+
+		   String[] lineData = line.split(sep);
+		   labelData[j] = Double.parseDouble(lineData[0]);
+	   }
+
+	   NumericTable labelTable = new HomogenNumericTable(context, Double.class, 1, labelData.length, NumericTable.AllocationFlag.DoAllocate);
+	   labelTable.releaseBlockOfRows(0, labelData.length, DoubleBuffer.wrap(labelData));
+
+	   NumericTable[] output = new NumericTable[2];
+	   output[0] = dataTable;
+	   output[1] = labelTable;
+
+	   in.close();
+
+	   return output; 
 
    }//}}}
 
