@@ -59,11 +59,8 @@ import edu.iu.data_aux.*;
 import com.intel.daal.algorithms.association_rules.*;
 
 // daal data structure and service
-import com.intel.daal.data_management.data_source.DataSource;
-import com.intel.daal.data_management.data_source.FileDataSource;
-import com.intel.daal.data_management.data.NumericTable;
-import com.intel.daal.data_management.data.HomogenNumericTable;
-import com.intel.daal.data_management.data.MergedNumericTable;
+import com.intel.daal.data_management.data_source.*;
+import com.intel.daal.data_management.data.*;
 import com.intel.daal.services.DaalContext;
 import com.intel.daal.services.Environment;
 
@@ -79,25 +76,16 @@ public class ARDaalCollectiveMapper
         private int numThreads;
         private int harpThreads; 
 	private int fileDim;
-	private double minSupport; 	/* Minimum support */
-	private double minConfidence;   /* Minimum confidence */
+	private double minSupport; 	
+	private double minConfidence;   
+	private List<String> inputFiles;
+	private Configuration conf;
 
 	private static HarpDAALDataSource datasource;
 	private static DaalContext daal_Context = new DaalContext();
 
 	/* Apriori algorithm parameters */
 	private NumericTable input;
-
-	//to measure the time
-        private long load_time = 0;
-        private long convert_time = 0;
-        private long total_time = 0;
-        private long compute_time = 0;
-        private long comm_time = 0;
-        private long ts_start = 0;
-        private long ts_end = 0;
-        private long ts1 = 0;
-        private long ts2 = 0;
 
         /**
          * Mapper configuration.
@@ -108,15 +96,14 @@ public class ARDaalCollectiveMapper
 
         long startTime = System.currentTimeMillis();
 
-        Configuration configuration =
-            context.getConfiguration();
+        this.conf = context.getConfiguration();
 
-	this.numMappers = configuration.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
-        this.numThreads = configuration.getInt(HarpDAALConstants.NUM_THREADS, 10);
+	this.numMappers = this.conf.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
+        this.numThreads = this.conf.getInt(HarpDAALConstants.NUM_THREADS, 10);
         this.harpThreads = Runtime.getRuntime().availableProcessors();
-	this.fileDim = configuration.getInt(HarpDAALConstants.FILE_DIM, 10);
-	this.minSupport = configuration.getDouble(Constants.MIN_SUPPORT, 0.001);
-	this.minConfidence = configuration.getDouble(Constants.MIN_CONFIDENCE, 0.7);
+	this.fileDim = this.conf.getInt(HarpDAALConstants.FILE_DIM, 10);
+	this.minSupport = this.conf.getDouble(Constants.MIN_SUPPORT, 0.001);
+	this.minConfidence = this.conf.getDouble(Constants.MIN_CONFIDENCE, 0.7);
 
         LOG.info("File Dim " + this.fileDim);
         LOG.info("Num Mappers " + this.numMappers);
@@ -138,7 +125,7 @@ public class ARDaalCollectiveMapper
             long startTime = System.currentTimeMillis();
 
 	    // read data file names from HDFS
-            List<String> dataFiles =
+            this.inputFiles =
                 new LinkedList<String>();
             while (reader.nextKeyValue()) {
                 String key = reader.getCurrentKey();
@@ -146,21 +133,19 @@ public class ARDaalCollectiveMapper
                 LOG.info("Key: " + key + ", Value: "
                         + value);
                 LOG.info("file name: " + value);
-                dataFiles.add(value);
+                this.inputFiles.add(value);
             }
             
-            Configuration conf = context.getConfiguration();
-
 	    // ----------------------- runtime settings -----------------------
             //set thread number used in DAAL
             LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
             Environment.setNumberOfThreads(numThreads);
             LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
 
-	    this.datasource = new HarpDAALDataSource(dataFiles, fileDim, harpThreads, conf);
+	    this.datasource = new HarpDAALDataSource(harpThreads, conf);
 
 	    // ----------------------- start the execution -----------------------
-            runAR(conf, context);
+            runAR(context);
             this.freeMemory();
             this.freeConn();
             System.gc();
@@ -175,20 +160,14 @@ public class ARDaalCollectiveMapper
          *
          * @return 
          */
-        private void runAR(Configuration conf, Context context) throws IOException 
+        private void runAR(Context context) throws IOException 
 	{
 		// ---------- load data ----------
-		this.datasource.loadFiles();
-		// ---------- training and testing ----------
-		/* Retrieve the input data */
-		input = new HomogenNumericTable(daal_Context, Double.class, this.fileDim, this.datasource.getTotalLines(), NumericTable.AllocationFlag.DoAllocate);
-        	this.datasource.loadDataBlock(input);
-
+		this.input = this.datasource.createDenseNumericTable(this.inputFiles, this.fileDim, "," , this.daal_Context);
 		/* Create an algorithm to mine association rules using the Apriori method */
 		Batch alg = new Batch(daal_Context, Double.class, Method.apriori);
 
 		/* Set an input object for the algorithm */
-		// NumericTable input = dataSource.getNumericTable();
 		alg.input.set(InputId.data, input);
 
 		/* Set Apriori algorithm parameters */
@@ -214,7 +193,6 @@ public class ARDaalCollectiveMapper
 		daal_Context.dispose();
 
 	}
-
 	
 
 }

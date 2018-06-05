@@ -62,11 +62,8 @@ import com.intel.daal.algorithms.implicit_als.training.*;
 import com.intel.daal.algorithms.implicit_als.training.init.*;
 
 // daal data structure and service
-import com.intel.daal.data_management.data_source.DataSource;
-import com.intel.daal.data_management.data_source.FileDataSource;
-import com.intel.daal.data_management.data.NumericTable;
-import com.intel.daal.data_management.data.HomogenNumericTable;
-import com.intel.daal.data_management.data.MergedNumericTable;
+import com.intel.daal.data_management.data_source.*;
+import com.intel.daal.data_management.data.*;
 import com.intel.daal.services.DaalContext;
 import com.intel.daal.services.Environment;
 
@@ -94,50 +91,38 @@ public class ALSBatchDaalCollectiveMapper
     	private Model        trainedModel;
     	private NumericTable data = null;
 
-	//to measure the time
-        private long load_time = 0;
-        private long convert_time = 0;
-        private long total_time = 0;
-        private long compute_time = 0;
-        private long comm_time = 0;
-        private long ts_start = 0;
-        private long ts_end = 0;
-        private long ts1 = 0;
-        private long ts2 = 0;
-
         /**
          * Mapper configuration.
          */
         @Override
         protected void setup(Context context)
-        throws IOException, InterruptedException {
+		throws IOException, InterruptedException {
 
-        long startTime = System.currentTimeMillis();
+		long startTime = System.currentTimeMillis();
 
-        this.conf = context.getConfiguration();
+		this.conf = context.getConfiguration();
 
-	this.numMappers = this.conf.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
-        this.numThreads = this.conf.getInt(HarpDAALConstants.NUM_THREADS, 10);
-        this.harpThreads = Runtime.getRuntime().availableProcessors();
-	this.fileDim = this.conf.getInt(HarpDAALConstants.FILE_DIM, 21);
-	this.nFactors = this.conf.getLong(HarpDAALConstants.NUM_FACTOR, 2);
+		this.numMappers = this.conf.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
+		this.numThreads = this.conf.getInt(HarpDAALConstants.NUM_THREADS, 10);
+		this.harpThreads = Runtime.getRuntime().availableProcessors();
+		this.fileDim = this.conf.getInt(HarpDAALConstants.FILE_DIM, 21);
+		this.nFactors = this.conf.getLong(HarpDAALConstants.NUM_FACTOR, 2);
 
-	//set thread number used in DAAL
-	LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
-	Environment.setNumberOfThreads(numThreads);
-	LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
+		//set thread number used in DAAL
+		LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
+		Environment.setNumberOfThreads(numThreads);
+		LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
 
-	LOG.info("File Dim " + this.fileDim);
-	LOG.info("Num Mappers " + this.numMappers);
-        LOG.info("Num Threads " + this.numThreads);
-        LOG.info("Num harp load data threads " + harpThreads);
-	LOG.info("nFactors " + this.nFactors);
+		LOG.info("File Dim " + this.fileDim);
+		LOG.info("Num Mappers " + this.numMappers);
+		LOG.info("Num Threads " + this.numThreads);
+		LOG.info("Num harp load data threads " + harpThreads);
+		LOG.info("nFactors " + this.nFactors);
 
-        long endTime = System.currentTimeMillis();
-        LOG.info("config (ms) :"
-                + (endTime - startTime));
+		long endTime = System.currentTimeMillis();
+		LOG.info("config (ms) :" + (endTime - startTime));
 
-        }
+	}
 
         // Assigns the reader to different nodes
         protected void mapCollective(
@@ -180,7 +165,6 @@ public class ALSBatchDaalCollectiveMapper
 		initializeModel();
 		trainModel();
 		testModel();
-		
 		daal_Context.dispose();
 
 	}

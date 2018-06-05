@@ -59,11 +59,8 @@ import edu.iu.data_aux.*;
 import com.intel.daal.algorithms.cholesky.*;
 
 // daal data structure and service
-import com.intel.daal.data_management.data_source.DataSource;
-import com.intel.daal.data_management.data_source.FileDataSource;
-import com.intel.daal.data_management.data.NumericTable;
-import com.intel.daal.data_management.data.HomogenNumericTable;
-import com.intel.daal.data_management.data.MergedNumericTable;
+import com.intel.daal.data_management.data_source.*;
+import com.intel.daal.data_management.data.*;
 import com.intel.daal.services.DaalContext;
 import com.intel.daal.services.Environment;
 
@@ -80,22 +77,13 @@ public class CLYDaalCollectiveMapper
 		private int harpThreads; 
 		private int fileDim;
 
+		private List<String> inputFiles;
+		private Configuration conf;
 		private static HarpDAALDataSource datasource;
 		private static DaalContext daal_Context = new DaalContext();
 
 		/* Apriori algorithm parameters */
 		private NumericTable input;
-
-		//to measure the time
-		private long load_time = 0;
-		private long convert_time = 0;
-		private long total_time = 0;
-		private long compute_time = 0;
-		private long comm_time = 0;
-		private long ts_start = 0;
-		private long ts_end = 0;
-		private long ts1 = 0;
-		private long ts2 = 0;
 
 		/**
 		 * Mapper configuration.
@@ -105,14 +93,12 @@ public class CLYDaalCollectiveMapper
 			throws IOException, InterruptedException {
 
 			long startTime = System.currentTimeMillis();
+			this.conf = context.getConfiguration();
 
-			Configuration configuration =
-				context.getConfiguration();
-
-			this.numMappers = configuration.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
-			this.numThreads = configuration.getInt(HarpDAALConstants.NUM_THREADS, 10);
+			this.numMappers = this.conf.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
+			this.numThreads = this.conf.getInt(HarpDAALConstants.NUM_THREADS, 10);
 			this.harpThreads = Runtime.getRuntime().availableProcessors();
-			this.fileDim = configuration.getInt(HarpDAALConstants.FILE_DIM, 5);
+			this.fileDim = this.conf.getInt(HarpDAALConstants.FILE_DIM, 5);
 
 			LOG.info("File Dim " + this.fileDim);
 			LOG.info("Num Mappers " + this.numMappers);
@@ -120,45 +106,40 @@ public class CLYDaalCollectiveMapper
 			LOG.info("Num harp load data threads " + harpThreads);
 
 			long endTime = System.currentTimeMillis();
-			LOG.info("config (ms) :"
-					+ (endTime - startTime));
+			LOG.info("config (ms) :" + (endTime - startTime));
 
 		}
 
 		// Assigns the reader to different nodes
-		protected void mapCollective(
-				KeyValReader reader, Context context)
-				throws IOException, InterruptedException {
-				long startTime = System.currentTimeMillis();
+		protected void mapCollective(KeyValReader reader, Context context) throws IOException, InterruptedException 
+		{
+			long startTime = System.currentTimeMillis();
 
-				// read data file names from HDFS
-				List<String> dataFiles =
-					new LinkedList<String>();
-				while (reader.nextKeyValue()) {
-					String key = reader.getCurrentKey();
-					String value = reader.getCurrentValue();
-					LOG.info("Key: " + key + ", Value: "
-							+ value);
-					LOG.info("file name: " + value);
-					dataFiles.add(value);
-				}
+			// read data file names from HDFS
+			this.inputFiles = new LinkedList<String>();
+			while (reader.nextKeyValue()) {
+				String key = reader.getCurrentKey();
+				String value = reader.getCurrentValue();
+				LOG.info("Key: " + key + ", Value: "
+						+ value);
+				LOG.info("file name: " + value);
+				this.inputFiles.add(value);
+			}
 
-				Configuration conf = context.getConfiguration();
+			// ----------------------- runtime settings -----------------------
+			//set thread number used in DAAL
+			LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
+			Environment.setNumberOfThreads(numThreads);
+			LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
 
-				// ----------------------- runtime settings -----------------------
-				//set thread number used in DAAL
-				LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
-				Environment.setNumberOfThreads(numThreads);
-				LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
+			this.datasource = new HarpDAALDataSource(harpThreads, conf);
 
-				this.datasource = new HarpDAALDataSource(dataFiles, fileDim, harpThreads, conf);
-
-				// ----------------------- start the execution -----------------------
-				runCLY(conf, context);
-				this.freeMemory();
-				this.freeConn();
-				System.gc();
-				}
+			// ----------------------- start the execution -----------------------
+			runCLY(context);
+			this.freeMemory();
+			this.freeConn();
+			System.gc();
+		}
 
 		/**
 		 * @brief run Association Rules by invoking DAAL Java API
@@ -169,15 +150,10 @@ public class CLYDaalCollectiveMapper
 		 *
 		 * @return 
 		 */
-		private void runCLY(Configuration conf, Context context) throws IOException 
+		private void runCLY(Context context) throws IOException 
 		{
 			// ---------- load data ----------
-			this.datasource.loadFiles();
-			// ---------- training and testing ----------
-			/* Retrieve the input data */
-			input = new HomogenNumericTable(daal_Context, Double.class, this.fileDim, this.datasource.getTotalLines(), NumericTable.AllocationFlag.DoAllocate);
-			this.datasource.loadDataBlock(input);
-
+			this.input = this.datasource.createDenseNumericTable(this.inputFiles, this.fileDim, "," , this.daal_Context);
 			/* Create an algorithm */
 			Batch choleskyAlgorithm = new Batch(daal_Context, Double.class, Method.defaultDense);
 

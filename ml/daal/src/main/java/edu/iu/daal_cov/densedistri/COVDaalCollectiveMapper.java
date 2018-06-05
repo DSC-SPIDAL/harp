@@ -66,8 +66,6 @@ public class COVDaalCollectiveMapper
 extends
 CollectiveMapper<String, String, Object, Object>{
 
-
-
   private PartialResult partialResult;
   private Result result;
   private int fileDim;
@@ -75,17 +73,8 @@ CollectiveMapper<String, String, Object, Object>{
   private int num_mappers;
   private int numThreads;
   private int harpThreads; 
-
-    //to measure the time
-  private long load_time = 0;
-  private long convert_time = 0;
-  private long total_time = 0;
-  private long compute_time = 0;
-  private long comm_time = 0;
-  private long ts_start = 0;
-  private long ts_end = 0;
-  private long ts1 = 0;
-  private long ts2 = 0;
+  private List<String> inputFiles;
+  private Configuration conf;
 
   private static HarpDAALDataSource datasource;
   private static HarpDAALComm harpcomm;	
@@ -99,13 +88,18 @@ CollectiveMapper<String, String, Object, Object>{
 
       long startTime = System.currentTimeMillis();
 
-      Configuration configuration = context.getConfiguration();
-      this.num_mappers = configuration.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
-      this.numThreads = configuration.getInt(HarpDAALConstants.NUM_THREADS, 10);
-      this.fileDim = configuration.getInt(HarpDAALConstants.FILE_DIM, 10);
-      this.nFeature = configuration.getInt(HarpDAALConstants.FEATURE_DIM, 10);
+      this.conf = context.getConfiguration();
+      this.num_mappers = this.conf.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
+      this.numThreads = this.conf.getInt(HarpDAALConstants.NUM_THREADS, 10);
+      this.fileDim = this.conf.getInt(HarpDAALConstants.FILE_DIM, 10);
+      this.nFeature = this.conf.getInt(HarpDAALConstants.FEATURE_DIM, 10);
       //always use the maximum hardware threads to load in data and convert data 
       harpThreads = Runtime.getRuntime().availableProcessors();
+
+      //set thread number used in DAAL
+      LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
+      Environment.setNumberOfThreads(numThreads);
+      LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
 
       LOG.info("Num Mappers " + num_mappers);
       LOG.info("Num Threads " + numThreads);
@@ -121,11 +115,10 @@ CollectiveMapper<String, String, Object, Object>{
     protected void mapCollective(
       KeyValReader reader, Context context)
     throws IOException, InterruptedException {
-      long startTime = System.currentTimeMillis();
-      List<String> trainingDataFiles =
-      new LinkedList<String>();
 
-    //splitting files between mapper
+      long startTime = System.currentTimeMillis();
+
+      this.inputFiles = new LinkedList<String>();
 
       while (reader.nextKeyValue()) {
         String key = reader.getCurrentKey();
@@ -133,70 +126,43 @@ CollectiveMapper<String, String, Object, Object>{
         LOG.info("Key: " + key + ", Value: "
           + value);
         System.out.println("file name : " + value);
-        trainingDataFiles.add(value);
+        this.inputFiles.add(value);
       }
 
-      Configuration conf = context.getConfiguration();
-      Path pointFilePath = new Path(trainingDataFiles.get(0));
-      System.out.println("path = "+ pointFilePath.getName());
-      FileSystem fs = pointFilePath.getFileSystem(conf);
-      FSDataInputStream in = fs.open(pointFilePath);
-
       //init data source
-      this.datasource = new HarpDAALDataSource(trainingDataFiles, this.fileDim, harpThreads, conf);
+      this.datasource = new HarpDAALDataSource(harpThreads, conf);
       // create communicator
       this.harpcomm= new HarpDAALComm(this.getSelfID(), this.getMasterID(), this.num_mappers, daal_Context, this);
 
-      runCOV(conf, context);
-      LOG.info("Total iterations in master view: "
-        + (System.currentTimeMillis() - startTime));
+      runCOV(context);
+      LOG.info("Total iterations in master view: " + (System.currentTimeMillis() - startTime));
       this.freeMemory();
       this.freeConn();
       System.gc();
     }
 
-    private void runCOV(Configuration conf, Context context) throws IOException {
+    private void runCOV(Context context) throws IOException 
+    {
 
-        //set thread number used in DAAL
-        LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
-        Environment.setNumberOfThreads(numThreads);
-        LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
+	    // ---------- load data ----------
+	    NumericTable featureArray_daal = this.datasource.createDenseNumericTable(this.inputFiles, this.fileDim, "," , this.daal_Context);
 
-	ts_start = System.currentTimeMillis();
+	    PartialResult[] outcome = computeOnLocalNode(featureArray_daal);
 
-	// ---------- load data ----------
-	this.datasource.loadFiles();
+	    if(this.isMaster()){
+		    computeOnMasterNode(outcome);
+		    HomogenNumericTable covariance = (HomogenNumericTable) result.get(ResultId.covariance);
+		    HomogenNumericTable mean = (HomogenNumericTable) result.get(ResultId.mean);
+		    Service.printNumericTable("Covariance matrix:", covariance);
+		    Service.printNumericTable("Mean vector:", mean);
+	    }
 
-	// // ---------- training and testing ----------
-	NumericTable featureArray_daal = new HomogenNumericTable(daal_Context, Double.class, this.nFeature, this.datasource.getTotalLines(), NumericTable.AllocationFlag.DoAllocate);
-	this.datasource.loadDataBlock(featureArray_daal);
+	    daal_Context.dispose();
 
-        PartialResult[] outcome = computeOnLocalNode(featureArray_daal);
-
-        if(this.isMaster()){
-            computeOnMasterNode(outcome);
-            HomogenNumericTable covariance = (HomogenNumericTable) result.get(ResultId.covariance);
-            HomogenNumericTable mean = (HomogenNumericTable) result.get(ResultId.mean);
-            Service.printNumericTable("Covariance matrix:", covariance);
-            Service.printNumericTable("Mean vector:", mean);
-        }
-
-        daal_Context.dispose();
-
-        ts_end = System.currentTimeMillis();
-        total_time = (ts_end - ts_start);
-
-        LOG.info("Total Execution Time of Cov: "+ total_time);
-        LOG.info("Loading Data Time of Cov: "+ load_time);
-        LOG.info("Computation Time of Cov: "+ compute_time);
-        LOG.info("Comm Time of Cov: "+ comm_time);
-        LOG.info("DataType Convert Time of Cov: "+ convert_time);
-        LOG.info("Misc Time of Cov: "+ (total_time - load_time - compute_time - comm_time - convert_time));
     }
 
   private PartialResult[] computeOnLocalNode(NumericTable featureArray_daal) throws java.io.IOException {
 
-    ts1 = System.currentTimeMillis();
     /* Create algorithm objects to compute a variance-covariance matrix in the distributed processing mode using the default method */
     DistributedStep1Local algorithm = new DistributedStep1Local(daal_Context, Double.class, Method.defaultDense);
 
@@ -205,10 +171,7 @@ CollectiveMapper<String, String, Object, Object>{
 
     /* Compute partial estimates on nodes */
     partialResult = algorithm.compute();
-    ts2 = System.currentTimeMillis();
-    compute_time += (ts2 - ts1);
 
-    ts1 = System.currentTimeMillis();
 
     //comm gather
     SerializableBase[] partial_res = this.harpcomm.harpdaal_gather(partialResult, this.getMasterID(), "COV", "gather_partial_res");
@@ -218,9 +181,6 @@ CollectiveMapper<String, String, Object, Object>{
 	    for(int j=0;j<this.num_mappers;j++)
 		    partial_output[j] = (PartialResult)(partial_res[j]);
     }
-
-    ts2 = System.currentTimeMillis();
-    comm_time += (ts2 - ts1);
 
     return partial_output;
     
@@ -232,11 +192,8 @@ CollectiveMapper<String, String, Object, Object>{
     for(int j=0;j<this.num_mappers;j++)
     	algorithm.input.add(DistributedStep2MasterInputId.partialResults,partialResultTable[j]); 
 
-    ts1 = System.currentTimeMillis();
     algorithm.compute();
     result = algorithm.finalizeCompute();
-    ts2 = System.currentTimeMillis();
-    compute_time += (ts2 - ts1);
   }
 
 }

@@ -67,11 +67,8 @@ import com.intel.daal.algorithms.classifier.training.InputId;
 import com.intel.daal.algorithms.classifier.training.TrainingResultId;
 
 // daal data structure and service module
-import com.intel.daal.data_management.data.NumericTable;
-import com.intel.daal.data_management.data.HomogenNumericTable;
-import com.intel.daal.data_management.data.MergedNumericTable;
-import com.intel.daal.data_management.data_source.DataSource;
-import com.intel.daal.data_management.data_source.FileDataSource;
+import com.intel.daal.data_management.data.*;
+import com.intel.daal.data_management.data_source.*;
 import com.intel.daal.services.DaalContext;
 import com.intel.daal.services.Environment;
 
@@ -87,20 +84,10 @@ public class BROWNBOOSTDaalCollectiveMapper
         private int numThreads;
         private int harpThreads; 
 	private int fileDim;
-  	private String testFilePath;
-
 	private int nFeatures;
-
-        //to measure the time
-        private long load_time = 0;
-        private long convert_time = 0;
-        private long total_time = 0;
-        private long compute_time = 0;
-        private long comm_time = 0;
-        private long ts_start = 0;
-        private long ts_end = 0;
-        private long ts1 = 0;
-        private long ts2 = 0;
+  	private String testFilePath;
+	private List<String> inputFiles;
+	private Configuration conf;
 
 	private static HarpDAALDataSource datasource;
 	private static DaalContext daal_Context = new DaalContext();
@@ -118,16 +105,15 @@ public class BROWNBOOSTDaalCollectiveMapper
 
         long startTime = System.currentTimeMillis();
 
-        Configuration configuration =
-            context.getConfiguration();
+        this.conf = context.getConfiguration();
 
-	this.fileDim = configuration.getInt(HarpDAALConstants.FILE_DIM, 21);
-	this.numMappers = configuration.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
-        this.numThreads = configuration.getInt(HarpDAALConstants.NUM_THREADS, 10);
+	this.fileDim = this.conf.getInt(HarpDAALConstants.FILE_DIM, 21);
+	this.numMappers = this.conf.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
+        this.numThreads = this.conf.getInt(HarpDAALConstants.NUM_THREADS, 10);
         this.harpThreads = Runtime.getRuntime().availableProcessors();
 
-	this.nFeatures = configuration.getInt(HarpDAALConstants.FEATURE_DIM, 20);
-	this.testFilePath = configuration.get(HarpDAALConstants.TEST_FILE_PATH,"");
+	this.nFeatures = this.conf.getInt(HarpDAALConstants.FEATURE_DIM, 20);
+	this.testFilePath = this.conf.get(HarpDAALConstants.TEST_FILE_PATH,"");
 
         LOG.info("File Dim " + this.fileDim);
         LOG.info("Num Mappers " + this.numMappers);
@@ -146,7 +132,7 @@ public class BROWNBOOSTDaalCollectiveMapper
             long startTime = System.currentTimeMillis();
 
 	    // read data file names from HDFS
-            List<String> dataFiles =
+            this.inputFiles =
                 new LinkedList<String>();
             while (reader.nextKeyValue()) {
                 String key = reader.getCurrentKey();
@@ -154,10 +140,8 @@ public class BROWNBOOSTDaalCollectiveMapper
                 LOG.info("Key: " + key + ", Value: "
                         + value);
                 LOG.info("file name: " + value);
-                dataFiles.add(value);
+                this.inputFiles.add(value);
             }
-            
-            Configuration conf = context.getConfiguration();
 
 	    // ----------------------- runtime settings -----------------------
             //set thread number used in DAAL
@@ -165,10 +149,10 @@ public class BROWNBOOSTDaalCollectiveMapper
             Environment.setNumberOfThreads(numThreads);
             LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
 
-	    this.datasource = new HarpDAALDataSource(dataFiles, fileDim, harpThreads, conf);
+	    this.datasource = new HarpDAALDataSource(harpThreads, conf);
 
 	    // ----------------------- start the execution -----------------------
-            runBROWNBOOST(conf, context);
+            runBROWNBOOST(context);
             this.freeMemory();
             this.freeConn();
             System.gc();
@@ -183,11 +167,8 @@ public class BROWNBOOSTDaalCollectiveMapper
          *
          * @return 
          */
-        private void runBROWNBOOST(Configuration conf, Context context) throws IOException 
+        private void runBROWNBOOST(Context context) throws IOException 
 	{
-		// ---------- load data ----------
-		this.datasource.loadFiles();
-		// ---------- training and testing ----------
 		trainModel();
 		testModel();
 		printResults();
@@ -196,15 +177,11 @@ public class BROWNBOOSTDaalCollectiveMapper
 
 	private void trainModel() 
 	{
-		/* Create Numeric Tables for training data and labels */
-		NumericTable trainData = new HomogenNumericTable(daal_Context, Double.class, nFeatures, this.datasource.getTotalLines(), NumericTable.AllocationFlag.DoAllocate);
-		NumericTable trainGroundTruth = new HomogenNumericTable(daal_Context, Double.class, 1, this.datasource.getTotalLines(), NumericTable.AllocationFlag.DoAllocate);
-		MergedNumericTable mergedData = new MergedNumericTable(daal_Context);
-		mergedData.addNumericTable(trainData);
-		mergedData.addNumericTable(trainGroundTruth);
 
-		/* Retrieve the data from an input file */
-        	this.datasource.loadDataBlock(mergedData);
+		//load training data
+		NumericTable[] load_table = this.datasource.createDenseNumericTableSplit(this.inputFiles, nFeatures, 1, ",", this.daal_Context);
+		NumericTable trainData = load_table[0]; 
+		NumericTable trainGroundTruth = load_table[1];
 
 		/* Create algorithm objects to train the BROWNBoost model */
 		TrainingBatch algorithm = new TrainingBatch(daal_Context, Double.class, TrainingMethod.defaultDense);
@@ -222,17 +199,9 @@ public class BROWNBOOSTDaalCollectiveMapper
 	{
 
 		// load test set from HDFS
-		this.datasource.loadTestFile(testFilePath, fileDim);
-
-		/* Create Numeric Tables for testing data and labels */
-		NumericTable testData = new HomogenNumericTable(daal_Context, Double.class, nFeatures, this.datasource.getTestRows(), NumericTable.AllocationFlag.DoAllocate);
-		testGroundTruth = new HomogenNumericTable(daal_Context, Double.class, 1, this.datasource.getTestRows(), NumericTable.AllocationFlag.DoAllocate);
-		MergedNumericTable mergedData = new MergedNumericTable(daal_Context);
-		mergedData.addNumericTable(testData);
-		mergedData.addNumericTable(testGroundTruth);
-
-		/* Retrieve the data from an input file */
-		this.datasource.loadTestTable(mergedData);
+		NumericTable[] load_table = this.datasource.createDenseNumericTableSplit(this.testFilePath, this.nFeatures, 1, ",", this.daal_Context);
+		NumericTable testData = load_table[0];
+		this.testGroundTruth = load_table[1];
 
 		/* Create algorithm objects for BROWNBoost prediction with the fast method */
 		PredictionBatch algorithm = new PredictionBatch(daal_Context, Double.class, PredictionMethod.defaultDense);

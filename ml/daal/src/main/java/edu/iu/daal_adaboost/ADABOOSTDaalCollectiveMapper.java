@@ -67,11 +67,8 @@ import com.intel.daal.algorithms.classifier.training.InputId;
 import com.intel.daal.algorithms.classifier.training.TrainingResultId;
 
 // daal data structure and service module
-import com.intel.daal.data_management.data.NumericTable;
-import com.intel.daal.data_management.data.HomogenNumericTable;
-import com.intel.daal.data_management.data.MergedNumericTable;
-import com.intel.daal.data_management.data_source.DataSource;
-import com.intel.daal.data_management.data_source.FileDataSource;
+import com.intel.daal.data_management.data.*;
+import com.intel.daal.data_management.data_source.*;
 import com.intel.daal.services.DaalContext;
 import com.intel.daal.services.Environment;
 
@@ -87,8 +84,8 @@ public class ADABOOSTDaalCollectiveMapper
         private int harpThreads; 
 	private int fileDim;
 	private int nFeatures;
-	private List<String> inputFiles;
   	private String testFilePath;
+	private List<String> inputFiles;
 	private Configuration conf;
 	private static HarpDAALDataSource datasource;
 	private static DaalContext daal_Context = new DaalContext();
@@ -97,12 +94,6 @@ public class ADABOOSTDaalCollectiveMapper
 	private static PredictionResult predictionResult;
 	private static NumericTable     testGroundTruth;
 
-        //to measure the time
-        private long load_time = 0;
-        private long compute_time = 0;
-        private long comm_time = 0;
-        private long total_time = 0;
-
         /**
          * Mapper configuration.
          */
@@ -110,7 +101,6 @@ public class ADABOOSTDaalCollectiveMapper
         protected void setup(Context context)
 		throws IOException, InterruptedException {
 
-		long ts_start = System.currentTimeMillis();
 
 		this.conf = context.getConfiguration();
 		this.fileDim = this.conf.getInt(HarpDAALConstants.FILE_DIM, 21);
@@ -123,12 +113,10 @@ public class ADABOOSTDaalCollectiveMapper
 		//set thread number used in DAAL
 		LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
 		Environment.setNumberOfThreads(numThreads);
-
 		LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
 		LOG.info("Num Mappers " + this.numMappers);
 		LOG.info("Num Threads " + this.numThreads);
 		LOG.info("Num harp load data threads " + harpThreads);
-		LOG.info("config (ms) :" + (System.currentTimeMillis() - ts_start));
 
 	}
 
@@ -166,26 +154,19 @@ public class ADABOOSTDaalCollectiveMapper
         private void runADABOOST() throws IOException 
 	{
 		// ---------- training and testing ----------
-		long total_start = System.currentTimeMillis();
 		trainModel();
 		testModel();
 		printResults();
 		daal_Context.dispose();
-		this.total_time += (System.currentTimeMillis() - total_start); 
-		LOG.info("Data Loading time: " + this.load_time);
-		LOG.info("Compute time: " + this.compute_time);
-		LOG.info("Total time: " + this.total_time);
+
 	}
 
 	private void trainModel() 
 	{
-		long ts_start = System.currentTimeMillis();
 		NumericTable[] load_table = this.datasource.createDenseNumericTableSplit(this.inputFiles, nFeatures, 1, ",", this.daal_Context);
 		NumericTable trainData = load_table[0];
 		NumericTable trainGroundTruth = load_table[1];
-		this.load_time += (System.currentTimeMillis() - ts_start); 
 
-		ts_start = System.currentTimeMillis();
 		/* Create algorithm objects to train the AdaBoost model */
 		TrainingBatch algorithm = new TrainingBatch(daal_Context, Double.class, TrainingMethod.defaultDense);
 
@@ -195,7 +176,6 @@ public class ADABOOSTDaalCollectiveMapper
 
 		/* Train the AdaBoost model */
 		trainingResult = algorithm.compute();
-		this.compute_time += (System.currentTimeMillis() - ts_start); 
 	}
 
  
