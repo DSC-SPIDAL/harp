@@ -62,14 +62,10 @@ import com.intel.daal.algorithms.decision_forest.regression.training.*;
 import com.intel.daal.algorithms.decision_forest.*;
 
 // intel daal data structures and services
-import com.intel.daal.data_management.data.NumericTable;
-import com.intel.daal.data_management.data.HomogenNumericTable;
-import com.intel.daal.data_management.data.MergedNumericTable;
-import com.intel.daal.data_management.data_source.DataSource;
-import com.intel.daal.data_management.data_source.FileDataSource;
+import com.intel.daal.data_management.data.*;
+import com.intel.daal.data_management.data_source.*;
 import com.intel.daal.services.DaalContext;
 import com.intel.daal.services.Environment;
-import com.intel.daal.data_management.data.*;
 
 class DfRegPrintNodeVisitor extends TreeNodeVisitor {
     @Override
@@ -104,24 +100,14 @@ public class DFREGTAVDaalCollectiveMapper
     CollectiveMapper<String, String, Object, Object> {
 
 	//cmd args
-        private int numMappers;
+        private int num_mappers;
         private int numThreads;
         private int harpThreads; 
 	private int fileDim;
-
 	private int nFeatures;
     	private int nTrees;
-
-        //to measure the time
-        private long load_time = 0;
-        private long convert_time = 0;
-        private long total_time = 0;
-        private long compute_time = 0;
-        private long comm_time = 0;
-        private long ts_start = 0;
-        private long ts_end = 0;
-        private long ts1 = 0;
-        private long ts2 = 0;
+	private List<String> inputFiles;
+	private Configuration conf;
 
 	private static HarpDAALDataSource datasource;
 	private static DaalContext daal_Context = new DaalContext();
@@ -135,20 +121,24 @@ public class DFREGTAVDaalCollectiveMapper
 
         long startTime = System.currentTimeMillis();
 
-        Configuration configuration =
-            context.getConfiguration();
+        this.conf = context.getConfiguration();
 
-	this.nFeatures = configuration.getInt(HarpDAALConstants.FEATURE_DIM, 13);
-	this.fileDim = configuration.getInt(HarpDAALConstants.FILE_DIM, 14);
-	this.nTrees = configuration.getInt(Constants.NUM_TREES, 2);
+	this.nFeatures = this.conf.getInt(HarpDAALConstants.FEATURE_DIM, 13);
+	this.fileDim = this.conf.getInt(HarpDAALConstants.FILE_DIM, 14);
+	this.nTrees = this.conf.getInt(Constants.NUM_TREES, 2);
 
-        this.numMappers = configuration.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
-        this.numThreads = configuration.getInt(HarpDAALConstants.NUM_THREADS, 10);
+        this.num_mappers = this.conf.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
+        this.numThreads = this.conf.getInt(HarpDAALConstants.NUM_THREADS, 10);
         //always use the maximum hardware threads to load in data and convert data 
         this.harpThreads = Runtime.getRuntime().availableProcessors();
 
-        LOG.info("File Dim " + this.fileDim);
-        LOG.info("Num Mappers " + this.numMappers);
+	//set thread number used in DAAL
+	LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
+	Environment.setNumberOfThreads(numThreads);
+	LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
+
+	LOG.info("File Dim " + this.fileDim);
+	LOG.info("Num Mappers " + this.num_mappers);
         LOG.info("Num Threads " + this.numThreads);
         LOG.info("Num harp load data threads " + harpThreads);
 
@@ -165,29 +155,20 @@ public class DFREGTAVDaalCollectiveMapper
             long startTime = System.currentTimeMillis();
 
 	    // read data file names from HDFS
-            List<String> dataFiles =
-                new LinkedList<String>();
+            this.inputFiles = new LinkedList<String>();
             while (reader.nextKeyValue()) {
                 String key = reader.getCurrentKey();
                 String value = reader.getCurrentValue();
                 LOG.info("Key: " + key + ", Value: "
                         + value);
                 LOG.info("file name: " + value);
-                dataFiles.add(value);
+                this.inputFiles.add(value);
             }
-            
-            Configuration conf = context.getConfiguration();
 
-	    // ----------------------- runtime settings -----------------------
-            //set thread number used in DAAL
-            LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
-            Environment.setNumberOfThreads(numThreads);
-            LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
-
-	    this.datasource = new HarpDAALDataSource(dataFiles, fileDim, harpThreads, conf);
+	    this.datasource = new HarpDAALDataSource(harpThreads, conf);
 
 	    // ----------------------- start the execution -----------------------
-            runDFREGTAV(conf, context);
+            runDFREGTAV(context);
             this.freeMemory();
             this.freeConn();
             System.gc();
@@ -202,10 +183,9 @@ public class DFREGTAVDaalCollectiveMapper
          *
          * @return 
          */
-        private void runDFREGTAV(Configuration conf, Context context) throws IOException 
+        private void runDFREGTAV(Context context) throws IOException 
 	{
-		// ---------- load data ----------
-		this.datasource.loadFiles();
+		
 		// ---------- training and testing ----------
 		TrainingResult trainingResult = trainModel();
         	printModel(trainingResult);
@@ -213,36 +193,32 @@ public class DFREGTAVDaalCollectiveMapper
 		daal_Context.dispose();
 	}
 
-	private TrainingResult trainModel() {
+	private TrainingResult trainModel() 
+	{
 
-        /* Create Numeric Tables for training data and labels */
-        NumericTable trainData = new HomogenNumericTable(daal_Context, Double.class, nFeatures, this.datasource.getTotalLines(), NumericTable.AllocationFlag.DoAllocate);
-        NumericTable trainGroundTruth = new HomogenNumericTable(daal_Context, Double.class, 1, this.datasource.getTotalLines(), NumericTable.AllocationFlag.DoAllocate);
-        MergedNumericTable mergedData = new MergedNumericTable(daal_Context);
-        mergedData.addNumericTable(trainData);
-        mergedData.addNumericTable(trainGroundTruth);
+		NumericTable[] load_table = this.datasource.createDenseNumericTableSplit(this.inputFiles, nFeatures, 1, ",", this.daal_Context);
 
-        /* Retrieve the data from an input file */
-	this.datasource.loadDataBlock(mergedData);
+		NumericTable trainData = load_table[0];
+		NumericTable trainGroundTruth = load_table[1];
 
-        /* Set feature as categorical */
-        DataFeature categoricalFeature = trainData.getDictionary().getFeature(3);
-        categoricalFeature.setFeatureType(DataFeatureUtils.FeatureType.DAAL_CATEGORICAL);
+		/* Set feature as categorical */
+		DataFeature categoricalFeature = trainData.getDictionary().getFeature(3);
+		categoricalFeature.setFeatureType(DataFeatureUtils.FeatureType.DAAL_CATEGORICAL);
 
-        /* Create algorithm objects to train the decision forest classification model */
-        TrainingBatch algorithm = new TrainingBatch(daal_Context, Double.class, TrainingMethod.defaultDense);
-        algorithm.parameter.setNTrees(nTrees);
+		/* Create algorithm objects to train the decision forest classification model */
+		TrainingBatch algorithm = new TrainingBatch(daal_Context, Double.class, TrainingMethod.defaultDense);
+		algorithm.parameter.setNTrees(nTrees);
 
-        /* Pass a training data set and dependent values to the algorithm */
-        algorithm.input.set(InputId.data, trainData);
-        algorithm.input.set(InputId.dependentVariable, trainGroundTruth);
+		/* Pass a training data set and dependent values to the algorithm */
+		algorithm.input.set(InputId.data, trainData);
+		algorithm.input.set(InputId.dependentVariable, trainGroundTruth);
 
-        /* Train the decision forest classification model */
-        TrainingResult trainingResult = algorithm.compute();
+		/* Train the decision forest classification model */
+		TrainingResult trainingResult = algorithm.compute();
 
-        
-        return trainingResult;
-    }
+
+		return trainingResult;
+	}
 
 
     private void printModel(TrainingResult trainingResult) {

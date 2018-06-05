@@ -68,14 +68,10 @@ import com.intel.daal.algorithms.decision_tree.classification.training.*;
 import com.intel.daal.algorithms.decision_tree.*;
 
 // intel daal data structures and services
-import com.intel.daal.data_management.data.NumericTable;
-import com.intel.daal.data_management.data.HomogenNumericTable;
-import com.intel.daal.data_management.data.MergedNumericTable;
-import com.intel.daal.data_management.data_source.DataSource;
-import com.intel.daal.data_management.data_source.FileDataSource;
+import com.intel.daal.data_management.data.*;
+import com.intel.daal.data_management.data_source.*;
 import com.intel.daal.services.DaalContext;
 import com.intel.daal.services.Environment;
-import com.intel.daal.data_management.data.*;
 
 /**
  * @brief the Harp mapper for running K-means
@@ -85,26 +81,16 @@ public class DTCLSDaalCollectiveMapper
     CollectiveMapper<String, String, Object, Object> {
 
 	//cmd args
-        private int numMappers;
+        private int num_mappers;
         private int numThreads;
         private int harpThreads; 
 	private int fileDim;
-  	private String testFilePath;
-  	private String pruneFilePath;
-
 	private int nFeatures;
     	private int nClasses;
-
-        //to measure the time
-        private long load_time = 0;
-        private long convert_time = 0;
-        private long total_time = 0;
-        private long compute_time = 0;
-        private long comm_time = 0;
-        private long ts_start = 0;
-        private long ts_end = 0;
-        private long ts1 = 0;
-        private long ts2 = 0;
+	private String testFilePath;
+  	private String pruneFilePath;
+        private List<String> inputFiles;
+	private Configuration conf;
 
     	private static NumericTable testGroundTruth;
 
@@ -120,21 +106,25 @@ public class DTCLSDaalCollectiveMapper
 
         long startTime = System.currentTimeMillis();
 
-        Configuration configuration =
-            context.getConfiguration();
+        this.conf = context.getConfiguration();
 
-	this.nFeatures = configuration.getInt(HarpDAALConstants.FEATURE_DIM, 10);
-	this.fileDim = configuration.getInt(HarpDAALConstants.FILE_DIM, 10);
-	this.nClasses = configuration.getInt(HarpDAALConstants.NUM_CLASS, 10);
-        this.numMappers = configuration.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
-        this.numThreads = configuration.getInt(HarpDAALConstants.NUM_THREADS, 10);
+	this.nFeatures = this.conf.getInt(HarpDAALConstants.FEATURE_DIM, 10);
+	this.fileDim = this.conf.getInt(HarpDAALConstants.FILE_DIM, 10);
+	this.nClasses = this.conf.getInt(HarpDAALConstants.NUM_CLASS, 10);
+        this.num_mappers = this.conf.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
+        this.numThreads = this.conf.getInt(HarpDAALConstants.NUM_THREADS, 10);
         //always use the maximum hardware threads to load in data and convert data 
         this.harpThreads = Runtime.getRuntime().availableProcessors();
-	this.testFilePath = configuration.get(HarpDAALConstants.TEST_FILE_PATH,"");
-	this.pruneFilePath = configuration.get(HarpDAALConstants.TRAIN_PRUNE_PATH,"");
+	this.testFilePath = this.conf.get(HarpDAALConstants.TEST_FILE_PATH,"");
+	this.pruneFilePath = this.conf.get(HarpDAALConstants.TRAIN_PRUNE_PATH,"");
 
-        LOG.info("File Dim " + this.fileDim);
-        LOG.info("Num Mappers " + this.numMappers);
+	//set thread number used in DAAL
+	LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
+	Environment.setNumberOfThreads(numThreads);
+	LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
+
+	LOG.info("File Dim " + this.fileDim);
+        LOG.info("Num Mappers " + this.num_mappers);
         LOG.info("Num Threads " + this.numThreads);
         LOG.info("Num harp load data threads " + harpThreads);
 
@@ -151,7 +141,7 @@ public class DTCLSDaalCollectiveMapper
             long startTime = System.currentTimeMillis();
 
 	    // read data file names from HDFS
-            List<String> dataFiles =
+            this.inputFiles =
                 new LinkedList<String>();
             while (reader.nextKeyValue()) {
                 String key = reader.getCurrentKey();
@@ -159,21 +149,13 @@ public class DTCLSDaalCollectiveMapper
                 LOG.info("Key: " + key + ", Value: "
                         + value);
                 LOG.info("file name: " + value);
-                dataFiles.add(value);
+                this.inputFiles.add(value);
             }
             
-            Configuration conf = context.getConfiguration();
-
-	    // ----------------------- runtime settings -----------------------
-            //set thread number used in DAAL
-            LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
-            Environment.setNumberOfThreads(numThreads);
-            LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
-
-	    this.datasource = new HarpDAALDataSource(dataFiles, fileDim, harpThreads, conf);
+	    this.datasource = new HarpDAALDataSource(harpThreads, conf);
 
 	    // ----------------------- start the execution -----------------------
-            runDTCLS(conf, context);
+            runDTCLS(context);
             this.freeMemory();
             this.freeConn();
             System.gc();
@@ -188,72 +170,51 @@ public class DTCLSDaalCollectiveMapper
          *
          * @return 
          */
-        private void runDTCLS(Configuration conf, Context context) throws IOException 
+        private void runDTCLS(Context context) throws IOException 
 	{
-		// ---------- load data ----------
-		this.datasource.loadFiles();
+	
 		// ---------- training and testing ----------
-
 		TrainingResult trainingResult = trainModel();
 		PredictionResult predictionResult = testModel(trainingResult);
 		printResults(predictionResult);
 		daal_Context.dispose();
 	}
 
-	private TrainingResult trainModel() throws IOException {
+	private TrainingResult trainModel() throws IOException 
+	{
 
-        /* Create Numeric Tables for training data and labels */
-        NumericTable trainData = new HomogenNumericTable(daal_Context, Double.class, nFeatures, this.datasource.getTotalLines(), NumericTable.AllocationFlag.DoAllocate);
-        NumericTable trainGroundTruth = new HomogenNumericTable(daal_Context, Double.class, 1, this.datasource.getTotalLines(), NumericTable.AllocationFlag.DoAllocate);
-        MergedNumericTable mergedData = new MergedNumericTable(daal_Context);
-        mergedData.addNumericTable(trainData);
-        mergedData.addNumericTable(trainGroundTruth);
+		NumericTable[] load_table = this.datasource.createDenseNumericTableSplit(this.inputFiles, nFeatures, 1, ",", this.daal_Context);
 
-        /* Retrieve the data from an input file */
-        this.datasource.loadDataBlock(mergedData);
+		NumericTable trainData = load_table[0];
+		NumericTable trainGroundTruth = load_table[1];
 
-	this.datasource.loadTestFile(pruneFilePath, fileDim);
+		NumericTable[] load_prune_table = this.datasource.createDenseNumericTableSplit(this.pruneFilePath, this.nFeatures, 1, ",", this.daal_Context);
 
-        /* Create Numeric Tables for pruning data and labels */
-        NumericTable pruneData = new HomogenNumericTable(daal_Context, Double.class, nFeatures, this.datasource.getTestRows(), NumericTable.AllocationFlag.NotAllocate);
-        NumericTable pruneGroundTruth = new HomogenNumericTable(daal_Context, Double.class, 1, this.datasource.getTestRows(), NumericTable.AllocationFlag.NotAllocate);
-        MergedNumericTable pruneMergedData = new MergedNumericTable(daal_Context);
-        pruneMergedData.addNumericTable(pruneData);
-        pruneMergedData.addNumericTable(pruneGroundTruth);
+		NumericTable pruneData = load_prune_table[0];
+		NumericTable pruneGroundTruth = load_prune_table[1];
 
-        /* Retrieve the pruning data from an input file */
-	this.datasource.loadTestTable(pruneMergedData);
+		/* Create algorithm objects to train the decision tree classification model */
+		TrainingBatch algorithm = new TrainingBatch(daal_Context, Double.class, TrainingMethod.defaultDense, nClasses);
 
-        /* Create algorithm objects to train the decision tree classification model */
-        TrainingBatch algorithm = new TrainingBatch(daal_Context, Double.class, TrainingMethod.defaultDense, nClasses);
+		/* Pass the training data set with labels, and pruning dataset with labels to the algorithm */
+		algorithm.input.set(InputId.data, trainData);
+		algorithm.input.set(InputId.labels, trainGroundTruth);
+		algorithm.input.set(TrainingInputId.dataForPruning, pruneData);
+		algorithm.input.set(TrainingInputId.labelsForPruning, pruneGroundTruth);
 
-        /* Pass the training data set with labels, and pruning dataset with labels to the algorithm */
-        algorithm.input.set(InputId.data, trainData);
-        algorithm.input.set(InputId.labels, trainGroundTruth);
-        algorithm.input.set(TrainingInputId.dataForPruning, pruneData);
-        algorithm.input.set(TrainingInputId.labelsForPruning, pruneGroundTruth);
+		/* Train the decision tree classification model */
+		TrainingResult trainingResult = algorithm.compute();
 
-        /* Train the decision tree classification model */
-        TrainingResult trainingResult = algorithm.compute();
-
-        return trainingResult;
-    }
+		return trainingResult;
+	}
 
 
     private PredictionResult testModel(TrainingResult trainingResult) throws IOException
     {
+	NumericTable[] load_test_table = this.datasource.createDenseNumericTableSplit(this.testFilePath, this.nFeatures, 1, ",", this.daal_Context);
 
-	this.datasource.loadTestFile(testFilePath, fileDim);
-
-        /* Create Numeric Tables for testing data and labels */
-        NumericTable testData = new HomogenNumericTable(daal_Context, Double.class, nFeatures, this.datasource.getTestRows(), NumericTable.AllocationFlag.DoAllocate);
-        testGroundTruth = new HomogenNumericTable(daal_Context, Double.class, 1, this.datasource.getTestRows(), NumericTable.AllocationFlag.DoAllocate);
-        MergedNumericTable mergedData = new MergedNumericTable(daal_Context);
-        mergedData.addNumericTable(testData);
-        mergedData.addNumericTable(testGroundTruth);
-
-        /* Retrieve the data from an input file */
-	this.datasource.loadTestTable(mergedData);
+	NumericTable testData = load_test_table[0];
+	this.testGroundTruth = load_test_table[1];
 
         /* Create algorithm objects for decision tree classification prediction */
         PredictionBatch algorithm = new PredictionBatch(daal_Context, Double.class, PredictionMethod.defaultDense);
