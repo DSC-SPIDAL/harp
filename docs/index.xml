@@ -484,7 +484,7 @@ In the &lt;em&gt;&lt;strong&gt;init&lt;/strong&gt;&lt;/em&gt; function, tune the
 
 &lt;h2 id=&#34;association-rule&#34;&gt;&lt;strong&gt;Association Rule&lt;/strong&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/association-rule-apriori.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/association-rule-new.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;Association rule learning is a rule-based learning method for discovering relations between variables in databases.
 It is intended to identify strong rules discovered in databases using some measures of interestingness.&lt;/p&gt;
@@ -546,7 +546,7 @@ More details are from &lt;a href=&#34;https://software.intel.com/en-us/daal-prog
 
 &lt;h2 id=&#34;naive-bayes-classifier&#34;&gt;&lt;strong&gt;Naive Bayes Classifier&lt;/strong&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/naive-bayes.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/NaiveBayes-New.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;Naïve Bayes is a set of simple and powerful classification methods often used for text classification,
 medical diagnosis, and other classification problems. In spite of their main assumption about independence between features,
@@ -562,7 +562,7 @@ More details from Intel DAAL Documentation is &lt;a href=&#34;https://software.i
 
 &lt;h2 id=&#34;k-means-clustering&#34;&gt;&lt;strong&gt;K-means Clustering&lt;/strong&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/kmeans-clustering.jpg&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/kmeans-clustering-new.jpg&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;K-means is a widely used clustering algorithm in machine learning community. It iteratively computes the distance between each
 training point to every centroids, re-assigns the training point to new cluster and re-compute the new centroid of each cluster.
@@ -579,7 +579,7 @@ input datasets.&lt;/p&gt;
 
 &lt;h2 id=&#34;expectation-maximization&#34;&gt;&lt;strong&gt;Expectation Maximization&lt;/strong&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/em.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/em-new.jpg&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;Expectation-Maximization (EM) algorithm is an iterative method for finding the maximum likelihood and maximum a posteriori estimates of parameters in models that typically depend on hidden variables.&lt;/p&gt;
 
