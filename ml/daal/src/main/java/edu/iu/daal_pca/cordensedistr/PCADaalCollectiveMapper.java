@@ -67,164 +67,128 @@ import com.intel.daal.services.Environment;
 /**
  * @brief the Harp mapper for running PCA
  */
-public class PCADaalCollectiveMapper extends
-    CollectiveMapper<String, String, Object, Object>
+public class PCADaalCollectiveMapper extends CollectiveMapper<String, String, Object, Object>
 {
-  private int fileDim;
-  private int vectorSize;
-  private int num_mappers;
-  private int numThreads;
-  private int harpThreads; 
+	private int fileDim;
+	private int vectorSize;
+	private int num_mappers;
+	private int numThreads;
+	private int harpThreads; 
 
-  //to measure the time
-  private long load_time = 0;
-  private long convert_time = 0;
-  private long total_time = 0;
-  private long compute_time = 0;
-  private long comm_time = 0;
-  private long ts_start = 0;
-  private long ts_end = 0;
-  private long ts1 = 0;
-  private long ts2 = 0;
+	private List<String> inputFiles;
+	private Configuration conf;
 
-  private List<String> inputFiles;
-  private Configuration conf;
+	private static HarpDAALDataSource datasource;
+	private static HarpDAALComm harpcomm;	
+	private static DaalContext daal_Context = new DaalContext();
 
-  private static HarpDAALDataSource datasource;
-  private static HarpDAALComm harpcomm;	
-  private static DaalContext daal_Context = new DaalContext();
+	/**
+	 * Mapper configuration.
+	 */
+	@Override
+	protected void setup(Context context)
+		throws IOException, InterruptedException
+	{
+		long startTime = System.currentTimeMillis();
+		this.conf = context.getConfiguration();
+		this.fileDim = this.conf.getInt(HarpDAALConstants.FILE_DIM, 20);
+		this.vectorSize = this.conf.getInt(HarpDAALConstants.FEATURE_DIM, 20);
+		this.num_mappers = this.conf.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
+		this.numThreads = this.conf.getInt(HarpDAALConstants.NUM_THREADS, 10);
 
-  /**
-   * Mapper configuration.
-   */
-  @Override
-  protected void setup(Context context)
-  throws IOException, InterruptedException
-  {
-    long startTime = System.currentTimeMillis();
-    this.conf = context.getConfiguration();
-    this.fileDim = this.conf.getInt(HarpDAALConstants.FILE_DIM, 20);
-    this.vectorSize = this.conf.getInt(HarpDAALConstants.FEATURE_DIM, 20);
-    this.num_mappers = this.conf.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
-    this.numThreads = this.conf.getInt(HarpDAALConstants.NUM_THREADS, 10);
+		//always use the maximum hardware threads to load in data and convert data 
+		this.harpThreads = Runtime.getRuntime().availableProcessors();
+		//set thread number used in DAAL
+		LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
+		Environment.setNumberOfThreads(numThreads);
+		LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
 
-    //always use the maximum hardware threads to load in data and convert data 
-    this.harpThreads = Runtime.getRuntime().availableProcessors();
+		LOG.info("Vector Size " + vectorSize);
+		LOG.info("Num Mappers " + num_mappers);
+		LOG.info("Num Threads " + numThreads);
+		LOG.info("Num harp load data threads " + harpThreads);
 
-    LOG.info("Vector Size " + vectorSize);
-    LOG.info("Num Mappers " + num_mappers);
-    LOG.info("Num Threads " + numThreads);
-    LOG.info("Num harp load data threads " + harpThreads);
+		long endTime = System.currentTimeMillis();
+		LOG.info("config (ms) :" + (endTime - startTime));
+	}
 
-    long endTime = System.currentTimeMillis();
-    LOG.info("config (ms) :" + (endTime - startTime));
-  }
+	protected void mapCollective(KeyValReader reader, Context context) throws IOException, InterruptedException
+	{//{{{
+		long startTime = System.currentTimeMillis();
+		this.inputFiles = new LinkedList<String>();
+		while (reader.nextKeyValue())
+		{
+			String key = reader.getCurrentKey();
+			String value = reader.getCurrentValue();
+			LOG.info("Key: " + key + ", Value: " + value);
+			this.inputFiles.add(value);
+		}
 
-  protected void mapCollective(KeyValReader reader, Context context) throws IOException, InterruptedException
-  {//{{{
-    long startTime = System.currentTimeMillis();
-    List<String> pointFiles = new LinkedList<String>();
-    while (reader.nextKeyValue())
-    {
-      String key = reader.getCurrentKey();
-      String value = reader.getCurrentValue();
-      LOG.info("Key: " + key + ", Value: " + value);
-      pointFiles.add(value);
-    }
+		//init data source
+		this.datasource = new HarpDAALDataSource(this.harpThreads, this.conf);
+		// create communicator
+		this.harpcomm= new HarpDAALComm(this.getSelfID(), this.getMasterID(), this.num_mappers, daal_Context, this);
+		runPCA(context);
+		LOG.info("Total iterations in master view: " + (System.currentTimeMillis() - startTime));
+	}//}}}
 
-    this.inputFiles = pointFiles;
-    //init data source
-    this.datasource = new HarpDAALDataSource(this.harpThreads, this.conf);
-    // create communicator
-    this.harpcomm= new HarpDAALComm(this.getSelfID(), this.getMasterID(), this.num_mappers, daal_Context, this);
+	/**
+	 * @brief run PCA by invoking DAAL Java API
+	 *
+	 * @param fileNames
+	 * @param conf
+	 * @param context
+	 *
+	 * @return
+	 */
+	private void runPCA(Context context) throws IOException
+	{//{{{
 
-    runPCA();
-    LOG.info("Total iterations in master view: " + (System.currentTimeMillis() - startTime));
-  }//}}}
+		// loading training data
+		NumericTable pointsArray_daal = this.datasource.createDenseNumericTable(this.inputFiles, this.vectorSize, ",", this.daal_Context);
 
-  /**
-   * @brief run PCA by invoking DAAL Java API
-   *
-   * @param fileNames
-   * @param conf
-   * @param context
-   *
-   * @return
-   */
-  private void runPCA() throws IOException
-  {//{{{
-	  ts_start = System.currentTimeMillis();
+		/* Create an algorithm to compute PCA decomposition using the correlation method on local nodes */
+		DistributedStep1Local pcaLocal = new DistributedStep1Local(daal_Context, Double.class, Method.correlationDense);
 
-	  //set thread number used in DAAL
-	  LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
-	  Environment.setNumberOfThreads(numThreads);
-	  LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
+		/* Set the input data on local nodes */
+		pcaLocal.input.set(InputId.data, pointsArray_daal);
 
-	  // loading training data
-	  NumericTable pointsArray_daal = this.datasource.createDenseNumericTable(this.inputFiles, this.vectorSize, ",", this.daal_Context);
+		/*Compute the partial results on the local data nodes*/
+		PartialCorrelationResult pres = (PartialCorrelationResult)pcaLocal.compute();
 
-	  /* Create an algorithm to compute PCA decomposition using the correlation method on local nodes */
-	  DistributedStep1Local pcaLocal = new DistributedStep1Local(daal_Context, Double.class, Method.correlationDense);
+		// gather pres to master mapper
+		SerializableBase[] gather_output = this.harpcomm.harpdaal_gather(pres, this.getMasterID(), "pca", "gather_pres");
 
-	  /* Set the input data on local nodes */
-	  pcaLocal.input.set(InputId.data, pointsArray_daal);
+		/*Start the Step 2 on the master node*/
+		if(this.isMaster())
+		{
+			/*create a new algorithm for the master node computations*/
+			DistributedStep2Master pcaMaster = new DistributedStep2Master(daal_Context, Double.class, Method.correlationDense);
 
-	  ts1 = System.currentTimeMillis();
-	  /*Compute the partial results on the local data nodes*/
-	  PartialCorrelationResult pres = (PartialCorrelationResult)pcaLocal.compute();
-	  ts2 = System.currentTimeMillis();
-	  compute_time += (ts2 - ts1);
+			for(int j=0;j<this.num_mappers;j++)
+			{
+				PartialCorrelationResult des_output = (PartialCorrelationResult)(gather_output[j]);
+				pcaMaster.input.add(MasterInputId.partialResults, des_output);
+			}
 
-	  // gather pres to master mapper
-	  ts1 = System.currentTimeMillis();
-	  SerializableBase[] gather_output = this.harpcomm.harpdaal_gather(pres, this.getMasterID(), "pca", "gather_pres");
-	  ts2 = System.currentTimeMillis();
-	  comm_time += (ts2 - ts1);   
+			pcaMaster.compute();
 
-	  /*Start the Step 2 on the master node*/
-	  if(this.isMaster())
-	  {
-		  /*create a new algorithm for the master node computations*/
-		  DistributedStep2Master pcaMaster = new DistributedStep2Master(daal_Context, Double.class, Method.correlationDense);
+			/*get the results from master node*/
+			Result res = pcaMaster.finalizeCompute();
 
-		  for(int j=0;j<this.num_mappers;j++)
-		  {
-			  PartialCorrelationResult des_output = (PartialCorrelationResult)(gather_output[j]);
-			  pcaMaster.input.add(MasterInputId.partialResults, des_output);
-		  }
+			NumericTable eigenValues = res.get(ResultId.eigenValues);
+			NumericTable eigenVectors = res.get(ResultId.eigenVectors);
 
-		  ts1 = System.currentTimeMillis();
-		  pcaMaster.compute();
-		  ts2 = System.currentTimeMillis();
-		  compute_time += (ts2 - ts1);
+			/*printing the results*/
+			Service.printNumericTable("Eigenvalues:", eigenValues);
+			Service.printNumericTable("Eigenvectors:", eigenVectors);
 
-		  /*get the results from master node*/
-		  ts1 = System.currentTimeMillis();
-		  Result res = pcaMaster.finalizeCompute();
-		  ts2 = System.currentTimeMillis();
-		  compute_time += (ts2 - ts1);
+			/*free the memory*/
+			daal_Context.dispose();
+		}
 
-		  NumericTable eigenValues = res.get(ResultId.eigenValues);
-		  NumericTable eigenVectors = res.get(ResultId.eigenVectors);
 
-		  /*printing the results*/
-		  Service.printNumericTable("Eigenvalues:", eigenValues);
-		  Service.printNumericTable("Eigenvectors:", eigenVectors);
-
-		  /*free the memory*/
-		  daal_Context.dispose();
-	  }
-
-	  ts_end = System.currentTimeMillis();
-	  total_time = (ts_end - ts_start);
-	  LOG.info("Total Execution Time of PCA: "+ total_time);
-	  LOG.info("Loading Data Time of PCA: "+ load_time);
-	  LOG.info("Computation Time of PCA: "+ compute_time);
-	  LOG.info("Comm Time of PCA: "+ comm_time);
-	  LOG.info("DataType Convert Time of PCA: "+ convert_time);
-	  LOG.info("Misc Time of PCA: "+ (total_time - load_time - compute_time - comm_time - convert_time));
-
-  }//}}}
+	}//}}}
 
 }
 

@@ -59,16 +59,11 @@ import edu.iu.datasource.*;
 import edu.iu.data_aux.*;
 import edu.iu.data_comm.*;
 import edu.iu.data_gen.*;
-import edu.iu.data_transfer.*;
 
 import java.nio.DoubleBuffer;
 
 //import daa.jar API
 import com.intel.daal.algorithms.svd.*;
-// import com.intel.daal.data_management.data.NumericTable;
-// import com.intel.daal.data_management.data.HomogenNumericTable;
-// import com.intel.daal.data_management.data.DataCollection;
-// import com.intel.daal.data_management.data.KeyValueDataCollection;
 import com.intel.daal.data_management.data.*;
 import com.intel.daal.services.Environment;
 import com.intel.daal.services.DaalContext;
@@ -84,17 +79,6 @@ public class SVDDaalCollectiveMapper extends CollectiveMapper<String, String, Ob
 	private int num_mappers;
 	private int numThreads;
 	private int harpThreads; 
-
-	//to measure the time
-	private long load_time = 0;
-	private long convert_time = 0;
-	private long total_time = 0;
-	private long compute_time = 0;
-	private long comm_time = 0;
-	private long ts_start = 0;
-	private long ts_end = 0;
-	private long ts1 = 0;
-	private long ts2 = 0;
 
 	private List<String> inputFiles;
 	private Configuration conf;
@@ -124,7 +108,6 @@ public class SVDDaalCollectiveMapper extends CollectiveMapper<String, String, Ob
 	protected void setup(Context context)
 		throws IOException, InterruptedException {
 
-
 		long startTime = System.currentTimeMillis();
 		this.conf = context.getConfiguration();
 		this.fileDim = conf.getInt(HarpDAALConstants.FILE_DIM,20);
@@ -134,6 +117,11 @@ public class SVDDaalCollectiveMapper extends CollectiveMapper<String, String, Ob
 
 		//always use the maximum hardware threads to load in data and convert data 
 		this.harpThreads = Runtime.getRuntime().availableProcessors();
+
+		//set thread number used in DAAL
+		LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
+		Environment.setNumberOfThreads(numThreads);
+		LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
 
 		LOG.info("Vector Size " + vectorSize);
 		LOG.info("Num Mappers " + num_mappers);
@@ -148,7 +136,7 @@ public class SVDDaalCollectiveMapper extends CollectiveMapper<String, String, Ob
 	protected void mapCollective( KeyValReader reader, Context context) throws IOException, InterruptedException 
 	{
 		long startTime = System.currentTimeMillis();
-		List<String> pointFiles = new LinkedList<String>();
+		this.inputFiles = new LinkedList<String>();
 		while (reader.nextKeyValue()) {
 			String key = reader.getCurrentKey();
 			String value = reader.getCurrentValue();
@@ -156,16 +144,15 @@ public class SVDDaalCollectiveMapper extends CollectiveMapper<String, String, Ob
 					+ value);
 			// System.out.println("file name: " + value);
 			LOG.info("file name: " + value);
-			pointFiles.add(value);
+			this.inputFiles.add(value);
 		}
 
-		this.inputFiles = pointFiles;
 		//init data source
 		this.datasource = new HarpDAALDataSource(this.harpThreads, this.conf);
 		// create communicator
 		this.harpcomm= new HarpDAALComm(this.getSelfID(), this.getMasterID(), this.num_mappers, daal_Context, this);
 
-		runSVD();
+		runSVD(context);
 		this.freeMemory();
 		this.freeConn();
 		System.gc();
@@ -180,15 +167,8 @@ public class SVDDaalCollectiveMapper extends CollectiveMapper<String, String, Ob
 	 *
 	 * @return 
 	 */
-	private void runSVD() throws IOException 
+	private void runSVD(Context context) throws IOException 
 	{//{{{
-
-		ts_start = System.currentTimeMillis();
-
-		//set thread number used in DAAL
-		LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
-		Environment.setNumberOfThreads(numThreads);
-		LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
 
 		// loading training data
 		NumericTable pointsArray_daal = this.datasource.createDenseNumericTable(this.inputFiles, this.vectorSize, ",", this.daal_Context);
@@ -202,20 +182,14 @@ public class SVDDaalCollectiveMapper extends CollectiveMapper<String, String, Ob
 		svdStep1Local.input.set(InputId.data, input);
 
 		/* Compute SVD */
-		ts1 = System.currentTimeMillis();
 		DistributedStep1LocalPartialResult pres = svdStep1Local.compute();
-		ts2 = System.currentTimeMillis();
-		compute_time += (ts2 - ts1);
 
 		/* Get the results for next steps */
 		DataCollection dataFromStep1ForStep2 = pres.get(PartialResultId.outputOfStep1ForStep2);
 		DataCollection dataFromStep1ForStep3 = pres.get(PartialResultId.outputOfStep1ForStep3);
 
 		// Communicate the results
-		ts1 = System.currentTimeMillis();
 		SerializableBase[] gather_output = this.harpcomm.harpdaal_gather(dataFromStep1ForStep2, this.getMasterID(), "SVD", "gather_step1forstep2");
-		ts2 = System.currentTimeMillis();
-		comm_time += (ts2 - ts1);
 
 		KeyValueDataCollection inputForStep3FromStep2 = null;
 
@@ -228,18 +202,12 @@ public class SVDDaalCollectiveMapper extends CollectiveMapper<String, String, Ob
 				svdStep2Master.input.add(DistributedStep2MasterInputId.inputOfStep2FromStep1, j , des_output);
 			}
 
-			ts1 = System.currentTimeMillis();
 			DistributedStep2MasterPartialResult pres2master = svdStep2Master.compute();
-			ts2 = System.currentTimeMillis();
-			compute_time += (ts2 - ts1);
 
 			/* Get the result for step 3 */
 			inputForStep3FromStep2 = pres2master.get(DistributedPartialResultCollectionId.outputOfStep2ForStep3);
 
-			ts1 = System.currentTimeMillis();
 			Result result = svdStep2Master.finalizeCompute();
-			ts2 = System.currentTimeMillis();
-			compute_time += (ts2 - ts1);
 
 			/* Get final singular values and a matrix of right singular vectors */
 			S = result.get(ResultId.singularValues);
@@ -250,12 +218,8 @@ public class SVDDaalCollectiveMapper extends CollectiveMapper<String, String, Ob
 		}
 
 		// broadcast the results
-		ts1 = System.currentTimeMillis();
 		SerializableBase bcast_output = this.harpcomm.harpdaal_braodcast(inputForStep3FromStep2, this.getMasterID(), "svd", "bcast_step2tostep3", true);
-		ts2 = System.currentTimeMillis();
-		comm_time += (ts2 - ts1);
 		
-		ts1 = System.currentTimeMillis();
 		/* Create an algorithm to compute SVD on local nodes */
 		svdStep3Local = new DistributedStep3Local(daal_Context, Double.class, Method.defaultDense);
 		svdStep3Local.input.set(DistributedStep3LocalInputId.inputOfStep3FromStep1, dataFromStep1ForStep3);
@@ -264,10 +228,7 @@ public class SVDDaalCollectiveMapper extends CollectiveMapper<String, String, Ob
 		svdStep3Local.input.set(DistributedStep3LocalInputId.inputOfStep3FromStep2, (DataCollection)dataFromStep2ForStep3_keyValue.get(this.getSelfID()));
 
 		/* Compute SVD */
-		ts1 = System.currentTimeMillis();
 		svdStep3Local.compute();
-		ts2 = System.currentTimeMillis();
-		compute_time += (ts2 - ts1);
 
 		Result result = svdStep3Local.finalizeCompute();
 
@@ -280,14 +241,6 @@ public class SVDDaalCollectiveMapper extends CollectiveMapper<String, String, Ob
 		LOG.info("Final factorization ");
 		Service.printNumericTable("Left orthogonal matrix U (10 first vectors):", U, 10,10);
 
-		ts_end = System.currentTimeMillis();
-		total_time = (ts_end - ts_start);
-		LOG.info("Total Execution Time of SVD: "+ total_time);
-		LOG.info("Loading Data Time of SVD: "+ load_time);
-		LOG.info("Computation Time of SVD: "+ compute_time);
-		LOG.info("Comm Time of SVD: "+ comm_time);
-		LOG.info("DataType Convert Time of SVD: "+ convert_time);
-		LOG.info("Misc Time of SVD: "+ (total_time - load_time - compute_time - comm_time - convert_time));
 
 	}//}}}
 

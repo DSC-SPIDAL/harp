@@ -57,10 +57,15 @@ import com.intel.daal.data_management.data_source.*;
 import com.intel.daal.services.DaalContext;
 import com.intel.daal.services.Environment;
 
-public class QRDaalCollectiveMapper
-    extends
-    CollectiveMapper<String, String, Object, Object>
+public class QRDaalCollectiveMapper extends CollectiveMapper<String, String, Object, Object>
 {
+	private int num_mappers;
+	private int numThreads;
+	private int harpThreads; 
+	private int fileDim;
+	private int vectorSize;
+	private List<String> inputFiles;
+	private Configuration conf;
 
 	private DataCollection dataFromStep1ForStep2;
 	private DataCollection dataFromStep1ForStep3;
@@ -74,120 +79,81 @@ public class QRDaalCollectiveMapper
 	private DistributedStep2Master qrStep2Master;
 	private DistributedStep3Local qrStep3Local;
 
-	private int num_mappers;
-	private int numThreads;
-	private int harpThreads; 
-	private int fileDim = 18;
-	private int vectorSize = 18;
-
 	private static HarpDAALDataSource datasource;
 	private static HarpDAALComm harpcomm;	
 	private static DaalContext daal_Context = new DaalContext();
-
-	//to measure the time
-	private long total_time = 0;
-	private long load_time = 0;
-	private long convert_time = 0;
-	private long compute_time = 0;
-	private long comm_time = 0;
-	private long ts_start = 0;
-	private long ts_end = 0;
-	private long ts1 = 0;
-	private long ts2 = 0;
 
 	/**
 	 * Mapper configuration.
 	 */
 	@Override
-	protected void setup(Context context)
-		throws IOException, InterruptedException {
+	protected void setup(Context context) throws IOException, InterruptedException 
+	{
 		long startTime = System.currentTimeMillis();
-		Configuration configuration =
-			context.getConfiguration();
-		this.num_mappers = configuration
-			.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
-		this.numThreads = configuration
-			.getInt(HarpDAALConstants.NUM_THREADS, 10);
-		this.fileDim = configuration
-			.getInt(HarpDAALConstants.FILE_DIM, 18);
-		this.vectorSize = configuration
-			.getInt(HarpDAALConstants.FEATURE_DIM, 18);
+		this.conf = context.getConfiguration();
+		this.num_mappers = this.conf.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
+		this.numThreads = this.conf.getInt(HarpDAALConstants.NUM_THREADS, 10);
+		this.fileDim = this.conf.getInt(HarpDAALConstants.FILE_DIM, 18);
+		this.vectorSize = this.conf.getInt(HarpDAALConstants.FEATURE_DIM, 18);
 
 		//always use the maximum hardware threads to load in data and convert data 
 		harpThreads = Runtime.getRuntime().availableProcessors();
-
-		LOG.info("Num Mappers " + num_mappers);
-		LOG.info("Num Threads " + numThreads);
-		LOG.info("Num harp load data threads " + harpThreads);
-
-		long endTime = System.currentTimeMillis();
-		LOG.info(
-				"config (ms) :" + (endTime - startTime));
-		System.out.println("Collective Mapper launched");
-
-	}
-
-	protected void mapCollective(
-			KeyValReader reader, Context context)
-			throws IOException, InterruptedException 
-		{//{{{
-			long startTime = System.currentTimeMillis();
-			List<String> trainingDataFiles =
-				new LinkedList<String>();
-
-			while (reader.nextKeyValue()) {
-				String key = reader.getCurrentKey();
-				String value = reader.getCurrentValue();
-				LOG.info("Key: " + key + ", Value: "
-						+ value);
-				System.out.println("file name : " + value);
-				trainingDataFiles.add(value);
-			}
-
-			Configuration conf = context.getConfiguration();
-
-			Path pointFilePath = new Path(trainingDataFiles.get(0));
-			System.out.println("path = "+ pointFilePath.getName());
-			FileSystem fs = pointFilePath.getFileSystem(conf);
-			FSDataInputStream in = fs.open(pointFilePath);
-
-			//init data source
-			this.datasource = new HarpDAALDataSource(trainingDataFiles, this.fileDim, harpThreads, conf);
-			// create communicator
-			this.harpcomm= new HarpDAALComm(this.getSelfID(), this.getMasterID(), this.num_mappers, daal_Context, this);
-
-			runQR(conf, context);
-			LOG.info("Total iterations in master view: "
-					+ (System.currentTimeMillis() - startTime));
-			this.freeMemory();
-			this.freeConn();
-			System.gc();
-
-		}//}}}
-
-
-
-	private void runQR(Configuration conf, Context context) throws IOException 
-	{//{{{
-
-		ts_start = System.currentTimeMillis();
 
 		//set thread number used in DAAL
 		LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
 		Environment.setNumberOfThreads(numThreads);
 		LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
 
-		this.datasource.loadFiles();
-		NumericTable featureArray_daal = new HomogenNumericTable(daal_Context, Double.class, this.vectorSize, this.datasource.getTotalLines(), NumericTable.AllocationFlag.DoAllocate);
-		this.datasource.loadDataBlock(featureArray_daal);
+		LOG.info("Num Mappers " + num_mappers);
+		LOG.info("Num Threads " + numThreads);
+		LOG.info("Num harp load data threads " + harpThreads);
+
+		long endTime = System.currentTimeMillis();
+		LOG.info("config (ms) :" + (endTime - startTime));
+		System.out.println("Collective Mapper launched");
+
+	}
+
+	protected void mapCollective(KeyValReader reader, Context context) throws IOException, InterruptedException 
+	{//{{{
+
+		long startTime = System.currentTimeMillis();
+		this.inputFiles = new LinkedList<String>();
+
+		while (reader.nextKeyValue()) {
+			String key = reader.getCurrentKey();
+			String value = reader.getCurrentValue();
+			LOG.info("Key: " + key + ", Value: "
+					+ value);
+			System.out.println("file name : " + value);
+			this.inputFiles.add(value);
+		}
+
+		//init data source
+		this.datasource = new HarpDAALDataSource(harpThreads, conf);
+		// create communicator
+		this.harpcomm= new HarpDAALComm(this.getSelfID(), this.getMasterID(), this.num_mappers, daal_Context, this);
+
+		runQR(context);
+		LOG.info("Total iterations in master view: " + (System.currentTimeMillis() - startTime));
+		this.freeMemory();
+		this.freeConn();
+		System.gc();
+
+	}//}}}
+
+
+
+	private void runQR(Context context) throws IOException 
+	{//{{{
+
+		NumericTable featureArray_daal = this.datasource.createDenseNumericTable(this.inputFiles, this.vectorSize, "," , this.daal_Context);
 
 		qrStep1Local = new DistributedStep1Local(daal_Context, Double.class, Method.defaultDense);
 		qrStep1Local.input.set(InputId.data, featureArray_daal);
 		DistributedStep1LocalPartialResult pres = qrStep1Local.compute();
 		dataFromStep1ForStep2 = pres.get(PartialResultId.outputOfStep1ForStep2);
 		dataFromStep1ForStep3 = pres.get(PartialResultId.outputOfStep1ForStep3);
-
-		ts1 = System.currentTimeMillis();
 
 		//gather dataFromStep1forStep2 on master mapper
 		SerializableBase[] gather_out = this.harpcomm.harpdaal_gather(dataFromStep1ForStep2, this.getMasterID(), "QR", "gather_step1forstep2");
@@ -202,15 +168,12 @@ public class QRDaalCollectiveMapper
 				qrStep2Master.input.add(DistributedStep2MasterInputId.inputOfStep2FromStep1, j, des_out);
 			}
 
-			ts1 = System.currentTimeMillis();
 			DistributedStep2MasterPartialResult presStep2 = qrStep2Master.compute();
 			inputForStep3FromStep2 = presStep2.get(DistributedPartialResultCollectionId.outputOfStep2ForStep3);
 
 			Result result = qrStep2Master.finalizeCompute();
 			R = result.get(ResultId.matrixR);
 
-			ts2 = System.currentTimeMillis();
-			compute_time += (ts2 - ts1);
 		}
 
 
@@ -218,18 +181,14 @@ public class QRDaalCollectiveMapper
 		SerializableBase bcast_out = this.harpcomm.harpdaal_braodcast(inputForStep3FromStep2, this.getMasterID(), 
 				"QR", "bcast_step3fromstep2", true);
 
-		// System.out.println("number of partition in partialstep32 after broadcast :" + partialStep32.getNumPartitions());
 		qrStep3Local = new DistributedStep3Local(daal_Context, Double.class, Method.defaultDense);
 		qrStep3Local.input.set(DistributedStep3LocalInputId.inputOfStep3FromStep1,dataFromStep1ForStep3); 
 
 		KeyValueDataCollection des_bcast_out = (KeyValueDataCollection)(bcast_out);
 		qrStep3Local.input.set(DistributedStep3LocalInputId.inputOfStep3FromStep2, (DataCollection)des_bcast_out.get(this.getSelfID())); 
 
-		ts1 = System.currentTimeMillis();
 		qrStep3Local.compute();
 		Result result = qrStep3Local.finalizeCompute();
-		ts2 = System.currentTimeMillis();
-		compute_time += (ts2 - ts1);
 
 		Qi = result.get(ResultId.matrixQ);
 		System.out.println("number of rows" + Qi.getNumberOfRows());
@@ -240,15 +199,7 @@ public class QRDaalCollectiveMapper
 			Service.printNumericTable("Triangular matrix R:", R);
 		}
 
-		ts_end = System.currentTimeMillis();
-		total_time = (ts_end - ts_start);
 
-		LOG.info("Total Execution Time of QR: "+ total_time);
-		LOG.info("Loading Data Time of QR: "+ load_time);
-		LOG.info("Computation Time of QR: "+ compute_time);
-		LOG.info("Comm Time of QR: "+ comm_time);
-		LOG.info("DataType Convert Time of QR: "+ convert_time);
-		LOG.info("Misc Time of QR: "+ (total_time - load_time - compute_time - comm_time - convert_time));
 
 	}//}}}
 

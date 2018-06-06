@@ -69,42 +69,28 @@ import com.intel.daal.algorithms.multi_class_classifier.quality_metric_set.*;
 import com.intel.daal.algorithms.multi_class_classifier.training.*;
 
 // intel daal data structures and services
-import com.intel.daal.data_management.data.NumericTable;
-import com.intel.daal.data_management.data.HomogenNumericTable;
-import com.intel.daal.data_management.data.MergedNumericTable;
-import com.intel.daal.data_management.data_source.DataSource;
-import com.intel.daal.data_management.data_source.FileDataSource;
+import com.intel.daal.data_management.data.*;
+import com.intel.daal.data_management.data_source.*;
 import com.intel.daal.services.DaalContext;
 import com.intel.daal.services.Environment;
-import com.intel.daal.data_management.data.*;
 
 /**
  * @brief the Harp mapper for running K-means
  */
-public class SVMMultiMESDaalCollectiveMapper
-    extends
-    CollectiveMapper<String, String, Object, Object> {
+public class SVMMultiMESDaalCollectiveMapper extends CollectiveMapper<String, String, Object, Object> 
+{
 
 	//cmd args
-        private int numMappers;
-        private int numThreads;
-        private int harpThreads; 
+	private int num_mappers;
+	private int numThreads;
+	private int harpThreads; 
 	private int fileDim;
-  	private String testFilePath;
+	private String testFilePath;
 
 	private int nFeatures;
-    	private int nClasses;
-
-        //to measure the time
-        private long load_time = 0;
-        private long convert_time = 0;
-        private long total_time = 0;
-        private long compute_time = 0;
-        private long comm_time = 0;
-        private long ts_start = 0;
-        private long ts_end = 0;
-        private long ts1 = 0;
-        private long ts2 = 0;
+	private int nClasses;
+	private List<String> inputFiles;
+	private Configuration conf;
 
 	private static TrainingResult   trainingResult;
 	private static PredictionResult predictionResult;
@@ -116,87 +102,78 @@ public class SVMMultiMESDaalCollectiveMapper
 	private static HarpDAALDataSource datasource;
 	private static DaalContext daal_Context = new DaalContext();
 
-        /**
-         * Mapper configuration.
-         */
-        @Override
-        protected void setup(Context context)
-        throws IOException, InterruptedException {
-
-        long startTime = System.currentTimeMillis();
-
-        Configuration configuration =
-            context.getConfiguration();
-
-	this.nFeatures = configuration.getInt(HarpDAALConstants.FEATURE_DIM, 20);
-	this.fileDim = configuration.getInt(HarpDAALConstants.FILE_DIM, 21);
-	this.nClasses = configuration.getInt(HarpDAALConstants.NUM_CLASS, 5);
-
-        this.numMappers = configuration.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
-        this.numThreads = configuration.getInt(HarpDAALConstants.NUM_THREADS, 10);
-        //always use the maximum hardware threads to load in data and convert data 
-        this.harpThreads = Runtime.getRuntime().availableProcessors();
-	this.testFilePath = configuration.get(HarpDAALConstants.TEST_FILE_PATH,"");
-
-        LOG.info("File Dim " + this.fileDim);
-        LOG.info("Num Mappers " + this.numMappers);
-        LOG.info("Num Threads " + this.numThreads);
-        LOG.info("Num harp load data threads " + harpThreads);
-
-        long endTime = System.currentTimeMillis();
-        LOG.info("config (ms) :"
-                + (endTime - startTime));
-
-        }
-
-        // Assigns the reader to different nodes
-        protected void mapCollective(
-                KeyValReader reader, Context context)
-            throws IOException, InterruptedException {
-            long startTime = System.currentTimeMillis();
-
-	    // read data file names from HDFS
-            List<String> dataFiles =
-                new LinkedList<String>();
-            while (reader.nextKeyValue()) {
-                String key = reader.getCurrentKey();
-                String value = reader.getCurrentValue();
-                LOG.info("Key: " + key + ", Value: "
-                        + value);
-                LOG.info("file name: " + value);
-                dataFiles.add(value);
-            }
-            
-            Configuration conf = context.getConfiguration();
-
-	    // ----------------------- runtime settings -----------------------
-            //set thread number used in DAAL
-            LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
-            Environment.setNumberOfThreads(numThreads);
-            LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
-
-	    this.datasource = new HarpDAALDataSource(dataFiles, fileDim, harpThreads, conf);
-
-	    // ----------------------- start the execution -----------------------
-            runSVMMulti(conf, context);
-            this.freeMemory();
-            this.freeConn();
-            System.gc();
-        }
-
-        /**
-         * @brief run SVD by invoking DAAL Java API
-         *
-         * @param fileNames
-         * @param conf
-         * @param context
-         *
-         * @return 
-         */
-        private void runSVMMulti(Configuration conf, Context context) throws IOException 
+	/**
+	 * Mapper configuration.
+	 */
+	@Override
+	protected void setup(Context context) throws IOException, InterruptedException 
 	{
-		// ---------- load data ----------
-		this.datasource.loadFiles();
+
+		long startTime = System.currentTimeMillis();
+
+		this.conf = context.getConfiguration();
+
+		this.nFeatures = this.conf.getInt(HarpDAALConstants.FEATURE_DIM, 20);
+		this.fileDim = this.conf.getInt(HarpDAALConstants.FILE_DIM, 21);
+		this.nClasses = this.conf.getInt(HarpDAALConstants.NUM_CLASS, 5);
+
+		this.num_mappers = this.conf.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
+		this.numThreads = this.conf.getInt(HarpDAALConstants.NUM_THREADS, 10);
+		//always use the maximum hardware threads to load in data and convert data 
+		this.harpThreads = Runtime.getRuntime().availableProcessors();
+		this.testFilePath = this.conf.get(HarpDAALConstants.TEST_FILE_PATH,"");
+
+		//set thread number used in DAAL
+		LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
+		Environment.setNumberOfThreads(numThreads);
+		LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
+
+		LOG.info("File Dim " + this.fileDim);
+		LOG.info("Num Mappers " + this.num_mappers);
+		LOG.info("Num Threads " + this.numThreads);
+		LOG.info("Num harp load data threads " + harpThreads);
+
+		long endTime = System.currentTimeMillis();
+		LOG.info("config (ms) :"
+				+ (endTime - startTime));
+
+	}
+
+	// Assigns the reader to different nodes
+	protected void mapCollective(KeyValReader reader, Context context) throws IOException, InterruptedException 
+	{
+		long startTime = System.currentTimeMillis();
+		// read data file names from HDFS
+		this.inputFiles = new LinkedList<String>();
+		while (reader.nextKeyValue()) {
+			String key = reader.getCurrentKey();
+			String value = reader.getCurrentValue();
+			LOG.info("Key: " + key + ", Value: "
+					+ value);
+			LOG.info("file name: " + value);
+			this.inputFiles.add(value);
+		}
+
+		this.datasource = new HarpDAALDataSource(harpThreads, conf);
+
+		// ----------------------- start the execution -----------------------
+		runSVMMulti(context);
+		this.freeMemory();
+		this.freeConn();
+		System.gc();
+	}
+
+	/**
+	 * @brief run SVD by invoking DAAL Java API
+	 *
+	 * @param fileNames
+	 * @param conf
+	 * @param context
+	 *
+	 * @return 
+	 */
+	private void runSVMMulti(Context context) throws IOException 
+	{
 		// ---------- training and testing ----------
 		trainModel();
 		testModel();
@@ -205,128 +182,110 @@ public class SVMMultiMESDaalCollectiveMapper
 		daal_Context.dispose();
 	}
 
-	private void trainModel() {
-        /* Retrieve the data from input data sets */
-        com.intel.daal.algorithms.svm.training.TrainingBatch training = new com.intel.daal.algorithms.svm.training.TrainingBatch(
-                daal_Context, Double.class, com.intel.daal.algorithms.svm.training.TrainingMethod.boser);
+	private void trainModel() 
+	{
 
-        com.intel.daal.algorithms.svm.prediction.PredictionBatch prediction = new com.intel.daal.algorithms.svm.prediction.PredictionBatch(
-                daal_Context, Double.class, com.intel.daal.algorithms.svm.prediction.PredictionMethod.defaultDense);
+		NumericTable[] load_table = this.datasource.createDenseNumericTableSplit(this.inputFiles, this.nFeatures, 1, ",", this.daal_Context);
+		NumericTable trainData = load_table[0]; 
+		NumericTable trainGroundTruth = load_table[1];
 
-        /* Retrieve the data from input data sets */
-        // FileDataSource trainDataSource = new FileDataSource(daal_Context, trainDatasetFileName,
-        //         DataSource.DictionaryCreationFlag.DoDictionaryFromdaal_Context,
-        //         DataSource.NumericTableAllocationFlag.NotAllocateNumericTable);
+		/* Retrieve the data from input data sets */
+		com.intel.daal.algorithms.svm.training.TrainingBatch training = new com.intel.daal.algorithms.svm.training.TrainingBatch(
+				daal_Context, Double.class, com.intel.daal.algorithms.svm.training.TrainingMethod.boser);
 
-        /* Create Numeric Tables for training data and labels */
-        NumericTable trainData = new HomogenNumericTable(daal_Context, Double.class, nFeatures, this.datasource.getTotalLines(), NumericTable.AllocationFlag.DoAllocate);
-        NumericTable trainGroundTruth = new HomogenNumericTable(daal_Context, Double.class, 1, this.datasource.getTotalLines(), NumericTable.AllocationFlag.DoAllocate);
-        MergedNumericTable mergedData = new MergedNumericTable(daal_Context);
-        mergedData.addNumericTable(trainData);
-        mergedData.addNumericTable(trainGroundTruth);
+		com.intel.daal.algorithms.svm.prediction.PredictionBatch prediction = new com.intel.daal.algorithms.svm.prediction.PredictionBatch(
+				daal_Context, Double.class, com.intel.daal.algorithms.svm.prediction.PredictionMethod.defaultDense);
 
-        /* Retrieve the data from an input file */
-	this.datasource.loadDataBlock(mergedData);
+		/* Create algorithm objects to train the multi-class SVM model */
+		TrainingBatch algorithm = new TrainingBatch(daal_Context, Double.class, TrainingMethod.oneAgainstOne, nClasses);
 
-        /* Create algorithm objects to train the multi-class SVM model */
-        TrainingBatch algorithm = new TrainingBatch(daal_Context, Double.class, TrainingMethod.oneAgainstOne, nClasses);
+		/* Set parameters for the multi-class SVM algorithm */
+		algorithm.parameter.setTraining(training);
+		algorithm.parameter.setPrediction(prediction);
 
-        /* Set parameters for the multi-class SVM algorithm */
-        algorithm.parameter.setTraining(training);
-        algorithm.parameter.setPrediction(prediction);
+		/* Pass a training data set and dependent values to the algorithm */
+		algorithm.input.set(InputId.data, trainData);
+		algorithm.input.set(InputId.labels, trainGroundTruth);
 
-        /* Pass a training data set and dependent values to the algorithm */
-        algorithm.input.set(InputId.data, trainData);
-        algorithm.input.set(InputId.labels, trainGroundTruth);
-
-        /* Train the multi-class SVM model */
-        trainingResult = algorithm.compute();
-    }
+		/* Train the multi-class SVM model */
+		trainingResult = algorithm.compute();
+	}
 
 
-    private void testModel() throws IOException
-    {
+	private void testModel() throws IOException
+	{
 
-	this.datasource.loadTestFile(testFilePath, fileDim);
-        com.intel.daal.algorithms.svm.training.TrainingBatch training = new com.intel.daal.algorithms.svm.training.TrainingBatch(
-                daal_Context, Double.class, com.intel.daal.algorithms.svm.training.TrainingMethod.boser);
+		NumericTable[] load_table = this.datasource.createDenseNumericTableSplit(this.testFilePath, this.nFeatures, 1, ",", this.daal_Context);
+		NumericTable testData = load_table[0];
+		this.groundTruthLabels = load_table[1];
 
-        com.intel.daal.algorithms.svm.prediction.PredictionBatch prediction = new com.intel.daal.algorithms.svm.prediction.PredictionBatch(
-                daal_Context, Double.class, com.intel.daal.algorithms.svm.prediction.PredictionMethod.defaultDense);
+		// this.datasource.loadTestFile(testFilePath, fileDim);
+		com.intel.daal.algorithms.svm.training.TrainingBatch training = new com.intel.daal.algorithms.svm.training.TrainingBatch(
+				daal_Context, Double.class, com.intel.daal.algorithms.svm.training.TrainingMethod.boser);
 
-        // FileDataSource testDataSource = new FileDataSource(daal_Context, testDatasetFileName,
-        //         DataSource.DictionaryCreationFlag.DoDictionaryFromContext,
-        //         DataSource.NumericTableAllocationFlag.NotAllocateNumericTable);
+		com.intel.daal.algorithms.svm.prediction.PredictionBatch prediction = new com.intel.daal.algorithms.svm.prediction.PredictionBatch(
+				daal_Context, Double.class, com.intel.daal.algorithms.svm.prediction.PredictionMethod.defaultDense);
 
-        /* Create Numeric Tables for testing data and labels */
-        NumericTable testData = new HomogenNumericTable(daal_Context, Double.class, nFeatures, this.datasource.getTestRows(), NumericTable.AllocationFlag.DoAllocate);
-        groundTruthLabels = new HomogenNumericTable(daal_Context, Double.class, 1, this.datasource.getTestRows(), NumericTable.AllocationFlag.DoAllocate);
-        MergedNumericTable mergedData = new MergedNumericTable(daal_Context);
-        mergedData.addNumericTable(testData);
-        mergedData.addNumericTable(groundTruthLabels);
 
-        /* Retrieve the data from an input file */
-	this.datasource.loadTestTable(mergedData);
+		/* Create algorithm objects to predict multi-class SVM values with the defaultDense method */
+		PredictionBatch algorithm = new PredictionBatch(daal_Context, Double.class, PredictionMethod.multiClassClassifierWu, nClasses);
 
-        /* Create algorithm objects to predict multi-class SVM values with the defaultDense method */
-        PredictionBatch algorithm = new PredictionBatch(daal_Context, Double.class, PredictionMethod.multiClassClassifierWu, nClasses);
+		algorithm.parameter.setTraining(training);
+		algorithm.parameter.setPrediction(prediction);
 
-        algorithm.parameter.setTraining(training);
-        algorithm.parameter.setPrediction(prediction);
+		Model model = trainingResult.get(TrainingResultId.model);
 
-        Model model = trainingResult.get(TrainingResultId.model);
+		/* Pass a testing data set and the trained model to the algorithm */
+		algorithm.input.set(NumericTableInputId.data, testData);
+		algorithm.input.set(ModelInputId.model, model);
 
-        /* Pass a testing data set and the trained model to the algorithm */
-        algorithm.input.set(NumericTableInputId.data, testData);
-        algorithm.input.set(ModelInputId.model, model);
+		/* Compute the prediction results */
+		predictionResult = algorithm.compute();
+	}
 
-        /* Compute the prediction results */
-        predictionResult = algorithm.compute();
-    }
-    
- 
-    private void testModelQuality() {
-        /* Retrieve predicted labels */
-        predictedLabels = predictionResult.get(PredictionResultId.prediction);
 
-        /* Create a quality metric set object to compute quality metrics of the SVM algorithm */
-        QualityMetricSetBatch quality_metric_set = new QualityMetricSetBatch(daal_Context, nClasses);
+	private void testModelQuality() {
+		/* Retrieve predicted labels */
+		predictedLabels = predictionResult.get(PredictionResultId.prediction);
 
-        MultiClassConfusionMatrixInput input = quality_metric_set.getInputDataCollection()
-                .getInput(QualityMetricId.confusionMatrix);
+		/* Create a quality metric set object to compute quality metrics of the SVM algorithm */
+		QualityMetricSetBatch quality_metric_set = new QualityMetricSetBatch(daal_Context, nClasses);
 
-        input.set(MultiClassConfusionMatrixInputId.predictedLabels, predictedLabels);
-        input.set(MultiClassConfusionMatrixInputId.groundTruthLabels, groundTruthLabels);
+		MultiClassConfusionMatrixInput input = quality_metric_set.getInputDataCollection()
+			.getInput(QualityMetricId.confusionMatrix);
 
-        /* Compute quality metrics */
-        qualityMetricSetResult = quality_metric_set.compute();
-    }
- 
-    private void printResults() {
-        /* Print the classification results */
-        Service.printClassificationResult(groundTruthLabels, predictedLabels, "Ground truth", "Classification results",
-                "Multi-class SVM classification results (first 20 observations):", 20);
-        /* Print the quality metrics */
-        MultiClassConfusionMatrixResult qualityMetricResult = qualityMetricSetResult
-                .getResult(QualityMetricId.confusionMatrix);
-        NumericTable confusionMatrix = qualityMetricResult.get(MultiClassConfusionMatrixResultId.confusionMatrix);
-        NumericTable multiClassMetrics = qualityMetricResult.get(MultiClassConfusionMatrixResultId.multiClassMetrics);
+		input.set(MultiClassConfusionMatrixInputId.predictedLabels, predictedLabels);
+		input.set(MultiClassConfusionMatrixInputId.groundTruthLabels, groundTruthLabels);
 
-        Service.printNumericTable("Confusion matrix:", confusionMatrix);
+		/* Compute quality metrics */
+		qualityMetricSetResult = quality_metric_set.compute();
+	}
 
-        DoubleBuffer qualityMetricsData = DoubleBuffer
-                .allocate((int) (multiClassMetrics.getNumberOfColumns() * multiClassMetrics.getNumberOfRows()));
-        qualityMetricsData = multiClassMetrics.getBlockOfRows(0, multiClassMetrics.getNumberOfRows(),
-                qualityMetricsData);
+	private void printResults() {
+		/* Print the classification results */
+		Service.printClassificationResult(groundTruthLabels, predictedLabels, "Ground truth", "Classification results",
+				"Multi-class SVM classification results (first 20 observations):", 20);
+		/* Print the quality metrics */
+		MultiClassConfusionMatrixResult qualityMetricResult = qualityMetricSetResult
+			.getResult(QualityMetricId.confusionMatrix);
+		NumericTable confusionMatrix = qualityMetricResult.get(MultiClassConfusionMatrixResultId.confusionMatrix);
+		NumericTable multiClassMetrics = qualityMetricResult.get(MultiClassConfusionMatrixResultId.multiClassMetrics);
 
-        System.out
-                .println("Average accuracy: " + qualityMetricsData.get(MultiClassMetricId.averageAccuracy.getValue()));
-        System.out.println("Error rate:       " + qualityMetricsData.get(MultiClassMetricId.errorRate.getValue()));
-        System.out.println("Micro precision:  " + qualityMetricsData.get(MultiClassMetricId.microPrecision.getValue()));
-        System.out.println("Micro recall:     " + qualityMetricsData.get(MultiClassMetricId.microRecall.getValue()));
-        System.out.println("Micro F-score:    " + qualityMetricsData.get(MultiClassMetricId.microFscore.getValue()));
-        System.out.println("Macro precision:  " + qualityMetricsData.get(MultiClassMetricId.macroPrecision.getValue()));
-        System.out.println("Macro recall:     " + qualityMetricsData.get(MultiClassMetricId.macroRecall.getValue()));
-        System.out.println("Macro F-score:    " + qualityMetricsData.get(MultiClassMetricId.macroFscore.getValue()));
-    }    
+		Service.printNumericTable("Confusion matrix:", confusionMatrix);
+
+		DoubleBuffer qualityMetricsData = DoubleBuffer
+			.allocate((int) (multiClassMetrics.getNumberOfColumns() * multiClassMetrics.getNumberOfRows()));
+		qualityMetricsData = multiClassMetrics.getBlockOfRows(0, multiClassMetrics.getNumberOfRows(),
+				qualityMetricsData);
+
+		System.out
+			.println("Average accuracy: " + qualityMetricsData.get(MultiClassMetricId.averageAccuracy.getValue()));
+		System.out.println("Error rate:       " + qualityMetricsData.get(MultiClassMetricId.errorRate.getValue()));
+		System.out.println("Micro precision:  " + qualityMetricsData.get(MultiClassMetricId.microPrecision.getValue()));
+		System.out.println("Micro recall:     " + qualityMetricsData.get(MultiClassMetricId.microRecall.getValue()));
+		System.out.println("Micro F-score:    " + qualityMetricsData.get(MultiClassMetricId.microFscore.getValue()));
+		System.out.println("Macro precision:  " + qualityMetricsData.get(MultiClassMetricId.macroPrecision.getValue()));
+		System.out.println("Macro recall:     " + qualityMetricsData.get(MultiClassMetricId.macroRecall.getValue()));
+		System.out.println("Macro F-score:    " + qualityMetricsData.get(MultiClassMetricId.macroFscore.getValue()));
+	}    
 }

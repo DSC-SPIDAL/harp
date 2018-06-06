@@ -65,43 +65,32 @@ import com.intel.daal.algorithms.classifier.training.TrainingResultId;
 import com.intel.daal.algorithms.multi_class_classifier.Model;
 import com.intel.daal.algorithms.multi_class_classifier.prediction.*;
 import com.intel.daal.algorithms.multi_class_classifier.training.*;
-import com.intel.daal.data_management.data.NumericTable;
-import com.intel.daal.data_management.data.HomogenNumericTable;
-import com.intel.daal.data_management.data.MergedNumericTable;
-import com.intel.daal.data_management.data_source.DataSource;
-import com.intel.daal.data_management.data_source.FileDataSource;
+
+import com.intel.daal.data_management.data.*;
+import com.intel.daal.data_management.data_source.*;
 import com.intel.daal.services.DaalContext;
 import com.intel.daal.services.Environment;
 
 /**
  * @brief the Harp mapper for running K-means
  */
-public class SVMDaalCollectiveMapper
-    extends
-    CollectiveMapper<String, String, Object, Object> {
+public class SVMDaalCollectiveMapper extends CollectiveMapper<String, String, Object, Object> 
+{
 
 	//cmd args
-        private int numMappers;
-        private int numThreads;
-        private int harpThreads; 
+	private int num_mappers;
+	private int numThreads;
+	private int harpThreads; 
 	private int fileDim;
-  	private String testFilePath;
-
+	private String testFilePath;
 	private int nFeatures;
-    	private int nClasses;
+	private int nClasses;
 
-        //to measure the time
-        private long load_time = 0;
-        private long convert_time = 0;
-        private long total_time = 0;
-        private long compute_time = 0;
-        private long comm_time = 0;
-        private long ts_start = 0;
-        private long ts_end = 0;
-        private long ts1 = 0;
-        private long ts2 = 0;
+	private List<String> inputFiles;
+	private Configuration conf;
 
 	private static HarpDAALDataSource datasource;
+	private static DaalContext daal_Context = new DaalContext();
 
 	private static TrainingResult   trainingResult;
 	private static PredictionResult predictionResult;
@@ -109,166 +98,142 @@ public class SVMDaalCollectiveMapper
 
 	private static com.intel.daal.algorithms.svm.training.TrainingBatch twoClassTraining;
 	private static com.intel.daal.algorithms.svm.prediction.PredictionBatch twoClassPrediction;
-	private static DaalContext daal_Context = new DaalContext();
 
-        /**
-         * Mapper configuration.
-         */
-        @Override
-        protected void setup(Context context)
-        throws IOException, InterruptedException {
+	/**
+	 * Mapper configuration.
+	 */
+	@Override
+	protected void setup(Context context)
+		throws IOException, InterruptedException {
 
-        long startTime = System.currentTimeMillis();
+		long startTime = System.currentTimeMillis();
 
-        Configuration configuration =
-            context.getConfiguration();
+		this.conf = context.getConfiguration();
 
-	this.nFeatures = configuration.getInt(HarpDAALConstants.FEATURE_DIM, 10);
-	this.fileDim = configuration.getInt(HarpDAALConstants.FILE_DIM, 10);
-	this.nClasses = configuration.getInt(HarpDAALConstants.NUM_CLASS, 10);
-        this.numMappers = configuration.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
-        this.numThreads = configuration.getInt(HarpDAALConstants.NUM_THREADS, 10);
-        //always use the maximum hardware threads to load in data and convert data 
-        this.harpThreads = Runtime.getRuntime().availableProcessors();
-	this.testFilePath = configuration.get(HarpDAALConstants.TEST_FILE_PATH,"");
+		this.nFeatures = this.conf.getInt(HarpDAALConstants.FEATURE_DIM, 10);
+		this.fileDim = this.conf.getInt(HarpDAALConstants.FILE_DIM, 10);
+		this.nClasses = this.conf.getInt(HarpDAALConstants.NUM_CLASS, 10);
+		this.num_mappers = this.conf.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
+		this.numThreads = this.conf.getInt(HarpDAALConstants.NUM_THREADS, 10);
+		//always use the maximum hardware threads to load in data and convert data 
+		this.harpThreads = Runtime.getRuntime().availableProcessors();
+		this.testFilePath = this.conf.get(HarpDAALConstants.TEST_FILE_PATH,"");
 
-        LOG.info("File Dim " + this.fileDim);
-        LOG.info("Num Mappers " + this.numMappers);
-        LOG.info("Num Threads " + this.numThreads);
-        LOG.info("Num harp load data threads " + harpThreads);
+		//set thread number used in DAAL
+		LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
+		Environment.setNumberOfThreads(numThreads);
+		LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
 
-        long endTime = System.currentTimeMillis();
-        LOG.info("config (ms) :"
-                + (endTime - startTime));
+		LOG.info("File Dim " + this.fileDim);
+		LOG.info("Num Mappers " + this.num_mappers);
+		LOG.info("Num Threads " + this.numThreads);
+		LOG.info("Num harp load data threads " + harpThreads);
 
-        }
+		long endTime = System.currentTimeMillis();
+		LOG.info("config (ms) :"
+				+ (endTime - startTime));
 
-        // Assigns the reader to different nodes
-        protected void mapCollective(
-                KeyValReader reader, Context context)
-            throws IOException, InterruptedException {
-            long startTime = System.currentTimeMillis();
+	}
 
-	    // read data file names from HDFS
-            List<String> dataFiles =
-                new LinkedList<String>();
-            while (reader.nextKeyValue()) {
-                String key = reader.getCurrentKey();
-                String value = reader.getCurrentValue();
-                LOG.info("Key: " + key + ", Value: "
-                        + value);
-                LOG.info("file name: " + value);
-                dataFiles.add(value);
-            }
-            
-            Configuration conf = context.getConfiguration();
-
-	    // ----------------------- runtime settings -----------------------
-            //set thread number used in DAAL
-            LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
-            Environment.setNumberOfThreads(numThreads);
-            LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
-
-	    this.datasource = new HarpDAALDataSource(dataFiles, fileDim, harpThreads, conf);
-
-	    // ----------------------- start the execution -----------------------
-            runSVM(conf, context);
-            this.freeMemory();
-            this.freeConn();
-            System.gc();
-        }
-
-        /**
-         * @brief run SVD by invoking DAAL Java API
-         *
-         * @param fileNames
-         * @param conf
-         * @param context
-         *
-         * @return 
-         */
-        private void runSVM(Configuration conf, Context context) throws IOException 
+	// Assigns the reader to different nodes
+	protected void mapCollective(KeyValReader reader, Context context) throws IOException, InterruptedException 
 	{
-	    // ---------- load data ----------
-	    this.datasource.loadFiles();
-	    // ---------- training and testing ----------
-	    trainModel();
-	    testModel();
-	    printResults();
-	    daal_Context.dispose();
-        }
+		long startTime = System.currentTimeMillis();
+
+		// read data file names from HDFS
+		this.inputFiles = new LinkedList<String>();
+		while (reader.nextKeyValue()) {
+			String key = reader.getCurrentKey();
+			String value = reader.getCurrentValue();
+			LOG.info("Key: " + key + ", Value: "
+					+ value);
+			LOG.info("file name: " + value);
+			this.inputFiles.add(value);
+		}
+
+		this.datasource = new HarpDAALDataSource(harpThreads, conf);
+
+		// ----------------------- start the execution -----------------------
+		runSVM(context);
+		this.freeMemory();
+		this.freeConn();
+		System.gc();
+	}
+
+	/**
+	 * @brief run SVD by invoking DAAL Java API
+	 *
+	 * @param fileNames
+	 * @param conf
+	 * @param context
+	 *
+	 * @return 
+	 */
+	private void runSVM(Context context) throws IOException 
+	{
+		// ---------- training and testing ----------
+		trainModel();
+		testModel();
+		printResults();
+		daal_Context.dispose();
+	}
 
 	private void trainModel() {
 
-        twoClassTraining = new com.intel.daal.algorithms.svm.training.TrainingBatch(
-                daal_Context, Double.class, com.intel.daal.algorithms.svm.training.TrainingMethod.boser);
+		twoClassTraining = new com.intel.daal.algorithms.svm.training.TrainingBatch(
+				daal_Context, Double.class, com.intel.daal.algorithms.svm.training.TrainingMethod.boser);
 
-        twoClassPrediction = new com.intel.daal.algorithms.svm.prediction.PredictionBatch(
-                daal_Context, Double.class, com.intel.daal.algorithms.svm.prediction.PredictionMethod.defaultDense);
+		twoClassPrediction = new com.intel.daal.algorithms.svm.prediction.PredictionBatch(
+				daal_Context, Double.class, com.intel.daal.algorithms.svm.prediction.PredictionMethod.defaultDense);
 
-        NumericTable trainData = new HomogenNumericTable(daal_Context, Double.class, nFeatures, this.datasource.getTotalLines(), NumericTable.AllocationFlag.DoAllocate);
-        NumericTable trainGroundTruth = new HomogenNumericTable(daal_Context, Double.class, 1, this.datasource.getTotalLines(), NumericTable.AllocationFlag.DoAllocate);
+		NumericTable[] load_table = this.datasource.createDenseNumericTableSplit(this.inputFiles, nFeatures, 1, ",", this.daal_Context);
+		NumericTable trainData = load_table[0]; 
+		NumericTable trainGroundTruth = load_table[1];
 
-        MergedNumericTable mergedData = new MergedNumericTable(daal_Context);
-        mergedData.addNumericTable(trainData);
-        mergedData.addNumericTable(trainGroundTruth);
+		/* Create an algorithm to train the multi-class SVM model */
+		TrainingBatch algorithm = new TrainingBatch(daal_Context, Double.class, TrainingMethod.oneAgainstOne, nClasses);
 
-	//TODO move the loadDataBlock to Harp side
-        /* Retrieve the data from an input file */
-        this.datasource.loadDataBlock(mergedData);
+		/* Set parameters for the multi-class SVM algorithm */
+		algorithm.parameter.setTraining(twoClassTraining);
+		algorithm.parameter.setPrediction(twoClassPrediction);
 
-        /* Create an algorithm to train the multi-class SVM model */
-        TrainingBatch algorithm = new TrainingBatch(daal_Context, Double.class, TrainingMethod.oneAgainstOne, nClasses);
+		/* Pass a training data set and dependent values to the algorithm */
+		algorithm.input.set(InputId.data, trainData);
+		algorithm.input.set(InputId.labels, trainGroundTruth);
 
-        /* Set parameters for the multi-class SVM algorithm */
-        algorithm.parameter.setTraining(twoClassTraining);
-        algorithm.parameter.setPrediction(twoClassPrediction);
+		/* Train the multi-class SVM model */
+		trainingResult = algorithm.compute();
+	}
 
-        /* Pass a training data set and dependent values to the algorithm */
-        algorithm.input.set(InputId.data, trainData);
-        algorithm.input.set(InputId.labels, trainGroundTruth);
+	private void testModel() throws IOException
+	{
 
-        /* Train the multi-class SVM model */
-        trainingResult = algorithm.compute();
-    }
-     
-    private void testModel() throws IOException
-    {
+		// load test set from HDFS
+		NumericTable[] load_table = this.datasource.createDenseNumericTableSplit(this.testFilePath, this.nFeatures, 1, ",", this.daal_Context);
+		NumericTable testData = load_table[0];
+		this.testGroundTruth = load_table[1];
 
-	// load test set from HDFS
-	this.datasource.loadTestFile(testFilePath, fileDim);
+		/* Create a numeric table to store the prediction results */
+		PredictionBatch algorithm = new PredictionBatch(daal_Context, Double.class, PredictionMethod.multiClassClassifierWu, nClasses);
 
-	NumericTable testData = new HomogenNumericTable(daal_Context, Double.class, nFeatures, this.datasource.getTestRows(), NumericTable.AllocationFlag.DoAllocate);
-        testGroundTruth = new HomogenNumericTable(daal_Context, Double.class, 1, this.datasource.getTestRows(), NumericTable.AllocationFlag.DoAllocate);
+		algorithm.parameter.setTraining(twoClassTraining);
+		algorithm.parameter.setPrediction(twoClassPrediction);
 
-        MergedNumericTable mergedData = new MergedNumericTable(daal_Context);
-        mergedData.addNumericTable(testData);
-        mergedData.addNumericTable(testGroundTruth);
+		Model model = trainingResult.get(TrainingResultId.model);
 
-	// load test set to daal table
-	this.datasource.loadTestTable(mergedData);
+		/* Pass a testing data set and the trained model to the algorithm */
+		algorithm.input.set(NumericTableInputId.data, testData);
+		algorithm.input.set(ModelInputId.model, model);
 
-        /* Create a numeric table to store the prediction results */
-        PredictionBatch algorithm = new PredictionBatch(daal_Context, Double.class, PredictionMethod.multiClassClassifierWu, nClasses);
+		/* Compute the prediction results */
+		predictionResult = algorithm.compute();
 
-        algorithm.parameter.setTraining(twoClassTraining);
-        algorithm.parameter.setPrediction(twoClassPrediction);
+	}   
 
-        Model model = trainingResult.get(TrainingResultId.model);
-
-        /* Pass a testing data set and the trained model to the algorithm */
-        algorithm.input.set(NumericTableInputId.data, testData);
-        algorithm.input.set(ModelInputId.model, model);
-
-        /* Compute the prediction results */
-        predictionResult = algorithm.compute();
-
-    }   
-
-    private void printResults() {
-        NumericTable predictionResults = predictionResult.get(PredictionResultId.prediction);
-        Service.printClassificationResult(testGroundTruth, predictionResults, "Ground truth", "Classification results",
-                "SVM multiclass classification results (first 20 observations):", 20);
-    }
+	private void printResults() {
+		NumericTable predictionResults = predictionResult.get(PredictionResultId.prediction);
+		Service.printClassificationResult(testGroundTruth, predictionResults, "Ground truth", "Classification results",
+				"SVM multiclass classification results (first 20 observations):", 20);
+	}
 
 }

@@ -70,126 +70,105 @@ import com.intel.daal.algorithms.weak_learner.Model;
 import com.intel.daal.algorithms.weak_learner.training.TrainingResult;
 
 // daal data structure and service module
-import com.intel.daal.data_management.data.NumericTable;
-import com.intel.daal.data_management.data.HomogenNumericTable;
-import com.intel.daal.data_management.data.MergedNumericTable;
-import com.intel.daal.data_management.data_source.DataSource;
-import com.intel.daal.data_management.data_source.FileDataSource;
+import com.intel.daal.data_management.data.*;
+import com.intel.daal.data_management.data_source.*;
 import com.intel.daal.services.DaalContext;
 import com.intel.daal.services.Environment;
 
 /**
  * @brief the Harp mapper for running K nearest neighbors 
  */
-public class STUMPDaalCollectiveMapper
-    extends
-    CollectiveMapper<String, String, Object, Object> {
+public class STUMPDaalCollectiveMapper extends CollectiveMapper<String, String, Object, Object> 
+{
 
 	//cmd args
-        private int numMappers;
-        private int numThreads;
-        private int harpThreads; 
+	private int num_mappers;
+	private int numThreads;
+	private int harpThreads; 
 	private int fileDim;
-  	private String testFilePath;
-
+	private String testFilePath;
 	private int nFeatures;
 
-        //to measure the time
-        private long load_time = 0;
-        private long convert_time = 0;
-        private long total_time = 0;
-        private long compute_time = 0;
-        private long comm_time = 0;
-        private long ts_start = 0;
-        private long ts_end = 0;
-        private long ts1 = 0;
-        private long ts2 = 0;
+	private List<String> inputFiles;
+	private Configuration conf;
 
 	private static HarpDAALDataSource datasource;
 	private static DaalContext daal_Context = new DaalContext();
 
 	private static TrainingResult   trainingResult;
-    	private static PredictionResult predictionResult;
-    	private static NumericTable     testGroundTruth;
+	private static PredictionResult predictionResult;
+	private static NumericTable     testGroundTruth;
 
-        /**
-         * Mapper configuration.
-         */
-        @Override
-        protected void setup(Context context)
-        throws IOException, InterruptedException {
-
-        long startTime = System.currentTimeMillis();
-
-        Configuration configuration =
-            context.getConfiguration();
-
-	this.fileDim = configuration.getInt(HarpDAALConstants.FILE_DIM, 10);
-	this.numMappers = configuration.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
-        this.numThreads = configuration.getInt(HarpDAALConstants.NUM_THREADS, 10);
-        this.harpThreads = Runtime.getRuntime().availableProcessors();
-
-	this.nFeatures = configuration.getInt(HarpDAALConstants.FEATURE_DIM, 10);
-	this.testFilePath = configuration.get(HarpDAALConstants.TEST_FILE_PATH,"");
-
-        LOG.info("File Dim " + this.fileDim);
-        LOG.info("Num Mappers " + this.numMappers);
-        LOG.info("Num Threads " + this.numThreads);
-        LOG.info("Num harp load data threads " + harpThreads);
-
-        long endTime = System.currentTimeMillis();
-        LOG.info("config (ms) :"
-                + (endTime - startTime));
-        }
-
-        // Assigns the reader to different nodes
-        protected void mapCollective(
-                KeyValReader reader, Context context)
-            throws IOException, InterruptedException {
-            long startTime = System.currentTimeMillis();
-
-	    // read data file names from HDFS
-            List<String> dataFiles =
-                new LinkedList<String>();
-            while (reader.nextKeyValue()) {
-                String key = reader.getCurrentKey();
-                String value = reader.getCurrentValue();
-                LOG.info("Key: " + key + ", Value: "
-                        + value);
-                LOG.info("file name: " + value);
-                dataFiles.add(value);
-            }
-            
-            Configuration conf = context.getConfiguration();
-
-	    // ----------------------- runtime settings -----------------------
-            //set thread number used in DAAL
-            LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
-            Environment.setNumberOfThreads(numThreads);
-            LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
-
-	    this.datasource = new HarpDAALDataSource(dataFiles, fileDim, harpThreads, conf);
-
-	    // ----------------------- start the execution -----------------------
-            runSTUMP(conf, context);
-            this.freeMemory();
-            this.freeConn();
-            System.gc();
-        }
-
-        /**
-         * @brief run SVD by invoking DAAL Java API
-         *
-         * @param fileNames
-         * @param conf
-         * @param context
-         *
-         * @return 
-         */
-        private void runSTUMP(Configuration conf, Context context) throws IOException 
+	/**
+	 * Mapper configuration.
+	 */
+	@Override
+	protected void setup(Context context) throws IOException, InterruptedException 
 	{
-		// ---------- load data ----------
-		this.datasource.loadFiles();
+
+		long startTime = System.currentTimeMillis();
+
+		this.conf = context.getConfiguration();
+
+		this.fileDim = this.conf.getInt(HarpDAALConstants.FILE_DIM, 10);
+		this.num_mappers = this.conf.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
+		this.numThreads = this.conf.getInt(HarpDAALConstants.NUM_THREADS, 10);
+		this.harpThreads = Runtime.getRuntime().availableProcessors();
+
+		this.nFeatures = this.conf.getInt(HarpDAALConstants.FEATURE_DIM, 10);
+		this.testFilePath = this.conf.get(HarpDAALConstants.TEST_FILE_PATH,"");
+
+		//set thread number used in DAAL
+		LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
+		Environment.setNumberOfThreads(numThreads);
+		LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
+
+		LOG.info("File Dim " + this.fileDim);
+		LOG.info("Num Mappers " + this.num_mappers);
+		LOG.info("Num Threads " + this.numThreads);
+		LOG.info("Num harp load data threads " + harpThreads);
+
+		long endTime = System.currentTimeMillis();
+		LOG.info("config (ms) :"
+				+ (endTime - startTime));
+	}
+
+	// Assigns the reader to different nodes
+	protected void mapCollective(KeyValReader reader, Context context) throws IOException, InterruptedException 
+	{
+		long startTime = System.currentTimeMillis();
+
+		// read data file names from HDFS
+		this.inputFiles = new LinkedList<String>();
+		while (reader.nextKeyValue()) {
+			String key = reader.getCurrentKey();
+			String value = reader.getCurrentValue();
+			LOG.info("Key: " + key + ", Value: "
+					+ value);
+			LOG.info("file name: " + value);
+			this.inputFiles.add(value);
+		}
+
+		this.datasource = new HarpDAALDataSource(harpThreads, conf);
+
+		// ----------------------- start the execution -----------------------
+		runSTUMP(context);
+		this.freeMemory();
+		this.freeConn();
+		System.gc();
+	}
+
+	/**
+	 * @brief run SVD by invoking DAAL Java API
+	 *
+	 * @param fileNames
+	 * @param conf
+	 * @param context
+	 *
+	 * @return 
+	 */
+	private void runSTUMP(Context context) throws IOException 
+	{
 		// ---------- training and testing ----------
 		trainModel();
 		testModel();
@@ -200,15 +179,9 @@ public class STUMPDaalCollectiveMapper
 	private void trainModel() 
 	{
 
-		/* Create Numeric Tables for training data and labels */
-		NumericTable trainData = new HomogenNumericTable(daal_Context, Double.class, nFeatures, this.datasource.getTotalLines(), NumericTable.AllocationFlag.DoAllocate);
-		NumericTable trainGroundTruth = new HomogenNumericTable(daal_Context, Double.class, 1, this.datasource.getTotalLines(), NumericTable.AllocationFlag.DoAllocate);
-		MergedNumericTable mergedData = new MergedNumericTable(daal_Context);
-		mergedData.addNumericTable(trainData);
-		mergedData.addNumericTable(trainGroundTruth);
-
-		/* Retrieve the data from an input file */
-		this.datasource.loadDataBlock(mergedData);
+		NumericTable[] load_table = this.datasource.createDenseNumericTableSplit(this.inputFiles, nFeatures, 1, ",", this.daal_Context);
+		NumericTable trainData = load_table[0]; 
+		NumericTable trainGroundTruth = load_table[1];
 
 		/* Create algorithm objects to train the stump model */
 		TrainingBatch algorithm = new TrainingBatch(daal_Context, Double.class, TrainingMethod.defaultDense);
@@ -219,21 +192,13 @@ public class STUMPDaalCollectiveMapper
 		/* Train the stump model */
 		trainingResult = algorithm.compute();
 	}
-    
+
 	private void testModel() throws IOException
 	{
 		// load test set from HDFS
-		this.datasource.loadTestFile(testFilePath, fileDim);
-
-		/* Create Numeric Tables for testing data and labels */
-		NumericTable testData = new HomogenNumericTable(daal_Context, Double.class, nFeatures, this.datasource.getTestRows(), NumericTable.AllocationFlag.DoAllocate);
-		testGroundTruth = new HomogenNumericTable(daal_Context, Double.class, 1, this.datasource.getTestRows(), NumericTable.AllocationFlag.DoAllocate);
-		MergedNumericTable mergedData = new MergedNumericTable(daal_Context);
-		mergedData.addNumericTable(testData);
-		mergedData.addNumericTable(testGroundTruth);
-
-		/* Retrieve the data from an input file */
-		this.datasource.loadTestTable(mergedData);
+		NumericTable[] load_table = this.datasource.createDenseNumericTableSplit(this.testFilePath, this.nFeatures, 1, ",", this.daal_Context);
+		NumericTable testData = load_table[0];
+		this.testGroundTruth = load_table[1];
 
 		/* Create algorithm objects to predict values with the fast method */
 		PredictionBatch algorithm = new PredictionBatch(daal_Context, Double.class, PredictionMethod.defaultDense);

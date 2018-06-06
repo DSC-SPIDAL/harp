@@ -67,231 +67,168 @@ import com.intel.daal.services.Environment;
  */
 
 
-public class RidgeRegDaalCollectiveMapper
-extends
-CollectiveMapper<String, String, Object, Object>{
+public class RidgeRegDaalCollectiveMapper extends CollectiveMapper<String, String, Object, Object>
+{
 
-  private int fileDim = 12;
-  private int vectorSize = 10;
-  private int nDependentVariables  = 2;
-  private int num_mappers;
-  private int numThreads;
-  private int harpThreads; 
-  private String testFilePath;
-  private String testGroundTruth;
+	private int fileDim;
+	private int vectorSize;
+	private int nDependentVariables;
+	private int num_mappers;
+	private int numThreads;
+	private int harpThreads; 
+	private String testFilePath;
+	private String testGroundTruth;
+	private List<String> inputFiles;
+	private Configuration conf;
 
-  private TrainingResult trainingResult;
-  private PredictionResult predictionResult;
-  private Model model;
-  private NumericTable results;
+	private TrainingResult trainingResult;
+	private PredictionResult predictionResult;
+	private Model model;
+	private NumericTable results;
 
-  //to measure the time
-  private long load_time = 0;
-  private long convert_time = 0;
-  private long total_time = 0;
-  private long compute_time = 0;
-  private long comm_time = 0;
-  private long ts_start = 0;
-  private long ts_end = 0;
-  private long ts1 = 0;
-  private long ts2 = 0;
+	private static HarpDAALDataSource datasource;
+	private static HarpDAALComm harpcomm;	
+	private static DaalContext daal_Context = new DaalContext();
 
-  private static HarpDAALDataSource datasource;
-  private static HarpDAALComm harpcomm;	
-  private static DaalContext daal_Context = new DaalContext();
+	/**
+	 * Mapper configuration.
+	 */
+	@Override
+	protected void setup(Context context) throws IOException, InterruptedException 
+	{
+		long startTime = System.currentTimeMillis();
 
-    /**
-   * Mapper configuration.
-   */
-    @Override
-    protected void setup(Context context)
-    throws IOException, InterruptedException {
-      long startTime = System.currentTimeMillis();
+		this.conf = context.getConfiguration();
+		this.num_mappers = this.conf.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
+		this.numThreads = this.conf.getInt(HarpDAALConstants.NUM_THREADS, 10);
+		this.fileDim = this.conf.getInt(HarpDAALConstants.FILE_DIM, 12);
+		this.vectorSize = this.conf.getInt(HarpDAALConstants.FEATURE_DIM, 10);
+		this.nDependentVariables = this.conf.getInt(HarpDAALConstants.NUM_DEPVAR, 2);
+		this.testFilePath = this.conf.get(HarpDAALConstants.TEST_FILE_PATH,"");
+		this.testGroundTruth = this.conf.get(HarpDAALConstants.TEST_TRUTH_PATH,"");
 
-      Configuration configuration = context.getConfiguration();
-      this.num_mappers = configuration.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
-      this.numThreads = configuration.getInt(HarpDAALConstants.NUM_THREADS, 10);
-      this.fileDim = configuration.getInt(HarpDAALConstants.FILE_DIM, 12);
-      this.vectorSize = configuration.getInt(HarpDAALConstants.FEATURE_DIM, 10);
-      this.nDependentVariables = configuration.getInt(HarpDAALConstants.NUM_DEPVAR, 2);
-      this.testFilePath = configuration.get(HarpDAALConstants.TEST_FILE_PATH,"");
-      this.testGroundTruth = configuration.get(HarpDAALConstants.TEST_TRUTH_PATH,"");
+		//always use the maximum hardware threads to load in data and convert data 
+		harpThreads = Runtime.getRuntime().availableProcessors();
 
-      //always use the maximum hardware threads to load in data and convert data 
-      harpThreads = Runtime.getRuntime().availableProcessors();
+		LOG.info("Num Mappers " + num_mappers);
+		LOG.info("Num Threads " + numThreads);
+		LOG.info("Num harp load data threads " + harpThreads);
+		long endTime = System.currentTimeMillis();
+		LOG.info("config (ms) :" + (endTime - startTime));
+		System.out.println("Collective Mapper launched");
 
-      LOG.info("Num Mappers " + num_mappers);
-      LOG.info("Num Threads " + numThreads);
-      LOG.info("Num harp load data threads " + harpThreads);
-      long endTime = System.currentTimeMillis();
-      LOG.info(
-        "config (ms) :" + (endTime - startTime));
-      System.out.println("Collective Mapper launched");
+	}
 
-    }
+	protected void mapCollective(KeyValReader reader, Context context) throws IOException, InterruptedException 
+	{
+		long startTime = System.currentTimeMillis();
 
-    protected void mapCollective(
-      KeyValReader reader, Context context)
-    throws IOException, InterruptedException {
-      long startTime = System.currentTimeMillis();
-      List<String> trainingDataFiles =
-      new LinkedList<String>();
+		this.inputFiles = new LinkedList<String>();
+		//splitting files between mapper
+		while (reader.nextKeyValue()) {
+			String key = reader.getCurrentKey();
+			String value = reader.getCurrentValue();
+			LOG.info("Key: " + key + ", Value: "
+					+ value);
+			System.out.println("file name : " + value);
+			this.inputFiles.add(value);
+		}
 
-    //splitting files between mapper
+		//init data source
+		this.datasource = new HarpDAALDataSource(harpThreads, conf);
+		// create communicator
+		this.harpcomm= new HarpDAALComm(this.getSelfID(), this.getMasterID(), this.num_mappers, daal_Context, this);
 
-      while (reader.nextKeyValue()) {
-        String key = reader.getCurrentKey();
-        String value = reader.getCurrentValue();
-        LOG.info("Key: " + key + ", Value: "
-          + value);
-        System.out.println("file name : " + value);
-        trainingDataFiles.add(value);
-      }
+		runRidgeReg(context);
+		LOG.info("Total iterations in master view: " + (System.currentTimeMillis() - startTime));
+		this.freeMemory();
+		this.freeConn();
+		System.gc();
+	}
 
-      Configuration conf = context.getConfiguration();
+	private void runRidgeReg(Context context) throws IOException 
+	{
 
-      Path pointFilePath = new Path(trainingDataFiles.get(0));
-      System.out.println("path = "+ pointFilePath.getName());
-      FileSystem fs = pointFilePath.getFileSystem(conf);
-      FSDataInputStream in = fs.open(pointFilePath);
+		NumericTable[] load_table = this.datasource.createDenseNumericTableSplit(this.inputFiles, this.vectorSize, this.nDependentVariables, ",", this.daal_Context);
+		NumericTable featureArray_daal = load_table[0]; 
+		NumericTable labelArray_daal = load_table[1];
 
-      //init data source
-      this.datasource = new HarpDAALDataSource(trainingDataFiles, this.fileDim, harpThreads, conf);
-      // create communicator
-      this.harpcomm= new HarpDAALComm(this.getSelfID(), this.getMasterID(), this.num_mappers, daal_Context, this);
+		trainModel(featureArray_daal, labelArray_daal);
 
-      runRidgeReg(conf, context);
-      LOG.info("Total iterations in master view: "
-        + (System.currentTimeMillis() - startTime));
-      this.freeMemory();
-      this.freeConn();
-      System.gc();
-    }
+		if(this.isMaster()){
+			testModel(testFilePath);
+			printResults(testGroundTruth, predictionResult);
+		}
 
-  private void runRidgeReg(Configuration conf, Context context) throws IOException 
-  {
-
-	  ts_start = System.currentTimeMillis();
-
-	  this.datasource.loadFiles();
-
-	  NumericTable featureArray_daal = new HomogenNumericTable(daal_Context, Double.class, this.vectorSize, this.datasource.getTotalLines(), 
-			  NumericTable.AllocationFlag.DoAllocate);
-	  NumericTable labelArray_daal = new HomogenNumericTable(daal_Context, Double.class, this.nDependentVariables, this.datasource.getTotalLines(), 
-			  NumericTable.AllocationFlag.DoAllocate);
-	  MergedNumericTable mergedData = new MergedNumericTable(daal_Context);
-	  mergedData.addNumericTable(featureArray_daal);
-	  mergedData.addNumericTable(labelArray_daal);
-
-	  /* Retrieve the data from an input file */
-	  this.datasource.loadDataBlock(mergedData);
-
-	  trainModel(featureArray_daal, labelArray_daal);
-
-	  if(this.isMaster()){
-		  testModel(testFilePath, conf);
-		  printResults(testGroundTruth, predictionResult, conf);
-	  }
-
-	  daal_Context.dispose();
-
-	  ts_end = System.currentTimeMillis();
-	  total_time = (ts_end - ts_start);
-
-	  LOG.info("Total Execution Time of RidgeReg: "+ total_time);
-	  LOG.info("Loading Data Time of RidgeReg: "+ load_time);
-	  LOG.info("Computation Time of RidgeReg: "+ compute_time);
-	  LOG.info("Comm Time of RidgeReg: "+ comm_time);
-	  LOG.info("DataType Convert Time of RidgeReg: "+ convert_time);
-	  LOG.info("Misc Time of RidgeReg: "+ (total_time - load_time - compute_time - comm_time - convert_time));
-  }
-  
-  private void trainModel(NumericTable trainData, NumericTable trainDependentVariables) throws java.io.IOException {
-
-    LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
-    Environment.setNumberOfThreads(numThreads);
-    LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
-
-    ts1 = System.currentTimeMillis();
-    TrainingDistributedStep1Local ridgeRegressionTraining = new TrainingDistributedStep1Local(daal_Context, Double.class,
-                    TrainingMethod.normEqDense);
-
-    ridgeRegressionTraining.input.set(TrainingInputId.data, trainData);
-    ridgeRegressionTraining.input.set(TrainingInputId.dependentVariable, trainDependentVariables);
-
-    PartialResult pres = ridgeRegressionTraining.compute();
-    ts2 = System.currentTimeMillis();
-    compute_time += (ts2 - ts1);
-
-    //gather the pres to master mappers
-    SerializableBase[] gather_out = this.harpcomm.harpdaal_gather(pres, this.getMasterID(), "RidgeReg", "gather_pres");
-
-    if(this.isMaster())
-    {
-
-      TrainingDistributedStep2Master ridgeRegressionTrainingMaster = new TrainingDistributedStep2Master(daal_Context, Double.class,
-                TrainingMethod.normEqDense);
-
-      for(int j=0;j<this.num_mappers;j++)
-      {
-	      PartialResult pres_entry = (PartialResult)(gather_out[j]); 
-	      ridgeRegressionTrainingMaster.input.add(MasterInputId.partialModels, pres_entry); 
-      }
-
-      ts1 = System.currentTimeMillis();
-      ridgeRegressionTrainingMaster.compute();
-      trainingResult = ridgeRegressionTrainingMaster.finalizeCompute();
-      ts2 = System.currentTimeMillis();
-      compute_time += (ts2 - ts1);
-      model = trainingResult.get(TrainingResultId.model);
-    }
-
-  }
-
-  private void testModel(String testFilePath, Configuration conf) throws java.io.FileNotFoundException, java.io.IOException 
-  {
-
-    //load test data
-    this.datasource.loadTestFile(testFilePath, this.fileDim);
-
-    NumericTable testData = new HomogenNumericTable(daal_Context, Double.class, this.vectorSize, this.datasource.getTestRows(), 
-		    NumericTable.AllocationFlag.DoAllocate);
-    NumericTable testLabel = new HomogenNumericTable(daal_Context, Double.class, this.nDependentVariables, this.datasource.getTestRows(), 
-		    NumericTable.AllocationFlag.DoAllocate);
-
-    MergedNumericTable mergedData = new MergedNumericTable(daal_Context);
-    mergedData.addNumericTable(testData);
-    mergedData.addNumericTable(testLabel);
-    this.datasource.loadTestTable(mergedData);
+		daal_Context.dispose();
 
 
-    PredictionBatch ridgeRegressionPredict = new PredictionBatch(daal_Context, Double.class, PredictionMethod.defaultDense);
+	}
 
-    ridgeRegressionPredict.input.set(PredictionInputId.data, testData);
-    ridgeRegressionPredict.input.set(PredictionInputId.model, model);
+	private void trainModel(NumericTable trainData, NumericTable trainDependentVariables) throws java.io.IOException {
 
-    /* Compute the prediction results */
-    ts1 = System.currentTimeMillis();
-    predictionResult = ridgeRegressionPredict.compute();
-    results = predictionResult.get(PredictionResultId.prediction);
-    ts2 = System.currentTimeMillis();
-    compute_time += (ts2 - ts1);
+		LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
+		Environment.setNumberOfThreads(numThreads);
+		LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
 
-  }
+		TrainingDistributedStep1Local ridgeRegressionTraining = new TrainingDistributedStep1Local(daal_Context, Double.class,
+				TrainingMethod.normEqDense);
 
-  private void printResults(String testGroundTruth, PredictionResult predictionResult, Configuration conf) throws java.io.FileNotFoundException, java.io.IOException 
-  {
+		ridgeRegressionTraining.input.set(TrainingInputId.data, trainData);
+		ridgeRegressionTraining.input.set(TrainingInputId.dependentVariable, trainDependentVariables);
 
-	  NumericTable beta = model.getBeta();
-	  //load the test groudtruth 
-	  this.datasource.loadTestFile(testGroundTruth, this.nDependentVariables);
-	  NumericTable expected = new HomogenNumericTable(daal_Context, Double.class, this.nDependentVariables, this.datasource.getTestRows(), 
-			  NumericTable.AllocationFlag.DoAllocate);
-	  this.datasource.loadTestTable(expected);
+		PartialResult pres = ridgeRegressionTraining.compute();
 
-	  Service.printNumericTable("Coefficients: ", beta);
-	  Service.printNumericTable("First 10 rows of results (obtained): ", results, 10);
-	  Service.printNumericTable("First 10 rows of results (expected): ", expected, 10);
-  }
+		//gather the pres to master mappers
+		SerializableBase[] gather_out = this.harpcomm.harpdaal_gather(pres, this.getMasterID(), "RidgeReg", "gather_pres");
+
+		if(this.isMaster())
+		{
+
+			TrainingDistributedStep2Master ridgeRegressionTrainingMaster = new TrainingDistributedStep2Master(daal_Context, Double.class,
+					TrainingMethod.normEqDense);
+
+			for(int j=0;j<this.num_mappers;j++)
+			{
+				PartialResult pres_entry = (PartialResult)(gather_out[j]); 
+				ridgeRegressionTrainingMaster.input.add(MasterInputId.partialModels, pres_entry); 
+			}
+
+			ridgeRegressionTrainingMaster.compute();
+			trainingResult = ridgeRegressionTrainingMaster.finalizeCompute();
+			model = trainingResult.get(TrainingResultId.model);
+		}
+
+	}
+
+	private void testModel(String testFilePath) throws java.io.FileNotFoundException, java.io.IOException 
+	{
+
+		//load test data
+		NumericTable[] load_table = this.datasource.createDenseNumericTableSplit(this.testFilePath, this.vectorSize, this.nDependentVariables, ",", this.daal_Context);
+		NumericTable testData = load_table[0];
+		NumericTable testLabel = load_table[1];
+
+		PredictionBatch ridgeRegressionPredict = new PredictionBatch(daal_Context, Double.class, PredictionMethod.defaultDense);
+
+		ridgeRegressionPredict.input.set(PredictionInputId.data, testData);
+		ridgeRegressionPredict.input.set(PredictionInputId.model, model);
+
+		/* Compute the prediction results */
+		predictionResult = ridgeRegressionPredict.compute();
+		results = predictionResult.get(PredictionResultId.prediction);
+
+	}
+
+	private void printResults(String testGroundTruth, PredictionResult predictionResult) throws java.io.FileNotFoundException, java.io.IOException 
+	{
+
+		NumericTable beta = model.getBeta();
+		//load the test groudtruth 
+		NumericTable expected = this.datasource.createDenseNumericTable(testGroundTruth, this.nDependentVariables, "," , this.daal_Context);
+		Service.printNumericTable("Coefficients: ", beta);
+		Service.printNumericTable("First 10 rows of results (obtained): ", results, 10);
+		Service.printNumericTable("First 10 rows of results (expected): ", expected, 10);
+	}
 
 }
