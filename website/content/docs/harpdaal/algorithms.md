@@ -7,7 +7,7 @@ title: Algorithms in Harp-DAAL
 </a>
 ## **Association Rule**
 
-<img src="/img/daalAlgos/association-rule-apriori.png" width="80%" >
+<img src="/img/daalAlgos/association-rule-new.png" width="80%" >
 
 Association rule learning is a rule-based learning method for discovering relations between variables in databases. 
 It is intended to identify strong rules discovered in databases using some measures of interestingness.
@@ -66,7 +66,7 @@ More details are from [Intel DAAL Documentation](https://software.intel.com/en-u
 </a>
 ## **Naive Bayes Classifier**
 
-<img src="/img/daalAlgos/naive-bayes.png" width="80%" >
+<img src="/img/daalAlgos/NaiveBayes-New.png" width="80%" >
 
 Naïve Bayes is a set of simple and powerful classification methods often used for text classification, 
 medical diagnosis, and other classification problems. In spite of their main assumption about independence between features, 
@@ -81,7 +81,7 @@ More details from Intel DAAL Documentation is [here](https://software.intel.com/
 </a>
 ## **K-means Clustering**
 
-<img src="/img/daalAlgos/kmeans-clustering.jpg" width="80%" >
+<img src="/img/daalAlgos/kmeans-clustering-new.jpg" width="80%" >
 
 K-means is a widely used clustering algorithm in machine learning community. It iteratively computes the distance between each 
 training point to every centroids, re-assigns the training point to new cluster and re-compute the new centroid of each cluster. 
@@ -97,7 +97,7 @@ More algorithmic details from Intel DAAL Documentation is [here](https://softwar
 </a>
 ## **Expectation Maximization**
 
-<img src="/img/daalAlgos/em.png" width="80%" >
+<img src="/img/daalAlgos/em-new.jpg" width="80%" >
 
 Expectation-Maximization (EM) algorithm is an iterative method for finding the maximum likelihood and maximum a posteriori estimates of parameters in models that typically depend on hidden variables.
 
