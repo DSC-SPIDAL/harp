@@ -229,11 +229,7 @@ CollectiveMapper<String, String, Object, Object>{
   private void printResults(String testGroundTruth, PredictionResult predictionResult, Configuration conf) throws java.io.FileNotFoundException, java.io.IOException 
   {
 
-	  this.datasource.loadTestFile(testGroundTruth, 1);
-	  NumericTable expected = new HomogenNumericTable(daal_Context, Double.class, 1, this.datasource.getTestRows(), NumericTable.AllocationFlag.DoAllocate);
-
-	  this.datasource.loadTestTable(expected);
-
+	  NumericTable expected = this.datasource.createDenseNumericTable(testGroundTruth, 1, ",", this.daal_Context); 
 	  NumericTable prediction = predictionResult.get(PredictionResultId.prediction);
 
         Service.printClassificationResult(expected, prediction, "Ground truth", "Classification results",
