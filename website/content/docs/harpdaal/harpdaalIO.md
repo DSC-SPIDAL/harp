@@ -16,54 +16,69 @@ import edu.iu.datasource.*;
 To create a *HarpDAALDataSource* data loader for dense data:
 
 ```java
-HarpDAALDataSource datasource = new HarpDAALDataSource(dataFiles, fileDim, harpThreads, conf);
+HarpDAALDataSource datasource = new HarpDAALDataSource(harpThreads, conf);
 ```
 
-where four parameters are required
+where two parameters are required
 
-* List<String> dataFiles: the list of HDFS file names of input data
-* int fileDim: the dimension of each file row (column number of dense matrix)
 * int harpThreads: the multi-thread number used in parallel I/O, default value is the maximal available java threads 
 * Configuration conf: the Configuration handle of Harp mapper. 
 
-To create a *HarpDAALDataSource* for CSR sparse data, the second argument *fileDim* is omitted.
+## Load Dense CSV Data
+
+To load a dense training dataset stored in CSV files from HDFS
 
 ```java
-HarpDAALDataSource datasource = new HarpDAALDataSource(dataFiles, harpThreads, conf);
+NumericTable inputTable = datasource.createDenseNumericTableInput(inputFiles, nFeatures, sep,  daal_Context);
 ```
 
-## Load Input Data (Training Data)
+where parameters are
 
-The file path of input data is already initialized during the creation of *HarpDAALDataSource* object.
-To create a dense training dataset from HDFS
+* inputFiles: the path to the CSV files stored in HDFS
+* nFeatures: the dimension of each feature vector (column number of CSV file)
+* sep: the seperator of CSV files (e.g., comma, or space)
+* daal_Context: the DAALContext handle to create instance of DAAL NumericTable.
+
+In some cases, the CSV files shall be splitted into two dense matrix (e.g, training data and label data)
 
 ```java
-NumericTable inputTable = datasource.createDenseNumericTableInput(daal_Context);
+NumericTable[] load_table = this.datasource.createDenseNumericTableSplit(inputFiles, nFeatures, 1, sep, daal_Context);
+NumericTable trainData = load_table[0];
+NumericTable trainLabels = load_table[1];
 ```
 
-To create a CSR training dataset from HDFS
+where *nFeatures* is the feature dimension of the first NumericTable, and the label table takes 1 dimension. 
+
+## Load Sparse CSR Data
+
+To load a CSR training dataset from HDFS
 
 ```java
-NumericTable inputTable = datasource.createCSRNumericTableInput(daal_Context);
+NumericTable inputTable = datasource.loadCSRNumericTable(inputFiles, sep, context);
 ```
 
-## Load Additional Data (ground truth data, label data, and test data)
+where the *nFeatures* parameter is not required for CSR files. 
 
-These datasets are relatively much smaller than the training data, and their HDFS paths are 
-not bind to the Harp *KeyValReader*. To load these files, we obtain their HDFS paths from 
-command line arguments and explicitly invoke *HarpDAALDataSource* to load them.
+## Load Sparse Distributed COO Data
 
-To create a dense additional data from filenames and file dimension
+As Intel DAAL has no NumericTable type dedicated to COO sparse format, 
+the loading of distributed COO files takes following steps: 1) Loading distributed COO files from HDFS to harp mapper , 2) 
+grouping COO entry either by their row ID or column ID, 3) regrouping COO entries across all mappers according to their row ID (or column ID), 
+4) convert COO format to CSR format.
 
 ```java
-NumericTable table = datasource.createDenseNumericTable(filenames, fileDim, daal_Context);
+// load COO files
+List<COO> coo_data = this.datasource.loadCOOFiles(this.inputFiles,",");
+// group by row ID 
+HashMap<Long, COOGroup> coo_group = this.datasource.groupCOOByIDs(coo_data, true);
+// create compact global ID mapping
+HashMap<Long, Integer> gid_remap = this.datasource.remapCOOIDs(coo_group, this.getSelfID(), this.getNumWorkers(), this);
+// regrouping COO entries
+Table<COOGroup> regrouped_table = this.datasource.regroupCOOList(coo_group, gid_remap, this, maxCompactID);
+// convert COO to CSRNumericTable
+CSRNumericTable trainDaalTable = this.datasource.COOToCSR(regrouped_table, gid_remap_tran, daal_Context);
 ```
 
-To create a CSR additional data from filenames
-
-```java
-NumericTable table = datasource.createCSRNumericTable(filenames, daal_Context);
-```
 
 
 

@@ -78,12 +78,14 @@ public class ARDaalCollectiveMapper
     extends
     CollectiveMapper<String, String, Object, Object> {
         //cmd args
-        private int numMappers;
+        private int num_mappers;
         private int numThreads;
         private int harpThreads;
         private int fileDim;
         private double minSupport;      
         private double minConfidence;   
+        private List<String> inputFiles;
+        private Configuration conf;
         private static HarpDAALDataSource datasource;
         private static DaalContext daal_Context = new DaalContext();
         private NumericTable input;
@@ -92,53 +94,47 @@ public class ARDaalCollectiveMapper
         protected void setup(Context context)
         throws IOException, InterruptedException 
         {
-            Configuration configuration =context.getConfiguration();
-            this.numMappers = configuration.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
-            this.numThreads = configuration.getInt(HarpDAALConstants.NUM_THREADS, 10);
+            this.conf =context.getConfiguration();
+            this.num_mappers = this.conf.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
+            this.numThreads = this.conf.getInt(HarpDAALConstants.NUM_THREADS, 10);
             this.harpThreads = Runtime.getRuntime().availableProcessors();
-            this.fileDim = configuration.getInt(HarpDAALConstants.FILE_DIM, 10);
-            this.minSupport = configuration.getDouble(Constants.MIN_SUPPORT, 0.001);
-            this.minConfidence = configuration.getDouble(Constants.MIN_CONFIDENCE, 0.7);
+            this.fileDim = this.conf.getInt(HarpDAALConstants.FILE_DIM, 10);
+            this.minSupport = this.conf.getDouble(Constants.MIN_SUPPORT, 0.001);
+            this.minConfidence = this.conf.getDouble(Constants.MIN_CONFIDENCE, 0.7);
+
+            //set thread number used in DAAL
+            LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
+            Environment.setNumberOfThreads(numThreads);
+            LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
         }
 
         protected void mapCollective(KeyValReader reader, Context context) throws IOException, InterruptedException 
         {
             // read data file names from HDFS
-            List<String> dataFiles =
-                new LinkedList<String>();
+            this.inputFiles = new LinkedList<String>();
             while (reader.nextKeyValue()) {
                 String key = reader.getCurrentKey();
                 String value = reader.getCurrentValue();
                 LOG.info("Key: " + key + ", Value: "
                         + value);
                 LOG.info("file name: " + value);
-                dataFiles.add(value);
+                this.inputFiles.add(value);
             }
 
-            Configuration conf = context.getConfiguration();
-
-            // ----------------------- runtime settings -----------------------
-            //set thread number used in DAAL
-            LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
-            Environment.setNumberOfThreads(numThreads);
-            LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
-
             // set up data source module
-            this.datasource = new HarpDAALDataSource(dataFiles, fileDim, harpThreads, conf);
+            this.datasource = new HarpDAALDataSource(harpThreads, conf);
 
             // ----------------------- start the execution -----------------------
-            runAR(conf, context);
+            runAR(context);
             this.freeMemory();
             this.freeConn();
             System.gc();
         }
 
-        private void runAR(Configuration conf, Context context) throws IOException
+        private void runAR(Context context) throws IOException
         {
                 //  load data 
-                this.datasource.loadFiles();
-                input = new HomogenNumericTable(daal_Context, Double.class, this.fileDim, this.datasource.getTotalLines(), NumericTable.AllocationFlag.DoAllocate);
-                this.datasource.loadDataBlock(input);
+                this.input = this.datasource.createDenseNumericTableInput(this.inputFiles, this.fileDim, ",",  daal_Context);
                 // Create an algorithm to mine association rules using the Apriori method 
                 Batch alg = new Batch(daal_Context, Double.class, Method.apriori);
                 // Set an input object for the algorithm 

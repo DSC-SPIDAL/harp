@@ -51,35 +51,39 @@ A *COVDaalCollectiveMapper.java* file is the main body to implement the algorith
 public class COVDaalCollectiveMapper
 extends CollectiveMapper<String, String, Object, Object>
 {
-  private PartialResult partialResult;
-  private SerializableBase[] partialResult_comm;
-  private Result result;
-  private int numMappers;
+  
+  private int num_mappers;
   private int numThreads;
   private int harpThreads;
+  private List<String> inputFiles;
+  private Configuration conf;
+
   private static HarpDAALDataSource datasource;
   private static HarpDAALComm harpcomm;
   private static DaalContext daal_Context = new DaalContext();
 
+  private PartialResult partialResult;
+  private SerializableBase[] partialResult_comm;
+  private Result result;
+
   @Override
   protected void setup(Context context)
-  throws IOException, InterruptedException {
-  long startTime = System.currentTimeMillis();
-  Configuration configuration =
-  context.getConfiguration();
-  numMappers = configuration
-  .getInt(HarpDAALConstants.NUM_MAPPERS, 10);
-  numThreads = configuration
-  .getInt(HarpDAALConstants.NUM_THREADS, 10);
-  //always use the maximum hardware threads to load in data and convert data
-  harpThreads = Runtime.getRuntime().availableProcessors();
+  throws IOException, InterruptedException 
+  {
+    long startTime = System.currentTimeMillis();
+    this.conf = context.getConfiguration();
+    num_mappers = this.conf.getInt(HarpDAALConstants.NUM_MAPPERS, 10);
+    numThreads = this.conf.getInt(HarpDAALConstants.NUM_THREADS, 10);
+    //always use the maximum hardware threads to load in data and convert data
+    harpThreads = Runtime.getRuntime().availableProcessors();
+    //set thread number used in DAAL
+    Environment.setNumberOfThreads(numThreads);
   }
 
   protected void mapCollective(KeyValReader reader, Context context) throws IOException, InterruptedException 
   {
       long startTime = System.currentTimeMillis();
-      List<String> trainingDataFiles =
-      new LinkedList<String>();
+      this.inputFiles = new LinkedList<String>();
       //splitting files between mapper
       while (reader.nextKeyValue()) {
         String key = reader.getCurrentKey();
@@ -87,31 +91,24 @@ extends CollectiveMapper<String, String, Object, Object>
         LOG.info("Key: " + key + ", Value: "
           + value);
         System.out.println("file name : " + value);
-        trainingDataFiles.add(value);
+        this.inputFiles.add(value);
       }
 
-      Configuration conf = context.getConfiguration();
-      Path pointFilePath = new Path(trainingDataFiles.get(0));
-      System.out.println("path = "+ pointFilePath.getName());
-      FileSystem fs = pointFilePath.getFileSystem(conf);
-      FSDataInputStream in = fs.open(pointFilePath);
       //init data source
-      this.datasource = new HarpDAALDataSource(trainingDataFiles, harpThreads, conf);
+      this.datasource = new HarpDAALDataSource(harpThreads, conf);
       // create communicator
-      this.harpcomm= new HarpDAALComm(this.getSelfID(), this.getMasterID(), this.numMappers, daal_Context, this);
-      //set thread number used in DAAL
-      Environment.setNumberOfThreads(numThreads);
+      this.harpcomm= new HarpDAALComm(this.getSelfID(), this.getMasterID(), this.num_mappers, daal_Context, this);
       // run the application codes
-      runCOV(conf, context);
+      runCOV(context);
       this.freeMemory();
       this.freeConn();
       System.gc();
     }
 
-    private void runCOV(Configuration conf, Context context) throws IOException 
+    private void runCOV(Context context) throws IOException 
     {
-        //read in csr files with filenames in trainingDataFiles
-        NumericTable featureArray_daal = this.datasource.loadCSRNumericTable(daal_Context);
+        //read in csr files 
+        NumericTable featureArray_daal = this.datasource.loadCSRNumericTable(this.inputFiles, ",", daal_Context);
         // compute on local nodes
         computeOnLocalNode(featureArray_daal);
         // compute on master node
@@ -141,7 +138,7 @@ extends CollectiveMapper<String, String, Object, Object>
         // create algorithm instance at master node
         DistributedStep2Master algorithm = new DistributedStep2Master(daal_Context, Double.class, Method.fastCSR);
         // add input data
-        for(int j=0;j<this.numMappers; j++)
+        for(int j=0;j<this.num_mappers; j++)
           algorithm.input.add(DistributedStep2MasterInputId.partialResults, (PartialResult)(partialResult_comm[j]));
         // compute 
         algorithm.compute();
