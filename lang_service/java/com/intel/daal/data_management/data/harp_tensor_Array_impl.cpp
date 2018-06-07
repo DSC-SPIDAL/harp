@@ -1,6 +1,6 @@
-/* file: common_defines.i */
+/* file: harp_tensor_Array_impl.cpp */
 /*******************************************************************************
-* Copyright 2014-2018 Intel Corporation
+* Copyright 2014-2017 Intel Corporation
 * All Rights Reserved.
 *
 * If this  software was obtained  under the  Intel Simplified  Software License,
@@ -39,39 +39,62 @@
 * limitations under the License.
 *******************************************************************************/
 
-#include "JComputeMode.h"
-#include "JComputeStep.h"
+#include <jni.h>
 
-#define jBatch          com_intel_daal_algorithms_ComputeMode_batchValue
-#define jOnline         com_intel_daal_algorithms_ComputeMode_onlineValue
-#define jDistributed    com_intel_daal_algorithms_ComputeMode_distributedValue
+#include "JHarpTensorArrayImpl.h"
+#include "java_harptensor.h"
+#include "daal.h"
+#include "common_defines.i"
+#include "common_helpers_functions.h"
 
-#define jStep1Local     com_intel_daal_algorithms_ComputeStep_step1LocalValue
-#define jStep2Master    com_intel_daal_algorithms_ComputeStep_step2MasterValue
-#define jStep3Local     com_intel_daal_algorithms_ComputeStep_step3LocalValue
+using namespace daal;
+using namespace daal::services;
+using namespace daal::data_management;
 
+JavaVM* daal::JavaHarpTensorBase::globalJavaVM = NULL;
+tbb::enumerable_thread_specific<jobject> daal::JavaHarpTensorBase::globalDaalContext;
 
-namespace daal
+/*
+ * Class:     com_intel_daal_data_management_data_HarpTensorArrayImpl
+ * Method:    cNewJavaHarpTensor
+ * Signature: ([JI)J
+ */
+JNIEXPORT jlong JNICALL Java_com_intel_daal_data_1management_data_HarpTensorArrayImpl_cNewJavaHarpTensor
+  (JNIEnv *env, jobject thisObj, jlongArray jDims, jint tag)
 {
+    JavaVM *jvm;
+    // Get pointer to the Java VM interface function table
+    jint status = env->GetJavaVM(&jvm);
+    if(status != 0)
+    {
+        env->ThrowNew(env->FindClass("java/lang/Exception"), "Error on GetJavaVM");
+        return 0;
+    }
 
-const int SERIALIZATION_JAVANIO_CSR_NT_ID                                                       = 9000;
-const int SERIALIZATION_JAVANIO_HOMOGEN_NT_ID                                                   = 10010;
-const int SERIALIZATION_JAVANIO_AOS_NT_ID                                                       = 10020;
-const int SERIALIZATION_JAVANIO_SOA_NT_ID                                                       = 10030;
-const int SERIALIZATION_JAVANIO_PACKEDSYMMETRIC_NT_ID                                           = 10040;
-const int SERIALIZATION_JAVANIO_PACKEDTRIANGULAR_NT_ID                                          = 10050;
-const int SERIALIZATION_JAVANIO_HOMOGEN_TENSOR_ID                                               = 21000;
-// added by Harp-DAAL
-const int SERIALIZATION_JAVANIO_HARP_TENSOR_ID                                                  = 22000;
-const int SERIALIZATION_JAVANIO_HARP_NT_ID                                                      = 23000;
+    jsize len   = env->GetArrayLength(jDims);
+    jlong *dimSizes = env->GetLongArrayElements(jDims, 0);
+    Collection<size_t> dims;
+    for(size_t i=0; i<len; i++)
+    {
+        dims.push_back( dimSizes[i] );
+    }
+    env->ReleaseLongArrayElements(jDims, dimSizes, 0);
 
-} // namespace daal
+    // Create C++ object of the class Tensor
+    Tensor *tnsr = 0;
+    switch(tag){
+        case SERIALIZATION_JAVANIO_HARP_TENSOR_ID:
+            tnsr = new daal::JavaHarpTensor<SERIALIZATION_JAVANIO_HARP_TENSOR_ID>(dims, jvm, thisObj);
+            break;
+        default:
+            break;
+    }
 
+    if(tnsr->getErrors()->size() > 0)
+    {
+        env->ThrowNew(env->FindClass("java/lang/Exception"), tnsr->getErrors()->getDescription());
+    }
 
-#define IMPLEMENT_SERIALIZABLE_TAG(Class,Tag) \
-    int Class<Tag>::serializationTag() { return Tag; } \
-    int Class<Tag>::getSerializationTag() const { return Class<Tag>::serializationTag(); }
+    return (jlong)(new SerializationIfacePtr(tnsr));
+}
 
-#define IMPLEMENT_SERIALIZABLE_TAGT(Class,Tag) \
-    template<> int Class<Tag>::serializationTag() { return Tag; } \
-    template<> int Class<Tag>::getSerializationTag() const { return Class<Tag>::serializationTag(); }

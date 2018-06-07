@@ -46,6 +46,9 @@
 #include "services/base.h"
 #include "services/env_detect.h"
 #include "services/library_version_info.h"
+// --- Start added by Harp-DAAL ---
+#include "services/thpool.h"
+// --- End added by Harp-DAAL ---
 #include "data_management/compression/bzip2compression.h"
 #include "data_management/compression/compression.h"
 #include "data_management/compression/compression_stream.h"
@@ -61,6 +64,9 @@
 #include "data_management/data/aos_numeric_table.h"
 #include "data_management/data/csr_numeric_table.h"
 #include "data_management/data/data_archive.h"
+// --- Start added by Harp-DAAL ---
+#include "data_management/data/harp_numeric_table.h"
+// --- End added by Harp-DAAL ---
 #include "services/collection.h"
 #include "data_management/data/data_block.h"
 #include "data_management/data/factory.h"

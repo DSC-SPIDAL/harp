@@ -180,6 +180,18 @@ TBBDIR := $(if $(wildcard $(DIR)/externals/tbb/*),$(DIR)/externals/tbb/$(_OS)$(i
 TBBDIR.include := $(TBBDIR)/include/tbb $(TBBDIR)/include
 TBBDIR.libia   := $(TBBDIR)/lib$(if $(OS_is_mac),,/$(_IA)$(if $(OS_is_win),/vc_mt,/gcc4.4))
 TBBDIR.soia    := $(TBBDIR)$(if $(OS_is_win),/../redist,/lib)$(if $(OS_is_mac),,/$(_IA)/$(if $(OS_is_win),tbb/vc_mt,gcc4.4))
+## --------- start added by harp ---------
+## harp thrid party is not included at release dir
+HDFSDIR := $(DIR)/externals/hdfs
+HDFSDIR.include := $(HDFSDIR)/include
+HDFSDIR.libia := $(HDFSDIR)/lib
+HDFSDIR.soia := $(HDFSDIR)/lib
+MEMKINDDIR := $(DIR)/externals/memkind
+MEMKINDDIR.include := $(MEMKINDDIR)/include
+MEMKINDDIR.libia := $(MEMKINDDIR)/lib
+MEMKINDDIR.soia := $(MEMKINDDIR)/lib
+## --------- end added by harp ---------
+
 RELEASEDIR.tbb       := $(RELEASEDIR)/tbb
 RELEASEDIR.tbb.libia := $(RELEASEDIR.tbb)/lib$(if $(OS_is_mac),,/$(_IA)_$(_OSr)$(if $(OS_is_win),/vc_mt,/gcc4.4))
 RELEASEDIR.tbb.soia  := $(if $(OS_is_win),$(RELEASEDIR)/redist/$(_IA)_$(_OSr)/tbb/vc_mt,$(RELEASEDIR.tbb.libia))
@@ -216,8 +228,9 @@ daaldep.lnx32e.mkl.seq := $(MKLFPKDIR.libia)/$(plib)daal_mkl_sequential.$a
 daaldep.lnx32e.mkl := $(MKLFPKDIR.libia)/$(plib)daal_vmlipp_core.$a
 daaldep.lnx32e.vml := 
 daaldep.lnx32e.ipp := $(if $(COV.libia),$(COV.libia)/libcov.a)
-daaldep.lnx32e.rt.thr := -L$(TBBDIR.libia) -ltbb -ltbbmalloc -lpthread $(daaldep.lnx32e.rt.$(COMPILER)) $(if $(COV.libia),$(COV.libia)/libcov.a)
-daaldep.lnx32e.rt.seq := -lpthread $(daaldep.lnx32e.rt.$(COMPILER)) $(if $(COV.libia),$(COV.libia)/libcov.a)
+# add harpdaal hdfs
+daaldep.lnx32e.rt.thr := -L$(TBBDIR.libia) -ltbb -ltbbmalloc -lpthread -L$(HDFSDIR.libia) -lhdfs -L$(MEMKINDDIR.libia) -lmemkind $(daaldep.lnx32e.rt.$(COMPILER)) $(if $(COV.libia),$(COV.libia)/libcov.a)
+daaldep.lnx32e.rt.seq := -lpthread -L$(HDFSDIR.libia) -lhdfs -L$(MEMKINDDIR.libia) -lmemkind $(daaldep.lnx32e.rt.$(COMPILER)) $(if $(COV.libia),$(COV.libia)/libcov.a)
 
 daaldep.lnx32.mkl.thr := $(MKLFPKDIR.libia)/$(plib)daal_mkl_thread.$a    
 daaldep.lnx32.mkl.seq := $(MKLFPKDIR.libia)/$(plib)daal_mkl_sequential.$a
@@ -346,7 +359,10 @@ CORE.incdirs.thr    := $(THR.srcdir)
 CORE.incdirs.core   := $(CORE.SERV.srcdir) $(addprefix $(CORE.SERV.srcdir)/, $(CORE.SERVICES)) $(CORE.srcdir) $(addprefix $(CORE.srcdir)/, $(CORE.ALGORITHMS.FULL)) ## change CORE.ALGORITHMS.FULL --> CORE.ALGORITHMS
 CORE.incdirs.common := $(RELEASEDIR.include) $(WORKDIR)
 CORE.incdirs.thirdp := $(EXTERNALS.srcdir) $(MKLFPKDIR.include) $(TBBDIR.include)
-CORE.incdirs := $(CORE.incdirs.rel) $(CORE.incdirs.thr) $(CORE.incdirs.core) $(CORE.incdirs.common) $(CORE.incdirs.thirdp)
+# ---------- start added by harp project ----------
+CORE.incdirs.harp := $(EXTERNALS.srcdir) $(HDFSDIR.include) $(MEMKINDDIR.include)
+# ---------- end added by harp project ----------
+CORE.incdirs := $(CORE.incdirs.rel) $(CORE.incdirs.thr) $(CORE.incdirs.core) $(CORE.incdirs.common) $(CORE.incdirs.thirdp) $(CORE.incdirs.harp)
 
 containing = $(foreach v,$2,$(if $(findstring $1,$v),$v))
 notcontaining = $(foreach v,$2,$(if $(findstring $1,$v),,$v))
@@ -406,6 +422,13 @@ $(CORE.objs_a): $(CORE.tmpdir_a)/inc_a_folders.txt
 $(CORE.objs_a): COPT += $(-fPIC) $(-cxx11) $(-Zl) $(-DEBC)
 $(CORE.objs_a): COPT += -D__TBB_NO_IMPLICIT_LINKAGE -DDAAL_NOTHROW_EXCEPTIONS -DDAAL_HIDE_DEPRECATED
 $(CORE.objs_a): COPT += @$(CORE.tmpdir_a)/inc_a_folders.txt
+
+# added by Harp-DAAL
+# add -wn2 to stop after 2 errors
+# apache hdfs i/o lib, 
+$(CORE.objs_a): COPT += -I$(HDFSDIR.include) -I$(MEMKINDDIR.include) -O3 -wn2
+
+
 $(filter %threading.$o, $(CORE.objs_a)): COPT += -D__DO_TBB_LAYER__
 $(call containing,_nrh, $(CORE.objs_a)): COPT += $(p4_OPT)   -DDAAL_CPU=sse2
 $(call containing,_mrm, $(CORE.objs_a)): COPT += $(mc_OPT)   -DDAAL_CPU=ssse3
@@ -421,6 +444,12 @@ $(CORE.objs_y): $(CORE.tmpdir_y)/inc_y_folders.txt
 $(CORE.objs_y): COPT += $(-fPIC) $(-cxx11) $(-Zl) $(-DEBC)
 $(CORE.objs_y): COPT += -D__DAAL_IMPLEMENTATION -D__TBB_NO_IMPLICIT_LINKAGE -DDAAL_NOTHROW_EXCEPTIONS -DDAAL_HIDE_DEPRECATED $(if $(CHECK_DLL_SIG),-DDAAL_CHECK_DLL_SIG)
 $(CORE.objs_y): COPT += @$(CORE.tmpdir_y)/inc_y_folders.txt
+
+# added by Harp-DAAL
+# O3 optimization
+# apache hdfs i/o lib
+$(CORE.objs_y): COPT += -I$(HDFSDIR.include) -I$(MEMKINDDIR.include) -O3 -wn2
+
 $(filter %threading.$o, $(CORE.objs_y)): COPT += -D__DO_TBB_LAYER__
 $(call containing,_nrh, $(CORE.objs_y)): COPT += $(p4_OPT)   -DDAAL_CPU=sse2
 $(call containing,_mrm, $(CORE.objs_y)): COPT += $(mc_OPT)   -DDAAL_CPU=ssse3

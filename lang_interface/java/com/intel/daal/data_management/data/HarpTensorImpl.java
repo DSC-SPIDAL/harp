@@ -1,6 +1,6 @@
-/* file: common_defines.i */
+/* file: HarpTensorImpl.java */
 /*******************************************************************************
-* Copyright 2014-2018 Intel Corporation
+* Copyright 2014-2017 Intel Corporation
 * All Rights Reserved.
 *
 * If this  software was obtained  under the  Intel Simplified  Software License,
@@ -39,39 +39,37 @@
 * limitations under the License.
 *******************************************************************************/
 
-#include "JComputeMode.h"
-#include "JComputeStep.h"
+/**
+ * @ingroup tensor
+ * @{
+ */
+package com.intel.daal.data_management.data;
 
-#define jBatch          com_intel_daal_algorithms_ComputeMode_batchValue
-#define jOnline         com_intel_daal_algorithms_ComputeMode_onlineValue
-#define jDistributed    com_intel_daal_algorithms_ComputeMode_distributedValue
+import com.intel.daal.services.DaalContext;
 
-#define jStep1Local     com_intel_daal_algorithms_ComputeStep_step1LocalValue
-#define jStep2Master    com_intel_daal_algorithms_ComputeStep_step2MasterValue
-#define jStep3Local     com_intel_daal_algorithms_ComputeStep_step3LocalValue
+/**
+ * @brief A derivative class of the TensorImpl class, that provides common interfaces for
+ *        different implementations of a Harp tensor
+ */
+abstract class HarpTensorImpl extends TensorImpl {
+    protected Class<? extends Number> type;
 
+    /** @private */
+    static {
+        System.loadLibrary("JavaAPI");
+    }
 
-namespace daal
-{
+    /**
+     * Constructs the Harp tensor
+     * @param context   Context to manage the Harp tensor
+     */
+    public HarpTensorImpl(DaalContext context) {
+        super(context);
+    }
 
-const int SERIALIZATION_JAVANIO_CSR_NT_ID                                                       = 9000;
-const int SERIALIZATION_JAVANIO_HOMOGEN_NT_ID                                                   = 10010;
-const int SERIALIZATION_JAVANIO_AOS_NT_ID                                                       = 10020;
-const int SERIALIZATION_JAVANIO_SOA_NT_ID                                                       = 10030;
-const int SERIALIZATION_JAVANIO_PACKEDSYMMETRIC_NT_ID                                           = 10040;
-const int SERIALIZATION_JAVANIO_PACKEDTRIANGULAR_NT_ID                                          = 10050;
-const int SERIALIZATION_JAVANIO_HOMOGEN_TENSOR_ID                                               = 21000;
-// added by Harp-DAAL
-const int SERIALIZATION_JAVANIO_HARP_TENSOR_ID                                                  = 22000;
-const int SERIALIZATION_JAVANIO_HARP_NT_ID                                                      = 23000;
+    
+    abstract public Object getDataObject();
 
-} // namespace daal
-
-
-#define IMPLEMENT_SERIALIZABLE_TAG(Class,Tag) \
-    int Class<Tag>::serializationTag() { return Tag; } \
-    int Class<Tag>::getSerializationTag() const { return Class<Tag>::serializationTag(); }
-
-#define IMPLEMENT_SERIALIZABLE_TAGT(Class,Tag) \
-    template<> int Class<Tag>::serializationTag() { return Tag; } \
-    template<> int Class<Tag>::getSerializationTag() const { return Class<Tag>::serializationTag(); }
+    abstract public Class<? extends Number> getNumericType();
+}
+/** @} */
