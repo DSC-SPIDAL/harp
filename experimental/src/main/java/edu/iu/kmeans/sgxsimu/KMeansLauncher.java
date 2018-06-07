@@ -28,241 +28,97 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
+import edu.iu.datasource.*;
+import edu.iu.data_aux.*;
+import edu.iu.data_comm.*;
+import edu.iu.data_gen.*;
+
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.concurrent.ExecutionException;
 
-public class KMeansLauncher extends Configured
-  implements Tool {
+public class KMeansLauncher extends Configured implements Tool 
+{
 
-  public static void main(String[] argv)
-    throws Exception {
-    int res = ToolRunner.run(new Configuration(),
-      new KMeansLauncher(), argv);
-    System.exit(res);
-  }
+	public static void main(String[] argv) throws Exception 
+	{
+		int res = ToolRunner.run(new Configuration(), new KMeansLauncher(), argv);
+		System.exit(res);
+	}
 
-  /**
-   * Launches all the tasks in order.
-   */
-  @Override
-  public int run(String[] args) throws Exception {
-    if (args.length < 13) {
-      System.err.println(
-        "Usage: edu.iu.kmeans.KMeansLauncher"
-          + "<num Of DataPoints>" 
-	  + "<num of Centroids>" 
-	  + "<vector size>"
-          + "<num of point files per worker>"
-	  + "<total enclave capacity MB>"
-	  + "<enclave capacity per thread MB>"
-	  + "<enclave usage per tasks MB>"
-          + "<number of map tasks>" 
-	  + "<num threads>" 
-	  + "<mem MB per mapper>"
-	  + "<number of iteration>"
-	  + "<work dir>"
-	  + "<local points dir>");
-      ToolRunner
-        .printGenericCommandUsage(System.err);
-      return -1;
-    }
-    int numOfDataPoints =
-      Integer.parseInt(args[0]);
-    int numCentroids = Integer.parseInt(args[1]);
-    int vectorSize = Integer.parseInt(args[2]);
-    int numPointFilePerWorker =
-      Integer.parseInt(args[3]);
-    int enclave_total_size = Integer.parseInt(args[4]);
-    int enclave_eff_per_thd = Integer.parseInt(args[5]);
-    int enclave_task_size = Integer.parseInt(args[6]);
-    int numMapTasks = Integer.parseInt(args[7]);
-    int numThreads = Integer.parseInt(args[8]);
-    int mem = Integer.parseInt(args[9]);
-    int numIteration = Integer.parseInt(args[10]);
-    String workDir = args[11];
-    String localPointFilesDir = args[12];
-    boolean regenerateData = true;
-    if (args.length == 14) {
-      regenerateData =
-        Boolean.parseBoolean(args[13]);
-    }
-    System.out.println(
-      "Number of Map Tasks = " + numMapTasks);
-    int numPointFiles =
-      numMapTasks * numPointFilePerWorker;
-    if (numOfDataPoints / numPointFiles == 0
-      || numCentroids / numMapTasks == 0) {
-      return -1;
-    }
-    if (numIteration == 0) {
-      numIteration = 1;
-    }
-    launch(numOfDataPoints, numCentroids,
-      vectorSize, numPointFiles, enclave_total_size, enclave_eff_per_thd, enclave_task_size,numMapTasks,
-      numThreads, mem, numIteration, workDir,
-      localPointFilesDir, regenerateData);
-    return 0;
-  }
+	/**
+	 * Launches all the tasks in order.
+	 */
+	@Override
+	public int run(String[] args) throws Exception 
+	{
 
-  private void launch(int numOfDataPoints,
-    int numCentroids, int vectorSize,
-    int numPointFiles, int enclave_total_size, int enclave_eff_per_thd, int enclave_task_size, int numMapTasks,
-    int numThreads, int mem, int numIterations,
-    String workDir, String localPointFilesDir,
-    boolean generateData) throws IOException,
-    URISyntaxException, InterruptedException,
-    ExecutionException, ClassNotFoundException {
-    Configuration configuration = getConf();
-    Path workDirPath = new Path(workDir);
-    FileSystem fs = FileSystem.get(configuration);
-    Path dataDir = new Path(workDirPath, "data");
-    Path cenDir =
-      new Path(workDirPath, "centroids");
-    if (fs.exists(cenDir)) {
-      fs.delete(cenDir, true);
-    }
-    fs.mkdirs(cenDir);
-    Path outDir = new Path(workDirPath, "out");
-    if (fs.exists(outDir)) {
-      fs.delete(outDir, true);
-    }
-    if (generateData) {
-      System.out.println("Generate data.");
-      KMUtil.generateData(numOfDataPoints,
-        numCentroids, vectorSize, numPointFiles,
-        configuration, fs, dataDir, cenDir,
-        localPointFilesDir);
+		/* Put shared libraries into the distributed cache */
+		Configuration conf = this.getConf();
 
-      	if (fs.exists(cenDir)) {
-            fs.delete(cenDir, true);
-        }
+		Initialize init = new Initialize(conf, args);
 
-    }
+		// load args
+		init.loadSysArgs();
 
-    KMUtil.generateCentroids(numCentroids,
-      	vectorSize, configuration, cenDir, fs);
+      		init.loadDistributedLibs();
 
-    long startTime = System.currentTimeMillis();
-    runKMeansAllReduce(numOfDataPoints,
-      numCentroids, vectorSize, numPointFiles, enclave_total_size, enclave_eff_per_thd, enclave_task_size,
-      numMapTasks, numThreads, mem,  numIterations,
-      dataDir, cenDir, outDir, configuration);
-    long endTime = System.currentTimeMillis();
-    System.out
-      .println("Total K-means Execution Time: "
-        + (endTime - startTime));
-  }
+		//load app args
+		conf.setInt(HarpDAALConstants.FILE_DIM, Integer.parseInt(args[init.getSysArgNum()]));
+		conf.setInt(HarpDAALConstants.FEATURE_DIM, Integer.parseInt(args[init.getSysArgNum()+1]));
+		conf.setInt(HarpDAALConstants.NUM_CENTROIDS, Integer.parseInt(args[init.getSysArgNum()+2]));
+		conf.setInt(Constants.ENCLAVE_TOTAL, Integer.parseInt(args[init.getSysArgNum()+3]));
+		conf.setInt(Constants.ENCLAVE_PER_THD, Integer.parseInt(args[init.getSysArgNum()+4]));
+		conf.setInt(Constants.ENCLAVE_TASK, Integer.parseInt(args[init.getSysArgNum()+5]));
+		conf.setBoolean(Constants.ENABLE_SIMU, Boolean.parseBoolean(args[init.getSysArgNum()+6]));
 
-  private void runKMeansAllReduce(
-    int numOfDataPoints, int numCentroids,
-    int vectorSize, int numPointFiles, int enclave_total_size, int enclave_eff_per_thd, int enclave_task_size,
-    int numMapTasks, int numThreads, int mem,
-    int numIterations, Path dataDir, Path cenDir,
-    Path outDir, Configuration configuration)
-    throws IOException, URISyntaxException,
-    InterruptedException, ClassNotFoundException {
-    System.out.println("Starting Job");
-    // ----------------------------------------------------------------------
-    long perJobSubmitTime =
-      System.currentTimeMillis();
-    System.out.println("Start Job "
-      + new SimpleDateFormat("HH:mm:ss.SSS")
-        .format(
-          Calendar.getInstance().getTime()));
-    Job kmeansJob =
-      configureKMeansJob(numOfDataPoints,
-        numCentroids, vectorSize, numPointFiles, enclave_total_size, enclave_eff_per_thd, enclave_task_size,
-        numMapTasks, numThreads, mem, numIterations,
-        dataDir, cenDir, outDir, configuration);
-    System.out
-      .println(
-        "Job" + " configure in "
-          + (System.currentTimeMillis()
-            - perJobSubmitTime)
-          + " miliseconds.");
-    // ----------------------------------------------------------
-    boolean jobSuccess =
-      kmeansJob.waitForCompletion(true);
-    System.out.println("end Jod "
-      + new SimpleDateFormat("HH:mm:ss.SSS")
-        .format(
-          Calendar.getInstance().getTime()));
-    System.out
-      .println(
-        "Job" + " finishes in "
-          + (System.currentTimeMillis()
-            - perJobSubmitTime)
-          + " miliseconds.");
-    // ---------------------------------------------------------
-    if (!jobSuccess) {
-      System.out.println("KMeans Job fails.");
-    }
-  }
+		// config job
+		System.out.println("Starting Job");
+		long perJobSubmitTime = System.currentTimeMillis();
+		System.out.println("Start Job#"  + " "+ new SimpleDateFormat("HH:mm:ss.SSS").format(Calendar.getInstance().getTime()));
+		Job kmeansJob = init.createJob("kmeansJob", KMeansLauncher.class, KMeansCollectiveMapper.class); 
 
-  private Job configureKMeansJob(
-    int numOfDataPoints, int numCentroids,
-    int vectorSize, int numPointFiles, int enclave_total_size, int enclave_eff_per_thd, int enclave_task_size,
-    int numMapTasks, int numThreads, int mem,
-    int numIterations, Path dataDir, Path cenDir,
-    Path outDir, Configuration configuration)
-    throws IOException, URISyntaxException {
-    Job job = Job.getInstance(configuration,
-      "kmeans_job");
-    FileInputFormat.setInputPaths(job, dataDir);
-    FileOutputFormat.setOutputPath(job, outDir);
-    job.setInputFormatClass(
-      MultiFileInputFormat.class);
-    job.setJarByClass(KMeansLauncher.class);
-    job.setMapperClass(
-      KMeansCollectiveMapper.class);
-    org.apache.hadoop.mapred.JobConf jobConf =
-      (JobConf) job.getConfiguration();
-    jobConf.set("mapreduce.framework.name",
-      "map-collective");
-    jobConf.setNumMapTasks(numMapTasks);
-    jobConf.setInt(
-      "mapreduce.job.max.split.locations", 10000);
+		// initialize centroids data
+		JobConf thisjobConf = (JobConf) kmeansJob.getConfiguration();
+		FileSystem fs = FileSystem.get(conf);
+		int nFeatures = Integer.parseInt(args[init.getSysArgNum()+1]);
+		int numCentroids = Integer.parseInt(args[init.getSysArgNum()+2]);
+		Path workPath = init.getWorkPath();
+		Path cenDir = new Path(workPath, "centroids");
+		fs.mkdirs(cenDir);
+		if (fs.exists(cenDir)) {
+			fs.delete(cenDir, true);
+		}
 
-    jobConf.setInt(
-      "mapreduce.map.collective.memory.mb", mem);
- 
-    jobConf.setInt("mapreduce.task.timeout", 60000000);
+		Path initCenDir = new Path(cenDir, "init_centroids");
+		DataGenerator.generateDenseDataSingle(numCentroids, nFeatures, 1000, 0, " ", initCenDir, fs);
+		thisjobConf.set(HarpDAALConstants.CEN_DIR, cenDir.toString());
+		thisjobConf.set(HarpDAALConstants.CENTROID_FILE_NAME, "init_centroids");
 
-    int xmx = (int) Math.ceil((mem)*0.9);
-    int xmn = (int) Math.ceil(0.25 * xmx);
-    jobConf.set(
-      "mapreduce.map.collective.java.opts",
-      "-Xmx" + xmx + "m -Xms" + xmx + "m"
-        + " -Xmn" + xmn + "m");
+		//generate Data if required
+		boolean generateData = Boolean.parseBoolean(args[init.getSysArgNum()+7]); 
+		if (generateData)
+		{
+			Path inputPath = init.getInputPath();
+			int total_points = Integer.parseInt(args[init.getSysArgNum()+8]);
+			int total_files = Integer.parseInt(args[init.getSysArgNum()+9]);
+			String tmpDirPathName = args[init.getSysArgNum()+10];
 
-    job.setNumReduceTasks(0);
-    Configuration jobConfig =
-      job.getConfiguration();
-    jobConfig.setInt(Constants.POINTS_PER_FILE,
-      numOfDataPoints / numPointFiles);
-    jobConfig.setInt(Constants.NUM_CENTROIDS,
-      numCentroids);
-    jobConfig.setInt(Constants.VECTOR_SIZE,
-      vectorSize);
-    jobConfig.setInt(Constants.NUM_MAPPERS,
-      numMapTasks);
+			DataGenerator.generateDenseDataMulti(total_points, nFeatures, total_files, 2, 1, ",", inputPath, tmpDirPathName, fs);
+		}
 
-    jobConfig.setInt(Constants.ENCLAVE_TOTAL,
-      enclave_total_size);
-    jobConfig.setInt(Constants.ENCLAVE_PER_THD,
-      enclave_eff_per_thd);
-    jobConfig.setInt(Constants.ENCLAVE_TASK,
-      enclave_task_size);
+		// finish job
+		boolean jobSuccess = kmeansJob.waitForCompletion(true);
+		System.out.println("End Job#"  + " "+ new SimpleDateFormat("HH:mm:ss.SSS").format(Calendar.getInstance().getTime()));
+		System.out.println("| Job#"  + " Finished in " + (System.currentTimeMillis() - perJobSubmitTime)+ " miliseconds |");
+		if (!jobSuccess) {
+			kmeansJob.killJob();
+			System.out.println("kmeansJob failed");
+		}
+		
+		return 0;
+	}
 
-    jobConfig.setInt(Constants.NUM_THREADS,
-      numThreads);
-    jobConfig.setInt(Constants.NUM_ITERATIONS,
-      numIterations);
-    jobConfig.set(Constants.CEN_DIR,
-      cenDir.toString());
-    return job;
-  }
 }

@@ -23,15 +23,15 @@ import java.io.FileReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Arrays;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStreamWriter;
+import java.nio.DoubleBuffer;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Arrays;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -46,11 +46,12 @@ import edu.iu.harp.partition.PartitionStatus;
 import edu.iu.harp.partition.Table;
 import edu.iu.harp.resource.DoubleArray;
 import edu.iu.harp.schdynamic.DynamicScheduler;
-
 import edu.iu.harp.resource.ByteArray;
 
-import edu.iu.data_transfer.*;
-import java.nio.DoubleBuffer;
+import edu.iu.datasource.*;
+import edu.iu.data_aux.*;
+import edu.iu.data_comm.*;
+import edu.iu.data_gen.*;
 
 //import PCA from DAAL library
 import com.intel.daal.algorithms.PartialResult;
@@ -58,11 +59,6 @@ import com.intel.daal.algorithms.pca.*;
 import com.intel.daal.data_management.data_source.DataSource;
 import com.intel.daal.data_management.data_source.FileDataSource;
 import edu.iu.harp.resource.ByteArray;
-
-import edu.iu.datasource.*;
-import edu.iu.data_aux.*;
-import edu.iu.data_comm.*;
-import edu.iu.data_gen.*;
 
 import com.intel.daal.data_management.data.*;
 import com.intel.daal.data_management.data_source.*;

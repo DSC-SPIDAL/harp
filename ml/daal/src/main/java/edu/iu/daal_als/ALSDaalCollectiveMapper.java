@@ -79,8 +79,6 @@ import edu.iu.harp.resource.LongArray;
 import edu.iu.harp.schdynamic.DynamicScheduler;
 import edu.iu.harp.example.LongArrPlus;
 
-import edu.iu.data_transfer.*;
-
 // packages from Daal 
 import com.intel.daal.algorithms.implicit_als.PartialModel;
 import com.intel.daal.algorithms.implicit_als.prediction.ratings.*;

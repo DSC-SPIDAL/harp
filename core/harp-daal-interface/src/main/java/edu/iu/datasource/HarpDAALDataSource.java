@@ -73,18 +73,8 @@ public class HarpDAALDataSource
 	this.conf = conf;
    }
 
-   // ------------------------------  Start Dense CSV files I/O ------------------------------
+   // ------------------------------  Dense CSV files I/O ------------------------------
    
-   /**
-    * @brief create a HomogenNumericTable from a list of dense CSV files with fixed feature dimension
-    *
-    * @param inputFiles
-    * @param nFeatures
-    * @param sep
-    * @param context
-    *
-    * @return 
-    */
    public NumericTable createDenseNumericTable(List<String> inputFiles, int nFeatures, String sep, DaalContext context)
    {//{{{
 
@@ -226,6 +216,15 @@ public class HarpDAALDataSource
 
    }//}}}
 
+   public List<double[][]> loadDenseCSVFilesSharding(List<String> inputFiles, int nFeatures, int shardsize, String sep)
+   {//{{{
+
+     	MTReader reader = new MTReader();
+	List<double[][]> output = reader.readDenseCSVSharding(inputFiles, nFeatures, shardsize, sep, this.conf, this.harpthreads);
+	return output;
+
+   }//}}}
+
    public List<double[]> loadDenseCSVFiles(String inputFile, int nFeatures, String sep)
    {//{{{
 
@@ -333,9 +332,8 @@ public class HarpDAALDataSource
 
    }//}}}
 
-   // ------------------------------  End Dense CSV files I/O ------------------------------
+   // ------------------------------  Sparse COO files I/O ------------------------------
    
-   // ------------------------------  Start COO files I/O ------------------------------
    public List<COO> loadCOOFiles(List<String> FilePaths, String regex)
    {//{{{
 
@@ -531,9 +529,8 @@ public class HarpDAALDataSource
 
    }//}}}
 
-   // ------------------------------  end COO files I/O ------------------------------
+   // ------------------------------  Sparse CSR files I/O ------------------------------
    
-   // ------------------------------  Start CSR files I/O ------------------------------
    public NumericTable loadCSRNumericTable(List<String> inputFiles, String sep, DaalContext context) throws IOException
    {//{{{
 	 if (inputFiles.size() > 1)
@@ -823,7 +820,6 @@ public class HarpDAALDataSource
         }
    }//}}}
 
-   // ------------------------------  End CSR files I/O ------------------------------
 
 }
 

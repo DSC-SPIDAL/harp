@@ -14,7 +14,7 @@
 		<module>ml</module>
 		<module>contrib</module>
 		<module>distribution</module>
-		<!-- <module>experimental</module> -->
+		<module>experimental</module>
 	</modules>
 
 	<properties>

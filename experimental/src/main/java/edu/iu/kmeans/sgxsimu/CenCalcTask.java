@@ -22,9 +22,10 @@ import edu.iu.harp.resource.DoubleArray;
 import edu.iu.harp.schdynamic.Task;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import java.lang.*;
 
 public class CenCalcTask
-  implements Task<double[], Object> {
+  implements Task<double[][], Object> {
 
   protected static final Log LOG =
     LogFactory.getLog(CenCalcTask.class);
@@ -32,20 +33,31 @@ public class CenCalcTask
   private double[][] centroids;
   private double[][] local;
   private final int cenVecSize;
+  private int enclave_eff_per_thd;
   private long sgxoverheadEcall;
+  private long sgxoverheadMem;
   private long sgxoverheadOcall;
+  private boolean enablesimu;
 
   public CenCalcTask(Table<DoubleArray> cenTable,
-    int cenVecSize) 
+    int cenVecSize, int enclave_eff_per_thd, boolean enablesimu) 
   {
     //record sgx centroid data size
     int sgxdatasize = 0;
     this.sgxoverheadEcall = 0;
+    this.sgxoverheadMem = 0;
     this.sgxoverheadOcall = 0;
+    this.cenVecSize = cenVecSize;
+    this.enclave_eff_per_thd = enclave_eff_per_thd;
+    this.enablesimu = enablesimu;
 
     centroids =
       new double[cenTable.getNumPartitions()][];
     local = new double[centroids.length][];
+
+    //debug output centroid length
+    LOG.info("Centroid length: " + cenTable.getNumPartitions());
+
     for (Partition<DoubleArray> partition : cenTable
       .getPartitions()) {
       int partitionID = partition.id();
@@ -58,7 +70,7 @@ public class CenCalcTask
       sgxdatasize += array.size();
     }
     
-    if (Constants.enablesimu)
+    if (enablesimu)
     {
 	    //each thread fetches its centroids data from main memory into thread enclave
 	    //each thread writes back centroids data from thread enclave to main memory after all tasks
@@ -70,12 +82,12 @@ public class CenCalcTask
 	    this.sgxoverheadOcall += ocallOverhead;
     }
 
-    this.cenVecSize = cenVecSize;
 
   }
 
   public long getSGXEcall() { return this.sgxoverheadEcall; }
   public long getSGXOcall() { return this.sgxoverheadOcall; }
+  public long getSGXMem() { return this.sgxoverheadMem; }
 
   public void
     update(Table<DoubleArray> cenTable) {
@@ -94,61 +106,110 @@ public class CenCalcTask
   public void resetSGX() {
      this.sgxoverheadEcall = 0;
      this.sgxoverheadOcall = 0;
+     this.sgxoverheadMem = 0;
   }
 
   @Override
-  public Object run(double[] points)
+  public Object run(double[][] points)
     throws Exception {
 
+    double minDistance = Double.MAX_VALUE;
+    double distance = 0.0;
+    int minCenParID = 0;
+    int minOffset = 0;
     
-    if (Constants.enablesimu)
-    {
-	    //each thread fetch the data from enclave of main thread 
-	    int datasize = dataDoubleSizeKB(points.length);
-	    //simulate overhead of Ecall
-	    long ecallOverhead = (long)((Constants.Ecall + datasize*Constants.cross_enclave_per_kb)*Constants.ms_per_kcycle);
+    int ptearraysize = 0;
+    if (points[0] != null)
+	  ptearraysize = points[0].length;
 
-	    simuOverhead(ecallOverhead);
-	    this.sgxoverheadEcall += ecallOverhead;
+    long ecallOverhead = 0;
+
+    if (enablesimu)
+    {
+         //each thread fetch the data from enclave of main thread 
+         int datasize = dataDoubleSizeKB(points.length*ptearraysize);
+         //simulate overhead of Ecall
+         ecallOverhead = (long)((Constants.Ecall + datasize*Constants.cross_enclave_per_kb)*Constants.ms_per_kcycle);
+
+         //check overhead made by page swapping (default 4K page size)
+         // if (datasize > enclave_eff_per_thd*1024)
+     		// ecallOverhead += (long)(Constants.swap_page_penalty*(datasize/4)*Constants.ms_per_kcycle);
+
+         simuOverhead(ecallOverhead);
+         this.sgxoverheadEcall += ecallOverhead;
     }
 
-    for (int i = 0; i < points.length;) {
-      double minDistance = Double.MAX_VALUE;
-      int minCenParID = 0;
-      int minOffset = 0;
-      for (int j = 0; j < centroids.length; j++) {
-        for (int k = 0; k < local[j].length;) {
-          int pStart = i;
-          k++;
+    long start_thd = System.currentTimeMillis();
 
-          double distance = 0.0;
-          for (int l = 1; l < cenVecSize; l++) {
-            double diff = (points[pStart++]
-              - centroids[j][l]);
-            distance += diff * diff;
-          }
+    // -------------------- main body of computation for k-means --------------------
+    for (int i=0; i < points.length; i++)
+    {
+	double[] pte = points[i];
+	minDistance = Double.MAX_VALUE;
+	minCenParID = 0;
 
-	  k+= (cenVecSize - 1);
-          if (distance < minDistance) {
-            minDistance = distance;
-            minCenParID = j;
-            minOffset = k - cenVecSize;
-          }
-        }
-      }
-      // Count + 1
-      local[minCenParID][minOffset++]++;
-      // Add the point
-      for (int j = 1; j < cenVecSize; j++) {
-        local[minCenParID][minOffset++] +=
-          points[i++];
-      }
+	for (int j=0; j< centroids.length; j++)
+	{
+	   for(int k=0;k<centroids[j].length; k+=cenVecSize)
+	   {
+
+	   	   distance = 0.0;
+		   //compute one distance for each centroids
+		   for (int p=0;p<pte.length;p++)
+		   {
+			   // first element of centroid is jumpped
+			   double diff = (pte[p] - centroids[j][k+p+1]);
+			   distance += diff*diff; 
+		   }
+
+		   if (distance < minDistance)
+		   {
+			   minDistance = distance;
+			   minCenParID = j;
+			   minOffset = k; 
+		   }
+	   }
+	   
+	}
+
+	//add count of minCenParID
+	local[minCenParID][minOffset]++;
+	for(int j=1; j<cenVecSize;j++)
+		local[minCenParID][minOffset+j] += pte[j-1]; 
+    }
+    
+    // ---------------------- end of computation ----------------------
+
+    // computation time in ms
+    if (enablesimu)
+    {
+	    long effec_time_overhead = (System.currentTimeMillis() - start_thd);
+	    int datasize = dataDoubleSizeKB(points.length*ptearraysize);
+	    long additional_sgx_overhead = (long)(effec_time_overhead*sgx_overhead_func(datasize));
+	    additional_sgx_overhead -= ecallOverhead;
+	    if (additional_sgx_overhead < 0)
+		additional_sgx_overhead = 0;
+
+	    simuOverhead(additional_sgx_overhead);
+	    this.sgxoverheadMem += additional_sgx_overhead;
     }
 
     //no simulate overhead of Ocall
     //training data is not changed 
     
     return null;
+  }
+
+  private double sgx_overhead_func(int datasize)
+  {
+      //in MB
+      double simu_size = (double)datasize/10.0/1024.0;
+      // double ratio = (-0.000592887941*Math.pow(simu_size,3.0) + 0.03776145898*Math.pow(simu_size, 2.0) - 0.172624736*simu_size
+	      // + 0.08813241271);
+      double ratio = (-0.000592887941*simu_size*simu_size*simu_size + 0.03776145898*simu_size*simu_size - 0.172624736*simu_size
+	      + 0.08813241271);
+
+      return ratio;
   }
 
   /**

@@ -17,30 +17,14 @@
 package edu.iu.kmeans.sgxsimu;
 
 public class Constants {
-  public static final String POINTS_PER_FILE =
-    "points_per_file";
-  public static final String VECTOR_SIZE =
-    "vector_size";
-  public static final String NUM_CENTROIDS =
-    "num_centroids";
-  public static final String CENTROID_FILE_NAME =
-    "init_centroids";
-  public static final String CEN_DIR = "c-file";
 
-  public static final String NUM_MAPPERS =
-    "num_mappers";
-  public static final String NUM_THREADS =
-    "num_threads";
-  public static final String NUM_ITERATIONS =
-    "num_iterations";
-  public static final String WORK_DIR =
-    "work_dir";
   public static final String ENCLAVE_TASK =
     "sgx data size for each task";
   public static final String ENCLAVE_TOTAL =
     "total enclave capacity";
   public static final String ENCLAVE_PER_THD =
     "effective enclave size per thread";
+  public static final String ENABLE_SIMU="true";
 
   // for enclave overhead simulation
   // overhead is measured by x1000 cycles at 2.3 GHz SGX-enabled CPU
@@ -55,6 +39,5 @@ public class Constants {
   //for 3.4GHz SGX-enabled CPU
   public static final double ms_per_kcycle=0.0002941;
   // public static final boolean enablesimu=false;
-  public static final boolean enablesimu=true;
 
 }

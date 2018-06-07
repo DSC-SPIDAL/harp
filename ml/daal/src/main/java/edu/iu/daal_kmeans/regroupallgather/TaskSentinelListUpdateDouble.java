@@ -15,35 +15,44 @@
  *
  * */
 
-package edu.iu.data_transfer;
+package edu.iu.daal_kmeans.regroupallgather;
 
 import java.lang.System;
 
-public class TaskListToBufferDouble implements Runnable {
+public class TaskSentinelListUpdateDouble implements Runnable {
 
     private int task_id;
     private int th_num;
+    private int vecSize;
     private int task_num;
     private long[] startP;
+    private long[] sentinel_startP;
     private double[][] data;
-    private double[] buffer_array;
+    private double[] partialRes;
+    private double[] observ;
 
     //constructor
-    public TaskListToBufferDouble(
+    public TaskSentinelListUpdateDouble(
             int task_id, 
             int th_num,
+            int vecSize,
             int task_num, 
             long[] startP,
+            long[] sentinel_startP,
             double[][] data,
-            double[] buffer_array
+            double[] partialRes,
+            double[] observ
     )
     {
         this.task_id = task_id;
         this.th_num = th_num;
+        this.vecSize = vecSize;
         this.task_num = task_num;
         this.startP = startP;
+        this.sentinel_startP = sentinel_startP;
         this.data = data;
-        this.buffer_array = buffer_array;
+        this.partialRes = partialRes;
+        this.observ = observ;
     }
 
     @Override
@@ -51,7 +60,16 @@ public class TaskListToBufferDouble implements Runnable {
 
         while(task_id < task_num)
         {
-            System.arraycopy(data[task_id], 0, buffer_array, (int)startP[task_id], data[task_id].length); 
+            int local_cen_num = (data[task_id].length)/(vecSize + 1);
+            int local_startP = (int)startP[task_id];
+            int local_sentinel_startP = (int)sentinel_startP[task_id];
+
+            for(int k=0;k<local_cen_num;k++)
+            {
+                System.arraycopy(partialRes, local_startP + k*vecSize, data[task_id], k*(vecSize+1) + 1, vecSize); 
+                data[task_id][k*(vecSize+1)] = observ[local_sentinel_startP + k];
+            }
+
             task_id += th_num;
         }
 

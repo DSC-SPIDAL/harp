@@ -49,7 +49,6 @@ import edu.iu.datasource.*;
 import edu.iu.data_aux.*;
 import edu.iu.data_comm.*;
 import edu.iu.data_gen.*;
-import edu.iu.data_transfer.*;
 import java.nio.DoubleBuffer;
 
 //import daa.jar API
@@ -65,7 +64,6 @@ import com.intel.daal.services.Environment;
 public class KMeansDaalCollectiveMapper extends CollectiveMapper<String, String, Object, Object> 
 {
 
-	// private int pointsPerFile;
 	private int numCentroids;
 	private int vectorSize;
 	private int fileDim;

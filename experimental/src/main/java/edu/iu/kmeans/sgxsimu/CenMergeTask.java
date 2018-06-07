@@ -26,13 +26,15 @@ import java.util.List;
 public class CenMergeTask implements
   Task<Partition<DoubleArray>, Object> {
 
-  private final List<CenCalcTask2> cenCalcTasks;
+  private final List<CenCalcTask> cenCalcTasks;
   private long sgxoverheadEcall;
   private long sgxoverheadOcall;
+  private boolean enablesimu;
 
   public CenMergeTask(
-    List<CenCalcTask2> cenCalcTasks) {
+    List<CenCalcTask> cenCalcTasks, boolean enablesimu) {
     this.cenCalcTasks = cenCalcTasks;
+    this.enablesimu = enablesimu;
     this.sgxoverheadEcall = 0;
     this.sgxoverheadOcall = 0;
   }
@@ -59,7 +61,7 @@ public class CenMergeTask implements
     long ecallOverhead = 0;
     long ocallOverhead = 0;
 
-    if (Constants.enablesimu)
+    if (enablesimu)
     {
 	 datasize = dataDoubleSizeKB(centroids.length);
     	 ecallOverhead = (long)((Constants.Ecall + datasize*Constants.cross_enclave_per_kb)*Constants.ms_per_kcycle);
@@ -69,7 +71,7 @@ public class CenMergeTask implements
 
     // It is safe to iterate concurrently
     // because each task has its own iterator
-    for (CenCalcTask2 task : cenCalcTasks) 
+    for (CenCalcTask task : cenCalcTasks) 
     {
 
 	    double[] localCentroids =
@@ -79,7 +81,7 @@ public class CenMergeTask implements
 	    // simulate overhead of Ecall ( from main memory localCentroids to thread enclave )
 	    datasize = dataDoubleSizeKB(localCentroids.length);
 	    ecallOverhead = (long)((Constants.Ecall + datasize*Constants.cross_enclave_per_kb)*Constants.ms_per_kcycle);
-	    if (Constants.enablesimu)
+	    if (enablesimu)
 		    simuOverhead(ecallOverhead);
 
 	    //computing: reduction local centroids to model
@@ -92,7 +94,7 @@ public class CenMergeTask implements
     }
 
     
-    if (Constants.enablesimu)
+    if (enablesimu)
     {
 	 //simulate overhead of Ocall write cenPartition back to main memory
     	 datasize = dataDoubleSizeKB(centroids.length);
