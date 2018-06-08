@@ -11,9 +11,9 @@
 
 	<modules>
 		<module>core</module>
-		<module>ml</module>
+		<!-- <module>ml</module> -->
 		<module>contrib</module>
-		<module>distribution</module>
+		<!-- <module>distribution</module> -->
 		<module>experimental</module>
 	</modules>
 

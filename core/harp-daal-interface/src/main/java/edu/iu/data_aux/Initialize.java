@@ -76,6 +76,16 @@ public class Initialize {
 		DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libtbbmalloc.so#libtbbmalloc.so"), this.conf);
 	}
 
+	public void loadDistributedLibsExp() throws Exception
+	{
+		DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libiomp5.so#libiomp5.so"), conf);
+		DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libhdfs.so#libhdfs.so"), conf);
+		DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libhdfs.so.0.0.0#libhdfs.so.0.0.0"), conf);
+		DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libautohbw.so#libautohbw.so"), conf);
+		DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libmemkind.so#libmemkind.so"), conf);
+		DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libmemkind.so.0#libmemkind.so.0"), conf);	
+	}
+
 	public int getSysArgNum() {return this.sys_args_num;}
 	public Path getInputPath() {return this.inputPath;}
 	public Path getWorkPath() {return this.workPath;}
