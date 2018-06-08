@@ -77,7 +77,8 @@ CORE.ALGORITHMS.FULL :=                                                       \
     distributions/uniform                                                     \
     engines                                                                   \
     engines/mt19937                                                           \
-    svm                                                                       
+    svm 								      \                                           mf_sgd 								    \
+    subgraph
 
 CORE.ALGORITHMS := $(if $(CORE.ALGORITHMS.CUSTOM), $(CORE.ALGORITHMS.CUSTOM), $(CORE.ALGORITHMS.FULL))
 CORE.ALGORITHMS := $(sort $(foreach alg,$(CORE.ALGORITHMS),$(foreach alg1,$($(alg)),$($(alg1)) $(alg1)) $(alg)))
@@ -88,7 +89,9 @@ CORE.ALGORITHMS.INC :=                                                        \
     kernel_function                                                           \
     distributions                                                             \
     engines                                                                   \
-    svm                                                   		      
+    svm                                                   		      \
+    mf_sgd 								      \
+    subgraph
 
 CORE.SERVICES       := compression            				      \
                        data_management
@@ -119,7 +122,9 @@ JJ.ALGORITHMS       := 								 \
                        svm                                                       \
                        svm/prediction                                            \
                        svm/quality_metric_set                                    \
-                       svm/training                                        	
+                       svm/training                                              \
+		       mf_sgd							 \
+		       subgraph
 
 JJ.DATA_MANAGEMENT  := data                                                      \
                        data_source                                               \
