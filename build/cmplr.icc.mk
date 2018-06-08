@@ -54,6 +54,7 @@ CORE.SERV.COMPILER.icc = generic
 
 COMPILER.lnx.icc  = $(if $(COVFILE),cov01 -1; covc -i )icc -Werror -qopenmp-simd -Wreturn-type
 COMPILER.lnx.icc += $(if $(COVFILE), $(if $(IA_is_ia32), $(-Q)m32, $(-Q)m64))
+
 # add by harpdaal
 COMPILER.lnx.icc += -I$(HDFSDIR.include) -I$(MEMKINDDIR.include) -O3 -wn2
 
@@ -68,8 +69,7 @@ endif
 link.dynamic.lnx.icc = icc -no-cilk
 link.dynamic.mac.icc = icc
 
-# add by harpdaal
-daaldep.lnx32e.rt.icc = -static-intel -I$(HDFSDIR.include) -I$(MEMKINDDIR.include) -O3 -wn2
+daaldep.lnx32e.rt.icc = -static-intel
 daaldep.lnx32.rt.icc  = -static-intel
 
 p4_OPT.icc   = $(-Q)$(if $(OS_is_mac),$(if $(IA_is_ia32),xSSE3,xSSSE3),xSSE2)

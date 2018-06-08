@@ -77,7 +77,8 @@ CORE.ALGORITHMS.FULL :=                                                       \
     distributions/uniform                                                     \
     engines                                                                   \
     engines/mt19937                                                           \
-    svm 								      \                                           mf_sgd 								    \
+    svm 								      \
+    mf_sgd 								      \
     subgraph
 
 CORE.ALGORITHMS := $(if $(CORE.ALGORITHMS.CUSTOM), $(CORE.ALGORITHMS.CUSTOM), $(CORE.ALGORITHMS.FULL))

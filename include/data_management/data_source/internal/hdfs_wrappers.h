@@ -56,7 +56,7 @@ namespace internal
 {
 
 class HDFSFile;
-class HDFSConnection;
+// class HDFSConnection;
 
 class HDFSConnection : public Base
 {
@@ -146,7 +146,7 @@ public:
         return _impl->native();
     }
 
-    HDFSFile openFile(const std::string &path,
+    inline HDFSFile openFile(const std::string &path,
                       services::Status *status = NULL);
 
 private:
@@ -267,7 +267,7 @@ private:
     services::SharedPtr<Impl> _impl;
 };
 
-HDFSFile HDFSConnection::openFile(const std::string &path,
+inline HDFSFile HDFSConnection::openFile(const std::string &path,
                                   services::Status *status)
 {
     return HDFSFile(*this, path);

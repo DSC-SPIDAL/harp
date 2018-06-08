@@ -360,7 +360,7 @@ CORE.incdirs.core   := $(CORE.SERV.srcdir) $(addprefix $(CORE.SERV.srcdir)/, $(C
 CORE.incdirs.common := $(RELEASEDIR.include) $(WORKDIR)
 CORE.incdirs.thirdp := $(EXTERNALS.srcdir) $(MKLFPKDIR.include) $(TBBDIR.include)
 # ---------- start added by harp project ----------
-CORE.incdirs.harp := $(EXTERNALS.srcdir) $(HDFSDIR.include) $(MEMKINDDIR.include)
+CORE.incdirs.harp := $(EXTERNALS.srcdir) $(MEMKINDDIR.include)
 # ---------- end added by harp project ----------
 CORE.incdirs := $(CORE.incdirs.rel) $(CORE.incdirs.thr) $(CORE.incdirs.core) $(CORE.incdirs.common) $(CORE.incdirs.thirdp) $(CORE.incdirs.harp)
 
@@ -423,12 +423,6 @@ $(CORE.objs_a): COPT += $(-fPIC) $(-cxx11) $(-Zl) $(-DEBC)
 $(CORE.objs_a): COPT += -D__TBB_NO_IMPLICIT_LINKAGE -DDAAL_NOTHROW_EXCEPTIONS -DDAAL_HIDE_DEPRECATED
 $(CORE.objs_a): COPT += @$(CORE.tmpdir_a)/inc_a_folders.txt
 
-# added by Harp-DAAL
-# add -wn2 to stop after 2 errors
-# apache hdfs i/o lib, 
-$(CORE.objs_a): COPT += -I$(HDFSDIR.include) -I$(MEMKINDDIR.include) -O3 -wn2
-
-
 $(filter %threading.$o, $(CORE.objs_a)): COPT += -D__DO_TBB_LAYER__
 $(call containing,_nrh, $(CORE.objs_a)): COPT += $(p4_OPT)   -DDAAL_CPU=sse2
 $(call containing,_mrm, $(CORE.objs_a)): COPT += $(mc_OPT)   -DDAAL_CPU=ssse3
@@ -444,11 +438,6 @@ $(CORE.objs_y): $(CORE.tmpdir_y)/inc_y_folders.txt
 $(CORE.objs_y): COPT += $(-fPIC) $(-cxx11) $(-Zl) $(-DEBC)
 $(CORE.objs_y): COPT += -D__DAAL_IMPLEMENTATION -D__TBB_NO_IMPLICIT_LINKAGE -DDAAL_NOTHROW_EXCEPTIONS -DDAAL_HIDE_DEPRECATED $(if $(CHECK_DLL_SIG),-DDAAL_CHECK_DLL_SIG)
 $(CORE.objs_y): COPT += @$(CORE.tmpdir_y)/inc_y_folders.txt
-
-# added by Harp-DAAL
-# O3 optimization
-# apache hdfs i/o lib
-$(CORE.objs_y): COPT += -I$(HDFSDIR.include) -I$(MEMKINDDIR.include) -O3 -wn2
 
 $(filter %threading.$o, $(CORE.objs_y)): COPT += -D__DO_TBB_LAYER__
 $(call containing,_nrh, $(CORE.objs_y)): COPT += $(p4_OPT)   -DDAAL_CPU=sse2

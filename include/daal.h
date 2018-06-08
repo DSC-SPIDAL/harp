@@ -60,6 +60,7 @@
 #include "data_management/data_source/data_source.h"
 #include "data_management/data_source/data_source_utils.h"
 #include "data_management/data_source/file_data_source.h"
+#include "data_management/data_source/hdfs_data_source.h"
 #include "data_management/data_source/string_data_source.h"
 #include "data_management/data/aos_numeric_table.h"
 #include "data_management/data/csr_numeric_table.h"
