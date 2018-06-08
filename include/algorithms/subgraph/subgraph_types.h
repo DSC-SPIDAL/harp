@@ -35,14 +35,14 @@
 
 #include "algorithms/algorithm.h"
 #include "data_management/data/numeric_table.h"
-// #include "data_management/data/harp_numeric_table.h"
 #include "data_management/data/homogen_numeric_table.h"
+#include "data_management/data_source/internal/hdfs_wrappers.h"
 #include "services/daal_defines.h"
-// #include "services/hdfs.h"
 #include "hdfs.h"
 #include "harp_numeric_table.h"
 
 using namespace daal::data_management;
+using namespace daal::data_management::internal;
 using namespace daal::data_management::interface1;
 using namespace daal::services;
 
@@ -473,6 +473,7 @@ public:
 
     // input func for read in data from HDFS
     void readGraph();
+    void readGraphHDFS();
     void readTemplate();
     void free_input();
 
@@ -659,8 +660,9 @@ private:
     std::vector<int> t_src;
     std::vector<int> t_dst;
 
-	// read in data from HDFS
+    // read in data from HDFS
     hdfsFS* fs;
+    HDFSConnection* hdfs_fs;
     services::SharedPtr<int> fileOffsetPtr;
     services::SharedPtr<int> fileNamesPtr;
 

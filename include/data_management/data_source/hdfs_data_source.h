@@ -44,6 +44,7 @@
 
 #include "data_management/data_source/data_source.h"
 #include "data_management/data_source/csv_data_source.h"
+#include "data_management/data_source/csv_feature_manager.h"
 #include "data_management/data_source/internal/hdfs_wrappers.h"
 
 namespace daal

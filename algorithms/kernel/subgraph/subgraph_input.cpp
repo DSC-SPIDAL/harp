@@ -86,10 +86,8 @@ int* util_divide_chunks_comm(int total, int partition);
 // input has two numerictables
 // 0: filenames
 // 1: fileoffsets
-Input::Input() : daal::algorithms::Input(10) {
-
-
-
+Input::Input() : daal::algorithms::Input(10) 
+{
     // store vert of each template
     num_verts_table = NULL;
     subtemplate_count = 0;
@@ -111,8 +109,7 @@ Input::Input() : daal::algorithms::Input(10) {
     t_mg = 0;
 
     fs = NULL;
-    // fileOffsetPtr = NULL;
-    // fileNamesPtr = NULL;
+    hdfs_fs = NULL;
 
     // table for dynamic programming
     part = NULL;
@@ -167,13 +164,13 @@ Input::Input() : daal::algorithms::Input(10) {
     cur_parcel_v_counts_data = NULL; //count_num
     cur_parcel_v_counts_index = NULL; //count_num
 
-	peak_mem = 0.0;
-	peak_mem_comm = 0.0;
+    peak_mem = 0.0;
+    peak_mem_comm = 0.0;
 
-	//record avg and stdev of thread-level workload
-	thdwork_record = NULL;
-	thdwork_avg = 0;
-	thdwork_stdev = 0;
+    //record avg and stdev of thread-level workload
+    thdwork_record = NULL;
+    thdwork_avg = 0;
+    thdwork_stdev = 0;
 
 }
 
@@ -1122,7 +1119,8 @@ size_t Input::getNumberOfRows(InputId id) const
 
 daal::services::interface1::Status Input::check(const daal::algorithms::Parameter *parameter, int method) const {services::Status s; return s;}
 
-struct readG_task{
+struct readG_task
+{
 
     readG_task(int file_id, hdfsFS*& handle, int* fileOffsetPtr, int* fileNamesPtr, std::vector<v_adj_elem*>*& v_adj, int*& max_v_id_local)
     {
@@ -1143,6 +1141,179 @@ struct readG_task{
 
 };
 
+struct readG_task_HDFS
+{
+
+    readG_task_HDFS(int file_id, HDFSConnection*& handle, int* fileOffsetPtr, int* fileNamesPtr, std::vector<v_adj_elem*>*& v_adj, int*& max_v_id_local)
+    {
+        _file_id = file_id;
+        _handle = handle;
+        _fileOffsetPtr = fileOffsetPtr;
+        _fileNamesPtr = fileNamesPtr;
+        _v_adj = v_adj;
+        _max_v_id_local = max_v_id_local;
+    }
+
+    int _file_id;
+    HDFSConnection* _handle;
+    int* _fileOffsetPtr;
+    int* _fileNamesPtr;
+    std::vector<v_adj_elem*>* _v_adj;
+    int* _max_v_id_local;
+
+};
+
+/**
+ * @brief To Do
+ *
+ * @param thd_id
+ * @param arg
+ */
+void thd_task_read_HDFS(int thd_id, void* arg)
+{
+
+    readG_task_HDFS* task = (readG_task_HDFS*)arg;
+
+    int file_id = task->_file_id;
+
+    // std::printf("Thread %d working on task file %d\n", thd_id, file_id);
+    // std::fflush;
+
+    // create the hdfs connection
+    HDFSConnection fs_handle = (task->_handle)[thd_id];
+    std::vector<v_adj_elem*>* v_adj_table = &((task->_v_adj)[thd_id]);
+
+    int max_id_thd = (task->_max_v_id_local)[thd_id];
+
+    // obtain the file path for each file id
+    int* file_off_ptr = task->_fileOffsetPtr;
+    int* file_name_ptr = task->_fileNamesPtr;
+    int len = file_off_ptr[file_id+1] - file_off_ptr[file_id];
+    char* file = new char[len+1];
+    for(int j=0;j<len;j++)
+        file[j] = (char)(file_name_ptr[file_off_ptr[file_id] + j]);
+
+    // terminate char buf
+    file[len] = '\0';
+    // std::printf("FilePath: %s\n", file);
+    // std::fflush;
+
+    // ------ start refactoring this codes ---------------
+    std::string filePath(file);
+    HDFSFile read_hdfs_file = fs_handle.openFile(filePath);  
+    HDSFFileReader hdfs_reader(read_hdfs_file);
+    int buf_size = 700000;
+    char* buf = new char[buf_size];
+    // if (hdfsExists(fs_handle, file) < 0)
+    //     return;
+    //
+    // hdfsFile readFile = hdfsOpenFile(fs_handle, file, O_RDONLY, 0, 0, 0);
+    // int file_size = hdfsAvailable(fs_handle, readFile);
+    // int buf_size = 70000;
+    // char* buf = new char[buf_size];
+    //
+    // std::string tail;
+    // while(1)
+    // {
+    //
+    //     std::memset(buf, '\0', buf_size);
+    //     tSize ret = hdfsRead(fs_handle, readFile, (void*)buf, buf_size); 
+    //     // std::printf("FileSize: %d, Read size: %d\n", file_size, (int)ret);
+    //     // std::fflush;
+    //
+    //     std::string obj;
+    //     if (tail.empty())
+    //     {
+    //         if (ret > 0)
+    //         {
+    //             // obj.assign(buf, buf_size);
+    //             obj.assign(buf, ret);
+    //             //may cause redundant '\0' if the buf already contains a '\0'
+    //             obj += '\0';
+    //
+    //         }
+    //     }
+    //     else
+    //     {
+    //         if (ret > 0)
+    //         {
+    //             // obj.assign(buf, buf_size);
+    //             obj.assign(buf, ret);
+    //             //may cause  redundant '\0' if the buf already contains a '\0'
+    //             obj += '\0';
+    //             
+    //             //remove '\0' at the end of tail
+    //             std::string tail_v;
+    //             tail_v.assign(tail.c_str(), std::strlen(tail.c_str()));
+    //             obj = tail_v + obj;
+    //         }
+    //         else
+    //             obj = tail;
+    //
+    //     }
+    //
+    //     if (obj.length() == 0)
+    //         break;
+    //
+    //     std::istringstream obj_ss(obj);
+    //     std::string elem;
+    //     while(std::getline(obj_ss, elem, '\n'))
+    //     {
+    //         if (obj_ss.eof())
+    //         {
+    //             tail.clear();
+    //             //trim dangling '\0'
+    //             if (elem[0] != '\0')
+    //                 tail = elem;
+    //
+    //             if (ret > 0 || elem[0] == '\0')
+    //                 break;
+    //         }
+    //
+    //         std::string header;
+    //         std::string nbrs;
+    //
+    //         std::istringstream elem_ss(elem);
+    //         elem_ss >> header;
+    //         elem_ss >> nbrs;
+    //
+    //         std::istringstream nbrs_ss(nbrs);
+    //         std::string s;
+    //
+    //         //check header contains '\0' 
+    //         int v_id_add = std::stoi(header);
+    //         v_adj_elem* add_one = new v_adj_elem(v_id_add);
+    //
+    //         while(std::getline(nbrs_ss, s,','))
+    //         {
+    //             add_one->_adjs.push_back(std::stoi(s));
+    //         }
+    //
+    //         //load one vert id and nbr list into table
+    //         if (add_one->_adjs.size() > 0)
+    //         {
+    //             v_adj_table->push_back(add_one);
+    //             max_id_thd = v_id_add> max_id_thd? v_id_add: max_id_thd;
+    //         }
+    //         
+    //     }
+    //
+    //     //check again
+    //     if (ret <= 0)
+    //         break;
+    // }
+    //
+    // hdfsCloseFile(fs_handle, readFile);
+
+    // ------ Finish refactoring this codes ---------------
+    
+    // record thread local max v_id
+    (task->_max_v_id_local)[thd_id] = max_id_thd;
+
+    delete[] buf;
+    delete[] file;
+
+}
 /**
  * @brief test thread func for thread pool
  */
@@ -1310,7 +1481,6 @@ void Input::readGraph()
     filenames_array->getBlockOfRows(0, 1, readOnly, mtFileNames);
     fileNamesPtr = mtFileNames.getBlockSharedPtr();
 
-
     std::printf("Finish create hdfsFS files\n");
     std::fflush;
 
@@ -1323,12 +1493,85 @@ void Input::readGraph()
         task_queue[i] = new readG_task(i, fs, fileOffsetPtr.get(), fileNamesPtr.get(), v_adj, max_v_id_thdl);
         // std::printf("Finish create taskqueue %d\n", i);
         // std::fflush;
-
-		thpool_add_work(thpool, (void (*)(int,void*))thd_task_read, task_queue[i]);
+        thpool_add_work(thpool, (void (*)(int,void*))thd_task_read, task_queue[i]);
     }
 
     thpool_wait(thpool);
-	thpool_destroy(thpool);
+    thpool_destroy(thpool);
+
+    //sum up the total v_ids num on this mapper
+    g.vert_num_count = 0;
+    g.adj_len = 0;
+
+    for(int i = 0; i< thread_num;i++)
+    {
+        g.vert_num_count += v_adj[i].size();
+        for(int j=0;j<v_adj[i].size(); j++)
+        {
+            g.adj_len += ((v_adj[i])[j])->_adjs.size();
+        }
+        
+        g.max_v_id_local = max_v_id_thdl[i] > g.max_v_id_local? max_v_id_thdl[i] : g.max_v_id_local;
+    }
+
+    // std::printf("Finish Reading all the vert num: %d, total nbrs: %d, local max vid: %d\n", g.vert_num_count, g.adj_len, g.max_v_id_local);
+    // std::fflush;
+
+    // free task queue
+    for(int i=0;i<file_num;i++)
+        delete task_queue[i];
+
+    delete[] task_queue;
+    delete[] max_v_id_thdl; 
+
+}
+
+/**
+ * @brief a new hdfs reader using Intel DAAL hdfs wrapper
+ */
+void Input::readGraphHDFS()
+{
+    // use all the avaiable cpus (threads to read in data)
+    thread_num = (sysconf(_SC_NPROCESSORS_ONLN));
+    hdfs_fs = new HDFSConnection[thread_num];
+
+    for(int i=0;i<thread_num;i++)
+        hdfs_fs[i] = HDFSConnection("default", 0);
+
+    v_adj = new std::vector<v_adj_elem*>[thread_num];
+    int* max_v_id_thdl = new int[thread_num];
+    std::memset(max_v_id_thdl, 0, thread_num*sizeof(int));
+
+    NumericTablePtr filenames_array = get(filenames);
+    NumericTablePtr filenames_offset = get(fileoffset);
+
+    int file_num = filenames_offset->getNumberOfColumns() - 1;
+
+    BlockDescriptor<int> mtFileOffset;
+    filenames_offset->getBlockOfRows(0, 1, readOnly, mtFileOffset);
+    fileOffsetPtr = mtFileOffset.getBlockSharedPtr();
+
+    BlockDescriptor<int> mtFileNames;
+    filenames_array->getBlockOfRows(0, 1, readOnly, mtFileNames);
+    fileNamesPtr = mtFileNames.getBlockSharedPtr();
+
+    std::printf("Finish create hdfsFS files\n");
+    std::fflush;
+
+    // create the thread pool
+    threadpool thpool = thpool_init(thread_num);
+    readG_task_HDFS** task_queue = new readG_task_HDFS*[file_num];
+
+    for(int i=0;i<file_num;i++)
+    {
+        task_queue[i] = new readG_task_HDFS(i, hdfs_fs, fileOffsetPtr.get(), fileNamesPtr.get(), v_adj, max_v_id_thdl);
+        // std::printf("Finish create taskqueue %d\n", i);
+        // std::fflush;
+        thpool_add_work(thpool, (void (*)(int,void*))thd_task_read_HDFS, task_queue[i]);
+    }
+
+    thpool_wait(thpool);
+    thpool_destroy(thpool);
 
     //sum up the total v_ids num on this mapper
     g.vert_num_count = 0;

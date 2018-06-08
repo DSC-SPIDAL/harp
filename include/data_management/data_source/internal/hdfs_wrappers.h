@@ -56,7 +56,6 @@ namespace internal
 {
 
 class HDFSFile;
-// class HDFSConnection;
 
 class HDFSConnection : public Base
 {
