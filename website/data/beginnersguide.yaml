@@ -3,5 +3,5 @@ sections:
     sublinks:
       - name: Multiclass Logistic Regression
         url: /docs/beginnersguide/mlr
-      - name: Multiclass Logistic Regression
-        url: /docs/beginnersguide/Support-Vector-Machine
+      - name: Support Vector Machine
+        url: /docs/beginnersguide/svm
