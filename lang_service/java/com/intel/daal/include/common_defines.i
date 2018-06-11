@@ -64,6 +64,7 @@ const int SERIALIZATION_JAVANIO_HOMOGEN_TENSOR_ID                               
 // added by Harp-DAAL
 const int SERIALIZATION_JAVANIO_HARP_TENSOR_ID                                                  = 22000;
 const int SERIALIZATION_JAVANIO_HARP_NT_ID                                                      = 23000;
+const int SERIALIZATION_JAVANIO_HARPDAAL_NT_ID                                                  = 24000;
 
 } // namespace daal
 

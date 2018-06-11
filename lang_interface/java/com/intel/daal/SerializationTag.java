@@ -133,6 +133,7 @@ public final class SerializationTag {
     //added by Harp-DAAL
     private static final int SERIALIZATION_JAVANIO_HARP_TENSOR_ID_VALUE                            = 22000;
     private static final int SERIALIZATION_JAVANIO_HARP_NT_ID_VALUE                                = 23000;
+    private static final int SERIALIZATION_JAVANIO_HARPDAAL_NT_ID_VALUE                                = 24000;
 
     public static final SerializationTag SERIALIZATION_HOMOGEN_FLOAT32_NT_ID     = new SerializationTag(SERIALIZATION_HOMOGEN_FLOAT32_NT_ID_VALUE);
     public static final SerializationTag SERIALIZATION_HOMOGEN_FLOAT64_NT_ID     = new SerializationTag(SERIALIZATION_HOMOGEN_FLOAT64_NT_ID_VALUE);
@@ -193,6 +194,7 @@ public final class SerializationTag {
     public static final SerializationTag SERIALIZATION_JAVANIO_HOMOGEN_TENSOR_ID           = new SerializationTag(SERIALIZATION_JAVANIO_HOMOGEN_TENSOR_ID_VALUE);
     //added for harp-daal
     public static final SerializationTag SERIALIZATION_JAVANIO_HARP_TENSOR_ID           = new SerializationTag(SERIALIZATION_JAVANIO_HARP_TENSOR_ID_VALUE);
-    public static final SerializationTag SERIALIZATION_JAVANIO_HARP_NT_ID           = new SerializationTag(SERIALIZATION_JAVANIO_HARP_NT_ID_VALUE);
+    public static final SerializationTag SERIALIZATION_JAVANIO_HARP_NT_ID               = new SerializationTag(SERIALIZATION_JAVANIO_HARP_NT_ID_VALUE);
+    public static final SerializationTag SERIALIZATION_JAVANIO_HARPDAAL_NT_ID               = new SerializationTag(SERIALIZATION_JAVANIO_HARPDAAL_NT_ID_VALUE);
 }
 /** @} */

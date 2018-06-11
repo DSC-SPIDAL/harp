@@ -67,6 +67,7 @@
 #include "data_management/data/data_archive.h"
 // --- Start added by Harp-DAAL ---
 #include "data_management/data/harp_numeric_table.h"
+#include "data_management/data/harpdaal_numeric_table.h"
 // --- End added by Harp-DAAL ---
 #include "services/collection.h"
 #include "data_management/data/data_block.h"
