@@ -65,6 +65,7 @@ import com.intel.daal.data_management.data_source.*;
 import com.intel.daal.services.DaalContext;
 
 public class Service {
+
     public static void readRow(String line, int offset, int nCols, double[] data) throws IOException {
         if (line == null) {
             throw new IOException("Unable to read input dataset");

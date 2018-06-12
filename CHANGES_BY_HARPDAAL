@@ -26,15 +26,17 @@ Changes to
 
 * daal/lang_service/java/com/intel/daal/include/common_defines.i 
 * daal/lang_interface/java/com/intel/daal/SerializationTag.java
+* daal/include/daal.h
+* daal/include/daal_win.h
 
 ## New Aux headers
 
 New Files
 
 * daal/include/services/thpool.h
-* daal/include/services/hdfs.h
 * daal/service/kernel/thpool.cpp
 * daal/externals/hdfs/*
+* daal/externals/memkind/*
 
 Changes to 
 

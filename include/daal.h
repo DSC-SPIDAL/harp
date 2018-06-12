@@ -47,7 +47,6 @@
 #include "services/env_detect.h"
 #include "services/library_version_info.h"
 // --- Start added by Harp-DAAL ---
-// #include "services/hdfs.h"
 #include "services/thpool.h"
 // --- End added by Harp-DAAL ---
 #include "data_management/compression/bzip2compression.h"
