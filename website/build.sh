@@ -4,4 +4,5 @@
 gulp clean
 gulp build
 hugo
+cp design/index.html public
 hugo server --watch --ignoreCache
