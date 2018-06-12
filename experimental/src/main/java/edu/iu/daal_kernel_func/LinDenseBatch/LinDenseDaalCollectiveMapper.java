@@ -105,6 +105,11 @@ public class LinDenseDaalCollectiveMapper
         this.numThreads = this.conf.getInt(HarpDAALConstants.NUM_THREADS, 10);
         this.harpThreads = Runtime.getRuntime().availableProcessors();
 
+	//set thread number used in DAAL
+	LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
+	Environment.setNumberOfThreads(numThreads);
+	LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
+
 	this.nFeatures = this.conf.getInt(HarpDAALConstants.FEATURE_DIM, 4);
 	this.k = this.conf.getDouble(Constants.K, 1.0);
 	this.b = this.conf.getDouble(Constants.B, 0.0);
@@ -139,13 +144,6 @@ public class LinDenseDaalCollectiveMapper
                 this.inputFiles.add(value);
             }
             
-
-	    // ----------------------- runtime settings -----------------------
-            //set thread number used in DAAL
-            LOG.info("The default value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
-            Environment.setNumberOfThreads(numThreads);
-            LOG.info("The current value of thread numbers in DAAL: " + Environment.getNumberOfThreads());
-
 	    this.datasource = new HarpDAALDataSource(harpThreads, conf);
 
 	    // ----------------------- start the execution -----------------------
@@ -168,16 +166,35 @@ public class LinDenseDaalCollectiveMapper
 	{
 		// // ---------- load data ----------
 		NumericTable inputX = this.datasource.createDenseNumericTable(this.inputFiles, this.nFeatures, "," , this.daal_Context);
-		// NumericTable inputY = this.datasource.createDenseNumericTable(this.rightfilepath, this.nFeatures, "," , this.daal_Context);
+		NumericTable inputY = this.datasource.createDenseNumericTable(this.rightfilepath, this.nFeatures, "," , this.daal_Context);
+		// test new HarpDAALNumericTable
+		HarpDAALNumericTable merged = new HarpDAALNumericTable(this.daal_Context, inputX);
+		LOG.info("HarpDAALNumericTable column number: " + merged.getNumberOfColumns());
+		merged.addPartition(inputY, 1);
+		LOG.info("HarpDAALNumericTable column number: " + merged.getNumberOfColumns() + "; num partitions " + merged.getNumberOfPartitions());
+		NumericTable get_inputX = merged.getPartition(0);
+		NumericTable get_inputY = merged.getPartition(1);
+		int row_num = (int)get_inputX.getNumberOfRows() + 5;
+		int col_num = (int)get_inputX.getNumberOfColumns() + 5;
+		HarpNumericTable inputZ = new HarpNumericTable(daal_Context, col_num, row_num);
+
+		for(int j=0;j<col_num;j++)
+                  inputZ.setArray(new double[row_num], j, j);
+
+		merged.addPartition(inputZ, 2);
+		LOG.info("HarpDAALNumericTable column number: " + merged.getNumberOfColumns() + "; num partitions " + merged.getNumberOfPartitions());
+
+		// HarpDAALNumericTable testTable = 
 		// replace this by HDFSDataSource
 		// check rightpath name
-		LOG.info(this.rightfilepath);
-	        HDFSDataSource inputY_source = new HDFSDataSource(this.daal_Context, this.rightfilepath, 
-				DataSource.DictionaryCreationFlag.DoDictionaryFromContext,
-			        DataSource.NumericTableAllocationFlag.DoAllocateNumericTable);
-
-		inputY_source.loadDataBlock();
-		NumericTable inputY = inputY_source.getNumericTable();
+		// LOG.info(this.rightfilepath);
+	        // HDFSDataSource inputY_source = new HDFSDataSource(this.daal_Context, this.rightfilepath, 
+		// 		DataSource.DictionaryCreationFlag.DoDictionaryFromContext,
+		// 	        DataSource.NumericTableAllocationFlag.DoAllocateNumericTable);
+                //
+		// inputY_source.loadDataBlock();
+		// NumericTable inputY = inputY_source.getNumericTable();
+		// inputY_source.dispose();
 
 		/* Create an algorithm */
 		com.intel.daal.algorithms.kernel_function.linear.Batch algorithm = new com.intel.daal.algorithms.kernel_function.linear.Batch(daal_Context, Double.class);

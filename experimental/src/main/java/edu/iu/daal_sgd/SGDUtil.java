@@ -39,7 +39,7 @@ public class SGDUtil {
 
   static
     Int2ObjectOpenHashMap<VRowCol>
-    loadVWMap(LinkedList<String> vFilePaths,
+    loadVWMap(List<String> vFilePaths,
       int numThreads, Configuration configuration) {
     VStore vStore =
       new VStore(vFilePaths, numThreads,
