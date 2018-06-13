@@ -26,180 +26,77 @@ Compared to contemporary distributed data processing frameworks, such as Hadoop 
 1. MPI-like collective communication operations that are highly optimized for big data problems.
 2. Efficient and innovative computation models for different machine learning problems.
 
-However, the original Harp framework only supports development of Java applications, which is a common choice within the Hadoop ecosystem. 
-The downside of the pure Java implementation is the lack of support for emerging new hardware architectures such as Intel's Xeon Phi. 
-By invoking DAAL's native kernels, applications can leverage the huge number of threads on many-core platforms, which is a great 
-advantage for computation-intensive data analytics algorithms. This is also the tendency of merging HPC and Big Data domain. 
+However, the original Harp framework only supports development of Java applications, which is a common choice of the Hadoop ecosystem. 
+The downside of the pure Java implementation is a lack of supporting high-end HPC architectures such as Intel's Xeon Phi. 
+By invoking DAAL's native kernels, applications can exploit all of the hardware threads on many-core platforms, which is a great 
+advantage for computation-intensive workloads.
 
-## How to build a Harp-DAAL Application ?
+## How to install Harp-DAAL Application ?
 
-If you already have a legacy Harp application codes, you need only identify the local computation module, and replace it by invoking correspondent 
-DAAL kernels. Although DAAL's kernels are written in C/C++, it does provide users of a Java API. The API is highly packaged, and the users only need
-a few lines of codes to finish the invocation of kernels. For instance, the main function of a PCA application in DAAL is shown as below: 
+The libraries of Intel DAAL version 2018 has been pre-compiled and located at path *harp/third_party/daal_2018*, which provides all
+of the implementations for Harp-DAAL algorithms located at path *harp/ml/daal*
 
-```java
-public static void main(String[] args) throws java.io.FileNotFoundException, java.io.IOException {
+The source codes of Intel DAAL version 2019 are loacted at path *harp/third_party/daal-exp*, which provides implementations for 
+Harp-DAAL experimental algorithms located at path *harp/experimental*
 
-     /* Read a data set from a file and create a numeric table for storing the input data */
-     CSRNumericTable data = Service.createSparseTable(context, datasetFileName);
+### Compile Harp-DAAL Algorithms
 
-     /* Create an algorithm to compute PCA decomposition using the correlation method */
-     Batch pcaAlgorithm = new Batch(context, Double.class, Method.correlationDense);
+To compile the Harp-DAAL algorithms, put the *ml* modules along with *core* modules in the *harp/pom.xml* file
 
-     com.intel.daal.algorithms.covariance.Batch covarianceSparse
-         = new com.intel.daal.algorithms.covariance.Batch(context, Double.class, com.intel.daal.algorithms.covariance.Method.fastCSR);
-     pcaAlgorithm.parameter.setCovariance(covarianceSparse);
-
-     /* Set the input data */
-     pcaAlgorithm.input.set(InputId.data, data);
-
-     /* Compute PCA decomposition */
-     Result res = pcaAlgorithm.compute();
-
-     NumericTable eigenValues = res.get(ResultId.eigenValues);
-     NumericTable eigenVectors = res.get(ResultId.eigenVectors);
-     Service.printNumericTable("Eigenvalues:", eigenValues);
-     Service.printNumericTable("Eigenvectors:", eigenVectors);
-
-     context.dispose();
-}
-```
-
-DAAL's Java API is usually contains the following objects:
-
-+ Data: user's data packed in DAAL's data structure, e.g., NumericTable, DataCollection 
-+ Algorithm:  the engine of machine learning, each has three modes: Batch, Distri, Online 
-+ Input: the user's input data to Algorithm 
-+ Parameter: the parameters provided by users during the running of algorithms
-+ Result: the feedback of Algorithm after running, retrieved by users
-
-Before invoking your DAAL kernels,the most suitable data structure for the problem should be chosen. For many NumericTable types, 
-the Java API provides two ways of storing data. One is to store data on the JVM heap side, and whenever the native computation kernels require 
-the dataset, it will automatically copy the data from JVM heap to the off-heap memory space. The other way is to store data on Java's direct byte buffer, and 
-native computation kernels can access them directly without any data copy. Therefore, you should evaluate the overhead of loading and writing data from memory 
-in your application. For many data-intensive applications, it is wise to store the data on the direct byte buffer. 
-
-If you build the Harp-DAAL application from scratch, you should also carefully choose the data structure on the Harp side. The thumb rule is to allocate data in 
-contiguous primitive Java array, because most of DAAL's Java API only accepts primitive array as input arguments. If Harp's own Table structure is used and the 
-contained data is distributed into different partitions, then you may use the Harp-DAAL data conversion API to transfer the data between a Harp table and a DAAL
-table. 
-
-### Harp-DAAL Data Conversion API
-
-Harp-DAAL now provides a group of classes under the path *harp/ml/daal/src/edu/iu/daal*, which manipulates the data 
-transfer
-between Harp's data structure and that of DAAL.
-
-+ RotatorDaal: a rotator which internally converts the H matrix from Harp table to DAAL's NumericTable
-+ RotateTaskDaal: the tasks executed by RotatorDaal in the model rotation paradigm.
-+ HomogenTableHarpMap: convert data between DAAL's HomogenNumericTable and Harp's map
-+ HomogenTableHarpTable: convert data between DAAL's HomogenNumericTable and Harp's table
-
-Within the *RotatorDaal*, the data transfers between Harp and DAAL is also overlapped by the computation work in another pipeline. Thus, if there is enough computation workload, the 
-overhead of data conversion could be significantly reduced. It is also very straightforward to invoke these conversion tools. 
-
-```java
-//create a conversion class between harp map and daal's table
-HomogenTableHarpMap<double[]> converter = new HomogenTableHarpMap<double[]>(wMap, wMap_index, wMap_daal, wMap_size, r, numThreads);
-convert_wTable.HarpToDaalDouble();
-
-//create a conversion class between a harp table and a daal table
-converter = new HomogenTableHarpTable<I, P, Table<P> >(table, this.daal_table, table.getNumPartitions(), this.rdim, this.numThreads);
-converter.HarpToDaalDouble();
-```
-
-## How to Compile and Run Harp-DAAL Application ?
-
-### Installation of DAAL framework
-
-There are two options to install DAAL library for Harp-DAAL 
-
-1. Installation from latest Intel DAAL source code (https://github.com/01org/daal)
-```bash
-# clone from Intel Github repository
-git clone git@github.com:01org/daal.git
-# enter the src directory
-cd daal
-# compile and install
-make daal PLAT=lnx32e
-# setup the DAALROOT environment variables use intel64 or ia32
-source __release_lnx/daal/bin/daalvars.sh intel64
-```
-2. Installation from optimized DAAL source code within DSC-SPIDAL/harp (Recommended)
-```bash
-# enter the harp root directory
-cd harp
-# pull the daal src (as a submodule)
-git submodule update --init --recursive
-# enter daal src directory
-cd $HARP_ROOT_DIR/ml/daal/daal-src
-# compile and install
-make daal PLAT=lnx32e
-# setup the DAALROOT environment variables
-source ../__release_lnx/daal/bin/daalvars.sh intel64 
-```
-The DAAL source code within DSC-SPIDAL/harp has some modifications upon a certain version of Intel DAAL source code. 
-The current source code is based on Intel DAAL version 2018 beta update1. Installation from Intel DAAL latest version 
-may accelerate the performance of harp-daal, however, it may also cause compilation errors if Intel 
-change some of the DAAL Java APIs. Therefore, we recommend users to use the tested DAAL stable version provided by our 
-repository. Some harp-daal codes like MF-SGD contains DAAL native implementation codes that are not yet included to Intel DAAL repository, 
-and users can only run them with installation of DAAL codes from DSC-SPIDAL/harp.
-In addition, our DAAL codes provide users of exclusive optimized data structures for machine learning algorithms 
-with big model. 
-
-3. Update daal-src submodule
-If users choose second option and install the submodule daal-src of DSC-SPIDAL/harp. The daal-src points to a 
-certain commit of our DAAL code version. If users would like to explore the latest updates of our DAAL code
-please make https://github.com/francktcheng/Harp-DAAL-Local.git as a remote upstream repository and git pull daal_2018_beta_update1 
-branch
-```bash
-cd harp/ml/daal/daal-src
-git remote -v 
-git remote rename origin upstream 
-git pull upstream daal_2018_beta_update1:daal_2018_beta_update1
-git checkout daal_2018_beta_update1
-```
-
-### Compile and Run Harp-DAAL Applications
-1. Add harp-daal-interface module back to harp/core/pom.xml file
 ```xml
 <modules>
-        <module>harp-collective</module>
-        <module>harp-hadoop</module>
-        <module>harp-daal-interface</module>
+	<module>core</module>
+    <module>ml</module>
 </modules>
 ```
 
-2. Add daal module back to harp/ml/pom.xml file
-```xml
-<modules>
-        <module>java</module>
-        <module>daal</module>
-</modules>
-``` 
+and run *maven*
 
-3. Add external daal lib dependency to harp/core/pom.xml and harp/ml/pom.xml files.
-The daal.jar file contains the Java APIs provided by DAAL to its native kernels
-```xml
-<dependency>
-<groupId>daal</groupId>
-<artifactId>daal</artifactId>
-<scope>system</scope>
-<version>1.0</version>
-<systemPath>${DAALROOT}/lib/daal.jar</systemPath>
-</dependency>
-```
-
-3. Re-compile harp to generate harp-daal targets. Select the profile related to your hadoop version. For ex: hadoop-2
-.6.0. Supported hadoop versions are 2.6.0, 2.7.5 and 2.9.0
 ```bash
-cd harp/
 mvn clean package -Phadoop-2.6.0
 ```
-The generated harp-daal-interface jar is at ```$HARP_ROOT_DIR/core/harp-daal-interface/target``` folder and the 
-harp-daal jar is at ```$HARP_ROOT_DIR/ml/daal/target/``` folder. 
 
-4. Run harp-daal frome NameNode of the launched Hadoop daemons 
+The compiled jar files are located at *harp/ml/daal/target/harp-daal-0.1.0.jar*
+
+### Compile Harp-DAAL Applications (Experimental) 
+
+To compile the Harp-DAAL experimental applications, first make sure that the daal source codes has been compiled locally. 
+
+```bash
+cd daal/
+make daal PLAT=lnx32e
+```
+
+where directory *daal/* is the location of your daal source codes, *lnx32e* is the 64 bit linux platforms. To compile Intel DAAL
+source codes on other platforms, please find detailed instructions in the README.md of Intel DAAL source code directory.
+The compiled library files are located at *daal/__release_lnx/* folder. To use the compiled Intel DAAL libraries, source the 
+environment setting script
+
+```bash
+source daa/__release_lnx/daal/bin/daalvars.sh intel64
+```
+
+Secondly, add the experimental module to the *harp/pom.xml* file
+
+```xml
+<modules>
+	<module>core</module>
+    <module>experimental</module>
+</modules>
+```
+
+run the *maven*
+
+```bash
+mvn clean package -Phadoop-2.6.0
+```
+
+The compiled jar files are located at *harp/experimental/target/experimental-0.1.0.jar*
+
+## How to run a Harp-DAAL application ?
+
+Run harp-daal frome NameNode of the launched Hadoop daemons 
+
 ```bash
 # copy harp-daal jar file to Hadoop directory
 cp $HARP_ROOT_DIR/core/harp-daal-interface/target/harp-daal-interface-0.1.0.jar ${HADOOP_HOME}/share/hadoop/mapreduce
@@ -219,12 +116,6 @@ export LIBJARS=${DAALROOT}/lib/daal.jar
 bin/hadoop jar harp-daal-0.1.0.jar edu.iu.daal_als.ALSDaalLauncher -libjars ${LIBJARS} 
 /Hadoop/sgd-input/yahoomusic-train 100 1 0.0001 10 false 2 24 110000 /Hadoop/als-work /Hadoop/sgd-input/yahoomusic-test
 ```
-command line arguments vary from app to app, please refer to the src of harp-daal
-there is also a test_scripts directory under /ml/daal/, which contains example scripts to run each harp-daal 
-application.
-
-
-
 
 
 

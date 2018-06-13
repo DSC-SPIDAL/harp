@@ -3,7 +3,7 @@ sections:
     sublinks:
       - name: Harp-DAAL framework
         url: /docs/harpdaal/harpdaal
-  - name: Harp-DAAL APIs
+  - name: Harp-DAAL API
     sublinks:
       - name: Initialization Module 
         url: /docs/harpdaal/harpdaalInit
@@ -15,7 +15,7 @@ sections:
         url: /docs/harpdaal/BatchModeEg
       - name: Distributed Mode Code Walk Through 
         url: /docs/harpdaal/DistriModeEg
-  - name: Algorithms
+  - name: Algorithm
     sublinks:
       - name: Association Rule
         url: /docs/harpdaal/algorithms#arpos
@@ -73,7 +73,7 @@ sections:
         url: /docs/harpdaal/algorithms#alspos
       - name: Neural Network
         url: /docs/harpdaal/algorithms#nnpos
-  - name: Algorithms Experimental
+  - name: Application
     sublinks:
       - name: Recommender System based on SGD 
         url: /docs/harpdaal/MF-SGD
