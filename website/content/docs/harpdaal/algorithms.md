@@ -7,7 +7,7 @@ title: Algorithms in Harp-DAAL
 </a>
 ## **Association Rule** [[Learn More]](https://software.intel.com/en-us/daal-programming-guide-details-10) 
 
-<img src="/img/daalAlgos/HarpIllustrations_Association_Rule.png" width="80%" >
+<img src="/img/daalAlgos/HarpIllustrations_Association_Rule.png" width="60%" >
 
 Association rule learning is a rule-based learning method for discovering relations between variables in databases. 
 It is intended to identify strong rules discovered in databases using some measures of interestingness.
@@ -19,7 +19,7 @@ Harp-DAAL support a Batch mode of Association Rules based on the *Apriori* algor
 </a>
 ## **Covariance** [[Learn More]](https://software.intel.com/en-us/daal-programming-guide-details-2)
 
-<img src="/img/daalAlgos/Covariance.png" width="80%" >
+<img src="/img/daalAlgos/Covariance.png" width="60%" >
 
 Covariance, in probability theory and statistics, is a measure of the joint variability of two random variables. The sign of the covariance 
 shows the tendency in the linear relationship between the variables. The correlation is the covariance normalized to be between -1 and +1. 
@@ -33,7 +33,7 @@ Harp-DAAL supports distributed modes of Covariance for both of dense and sparse 
 </a>
 ## **Boosting**
 
-<img src="/img/daalAlgos/HarpIllustrations_Boosting.png" width="80%" >
+<img src="/img/daalAlgos/HarpIllustrations_Boosting.png" width="60%" >
 
 Boosting is a group of algorithms aiming to construct a strong classifier from a set of weighted weak classifiers 
 through iterative re-weighting based on accuracy measurement for weak classifiers. A weak classifier typically has only slightly better 
@@ -61,7 +61,7 @@ LogitBoost in Harp-DAAL is a multi-class classifier.
 </a>
 ## **Naive Bayes Classifier** [[Learn More]](https://software.intel.com/en-us/daal-programming-guide-details-28)
 
-<img src="/img/daalAlgos/HarpIllustrations_Naive_Bayes.png" width="80%" >
+<img src="/img/daalAlgos/HarpIllustrations_Naive_Bayes.png" width="60%" >
 
 Naïve Bayes is a set of simple and powerful classification methods often used for text classification, 
 medical diagnosis, and other classification problems. In spite of their main assumption about independence between features, 
@@ -75,7 +75,7 @@ Harp-DAAL currently supports distributed mode of Multinomial Naive Bayes [^fn3] 
 </a>
 ## **K-means Clustering** [[Learn More]](https://software.intel.com/en-us/daal-programming-guide-details-5)
 
-<img src="/img/daalAlgos/HarpIllustrations_KMeans_Clustering.png" width="80%" >
+<img src="/img/daalAlgos/HarpIllustrations_KMeans_Clustering.png" width="60%" >
 
 K-means is a widely used clustering algorithm in machine learning community. It iteratively computes the distance between each 
 training point to every centroids, re-assigns the training point to new cluster and re-compute the new centroid of each cluster. 
@@ -89,7 +89,7 @@ input datasets.
 </a>
 ## **Expectation Maximization** [[Learn More]](https://software.intel.com/en-us/daal-programming-guide-details-13)
 
-<img src="/img/daalAlgos/HarpIllustrations_Em.png" width="80%" >
+<img src="/img/daalAlgos/HarpIllustrations_Em.png" width="60%" >
 
 Expectation-Maximization (EM) algorithm is an iterative method for finding the maximum likelihood and maximum a posteriori estimates of parameters in models that typically depend on hidden variables.
 
@@ -100,7 +100,7 @@ Harp-DAAL currently supports batch mode of EM [^fn4][^fn5] for dense input datas
 </a>
 ## **Principle Component Analysis**
 
-<img src="/img/daalAlgos/HarpIllustrations_PCA.png" width="80%" >
+<img src="/img/daalAlgos/HarpIllustrations_PCA.png" width="60%" >
 
 Principle Component Analysis (PCA) is a widely used statistical procedure that uses an orthogonal transformation to convert a set of observations of possibly correlated variables into a set of values of linearly uncorrelated variables called principal components (or sometimes, principal modes of variation). 
 PCA can be done by two methods:
@@ -129,7 +129,7 @@ Harp-DAAL provides distributed mode for Correlation based PCA for both of dense 
 </a>
 ## **Single Value Decomposition** [[Learn More]](https://software.intel.com/en-us/daal-programming-guide-details-9)
 
-<img src="/img/daalAlgos/SVD.png" width="80%" >
+<img src="/img/daalAlgos/SVD.png" width="60%" >
 
 Singular Value Decomposition is a method which seeks to reduce the rank of a data matrix, thus finding the unique vectors, features, or characteristics of the data matrix at hand. This algorithm has been used in, but is not limited to signal processing, weather prediction, hotspot detection, and recommender systems.
 
@@ -140,7 +140,7 @@ Harp-DAAL currently supports the distributed mode for dense input datasets
 </a>
 ## **QR Decomposition** [[Learn More]](https://software.intel.com/en-us/daal-programming-guide-details-11)
 
-<img src="/img/daalAlgos/HarpIllustrations_QR.png" width="80%" >
+<img src="/img/daalAlgos/HarpIllustrations_QR.png" width="60%" >
 
 The QR decomposition or QR factorization of a matrix is a decomposition of the matrix into an orthogonal matrix and a triangular matrix. A QR decomposition of a real square matrix A is a decomposition of A as A = QR, where Q is an orthogonal matrix (its columns are orthogonal unit vectors meaning Q<sup>T</sup>Q = I) 
 and R is an upper triangular matrix (also called right triangular matrix).
@@ -162,7 +162,7 @@ Harp-DAAL currently supports distributed mode of Pivoted QR for dense input data
 </a>
 ## **Cholesky Decomposition** [[Learn More]](https://software.intel.com/en-us/daal-programming-guide-details-8)
 
-<img src="/img/daalAlgos/HarpIllustrations_Cholesky_Decompsition.png" width="80%" >
+<img src="/img/daalAlgos/HarpIllustrations_Cholesky_Decompsition.png" width="60%" >
 
 Cholesky decomposition is a matrix factorization technique that decomposes a symmetric positive-definite matrix into a product of a lower triangular matrix and its conjugate transpose.
 
@@ -173,7 +173,7 @@ Harp-DAAL currently supports batch mode of Cholesky for dense input datasets.
 </a>
 ## **Moments of Low Order** [[Learn More]](https://software.intel.com/en-us/daal-programming-guide-details)
 
-<img src="/img/daalAlgos/HarpIllustrations_Low_Order_Moments.png" width="80%" >
+<img src="/img/daalAlgos/HarpIllustrations_Low_Order_Moments.png" width="60%" >
 
 Moments are basic quantitative measures of data set characteristics such as location and dispersion. 
 We compute the following low order characteristics: minimums/maximums, sums, means, sums of squares, sums of squared differences from the means, second order raw moments, variances, standard deviations, and variations.
@@ -185,7 +185,7 @@ Harp-DAAL supports the distributed mode of Low-order moments for both of dense a
 </a>
 ## **Outlier Detection**
 
-<img src="/img/daalAlgos/HarpIllustrations_Outlier_Detection.png" width="80%" >
+<img src="/img/daalAlgos/HarpIllustrations_Outlier_Detection.png" width="60%" >
 
 Outlier detection methods aim to identify observation points that are abnormally distant from other observation points. 
 
@@ -204,7 +204,7 @@ Harp-DAAL currently supports batch mode of outlier detection for dense input dat
 </a>
 ## **Sorting** [[Learn More]](https://software.intel.com/en-us/daal-programming-guide-details-17)
 
-<img src="/img/daalAlgos/HarpIllustrations_Sorting.png" width="80%" >
+<img src="/img/daalAlgos/HarpIllustrations_Sorting.png" width="60%" >
 
 Sorting is an algorithm to sort the observations by each feature (column) in the ascending order.
 
@@ -215,7 +215,7 @@ Harp-DAAL currently supports batch mode of sorting for dense input datasets.
 </a>
 ## **Quantile** [[Learn More]](https://software.intel.com/en-us/daal-programming-guide-details-1)
 
-<img src="/img/daalAlgos/HarpIllustrations_Quantile.png" width="80%" >
+<img src="/img/daalAlgos/HarpIllustrations_Quantile.png" width="60%" >
 
 Quantile is an algorithm to analyze the distribution of observations. Quantiles are the values that divide the distribution so that a given portion of observations is below the quantile.
 
@@ -226,7 +226,7 @@ Harp-DAAL currently supports batch mode of Quantile for dense input datasets.
 </a>
 ## **Quality Metrics** [[Learn More]](https://software.intel.com/en-us/daal-programming-guide-quality-metrics)
 
-<img src="/img/daalAlgos/HarpIllustrations_Quality_Metrics.png" width="80%" >
+<img src="/img/daalAlgos/HarpIllustrations_Quality_Metrics.png" width="60%" >
 
 A quality metric is a numerical characteristic or a set of connected numerical characteristics that represents 
 the qualitative aspect of the result returned by an algorithm: a computed statistical estimate, model, or result of decision making.
@@ -238,7 +238,7 @@ Harp-DAAL currently supports batch mode of sorting for dense input datasets.
 </a>
 ## **Optimization Solvers**
 
-<img src="/img/daalAlgos/HarpIllustrations_SGD_Optimization.png" width="80%" >
+<img src="/img/daalAlgos/HarpIllustrations_SGD_Optimization.png" width="60%" >
 
 An optimization solver is an algorithm to solve an optimization problem, which is to find the maximum or minimum of an 
 objective function in the presence of constraints on its variables. 
@@ -271,7 +271,7 @@ The momentum method (momentum) of the stochastic gradient descent algorithm is f
 </a>
 ## **Normalization**
 
-<img src="/img/daalAlgos/HarpIllustrations_Normalization.png" width="80%" >
+<img src="/img/daalAlgos/HarpIllustrations_Normalization.png" width="60%" >
 
 In statistics and applications of statistics, normalization can have a range of meanings. 
 In the simplest cases, normalization of ratings means adjusting values measured on different scales to a notionally common scale, often prior to averaging. 
@@ -293,7 +293,7 @@ Z-score normalization is an algorithm to normalize the observations by each feat
 </a>
 ## **Support Vector Machine Classifier** [[Learn More]](https://software.intel.com/en-us/daal-programming-guide-details-32)
 
-<img src="/img/daalAlgos/HarpIllustrations_Svm.png" width="80%" >
+<img src="/img/daalAlgos/HarpIllustrations_Svm.png" width="60%" >
 
 Support Vector Machine (SVM) is among popular classification algorithms. 
 It belongs to a family of generalized linear classification problems. 
@@ -306,7 +306,7 @@ Harp-DAAL currently supports batch mode of multi-class SVM [^fn11] for both of d
 </a>
 ## **K-Nearest Neighbors Classifier** [[Learn More]](https://software.intel.com/en-us/daal-programming-guide-details-34)
 
-<img src="/img/daalAlgos/HarpIllustrations_KNN.png" width="80%" >
+<img src="/img/daalAlgos/HarpIllustrations_KNN.png" width="60%" >
 
 k-Nearest Neighbors (kNN) classification is a non-parametric classification algorithm. The model of the kNN classifier is based on feature vectors and class labels from the training data set. This classifier induces the class of the query vector from the labels of the feature vectors in the training data set to which the query vector is similar. A similarity between feature vectors is determined by the type of distance (for example, Euclidian) in a multidimensional feature space.
 
@@ -317,7 +317,7 @@ Harp-DAAL currently supports batch mode of K-NN [^fn12][^fn13] for dense input d
 </a>
 ## **Decision Tree** [[Learn More]](https://software.intel.com/en-us/daal-programming-guide-details-22)
 
-<img src="/img/daalAlgos/HarpIllustrations_DTree.png" width="80%" >
+<img src="/img/daalAlgos/HarpIllustrations_DTree.png" width="60%" >
 
 Decision trees partition the feature space into a set of hypercubes, and then fit a simple model in each hypercube. The simple model can be a prediction model, which ignores all predictors and predicts the majority (most frequent) class (or the mean of a dependent variable for regression), also known as 0-R or constant classifier.
 
@@ -331,7 +331,7 @@ Harp-DAAL currently supports batch mode of Decision Tree for dense input dataset
 </a>
 ## **Decision Forest** [[Learn More]](https://software.intel.com/en-us/daal-programming-guide-details-23)
 
-<img src="/img/daalAlgos/HarpIllustrations_DForest.png" width="80%" >
+<img src="/img/daalAlgos/HarpIllustrations_DForest.png" width="60%" >
 
 Decision forest classification and regression algorithms are based on an ensemble of tree-structured classifiers (decision trees) 
 built using the general technique of bootstrap aggregation (bagging) and random choice of features.
@@ -346,7 +346,7 @@ Harp-DAAL currently supports batch mode of Decision Forest for dense input datas
 </a>
 ## **Kernel Functions** 
 
-<img src="/img/daalAlgos/HarpIllustrations_Kernel_Function.png" width="80%" >
+<img src="/img/daalAlgos/HarpIllustrations_Kernel_Function.png" width="60%" >
 
 Kernel functions form a class of algorithms for pattern analysis. The main characteristic of kernel functions is a distinct approach to this problem. 
 Instead of reducing the dimension of the original data, kernel functions map the data into higher-dimensional spaces 
@@ -367,7 +367,7 @@ The Radial Basis Function (RBF) kernel is a popular kernel function used in kern
 </a>
 ## **Stump Weak Learner Classifier** [[Learn More]](https://software.intel.com/en-us/daal-programming-guide-details-32)
 
-<img src="/img/daalAlgos/HarpIllustrations_Stump_Weaklearner.png" width="80%" >
+<img src="/img/daalAlgos/HarpIllustrations_Stump_Weaklearner.png" width="60%" >
 
 A decision stump is a model that consists of a one-level decision tree [^fn14] where the root is connected to terminal nodes (leaves).
 
@@ -378,7 +378,7 @@ Harp-DAAL currently supports batch mode of Stump for dense input datasets.
 </a>
 ## **Linear Regression** [[Learn More]](https://software.intel.com/en-us/daal-programming-guide-linear-regression)
 
-<img src="/img/daalAlgos/linear_regression.png" width="80%" >
+<img src="/img/daalAlgos/linear_regression.png" width="40%" >
 
 In statistics, linear regression is an approach for modelling the relationship between a scalar dependent variable y and one or more explanatory variables (or independent variables) denoted X. In linear regression, the relationships are modeled using linear predictor functions whose unknown model parameters are estimated from the data. Such models are called linear models.
 
@@ -393,7 +393,7 @@ It has two algorithmic variants [^fn15]:
 </a>
 ## **Ridge Regression** [[Learn More]](https://software.intel.com/en-us/daal-programming-guide-ridge-regression)
 
-<img src="/img/daalAlgos/HarpIllustrations_Ridge_Regression.png" width="80%" >
+<img src="/img/daalAlgos/HarpIllustrations_Ridge_Regression.png" width="60%" >
 
 Ridge Regression is a technique for analyzing multiple regression data that suffer from multicollinearity. When
 multicollinearity occurs, least squares estimates are unbiased, but their variances are large so they may be far from
@@ -407,7 +407,7 @@ Harp-DAAL currently supports distributed mode of Ridge regression [^fn16] for de
 </a>
 ## **Implicit Alternating Least Squares** [[Learn More]](https://software.intel.com/en-us/daal-programming-guide-details-38)
 
-<img src="/img/daalAlgos/HarpIllustrations_ALS.png" width="80%" >
+<img src="/img/daalAlgos/HarpIllustrations_ALS.png" width="70%" >
 
 Alternating least squares (ALS) is an algorithm used in recommender systems, 
 which trains the model data X and Y to minimize the cost function as below
@@ -437,7 +437,7 @@ Harp-DAAL currently supports distributed mode of ALS [^fn17][^fn18] for dense an
 </a>
 ## **Neural Networks** [[Learn More]](https://software.intel.com/en-us/daal-programming-guide-neural-networks)
 
-<img src="/img/daalAlgos/nn.png" width="80%" >
+<img src="/img/daalAlgos/nn.png" width="60%" >
 
 Neural Networks are a beautiful biologically-inspired programming paradigm which enable a computer to learn from observational data.
 The motivation for the development of neural network technology stemmed from the desire to develop an artificial system that could perform "intelligent" tasks similar to those performed by the human brain.
