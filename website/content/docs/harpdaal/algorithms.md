@@ -19,7 +19,7 @@ Harp-DAAL support a Batch mode of Association Rules based on the *Apriori* algor
 </a>
 ## **Covariance** [[Learn More]](https://software.intel.com/en-us/daal-programming-guide-details-2)
 
-<img src="/img/daalAlgos/Covariance.png" width="60%" >
+<img src="/img/daalAlgos/HarpIllustrations_Covariance.png" width="60%" >
 
 Covariance, in probability theory and statistics, is a measure of the joint variability of two random variables. The sign of the covariance 
 shows the tendency in the linear relationship between the variables. The correlation is the covariance normalized to be between -1 and +1. 
@@ -33,7 +33,7 @@ Harp-DAAL supports distributed modes of Covariance for both of dense and sparse 
 </a>
 ## **Boosting**
 
-<img src="/img/daalAlgos/HarpIllustrations_Boosting.png" width="60%" >
+<img src="/img/daalAlgos/HarpIllustrations-Boosting.png" width="60%" >
 
 Boosting is a group of algorithms aiming to construct a strong classifier from a set of weighted weak classifiers 
 through iterative re-weighting based on accuracy measurement for weak classifiers. A weak classifier typically has only slightly better 
@@ -89,7 +89,7 @@ input datasets.
 </a>
 ## **Expectation Maximization** [[Learn More]](https://software.intel.com/en-us/daal-programming-guide-details-13)
 
-<img src="/img/daalAlgos/HarpIllustrations_Em.png" width="60%" >
+<img src="/img/daalAlgos/HarpIllustrations_Expectation_Maximization.png" width="60%" >
 
 Expectation-Maximization (EM) algorithm is an iterative method for finding the maximum likelihood and maximum a posteriori estimates of parameters in models that typically depend on hidden variables.
 
@@ -129,7 +129,7 @@ Harp-DAAL provides distributed mode for Correlation based PCA for both of dense 
 </a>
 ## **Single Value Decomposition** [[Learn More]](https://software.intel.com/en-us/daal-programming-guide-details-9)
 
-<img src="/img/daalAlgos/SVD.png" width="60%" >
+<img src="/img/daalAlgos/HarpIllustrations-SVD3.png" width="60%" >
 
 Singular Value Decomposition is a method which seeks to reduce the rank of a data matrix, thus finding the unique vectors, features, or characteristics of the data matrix at hand. This algorithm has been used in, but is not limited to signal processing, weather prediction, hotspot detection, and recommender systems.
 
@@ -378,7 +378,7 @@ Harp-DAAL currently supports batch mode of Stump for dense input datasets.
 </a>
 ## **Linear Regression** [[Learn More]](https://software.intel.com/en-us/daal-programming-guide-linear-regression)
 
-<img src="/img/daalAlgos/linear_regression.png" width="40%" >
+<img src="/img/daalAlgos/HarpIllustrations_Linear_Regression.png" width="60%" >
 
 In statistics, linear regression is an approach for modelling the relationship between a scalar dependent variable y and one or more explanatory variables (or independent variables) denoted X. In linear regression, the relationships are modeled using linear predictor functions whose unknown model parameters are estimated from the data. Such models are called linear models.
 
@@ -437,7 +437,7 @@ Harp-DAAL currently supports distributed mode of ALS [^fn17][^fn18] for dense an
 </a>
 ## **Neural Networks** [[Learn More]](https://software.intel.com/en-us/daal-programming-guide-neural-networks)
 
-<img src="/img/daalAlgos/nn.png" width="60%" >
+<img src="/img/daalAlgos/HarpIllustrations_NN.png" width="60%" >
 
 Neural Networks are a beautiful biologically-inspired programming paradigm which enable a computer to learn from observational data.
 The motivation for the development of neural network technology stemmed from the desire to develop an artificial system that could perform "intelligent" tasks similar to those performed by the human brain.
