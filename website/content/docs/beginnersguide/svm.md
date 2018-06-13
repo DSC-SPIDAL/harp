@@ -23,7 +23,8 @@ Here’s what the dataset should look like:
 7 203:84 204:185 205:159 ... 741:207 742:18
 ```
 Format:
-*\<label\> [\<fid\>:\<feature\>]*
+*\<label\> [\<fid\>:\<feature\>]+*
+
 - *\<label\>*: digit between 0-9 (example: 7)
 - *\<fid\>*: positive feature id (example: 203)
 - *\<feature\>*: the feature value (example: 84)
@@ -34,7 +35,7 @@ Format:
 
 
 # Compile
-The dataset used is a subset of [MNIST]([https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass.html#mnist](https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass.html#mnist)) with 6000 examples selected.
+The dataset used is a subset of [MNIST]([https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass.html#mnist](https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass.html#mnist) with 6000 examples selected.
 
 <mark>To be able to compile and run, you have to [install Harp and Hadoop](https://dsc-spidal.github.io/harp/docs/getting-started/)</mark>:
 

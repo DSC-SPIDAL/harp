@@ -114,7 +114,7 @@ The format for the data should be a list of \<DAY_OF_WEEK DEP_DELAY DEP_DELAY_NE
 
 ### Put data on hdfs
 ```bash
-hdfs dfs -mkdir /data/airline
+hdfs dfs -mkdir -p /data/airline
 rm -rf data
 mkdir -p data
 cd data
@@ -136,8 +136,8 @@ mvn clean package -Phadoop-2.6.0
 ```bash
 cd $HARP_ROOT_DIR/contrib/target
 cp contrib-0.1.0.jar $HADOOP_HOME
-cp $HARP_ROOT_DIR/third_parity/javaml-0.1.7.jar $HADOOP_HOME/share/hadoop/mapreduce
-cp $HARP_ROOT_DIR/third_parity/ajt-2.11.jar $HADOOP_HOME/share/hadoop/mapreduce
+cp $HARP_ROOT_DIR/third_party/javaml-0.1.7.jar $HADOOP_HOME/share/hadoop/mapreduce
+cp $HARP_ROOT_DIR/third_party/ajt-2.11.jar $HADOOP_HOME/share/hadoop/mapreduce
 cd $HADOOP_HOME
 ```
 
