@@ -283,6 +283,10 @@
   </url>
   
   <url>
+    <loc>https://dsc-spidal.github.io/harp/docs/beginnersguide/svm/</loc>
+  </url>
+  
+  <url>
     <loc>https://dsc-spidal.github.io/harp/</loc>
     <priority>0</priority>
   </url>

@@ -482,21 +482,20 @@ In the &lt;em&gt;&lt;strong&gt;init&lt;/strong&gt;&lt;/em&gt; function, tune the
     &lt;h1 style=&#34;padding-top: 60px; margin-top: -60px;&#34;&gt;&lt;/h1&gt;
 &lt;/a&gt;&lt;/p&gt;
 
-&lt;h2 id=&#34;association-rule&#34;&gt;&lt;strong&gt;Association Rule&lt;/strong&gt;&lt;/h2&gt;
+&lt;h2 id=&#34;association-rule-learn-more-https-software-intel-com-en-us-daal-programming-guide-details-10&#34;&gt;&lt;strong&gt;Association Rule&lt;/strong&gt; &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-10&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/association-rule-new.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_Association_Rule.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;Association rule learning is a rule-based learning method for discovering relations between variables in databases.
 It is intended to identify strong rules discovered in databases using some measures of interestingness.&lt;/p&gt;
 
-&lt;p&gt;Harp-DAAL support a Batch mode of Association Rules based on the &lt;em&gt;Apriori&lt;/em&gt; algorithm &lt;sup class=&#34;footnote-ref&#34; id=&#34;fnref:fn1&#34;&gt;&lt;a rel=&#34;footnote&#34; href=&#34;#fn:fn1&#34;&gt;1&lt;/a&gt;&lt;/sup&gt;. provided by
-More details from Intel DAAL kernel is found &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-10&#34;&gt;here&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;Harp-DAAL support a Batch mode of Association Rules based on the &lt;em&gt;Apriori&lt;/em&gt; algorithm &lt;sup class=&#34;footnote-ref&#34; id=&#34;fnref:fn1&#34;&gt;&lt;a rel=&#34;footnote&#34; href=&#34;#fn:fn1&#34;&gt;1&lt;/a&gt;&lt;/sup&gt;.&lt;/p&gt;
 
 &lt;p&gt;&lt;a name=&#34;covpos&#34;&gt;
     &lt;h1 style=&#34;padding-top: 60px; margin-top: -60px;&#34;&gt;&lt;/h1&gt;
 &lt;/a&gt;&lt;/p&gt;
 
-&lt;h2 id=&#34;covariance&#34;&gt;&lt;strong&gt;Covariance&lt;/strong&gt;&lt;/h2&gt;
+&lt;h2 id=&#34;covariance-learn-more-https-software-intel-com-en-us-daal-programming-guide-details-2&#34;&gt;&lt;strong&gt;Covariance&lt;/strong&gt; &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-2&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h2&gt;
 
 &lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/Covariance.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
 
@@ -505,8 +504,7 @@ shows the tendency in the linear relationship between the variables. The correla
 A positive correlation indicates the extent to which variables increase or decrease simultaneously.
 A negative correlation indicates the extent to which one variable increases while the other one decreases.&lt;/p&gt;
 
-&lt;p&gt;Harp-DAAL supports distributed modes of Covariance for both of dense and sparse (CSR format) input data.
-Algorithmic details from Intel DAAL are found &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-2&#34;&gt;here&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;Harp-DAAL supports distributed modes of Covariance for both of dense and sparse (CSR format) input data.&lt;/p&gt;
 
 &lt;p&gt;&lt;a name=&#34;boostpos&#34;&gt;
     &lt;h1 style=&#34;padding-top: 60px; margin-top: -60px;&#34;&gt;&lt;/h1&gt;
@@ -514,55 +512,51 @@ Algorithmic details from Intel DAAL are found &lt;a href=&#34;https://software.i
 
 &lt;h2 id=&#34;boosting&#34;&gt;&lt;strong&gt;Boosting&lt;/strong&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/boosting.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_Boosting.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;Boosting is a group of algorithms aiming to construct a strong classifier from a set of weighted weak classifiers
 through iterative re-weighting based on accuracy measurement for weak classifiers. A weak classifier typically has only slightly better
 performance than random guessing, which are very simple, fast, and focusing on specific feature classification.
 Harp-DAAL supports batch modes of the following three boosting algorithms.&lt;/p&gt;
 
-&lt;h3 id=&#34;adaboost-classifier&#34;&gt;AdaBoost Classifier&lt;/h3&gt;
+&lt;h3 id=&#34;adaboost-classifier-learn-more-https-software-intel-com-en-us-daal-programming-guide-details-29&#34;&gt;AdaBoost Classifier &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-29&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h3&gt;
 
 &lt;p&gt;AdaBoost algorithm performs well on a variety of data sets except some noisy data &lt;sup class=&#34;footnote-ref&#34; id=&#34;fnref:fn2&#34;&gt;&lt;a rel=&#34;footnote&#34; href=&#34;#fn:fn2&#34;&gt;2&lt;/a&gt;&lt;/sup&gt;.
-More details are from &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-29&#34;&gt;Intel DAAL Documentation&lt;/a&gt;
 AdaBoost in Harp-DAAL is a binary classifier.&lt;/p&gt;
 
-&lt;h3 id=&#34;brownboost-classifier&#34;&gt;BrownBoost Classifier&lt;/h3&gt;
+&lt;h3 id=&#34;brownboost-classifier-learn-more-https-software-intel-com-en-us-daal-programming-guide-details-30&#34;&gt;BrownBoost Classifier &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-30&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h3&gt;
 
 &lt;p&gt;BrownBoost is a boosting classification algorithm. It is more robust to noisy data sets than other boosting classification algorithms.
-More details are from &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-30&#34;&gt;Intel DAAL Documentation&lt;/a&gt;
 BrownBoost in Harp-DAAL is a binary classifier.&lt;/p&gt;
 
-&lt;h3 id=&#34;logitboost-classifier&#34;&gt;LogitBoost Classifier&lt;/h3&gt;
+&lt;h3 id=&#34;logitboost-classifier-learn-more-https-software-intel-com-en-us-daal-programming-guide-details-31&#34;&gt;LogitBoost Classifier &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-31&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h3&gt;
 
 &lt;p&gt;LogitBoost and AdaBoost are close to each other in the sense that both perform an additive logistic regression. The difference is that AdaBoost minimizes the exponential loss, whereas LogitBoost minimizes the logistic loss.&lt;/p&gt;
 
-&lt;p&gt;LogitBoost in Harp-DAAL is a multi-class classifier.
-More details are from &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-31&#34;&gt;Intel DAAL Documentation&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;LogitBoost in Harp-DAAL is a multi-class classifier.&lt;/p&gt;
 
 &lt;p&gt;&lt;a name=&#34;naivepos&#34;&gt;
     &lt;h1 style=&#34;padding-top: 60px; margin-top: -60px;&#34;&gt;&lt;/h1&gt;
 &lt;/a&gt;&lt;/p&gt;
 
-&lt;h2 id=&#34;naive-bayes-classifier&#34;&gt;&lt;strong&gt;Naive Bayes Classifier&lt;/strong&gt;&lt;/h2&gt;
+&lt;h2 id=&#34;naive-bayes-classifier-learn-more-https-software-intel-com-en-us-daal-programming-guide-details-28&#34;&gt;&lt;strong&gt;Naive Bayes Classifier&lt;/strong&gt; &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-28&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/NaiveBayes-New.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_Naive_Bayes.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;Naïve Bayes is a set of simple and powerful classification methods often used for text classification,
 medical diagnosis, and other classification problems. In spite of their main assumption about independence between features,
 Naïve Bayes classifiers often work well when this assumption does not hold.
 An advantage of this method is that it requires only a small amount of training data to estimate model parameters.&lt;/p&gt;
 
-&lt;p&gt;Harp-DAAL currently supports distributed mode of Multinomial Naive Bayes &lt;sup class=&#34;footnote-ref&#34; id=&#34;fnref:fn3&#34;&gt;&lt;a rel=&#34;footnote&#34; href=&#34;#fn:fn3&#34;&gt;3&lt;/a&gt;&lt;/sup&gt; for both of dense and sparse (CSR format) input datasets.
-More details from Intel DAAL Documentation is &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-28&#34;&gt;here&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;Harp-DAAL currently supports distributed mode of Multinomial Naive Bayes &lt;sup class=&#34;footnote-ref&#34; id=&#34;fnref:fn3&#34;&gt;&lt;a rel=&#34;footnote&#34; href=&#34;#fn:fn3&#34;&gt;3&lt;/a&gt;&lt;/sup&gt; for both of dense and sparse (CSR format) input datasets.&lt;/p&gt;
 
 &lt;p&gt;&lt;a name=&#34;kmeanspos&#34;&gt;
     &lt;h1 style=&#34;padding-top: 60px; margin-top: -60px;&#34;&gt;&lt;/h1&gt;
 &lt;/a&gt;&lt;/p&gt;
 
-&lt;h2 id=&#34;k-means-clustering&#34;&gt;&lt;strong&gt;K-means Clustering&lt;/strong&gt;&lt;/h2&gt;
+&lt;h2 id=&#34;k-means-clustering-learn-more-https-software-intel-com-en-us-daal-programming-guide-details-5&#34;&gt;&lt;strong&gt;K-means Clustering&lt;/strong&gt; &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-5&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/kmeans-clustering-new.jpg&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_KMeans_Clustering.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;K-means is a widely used clustering algorithm in machine learning community. It iteratively computes the distance between each
 training point to every centroids, re-assigns the training point to new cluster and re-compute the new centroid of each cluster.
@@ -571,21 +565,17 @@ In other words, the clustering methods enable reducing the problem of analysis o
 &lt;p&gt;Harp-DAAL currently supports distributed mode of K-means clustering for both of dense and sparse (CSR format)
 input datasets.&lt;/p&gt;
 
-&lt;p&gt;More algorithmic details from Intel DAAL Documentation is &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-5&#34;&gt;here&lt;/a&gt;.&lt;/p&gt;
-
 &lt;p&gt;&lt;a name=&#34;empos&#34;&gt;
     &lt;h1 style=&#34;padding-top: 60px; margin-top: -60px;&#34;&gt;&lt;/h1&gt;
 &lt;/a&gt;&lt;/p&gt;
 
-&lt;h2 id=&#34;expectation-maximization&#34;&gt;&lt;strong&gt;Expectation Maximization&lt;/strong&gt;&lt;/h2&gt;
+&lt;h2 id=&#34;expectation-maximization-learn-more-https-software-intel-com-en-us-daal-programming-guide-details-13&#34;&gt;&lt;strong&gt;Expectation Maximization&lt;/strong&gt; &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-13&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/em-new.jpg&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_Em.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;Expectation-Maximization (EM) algorithm is an iterative method for finding the maximum likelihood and maximum a posteriori estimates of parameters in models that typically depend on hidden variables.&lt;/p&gt;
 
 &lt;p&gt;Harp-DAAL currently supports batch mode of EM &lt;sup class=&#34;footnote-ref&#34; id=&#34;fnref:fn4&#34;&gt;&lt;a rel=&#34;footnote&#34; href=&#34;#fn:fn4&#34;&gt;4&lt;/a&gt;&lt;/sup&gt;&lt;sup class=&#34;footnote-ref&#34; id=&#34;fnref:fn5&#34;&gt;&lt;a rel=&#34;footnote&#34; href=&#34;#fn:fn5&#34;&gt;5&lt;/a&gt;&lt;/sup&gt; for dense input datasets.&lt;/p&gt;
-
-&lt;p&gt;More algorithmic details from Intel DAAL documentation is &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-13&#34;&gt;here&lt;/a&gt;.&lt;/p&gt;
 
 &lt;p&gt;&lt;a name=&#34;pcapos&#34;&gt;
     &lt;h1 style=&#34;padding-top: 60px; margin-top: -60px;&#34;&gt;&lt;/h1&gt;
@@ -593,7 +583,7 @@ input datasets.&lt;/p&gt;
 
 &lt;h2 id=&#34;principle-component-analysis&#34;&gt;&lt;strong&gt;Principle Component Analysis&lt;/strong&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/pca.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_PCA.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;Principle Component Analysis (PCA) is a widely used statistical procedure that uses an orthogonal transformation to convert a set of observations of possibly correlated variables into a set of values of linearly uncorrelated variables called principal components (or sometimes, principal modes of variation).
 PCA can be done by two methods:&lt;/p&gt;
@@ -607,17 +597,15 @@ PCA can be done by two methods:&lt;/p&gt;
 
 &lt;p&gt;In Harp-DAAL, we have two methods for computing PCA&lt;/p&gt;
 
-&lt;h3 id=&#34;svd-based-pca&#34;&gt;SVD Based PCA&lt;/h3&gt;
+&lt;h3 id=&#34;svd-based-pca-learn-more-https-software-intel-com-en-us-daal-programming-guide-singular-value-decomposition&#34;&gt;SVD Based PCA &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-singular-value-decomposition&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h3&gt;
 
-&lt;p&gt;The input is a set of p-dimensional dense vectors, DAAL kernel invokes a SVD decomposition to find out $p_r$ principle directions (Eigenvectors)
-The details of SVD kernel by Intel DAAL is &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-singular-value-decomposition&#34;&gt;here&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;The input is a set of p-dimensional dense vectors, DAAL kernel invokes a SVD decomposition to find out $p_r$ principle directions (Eigenvectors)&lt;/p&gt;
 
 &lt;p&gt;Harp-DAAL provides distributed mode for SVD based PCA for dense input datasets.&lt;/p&gt;
 
-&lt;h3 id=&#34;correleation-based-pca&#34;&gt;Correleation Based PCA&lt;/h3&gt;
+&lt;h3 id=&#34;correleation-based-pca-learn-more-https-software-intel-com-en-us-daal-programming-guide-details-6&#34;&gt;Correleation Based PCA &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-6&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h3&gt;
 
-&lt;p&gt;The input is a $p\tims p$ correlation matrix, and the DAAL PCA kernel will find out the $p_r$ directions &lt;sup class=&#34;footnote-ref&#34; id=&#34;fnref:fn6&#34;&gt;&lt;a rel=&#34;footnote&#34; href=&#34;#fn:fn6&#34;&gt;6&lt;/a&gt;&lt;/sup&gt;.
-Details from Intel DAAL Documentation is &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-6&#34;&gt;here&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;The input is a $p\tims p$ correlation matrix, and the DAAL PCA kernel will find out the $p_r$ directions &lt;sup class=&#34;footnote-ref&#34; id=&#34;fnref:fn6&#34;&gt;&lt;a rel=&#34;footnote&#34; href=&#34;#fn:fn6&#34;&gt;6&lt;/a&gt;&lt;/sup&gt;.&lt;/p&gt;
 
 &lt;p&gt;Harp-DAAL provides distributed mode for Correlation based PCA for both of dense and sparse (CSR format) input datasets.&lt;/p&gt;
 
@@ -625,7 +613,7 @@ Details from Intel DAAL Documentation is &lt;a href=&#34;https://software.intel.
     &lt;h1 style=&#34;padding-top: 60px; margin-top: -60px;&#34;&gt;&lt;/h1&gt;
 &lt;/a&gt;&lt;/p&gt;
 
-&lt;h2 id=&#34;single-value-decomposition&#34;&gt;&lt;strong&gt;Single Value Decomposition&lt;/strong&gt;&lt;/h2&gt;
+&lt;h2 id=&#34;single-value-decomposition-learn-more-https-software-intel-com-en-us-daal-programming-guide-details-9&#34;&gt;&lt;strong&gt;Single Value Decomposition&lt;/strong&gt; &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-9&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h2&gt;
 
 &lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/SVD.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
 
@@ -633,64 +621,54 @@ Details from Intel DAAL Documentation is &lt;a href=&#34;https://software.intel.
 
 &lt;p&gt;Harp-DAAL currently supports the distributed mode for dense input datasets&lt;/p&gt;
 
-&lt;p&gt;More algorithmic details from Intel DAAL documentation is &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-9&#34;&gt;here&lt;/a&gt;.&lt;/p&gt;
-
 &lt;p&gt;&lt;a name=&#34;qrpos&#34;&gt;
     &lt;h1 style=&#34;padding-top: 60px; margin-top: -60px;&#34;&gt;&lt;/h1&gt;
 &lt;/a&gt;&lt;/p&gt;
 
-&lt;h2 id=&#34;qr-decomposition&#34;&gt;&lt;strong&gt;QR Decomposition&lt;/strong&gt;&lt;/h2&gt;
+&lt;h2 id=&#34;qr-decomposition-learn-more-https-software-intel-com-en-us-daal-programming-guide-details-11&#34;&gt;&lt;strong&gt;QR Decomposition&lt;/strong&gt; &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-11&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/QR.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_QR.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;The QR decomposition or QR factorization of a matrix is a decomposition of the matrix into an orthogonal matrix and a triangular matrix. A QR decomposition of a real square matrix A is a decomposition of A as A = QR, where Q is an orthogonal matrix (its columns are orthogonal unit vectors meaning Q&lt;sup&gt;T&lt;/sup&gt;Q = I)
 and R is an upper triangular matrix (also called right triangular matrix).&lt;/p&gt;
 
 &lt;p&gt;Harp-DAAL currently supports distributed mode of QR for dense input datasets.&lt;/p&gt;
 
-&lt;p&gt;More algorithmic details from Intel DAAL documentation is &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-11&#34;&gt;here&lt;/a&gt;.&lt;/p&gt;
-
 &lt;p&gt;&lt;a name=&#34;pqrpos&#34;&gt;
     &lt;h1 style=&#34;padding-top: 60px; margin-top: -60px;&#34;&gt;&lt;/h1&gt;
 &lt;/a&gt;&lt;/p&gt;
 
-&lt;h2 id=&#34;pivoted-qr-decomposition&#34;&gt;&lt;strong&gt;Pivoted QR Decomposition&lt;/strong&gt;&lt;/h2&gt;
+&lt;h2 id=&#34;pivoted-qr-decomposition-learn-more-https-software-intel-com-en-us-daal-programming-guide-details-12&#34;&gt;&lt;strong&gt;Pivoted QR Decomposition&lt;/strong&gt; &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-12&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h2&gt;
 
 &lt;p&gt;QR decomposition with column pivoting introduces a permutation matrix P and convert the original
 &lt;em&gt;A=QR&lt;/em&gt; to &lt;em&gt;AP=QR&lt;/em&gt;. Column pivoting is useful when A is (nearly) rank deficient, or is suspected of being so. It can also improve numerical accuracy.&lt;/p&gt;
 
 &lt;p&gt;Harp-DAAL currently supports distributed mode of Pivoted QR for dense input datasets.&lt;/p&gt;
 
-&lt;p&gt;More algorithmic details from Intel DAAL documentation is &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-12&#34;&gt;here&lt;/a&gt;.&lt;/p&gt;
-
 &lt;p&gt;&lt;a name=&#34;ckdpos&#34;&gt;
     &lt;h1 style=&#34;padding-top: 60px; margin-top: -60px;&#34;&gt;&lt;/h1&gt;
 &lt;/a&gt;&lt;/p&gt;
 
-&lt;h2 id=&#34;cholesky-decomposition&#34;&gt;&lt;strong&gt;Cholesky Decomposition&lt;/strong&gt;&lt;/h2&gt;
+&lt;h2 id=&#34;cholesky-decomposition-learn-more-https-software-intel-com-en-us-daal-programming-guide-details-8&#34;&gt;&lt;strong&gt;Cholesky Decomposition&lt;/strong&gt; &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-8&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/cholesky-decomposition.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_Cholesky_Decompsition.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;Cholesky decomposition is a matrix factorization technique that decomposes a symmetric positive-definite matrix into a product of a lower triangular matrix and its conjugate transpose.&lt;/p&gt;
 
 &lt;p&gt;Harp-DAAL currently supports batch mode of Cholesky for dense input datasets.&lt;/p&gt;
 
-&lt;p&gt;More algorithmic details from Intel DAAL documentation is &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-8&#34;&gt;here&lt;/a&gt;.&lt;/p&gt;
-
 &lt;p&gt;&lt;a name=&#34;mompos&#34;&gt;
     &lt;h1 style=&#34;padding-top: 60px; margin-top: -60px;&#34;&gt;&lt;/h1&gt;
 &lt;/a&gt;&lt;/p&gt;
 
-&lt;h2 id=&#34;moments-of-low-order&#34;&gt;&lt;strong&gt;Moments of Low Order&lt;/strong&gt;&lt;/h2&gt;
+&lt;h2 id=&#34;moments-of-low-order-learn-more-https-software-intel-com-en-us-daal-programming-guide-details&#34;&gt;&lt;strong&gt;Moments of Low Order&lt;/strong&gt; &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/low-order-moments.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_Low_Order_Moments.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;Moments are basic quantitative measures of data set characteristics such as location and dispersion.
 We compute the following low order characteristics: minimums/maximums, sums, means, sums of squares, sums of squared differences from the means, second order raw moments, variances, standard deviations, and variations.&lt;/p&gt;
 
 &lt;p&gt;Harp-DAAL supports the distributed mode of Low-order moments for both of dense and sparse (CSR format) input datasets&lt;/p&gt;
-
-&lt;p&gt;More algorithmic details from Intel DAAL documentation is found &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details&#34;&gt;here&lt;/a&gt;.&lt;/p&gt;
 
 &lt;p&gt;&lt;a name=&#34;odpos&#34;&gt;
     &lt;h1 style=&#34;padding-top: 60px; margin-top: -60px;&#34;&gt;&lt;/h1&gt;
@@ -698,21 +676,17 @@ We compute the following low order characteristics: minimums/maximums, sums, mea
 
 &lt;h2 id=&#34;outlier-detection&#34;&gt;&lt;strong&gt;Outlier Detection&lt;/strong&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/outlier-detection.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_Outlier_Detection.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;Outlier detection methods aim to identify observation points that are abnormally distant from other observation points.&lt;/p&gt;
 
-&lt;h3 id=&#34;univariate&#34;&gt;Univariate&lt;/h3&gt;
+&lt;h3 id=&#34;univariate-learn-more-https-software-intel-com-en-us-daal-programming-guide-details-16&#34;&gt;Univariate &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-16&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h3&gt;
 
 &lt;p&gt;A univariate outlier is an occurrence of an abnormal value within a single observation point.&lt;/p&gt;
 
-&lt;p&gt;More algorithmic details from Intel DAAL documentation is &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-16&#34;&gt;here&lt;/a&gt;.&lt;/p&gt;
-
-&lt;h3 id=&#34;multivariate&#34;&gt;Multivariate&lt;/h3&gt;
+&lt;h3 id=&#34;multivariate-learn-more-https-software-intel-com-en-us-daal-programming-guide-details-14&#34;&gt;Multivariate &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-14&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h3&gt;
 
 &lt;p&gt;In multivariate outlier detection methods, the observation point is the entire feature vector.&lt;/p&gt;
-
-&lt;p&gt;More algorithmic details from Intel DAAL documentation is &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-14&#34;&gt;here&lt;/a&gt;.&lt;/p&gt;
 
 &lt;p&gt;Harp-DAAL currently supports batch mode of outlier detection for dense input datasets.&lt;/p&gt;
 
@@ -720,44 +694,38 @@ We compute the following low order characteristics: minimums/maximums, sums, mea
     &lt;h1 style=&#34;padding-top: 60px; margin-top: -60px;&#34;&gt;&lt;/h1&gt;
 &lt;/a&gt;&lt;/p&gt;
 
-&lt;h2 id=&#34;sorting&#34;&gt;&lt;strong&gt;Sorting&lt;/strong&gt;&lt;/h2&gt;
+&lt;h2 id=&#34;sorting-learn-more-https-software-intel-com-en-us-daal-programming-guide-details-17&#34;&gt;&lt;strong&gt;Sorting&lt;/strong&gt; &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-17&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/sorting.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_Sorting.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;Sorting is an algorithm to sort the observations by each feature (column) in the ascending order.&lt;/p&gt;
 
 &lt;p&gt;Harp-DAAL currently supports batch mode of sorting for dense input datasets.&lt;/p&gt;
 
-&lt;p&gt;More algorithmic details from Intel DAAL documentation is &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-17&#34;&gt;here&lt;/a&gt;.&lt;/p&gt;
-
 &lt;p&gt;&lt;a name=&#34;qtepos&#34;&gt;
     &lt;h1 style=&#34;padding-top: 60px; margin-top: -60px;&#34;&gt;&lt;/h1&gt;
 &lt;/a&gt;&lt;/p&gt;
 
-&lt;h2 id=&#34;quantile&#34;&gt;&lt;strong&gt;Quantile&lt;/strong&gt;&lt;/h2&gt;
+&lt;h2 id=&#34;quantile-learn-more-https-software-intel-com-en-us-daal-programming-guide-details-1&#34;&gt;&lt;strong&gt;Quantile&lt;/strong&gt; &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-1&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/quantile.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_Quantile.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;Quantile is an algorithm to analyze the distribution of observations. Quantiles are the values that divide the distribution so that a given portion of observations is below the quantile.&lt;/p&gt;
 
 &lt;p&gt;Harp-DAAL currently supports batch mode of Quantile for dense input datasets.&lt;/p&gt;
 
-&lt;p&gt;More algorithmic details from Intel DAAL documentation is &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-1&#34;&gt;here&lt;/a&gt;.&lt;/p&gt;
-
 &lt;p&gt;&lt;a name=&#34;qmpos&#34;&gt;
     &lt;h1 style=&#34;padding-top: 60px; margin-top: -60px;&#34;&gt;&lt;/h1&gt;
 &lt;/a&gt;&lt;/p&gt;
 
-&lt;h2 id=&#34;quality-metrics&#34;&gt;&lt;strong&gt;Quality Metrics&lt;/strong&gt;&lt;/h2&gt;
+&lt;h2 id=&#34;quality-metrics-learn-more-https-software-intel-com-en-us-daal-programming-guide-quality-metrics&#34;&gt;&lt;strong&gt;Quality Metrics&lt;/strong&gt; &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-quality-metrics&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/quality-metrics.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_Quality_Metrics.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;A quality metric is a numerical characteristic or a set of connected numerical characteristics that represents
 the qualitative aspect of the result returned by an algorithm: a computed statistical estimate, model, or result of decision making.&lt;/p&gt;
 
 &lt;p&gt;Harp-DAAL currently supports batch mode of sorting for dense input datasets.&lt;/p&gt;
-
-&lt;p&gt;More algorithmic details from Intel DAAL documentation is &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-quality-metrics&#34;&gt;here&lt;/a&gt;.&lt;/p&gt;
 
 &lt;p&gt;&lt;a name=&#34;optpos&#34;&gt;
     &lt;h1 style=&#34;padding-top: 60px; margin-top: -60px;&#34;&gt;&lt;/h1&gt;
@@ -765,26 +733,22 @@ the qualitative aspect of the result returned by an algorithm: a computed statis
 
 &lt;h2 id=&#34;optimization-solvers&#34;&gt;&lt;strong&gt;Optimization Solvers&lt;/strong&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/sgd-optimization.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_SGD_Optimization.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;An optimization solver is an algorithm to solve an optimization problem, which is to find the maximum or minimum of an
 objective function in the presence of constraints on its variables.&lt;/p&gt;
 
 &lt;p&gt;Harp-DAAL currently provides the following iterative optimization solvers&lt;/p&gt;
 
-&lt;h3 id=&#34;adaptive-subgradient-method&#34;&gt;Adaptive Subgradient Method&lt;/h3&gt;
+&lt;h3 id=&#34;adaptive-subgradient-method-learn-more-https-software-intel-com-en-us-daal-programming-guide-adaptive-subgradient-method&#34;&gt;Adaptive Subgradient Method &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-adaptive-subgradient-method&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h3&gt;
 
 &lt;p&gt;The adaptive subgradient method (AdaGrad) is from &lt;sup class=&#34;footnote-ref&#34; id=&#34;fnref:fn7&#34;&gt;&lt;a rel=&#34;footnote&#34; href=&#34;#fn:fn7&#34;&gt;7&lt;/a&gt;&lt;/sup&gt;.&lt;/p&gt;
 
-&lt;p&gt;More algorithmic details from Intel DAAL documentation is &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-adaptive-subgradient-method&#34;&gt;here&lt;/a&gt;.&lt;/p&gt;
-
-&lt;h3 id=&#34;limited-memory-broyden-fletcher-goldfarb-shanno-algorithm&#34;&gt;Limited-Memory Broyden-Fletcher-Goldfarb-Shanno Algorithm&lt;/h3&gt;
+&lt;h3 id=&#34;limited-memory-broyden-fletcher-goldfarb-shanno-algorithm-learn-more-https-software-intel-com-en-us-daal-programming-guide-limited-memory-broyden-fletcher-goldfarb-shanno-algorithm&#34;&gt;Limited-Memory Broyden-Fletcher-Goldfarb-Shanno Algorithm &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-limited-memory-broyden-fletcher-goldfarb-shanno-algorithm&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h3&gt;
 
 &lt;p&gt;The limited-memory Broyden-Fletcher-Goldfarb-Shanno (LBFGS) algorithm is from &lt;sup class=&#34;footnote-ref&#34; id=&#34;fnref:fn8&#34;&gt;&lt;a rel=&#34;footnote&#34; href=&#34;#fn:fn8&#34;&gt;8&lt;/a&gt;&lt;/sup&gt;.&lt;/p&gt;
 
-&lt;p&gt;More algorithmic details from Intel DAAL documentation is &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-limited-memory-broyden-fletcher-goldfarb-shanno-algorithm&#34;&gt;here&lt;/a&gt;.&lt;/p&gt;
-
-&lt;h3 id=&#34;stochastic-gradient-descent-algorithm&#34;&gt;Stochastic Gradient Descent Algorithm&lt;/h3&gt;
+&lt;h3 id=&#34;stochastic-gradient-descent-algorithm-learn-more-https-software-intel-com-en-us-daal-programming-guide-stochastic-gradient-descent-algorithm&#34;&gt;Stochastic Gradient Descent Algorithm &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-stochastic-gradient-descent-algorithm&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h3&gt;
 
 &lt;p&gt;The stochastic gradient descent (SGD) algorithm is a special case of an iterative solver.
 The following computation methods are available in Intel DAAL for the stochastic gradient descent algorithm:&lt;/p&gt;
@@ -797,15 +761,13 @@ The following computation methods are available in Intel DAAL for the stochastic
 
 &lt;p&gt;The momentum method (momentum) of the stochastic gradient descent algorithm is from &lt;sup class=&#34;footnote-ref&#34; id=&#34;fnref:fn10&#34;&gt;&lt;a rel=&#34;footnote&#34; href=&#34;#fn:fn10&#34;&gt;10&lt;/a&gt;&lt;/sup&gt;.&lt;/p&gt;
 
-&lt;p&gt;More algorithmic details from Intel DAAL documentation is &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-stochastic-gradient-descent-algorithm&#34;&gt;here&lt;/a&gt;.&lt;/p&gt;
-
 &lt;p&gt;&lt;a name=&#34;normpos&#34;&gt;
     &lt;h1 style=&#34;padding-top: 60px; margin-top: -60px;&#34;&gt;&lt;/h1&gt;
 &lt;/a&gt;&lt;/p&gt;
 
 &lt;h2 id=&#34;normalization&#34;&gt;&lt;strong&gt;Normalization&lt;/strong&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/normalization.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_Normalization.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;In statistics and applications of statistics, normalization can have a range of meanings.
 In the simplest cases, normalization of ratings means adjusting values measured on different scales to a notionally common scale, often prior to averaging.
@@ -814,25 +776,21 @@ In more complicated cases, normalization may refer to more sophisticated adjustm
 &lt;p&gt;Harp-DAAL currently supports batch mode of normalization for dense input datasets, and it
 provides two algorithm kernels.&lt;/p&gt;
 
-&lt;h3 id=&#34;min-max&#34;&gt;Min-max&lt;/h3&gt;
+&lt;h3 id=&#34;min-max-learn-more-https-software-intel-com-en-us-daal-programming-guide-min-max&#34;&gt;Min-max &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-min-max&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h3&gt;
 
 &lt;p&gt;Min-max normalization is an algorithm to linearly scale the observations by each feature (column) into the range [a, b].&lt;/p&gt;
 
-&lt;p&gt;More algorithmic details from Intel DAAL documentation is &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-min-max&#34;&gt;here&lt;/a&gt;.&lt;/p&gt;
-
-&lt;h3 id=&#34;z-score&#34;&gt;Z-score&lt;/h3&gt;
+&lt;h3 id=&#34;z-score-learn-more-https-software-intel-com-en-us-daal-programming-guide-z-score&#34;&gt;Z-score &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-z-score&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h3&gt;
 
 &lt;p&gt;Z-score normalization is an algorithm to normalize the observations by each feature (column).&lt;/p&gt;
-
-&lt;p&gt;More algorithmic details from Intel DAAL documentation is &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-z-score&#34;&gt;here&lt;/a&gt;.&lt;/p&gt;
 
 &lt;p&gt;&lt;a name=&#34;svmpos&#34;&gt;
     &lt;h1 style=&#34;padding-top: 60px; margin-top: -60px;&#34;&gt;&lt;/h1&gt;
 &lt;/a&gt;&lt;/p&gt;
 
-&lt;h2 id=&#34;support-vector-machine-classifier&#34;&gt;&lt;strong&gt;Support Vector Machine Classifier&lt;/strong&gt;&lt;/h2&gt;
+&lt;h2 id=&#34;support-vector-machine-classifier-learn-more-https-software-intel-com-en-us-daal-programming-guide-details-32&#34;&gt;&lt;strong&gt;Support Vector Machine Classifier&lt;/strong&gt; &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-32&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/svm.jpeg&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_Svm.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;Support Vector Machine (SVM) is among popular classification algorithms.
 It belongs to a family of generalized linear classification problems.
@@ -840,29 +798,25 @@ Because SVM covers binary classification problems only in the multi-class case, 
 
 &lt;p&gt;Harp-DAAL currently supports batch mode of multi-class SVM &lt;sup class=&#34;footnote-ref&#34; id=&#34;fnref:fn11&#34;&gt;&lt;a rel=&#34;footnote&#34; href=&#34;#fn:fn11&#34;&gt;11&lt;/a&gt;&lt;/sup&gt; for both of dense and sparse (CSR format) input datasets.&lt;/p&gt;
 
-&lt;p&gt;More algorithmic details from Intel DAAL documentation is &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-32&#34;&gt;here&lt;/a&gt;.&lt;/p&gt;
-
 &lt;p&gt;&lt;a name=&#34;knnpos&#34;&gt;
     &lt;h1 style=&#34;padding-top: 60px; margin-top: -60px;&#34;&gt;&lt;/h1&gt;
 &lt;/a&gt;&lt;/p&gt;
 
-&lt;h2 id=&#34;k-nearest-neighbors-classifier&#34;&gt;&lt;strong&gt;K-Nearest Neighbors Classifier&lt;/strong&gt;&lt;/h2&gt;
+&lt;h2 id=&#34;k-nearest-neighbors-classifier-learn-more-https-software-intel-com-en-us-daal-programming-guide-details-34&#34;&gt;&lt;strong&gt;K-Nearest Neighbors Classifier&lt;/strong&gt; &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-34&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/knn.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_KNN.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;k-Nearest Neighbors (kNN) classification is a non-parametric classification algorithm. The model of the kNN classifier is based on feature vectors and class labels from the training data set. This classifier induces the class of the query vector from the labels of the feature vectors in the training data set to which the query vector is similar. A similarity between feature vectors is determined by the type of distance (for example, Euclidian) in a multidimensional feature space.&lt;/p&gt;
 
 &lt;p&gt;Harp-DAAL currently supports batch mode of K-NN &lt;sup class=&#34;footnote-ref&#34; id=&#34;fnref:fn12&#34;&gt;&lt;a rel=&#34;footnote&#34; href=&#34;#fn:fn12&#34;&gt;12&lt;/a&gt;&lt;/sup&gt;&lt;sup class=&#34;footnote-ref&#34; id=&#34;fnref:fn13&#34;&gt;&lt;a rel=&#34;footnote&#34; href=&#34;#fn:fn13&#34;&gt;13&lt;/a&gt;&lt;/sup&gt; for dense input datasets.&lt;/p&gt;
 
-&lt;p&gt;More algorithmic details from Intel DAAL documentation is &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-34&#34;&gt;here&lt;/a&gt;.&lt;/p&gt;
-
 &lt;p&gt;&lt;a name=&#34;dtreepos&#34;&gt;
     &lt;h1 style=&#34;padding-top: 60px; margin-top: -60px;&#34;&gt;&lt;/h1&gt;
 &lt;/a&gt;&lt;/p&gt;
 
-&lt;h2 id=&#34;decision-tree&#34;&gt;&lt;strong&gt;Decision Tree&lt;/strong&gt;&lt;/h2&gt;
+&lt;h2 id=&#34;decision-tree-learn-more-https-software-intel-com-en-us-daal-programming-guide-details-22&#34;&gt;&lt;strong&gt;Decision Tree&lt;/strong&gt; &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-22&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/dtree.jpg&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_DTree.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;Decision trees partition the feature space into a set of hypercubes, and then fit a simple model in each hypercube. The simple model can be a prediction model, which ignores all predictors and predicts the majority (most frequent) class (or the mean of a dependent variable for regression), also known as 0-R or constant classifier.&lt;/p&gt;
 
@@ -873,15 +827,13 @@ Because SVM covers binary classification problems only in the multi-class case, 
 &lt;li&gt;Regression&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;p&gt;More algorithmic details from Intel DAAL documentation is &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-22&#34;&gt;here&lt;/a&gt;.&lt;/p&gt;
-
 &lt;p&gt;&lt;a name=&#34;dforestpos&#34;&gt;
     &lt;h1 style=&#34;padding-top: 60px; margin-top: -60px;&#34;&gt;&lt;/h1&gt;
 &lt;/a&gt;&lt;/p&gt;
 
-&lt;h2 id=&#34;decision-forest&#34;&gt;&lt;strong&gt;Decision Forest&lt;/strong&gt;&lt;/h2&gt;
+&lt;h2 id=&#34;decision-forest-learn-more-https-software-intel-com-en-us-daal-programming-guide-details-23&#34;&gt;&lt;strong&gt;Decision Forest&lt;/strong&gt; &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-23&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/dforest.jpeg&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_DForest.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;Decision forest classification and regression algorithms are based on an ensemble of tree-structured classifiers (decision trees)
 built using the general technique of bootstrap aggregation (bagging) and random choice of features.&lt;/p&gt;
@@ -893,15 +845,13 @@ built using the general technique of bootstrap aggregation (bagging) and random 
 &lt;li&gt;Regression&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;p&gt;More algorithmic details from Intel DAAL documentation is &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-23&#34;&gt;here&lt;/a&gt;.&lt;/p&gt;
-
 &lt;p&gt;&lt;a name=&#34;kernelfuncpos&#34;&gt;
     &lt;h1 style=&#34;padding-top: 60px; margin-top: -60px;&#34;&gt;&lt;/h1&gt;
 &lt;/a&gt;&lt;/p&gt;
 
 &lt;h2 id=&#34;kernel-functions&#34;&gt;&lt;strong&gt;Kernel Functions&lt;/strong&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/kernel-function.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_Kernel_Function.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;Kernel functions form a class of algorithms for pattern analysis. The main characteristic of kernel functions is a distinct approach to this problem.
 Instead of reducing the dimension of the original data, kernel functions map the data into higher-dimensional spaces
@@ -909,37 +859,31 @@ in order to make the data more easily separable there.&lt;/p&gt;
 
 &lt;p&gt;Harp-DAAL currently supports batch mode of kernel functions for bothh of dense and sparse (CSR format) input datasets, which includes two sub-types&lt;/p&gt;
 
-&lt;h3 id=&#34;linear-kernel&#34;&gt;Linear Kernel&lt;/h3&gt;
+&lt;h3 id=&#34;linear-kernel-learn-more-https-software-intel-com-en-us-daal-programming-guide-linear-kernel&#34;&gt;Linear Kernel &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-linear-kernel&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h3&gt;
 
 &lt;p&gt;A linear kernel is the simplest kernel function.&lt;/p&gt;
 
-&lt;p&gt;More algorithmic details from Intel DAAL documentation is &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-linear-kernel&#34;&gt;here&lt;/a&gt;.&lt;/p&gt;
-
-&lt;h3 id=&#34;radial-basis-function-kernel&#34;&gt;Radial Basis Function Kernel&lt;/h3&gt;
+&lt;h3 id=&#34;radial-basis-function-kernel-learn-more-https-software-intel-com-en-us-daal-programming-guide-radial-basis-function-kernel&#34;&gt;Radial Basis Function Kernel &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-radial-basis-function-kernel&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h3&gt;
 
 &lt;p&gt;The Radial Basis Function (RBF) kernel is a popular kernel function used in kernelized learning algorithms.&lt;/p&gt;
-
-&lt;p&gt;More algorithmic details from Intel DAAL documentation is &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-radial-basis-function-kernel&#34;&gt;here&lt;/a&gt;.&lt;/p&gt;
 
 &lt;p&gt;&lt;a name=&#34;stumppos&#34;&gt;
     &lt;h1 style=&#34;padding-top: 60px; margin-top: -60px;&#34;&gt;&lt;/h1&gt;
 &lt;/a&gt;&lt;/p&gt;
 
-&lt;h2 id=&#34;stump-weak-learner-classifier&#34;&gt;&lt;strong&gt;Stump Weak Learner Classifier&lt;/strong&gt;&lt;/h2&gt;
+&lt;h2 id=&#34;stump-weak-learner-classifier-learn-more-https-software-intel-com-en-us-daal-programming-guide-details-32&#34;&gt;&lt;strong&gt;Stump Weak Learner Classifier&lt;/strong&gt; &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-32&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/stump-weaklearner.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_Stump_Weaklearner.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;A decision stump is a model that consists of a one-level decision tree &lt;sup class=&#34;footnote-ref&#34; id=&#34;fnref:fn14&#34;&gt;&lt;a rel=&#34;footnote&#34; href=&#34;#fn:fn14&#34;&gt;14&lt;/a&gt;&lt;/sup&gt; where the root is connected to terminal nodes (leaves).&lt;/p&gt;
 
 &lt;p&gt;Harp-DAAL currently supports batch mode of Stump for dense input datasets.&lt;/p&gt;
 
-&lt;p&gt;More algorithmic details from Intel DAAL documentation is &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-32&#34;&gt;here&lt;/a&gt;.&lt;/p&gt;
-
 &lt;p&gt;&lt;a name=&#34;linregpos&#34;&gt;
     &lt;h1 style=&#34;padding-top: 60px; margin-top: -60px;&#34;&gt;&lt;/h1&gt;
 &lt;/a&gt;&lt;/p&gt;
 
-&lt;h2 id=&#34;linear-regression&#34;&gt;&lt;strong&gt;Linear Regression&lt;/strong&gt;&lt;/h2&gt;
+&lt;h2 id=&#34;linear-regression-learn-more-https-software-intel-com-en-us-daal-programming-guide-linear-regression&#34;&gt;&lt;strong&gt;Linear Regression&lt;/strong&gt; &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-linear-regression&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h2&gt;
 
 &lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/linear_regression.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
 
@@ -953,15 +897,13 @@ It has two algorithmic variants &lt;sup class=&#34;footnote-ref&#34; id=&#34;fnr
 &lt;li&gt;Linear regression through QR decomposition.&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;p&gt;More algorithmic details from Intel DAAL documentation is &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-linear-regression&#34;&gt;here&lt;/a&gt;.&lt;/p&gt;
-
 &lt;p&gt;&lt;a name=&#34;reregpos&#34;&gt;
     &lt;h1 style=&#34;padding-top: 60px; margin-top: -60px;&#34;&gt;&lt;/h1&gt;
 &lt;/a&gt;&lt;/p&gt;
 
-&lt;h2 id=&#34;ridge-regression&#34;&gt;&lt;strong&gt;Ridge Regression&lt;/strong&gt;&lt;/h2&gt;
+&lt;h2 id=&#34;ridge-regression-learn-more-https-software-intel-com-en-us-daal-programming-guide-ridge-regression&#34;&gt;&lt;strong&gt;Ridge Regression&lt;/strong&gt; &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-ridge-regression&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/ridge-regression.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_Ridge_Regression.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;Ridge Regression is a technique for analyzing multiple regression data that suffer from multicollinearity. When
 multicollinearity occurs, least squares estimates are unbiased, but their variances are large so they may be far from
@@ -970,15 +912,13 @@ It is hoped that the net effect will be to give estimates that are more reliable
 
 &lt;p&gt;Harp-DAAL currently supports distributed mode of Ridge regression &lt;sup class=&#34;footnote-ref&#34; id=&#34;fnref:fn16&#34;&gt;&lt;a rel=&#34;footnote&#34; href=&#34;#fn:fn16&#34;&gt;16&lt;/a&gt;&lt;/sup&gt; for dense input datasets.&lt;/p&gt;
 
-&lt;p&gt;More algorithmic details from Intel DAAL documentation is &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-ridge-regression&#34;&gt;here&lt;/a&gt;.&lt;/p&gt;
-
 &lt;p&gt;&lt;a name=&#34;alspos&#34;&gt;
     &lt;h1 style=&#34;padding-top: 60px; margin-top: -60px;&#34;&gt;&lt;/h1&gt;
 &lt;/a&gt;&lt;/p&gt;
 
-&lt;h2 id=&#34;implicit-alternating-least-squares&#34;&gt;&lt;strong&gt;Implicit Alternating Least Squares&lt;/strong&gt;&lt;/h2&gt;
+&lt;h2 id=&#34;implicit-alternating-least-squares-learn-more-https-software-intel-com-en-us-daal-programming-guide-details-38&#34;&gt;&lt;strong&gt;Implicit Alternating Least Squares&lt;/strong&gt; &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-38&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/als.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_ALS.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;Alternating least squares (ALS) is an algorithm used in recommender systems,
 which trains the model data X and Y to minimize the cost function as below&lt;/p&gt;
@@ -1005,13 +945,11 @@ which trains the model data X and Y to minimize the cost function as below&lt;/p
 
 &lt;p&gt;Harp-DAAL currently supports distributed mode of ALS &lt;sup class=&#34;footnote-ref&#34; id=&#34;fnref:fn17&#34;&gt;&lt;a rel=&#34;footnote&#34; href=&#34;#fn:fn17&#34;&gt;17&lt;/a&gt;&lt;/sup&gt;&lt;sup class=&#34;footnote-ref&#34; id=&#34;fnref:fn18&#34;&gt;&lt;a rel=&#34;footnote&#34; href=&#34;#fn:fn18&#34;&gt;18&lt;/a&gt;&lt;/sup&gt; for dense and sparse (CSR format) input datasets.&lt;/p&gt;
 
-&lt;p&gt;More algorithmic details from Intel DAAL documentation is &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-38&#34;&gt;here&lt;/a&gt;.&lt;/p&gt;
-
 &lt;p&gt;&lt;a name=&#34;nnpos&#34;&gt;
     &lt;h1 style=&#34;padding-top: 60px; margin-top: -60px;&#34;&gt;&lt;/h1&gt;
 &lt;/a&gt;&lt;/p&gt;
 
-&lt;h2 id=&#34;neural-networks&#34;&gt;&lt;strong&gt;Neural Networks&lt;/strong&gt;&lt;/h2&gt;
+&lt;h2 id=&#34;neural-networks-learn-more-https-software-intel-com-en-us-daal-programming-guide-neural-networks&#34;&gt;&lt;strong&gt;Neural Networks&lt;/strong&gt; &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-neural-networks&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h2&gt;
 
 &lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/nn.png&#34; width=&#34;80%&#34; &gt;&lt;/p&gt;
 
@@ -1020,8 +958,6 @@ The motivation for the development of neural network technology stemmed from the
 Neural networks, with their remarkable ability to derive meaning from complicated or imprecise data, can be used to extract patterns and detect trends that are too complex to be noticed by either humans or other computer techniques.&lt;/p&gt;
 
 &lt;p&gt;Harp-DAAL currently supports distributed mode of Neural Networks for dense input datasets.&lt;/p&gt;
-
-&lt;p&gt;More algorithmic details from Intel DAAL documentation is &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-neural-networks&#34;&gt;here&lt;/a&gt;.&lt;/p&gt;
 
 &lt;h2 id=&#34;references&#34;&gt;&lt;strong&gt;References&lt;/strong&gt;&lt;/h2&gt;
 &lt;div class=&#34;footnotes&#34;&gt;
@@ -1318,12 +1254,14 @@ environments and launch the application.&lt;/p&gt;
     &lt;span style=&#34;color: #66d9ef&#34;&gt;extends&lt;/span&gt;
     &lt;span style=&#34;color: #f8f8f2&#34;&gt;CollectiveMapper&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;String&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;String&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Object&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Object&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
         &lt;span style=&#34;color: #75715e&#34;&gt;//cmd args&lt;/span&gt;
-        &lt;span style=&#34;color: #66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;numMappers&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
+        &lt;span style=&#34;color: #66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;num_mappers&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
         &lt;span style=&#34;color: #66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;numThreads&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
         &lt;span style=&#34;color: #66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;harpThreads&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
         &lt;span style=&#34;color: #66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;fileDim&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
         &lt;span style=&#34;color: #66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;double&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;minSupport&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;      
         &lt;span style=&#34;color: #66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;double&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;minConfidence&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;   
+        &lt;span style=&#34;color: #66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;List&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;String&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;inputFiles&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
+        &lt;span style=&#34;color: #66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Configuration&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;conf&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
         &lt;span style=&#34;color: #66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;static&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;HarpDAALDataSource&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;datasource&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
         &lt;span style=&#34;color: #66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;static&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;DaalContext&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;daal_Context&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;DaalContext&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
         &lt;span style=&#34;color: #66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;NumericTable&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;input&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
@@ -1332,53 +1270,47 @@ environments and launch the application.&lt;/p&gt;
         &lt;span style=&#34;color: #66d9ef&#34;&gt;protected&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;setup&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;Context&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;context&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt;
         &lt;span style=&#34;color: #66d9ef&#34;&gt;throws&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;IOException&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;InterruptedException&lt;/span&gt; 
         &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-            &lt;span style=&#34;color: #f8f8f2&#34;&gt;Configuration&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;configuration&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;context&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getConfiguration&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
-            &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;numMappers&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;configuration&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getInt&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;HarpDAALConstants&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;NUM_MAPPERS&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;10&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-            &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;numThreads&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;configuration&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getInt&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;HarpDAALConstants&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;NUM_THREADS&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;10&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+            &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;conf&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;context&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getConfiguration&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
+            &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;num_mappers&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;conf&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getInt&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;HarpDAALConstants&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;NUM_MAPPERS&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;10&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+            &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;numThreads&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;conf&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getInt&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;HarpDAALConstants&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;NUM_THREADS&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;10&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
             &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;harpThreads&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Runtime&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getRuntime&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;().&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;availableProcessors&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
-            &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;fileDim&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;configuration&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getInt&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;HarpDAALConstants&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;FILE_DIM&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;10&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-            &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;minSupport&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;configuration&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getDouble&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;Constants&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;MIN_SUPPORT&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0.001&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-            &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;minConfidence&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;configuration&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getDouble&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;Constants&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;MIN_CONFIDENCE&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0.7&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+            &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;fileDim&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;conf&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getInt&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;HarpDAALConstants&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;FILE_DIM&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;10&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+            &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;minSupport&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;conf&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getDouble&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;Constants&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;MIN_SUPPORT&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0.001&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+            &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;minConfidence&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;conf&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getDouble&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;Constants&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;MIN_CONFIDENCE&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;0.7&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+
+            &lt;span style=&#34;color: #75715e&#34;&gt;//set thread number used in DAAL&lt;/span&gt;
+            &lt;span style=&#34;color: #f8f8f2&#34;&gt;LOG&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;info&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;The default value of thread numbers in DAAL: &amp;quot;&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Environment&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getNumberOfThreads&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;());&lt;/span&gt;
+            &lt;span style=&#34;color: #f8f8f2&#34;&gt;Environment&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;setNumberOfThreads&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;numThreads&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+            &lt;span style=&#34;color: #f8f8f2&#34;&gt;LOG&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;info&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;The current value of thread numbers in DAAL: &amp;quot;&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Environment&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getNumberOfThreads&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;());&lt;/span&gt;
         &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
 
         &lt;span style=&#34;color: #66d9ef&#34;&gt;protected&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;mapCollective&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;KeyValReader&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;reader&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Context&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;context&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;throws&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;IOException&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;InterruptedException&lt;/span&gt; 
         &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
             &lt;span style=&#34;color: #75715e&#34;&gt;// read data file names from HDFS&lt;/span&gt;
-            &lt;span style=&#34;color: #f8f8f2&#34;&gt;List&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;String&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;dataFiles&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt;
-                &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;LinkedList&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;String&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;();&lt;/span&gt;
+            &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;inputFiles&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;LinkedList&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;String&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;();&lt;/span&gt;
             &lt;span style=&#34;color: #66d9ef&#34;&gt;while&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;reader&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;nextKeyValue&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;())&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
                 &lt;span style=&#34;color: #f8f8f2&#34;&gt;String&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;key&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;reader&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getCurrentKey&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
                 &lt;span style=&#34;color: #f8f8f2&#34;&gt;String&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;value&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;reader&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getCurrentValue&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
                 &lt;span style=&#34;color: #f8f8f2&#34;&gt;LOG&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;info&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;Key: &amp;quot;&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;key&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;, Value: &amp;quot;&lt;/span&gt;
                         &lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;value&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
                 &lt;span style=&#34;color: #f8f8f2&#34;&gt;LOG&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;info&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;file name: &amp;quot;&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;value&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-                &lt;span style=&#34;color: #f8f8f2&#34;&gt;dataFiles&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;add&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;value&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+                &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;inputFiles&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;add&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;value&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
             &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
 
-            &lt;span style=&#34;color: #f8f8f2&#34;&gt;Configuration&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;conf&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;context&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getConfiguration&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
-
-            &lt;span style=&#34;color: #75715e&#34;&gt;// ----------------------- runtime settings -----------------------&lt;/span&gt;
-            &lt;span style=&#34;color: #75715e&#34;&gt;//set thread number used in DAAL&lt;/span&gt;
-            &lt;span style=&#34;color: #f8f8f2&#34;&gt;LOG&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;info&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;The default value of thread numbers in DAAL: &amp;quot;&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Environment&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getNumberOfThreads&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;());&lt;/span&gt;
-            &lt;span style=&#34;color: #f8f8f2&#34;&gt;Environment&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;setNumberOfThreads&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;numThreads&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-            &lt;span style=&#34;color: #f8f8f2&#34;&gt;LOG&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;info&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;The current value of thread numbers in DAAL: &amp;quot;&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Environment&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getNumberOfThreads&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;());&lt;/span&gt;
-
             &lt;span style=&#34;color: #75715e&#34;&gt;// set up data source module&lt;/span&gt;
-            &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;datasource&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;HarpDAALDataSource&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;dataFiles&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;fileDim&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;harpThreads&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;conf&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+            &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;datasource&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;HarpDAALDataSource&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;harpThreads&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;conf&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
 
             &lt;span style=&#34;color: #75715e&#34;&gt;// ----------------------- start the execution -----------------------&lt;/span&gt;
-            &lt;span style=&#34;color: #f8f8f2&#34;&gt;runAR&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;conf&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;context&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+            &lt;span style=&#34;color: #f8f8f2&#34;&gt;runAR&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;context&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
             &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;freeMemory&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
             &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;freeConn&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
             &lt;span style=&#34;color: #f8f8f2&#34;&gt;System&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;gc&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
         &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
 
-        &lt;span style=&#34;color: #66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;runAR&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;Configuration&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;conf&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Context&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;context&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;throws&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;IOException&lt;/span&gt;
+        &lt;span style=&#34;color: #66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;runAR&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;Context&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;context&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;throws&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;IOException&lt;/span&gt;
         &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
                 &lt;span style=&#34;color: #75715e&#34;&gt;//  load data &lt;/span&gt;
-                &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;datasource&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;loadFiles&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
-                &lt;span style=&#34;color: #f8f8f2&#34;&gt;input&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;HomogenNumericTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;daal_Context&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Double&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;class&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;fileDim&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;datasource&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getTotalLines&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(),&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;NumericTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;AllocationFlag&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;DoAllocate&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-                &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;datasource&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;loadDataBlock&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;input&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+                &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;input&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;datasource&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;createDenseNumericTableInput&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;inputFiles&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;fileDim&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;,&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt;  &lt;span style=&#34;color: #f8f8f2&#34;&gt;daal_Context&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
                 &lt;span style=&#34;color: #75715e&#34;&gt;// Create an algorithm to mine association rules using the Apriori method &lt;/span&gt;
                 &lt;span style=&#34;color: #f8f8f2&#34;&gt;Batch&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;alg&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Batch&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;daal_Context&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Double&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;class&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Method&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;apriori&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
                 &lt;span style=&#34;color: #75715e&#34;&gt;// Set an input object for the algorithm &lt;/span&gt;
@@ -1457,35 +1389,39 @@ environments and launch the application.&lt;/p&gt;
 &lt;div class=&#34;highlight&#34; style=&#34;background: #272822&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;COVDaalCollectiveMapper&lt;/span&gt;
 &lt;span style=&#34;color: #66d9ef&#34;&gt;extends&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;CollectiveMapper&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;String&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;String&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Object&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Object&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt;
 &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-  &lt;span style=&#34;color: #66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;PartialResult&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;partialResult&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-  &lt;span style=&#34;color: #66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;SerializableBase&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[]&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;partialResult_comm&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-  &lt;span style=&#34;color: #66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Result&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;result&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
-  &lt;span style=&#34;color: #66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;numMappers&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
+  
+  &lt;span style=&#34;color: #66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;num_mappers&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
   &lt;span style=&#34;color: #66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;numThreads&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
   &lt;span style=&#34;color: #66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;harpThreads&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
+  &lt;span style=&#34;color: #66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;List&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;String&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;inputFiles&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
+  &lt;span style=&#34;color: #66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Configuration&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;conf&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
+
   &lt;span style=&#34;color: #66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;static&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;HarpDAALDataSource&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;datasource&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
   &lt;span style=&#34;color: #66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;static&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;HarpDAALComm&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;harpcomm&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
   &lt;span style=&#34;color: #66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;static&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;DaalContext&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;daal_Context&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;DaalContext&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
 
+  &lt;span style=&#34;color: #66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;PartialResult&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;partialResult&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
+  &lt;span style=&#34;color: #66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;SerializableBase&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[]&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;partialResult_comm&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
+  &lt;span style=&#34;color: #66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Result&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;result&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;
+
   &lt;span style=&#34;color: #a6e22e&#34;&gt;@Override&lt;/span&gt;
   &lt;span style=&#34;color: #66d9ef&#34;&gt;protected&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;setup&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;Context&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;context&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt;
-  &lt;span style=&#34;color: #66d9ef&#34;&gt;throws&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;IOException&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;InterruptedException&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-  &lt;span style=&#34;color: #66d9ef&#34;&gt;long&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;startTime&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;System&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;currentTimeMillis&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
-  &lt;span style=&#34;color: #f8f8f2&#34;&gt;Configuration&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;configuration&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt;
-  &lt;span style=&#34;color: #f8f8f2&#34;&gt;context&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getConfiguration&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
-  &lt;span style=&#34;color: #f8f8f2&#34;&gt;numMappers&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;configuration&lt;/span&gt;
-  &lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getInt&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;HarpDAALConstants&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;NUM_MAPPERS&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;10&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-  &lt;span style=&#34;color: #f8f8f2&#34;&gt;numThreads&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;configuration&lt;/span&gt;
-  &lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getInt&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;HarpDAALConstants&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;NUM_THREADS&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;10&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-  &lt;span style=&#34;color: #75715e&#34;&gt;//always use the maximum hardware threads to load in data and convert data&lt;/span&gt;
-  &lt;span style=&#34;color: #f8f8f2&#34;&gt;harpThreads&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Runtime&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getRuntime&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;().&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;availableProcessors&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
+  &lt;span style=&#34;color: #66d9ef&#34;&gt;throws&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;IOException&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;InterruptedException&lt;/span&gt; 
+  &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
+    &lt;span style=&#34;color: #66d9ef&#34;&gt;long&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;startTime&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;System&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;currentTimeMillis&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
+    &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;conf&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;context&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getConfiguration&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
+    &lt;span style=&#34;color: #f8f8f2&#34;&gt;num_mappers&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;conf&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getInt&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;HarpDAALConstants&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;NUM_MAPPERS&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;10&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+    &lt;span style=&#34;color: #f8f8f2&#34;&gt;numThreads&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;conf&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getInt&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;HarpDAALConstants&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;NUM_THREADS&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #ae81ff&#34;&gt;10&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+    &lt;span style=&#34;color: #75715e&#34;&gt;//always use the maximum hardware threads to load in data and convert data&lt;/span&gt;
+    &lt;span style=&#34;color: #f8f8f2&#34;&gt;harpThreads&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Runtime&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getRuntime&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;().&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;availableProcessors&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
+    &lt;span style=&#34;color: #75715e&#34;&gt;//set thread number used in DAAL&lt;/span&gt;
+    &lt;span style=&#34;color: #f8f8f2&#34;&gt;Environment&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;setNumberOfThreads&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;numThreads&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
   &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
 
   &lt;span style=&#34;color: #66d9ef&#34;&gt;protected&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;mapCollective&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;KeyValReader&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;reader&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Context&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;context&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;throws&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;IOException&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;InterruptedException&lt;/span&gt; 
   &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
       &lt;span style=&#34;color: #66d9ef&#34;&gt;long&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;startTime&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;System&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;currentTimeMillis&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
-      &lt;span style=&#34;color: #f8f8f2&#34;&gt;List&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;String&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;trainingDataFiles&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt;
-      &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;LinkedList&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;String&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;();&lt;/span&gt;
+      &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;inputFiles&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;LinkedList&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;String&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;gt;();&lt;/span&gt;
       &lt;span style=&#34;color: #75715e&#34;&gt;//splitting files between mapper&lt;/span&gt;
       &lt;span style=&#34;color: #66d9ef&#34;&gt;while&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;reader&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;nextKeyValue&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;())&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
         &lt;span style=&#34;color: #f8f8f2&#34;&gt;String&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;key&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;reader&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getCurrentKey&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
@@ -1493,31 +1429,24 @@ environments and launch the application.&lt;/p&gt;
         &lt;span style=&#34;color: #f8f8f2&#34;&gt;LOG&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;info&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;Key: &amp;quot;&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;key&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;, Value: &amp;quot;&lt;/span&gt;
           &lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;value&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
         &lt;span style=&#34;color: #f8f8f2&#34;&gt;System&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;out&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;println&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;file name : &amp;quot;&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;value&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-        &lt;span style=&#34;color: #f8f8f2&#34;&gt;trainingDataFiles&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;add&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;value&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+        &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;inputFiles&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;add&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;value&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
       &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
 
-      &lt;span style=&#34;color: #f8f8f2&#34;&gt;Configuration&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;conf&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;context&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getConfiguration&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
-      &lt;span style=&#34;color: #f8f8f2&#34;&gt;Path&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;pointFilePath&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Path&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;trainingDataFiles&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;get&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;));&lt;/span&gt;
-      &lt;span style=&#34;color: #f8f8f2&#34;&gt;System&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;out&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;println&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;path = &amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;pointFilePath&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getName&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;());&lt;/span&gt;
-      &lt;span style=&#34;color: #f8f8f2&#34;&gt;FileSystem&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;fs&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;pointFilePath&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getFileSystem&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;conf&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-      &lt;span style=&#34;color: #f8f8f2&#34;&gt;FSDataInputStream&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;in&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;fs&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;open&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;pointFilePath&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
       &lt;span style=&#34;color: #75715e&#34;&gt;//init data source&lt;/span&gt;
-      &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;datasource&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;HarpDAALDataSource&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;trainingDataFiles&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;harpThreads&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;conf&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+      &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;datasource&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;HarpDAALDataSource&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;harpThreads&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;conf&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
       &lt;span style=&#34;color: #75715e&#34;&gt;// create communicator&lt;/span&gt;
-      &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;harpcomm&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;HarpDAALComm&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getSelfID&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(),&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getMasterID&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(),&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;numMappers&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;daal_Context&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
-      &lt;span style=&#34;color: #75715e&#34;&gt;//set thread number used in DAAL&lt;/span&gt;
-      &lt;span style=&#34;color: #f8f8f2&#34;&gt;Environment&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;setNumberOfThreads&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;numThreads&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+      &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;harpcomm&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;HarpDAALComm&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getSelfID&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(),&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;getMasterID&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(),&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;num_mappers&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;daal_Context&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
       &lt;span style=&#34;color: #75715e&#34;&gt;// run the application codes&lt;/span&gt;
-      &lt;span style=&#34;color: #f8f8f2&#34;&gt;runCOV&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;conf&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;context&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+      &lt;span style=&#34;color: #f8f8f2&#34;&gt;runCOV&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;context&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
       &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;freeMemory&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
       &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;freeConn&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
       &lt;span style=&#34;color: #f8f8f2&#34;&gt;System&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;gc&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
     &lt;span style=&#34;color: #f92672&#34;&gt;}&lt;/span&gt;
 
-    &lt;span style=&#34;color: #66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;runCOV&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;Configuration&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;conf&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Context&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;context&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;throws&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;IOException&lt;/span&gt; 
+    &lt;span style=&#34;color: #66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color: #a6e22e&#34;&gt;runCOV&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;Context&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;context&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;throws&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;IOException&lt;/span&gt; 
     &lt;span style=&#34;color: #f92672&#34;&gt;{&lt;/span&gt;
-        &lt;span style=&#34;color: #75715e&#34;&gt;//read in csr files with filenames in trainingDataFiles&lt;/span&gt;
-        &lt;span style=&#34;color: #f8f8f2&#34;&gt;NumericTable&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;featureArray_daal&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;datasource&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;loadCSRNumericTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;daal_Context&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
+        &lt;span style=&#34;color: #75715e&#34;&gt;//read in csr files &lt;/span&gt;
+        &lt;span style=&#34;color: #f8f8f2&#34;&gt;NumericTable&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;featureArray_daal&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;datasource&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;loadCSRNumericTable&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;inputFiles&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #e6db74&#34;&gt;&amp;quot;,&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;daal_Context&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
         &lt;span style=&#34;color: #75715e&#34;&gt;// compute on local nodes&lt;/span&gt;
         &lt;span style=&#34;color: #f8f8f2&#34;&gt;computeOnLocalNode&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;featureArray_daal&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
         &lt;span style=&#34;color: #75715e&#34;&gt;// compute on master node&lt;/span&gt;
@@ -1547,7 +1476,7 @@ environments and launch the application.&lt;/p&gt;
         &lt;span style=&#34;color: #75715e&#34;&gt;// create algorithm instance at master node&lt;/span&gt;
         &lt;span style=&#34;color: #f8f8f2&#34;&gt;DistributedStep2Master&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;algorithm&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color: #66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;DistributedStep2Master&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;daal_Context&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Double&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;class&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;Method&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;fastCSR&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;);&lt;/span&gt;
         &lt;span style=&#34;color: #75715e&#34;&gt;// add input data&lt;/span&gt;
-        &lt;span style=&#34;color: #66d9ef&#34;&gt;for&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;j&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;j&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;numMappers&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;j&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;++)&lt;/span&gt;
+        &lt;span style=&#34;color: #66d9ef&#34;&gt;for&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;j&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color: #ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;j&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color: #66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;num_mappers&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;;&lt;/span&gt; &lt;span style=&#34;color: #f8f8f2&#34;&gt;j&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;++)&lt;/span&gt;
           &lt;span style=&#34;color: #f8f8f2&#34;&gt;algorithm&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;input&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;add&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;DistributedStep2MasterInputId&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;partialResults&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color: #f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;PartialResult&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;)(&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;partialResult_comm&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #f8f8f2&#34;&gt;j&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;]));&lt;/span&gt;
         &lt;span style=&#34;color: #75715e&#34;&gt;// compute &lt;/span&gt;
         &lt;span style=&#34;color: #f8f8f2&#34;&gt;algorithm&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color: #a6e22e&#34;&gt;compute&lt;/span&gt;&lt;span style=&#34;color: #f92672&#34;&gt;();&lt;/span&gt;
