@@ -497,7 +497,7 @@ It is intended to identify strong rules discovered in databases using some measu
 
 &lt;h2 id=&#34;covariance-learn-more-https-software-intel-com-en-us-daal-programming-guide-details-2&#34;&gt;&lt;strong&gt;Covariance&lt;/strong&gt; &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-2&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/Covariance.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_Covariance.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;Covariance, in probability theory and statistics, is a measure of the joint variability of two random variables. The sign of the covariance
 shows the tendency in the linear relationship between the variables. The correlation is the covariance normalized to be between -1 and +1.
@@ -512,7 +512,7 @@ A negative correlation indicates the extent to which one variable increases whil
 
 &lt;h2 id=&#34;boosting&#34;&gt;&lt;strong&gt;Boosting&lt;/strong&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_Boosting.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations-Boosting.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;Boosting is a group of algorithms aiming to construct a strong classifier from a set of weighted weak classifiers
 through iterative re-weighting based on accuracy measurement for weak classifiers. A weak classifier typically has only slightly better
@@ -571,7 +571,7 @@ input datasets.&lt;/p&gt;
 
 &lt;h2 id=&#34;expectation-maximization-learn-more-https-software-intel-com-en-us-daal-programming-guide-details-13&#34;&gt;&lt;strong&gt;Expectation Maximization&lt;/strong&gt; &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-13&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_Em.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_Expectation_Maximization.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;Expectation-Maximization (EM) algorithm is an iterative method for finding the maximum likelihood and maximum a posteriori estimates of parameters in models that typically depend on hidden variables.&lt;/p&gt;
 
@@ -615,7 +615,7 @@ PCA can be done by two methods:&lt;/p&gt;
 
 &lt;h2 id=&#34;single-value-decomposition-learn-more-https-software-intel-com-en-us-daal-programming-guide-details-9&#34;&gt;&lt;strong&gt;Single Value Decomposition&lt;/strong&gt; &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-9&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/SVD.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations-SVD3.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;Singular Value Decomposition is a method which seeks to reduce the rank of a data matrix, thus finding the unique vectors, features, or characteristics of the data matrix at hand. This algorithm has been used in, but is not limited to signal processing, weather prediction, hotspot detection, and recommender systems.&lt;/p&gt;
 
@@ -885,7 +885,7 @@ in order to make the data more easily separable there.&lt;/p&gt;
 
 &lt;h2 id=&#34;linear-regression-learn-more-https-software-intel-com-en-us-daal-programming-guide-linear-regression&#34;&gt;&lt;strong&gt;Linear Regression&lt;/strong&gt; &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-linear-regression&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/linear_regression.png&#34; width=&#34;40%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_Linear_Regression.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;In statistics, linear regression is an approach for modelling the relationship between a scalar dependent variable y and one or more explanatory variables (or independent variables) denoted X. In linear regression, the relationships are modeled using linear predictor functions whose unknown model parameters are estimated from the data. Such models are called linear models.&lt;/p&gt;
 
@@ -951,7 +951,7 @@ which trains the model data X and Y to minimize the cost function as below&lt;/p
 
 &lt;h2 id=&#34;neural-networks-learn-more-https-software-intel-com-en-us-daal-programming-guide-neural-networks&#34;&gt;&lt;strong&gt;Neural Networks&lt;/strong&gt; &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-neural-networks&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/nn.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_NN.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;Neural Networks are a beautiful biologically-inspired programming paradigm which enable a computer to learn from observational data.
 The motivation for the development of neural network technology stemmed from the desire to develop an artificial system that could perform &amp;ldquo;intelligent&amp;rdquo; tasks similar to those performed by the human brain.
