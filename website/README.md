@@ -30,10 +30,14 @@ npm install
 
 ### Build website
 ```bash
+cd website
 gulp clean
+#run 'npm rebuild node-sass' if got error message
 gulp build
 ./scripts/javadocs.sh
 hugo
+#restore the first page with new designed style
+cp design/index.html public
 ```
 
 ### View the website locally
