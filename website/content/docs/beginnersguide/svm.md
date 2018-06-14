@@ -35,7 +35,7 @@ Format:
 
 
 # Compile
-The dataset used is a subset of [MNIST]([https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass.html#mnist](https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass.html#mnist) with 6000 examples selected.
+The dataset used is a subset of [MNIST](https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass.html#mnist) with 6000 examples selected.
 
 <mark>To be able to compile and run, you have to [install Harp and Hadoop](https://dsc-spidal.github.io/harp/docs/getting-started/)</mark>:
 
