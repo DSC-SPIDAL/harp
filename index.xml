@@ -484,7 +484,7 @@ In the &lt;em&gt;&lt;strong&gt;init&lt;/strong&gt;&lt;/em&gt; function, tune the
 
 &lt;h2 id=&#34;association-rule-learn-more-https-software-intel-com-en-us-daal-programming-guide-details-10&#34;&gt;&lt;strong&gt;Association Rule&lt;/strong&gt; &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-10&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_Association_Rule.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgosNew/HarpIllustrations_Association_Rule.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;Association rule learning is a rule-based learning method for discovering relations between variables in databases.
 It is intended to identify strong rules discovered in databases using some measures of interestingness.&lt;/p&gt;
@@ -497,7 +497,7 @@ It is intended to identify strong rules discovered in databases using some measu
 
 &lt;h2 id=&#34;covariance-learn-more-https-software-intel-com-en-us-daal-programming-guide-details-2&#34;&gt;&lt;strong&gt;Covariance&lt;/strong&gt; &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-2&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_Covariance.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgosNew/HarpIllustrations_Covariance.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;Covariance, in probability theory and statistics, is a measure of the joint variability of two random variables. The sign of the covariance
 shows the tendency in the linear relationship between the variables. The correlation is the covariance normalized to be between -1 and +1.
@@ -512,7 +512,7 @@ A negative correlation indicates the extent to which one variable increases whil
 
 &lt;h2 id=&#34;boosting&#34;&gt;&lt;strong&gt;Boosting&lt;/strong&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations-Boosting.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgosNew/HarpIllustrations_Boosting.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;Boosting is a group of algorithms aiming to construct a strong classifier from a set of weighted weak classifiers
 through iterative re-weighting based on accuracy measurement for weak classifiers. A weak classifier typically has only slightly better
@@ -541,7 +541,7 @@ BrownBoost in Harp-DAAL is a binary classifier.&lt;/p&gt;
 
 &lt;h2 id=&#34;naive-bayes-classifier-learn-more-https-software-intel-com-en-us-daal-programming-guide-details-28&#34;&gt;&lt;strong&gt;Naive Bayes Classifier&lt;/strong&gt; &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-28&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_Naive_Bayes.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgosNew/HarpIllustrations_Naive_Bayes.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;Naïve Bayes is a set of simple and powerful classification methods often used for text classification,
 medical diagnosis, and other classification problems. In spite of their main assumption about independence between features,
@@ -556,7 +556,7 @@ An advantage of this method is that it requires only a small amount of training 
 
 &lt;h2 id=&#34;k-means-clustering-learn-more-https-software-intel-com-en-us-daal-programming-guide-details-5&#34;&gt;&lt;strong&gt;K-means Clustering&lt;/strong&gt; &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-5&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_KMeans_Clustering.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgosNew/HarpIllustrations_KMeans_Clustering.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;K-means is a widely used clustering algorithm in machine learning community. It iteratively computes the distance between each
 training point to every centroids, re-assigns the training point to new cluster and re-compute the new centroid of each cluster.
@@ -571,7 +571,7 @@ input datasets.&lt;/p&gt;
 
 &lt;h2 id=&#34;expectation-maximization-learn-more-https-software-intel-com-en-us-daal-programming-guide-details-13&#34;&gt;&lt;strong&gt;Expectation Maximization&lt;/strong&gt; &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-13&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_Expectation_Maximization.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgosNew/HarpIllustrations_Em.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;Expectation-Maximization (EM) algorithm is an iterative method for finding the maximum likelihood and maximum a posteriori estimates of parameters in models that typically depend on hidden variables.&lt;/p&gt;
 
@@ -583,7 +583,7 @@ input datasets.&lt;/p&gt;
 
 &lt;h2 id=&#34;principle-component-analysis&#34;&gt;&lt;strong&gt;Principle Component Analysis&lt;/strong&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_PCA.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgosNew/HarpIllustrations_PCA.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;Principle Component Analysis (PCA) is a widely used statistical procedure that uses an orthogonal transformation to convert a set of observations of possibly correlated variables into a set of values of linearly uncorrelated variables called principal components (or sometimes, principal modes of variation).
 PCA can be done by two methods:&lt;/p&gt;
@@ -615,7 +615,7 @@ PCA can be done by two methods:&lt;/p&gt;
 
 &lt;h2 id=&#34;single-value-decomposition-learn-more-https-software-intel-com-en-us-daal-programming-guide-details-9&#34;&gt;&lt;strong&gt;Single Value Decomposition&lt;/strong&gt; &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-9&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations-SVD3.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgosNew/HarpIllustrations_SVD.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;Singular Value Decomposition is a method which seeks to reduce the rank of a data matrix, thus finding the unique vectors, features, or characteristics of the data matrix at hand. This algorithm has been used in, but is not limited to signal processing, weather prediction, hotspot detection, and recommender systems.&lt;/p&gt;
 
@@ -627,7 +627,7 @@ PCA can be done by two methods:&lt;/p&gt;
 
 &lt;h2 id=&#34;qr-decomposition-learn-more-https-software-intel-com-en-us-daal-programming-guide-details-11&#34;&gt;&lt;strong&gt;QR Decomposition&lt;/strong&gt; &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-11&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_QR.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgosNew/HarpIllustrations_QR.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;The QR decomposition or QR factorization of a matrix is a decomposition of the matrix into an orthogonal matrix and a triangular matrix. A QR decomposition of a real square matrix A is a decomposition of A as A = QR, where Q is an orthogonal matrix (its columns are orthogonal unit vectors meaning Q&lt;sup&gt;T&lt;/sup&gt;Q = I)
 and R is an upper triangular matrix (also called right triangular matrix).&lt;/p&gt;
@@ -651,7 +651,7 @@ and R is an upper triangular matrix (also called right triangular matrix).&lt;/p
 
 &lt;h2 id=&#34;cholesky-decomposition-learn-more-https-software-intel-com-en-us-daal-programming-guide-details-8&#34;&gt;&lt;strong&gt;Cholesky Decomposition&lt;/strong&gt; &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-8&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_Cholesky_Decompsition.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgosNew/HarpIllustrations_Cholesky_Decompsition.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;Cholesky decomposition is a matrix factorization technique that decomposes a symmetric positive-definite matrix into a product of a lower triangular matrix and its conjugate transpose.&lt;/p&gt;
 
@@ -663,7 +663,7 @@ and R is an upper triangular matrix (also called right triangular matrix).&lt;/p
 
 &lt;h2 id=&#34;moments-of-low-order-learn-more-https-software-intel-com-en-us-daal-programming-guide-details&#34;&gt;&lt;strong&gt;Moments of Low Order&lt;/strong&gt; &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_Low_Order_Moments.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgosNew/HarpIllustrations_Low_Order_Moments.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;Moments are basic quantitative measures of data set characteristics such as location and dispersion.
 We compute the following low order characteristics: minimums/maximums, sums, means, sums of squares, sums of squared differences from the means, second order raw moments, variances, standard deviations, and variations.&lt;/p&gt;
@@ -676,7 +676,7 @@ We compute the following low order characteristics: minimums/maximums, sums, mea
 
 &lt;h2 id=&#34;outlier-detection&#34;&gt;&lt;strong&gt;Outlier Detection&lt;/strong&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_Outlier_Detection.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgosNew/HarpIllustrations_Outlier_Detection.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;Outlier detection methods aim to identify observation points that are abnormally distant from other observation points.&lt;/p&gt;
 
@@ -696,7 +696,7 @@ We compute the following low order characteristics: minimums/maximums, sums, mea
 
 &lt;h2 id=&#34;sorting-learn-more-https-software-intel-com-en-us-daal-programming-guide-details-17&#34;&gt;&lt;strong&gt;Sorting&lt;/strong&gt; &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-17&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_Sorting.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgosNew/HarpIllustrations_Sorting.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;Sorting is an algorithm to sort the observations by each feature (column) in the ascending order.&lt;/p&gt;
 
@@ -708,7 +708,7 @@ We compute the following low order characteristics: minimums/maximums, sums, mea
 
 &lt;h2 id=&#34;quantile-learn-more-https-software-intel-com-en-us-daal-programming-guide-details-1&#34;&gt;&lt;strong&gt;Quantile&lt;/strong&gt; &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-1&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_Quantile.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgosNew/HarpIllustrations_Quantile.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;Quantile is an algorithm to analyze the distribution of observations. Quantiles are the values that divide the distribution so that a given portion of observations is below the quantile.&lt;/p&gt;
 
@@ -720,7 +720,7 @@ We compute the following low order characteristics: minimums/maximums, sums, mea
 
 &lt;h2 id=&#34;quality-metrics-learn-more-https-software-intel-com-en-us-daal-programming-guide-quality-metrics&#34;&gt;&lt;strong&gt;Quality Metrics&lt;/strong&gt; &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-quality-metrics&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_Quality_Metrics.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgosNew/HarpIllustrations_Quality_Metrics.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;A quality metric is a numerical characteristic or a set of connected numerical characteristics that represents
 the qualitative aspect of the result returned by an algorithm: a computed statistical estimate, model, or result of decision making.&lt;/p&gt;
@@ -733,7 +733,7 @@ the qualitative aspect of the result returned by an algorithm: a computed statis
 
 &lt;h2 id=&#34;optimization-solvers&#34;&gt;&lt;strong&gt;Optimization Solvers&lt;/strong&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_SGD_Optimization.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgosNew/HarpIllustrations_SGD_Optimization.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;An optimization solver is an algorithm to solve an optimization problem, which is to find the maximum or minimum of an
 objective function in the presence of constraints on its variables.&lt;/p&gt;
@@ -767,7 +767,7 @@ The following computation methods are available in Intel DAAL for the stochastic
 
 &lt;h2 id=&#34;normalization&#34;&gt;&lt;strong&gt;Normalization&lt;/strong&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_Normalization.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgosNew/HarpIllustrations_Normalization.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;In statistics and applications of statistics, normalization can have a range of meanings.
 In the simplest cases, normalization of ratings means adjusting values measured on different scales to a notionally common scale, often prior to averaging.
@@ -790,7 +790,7 @@ provides two algorithm kernels.&lt;/p&gt;
 
 &lt;h2 id=&#34;support-vector-machine-classifier-learn-more-https-software-intel-com-en-us-daal-programming-guide-details-32&#34;&gt;&lt;strong&gt;Support Vector Machine Classifier&lt;/strong&gt; &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-32&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_Svm.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgosNew/HarpIllustrations_Svm.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;Support Vector Machine (SVM) is among popular classification algorithms.
 It belongs to a family of generalized linear classification problems.
@@ -804,7 +804,7 @@ Because SVM covers binary classification problems only in the multi-class case, 
 
 &lt;h2 id=&#34;k-nearest-neighbors-classifier-learn-more-https-software-intel-com-en-us-daal-programming-guide-details-34&#34;&gt;&lt;strong&gt;K-Nearest Neighbors Classifier&lt;/strong&gt; &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-34&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_KNN.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgosNew/HarpIllustrations_KNN.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;k-Nearest Neighbors (kNN) classification is a non-parametric classification algorithm. The model of the kNN classifier is based on feature vectors and class labels from the training data set. This classifier induces the class of the query vector from the labels of the feature vectors in the training data set to which the query vector is similar. A similarity between feature vectors is determined by the type of distance (for example, Euclidian) in a multidimensional feature space.&lt;/p&gt;
 
@@ -816,7 +816,7 @@ Because SVM covers binary classification problems only in the multi-class case, 
 
 &lt;h2 id=&#34;decision-tree-learn-more-https-software-intel-com-en-us-daal-programming-guide-details-22&#34;&gt;&lt;strong&gt;Decision Tree&lt;/strong&gt; &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-22&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_DTree.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgosNew/HarpIllustrations_D_Tree.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;Decision trees partition the feature space into a set of hypercubes, and then fit a simple model in each hypercube. The simple model can be a prediction model, which ignores all predictors and predicts the majority (most frequent) class (or the mean of a dependent variable for regression), also known as 0-R or constant classifier.&lt;/p&gt;
 
@@ -833,7 +833,7 @@ Because SVM covers binary classification problems only in the multi-class case, 
 
 &lt;h2 id=&#34;decision-forest-learn-more-https-software-intel-com-en-us-daal-programming-guide-details-23&#34;&gt;&lt;strong&gt;Decision Forest&lt;/strong&gt; &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-23&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_DForest.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgosNew/HarpIllustrations_D_Forest.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;Decision forest classification and regression algorithms are based on an ensemble of tree-structured classifiers (decision trees)
 built using the general technique of bootstrap aggregation (bagging) and random choice of features.&lt;/p&gt;
@@ -851,7 +851,7 @@ built using the general technique of bootstrap aggregation (bagging) and random 
 
 &lt;h2 id=&#34;kernel-functions&#34;&gt;&lt;strong&gt;Kernel Functions&lt;/strong&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_Kernel_Function.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgosNew/HarpIllustrations_Kernel_Function.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;Kernel functions form a class of algorithms for pattern analysis. The main characteristic of kernel functions is a distinct approach to this problem.
 Instead of reducing the dimension of the original data, kernel functions map the data into higher-dimensional spaces
@@ -873,7 +873,7 @@ in order to make the data more easily separable there.&lt;/p&gt;
 
 &lt;h2 id=&#34;stump-weak-learner-classifier-learn-more-https-software-intel-com-en-us-daal-programming-guide-details-32&#34;&gt;&lt;strong&gt;Stump Weak Learner Classifier&lt;/strong&gt; &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-32&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_Stump_Weaklearner.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgosNew/HarpIllustrations_Stump_Weaklearner.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;A decision stump is a model that consists of a one-level decision tree &lt;sup class=&#34;footnote-ref&#34; id=&#34;fnref:fn14&#34;&gt;&lt;a rel=&#34;footnote&#34; href=&#34;#fn:fn14&#34;&gt;14&lt;/a&gt;&lt;/sup&gt; where the root is connected to terminal nodes (leaves).&lt;/p&gt;
 
@@ -885,7 +885,7 @@ in order to make the data more easily separable there.&lt;/p&gt;
 
 &lt;h2 id=&#34;linear-regression-learn-more-https-software-intel-com-en-us-daal-programming-guide-linear-regression&#34;&gt;&lt;strong&gt;Linear Regression&lt;/strong&gt; &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-linear-regression&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_Linear_Regression.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgosNew/HarpIllustrations_Linear_Regression.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;In statistics, linear regression is an approach for modelling the relationship between a scalar dependent variable y and one or more explanatory variables (or independent variables) denoted X. In linear regression, the relationships are modeled using linear predictor functions whose unknown model parameters are estimated from the data. Such models are called linear models.&lt;/p&gt;
 
@@ -903,7 +903,7 @@ It has two algorithmic variants &lt;sup class=&#34;footnote-ref&#34; id=&#34;fnr
 
 &lt;h2 id=&#34;ridge-regression-learn-more-https-software-intel-com-en-us-daal-programming-guide-ridge-regression&#34;&gt;&lt;strong&gt;Ridge Regression&lt;/strong&gt; &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-ridge-regression&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_Ridge_Regression.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgosNew/HarpIllustrations_Ridge_Regression.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;Ridge Regression is a technique for analyzing multiple regression data that suffer from multicollinearity. When
 multicollinearity occurs, least squares estimates are unbiased, but their variances are large so they may be far from
@@ -918,7 +918,7 @@ It is hoped that the net effect will be to give estimates that are more reliable
 
 &lt;h2 id=&#34;implicit-alternating-least-squares-learn-more-https-software-intel-com-en-us-daal-programming-guide-details-38&#34;&gt;&lt;strong&gt;Implicit Alternating Least Squares&lt;/strong&gt; &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-details-38&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_ALS.png&#34; width=&#34;70%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgosNew/HarpIllustrations_ALS.png&#34; width=&#34;70%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;Alternating least squares (ALS) is an algorithm used in recommender systems,
 which trains the model data X and Y to minimize the cost function as below&lt;/p&gt;
@@ -951,7 +951,7 @@ which trains the model data X and Y to minimize the cost function as below&lt;/p
 
 &lt;h2 id=&#34;neural-networks-learn-more-https-software-intel-com-en-us-daal-programming-guide-neural-networks&#34;&gt;&lt;strong&gt;Neural Networks&lt;/strong&gt; &lt;a href=&#34;https://software.intel.com/en-us/daal-programming-guide-neural-networks&#34;&gt;[Learn More]&lt;/a&gt;&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgos/HarpIllustrations_NN.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://dsc-spidal.github.io/harp/img/daalAlgosNew/HarpIllustrations_NN.png&#34; width=&#34;60%&#34; &gt;&lt;/p&gt;
 
 &lt;p&gt;Neural Networks are a beautiful biologically-inspired programming paradigm which enable a computer to learn from observational data.
 The motivation for the development of neural network technology stemmed from the desire to develop an artificial system that could perform &amp;ldquo;intelligent&amp;rdquo; tasks similar to those performed by the human brain.
