@@ -22,8 +22,8 @@ examples.
 
 ## Open Channels
 
-Google group - harp-users@googlegroups.com
-Slack - https://apache-harp.slack.com
+1. Google group - harp-users@googlegroups.com
+2. Slack - https://apache-harp.slack.com
 
 ## Installation of Harp 
 
