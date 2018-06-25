@@ -172,6 +172,7 @@ mvn clean package -Phadoop-2.6.0
 cd $HARP_ROOT_DIR/contrib/target
 cp contrib-0.1.0.jar $HADOOP_HOME
 cd $HADOOP_HOME
+cp $HARP_ROOT_DIR/third_party/libsvm-3.17.jar $HADOOP_HOME/share/hadoop/mapreduce/
 ```
 
 ### Get the dataset and put data onto hdfs

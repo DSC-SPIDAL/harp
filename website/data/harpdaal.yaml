@@ -3,34 +3,82 @@ sections:
     sublinks:
       - name: Harp-DAAL framework
         url: /docs/harpdaal/harpdaal
-  - name: Algorithms
+  - name: Harp-DAAL API
     sublinks:
-      - name: K-means
-        url: /docs/harpdaal/kmeans
-      - name: Matrix Factorization (SGD)
-        url: /docs/harpdaal/mfsgd
-      - name: Recommender System (ALS)
-        url: /docs/harpdaal/als
-      - name: Singular Value Decomposition (SVD)
-        url: /docs/harpdaal/svd
-      - name: Principal Component Analysis (PCA)
-        url: /docs/harpdaal/pca
-      - name: Neural Network
-        url: /docs/harpdaal/nn
-      - name: QR Decomposition (QR)
-        url: /docs/harpdaal/qr
+      - name: Initialization Module 
+        url: /docs/harpdaal/harpdaalInit
+      - name: I/O Module 
+        url: /docs/harpdaal/harpdaalIO
+      - name: Communication Module 
+        url: /docs/harpdaal/harpdaalComm
+      - name: Batch Mode Code Walk Through 
+        url: /docs/harpdaal/BatchModeEg
+      - name: Distributed Mode Code Walk Through 
+        url: /docs/harpdaal/DistriModeEg
+  - name: Algorithm
+    sublinks:
+      - name: Association Rule
+        url: /docs/harpdaal/algorithms#arpos
       - name: Covariance
-        url: /docs/harpdaal/covariance
+        url: /docs/harpdaal/algorithms#covpos
+      - name: Boosting 
+        url: /docs/harpdaal/algorithms#boostpos
+      - name: Naive Bayes Classifier
+        url: /docs/harpdaal/algorithms#naivepos
+      - name: K-Means Clustering
+        url: /docs/harpdaal/algorithms#kmeanspos
+      - name: Expectation-Maximization
+        url: /docs/harpdaal/algorithms#empos
+      - name: Principal Component Analysis
+        url: /docs/harpdaal/algorithms#pcapos
+      - name: Singular Value Decomposition
+        url: /docs/harpdaal/algorithms#svdpos
+      - name: QR Decomposition
+        url: /docs/harpdaal/algorithms#qrpos
+      - name: Pivoted-QR Decomposition
+        url: /docs/harpdaal/algorithms#pqrpos
+      - name: Cholesky Decomposition
+        url: /docs/harpdaal/algorithms#ckdpos
       - name: Low Order Moments
-        url: /docs/harpdaal/moments
-      - name: Naive Bayes
-        url: /docs/harpdaal/naive_bayes
+        url: /docs/harpdaal/algorithms#mompos
+      - name: Outlier Detection 
+        url: /docs/harpdaal/algorithms#odpos
+      - name: Sorting 
+        url: /docs/harpdaal/algorithms#sortpos
+      - name: Quantile
+        url: /docs/harpdaal/algorithms#qtepos
+      - name: Quality Metrics 
+        url: /docs/harpdaal/algorithms#qmpos
+      - name: Optimization Solvers 
+        url: /docs/harpdaal/algorithms#optpos
+      - name: Normalization 
+        url: /docs/harpdaal/algorithms#normpos
+      - name: Support Vector Machine 
+        url: /docs/harpdaal/algorithms#svmpos
+      - name: K-Nearest Neighbors Classifier 
+        url: /docs/harpdaal/algorithms#knnpos
+      - name: Decision Tree 
+        url: /docs/harpdaal/algorithms#dtreepos
+      - name: Decision Forest 
+        url: /docs/harpdaal/algorithms#dforestpos
+      - name: Kernel Functions 
+        url: /docs/harpdaal/algorithms#kernelfuncpos
+      - name: Stump Weak Learner Classifier
+        url: /docs/harpdaal/algorithms#stumppos
       - name: Linear Regression
-        url: /docs/harpdaal/linear_regression
+        url: /docs/harpdaal/algorithms#linregpos
       - name: Ridge Regression
-        url: /docs/harpdaal/ridge_regression
+        url: /docs/harpdaal/algorithms#reregpos
+      - name: Implicit Alternating Least Squares 
+        url: /docs/harpdaal/algorithms#alspos
+      - name: Neural Network
+        url: /docs/harpdaal/algorithms#nnpos
+  - name: Application
+    sublinks:
+      - name: Recommender System based on SGD 
+        url: /docs/harpdaal/MF-SGD
       - name: Subgraph Counting
-        url: /docs/harpdaal/subgraph
+        url: /docs/harpdaal/Subgraph
   - name: Hands-on
     sublinks:
       - name: Tutorial

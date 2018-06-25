@@ -1,5 +1,5 @@
 ---
-title: Harp-DAAL-SGD
+title: Recommender System based on SGD 
 ---
 
 <img src="/img/6-2-6.png" width="70%"  >

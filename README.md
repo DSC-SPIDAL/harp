@@ -20,6 +20,11 @@ machine learning and other data intensive applications.
 Please find the full documentation of Harp at https://dsc-spidal.github.io/harp/ including quick start, programming guide, and 
 examples.
 
+## Open Channels
+
+1. Google group - harp-users@googlegroups.com
+2. Slack - https://apache-harp.slack.com
+
 ## Installation of Harp 
 
 ### Install from Binaries
