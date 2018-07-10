@@ -5,3 +5,5 @@ sections:
         url: /docs/beginnersguide/mlr
       - name: Support Vector Machine
         url: /docs/beginnersguide/svm
+      - name: Random Forests
+        url: /docs/beginnersguide/rf
