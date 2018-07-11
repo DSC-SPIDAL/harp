@@ -34,7 +34,7 @@ sample-sparse-data-part-1.txt 6
 
 # Run example
 
-Put data on hdfs
+## Put data on hdfs
 ```bash
 hdfs dfs -put $HARP_ROOT_DIR/datasets/tutorial/lda-cvb/sample-sparse-data/sample-sparse-metadata .
 hdfs dfs -mkdir sample-sparse-data
@@ -53,7 +53,7 @@ cp contrib-0.1.0.jar $HADOOP_HOME
 cp $HARP_ROOT_DIR/third_parity/cloud9-1.4.17.jar $HADOOP_HOME/share/hadoop/mapreduce
 cd $HADOOP_HOME
 ```
-Run
+## Run
 ```bash
 hadoop jar contrib-1.0.SNAPSHOT.jar  edu.iu.lda.LdaMapCollective <input dir>  <metafile>  <output dir> <number of terms> <number of topics> <number of docs> <number of MapTasks> <number of iterations> <number of threads> <mode, 1=multithreading>
 ```
