@@ -35,7 +35,7 @@ Format:
 
 # Run Example
 
-To be able to compile and run, you have to [install Harp and Hadoop](https://dsc-spidal.github.io/harp/docs/getting-started/):
+<mark>To be able to compile and run, you have to [install Harp and Hadoop](https://dsc-spidal.github.io/harp/docs/getting-started/)</mark>:
 
 ## Put data on hdfs
 ```bash
