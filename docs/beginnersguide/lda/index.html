@@ -6,51 +6,56 @@
 
 <p>The dataset used is sampled from wikipedia dataset.
 The format of the data should look like: (from <a href="https://github.com/DSC-SPIDAL/harp/blob/master/datasets/tutorial/lda-cvb/sample-sparse-data/sample-sparse-data-part-0.txt">sample-sparse-data-part-0.txt</a>)</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>    0:1 1:2 2:6 4:2 5:3 6:1 7:1 10:3
-    0:1 1:3 3:1 4:3 7:2 10:1
-    0:1 1:4 2:1 5:4 6:9 8:1 9:2
-    0:2 1:1 3:3 6:5 8:2 9:3 10:9
-    0:3 1:1 2:1 3:9 4:3 6:2 9:1 10:3
-    0:4 1:2 3:3 4:4 5:5 6:1 7:1 8:1 9:4
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>0:1 1:2 2:6 4:2 5:3 6:1 7:1 10:3
+0:1 1:3 3:1 4:3 7:2 10:1
+0:1 1:4 2:1 5:4 6:9 8:1 9:2
+0:2 1:1 3:3 6:5 8:2 9:3 10:9
+0:3 1:1 2:1 3:9 4:3 6:2 9:1 10:3
+0:4 1:2 3:3 4:4 5:5 6:1 7:1 8:1 9:4
 </pre></div>
 
-<p>Each row is one document.
-<em>&lt;wordid&gt;:&lt;wordcount&gt;]+</em>
-For example:
-- 0: word ID
-- 1: word count/frequency</p>
+<p>Each row is one document in Wikipedia.</p>
+
+<p><em>&lt;wordid&gt;:&lt;wordcount&gt;</em></p>
+
+<ul>
+<li><em>&lt;wordid&gt;</em>: word ID (Example: 0)</li>
+<li><em>&lt;wordcount&gt;</em>: word count/frequency (Example: 1)</li>
+</ul>
 
 <p><a href="https://github.com/DSC-SPIDAL/harp/blob/master/datasets/tutorial/lda-cvb/sample-sparse-data/sample-sparse-metadata">sample-sparse-metadata</a> shows the document ID for the first document of each file.</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>    sample-sparse-data-part-0.txt 0
-    sample-sparse-data-part-1.txt 6
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>sample-sparse-data-part-0.txt 0
+sample-sparse-data-part-1.txt 6
 </pre></div>
 
-<h1 id="run-example">Run example</h1>
+<h1 id="run-example">Run Example</h1>
 
-<p>Put data on hdfs</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>    hdfs dfs -put <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/datasets/tutorial/lda-cvb/sample-sparse-data/sample-sparse-metadata .
-    hdfs dfs -mkdir sample-sparse-data
-    hdfs dfs -put <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/datasets/tutorial/lda-cvb/sample-sparse-data/sample-sparse-data-part-1.txt sample-sparse-data
-    hdfs dfs -put <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/datasets/tutorial/lda-cvb/sample-sparse-data/sample-sparse-data-part-0.txt sample-sparse-data
+<p><mark>To be able to compile and run, you have to <a href="https://dsc-spidal.github.io/harp/docs/getting-started/">install Harp and Hadoop</a></mark>:</p>
+
+<h2 id="put-data-on-hdfs">Put data on hdfs</h2>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>hdfs dfs -put <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/datasets/tutorial/lda-cvb/sample-sparse-data/sample-sparse-metadata .
+hdfs dfs -mkdir sample-sparse-data
+hdfs dfs -put <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/datasets/tutorial/lda-cvb/sample-sparse-data/sample-sparse-data-part-1.txt sample-sparse-data
+hdfs dfs -put <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/datasets/tutorial/lda-cvb/sample-sparse-data/sample-sparse-data-part-0.txt sample-sparse-data
 </pre></div>
 
 <h2 id="compile">Compile</h2>
 
 <p>Select the profile related to your hadoop version. For ex: hadoop-2.6.0. Supported hadoop versions are 2.6.0, 2.7.5 and 2.9.0</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>    <span style="color: #f8f8f2">cd</span> <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>
-    mvn clean package -Phadoop-2.6.0
-    <span style="color: #f8f8f2">cd</span> <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/contrib/target
-    cp contrib-0.1.0.jar <span style="color: #f8f8f2">$HADOOP_HOME</span>
-    cp <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/third_parity/cloud9-1.4.17.jar <span style="color: #f8f8f2">$HADOOP_HOME</span>/share/hadoop/mapreduce
-    <span style="color: #f8f8f2">cd</span> <span style="color: #f8f8f2">$HADOOP_HOME</span>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #f8f8f2">cd</span> <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>
+mvn clean package -Phadoop-2.6.0
+<span style="color: #f8f8f2">cd</span> <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/contrib/target
+cp contrib-0.1.0.jar <span style="color: #f8f8f2">$HADOOP_HOME</span>
+cp <span style="color: #f8f8f2">$HARP_ROOT_DIR</span>/third_parity/cloud9-1.4.17.jar <span style="color: #f8f8f2">$HADOOP_HOME</span>/share/hadoop/mapreduce
+<span style="color: #f8f8f2">cd</span> <span style="color: #f8f8f2">$HADOOP_HOME</span>
 </pre></div>
 
-<p>Run</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>    hadoop jar contrib-1.0.SNAPSHOT.jar  edu.iu.lda.LdaMapCollective &lt;input dir&gt;  &lt;metafile&gt;  &lt;output dir&gt; &lt;number of terms&gt; &lt;number of topics&gt; &lt;number of docs&gt; &lt;number of MapTasks&gt; &lt;number of iterations&gt; &lt;number of threads&gt; &lt;mode, <span style="color: #f8f8f2">1</span><span style="color: #f92672">=</span>multithreading&gt;
+<h2 id="run">Run</h2>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>hadoop jar contrib-1.0.SNAPSHOT.jar  edu.iu.lda.LdaMapCollective &lt;input dir&gt;  &lt;metafile&gt;  &lt;output dir&gt; &lt;number of terms&gt; &lt;number of topics&gt; &lt;number of docs&gt; &lt;number of MapTasks&gt; &lt;number of iterations&gt; &lt;number of threads&gt; &lt;mode, <span style="color: #f8f8f2">1</span><span style="color: #f92672">=</span>multithreading&gt;
 </pre></div>
 
 <p>Example</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>    hadoop jar contrib-1.0.SNAPSHOT.jar  edu.iu.lda.LdaMapCollective sample-sparse-data sample-sparse-metadata  sample-sparse-output <span style="color: #ae81ff">11</span> <span style="color: #ae81ff">2</span> <span style="color: #ae81ff">12</span> <span style="color: #ae81ff">2</span> <span style="color: #ae81ff">5</span> <span style="color: #ae81ff">4</span> 1
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>hadoop jar contrib-1.0.SNAPSHOT.jar  edu.iu.lda.LdaMapCollective sample-sparse-data sample-sparse-metadata  sample-sparse-output <span style="color: #ae81ff">11</span> <span style="color: #ae81ff">2</span> <span style="color: #ae81ff">12</span> <span style="color: #ae81ff">2</span> <span style="color: #ae81ff">5</span> <span style="color: #ae81ff">4</span> 1
 </pre></div>
 
 <p>Please be noted:
