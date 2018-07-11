@@ -20,7 +20,7 @@ The format of the data should look like: (from [sample-sparse-data-part-0.txt](h
 ```
 
 Each row is one document. 
-*\<wordid\>:\<wordcount\>]+*
+*\<wordid\>:\<wordcount\>*
 - 0: word ID
 - 1: word count/frequency
 
