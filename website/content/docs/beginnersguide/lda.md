@@ -32,8 +32,8 @@ sample-sparse-data-part-0.txt 0
 sample-sparse-data-part-1.txt 6
 ```
 
-# Run example
-
+# Run Example
+<mark>To be able to compile and run, you have to [install Harp and Hadoop](https://dsc-spidal.github.io/harp/docs/getting-started/)</mark>:
 ## Put data on hdfs
 ```bash
 hdfs dfs -put $HARP_ROOT_DIR/datasets/tutorial/lda-cvb/sample-sparse-data/sample-sparse-metadata .
