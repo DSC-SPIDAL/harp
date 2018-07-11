@@ -20,6 +20,7 @@ The format of the data should look like: (from [sample-sparse-data-part-0.txt](h
 ```
 
 Each row is one document in Wikipedia. 
+
 *\<wordid\>:\<wordcount\>*
 
 - *\<wordid\>*: word ID (Example: 0)
