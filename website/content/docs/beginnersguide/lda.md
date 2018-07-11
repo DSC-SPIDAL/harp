@@ -19,10 +19,11 @@ The format of the data should look like: (from [sample-sparse-data-part-0.txt](h
 0:4 1:2 3:3 4:4 5:5 6:1 7:1 8:1 9:4
 ```
 
-Each row is one document. 
+Each row is one document in Wikipedia. 
 *\<wordid\>:\<wordcount\>*
-- 0: word ID
-- 1: word count/frequency
+
+- *\<wordid\>*: word ID (Example: 0)
+- *\<wordcount\>*: word count/frequency (Example: 1)
 
 [sample-sparse-metadata](https://github.com/DSC-SPIDAL/harp/blob/master/datasets/tutorial/lda-cvb/sample-sparse-data/sample-sparse-metadata) shows the document ID for the first document of each file. 
 ```bash
