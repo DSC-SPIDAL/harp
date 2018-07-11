@@ -7,13 +7,14 @@ Support Vector Machine typically needs a set of training examples, each marked a
 
 
 
+
 # **Dataset Description**
 
 ## **The Images**
 
 The MNIST database was constructed from the databases which contain binary images of handwritten digits. The handwritten digits has a training set of 60,000 examples, and a test set of 10,000 examples. It is a subset of a larger set available from NIST. The digits have been size-normalized and centered in a fixed-size image.
 
-
+![](https://d2mxuefqeaa7sj.cloudfront.net/s_B6F22FB13E188D4E8A7C8C8A787147196AB0BBCAE729048CA1FF94662824839E_1531339091940_file.png)
 ## **The Categories**
 
 The MNIST training set  is stored in a very simple file format designed for storing vectors and multidimensional matrices. The images are first transformed into a dataset of feature vectors(shown below) through preprocessing steps. The original black and white images from NIST were size normalized to fit in a 20x20 pixel box while preserving their aspect ratio. The resulting images contain grey levels as a result of the anti-aliasing technique used by the normalization algorithm. the images were centered in a 28x28 image by computing the center of mass of the pixels, and translating the image so as to position this point at the center of the 28x28 field. Please refer to [THE MNIST DATABASE of handwritten digits](http://yann.lecun.com/exdb/mnist/) for more details.
@@ -28,6 +29,9 @@ Format:
 - *\<label\>*: digit between 0-9 (example: 7)
 - *\<fid\>*: positive feature id (example: 203)
 - *\<feature\>*: the feature value (example: 84)
+
+
+
 
 
 

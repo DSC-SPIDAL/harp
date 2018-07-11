@@ -1,6 +1,8 @@
 sections:
   - name: Beginners Guide
     sublinks:
+      - name: K-means
+        url: /docs/beginnersguide/kmeans
       - name: Multiclass Logistic Regression
         url: /docs/beginnersguide/mlr
       - name: Support Vector Machine
@@ -9,4 +11,5 @@ sections:
         url: /docs/beginnersguide/rf
       - name: Latent Dirichlet Allocation
         url: /docs/beginnersguide/lda
-
+      - name: Neural Network
+        url: /docs/beginnersguide/nn
