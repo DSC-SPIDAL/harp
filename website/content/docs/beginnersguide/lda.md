@@ -11,12 +11,12 @@ In natural language processing, latent Dirichlet allocation (LDA) is a generativ
 The dataset used is sampled from wikipedia dataset.
 The format of the data should look like: (from [sample-sparse-data-part-0.txt](https://github.com/DSC-SPIDAL/harp/blob/master/datasets/tutorial/lda-cvb/sample-sparse-data/sample-sparse-data-part-0.txt))
 ```bash
-    0:1 1:2 2:6 4:2 5:3 6:1 7:1 10:3
-    0:1 1:3 3:1 4:3 7:2 10:1
-    0:1 1:4 2:1 5:4 6:9 8:1 9:2
-    0:2 1:1 3:3 6:5 8:2 9:3 10:9
-    0:3 1:1 2:1 3:9 4:3 6:2 9:1 10:3
-    0:4 1:2 3:3 4:4 5:5 6:1 7:1 8:1 9:4
+0:1 1:2 2:6 4:2 5:3 6:1 7:1 10:3
+0:1 1:3 3:1 4:3 7:2 10:1
+0:1 1:4 2:1 5:4 6:9 8:1 9:2
+0:2 1:1 3:3 6:5 8:2 9:3 10:9
+0:3 1:1 2:1 3:9 4:3 6:2 9:1 10:3
+0:4 1:2 3:3 4:4 5:5 6:1 7:1 8:1 9:4
 ```
 
 Each row is one document. 
@@ -27,38 +27,38 @@ For example:
 
 [sample-sparse-metadata](https://github.com/DSC-SPIDAL/harp/blob/master/datasets/tutorial/lda-cvb/sample-sparse-data/sample-sparse-metadata) shows the document ID for the first document of each file. 
 ```bash
-    sample-sparse-data-part-0.txt 0
-    sample-sparse-data-part-1.txt 6
+sample-sparse-data-part-0.txt 0
+sample-sparse-data-part-1.txt 6
 ```
 
 # Run example
 
 Put data on hdfs
 ```bash
-    hdfs dfs -put $HARP_ROOT_DIR/datasets/tutorial/lda-cvb/sample-sparse-data/sample-sparse-metadata .
-    hdfs dfs -mkdir sample-sparse-data
-    hdfs dfs -put $HARP_ROOT_DIR/datasets/tutorial/lda-cvb/sample-sparse-data/sample-sparse-data-part-1.txt sample-sparse-data
-    hdfs dfs -put $HARP_ROOT_DIR/datasets/tutorial/lda-cvb/sample-sparse-data/sample-sparse-data-part-0.txt sample-sparse-data
+hdfs dfs -put $HARP_ROOT_DIR/datasets/tutorial/lda-cvb/sample-sparse-data/sample-sparse-metadata .
+hdfs dfs -mkdir sample-sparse-data
+hdfs dfs -put $HARP_ROOT_DIR/datasets/tutorial/lda-cvb/sample-sparse-data/sample-sparse-data-part-1.txt sample-sparse-data
+hdfs dfs -put $HARP_ROOT_DIR/datasets/tutorial/lda-cvb/sample-sparse-data/sample-sparse-data-part-0.txt sample-sparse-data
 ```
 
 ## Compile
 
 Select the profile related to your hadoop version. For ex: hadoop-2.6.0. Supported hadoop versions are 2.6.0, 2.7.5 and 2.9.0
 ```bash
-    cd $HARP_ROOT_DIR
-    mvn clean package -Phadoop-2.6.0
-    cd $HARP_ROOT_DIR/contrib/target
-    cp contrib-0.1.0.jar $HADOOP_HOME
-    cp $HARP_ROOT_DIR/third_parity/cloud9-1.4.17.jar $HADOOP_HOME/share/hadoop/mapreduce
-    cd $HADOOP_HOME
+cd $HARP_ROOT_DIR
+mvn clean package -Phadoop-2.6.0
+cd $HARP_ROOT_DIR/contrib/target
+cp contrib-0.1.0.jar $HADOOP_HOME
+cp $HARP_ROOT_DIR/third_parity/cloud9-1.4.17.jar $HADOOP_HOME/share/hadoop/mapreduce
+cd $HADOOP_HOME
 ```
 Run
 ```bash
-    hadoop jar contrib-1.0.SNAPSHOT.jar  edu.iu.lda.LdaMapCollective <input dir>  <metafile>  <output dir> <number of terms> <number of topics> <number of docs> <number of MapTasks> <number of iterations> <number of threads> <mode, 1=multithreading>
+hadoop jar contrib-1.0.SNAPSHOT.jar  edu.iu.lda.LdaMapCollective <input dir>  <metafile>  <output dir> <number of terms> <number of topics> <number of docs> <number of MapTasks> <number of iterations> <number of threads> <mode, 1=multithreading>
 ```
 Example
 ```bash
-    hadoop jar contrib-1.0.SNAPSHOT.jar  edu.iu.lda.LdaMapCollective sample-sparse-data sample-sparse-metadata  sample-sparse-output 11 2 12 2 5 4 1
+hadoop jar contrib-1.0.SNAPSHOT.jar  edu.iu.lda.LdaMapCollective sample-sparse-data sample-sparse-metadata  sample-sparse-output 11 2 12 2 5 4 1
 ```
 Please be noted:
 If you are running with mode=0 (sequential version), you will need data with dense format, and the parameter “number of threads” will not be used. If you are running with mode=1, you will need data with sparse format.
