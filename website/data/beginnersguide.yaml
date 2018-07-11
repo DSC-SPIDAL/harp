@@ -7,3 +7,6 @@ sections:
         url: /docs/beginnersguide/svm
       - name: Random Forests
         url: /docs/beginnersguide/rf
+      - name: Latent Dirichlet Allocation
+        url: /docs/beginnersguide/lda
+
