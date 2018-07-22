@@ -64,6 +64,22 @@ public class Workers extends Nodes {
     this(null, selfID);
   }
 
+  public Workers(int selfID, int masterID, Map<Integer, WorkerInfo> workerInfos,
+                 Map<Integer, List<Integer>> rackWorkers, int maxID, int minID,
+                 int middleID, int nextID) throws Exception {
+    super(null);
+    this.selfID = selfID;
+    this.masterID = masterID;
+    this.workerInfos = workerInfos;
+    this.rackWorkers = rackWorkers;
+    this.maxID = maxID;
+    this.middleID = middleID;
+    this.nextID = nextID;
+
+    this.masterInfo = workerInfos.get(masterID);
+    this.minID = minID;
+  }
+
   /**
    * Initialization the workers. Assign IDs to
    * workers; Master is the worker with ID 0;
