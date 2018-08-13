@@ -12,7 +12,7 @@ public class ByteArrayTest {
   @Test
   public void testGetNumEncodedBytes() {
     ByteArray array = new ByteArray(new byte[4], 0, 4);
-    Assert.assertEquals(4 * Double.BYTES + 5, array.getNumEnocdeBytes());
+    Assert.assertEquals(4 * Byte.BYTES + 5, array.getNumEnocdeBytes());
   }
 
   @Test
