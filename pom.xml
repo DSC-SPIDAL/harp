@@ -106,6 +106,39 @@
 				<artifactId>junit</artifactId>
 				<version>4.12</version>
 			</dependency>
+
+			<dependency>
+				<groupId>org.powermock</groupId>
+				<artifactId>powermock-module-junit4</artifactId>
+				<version>1.7.4</version>
+				<scope>test</scope>
+			</dependency>
+
+			<dependency>
+				<groupId>org.powermock</groupId>
+				<artifactId>powermock-api-mockito</artifactId>
+				<version>1.7.4</version>
+				<scope>test</scope>
+			</dependency>
+
+			<dependency>
+				<groupId>org.powermock</groupId>
+				<artifactId>powermock-reflect</artifactId>
+				<version>1.7.4</version>
+			</dependency>
+
+			<dependency>
+				<groupId>org.powermock</groupId>
+				<artifactId>powermock-api-support</artifactId>
+				<version>1.7.4</version>
+			</dependency>
+
+			<dependency>
+				<groupId>org.powermock</groupId>
+				<artifactId>powermock-module-junit4-common</artifactId>
+				<version>1.7.4</version>
+			</dependency>
+
 		</dependencies>
 	</dependencyManagement>
 
@@ -135,6 +168,25 @@
 					</archive>
 				</configuration>
 			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-checkstyle-plugin</artifactId>
+				<version>3.0.0</version>
+				<executions>
+					<execution>
+						<id>checkstyle</id>
+						<phase>validate</phase>
+						<goals>
+							<goal>check</goal>
+						</goals>
+						<configuration>
+							<failOnViolation>false</failOnViolation>
+							<configLocation>checkstyle.xml</configLocation>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
 		</plugins>
 	</build>
 
@@ -159,4 +211,21 @@
 		</profile>
 	</profiles>
 
+	<reporting>
+		<plugins>
+			<!--<plugin>-->
+				<!--<groupId>org.apache.maven.plugins</groupId>-->
+				<!--<artifactId>maven-checkstyle-plugin</artifactId>-->
+				<!--<version>3.0.0</version>-->
+				<!--<configuration>-->
+					<!--<configLocation>goog.xml</configLocation>-->
+				<!--</configuration>-->
+			<!--</plugin>-->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-project-info-reports-plugin</artifactId>
+				<version>2.9</version>
+			</plugin>
+		</plugins>
+	</reporting>
 </project>

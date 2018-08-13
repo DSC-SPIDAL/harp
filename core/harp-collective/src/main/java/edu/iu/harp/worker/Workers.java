@@ -67,7 +67,7 @@ public class Workers extends Nodes {
   public Workers(int selfID, int masterID, Map<Integer, WorkerInfo> workerInfos,
                  Map<Integer, List<Integer>> rackWorkers, int maxID, int minID,
                  int middleID, int nextID) throws Exception {
-    super(null);
+    super();
     this.selfID = selfID;
     this.masterID = masterID;
     this.workerInfos = workerInfos;
@@ -108,7 +108,6 @@ public class Workers extends Nodes {
         new LinkedList<>();
       rackWorkers.put(rackID, workerIDs);
       for (String node : nodes.get(rackID)) {
-        System.out.println("node: " + node);
         // Generate next worker ID
         workerID++;
         // Port: workerPortBase + workerID

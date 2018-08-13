@@ -53,6 +53,13 @@ public class Nodes {
     reader.close();
   }
 
+  public Nodes(Map<Integer, List<String>> nodes, LinkedList<Integer> nodeRackIDs,
+               int numPhysicalNodes) {
+    this.nodes = nodes;
+    this.nodeRackIDs = nodeRackIDs;
+    this.numPhysicalNodes = numPhysicalNodes;
+  }
+
   public Nodes(BufferedReader reader)
     throws Exception {
     if (reader == null) {
