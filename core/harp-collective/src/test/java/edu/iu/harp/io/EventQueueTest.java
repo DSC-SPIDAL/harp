@@ -7,7 +7,7 @@ import org.junit.Test;
 
 public class EventQueueTest {
   @Test
-  public void addEventTest() {
+  public void testAddEvent() {
     EventQueue eventQueue = new EventQueue();
 
     eventQueue.addEvent(new Event(EventType.COLLECTIVE_EVENT, "test", 0, 1, null));
@@ -17,7 +17,7 @@ public class EventQueueTest {
   }
 
   @Test
-  public void waitEventTest() {
+  public void testWaitEvent() {
     EventQueue eventQueue = new EventQueue();
 
     eventQueue.addEvent(new Event(EventType.COLLECTIVE_EVENT, "test", 0, 1, null));
@@ -27,7 +27,7 @@ public class EventQueueTest {
   }
 
   @Test
-  public void getEventTest() {
+  public void testGetEvent() {
     EventQueue eventQueue = new EventQueue();
 
     eventQueue.addEvent(new Event(EventType.COLLECTIVE_EVENT, "test", 0, 1, null));

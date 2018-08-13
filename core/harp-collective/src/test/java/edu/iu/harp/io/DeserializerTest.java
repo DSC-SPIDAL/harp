@@ -7,7 +7,7 @@ import java.io.IOException;
 
 public class DeserializerTest {
   @Test
-  public void readBooleanTest() {
+  public void testReadBoolean() {
     byte vOut = (byte) (1);
     byte[] b = new byte[1];
     b[0] = vOut;
@@ -31,7 +31,7 @@ public class DeserializerTest {
   }
 
   @Test
-  public void readByteTest() {
+  public void testReadBytes() {
     byte vOut = (byte) (1);
     byte[] b = new byte[1];
     b[0] = vOut;

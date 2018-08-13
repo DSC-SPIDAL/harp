@@ -7,7 +7,7 @@ import java.io.IOException;
 
 public class SerializerTest {
   @Test
-  public void serializeBytesTest() {
+  public void testSerializeBytes() {
     byte[] bytes = new byte[64];
     Serializer serializer = new Serializer(bytes, 0,64);
     byte[] b = new byte[]{0, 1, 2};
@@ -22,7 +22,7 @@ public class SerializerTest {
   }
 
   @Test
-  public void serializeIntsTest() {
+  public void testSerializeInts() {
     byte[] bytes = new byte[64];
     Serializer serializer = new Serializer(bytes, 0,64);
     try {
@@ -45,7 +45,7 @@ public class SerializerTest {
   }
 
   @Test
-  public void serializeDoubleTest() {
+  public void testSerializeDouble() {
     byte[] bytes = new byte[64];
     Serializer serializer = new Serializer(bytes, 0,64);
     try {
@@ -68,7 +68,7 @@ public class SerializerTest {
   }
 
   @Test
-  public void serializeLongTest() {
+  public void testSerializeLong() {
     byte[] bytes = new byte[64];
     Serializer serializer = new Serializer(bytes, 0,64);
     try {
@@ -91,7 +91,7 @@ public class SerializerTest {
   }
 
   @Test
-  public void serializeCharTest() {
+  public void testSerializeChar() {
     byte[] bytes = new byte[64];
     Serializer serializer = new Serializer(bytes, 0,64);
     try {
