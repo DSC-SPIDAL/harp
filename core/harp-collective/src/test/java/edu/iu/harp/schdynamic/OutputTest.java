@@ -5,7 +5,7 @@ import org.junit.Test;
 
 public class OutputTest {
   @Test
-  public void outputTest() {
+  public void testOutput() {
     SimpleObject simpleObject = new SimpleObject();
     Output<SimpleObject> output = new Output<>(simpleObject, true);
 

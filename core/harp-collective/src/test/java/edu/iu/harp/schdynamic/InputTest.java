@@ -5,7 +5,7 @@ import org.junit.Test;
 
 public class InputTest {
   @Test
-  public void intputTest() {
+  public void testIntput() {
     SimpleObject simpleObject = new SimpleObject();
     Input<SimpleObject> input = new Input<>(simpleObject, false, false);
 
