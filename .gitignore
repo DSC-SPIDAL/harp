@@ -96,3 +96,5 @@ CMakeFiles/
 release/
 debug/
 
+#ctags
+tags
