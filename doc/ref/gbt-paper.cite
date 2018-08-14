@@ -10,12 +10,10 @@
 [10]J. H. Friedman, “Greedy function approximation: a gradient boosting machine,” Annals of statistics, pp. 1189–1232, 2001.
 [11]B. Panda, J. S. Herbach, S. Basu, and R. J. Bayardo, “Planet: massively parallel learning of tree ensembles with mapreduce,” Proceedings of the VLDB Endowment, vol. 2, no. 2, pp. 1426–1437, 2009.
 [12]S. Tyree, K. Q. Weinberger, K. Agrawal, and J. Paykin, “Parallel boosted regression trees for web search ranking,” in Proceedings of the 20th international conference on World wide web, 2011, pp. 387–396.
-[13]“Fulltext.” .
-[14]“Snapshot.” .
-[15]J. Ye, J.-H. Chow, J. Chen, and Z. Zheng, “Stochastic gradient boosted distributed decision trees,” in Proceedings of the 18th ACM conference on Information and knowledge management, 2009, pp. 2061–2064.
-[16]J. Jiang, B. Cui, C. Zhang, and F. Fu, “DimBoost: Boosting Gradient Boosting Decision Tree to Higher Dimensions,” in Proceedings of the 2018 International Conference on Management of Data, 2018, pp. 1363–1376.
-[17]A. Mohan, Z. Chen, and K. Weinberger, “Web-search ranking with initialized gradient boosted regression trees,” in Proceedings of the learning to rank challenge, 2011, pp. 77–89.
-[18]Y. Ben-Haim and E. Tom-Tov, “A streaming parallel decision tree algorithm,” Journal of Machine Learning Research, vol. 11, no. Feb, pp. 849–872, 2010.
-[19]Z. Zheng, H. Zha, T. Zhang, O. Chapelle, K. Chen, and G. Sun, “A general boosting method and its application to learning ranking functions for web search,” in Advances in neural information processing systems, 2008, pp. 1697–1704.
-[20]J. Ye, J.-H. Chow, J. Chen, and Z. Zheng, “Stochastic gradient boosted distributed decision trees,” in Proceedings of the 18th ACM conference on Information and knowledge management, 2009, pp. 2061–2064.
-[21]Z.-H. Zhou and J. Feng, “Deep forest: Towards an alternative to deep neural networks,” arXiv preprint arXiv:1702.08835, 2017.
+[13]J. Ye, J.-H. Chow, J. Chen, and Z. Zheng, “Stochastic gradient boosted distributed decision trees,” in Proceedings of the 18th ACM conference on Information and knowledge management, 2009, pp. 2061–2064.
+[14]J. Jiang, B. Cui, C. Zhang, and F. Fu, “DimBoost: Boosting Gradient Boosting Decision Tree to Higher Dimensions,” in Proceedings of the 2018 International Conference on Management of Data, 2018, pp. 1363–1376.
+[15]A. Mohan, Z. Chen, and K. Weinberger, “Web-search ranking with initialized gradient boosted regression trees,” in Proceedings of the learning to rank challenge, 2011, pp. 77–89.
+[16]Y. Ben-Haim and E. Tom-Tov, “A streaming parallel decision tree algorithm,” Journal of Machine Learning Research, vol. 11, no. Feb, pp. 849–872, 2010.
+[17]Z. Zheng, H. Zha, T. Zhang, O. Chapelle, K. Chen, and G. Sun, “A general boosting method and its application to learning ranking functions for web search,” in Advances in neural information processing systems, 2008, pp. 1697–1704.
+[18]J. Ye, J.-H. Chow, J. Chen, and Z. Zheng, “Stochastic gradient boosted distributed decision trees,” in Proceedings of the 18th ACM conference on Information and knowledge management, 2009, pp. 2061–2064.
+[19]Z.-H. Zhou and J. Feng, “Deep forest: Towards an alternative to deep neural networks,” arXiv preprint arXiv:1702.08835, 2017.
