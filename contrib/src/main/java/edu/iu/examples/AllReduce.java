@@ -31,6 +31,7 @@ public class AllReduce extends CollectiveMapper<String, String, Object, Object> 
   protected void mapCollective(KeyValReader reader, Context context) throws IOException, InterruptedException {
     double[] values = new double[10000];
     for (int i = 0; i < 100; i++) {
+      LOG.info("Iteration: " + i);
       Table<DoubleArray> mseTable = new Table<>(0, new DoubleArrPlus());
       mseTable.addPartition(new Partition<>(0, new DoubleArray(values, 0, 10000)));
       allreduce("all-reduce", "all-reduce", mseTable);

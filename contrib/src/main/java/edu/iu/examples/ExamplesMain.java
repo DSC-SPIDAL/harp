@@ -27,6 +27,7 @@ import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.Tool;
+import org.apache.hadoop.util.ToolRunner;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -37,8 +38,8 @@ public class ExamplesMain extends Configured implements Tool {
   private static final Logger LOG = Logger.getLogger(ExamplesMain.class.getName());
 
   public static void main(String[] args) throws Exception {
-    ExamplesMain main = new ExamplesMain();
-    main.run(args);
+    int res = ToolRunner.run(new Configuration(),
+        new ExamplesMain(), args);
   }
 
   @Override
@@ -46,7 +47,7 @@ public class ExamplesMain extends Configured implements Tool {
     // check the arguments length
 
     ExampleParameters parameters = parseArguments(args);
-    launch(parameters, null);
+    launch(parameters, "worker");
 
     // eaxmple finished
     System.out.println("Harp Example Completed!");
@@ -84,7 +85,7 @@ public class ExamplesMain extends Configured implements Tool {
       ClassNotFoundException {
     Configuration configuration = getConf();
     Path workPath = new Path(workPathString);
-    FileSystem fs = FileSystem.get(configuration);
+//    FileSystem fs = FileSystem.get(configuration);
     Path dataPath = new Path(workPath, "data");
     Path outputPath = new Path(workPath, "out");
 
@@ -138,6 +139,11 @@ public class ExamplesMain extends Configured implements Tool {
     FileSystem fs = FileSystem.get(configuration);
     if (fs.exists(outputPath)) {
       fs.delete(outputPath, true);
+    }
+    try {
+      Utils.generateData(numOfTasks, fs, dataPath);
+    } catch (InterruptedException | ExecutionException e) {
+      e.printStackTrace();
     }
     FileInputFormat.setInputPaths(job, dataPath);
     FileOutputFormat.setOutputPath(job,
