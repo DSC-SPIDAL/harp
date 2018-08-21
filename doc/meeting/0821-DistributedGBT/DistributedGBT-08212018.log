@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.16 (TeX Live 2015/Debian) (preloaded format=pdflatex 2017.9.26)  21 AUG 2018 16:14
+This is pdfTeX, Version 3.14159265-2.6-1.40.16 (TeX Live 2015/Debian) (preloaded format=pdflatex 2017.9.26)  21 AUG 2018 16:40
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1001,7 +1001,7 @@ LaTeX Font Warning: Font shape `OT1/cmss/m/n' in size <4> not available
 (./DistributedGBT-08212018.toc) [2
 
 ]
-<figs/dataset.jpg, id=144, 1080.035pt x 762.85pt>
+<figs/dataset.jpg, id=109, 1080.035pt x 762.85pt>
 File: figs/dataset.jpg Graphic file (type jpg)
  <use figs/dataset.jpg>
 Package pdftex.def Info: figs/dataset.jpg used on input line 151.
@@ -1026,7 +1026,7 @@ thkerncmss.
 [3
 
  <./figs/dataset.jpg>]
-<figs/regressiontree.jpg, id=177, 1822.81pt x 698.61pt>
+<figs/regressiontree.jpg, id=141, 1822.81pt x 698.61pt>
 File: figs/regressiontree.jpg Graphic file (type jpg)
 
 <use figs/regressiontree.jpg>
@@ -1039,7 +1039,7 @@ Overfull \vbox (0.71037pt too high) detected at line 168
 [4
 
  <./figs/regressiontree.jpg>]
-<figs/boostingtree.jpg, id=205, 1889.0575pt x 877.2775pt>
+<figs/boostingtree.jpg, id=170, 1889.0575pt x 877.2775pt>
 File: figs/boostingtree.jpg Graphic file (type jpg)
 
 <use figs/boostingtree.jpg>
@@ -1075,294 +1075,21 @@ Missing character: There is no Ä in font cmss12!
 
 ] (./DistributedGBT-08212018.toc) [10
 
-] [11
-
-] [12
-
-] [13
-
 ]
-(./DistributedGBT-08212018.toc) [14
-
-]
-<fig/iris-petal.jpg, id=507, 226.8475pt x 223.83624pt>
-File: fig/iris-petal.jpg Graphic file (type jpg)
-
-<use fig/iris-petal.jpg>
-Package pdftex.def Info: fig/iris-petal.jpg used on input line 387.
-(pdftex.def)             Requested size: 136.91603pt x 135.09857pt.
- <fig/irisdata.png, id=508, 563.10374pt x 111.41624pt>
-File: fig/irisdata.png Graphic file (type png)
-
-<use fig/irisdata.png>
-Package pdftex.def Info: fig/irisdata.png used on input line 387.
-(pdftex.def)             Requested size: 205.37926pt x 40.63683pt.
- <fig/irisdata2.png, id=509, 478.78876pt x 106.3975pt>
-File: fig/irisdata2.png Graphic file (type png)
-
-<use fig/irisdata2.png>
-Package pdftex.def Info: fig/irisdata2.png used on input line 387.
-(pdftex.def)             Requested size: 205.37926pt x 45.63962pt.
-LaTeX Font Info:    Try loading font information for OMS+cmss on input line 387
-.
-LaTeX Font Info:    No file OMScmss.fd. on input line 387.
-
-
-LaTeX Font Warning: Font shape `OMS/cmss/m/n' undefined
-(Font)              using `OMS/cmsy/m/n' instead
-(Font)              for symbol `textbraceleft' on input line 387.
-
-[15
-
- <./fig/iris-petal.jpg> <./fig/irisdata.png> <./fig/irisdata2.png>]
-<fig/fig1_svm.png, id=537, 983.675pt x 780.9175pt>
-File: fig/fig1_svm.png Graphic file (type png)
- <use fig/fig1_svm.png>
-Package pdftex.def Info: fig/fig1_svm.png used on input line 425.
-(pdftex.def)             Requested size: 164.30403pt x 130.43063pt.
-
-[16
-
- <./fig/fig1_svm.png (PNG copy)>]
-<fig/"svm_kerneltrick03".png, id=564, 541.02126pt x 387.4475pt>
-File: fig/"svm_kerneltrick03".png Graphic file (type png)
-
-<use fig/"svm_kerneltrick03".png>
-Package pdftex.def Info: fig/"svm_kerneltrick03".png used on input line 466.
-(pdftex.def)             Requested size: 184.84007pt x 132.3689pt.
-
-Overfull \vbox (1.02895pt too high) detected at line 466
- []
-
-[17
-
- <./fig/svm_kerneltrick03.png>] [18
-
-]
-<fig/two_lagrange_opt.png, id=620, 1074.0125pt x 452.69125pt>
-File: fig/two_lagrange_opt.png Graphic file (type png)
-
-<use fig/two_lagrange_opt.png>
-Package pdftex.def Info: fig/two_lagrange_opt.png used on input line 509.
-(pdftex.def)             Requested size: 219.07065pt x 92.3326pt.
- [19
-
- <./fig/two_lagrange_opt.png (PNG copy)>]
-[20
-
-] <fig/"fig1_svm".png, id=676, 983.675pt x 780.9175pt>
-File: fig/"fig1_svm".png Graphic file (type png)
-
-<use fig/"fig1_svm".png>
-Package pdftex.def Info: fig/"fig1_svm".png used on input line 558.
-(pdftex.def)             Requested size: 154.03183pt x 122.2802pt.
- [21
-
- <./fig/fig1_svm.png (PNG copy)>] [22
-
-]
-<fig/smo_algo.png, id=730, 820.06375pt x 651.43375pt>
-File: fig/smo_algo.png Graphic file (type png)
- <use fig/smo_algo.png>
-Package pdftex.def Info: fig/smo_algo.png used on input line 590.
-(pdftex.def)             Requested size: 273.83728pt x 217.5284pt.
-
-Overfull \vbox (0.45781pt too high) detected at line 590
- []
-
-[23
-
- <./fig/smo_algo.png (PNG copy)>]
-<fig/smo_datastructure.png, id=756, 1041.8925pt x 330.23375pt>
-File: fig/smo_datastructure.png Graphic file (type png)
-
-<use fig/smo_datastructure.png>
-Package pdftex.def Info: fig/smo_datastructure.png used on input line 611.
-(pdftex.def)             Requested size: 308.06367pt x 97.63982pt.
- [24
-
- <./fig/smo_datastructure.png>]
-(./DistributedGBT-08212018.toc) [25
-
-]
-<fig/fig2_methodology.png, id=822, 1361.085pt x 439.6425pt>
-File: fig/fig2_methodology.png Graphic file (type png)
-
-<use fig/fig2_methodology.png>
-Package pdftex.def Info: fig/fig2_methodology.png used on input line 628.
-(pdftex.def)             Requested size: 308.06367pt x 99.50563pt.
- [26
-
- <./fig/fig2_methodology.png (PNG copy)>]
-<fig/Fig3_CalcF.png, id=849, 1398.22375pt x 1016.79875pt>
-File: fig/Fig3_CalcF.png Graphic file (type png)
-
-<use fig/Fig3_CalcF.png>
-Package pdftex.def Info: fig/Fig3_CalcF.png used on input line 644.
-(pdftex.def)             Requested size: 205.37926pt x 149.34814pt.
- [27
-
- <./fig/Fig3_CalcF.png (PNG copy)>]
-<fig/table2_rcmb.png, id=876, 1213.53375pt x 929.4725pt>
-File: fig/table2_rcmb.png Graphic file (type png)
-
-<use fig/table2_rcmb.png>
-Package pdftex.def Info: fig/table2_rcmb.png used on input line 672.
-(pdftex.def)             Requested size: 136.91862pt x 104.86606pt.
-
-<fig/table1_kernel.png, id=877, 1098.1025pt x 447.6725pt>
-File: fig/table1_kernel.png Graphic file (type png)
-
-<use fig/table1_kernel.png>
-Package pdftex.def Info: fig/table1_kernel.png used on input line 672.
-(pdftex.def)             Requested size: 136.91862pt x 55.81548pt.
-Missing character: There is no ‚ in font cmss10!
-Missing character: There is no Ä in font cmss10!
-Missing character: There is no ô in font cmss10!
- [28
-
- <./fig/table2_rcmb.png (PNG copy)> <./fig/table1_kernel.png (PNG copy)>]
-Underfull \hbox (badness 2173) in paragraph at lines 687--687
-[]|\OT1/cmss/m/n/10.95 utilizing mul-ti-ple hard-
- []
-
-
-Underfull \hbox (badness 2173) in paragraph at lines 687--687
-[]|\OT1/cmss/m/n/10.95 utilizing mul-ti-ple hard-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 687--687
-[]|\OT1/cmss/m/n/10.95 on-core VPU (Vec-tor
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 687--687
-\OT1/cmss/m/n/10.95 Pro-cess-ing Unit) and
- []
-
-
-Overfull \hbox (2.59407pt too wide) in paragraph at lines 687--687
- [] 
- []
-
-[29
-
-] <fig/fig6_strongscaling.png, id=931, 1403.2425pt x 1004.75375pt>
-File: fig/fig6_strongscaling.png Graphic file (type png)
-
-<use fig/fig6_strongscaling.png>
-Package pdftex.def Info: fig/fig6_strongscaling.png used on input line 711.
-(pdftex.def)             Requested size: 154.03183pt x 110.27795pt.
-
-<fig/fig7_affinitymodel.png, id=932, 1396.21625pt x 700.6175pt>
-File: fig/fig7_affinitymodel.png Graphic file (type png)
-
-<use fig/fig7_affinitymodel.png>
-Package pdftex.def Info: fig/fig7_affinitymodel.png used on input line 711.
-(pdftex.def)             Requested size: 154.03183pt x 77.29266pt.
-
-<fig/fig8_balancedmode.png, id=933, 1362.08875pt x 972.63374pt>
-File: fig/fig8_balancedmode.png Graphic file (type png)
-
-<use fig/fig8_balancedmode.png>
-Package pdftex.def Info: fig/fig8_balancedmode.png used on input line 711.
-(pdftex.def)             Requested size: 154.03183pt x 109.98796pt.
-
-Overfull \vbox (0.84659pt too high) detected at line 711
- []
-
-[30
-
- <./fig/fig6_strongscaling.png (PNG copy)> <./fig/fig7_affinitymodel.png (PNG c
-opy)> <./fig/fig8_balancedmode.png (PNG copy)>]
-<fig/fig9_memorytraits.png, id=960, 1417.295pt x 1046.91125pt>
-File: fig/fig9_memorytraits.png Graphic file (type png)
-
-<use fig/fig9_memorytraits.png>
-Package pdftex.def Info: fig/fig9_memorytraits.png used on input line 733.
-(pdftex.def)             Requested size: 171.14764pt x 126.40668pt.
-
-<fig/fig10_cache.png, id=961, 1379.1525pt x 608.2725pt>
-File: fig/fig10_cache.png Graphic file (type png)
-
-<use fig/fig10_cache.png>
-Package pdftex.def Info: fig/fig10_cache.png used on input line 733.
-(pdftex.def)             Requested size: 171.14764pt x 75.47697pt.
- [31
-
- <./fig/fig9_memorytraits.png (PNG copy)> <./fig/fig10_cache.png (PNG copy)>]
-Missing character: There is no ‚ in font cmss10!
-Missing character: There is no Ä in font cmss10!
-Missing character: There is no ô in font cmss10!
- [32
-
-]
-<fig/smo_parallelalgo.png, id=1014, 1034.86626pt x 1079.03125pt>
-File: fig/smo_parallelalgo.png Graphic file (type png)
-
-<use fig/smo_parallelalgo.png>
-Package pdftex.def Info: fig/smo_parallelalgo.png used on input line 759.
-(pdftex.def)             Requested size: 205.37926pt x 214.1395pt.
- [33
-
- <./fig/smo_parallelalgo.png (PNG copy)>]
-(./DistributedGBT-08212018.toc) [34
-
-]
-<fig/expsetup.png, id=1078, 990.70125pt x 1101.11375pt>
-File: fig/expsetup.png Graphic file (type png)
- <use fig/expsetup.png>
-Package pdftex.def Info: fig/expsetup.png used on input line 769.
-(pdftex.def)             Requested size: 205.37926pt x 228.26683pt.
-
-Overfull \vbox (11.19624pt too high) detected at line 769
- []
-
-[35
-
- <./fig/expsetup.png (PNG copy)>]
-<fig/table5_accuracy.png, id=1105, 1891.065pt x 488.82625pt>
-File: fig/table5_accuracy.png Graphic file (type png)
-
-<use fig/table5_accuracy.png>
-Package pdftex.def Info: fig/table5_accuracy.png used on input line 785.
-(pdftex.def)             Requested size: 342.2953pt x 88.4772pt.
- [36
-
- <./fig/table5_accuracy.png (PNG copy)>]
-<fig/table6_performance.png, id=1132, 1738.495pt x 389.455pt>
-File: fig/table6_performance.png Graphic file (type png)
-
-<use fig/table6_performance.png>
-Package pdftex.def Info: fig/table6_performance.png used on input line 810.
-(pdftex.def)             Requested size: 342.2953pt x 76.67732pt.
-
-Overfull \vbox (2.73596pt too high) detected at line 810
- []
-
-[37
-
- <./fig/table6_performance.png (PNG copy)>]
-<fig/fig11_speedup.png, id=1160, 1646.15pt x 637.38126pt>
-File: fig/fig11_speedup.png Graphic file (type png)
-
-<use fig/fig11_speedup.png>
-Package pdftex.def Info: fig/fig11_speedup.png used on input line 820.
-(pdftex.def)             Requested size: 342.2953pt x 132.53133pt.
- [38
-
- <./fig/fig11_speedup.png (PNG copy)>]
-(./DistributedGBT-08212018.toc) [39
-
-] [40
-
-] (./DistributedGBT-08212018.toc)
-[41
-
-] [42
-
-]
+File: figs/dataset.jpg Graphic file (type jpg)
+ <use figs/dataset.jpg>
+Package pdftex.def Info: figs/dataset.jpg used on input line 330.
+(pdftex.def)             Requested size: 154.03183pt x 108.78873pt.
+
+<figs/dtree.jpg, id=344, 717.68124pt x 275.0275pt>
+File: figs/dtree.jpg Graphic file (type jpg)
+ <use figs/dtree.jpg>
+Package pdftex.def Info: figs/dtree.jpg used on input line 330.
+(pdftex.def)             Requested size: 154.03183pt x 59.02484pt.
+
+[11
+
+ <./figs/dtree.jpg>]
 Missing character: There is no ‚ in font cmss9!
 Missing character: There is no Ä in font cmss9!
 Missing character: There is no ú in font cmss9!
@@ -1372,10 +1099,10 @@ Missing character: There is no ù in font cmss9!
 Missing character: There is no ‚ in font cmss9!
 Missing character: There is no Ä in font cmss9!
 Missing character: There is no ì in font cmss9!
- [43
+ [12
 
- </usr/share/texlive/texmf-dist/tex/latex/beamer/art/beamericonarticle.pdf>] [4
-4
+ </usr/share/texlive/texmf-dist/tex/latex/beamer/art/beamericonarticle.pdf>] [1
+3
 
 ]
 \tf@nav=\write6
@@ -1387,32 +1114,29 @@ Missing character: There is no ì in font cmss9!
 \tf@snm=\write8
 \openout8 = `DistributedGBT-08212018.snm'.
 
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 899.
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 899.
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 364.
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 364.
  (./DistributedGBT-08212018.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 899.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 899.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 364.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 364.
 Package rerunfilecheck Info: File `DistributedGBT-08212018.out' has not changed
 .
-(rerunfilecheck)             Checksum: C31B99A890A0FE8AA5B42F541443BED2;631.
+(rerunfilecheck)             Checksum: FE38228F452F52235193528C18E7CBDD;247.
 
 
 LaTeX Font Warning: Size substitutions with differences
 (Font)              up to 1.0pt have occurred.
 
-
-LaTeX Font Warning: Some font shapes were not available, defaults substituted.
-
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 899.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 364.
  ) 
 Here is how much of TeX's memory you used:
- 18356 strings out of 494953
- 350460 string characters out of 6180977
- 421133 words of memory out of 5000000
- 21070 multiletter control sequences out of 15000+600000
- 16560 words of font info for 60 fonts, out of 8000000 for 9000
+ 18051 strings out of 494953
+ 345142 string characters out of 6180977
+ 421827 words of memory out of 5000000
+ 20867 multiletter control sequences out of 15000+600000
+ 15959 words of font info for 58 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
- 56i,23n,65p,433b,812s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 56i,23n,65p,403b,812s stack positions out of 5000i,500n,10000p,200000b,80000s
 </usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></us
 r/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cmextra/cmex7.pfb></usr/
 share/texlive/texmf-dist/fonts/type1/public/amsfonts/cmextra/cmex8.pfb></usr/sh
@@ -1433,10 +1157,10 @@ ive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/share/texlive/tex
 mf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></usr/share/texlive/texmf-dist
 /fonts/type1/public/amsfonts/cm/cmtt10.pfb></usr/share/texlive/texmf-dist/fonts
 /type1/public/amsfonts/symbols/msbm10.pfb>
-Output written on DistributedGBT-08212018.pdf (44 pages, 3515254 bytes).
+Output written on DistributedGBT-08212018.pdf (13 pages, 689995 bytes).
 PDF statistics:
- 1465 PDF objects out of 1728 (max. 8388607)
- 1335 compressed objects within 14 object streams
- 101 named destinations out of 1000 (max. 500000)
- 313 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 512 PDF objects out of 1000 (max. 8388607)
+ 449 compressed objects within 5 object streams
+ 33 named destinations out of 1000 (max. 500000)
+ 143 words of extra memory for PDF output out of 10000 (max. 10000000)
 

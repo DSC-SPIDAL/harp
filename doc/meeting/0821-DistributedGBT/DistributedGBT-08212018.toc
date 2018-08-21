@@ -1,11 +1,5 @@
 \beamer@endinputifotherversion {3.36pt}
 \beamer@sectionintoc {1}{Background}{2}{0}{1}
 \beamer@subsectionintoc {1}{1}{GBT Algorithm}{2}{0}{1}
-\beamer@sectionintoc {2}{Work of the paper}{10}{0}{2}
-\beamer@subsectionintoc {2}{1}{I. Introduction}{10}{0}{2}
-\beamer@subsectionintoc {2}{2}{II. Background of SVM}{14}{0}{2}
-\beamer@subsectionintoc {2}{3}{III. Methodology for MIC-SVM}{25}{0}{2}
-\beamer@subsectionintoc {2}{4}{IV. Experimental results and analysis}{34}{0}{2}
-\beamer@subsectionintoc {2}{5}{VI. Conclusion}{39}{0}{2}
-\beamer@sectionintoc {3}{Comments}{41}{0}{3}
-\beamer@subsectionintoc {3}{1}{Pros and Cons}{41}{0}{3}
+\beamer@sectionintoc {2}{Parallel and Distributed Implementation}{10}{0}{2}
+\beamer@subsectionintoc {2}{1}{I. Shared-Memory}{10}{0}{2}
