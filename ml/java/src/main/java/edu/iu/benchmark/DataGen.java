@@ -61,7 +61,7 @@ class DataGenRunnable implements Runnable {
 
 public class DataGen {
 
-  static void generateInputData(int numMappers,
+  public static void generateInputData(int numMappers,
     String localDirName, Path inputDirPath,
     FileSystem fs) throws IOException,
     InterruptedException, ExecutionException {
@@ -79,7 +79,7 @@ public class DataGen {
       }
       localDir.delete();
     }
-    boolean success = localDir.mkdir();
+    boolean success = localDir.mkdirs();
     if (success) {
       System.out.println(
         "Directory: " + localDir + " created");
@@ -109,7 +109,7 @@ public class DataGen {
       inputDirPath);
   }
 
-  static void generateData(int numMappers,
+  public static void generateData(int numMappers,
     Path inputDirPath, String localDirName,
     FileSystem fs) throws IOException,
     InterruptedException, ExecutionException {

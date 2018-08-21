@@ -19,22 +19,24 @@ import edu.iu.harp.example.DoubleArrPlus;
 import edu.iu.harp.partition.Partition;
 import edu.iu.harp.partition.Table;
 import edu.iu.harp.resource.DoubleArray;
-import org.apache.hadoop.mapred.CollectiveMapper;
 
 import java.io.IOException;
 
 /**
  * This example demonstrate the use of AllReduce collective operation
  */
-public class AllReduce extends CollectiveMapper<String, String, Object, Object> {
+public class AllReduce extends AbstractExampleMapper {
   @Override
   protected void mapCollective(KeyValReader reader, Context context) throws IOException, InterruptedException {
-    double[] values = new double[10000];
-    for (int i = 0; i < 100; i++) {
-      LOG.info("Iteration: " + i);
-      Table<DoubleArray> mseTable = new Table<>(0, new DoubleArrPlus());
+    Table<DoubleArray> mseTable = new Table<>(0, new DoubleArrPlus());
+    for (int j = 0; j < numPartitions; j++) {
+      double[] values = new double[elements];
       mseTable.addPartition(new Partition<>(0, new DoubleArray(values, 0, 10000)));
+    }
+
+    for (int i = 0; i < numIterations; i++) {
       allreduce("all-reduce", "all-reduce", mseTable);
+      mseTable.release();
     }
   }
 }

@@ -16,12 +16,10 @@
 package edu.iu.examples;
 
 public class Constants {
-  public static final String ARGS_ITR = "itr";
-  public static final String ARGS_ELEMENTS = "e";
+  public static final String ARGS_ITERATIONS = "i";
+  public static final String ARGS_ELEMENTS = "n";
   public static final String ARGS_OPERATION = "op";
-  public static final String ARGS_TASKS = "tasks";
-  public static final String ARGS_FNAME = "fname";
-  public static final String ARGS_PRINT_INTERVAL = "pi";
+  public static final String ARGS_MAPPERS = "maps";
   public static final String ARGS_DATA_TYPE = "type";
-  public static final String ARGS_INIT_ITERATIONS = "int_itr";
+  public static final String ARGS_PARTITIONS = "partitions";
 }
