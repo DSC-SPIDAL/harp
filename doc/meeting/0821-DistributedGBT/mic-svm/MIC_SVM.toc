@@ -1,0 +1,11 @@
+\beamer@endinputifotherversion {3.36pt}
+\beamer@sectionintoc {1}{Background of the paper}{2}{0}{1}
+\beamer@subsectionintoc {1}{1}{the Authors}{2}{0}{1}
+\beamer@sectionintoc {2}{Work of the paper}{6}{0}{2}
+\beamer@subsectionintoc {2}{1}{I. Introduction}{6}{0}{2}
+\beamer@subsectionintoc {2}{2}{II. Background of SVM}{10}{0}{2}
+\beamer@subsectionintoc {2}{3}{III. Methodology for MIC-SVM}{21}{0}{2}
+\beamer@subsectionintoc {2}{4}{IV. Experimental results and analysis}{30}{0}{2}
+\beamer@subsectionintoc {2}{5}{VI. Conclusion}{35}{0}{2}
+\beamer@sectionintoc {3}{Comments}{37}{0}{3}
+\beamer@subsectionintoc {3}{1}{Pros and Cons}{37}{0}{3}
