@@ -26,6 +26,7 @@ public abstract class AbstractExampleMapper extends CollectiveMapper<String, Str
   protected int numPartitions;
   protected int numMappers;
   protected int numIterations;
+  protected String dataType;
 
   /**
    * Mapper configuration.
@@ -45,12 +46,14 @@ public abstract class AbstractExampleMapper extends CollectiveMapper<String, Str
         .getInt(Constants.ARGS_ELEMENTS, 1);
     numIterations = configuration
         .getInt(Constants.ARGS_ITERATIONS, 1);
+    dataType = configuration
+        .get(Constants.ARGS_DATA_TYPE, "double");
     LOG.info("Example operation " + cmd);
     LOG.info("Num Mappers " + numMappers);
     LOG.info("Num Partitions " + numPartitions);
     LOG.info(
         "Bytes per Partition " + elements);
     LOG.info("Num Iterations " + numIterations);
-    LOG.info("Data type " + numIterations);
+    LOG.info("Data type " + dataType);
   }
 }

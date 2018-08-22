@@ -28,15 +28,23 @@ import java.io.IOException;
 public class AllReduce extends AbstractExampleMapper {
   @Override
   protected void mapCollective(KeyValReader reader, Context context) throws IOException, InterruptedException {
+    // lets prepare the data to be reduced
     Table<DoubleArray> mseTable = new Table<>(0, new DoubleArrPlus());
     for (int j = 0; j < numPartitions; j++) {
       double[] values = new double[elements];
-      mseTable.addPartition(new Partition<>(0, new DoubleArray(values, 0, 10000)));
+      mseTable.addPartition(new Partition<>(0, new DoubleArray(values, 0, elements)));
     }
 
+    long startTime = System.currentTimeMillis();
+    // we are going to call the same operation num iterations times
     for (int i = 0; i < numIterations; i++) {
-      allreduce("all-reduce", "all-reduce", mseTable);
+
+       // When calling the operation, each invocation should have a unique operation name, otherwise the calls
+       // may not complete
+      allreduce("main", "all-reduce-" + i , mseTable);
       mseTable.release();
     }
+    LOG.info(String.format("Op %s it %d ele %d par %d time %d", cmd, numIterations, elements, numPartitions,
+        (System.currentTimeMillis() - startTime)));
   }
 }

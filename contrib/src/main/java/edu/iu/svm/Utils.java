@@ -24,7 +24,7 @@ public class Utils {
     }
   }
 
-  static void generateData(int numOfTasks,
+  public static void generateData(int numOfTasks,
     FileSystem fs, String localPathString,
     Path dataPath) throws IOException,
     InterruptedException, ExecutionException {
