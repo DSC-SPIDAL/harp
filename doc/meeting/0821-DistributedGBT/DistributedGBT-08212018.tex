@@ -267,7 +267,7 @@ Indiana University\\ % Your institution for the title page
 						\For{j in sorted(I, by $X_{jk}$)}{
 							$G_L = G_L + g_j; H_L = H_L + h_j$ \\
 							$G_R = G - G_L; H_R = H - H_L$	\\						
-							$score = max(score,\frac{H_L + \lambda}{G_L^2} + \frac{H_R + \lambda}{G_R^2})$
+							$score = max(score,\frac{G_L^2}{H_L + \lambda} + \frac{G_R^2}{H_R + \lambda})$
 						}
 					}
 				}
@@ -327,81 +327,57 @@ Indiana University\\ % Your institution for the title page
 \end{frame}
 
 \begin{frame}
-	\frametitle{Issues}
+	\frametitle{Issues - Non-continous Mem Access}
 	\begin{columns}[c] % The "c" option specifies centered vertical alignment while the "t" option is used for top vertical alignment
-		\column{.45\textwidth} % Left column and width
-		%\textbf{Heading}
+		\column{.7\textwidth} % Left column and width	
 		\begin{figure}
-			\includegraphics[width=1\linewidth]{figs/dataset.jpg} \\
-			\includegraphics[width=1\linewidth]{figs/dtree}
+			\includegraphics[width=1\linewidth]{figs/memaccess.jpg} 
 		\end{figure}
-		
-		\column{.5\textwidth} % Right column and width
+		\column{.3\textwidth} % Right column and width
 		\begin{itemize}
-			\item non-continuous memory access
-			\item load imbalance 
-			\begin{itemize}			
-				\item \textcolor{red}{parallelFeatures}: findBestSplit() works on features independently
-				\item \textcolor{red}{parallelNodes}: same level of nodes in a tree works independently
-				\item \textcolor{red}{vectorization}: lots of $\sum$ operations, $G_j, H_j$
-			\end{itemize}			
+			\item \textcolor{red}{Bins} is a split candidates proposal $B={b_0,b_1,..,b_k}$, in general $|B| << n$
+			\item with Bins, the findBestSplit timecomplexity drops from $\mathcal{O}(nlogn)$ to $\mathcal{O}(nlogb)$ 
 		\end{itemize}
-	\end{columns}	
+	\end{columns}		
 \end{frame}
-
 
 
 \subsection{II. Distributed} 
 \begin{frame}
 	\frametitle{Data Partition}
-	\begin{columns}[c] % The "c" option specifies centered vertical alignment while the "t" option is used for top vertical alignment
-		
-		\column{.45\textwidth} % Left column and width
 		%\textbf{Heading}
 		\begin{figure}
-			\includegraphics[width=1\linewidth]{figs/dataset.jpg} \\
-			\includegraphics[width=1\linewidth]{figs/dtree}
+			\includegraphics[width=.5\linewidth]{figs/datapartition1.jpg}
+			\includegraphics[width=.5\linewidth]{figs/datapartition2.jpg}
 		\end{figure}
 		
-		\column{.5\textwidth} % Right column and width
+
 		\begin{itemize}
-			\item Boosting is a sequential process, building trees one by one.(multiclass categorization have multiple boosting processes)
-			\item Parallelism in building one tree
+			\item Partition by rows (samples) 
 			\begin{itemize}			
-				\item \textcolor{red}{parallelFeatures}: findBestSplit() works on features independently
-				\item \textcolor{red}{parallelNodes}: same level of nodes in a tree works independently
-				\item \textcolor{red}{vectorization}: lots of $\sum$ operations, $G_j, H_j$
+				\item need gobal communication to build \textcolor{red}{Bins}, once if use global static Bins.
+				\item need gobal communication to build \textcolor{red}{GHSum} for each feature in findBestSplit() 
+			\end{itemize}			
+			\item Partition by columns (features)
+			\begin{itemize}			
+				\item \textcolor{red}{Bins} and \textcolor{red}{GHSum} are all local, no communication
+				\item need global communication to select the best feature in findBestSplit()
+				\item load imbalance can be a problem
 			\end{itemize}			
 			
 		\end{itemize}
-	\end{columns}	
 	
 \end{frame}
 
+\section{Next Step} % Sections 
+\subsection{Topics} 
 \begin{frame}
-	\frametitle{Data Partition}
-	\begin{columns}[c] % The "c" option specifies centered vertical alignment while the "t" option is used for top vertical alignment
-		
-		\column{.45\textwidth} % Left column and width
-		%\textbf{Heading}
-		\begin{figure}
-			\includegraphics[width=1\linewidth]{figs/dataset.jpg} \\
-			\includegraphics[width=1\linewidth]{figs/dtree}
-		\end{figure}
-		
-		\column{.5\textwidth} % Right column and width
-		\begin{itemize}
-			\item Boosting is a sequential process, building trees one by one.(multiclass categorization have multiple boosting processes)
-			\item Parallelism in building one tree
-			\begin{itemize}			
-				\item \textcolor{red}{parallelFeatures}: findBestSplit() works on features independently
-				\item \textcolor{red}{parallelNodes}: same level of nodes in a tree works independently
-				\item \textcolor{red}{vectorization}: lots of $\sum$ operations, $G_j, H_j$
-			\end{itemize}			
-			
-		\end{itemize}
-	\end{columns}	
-	
+	\frametitle{Topics for the Next Step}
+	\begin{itemize}
+		\item memory access optimization
+		\item different Bins design
+		\item load imbalance issue in distributed setting		
+	\end{itemize}
 \end{frame}
 
 
@@ -420,9 +396,9 @@ Indiana University\\ % Your institution for the title page
 %\newblock Title of the publication
 %\newblock \emph{Journal Name} 12(3), 45 -- 678.
 
-\bibitem[Platt 1998]{Platt} Platt, J., 1998. Sequential minimal optimization: A fast algorithm for training support vector machines.
+\bibitem[Chen 2016]{Chen}T. Chen and C. Guestrin, “Xgboost: A scalable tree boosting system,” in Proceedings of the 22nd acm sigkdd international conference on knowledge discovery and data mining, 2016, pp. 785--794..
 
-\bibitem[You 2014]{You} Y. You et al., “Mic-svm: Designing a highly efficient support vector machine for advanced modern multi-core and many-core architectures,” in Parallel and Distributed Processing Symposium, 2014 IEEE 28th International, 2014, pp. 809–818.
+\bibitem[Tyree 2011]{Tyree}S. Tyree, K. Q. Weinberger, K. Agrawal, and J. Paykin, “Parallel boosted regression trees for web search ranking,” in Proceedings of the 20th international conference on World wide web, 2011, pp. 387--396.
 
 \end{thebibliography}
 }

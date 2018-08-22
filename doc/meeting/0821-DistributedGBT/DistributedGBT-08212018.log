@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.16 (TeX Live 2015/Debian) (preloaded format=pdflatex 2017.9.26)  21 AUG 2018 16:40
+This is pdfTeX, Version 3.14159265-2.6-1.40.16 (TeX Live 2015/Debian) (preloaded format=pdflatex 2017.11.1)  21 AUG 2018 21:04
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1001,7 +1001,7 @@ LaTeX Font Warning: Font shape `OT1/cmss/m/n' in size <4> not available
 (./DistributedGBT-08212018.toc) [2
 
 ]
-<figs/dataset.jpg, id=109, 1080.035pt x 762.85pt>
+<figs/dataset.jpg, id=126, 1080.035pt x 762.85pt>
 File: figs/dataset.jpg Graphic file (type jpg)
  <use figs/dataset.jpg>
 Package pdftex.def Info: figs/dataset.jpg used on input line 151.
@@ -1026,7 +1026,7 @@ thkerncmss.
 [3
 
  <./figs/dataset.jpg>]
-<figs/regressiontree.jpg, id=141, 1822.81pt x 698.61pt>
+<figs/regressiontree.jpg, id=159, 1822.81pt x 698.61pt>
 File: figs/regressiontree.jpg Graphic file (type jpg)
 
 <use figs/regressiontree.jpg>
@@ -1039,7 +1039,7 @@ Overfull \vbox (0.71037pt too high) detected at line 168
 [4
 
  <./figs/regressiontree.jpg>]
-<figs/boostingtree.jpg, id=170, 1889.0575pt x 877.2775pt>
+<figs/boostingtree.jpg, id=187, 1889.0575pt x 877.2775pt>
 File: figs/boostingtree.jpg Graphic file (type jpg)
 
 <use figs/boostingtree.jpg>
@@ -1078,18 +1078,53 @@ Missing character: There is no Ä in font cmss12!
 ]
 File: figs/dataset.jpg Graphic file (type jpg)
  <use figs/dataset.jpg>
-Package pdftex.def Info: figs/dataset.jpg used on input line 330.
+Package pdftex.def Info: figs/dataset.jpg used on input line 327.
 (pdftex.def)             Requested size: 154.03183pt x 108.78873pt.
 
-<figs/dtree.jpg, id=344, 717.68124pt x 275.0275pt>
+<figs/dtree.jpg, id=366, 717.68124pt x 275.0275pt>
 File: figs/dtree.jpg Graphic file (type jpg)
  <use figs/dtree.jpg>
-Package pdftex.def Info: figs/dtree.jpg used on input line 330.
+Package pdftex.def Info: figs/dtree.jpg used on input line 327.
 (pdftex.def)             Requested size: 154.03183pt x 59.02484pt.
 
 [11
 
- <./figs/dtree.jpg>]
+ <./figs/dtree.jpg>] <figs/memaccess.jpg, id=393, 1001.7425pt x 907.39pt>
+File: figs/memaccess.jpg Graphic file (type jpg)
+
+<use figs/memaccess.jpg>
+Package pdftex.def Info: figs/memaccess.jpg used on input line 342.
+(pdftex.def)             Requested size: 239.60567pt x 217.03038pt.
+
+Overfull \vbox (0.9598pt too high) detected at line 342
+ []
+
+[12
+
+ <./figs/memaccess.jpg>] (./DistributedGBT-08212018.toc) [13
+
+]
+<figs/datapartition1.jpg, id=452, 963.6pt x 542.025pt>
+File: figs/datapartition1.jpg Graphic file (type jpg)
+
+<use figs/datapartition1.jpg>
+Package pdftex.def Info: figs/datapartition1.jpg used on input line 370.
+(pdftex.def)             Requested size: 171.14764pt x 96.27007pt.
+
+<figs/datapartition2.jpg, id=453, 963.6pt x 542.025pt>
+File: figs/datapartition2.jpg Graphic file (type jpg)
+
+<use figs/datapartition2.jpg>
+Package pdftex.def Info: figs/datapartition2.jpg used on input line 370.
+(pdftex.def)             Requested size: 171.14764pt x 96.27007pt.
+ [14
+
+ <./figs/datapartition1.jpg> <./figs/datapartition2.jpg>] (./DistributedGBT-082
+12018.toc) [15
+
+] [16
+
+]
 Missing character: There is no ‚ in font cmss9!
 Missing character: There is no Ä in font cmss9!
 Missing character: There is no ú in font cmss9!
@@ -1098,11 +1133,14 @@ Missing character: There is no Ä in font cmss9!
 Missing character: There is no ù in font cmss9!
 Missing character: There is no ‚ in font cmss9!
 Missing character: There is no Ä in font cmss9!
-Missing character: There is no ì in font cmss9!
- [12
+Missing character: There is no ú in font cmss9!
+Missing character: There is no ‚ in font cmss9!
+Missing character: There is no Ä in font cmss9!
+Missing character: There is no ù in font cmss9!
+ [17
 
  </usr/share/texlive/texmf-dist/tex/latex/beamer/art/beamericonarticle.pdf>] [1
-3
+8
 
 ]
 \tf@nav=\write6
@@ -1114,26 +1152,27 @@ Missing character: There is no ì in font cmss9!
 \tf@snm=\write8
 \openout8 = `DistributedGBT-08212018.snm'.
 
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 364.
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 364.
- (./DistributedGBT-08212018.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 364.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 364.
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 417.
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 417.
+
+(./DistributedGBT-08212018.aux)
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 417.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 417.
 Package rerunfilecheck Info: File `DistributedGBT-08212018.out' has not changed
 .
-(rerunfilecheck)             Checksum: FE38228F452F52235193528C18E7CBDD;247.
+(rerunfilecheck)             Checksum: 5396D5CA7BACA59E17CB2A365D50872B;412.
 
 
 LaTeX Font Warning: Size substitutions with differences
 (Font)              up to 1.0pt have occurred.
 
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 364.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 417.
  ) 
 Here is how much of TeX's memory you used:
- 18051 strings out of 494953
- 345142 string characters out of 6180977
- 421827 words of memory out of 5000000
- 20867 multiletter control sequences out of 15000+600000
+ 18103 strings out of 494953
+ 345936 string characters out of 6180977
+ 421832 words of memory out of 5000000
+ 20899 multiletter control sequences out of 15000+600000
  15959 words of font info for 58 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
  56i,23n,65p,403b,812s stack positions out of 5000i,500n,10000p,200000b,80000s
@@ -1157,10 +1196,10 @@ ive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/share/texlive/tex
 mf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></usr/share/texlive/texmf-dist
 /fonts/type1/public/amsfonts/cm/cmtt10.pfb></usr/share/texlive/texmf-dist/fonts
 /type1/public/amsfonts/symbols/msbm10.pfb>
-Output written on DistributedGBT-08212018.pdf (13 pages, 689995 bytes).
+Output written on DistributedGBT-08212018.pdf (18 pages, 956933 bytes).
 PDF statistics:
- 512 PDF objects out of 1000 (max. 8388607)
- 449 compressed objects within 5 object streams
- 33 named destinations out of 1000 (max. 500000)
- 143 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 683 PDF objects out of 1000 (max. 8388607)
+ 610 compressed objects within 7 object streams
+ 46 named destinations out of 1000 (max. 500000)
+ 182 words of extra memory for PDF output out of 10000 (max. 10000000)
 
