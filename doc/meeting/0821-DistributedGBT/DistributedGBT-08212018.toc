@@ -4,5 +4,5 @@
 \beamer@sectionintoc {2}{Parallel and Distributed Implementation}{10}{0}{2}
 \beamer@subsectionintoc {2}{1}{I. Shared-Memory}{10}{0}{2}
 \beamer@subsectionintoc {2}{2}{II. Distributed}{13}{0}{2}
-\beamer@sectionintoc {3}{Next Step}{15}{0}{3}
-\beamer@subsectionintoc {3}{1}{Topics}{15}{0}{3}
+\beamer@sectionintoc {3}{Future Work}{16}{0}{3}
+\beamer@subsectionintoc {3}{1}{Topics for the Next Step}{16}{0}{3}

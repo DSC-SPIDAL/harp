@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.16 (TeX Live 2015/Debian) (preloaded format=pdflatex 2017.11.1)  21 AUG 2018 22:54
+This is pdfTeX, Version 3.14159265-2.6-1.40.16 (TeX Live 2015/Debian) (preloaded format=pdflatex 2017.11.1)  22 AUG 2018 00:24
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1104,25 +1104,26 @@ Overfull \vbox (0.9598pt too high) detected at line 343
  <./figs/memaccess.jpg>] (./DistributedGBT-08212018.toc) [13
 
 ]
-<figs/datapartition1.jpg, id=452, 963.6pt x 542.025pt>
+<figs/datapartition1.jpg, id=453, 963.6pt x 542.025pt>
 File: figs/datapartition1.jpg Graphic file (type jpg)
 
 <use figs/datapartition1.jpg>
-Package pdftex.def Info: figs/datapartition1.jpg used on input line 371.
+Package pdftex.def Info: figs/datapartition1.jpg used on input line 370.
 (pdftex.def)             Requested size: 171.14764pt x 96.27007pt.
 
-<figs/datapartition2.jpg, id=453, 963.6pt x 542.025pt>
+<figs/datapartition2.jpg, id=454, 963.6pt x 542.025pt>
 File: figs/datapartition2.jpg Graphic file (type jpg)
 
 <use figs/datapartition2.jpg>
-Package pdftex.def Info: figs/datapartition2.jpg used on input line 371.
+Package pdftex.def Info: figs/datapartition2.jpg used on input line 370.
 (pdftex.def)             Requested size: 171.14764pt x 96.27007pt.
  [14
 
- <./figs/datapartition1.jpg> <./figs/datapartition2.jpg>] (./DistributedGBT-082
-12018.toc) [15
+ <./figs/datapartition1.jpg> <./figs/datapartition2.jpg>] [15
 
-] [16
+] (./DistributedGBT-08212018.toc) [16
+
+] [17
 
 ]
 Missing character: There is no ‚ in font cmss9!
@@ -1137,10 +1138,10 @@ Missing character: There is no ú in font cmss9!
 Missing character: There is no ‚ in font cmss9!
 Missing character: There is no Ä in font cmss9!
 Missing character: There is no ù in font cmss9!
- [17
+ [18
 
  </usr/share/texlive/texmf-dist/tex/latex/beamer/art/beamericonarticle.pdf>] [1
-8
+9
 
 ]
 \tf@nav=\write6
@@ -1152,27 +1153,27 @@ Missing character: There is no ù in font cmss9!
 \tf@snm=\write8
 \openout8 = `DistributedGBT-08212018.snm'.
 
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 418.
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 418.
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 438.
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 438.
 
 (./DistributedGBT-08212018.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 418.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 418.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 438.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 438.
 Package rerunfilecheck Info: File `DistributedGBT-08212018.out' has not changed
 .
-(rerunfilecheck)             Checksum: 5396D5CA7BACA59E17CB2A365D50872B;412.
+(rerunfilecheck)             Checksum: FD27197D53A5113257028FCEEB7CA5B0;432.
 
 
 LaTeX Font Warning: Size substitutions with differences
 (Font)              up to 1.0pt have occurred.
 
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 418.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 438.
  ) 
 Here is how much of TeX's memory you used:
- 18103 strings out of 494953
- 345936 string characters out of 6180977
- 421832 words of memory out of 5000000
- 20899 multiletter control sequences out of 15000+600000
+ 18115 strings out of 494953
+ 346148 string characters out of 6180977
+ 421972 words of memory out of 5000000
+ 20909 multiletter control sequences out of 15000+600000
  15959 words of font info for 58 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
  56i,23n,65p,403b,812s stack positions out of 5000i,500n,10000p,200000b,80000s
@@ -1196,10 +1197,10 @@ ive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/share/texlive/tex
 mf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></usr/share/texlive/texmf-dist
 /fonts/type1/public/amsfonts/cm/cmtt10.pfb></usr/share/texlive/texmf-dist/fonts
 /type1/public/amsfonts/symbols/msbm10.pfb>
-Output written on DistributedGBT-08212018.pdf (18 pages, 956933 bytes).
+Output written on DistributedGBT-08212018.pdf (19 pages, 960172 bytes).
 PDF statistics:
- 683 PDF objects out of 1000 (max. 8388607)
- 610 compressed objects within 7 object streams
- 46 named destinations out of 1000 (max. 500000)
+ 710 PDF objects out of 1000 (max. 8388607)
+ 636 compressed objects within 7 object streams
+ 48 named destinations out of 1000 (max. 500000)
  182 words of extra memory for PDF output out of 10000 (max. 10000000)
 

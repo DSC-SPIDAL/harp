@@ -94,7 +94,7 @@
 %\title[Six Algorithms]{Six Algorithms \\ \footnotesize Select Typical Machine Learning Algorithms for Data Analytics} % The short title appears at the bottom of every slide, the full title is only on the title page
 
 \title[Distributed GBT]{HARP DAAL Update}
-\subtitle{}
+\subtitle{Distributed Gradient Boosting Tree}
 
 \author{Bo Peng} % Your name
 \institute[IUB] % Your institution as it will appear on the bottom of every slide, may be shorthand to save space
@@ -357,27 +357,47 @@ Indiana University\\ % Your institution for the title page
 			\item Partition by rows (samples) 
 			\begin{itemize}			
 				\item need gobal communication to build \textcolor{red}{Bins}, once if use global static Bins.
-				\item need gobal communication to build \textcolor{red}{GHSum} for each feature in findBestSplit() 
+				\item need gobal communication to build \textcolor{red}{GHSum} for each feature in findBestSplit() $\rightarrow$ \textcolor{blue}{allreduce(GHSum)}
 			\end{itemize}			
 			\item Partition by columns (features)
 			\begin{itemize}			
 				\item \textcolor{red}{Bins} and \textcolor{red}{GHSum} are all local, no communication
-				\item need global communication to select the best feature in findBestSplit()
-				\item load imbalance can be a problem
+				\item need global communication to select the best feature in findBestSplit() $\rightarrow$ \textcolor{blue}{allreduce(maxscore)}
 			\end{itemize}			
 			
 		\end{itemize}
 	
 \end{frame}
 
-\section{Next Step} % Sections 
-\subsection{Topics} 
+\begin{frame}
+	\frametitle{Issue - Overhead of Synchronization \& Communication}
+	%\textbf{Heading}
+	\begin{itemize}
+		\item Overhead of communication
+		\begin{itemize}			
+			\item well designed Bins works as model compression, reducing the data volume of communication
+			\item pipeline 
+		\end{itemize}			
+		\item Overhead of synchronization
+		\begin{itemize}			
+			\item load imbalance is the killer of synchronization operation
+			\item allreduce give chance to \textcolor{blue}{model rotation}
+			\item stochastic GBT give chance to \textcolor{blue}{timer control} 
+		\end{itemize}			
+		
+	\end{itemize}
+	
+\end{frame}
+
+\section{Future Work} % Sections 
+\subsection{Topics for the Next Step} 
 \begin{frame}
 	\frametitle{Topics for the Next Step}
 	\begin{itemize}
-		\item memory access optimization
+		\item memory access optimization in shared memory system
+		\item load imbalance issue in distributed system
 		\item different Bins design
-		\item load imbalance issue in distributed setting		
+		\item dataset with sparsity and high dimensionality
 	\end{itemize}
 \end{frame}
 
