@@ -17,6 +17,9 @@ package edu.iu.examples;
 
 import java.util.logging.Logger;
 
+/**
+ * Captures parameters for running the examples
+ */
 public class ExampleParameters {
   private static final Logger LOG = Logger.getLogger(ExampleParameters.class.getName());
   private int size;

@@ -33,6 +33,9 @@ import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
 
+/**
+ * These are set of examples to demonstrate the collective communications APIs of harp.
+ */
 public class ExamplesMain extends Configured implements Tool {
   private static final Logger LOG = Logger.getLogger(ExamplesMain.class.getName());
 
@@ -63,7 +66,7 @@ public class ExamplesMain extends Configured implements Tool {
     options.addOption(createOption(Constants.ARGS_PARTITIONS, true, "Partitions", false));
     options.addOption(createOption(Constants.ARGS_DATA_TYPE, true, "Data", false));
 
-    CommandLineParser commandLineParser = new DefaultParser();
+    CommandLineParser commandLineParser = new BasicParser();
     CommandLine cmd = commandLineParser.parse(options, args);
     int tasks = Utils.getIntValue(Constants.ARGS_MAPPERS, 2, cmd);
     int size = Utils.getIntValue(Constants.ARGS_ELEMENTS, 1000, cmd);
@@ -133,6 +136,8 @@ public class ExamplesMain extends Configured implements Tool {
       job.setMapperClass(Reduce.class);
     } else if (cmd.equals("bcast")) {
       job.setMapperClass(BCast.class);
+    } else if (cmd.equals("rotate")) {
+      job.setMapperClass(Rotate.class);
     }
     org.apache.hadoop.mapred.JobConf jobConf =
         (JobConf) job.getConfiguration();
