@@ -65,6 +65,7 @@ public class ExamplesMain extends Configured implements Tool {
     options.addOption(createOption(Constants.ARGS_OPERATION, true, "Operation", false));
     options.addOption(createOption(Constants.ARGS_PARTITIONS, true, "Partitions", false));
     options.addOption(createOption(Constants.ARGS_DATA_TYPE, true, "Data", false));
+    options.addOption(createOption(Constants.ARGS_VERIFY, false, "Verify", false));
 
     CommandLineParser commandLineParser = new BasicParser();
     CommandLine cmd = commandLineParser.parse(options, args);
@@ -74,8 +75,9 @@ public class ExamplesMain extends Configured implements Tool {
     int partitions = Utils.getIntValue(Constants.ARGS_PARTITIONS, 1, cmd);
     String operation = Utils.getStringValue(Constants.ARGS_OPERATION, "allreduce", cmd);
     String dataType = Utils.getStringValue(Constants.ARGS_DATA_TYPE, "int", cmd);
+    boolean verify = cmd.hasOption(Constants.ARGS_VERIFY);
 
-    return new ExampleParameters(tasks, size, itr, operation, partitions, dataType);
+    return new ExampleParameters(tasks, size, itr, operation, partitions, dataType, verify);
   }
 
   private void launch(ExampleParameters parameters, String workDirName)
@@ -95,18 +97,18 @@ public class ExamplesMain extends Configured implements Tool {
     DataGen.generateData(parameters.getMappers(),
         inputDirPath, "/tmp/harp/examples", fs);
     doBenchmark(parameters.getOperation(), parameters.getSize(),
-        parameters.getPartitions(), parameters.getMappers(), parameters.getIterations(),
+        parameters.getPartitions(), parameters.getMappers(), parameters.getIterations(), parameters.isVerify(),
         inputDirPath, outputDirPath);
   }
 
   private void doBenchmark(String cmd,
                            int bytesPerPartition, int numPartitions,
-                           int numMappers, int numIterations,
+                           int numMappers, int numIterations, boolean verify,
                            Path inputDirPath, Path outputDirPath) {
     try {
       Job benchamrkJob = configureBenchmarkJob(
           cmd, bytesPerPartition, numPartitions,
-          numMappers, numIterations, inputDirPath,
+          numMappers, numIterations, verify, inputDirPath,
           outputDirPath);
       benchamrkJob.waitForCompletion(true);
     } catch (IOException |
@@ -118,7 +120,7 @@ public class ExamplesMain extends Configured implements Tool {
 
   private Job configureBenchmarkJob(String cmd,
                                     int bytesPerPartition, int numPartitions,
-                                    int numMappers, int numIterations,
+                                    int numMappers, int numIterations, boolean verify,
                                     Path inputDirPath, Path outputDirPath) throws IOException {
     Job job = Job.getInstance(getConf(), "example_job");
     FileInputFormat.setInputPaths(job,
@@ -146,14 +148,11 @@ public class ExamplesMain extends Configured implements Tool {
     jobConf.setNumMapTasks(numMappers);
     job.setNumReduceTasks(0);
     jobConf.set(Constants.ARGS_OPERATION, cmd);
-    jobConf.setInt(Constants.ARGS_ELEMENTS,
-        bytesPerPartition);
-    jobConf.setInt(Constants.ARGS_PARTITIONS,
-        numPartitions);
-    jobConf.setInt(Constants.ARGS_MAPPERS,
-        numMappers);
-    jobConf.setInt(Constants.ARGS_ITERATIONS,
-        numIterations);
+    jobConf.setInt(Constants.ARGS_ELEMENTS, bytesPerPartition);
+    jobConf.setInt(Constants.ARGS_PARTITIONS, numPartitions);
+    jobConf.setInt(Constants.ARGS_MAPPERS, numMappers);
+    jobConf.setInt(Constants.ARGS_ITERATIONS, numIterations);
+    jobConf.setBoolean(Constants.ARGS_VERIFY, verify);
     return job;
   }
 

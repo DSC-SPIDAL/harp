@@ -19,6 +19,8 @@ import edu.iu.harp.example.DoubleArrPlus;
 import edu.iu.harp.partition.Partition;
 import edu.iu.harp.partition.Table;
 import edu.iu.harp.resource.DoubleArray;
+import it.unimi.dsi.fastutil.objects.ObjectCollection;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 
@@ -28,26 +30,48 @@ import java.io.IOException;
 public class AllGather extends AbstractExampleMapper {
   @Override
   protected void mapCollective(KeyValReader reader, Context context) throws IOException, InterruptedException {
-
-    // lets prepare the data to be reduced
-    Table<DoubleArray> mseTable = new Table<>(0, new DoubleArrPlus());
-    for (int j = 0; j < numPartitions; j++) {
-      double[] values = new double[elements];
-      mseTable.addPartition(new Partition<>(0, new DoubleArray(values, 0, elements)));
-    }
-
     long startTime = System.currentTimeMillis();
 
     // we are going to call the same operation numIterations times
     for (int i = 0; i < numIterations; i++) {
-
+      // lets prepare the data to be reduced
+      Table<DoubleArray> mseTable = createTable();
       // When calling the operation, each invocation should have a unique operation name, otherwise the calls
       // may not complete
       allgather("all-gather", "all-gather-" + i, mseTable);
-      mseTable.release();
+
+      if (verify) {
+        ObjectCollection<Partition<DoubleArray>> partitions = mseTable.getPartitions();
+        for (Partition<DoubleArray> p : partitions) {
+          double[] dArray = p.get().get();
+          if (dArray.length != numMappers * elements) {
+            LOG.info("Un-expected length of array, expected: "
+                + numMappers * elements + " got: " + dArray.length);
+          }
+          for (double d : dArray) {
+            if (d != 2) {
+              throw new RuntimeException("Un-expected value, expected: " + 2 + " got: " + d);
+            }
+          }
+        }
+        LOG.info("Verification success");
+      }
     }
 
     LOG.info(String.format("Op %s it %d ele %d par %d time %d", cmd, numIterations, elements, numPartitions,
         (System.currentTimeMillis() - startTime)));
+  }
+
+  @NotNull
+  private Table<DoubleArray> createTable() {
+    Table<DoubleArray> mseTable = new Table<>(0, new DoubleArrPlus());
+    for (int j = 0; j < numPartitions; j++) {
+      double[] values = new double[elements];
+      for (int k = 0; k < values.length; k++) {
+        values[k] = 2;
+      }
+      mseTable.addPartition(new Partition<>(0, new DoubleArray(values, 0, elements)));
+    }
+    return mseTable;
   }
 }

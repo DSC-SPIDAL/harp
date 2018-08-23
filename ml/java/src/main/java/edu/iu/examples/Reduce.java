@@ -31,7 +31,11 @@ public class Reduce extends AbstractExampleMapper {
     // lets prepare the data to be reduced
     Table<DoubleArray> mseTable = new Table<>(0, new DoubleArrPlus());
     for (int j = 0; j < numPartitions; j++) {
+      // lets start with 1, after every round the o'th worker will have
       double[] values = new double[elements];
+      for (int i = 0; i < values.length; i++) {
+        values[i] = 1;
+      }
       mseTable.addPartition(new Partition<>(0, new DoubleArray(values, 0, elements)));
     }
 
@@ -42,6 +46,7 @@ public class Reduce extends AbstractExampleMapper {
       // may not complete
       reduce("reduce", "reduce-" + i, mseTable, 0);
     }
+    mseTable.free();
     LOG.info(String.format("Op %s it %d ele %d par %d time %d", cmd, numIterations, elements, numPartitions,
         (System.currentTimeMillis() - startTime)));
   }

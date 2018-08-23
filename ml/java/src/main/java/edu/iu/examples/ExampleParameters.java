@@ -34,14 +34,18 @@ public class ExampleParameters {
 
   private String dataType;
 
+  private boolean verify;
+
   public ExampleParameters(int mappers, int size, int iterations,
-                           String operation, int partitions, String dataType) {
+                           String operation, int partitions,
+                           String dataType, boolean verify) {
     this.size = size;
     this.iterations = iterations;
     this.operation = operation;
     this.mappers = mappers;
     this.partitions = partitions;
     this.dataType = dataType;
+    this.verify = verify;
   }
 
   public int getSize() {
@@ -66,5 +70,9 @@ public class ExampleParameters {
 
   public String getDataType() {
     return dataType;
+  }
+
+  public boolean isVerify() {
+    return verify;
   }
 }

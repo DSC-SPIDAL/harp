@@ -21,5 +21,6 @@ public class Constants {
   public static final String ARGS_OPERATION = "op";
   public static final String ARGS_MAPPERS = "maps";
   public static final String ARGS_DATA_TYPE = "type";
+  public static final String ARGS_VERIFY = "verify";
   public static final String ARGS_PARTITIONS = "partitions";
 }

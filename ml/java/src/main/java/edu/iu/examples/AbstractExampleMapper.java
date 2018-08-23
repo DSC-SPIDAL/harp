@@ -28,6 +28,8 @@ public abstract class AbstractExampleMapper extends CollectiveMapper<String, Str
   protected int numMappers;
   protected int numIterations;
   protected String dataType;
+  // weather we are going to verify the results
+  protected boolean verify;
 
   /**
    * Mapper configuration.
@@ -48,6 +50,8 @@ public abstract class AbstractExampleMapper extends CollectiveMapper<String, Str
         .getInt(Constants.ARGS_ITERATIONS, 1);
     dataType = configuration
         .get(Constants.ARGS_DATA_TYPE, "double");
+    verify = configuration
+        .getBoolean(Constants.ARGS_VERIFY , false);
     LOG.info("Example operation " + cmd);
     LOG.info("Num Mappers " + numMappers);
     LOG.info("Num Partitions " + numPartitions);
@@ -55,5 +59,6 @@ public abstract class AbstractExampleMapper extends CollectiveMapper<String, Str
         "Bytes per Partition " + elements);
     LOG.info("Num Iterations " + numIterations);
     LOG.info("Data type " + dataType);
+    LOG.info("Verify " + verify);
   }
 }
