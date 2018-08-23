@@ -18,8 +18,9 @@ package edu.iu.examples;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapred.CollectiveMapper;
 
-import java.io.IOException;
-
+/**
+ * The base class for Examples
+ */
 public abstract class AbstractExampleMapper extends CollectiveMapper<String, String, Object, Object> {
   protected String cmd;
   protected int elements;
@@ -32,8 +33,7 @@ public abstract class AbstractExampleMapper extends CollectiveMapper<String, Str
    * Mapper configuration.
    */
   @Override
-  protected void setup(Context context)
-      throws IOException, InterruptedException {
+  protected void setup(Context context) {
     Configuration configuration =
         context.getConfiguration();
     cmd = configuration
