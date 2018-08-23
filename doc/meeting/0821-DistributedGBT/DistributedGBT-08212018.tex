@@ -177,6 +177,8 @@ Indiana University\\ % Your institution for the title page
 	\begin{itemize}
 		\item Boosting: $\widehat{y_i}=\phi(x_i)=\sum_{k=1}^{K}f_k(x_i)$  
 		\item additive model: prediction is the sum score of all the trees
+		\item How to learn $f_k(x)$ ? \\ 
+		\textcolor{red}{stage-wise} and train on the previous \textcolor{red}{residual} at the next step
 	\end{itemize}
 	
 \end{frame}
@@ -362,7 +364,7 @@ Indiana University\\ % Your institution for the title page
 			\item Partition by columns (features)
 			\begin{itemize}			
 				\item \textcolor{red}{Bins} and \textcolor{red}{GHSum} are all local, no communication
-				\item need global communication to select the best feature in findBestSplit() $\rightarrow$ \textcolor{blue}{allreduce(maxscore)}
+				\item need global communication to select the best feature in findBestSplit() $\rightarrow$ \textcolor{blue}{allreduce(maxscore)}, also need to  \textcolor{blue}{broadcast(Split Instance Set)}
 			\end{itemize}			
 			
 		\end{itemize}

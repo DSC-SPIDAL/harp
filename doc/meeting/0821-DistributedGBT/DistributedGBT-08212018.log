@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.16 (TeX Live 2015/Debian) (preloaded format=pdflatex 2017.11.1)  22 AUG 2018 00:24
+This is pdfTeX, Version 3.14159265-2.6-1.40.16 (TeX Live 2015/Debian) (preloaded format=pdflatex 2017.9.26)  22 AUG 2018 09:33
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1043,9 +1043,13 @@ Overfull \vbox (0.71037pt too high) detected at line 169
 File: figs/boostingtree.jpg Graphic file (type jpg)
 
 <use figs/boostingtree.jpg>
-Package pdftex.def Info: figs/boostingtree.jpg used on input line 182.
+Package pdftex.def Info: figs/boostingtree.jpg used on input line 184.
 (pdftex.def)             Requested size: 342.2953pt x 158.96063pt.
- [5
+
+Overfull \vbox (3.41924pt too high) detected at line 184
+ []
+
+[5
 
  <./figs/boostingtree.jpg>] [6
 
@@ -1056,12 +1060,12 @@ Missing character: There is no € in font cmss10!
  [7
 
 ]
-Overfull \hbox (78.35779pt too wide) in paragraph at lines 279--279
+Overfull \hbox (78.35779pt too wide) in paragraph at lines 281--281
 [] [][] []$  
  []
 
 
-Overfull \hbox (97.90538pt too wide) detected at line 279
+Overfull \hbox (97.90538pt too wide) detected at line 281
 [][][] $[]$[][][][][][][][] $[]$[][][][][][] 
  []
 
@@ -1078,13 +1082,13 @@ Missing character: There is no € in font cmss12!
 ]
 File: figs/dataset.jpg Graphic file (type jpg)
  <use figs/dataset.jpg>
-Package pdftex.def Info: figs/dataset.jpg used on input line 328.
+Package pdftex.def Info: figs/dataset.jpg used on input line 330.
 (pdftex.def)             Requested size: 154.03183pt x 108.78873pt.
 
 <figs/dtree.jpg, id=366, 717.68124pt x 275.0275pt>
 File: figs/dtree.jpg Graphic file (type jpg)
  <use figs/dtree.jpg>
-Package pdftex.def Info: figs/dtree.jpg used on input line 328.
+Package pdftex.def Info: figs/dtree.jpg used on input line 330.
 (pdftex.def)             Requested size: 154.03183pt x 59.02484pt.
 
 [11
@@ -1093,10 +1097,10 @@ Package pdftex.def Info: figs/dtree.jpg used on input line 328.
 File: figs/memaccess.jpg Graphic file (type jpg)
 
 <use figs/memaccess.jpg>
-Package pdftex.def Info: figs/memaccess.jpg used on input line 343.
+Package pdftex.def Info: figs/memaccess.jpg used on input line 345.
 (pdftex.def)             Requested size: 239.60567pt x 217.03038pt.
 
-Overfull \vbox (0.9598pt too high) detected at line 343
+Overfull \vbox (0.9598pt too high) detected at line 345
  []
 
 [12
@@ -1108,14 +1112,14 @@ Overfull \vbox (0.9598pt too high) detected at line 343
 File: figs/datapartition1.jpg Graphic file (type jpg)
 
 <use figs/datapartition1.jpg>
-Package pdftex.def Info: figs/datapartition1.jpg used on input line 370.
+Package pdftex.def Info: figs/datapartition1.jpg used on input line 372.
 (pdftex.def)             Requested size: 171.14764pt x 96.27007pt.
 
 <figs/datapartition2.jpg, id=454, 963.6pt x 542.025pt>
 File: figs/datapartition2.jpg Graphic file (type jpg)
 
 <use figs/datapartition2.jpg>
-Package pdftex.def Info: figs/datapartition2.jpg used on input line 370.
+Package pdftex.def Info: figs/datapartition2.jpg used on input line 372.
 (pdftex.def)             Requested size: 171.14764pt x 96.27007pt.
  [14
 
@@ -1153,12 +1157,12 @@ Missing character: There is no  in font cmss9!
 \tf@snm=\write8
 \openout8 = `DistributedGBT-08212018.snm'.
 
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 438.
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 438.
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 440.
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 440.
 
 (./DistributedGBT-08212018.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 438.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 438.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 440.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 440.
 Package rerunfilecheck Info: File `DistributedGBT-08212018.out' has not changed
 .
 (rerunfilecheck)             Checksum: FD27197D53A5113257028FCEEB7CA5B0;432.
@@ -1167,12 +1171,12 @@ Package rerunfilecheck Info: File `DistributedGBT-08212018.out' has not changed
 LaTeX Font Warning: Size substitutions with differences
 (Font)              up to 1.0pt have occurred.
 
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 438.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 440.
  ) 
 Here is how much of TeX's memory you used:
  18115 strings out of 494953
  346148 string characters out of 6180977
- 421972 words of memory out of 5000000
+ 421974 words of memory out of 5000000
  20909 multiletter control sequences out of 15000+600000
  15959 words of font info for 58 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
@@ -1197,7 +1201,7 @@ ive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/share/texlive/tex
 mf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></usr/share/texlive/texmf-dist
 /fonts/type1/public/amsfonts/cm/cmtt10.pfb></usr/share/texlive/texmf-dist/fonts
 /type1/public/amsfonts/symbols/msbm10.pfb>
-Output written on DistributedGBT-08212018.pdf (19 pages, 960172 bytes).
+Output written on DistributedGBT-08212018.pdf (19 pages, 960368 bytes).
 PDF statistics:
  710 PDF objects out of 1000 (max. 8388607)
  636 compressed objects within 7 object streams
