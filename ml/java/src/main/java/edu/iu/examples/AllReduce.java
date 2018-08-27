@@ -55,8 +55,6 @@ public class AllReduce extends AbstractExampleMapper {
         expectedSum += expectedSum;
         LOG.info("Verification success");
       }
-
-      mseTable.release();
     }
     LOG.info(String.format("Op %s it %d ele %d par %d time %d", cmd, numIterations, elements, numPartitions,
         (System.currentTimeMillis() - startTime)));
