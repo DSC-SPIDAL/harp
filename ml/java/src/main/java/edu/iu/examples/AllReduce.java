@@ -52,7 +52,7 @@ public class AllReduce extends AbstractExampleMapper {
             }
           }
         }
-        expectedSum += expectedSum;
+        expectedSum = expectedSum * numTasks;
         LOG.info("Verification success");
       }
     }
