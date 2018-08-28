@@ -32,30 +32,36 @@ public class ByteArrCombiner extends PartitionCombiner<ByteArray> {
       // + ", size2: " + size2);
       return PartitionStatus.COMBINE_FAILED;
     }
-    if (operation == Operation.SUM) {
-      for (int i = 0; i < size2; i++) {
-        arr1[i] += arr2[i];
-      }
-    } else if (operation == Operation.MINUS) {
-      for (int i = 0; i < size2; i++) {
-        arr1[i] -= arr2[i];
-      }
-    } else if (operation == Operation.MAX) {
-      for (int i = 0; i < size2; i++) {
-        if (arr1[i] < arr2[i]) {
-          arr1[i] = arr2[i];
+    switch (operation) {
+      case SUM:
+        for (int i = 0; i < size2; i++) {
+          arr1[i] += arr2[i];
         }
-      }
-    } else if (operation == Operation.MIN) {
-      for (int i = 0; i < size2; i++) {
-        if (arr1[i] > arr2[i]) {
-          arr1[i] = arr2[i];
+        break;
+      case MINUS:
+        for (int i = 0; i < size2; i++) {
+          arr1[i] -= arr2[i];
         }
-      }
-    } else if (operation == Operation.MULTIPLY) {
-      for (int i = 0; i < size2; i++) {
-        arr1[i] *= arr2[i];
-      }
+        break;
+      case MAX:
+        for (int i = 0; i < size2; i++) {
+          if (arr1[i] < arr2[i]) {
+            arr1[i] = arr2[i];
+          }
+        }
+        break;
+      case MIN:
+        for (int i = 0; i < size2; i++) {
+          if (arr1[i] > arr2[i]) {
+            arr1[i] = arr2[i];
+          }
+        }
+        break;
+      case MULTIPLY:
+        for (int i = 0; i < size2; i++) {
+          arr1[i] *= arr2[i];
+        }
+        break;
     }
     return PartitionStatus.COMBINED;
   }
