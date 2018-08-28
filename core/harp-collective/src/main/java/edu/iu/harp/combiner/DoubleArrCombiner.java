@@ -55,9 +55,7 @@ public class DoubleArrCombiner extends PartitionCombiner<DoubleArray> {
       }
     } else if (operation == Operation.MULTIPLY) {
       for (int i = 0; i < size2; i++) {
-        if (arr1[i] > arr2[i]) {
-          arr1[i] *= arr2[i];
-        }
+        arr1[i] *= arr2[i];
       }
     }
     return PartitionStatus.COMBINED;
