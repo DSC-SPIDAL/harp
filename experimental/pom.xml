@@ -39,7 +39,7 @@
             <artifactId>daal</artifactId>
             <scope>system</scope>
             <version>1.0</version>
-            <systemPath>${DAALROOT}/lib/daal.jar</systemPath>
+            <systemPath>${basedir}/../third_party/daal-2018/lib/daal.jar</systemPath>
         </dependency>
 
         <dependency>

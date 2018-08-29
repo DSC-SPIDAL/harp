@@ -13,8 +13,9 @@
 		<module>core</module>
 		<!-- <module>ml</module> -->
 		<module>contrib</module>
+		<module>ml</module>
 		<!-- <module>distribution</module> -->
-		<module>experimental</module>
+		<!--<module>experimental</module>-->
 	</modules>
 
 	<properties>
