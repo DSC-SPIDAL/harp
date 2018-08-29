@@ -77,6 +77,9 @@ public class SCDaalLauncher extends Configured implements Tool {
         DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libiomp5.so#libiomp5.so"), configuration);
         DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libhdfs.so#libhdfs.so"), configuration);
         DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libhdfs.so.0.0.0#libhdfs.so.0.0.0"), configuration);
+        DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libautohbw.so#libautohbw.so"), configuration);
+        DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libmemkind.so#libmemkind.so"), configuration);
+        DistributedCache.addCacheFile(new URI("/Hadoop/Libraries/libmemkind.so.0#libmemkind.so.0"), configuration);
 
 		if (args.length < 16) {
 			System.err.println("Usage: edu.iu.subgraph.SCDaalLauncher" +
