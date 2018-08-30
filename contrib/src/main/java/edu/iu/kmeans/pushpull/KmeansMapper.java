@@ -34,6 +34,7 @@ public class KmeansMapper extends
   private int iteration;
   private int numPoints;
   private double MSE;
+  private double finalMSE;
 
   @Override
   protected void setup(Context context)
@@ -76,117 +77,6 @@ public class KmeansMapper extends
     LOG.info("Total iterations in master view: "
       + (System.currentTimeMillis() - startTime));
   }
-
-  private void broadcastCentroids(
-    Table<DoubleArray> cenTable)
-    throws IOException {
-    // broadcast centroids
-    boolean isSuccess = false;
-    try {
-      isSuccess =
-        broadcast("main", "broadcast-centroids",
-          cenTable, this.getMasterID(), false);
-    } catch (Exception e) {
-      LOG.error("Fail to bcast.", e);
-    }
-    if (!isSuccess) {
-      throw new IOException("Fail to bcast");
-    }
-  }
-
-  private double computation(
-    Table<DoubleArray> cenTable,
-    Table<DoubleArray> previousCenTable,
-    ArrayList<DoubleArray> dataPoints) {
-    double err = 0;
-    for (DoubleArray aPoint : dataPoints) {
-      // for each data point, find the nearest
-      // centroid
-      double minDist = -1;
-      double tempDist = 0;
-      int nearestPartitionID = -1;
-      for (Partition ap : previousCenTable
-        .getPartitions()) {
-        DoubleArray aCentroid =
-          (DoubleArray) ap.get();
-        tempDist = calcEucDistSquare(aPoint,
-          aCentroid, vectorSize);
-        if (minDist == -1 || tempDist < minDist) {
-          minDist = tempDist;
-          nearestPartitionID = ap.id();
-        }
-      }
-      err += minDist;
-
-      // for the certain data point, found the
-      // nearest centroid.
-      // add the data to a new cenTable.
-      double[] partial =
-        new double[vectorSize + 1];
-      for (int j = 0; j < vectorSize; j++) {
-        partial[j] = aPoint.get()[j];
-      }
-      partial[vectorSize] = 1;
-
-      if (cenTable.getPartition(
-        nearestPartitionID) == null) {
-        Partition<DoubleArray> tmpAp =
-          new Partition<DoubleArray>(
-            nearestPartitionID, new DoubleArray(
-              partial, 0, vectorSize + 1));
-        cenTable.addPartition(tmpAp);
-
-      } else {
-        Partition<DoubleArray> apInCenTable =
-          cenTable
-            .getPartition(nearestPartitionID);
-        for (int i = 0; i < vectorSize + 1; i++) {
-          apInCenTable.get().get()[i] +=
-            partial[i];
-        }
-      }
-    }
-    System.out.println("Errors: " + err);
-    return err;
-  }
-
-  private void calcMSE(Configuration conf)
-    throws IOException {
-    double[] arrMSE = 
-      new double[2];
-    arrMSE[0] = numPoints;
-    arrMSE[1] = MSE;
-    Table<DoubleArray> mseTable =
-        new Table<>(0, new DoubleArrPlus());
-    Partition<DoubleArray> tmpAp =
-        new Partition<DoubleArray>(
-          0, new DoubleArray(
-            arrMSE, 0, 2));
-    mseTable.addPartition(tmpAp);
-
-    // allreduce
-    allreduce("main", "allreduce-mse",
-          mseTable);
-
-    //get result
-    double[] finalArrMSE = mseTable.getPartition(0).get().get();
-    double finalMSE = finalArrMSE[1]/finalArrMSE[0];
-
-    mseTable.release();
-
-    //save
-    if (this.isMaster()){
-      FileSystem fs = FileSystem.get(conf);
-      Path path = new Path(conf.get(KMeansConstants.WORK_DIR) + "/evaluation");
-      FSDataOutputStream output =
-        fs.create(path, true);
-      BufferedWriter writer = new BufferedWriter(
-        new OutputStreamWriter(output));
-      writer.write("MSE : " + finalMSE + "\n");
-      writer.close();
-    }
-  }
-
 
   private void runKmeans(List<String> fileNames,
     Configuration conf, Context context)
@@ -285,7 +175,122 @@ public class KmeansMapper extends
       outputCentroids(cenTable, conf, context);
     }
 
+    //save
+    if (this.isMaster()){
+      FileSystem fs = FileSystem.get(conf);
+      Path path = new Path(conf.get(KMeansConstants.WORK_DIR) + "/evaluation");
+      FSDataOutputStream output =
+        fs.create(path, true);
+      BufferedWriter writer = new BufferedWriter(
+        new OutputStreamWriter(output));
+      writer.write("MSE : " + this.finalMSE + "\n");
+      writer.close();
+    }
+
   }
+
+  private void broadcastCentroids(
+    Table<DoubleArray> cenTable)
+    throws IOException {
+    // broadcast centroids
+    boolean isSuccess = false;
+    try {
+      isSuccess =
+        broadcast("main", "broadcast-centroids",
+          cenTable, this.getMasterID(), false);
+    } catch (Exception e) {
+      LOG.error("Fail to bcast.", e);
+    }
+    if (!isSuccess) {
+      throw new IOException("Fail to bcast");
+    }
+  }
+
+  private double computation(
+    Table<DoubleArray> cenTable,
+    Table<DoubleArray> previousCenTable,
+    ArrayList<DoubleArray> dataPoints) {
+    double err = 0;
+    for (DoubleArray aPoint : dataPoints) {
+      // for each data point, find the nearest
+      // centroid
+      double minDist = -1;
+      double tempDist = 0;
+      int nearestPartitionID = -1;
+      for (Partition ap : previousCenTable
+        .getPartitions()) {
+        DoubleArray aCentroid =
+          (DoubleArray) ap.get();
+        tempDist = calcEucDistSquare(aPoint,
+          aCentroid, vectorSize);
+        if (minDist == -1 || tempDist < minDist) {
+          minDist = tempDist;
+          nearestPartitionID = ap.id();
+        }
+      }
+      err += minDist;
+
+      // for the certain data point, found the
+      // nearest centroid.
+      // add the data to a new cenTable.
+      double[] partial =
+        new double[vectorSize + 1];
+      for (int j = 0; j < vectorSize; j++) {
+        partial[j] = aPoint.get()[j];
+      }
+      partial[vectorSize] = 1;
+
+      if (cenTable.getPartition(
+        nearestPartitionID) == null) {
+        Partition<DoubleArray> tmpAp =
+          new Partition<DoubleArray>(
+            nearestPartitionID, new DoubleArray(
+              partial, 0, vectorSize + 1));
+        cenTable.addPartition(tmpAp);
+
+      } else {
+        Partition<DoubleArray> apInCenTable =
+          cenTable
+            .getPartition(nearestPartitionID);
+        for (int i = 0; i < vectorSize + 1; i++) {
+          apInCenTable.get().get()[i] +=
+            partial[i];
+        }
+      }
+    }
+    System.out.println("Errors: " + err);
+    return err;
+  }
+
+  private void calcMSE(Configuration conf)
+    throws IOException {
+    double[] arrMSE = 
+      new double[2];
+    arrMSE[0] = numPoints;
+    arrMSE[1] = MSE;
+    Table<DoubleArray> mseTable =
+        new Table<>(0, new DoubleArrPlus());
+    Partition<DoubleArray> tmpAp =
+        new Partition<DoubleArray>(
+          0, new DoubleArray(
+            arrMSE, 0, 2));
+    mseTable.addPartition(tmpAp);
+
+    // allreduce
+    allreduce("main", "allreduce-mse",
+          mseTable);
+
+    //get result
+    double[] finalArrMSE = mseTable.getPartition(0).get().get();
+    this.finalMSE = finalArrMSE[1]/finalArrMSE[0];
+
+    mseTable.release();
+
+    
+  }
+
+
+  
 
   // output centroids
   private void outputCentroids(

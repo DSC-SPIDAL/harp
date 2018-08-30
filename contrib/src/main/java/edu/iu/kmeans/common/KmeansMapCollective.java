@@ -21,6 +21,9 @@ import edu.iu.fileformat.MultiFileInputFormat;
 public class KmeansMapCollective
   extends Configured implements Tool {
 
+  // memory allocated to each mapper (default value: 2 GB)
+  private int mem_per_mapper = 2000;
+
   public static void main(String[] argv)
     throws Exception {
     int res = ToolRunner.run(new Configuration(),
@@ -33,12 +36,13 @@ public class KmeansMapCollective
     if (args.length < 7) {
       System.err.println(
         "Usage: KmeansMapCollective <numOfDataPoints> <num of Centroids> "
-          + "<size of vector> <number of map tasks> <number of iteration> <workDir> <localDir> <communication operation>\n"
+          + "<size of vector> <number of map tasks> <number of iteration> <workDir> <localDir> <communication operation> <mem per mapper>\n"
           + "<communication operation> includes:\n  "
           + "[allreduce]: use allreduce operation to synchronize centroids \n"
           + "[regroup-allgather]: use regroup and allgather operation to synchronize centroids \n"
           + "[broadcast-reduce]: use broadcast and reduce operation to synchronize centroids \n"
-          + "[push-pull]: use push and pull operation to synchronize centroids\n");
+          + "[push-pull]: use push and pull operation to synchronize centroids\n"
+          + "<mem per mapper>\n");
       ToolRunner
         .printGenericCommandUsage(System.err);
       return -1;
@@ -53,6 +57,9 @@ public class KmeansMapCollective
     String workDir = args[5];
     String localDir = args[6];
     String operation = args[7];
+
+    if (args.length > 7)
+	this.mem_per_mapper = Integer.parseInt(args[8]);
 
     System.out.println(
       "Number of Map Tasks = " + numMapTasks);
@@ -256,9 +263,9 @@ public class KmeansMapCollective
       numMapTasks);
 
 	jobConf.setInt(
-      "mapreduce.map.collective.memory.mb", 6000);
+      "mapreduce.map.collective.memory.mb", this.mem_per_mapper);
     // mapreduce.map.collective.java.opts
-    int xmx = (int) Math.ceil((6000)*0.5);
+    int xmx = (int) Math.ceil((this.mem_per_mapper)*0.8);
     int xmn = (int) Math.ceil(0.25 * xmx);
     jobConf.set(
       "mapreduce.map.collective.java.opts",
