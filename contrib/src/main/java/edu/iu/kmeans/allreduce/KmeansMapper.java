@@ -31,7 +31,10 @@ public class KmeansMapper extends
   private int vectorSize;
   private int iteration;
   private int numPoints;
+  private long compute_time;
+  private long comm_time;
   private double MSE;
+  private double finalMSE;
 
   @Override
   protected void setup(Context context)
@@ -75,6 +78,105 @@ public class KmeansMapper extends
       + (System.currentTimeMillis() - startTime));
   }
 
+
+  private void runKmeans(List<String> fileNames,
+    Configuration conf, Context context)
+    throws IOException {
+    // -----------------------------------------------------
+    // Load centroids
+    // for every partition in the centoid table,
+    // we will use the last element to store the
+    // number of points
+    // which are clustered to the particular
+    // partitionID
+    Table<DoubleArray> cenTable =
+      new Table<>(0, new DoubleArrPlus());
+    if (this.isMaster()) {
+      loadCentroids(cenTable, vectorSize,
+        conf.get(KMeansConstants.CFILE), conf);
+    }
+
+    System.out.println("After loading centroids");
+    printTable(cenTable);
+
+    // broadcast centroids
+    broadcastCentroids(cenTable);
+
+    // after broadcasting
+    System.out
+      .println("After brodcasting centroids");
+    printTable(cenTable);
+
+    // load data
+    ArrayList<DoubleArray> dataPoints =
+      loadData(fileNames, vectorSize, conf);
+    numPoints = dataPoints.size();
+
+    Table<DoubleArray> previousCenTable = null;
+    // iterations
+    for (int iter = 0; iter < iteration; iter++) {
+      previousCenTable = cenTable;
+      cenTable =
+        new Table<>(0, new DoubleArrPlus());
+
+      System.out.println("Iteraton No." + iter);
+
+      // compute new partial centroid table using
+      // previousCenTable and data points
+
+      // record time
+      long startTime = System.currentTimeMillis();
+
+      MSE = computation(cenTable, previousCenTable,
+        dataPoints);
+
+      this.compute_time += (System.currentTimeMillis() - startTime);
+
+      startTime = System.currentTimeMillis();
+      // AllReduce;
+      /****************************************/
+      allreduce("main", "allreduce_" + iter,
+        cenTable);
+
+      this.comm_time += (System.currentTimeMillis() - startTime);
+
+      // we can calculate new centroids
+      startTime = System.currentTimeMillis();
+      calculateCentroids(cenTable);
+      this.compute_time += (System.currentTimeMillis() - startTime);
+
+      /****************************************/
+
+      printTable(cenTable);
+
+    }
+
+    // evaluate the results 
+    calcMSE(conf);
+
+    if (this.isMaster()) {
+      outputCentroids(cenTable, conf, context);
+    }
+
+    //save evaluation info
+    if (this.isMaster()){
+
+      FileSystem fs = FileSystem.get(conf);
+      Path path = new Path(conf.get(KMeansConstants.WORK_DIR) + "/evaluation");
+      FSDataOutputStream output =
+        fs.create(path, true);
+      BufferedWriter writer = new BufferedWriter(
+        new OutputStreamWriter(output));
+      writer.write("MSE : " + this.finalMSE + "\n");
+      writer.write("Compute Time : " + this.compute_time + "\n");
+      writer.write("Comm Time : " + this.comm_time + "\n");
+      writer.close();
+
+    }
+
+  }
+
+  // broadcast the centroids value
   private void broadcastCentroids(
     Table<DoubleArray> cenTable)
     throws IOException {
@@ -92,6 +194,7 @@ public class KmeansMapper extends
     }
   }
 
+  // compute local results
   private double computation(
     Table<DoubleArray> cenTable,
     Table<DoubleArray> previousCenTable,
@@ -147,114 +250,6 @@ public class KmeansMapper extends
     System.out.println("Errors: " + err);
     return err;
   }
-
-  private void calcMSE(Configuration conf)
-    throws IOException {
-    double[] arrMSE = 
-      new double[2];
-    arrMSE[0] = numPoints;
-    arrMSE[1] = MSE;
-    Table<DoubleArray> mseTable =
-        new Table<>(0, new DoubleArrPlus());
-    Partition<DoubleArray> tmpAp =
-        new Partition<DoubleArray>(
-          0, new DoubleArray(
-            arrMSE, 0, 2));
-    mseTable.addPartition(tmpAp);
-
-    // allreduce
-    allreduce("main", "allreduce-mse",
-          mseTable);
-
-    //get result
-    double[] finalArrMSE = mseTable.getPartition(0).get().get();
-    double finalMSE = finalArrMSE[1]/finalArrMSE[0];
-
-    mseTable.release();
-
-    //save
-    if (this.isMaster()){
-      FileSystem fs = FileSystem.get(conf);
-      Path path = new Path(conf.get(KMeansConstants.WORK_DIR) + "/evaluation");
-      FSDataOutputStream output =
-        fs.create(path, true);
-      BufferedWriter writer = new BufferedWriter(
-        new OutputStreamWriter(output));
-      writer.write("MSE : " + finalMSE + "\n");
-      writer.close();
-    }
-  }
-
- 
-
-
-  private void runKmeans(List<String> fileNames,
-    Configuration conf, Context context)
-    throws IOException {
-    // -----------------------------------------------------
-    // Load centroids
-    // for every partition in the centoid table,
-    // we will use the last element to store the
-    // number of points
-    // which are clustered to the particular
-    // partitionID
-    Table<DoubleArray> cenTable =
-      new Table<>(0, new DoubleArrPlus());
-    if (this.isMaster()) {
-      loadCentroids(cenTable, vectorSize,
-        conf.get(KMeansConstants.CFILE), conf);
-    }
-
-    System.out.println("After loading centroids");
-    printTable(cenTable);
-
-    // broadcast centroids
-    broadcastCentroids(cenTable);
-
-    // after broadcasting
-    System.out
-      .println("After brodcasting centroids");
-    printTable(cenTable);
-
-    // load data
-    ArrayList<DoubleArray> dataPoints =
-      loadData(fileNames, vectorSize, conf);
-    numPoints = dataPoints.size();
-
-    Table<DoubleArray> previousCenTable = null;
-    // iterations
-    for (int iter = 0; iter < iteration; iter++) {
-      previousCenTable = cenTable;
-      cenTable =
-        new Table<>(0, new DoubleArrPlus());
-
-      System.out.println("Iteraton No." + iter);
-
-      // compute new partial centroid table using
-      // previousCenTable and data points
-      MSE = computation(cenTable, previousCenTable,
-        dataPoints);
-
-      // AllReduce;
-      /****************************************/
-      allreduce("main", "allreduce_" + iter,
-        cenTable);
-      // we can calculate new centroids
-      calculateCentroids(cenTable);
-      /****************************************/
-
-      printTable(cenTable);
-
-    }
-
-    // output results
-    calcMSE(conf);
-    if (this.isMaster()) {
-      outputCentroids(cenTable, conf, context);
-    }
-
-  }
-
   // output centroids
   private void outputCentroids(
     Table<DoubleArray> cenTable,
@@ -306,6 +301,33 @@ public class KmeansMapper extends
     return Math.sqrt(dist);
   }
 
+  // evaluate the mean square errors 
+  private void calcMSE(Configuration conf)
+    throws IOException {
+    double[] arrMSE = 
+      new double[2];
+    arrMSE[0] = numPoints;
+    arrMSE[1] = MSE;
+    Table<DoubleArray> mseTable =
+        new Table<>(0, new DoubleArrPlus());
+    Partition<DoubleArray> tmpAp =
+        new Partition<DoubleArray>(
+          0, new DoubleArray(
+            arrMSE, 0, 2));
+    mseTable.addPartition(tmpAp);
+
+    // allreduce
+    allreduce("main", "allreduce-mse",
+          mseTable);
+
+    //get result
+    double[] finalArrMSE = mseTable.getPartition(0).get().get();
+    this.finalMSE = finalArrMSE[1]/finalArrMSE[0];
+
+    mseTable.release();
+
+    
+  }
   // load centroids from HDFS
   private void loadCentroids(
     Table<DoubleArray> cenTable, int vectorSize,
