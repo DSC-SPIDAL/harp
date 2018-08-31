@@ -1,6 +1,6 @@
 /*
  * Copyright 2013-2016 Indiana University
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -21,11 +21,11 @@ import edu.iu.harp.partition.PartitionStatus;
 import edu.iu.harp.resource.ByteArray;
 
 public class ByteArrPlus extends
-  PartitionCombiner<ByteArray> {
+    PartitionCombiner<ByteArray> {
 
   @Override
   public PartitionStatus combine(
-    ByteArray curPar, ByteArray newPar) {
+      ByteArray curPar, ByteArray newPar) {
     // long[] longs1 = curPar.get();
     // int size1 = curPar.size();
     // long[] longs2 = newPar.get();

@@ -1,6 +1,6 @@
 /*
  * Copyright 2013-2017 Indiana University
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -24,14 +24,14 @@ import edu.iu.harp.resource.LongArray;
  * Combiner for LongArray
  ******************************************************/
 public class LongArrPlus
-  extends PartitionCombiner<LongArray> {
+    extends PartitionCombiner<LongArray> {
 
   /**
    * Combine two LongArrays
    */
   @Override
   public PartitionStatus combine(LongArray curPar,
-    LongArray newPar) {
+                                 LongArray newPar) {
     long[] longs1 = curPar.get();
     int size1 = curPar.size();
     long[] longs2 = newPar.get();

@@ -1,6 +1,6 @@
 /*
  * Copyright 2013-2016 Indiana University
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -25,20 +25,20 @@ import org.apache.commons.logging.LogFactory;
 import java.util.List;
 
 public abstract class MPTask<D, S extends Simple>
-  implements
-  Task<RowColSplit<D, S>, RowColSplit<D, S>> {
+    implements
+    Task<RowColSplit<D, S>, RowColSplit<D, S>> {
 
   protected static final Log LOG =
-    LogFactory.getLog(MPTask.class);
+      LogFactory.getLog(MPTask.class);
 
   @Override
   public RowColSplit<D, S> run(
-    RowColSplit<D, S> split) throws Exception {
+      RowColSplit<D, S> split) throws Exception {
     split.numItems =
-      doRun(split.cData, split.rData);
+        doRun(split.cData, split.rData);
     return split;
   }
 
   public abstract long
-    doRun(List<Partition<S>> cData, D rData);
+  doRun(List<Partition<S>> cData, D rData);
 }

@@ -1,6 +1,6 @@
 /*
  * Copyright 2013-2016 Indiana University
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -21,11 +21,11 @@ import edu.iu.harp.partition.PartitionStatus;
 import edu.iu.harp.resource.IntArray;
 
 public class IntArrMax extends
-  PartitionCombiner<IntArray> {
+    PartitionCombiner<IntArray> {
 
   @Override
   public PartitionStatus combine(
-    IntArray curPar, IntArray newPar) {
+      IntArray curPar, IntArray newPar) {
     int[] ints1 = curPar.get();
     int size1 = curPar.size();
     int[] ints2 = newPar.get();

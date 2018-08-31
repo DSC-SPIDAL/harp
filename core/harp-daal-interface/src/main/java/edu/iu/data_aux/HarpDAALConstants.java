@@ -1,6 +1,6 @@
 /*
  * Copyright 2013-2016 Indiana University
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,52 +20,52 @@ public class HarpDAALConstants {
 
   // system specific 
   public static final String NUM_MAPPERS =
-    "num_mappers";
+      "num_mappers";
   public static final String NUM_THREADS =
-    "num_threads";
+      "num_threads";
   public static final String NUM_ITERATIONS =
-    "num_iterations";
+      "num_iterations";
   public static final String WORK_DIR =
-    "work_dir";
+      "work_dir";
 
   // application specific
   public static final String FEATURE_DIM =
-    "vector_size";
+      "vector_size";
   public static final String FILE_DIM =
-    "file_dimension";
+      "file_dimension";
   public static final String NUM_FACTOR =
-    "nFactors";
+      "nFactors";
   public static final String NUM_CLASS =
-    "nClass";
+      "nClass";
   public static final String MAX_ITERATIONS =
-    "max_num_iterations";
+      "max_num_iterations";
   public static final String ACC_THRESHOLD =
-    "accuracy_threshold";
+      "accuracy_threshold";
   public static final String LEARNING_RATE =
-    "learning_rate";
+      "learning_rate";
   public static final String NUM_CENTROIDS =
-    "centroids";
+      "centroids";
   public static final String CEN_DIR =
-    "centroids_dir";
+      "centroids_dir";
   public static final String CENTROID_FILE_NAME =
-    "centroids_file";
+      "centroids_file";
 
   public static final String TEST_FILE_PATH =
-  "test_file_path";
+      "test_file_path";
   public static final String TRAIN_PRUNE_PATH =
-  "train_prune_path";
+      "train_prune_path";
   public static final String TRAIN_TRUTH_PATH =
-  "train_truth_path";
+      "train_truth_path";
   public static final String TEST_TRUTH_PATH =
-  "ground_truth_file_path";
+      "ground_truth_file_path";
   public static final String TEST_PRUNE_PATH =
-  "ground_truth_file_path";
+      "ground_truth_file_path";
   public static final String BATCH_SIZE =
-  "batch size";
+      "batch size";
   public static final String STEP_LENGTH =
-  "step_length";
+      "step_length";
   public static final String NUM_DEPVAR =
-  "nDependentVariables";
+      "nDependentVariables";
 
   public static final int ARR_LEN = 1000;
 }

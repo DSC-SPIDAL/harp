@@ -1,6 +1,6 @@
 /*
  * Copyright 2013-2016 Indiana University
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -45,261 +45,251 @@ import edu.iu.harp.partition.Partition;
 import edu.iu.harp.partition.Table;
 import edu.iu.harp.resource.DoubleArray;
 
-public class MTReader{
+public class MTReader {
 
-	protected static final Log LOG = LogFactory
-		.getLog(MTReader.class);
+  protected static final Log LOG = LogFactory
+      .getLog(MTReader.class);
 
-	private int totalLine;
-	private int totalPoints;
-	private String sep=",";
+  private int totalLine;
+  private int totalPoints;
+  private String sep = ",";
 
-	public MTReader()
-	{
-	   this.totalLine = 0;
-	   this.totalPoints = 0;
-	}
+  public MTReader() {
+    this.totalLine = 0;
+    this.totalPoints = 0;
+  }
 
-	public MTReader(String sep)
-	{
-	   this.totalLine = 0;
-	   this.totalPoints = 0;
-	   this.sep = sep;
-	}
-	/**
-	 * @brief read dense matrix files from HDFS in parallel (multi-threading)
-	 * file format is dense vector (matrix)
-	 *
-	 * @param fileNames: filenames in HDFS
-	 * @param dim  
-	 * @param conf
-	 * @param numThreads
-	 *
-	 * @return 
-	 */
-	public List<double[]>[] readfiles(
-			List<String> fileNames,
-			int dim, Configuration conf,
-			int numThreads) 
-	{//{{{
+  public MTReader(String sep) {
+    this.totalLine = 0;
+    this.totalPoints = 0;
+    this.sep = sep;
+  }
 
-		List<ReadDenseCSVTask> tasks = new LinkedList<>();
-		List<double[]>[] arrays = new List[fileNames.size()];
+  /**
+   * @param fileNames: filenames in HDFS
+   * @param dim
+   * @param conf
+   * @param numThreads
+   * @return
+   * @brief read dense matrix files from HDFS in parallel (multi-threading)
+   * file format is dense vector (matrix)
+   */
+  public List<double[]>[] readfiles(
+      List<String> fileNames,
+      int dim, Configuration conf,
+      int numThreads) {//{{{
 
-		for (int i = 0; i < numThreads; i++) {
-		   tasks.add(new ReadDenseCSVTask(dim, this.sep, conf));
-		}
+    List<ReadDenseCSVTask> tasks = new LinkedList<>();
+    List<double[]>[] arrays = new List[fileNames.size()];
 
-		DynamicScheduler<String, List<double[]>, ReadDenseCSVTask> compute =
-			new DynamicScheduler<>(tasks);
+    for (int i = 0; i < numThreads; i++) {
+      tasks.add(new ReadDenseCSVTask(dim, this.sep, conf));
+    }
 
-		for (String fileName : fileNames) {
-			compute.submit(fileName);
-		}
+    DynamicScheduler<String, List<double[]>, ReadDenseCSVTask> compute =
+        new DynamicScheduler<>(tasks);
 
-		compute.start();
-		compute.stop();
+    for (String fileName : fileNames) {
+      compute.submit(fileName);
+    }
 
-		int addidex = 0;
-		this.totalLine = 0;
-		this.totalPoints = 0;
-		while (compute.hasOutput()) {
+    compute.start();
+    compute.stop();
 
-			List<double[]> output = compute.waitForOutput();
-			if (output != null) {
-				arrays[addidex++] = output;
-				totalLine += output.size();
-				totalPoints += output.size()*dim;
-			}
-		}
+    int addidex = 0;
+    this.totalLine = 0;
+    this.totalPoints = 0;
+    while (compute.hasOutput()) {
 
-		return arrays;
-	} //}}}
+      List<double[]> output = compute.waitForOutput();
+      if (output != null) {
+        arrays[addidex++] = output;
+        totalLine += output.size();
+        totalPoints += output.size() * dim;
+      }
+    }
 
-	public List<double[]> readDenseCSV(
-			List<String> fileNames,
-			int dim, String seper, Configuration conf,
-			int numThreads) 
-	{//{{{
+    return arrays;
+  } //}}}
 
-		List<ReadDenseCSVTask> tasks = new LinkedList<>();
-		List<double[]> arrays = new LinkedList<>();
+  public List<double[]> readDenseCSV(
+      List<String> fileNames,
+      int dim, String seper, Configuration conf,
+      int numThreads) {//{{{
 
-		for (int i = 0; i < numThreads; i++) {
-		   tasks.add(new ReadDenseCSVTask(dim, seper, conf));
-		}
+    List<ReadDenseCSVTask> tasks = new LinkedList<>();
+    List<double[]> arrays = new LinkedList<>();
 
-		DynamicScheduler<String, List<double[]>, ReadDenseCSVTask> compute =
-			new DynamicScheduler<>(tasks);
+    for (int i = 0; i < numThreads; i++) {
+      tasks.add(new ReadDenseCSVTask(dim, seper, conf));
+    }
 
-		for (String fileName : fileNames) {
-			compute.submit(fileName);
-		}
+    DynamicScheduler<String, List<double[]>, ReadDenseCSVTask> compute =
+        new DynamicScheduler<>(tasks);
 
-		compute.start();
-		compute.stop();
+    for (String fileName : fileNames) {
+      compute.submit(fileName);
+    }
 
-		this.totalLine = 0;
-		this.totalPoints = 0;
+    compute.start();
+    compute.stop();
 
-		while (compute.hasOutput()) {
+    this.totalLine = 0;
+    this.totalPoints = 0;
 
-			List<double[]> output = compute.waitForOutput();
-			if (output != null) {
-				// totalLine += output.size();
-				// totalPoints += output.size()*dim;
-				arrays.addAll(output);
-			}
-		}
+    while (compute.hasOutput()) {
 
-		this.totalLine = arrays.size();
-		this.totalPoints = arrays.size()*dim;
+      List<double[]> output = compute.waitForOutput();
+      if (output != null) {
+        // totalLine += output.size();
+        // totalPoints += output.size()*dim;
+        arrays.addAll(output);
+      }
+    }
 
-		return arrays;
-	} //}}}
+    this.totalLine = arrays.size();
+    this.totalPoints = arrays.size() * dim;
 
-	public List<double[][]> readDenseCSVSharding(
-			List<String> fileNames,
-			int dim, int shardsize, String seper, Configuration conf,
-			int numThreads) 
-	{//{{{
+    return arrays;
+  } //}}}
 
-		List<ReadDenseCSVShardingTask> tasks = new LinkedList<>();
-		List<double[][]> arrays = new LinkedList<>();
+  public List<double[][]> readDenseCSVSharding(
+      List<String> fileNames,
+      int dim, int shardsize, String seper, Configuration conf,
+      int numThreads) {//{{{
 
-		for (int i = 0; i < numThreads; i++) {
-		   tasks.add(new ReadDenseCSVShardingTask(dim, shardsize, seper, conf));
-		}
+    List<ReadDenseCSVShardingTask> tasks = new LinkedList<>();
+    List<double[][]> arrays = new LinkedList<>();
 
-		DynamicScheduler<String, List<double[][]>, ReadDenseCSVShardingTask> compute =
-			new DynamicScheduler<>(tasks);
+    for (int i = 0; i < numThreads; i++) {
+      tasks.add(new ReadDenseCSVShardingTask(dim, shardsize, seper, conf));
+    }
 
-		for (String fileName : fileNames) {
-			compute.submit(fileName);
-		}
+    DynamicScheduler<String, List<double[][]>, ReadDenseCSVShardingTask> compute =
+        new DynamicScheduler<>(tasks);
 
-		compute.start();
-		compute.stop();
+    for (String fileName : fileNames) {
+      compute.submit(fileName);
+    }
 
-		this.totalLine = 0;
-		this.totalPoints = 0;
-		while (compute.hasOutput()) {
+    compute.start();
+    compute.stop();
 
-			List<double[][]> output = compute.waitForOutput();
-			if (output != null) {
+    this.totalLine = 0;
+    this.totalPoints = 0;
+    while (compute.hasOutput()) {
 
-				for(double[][] elem : output)
-				{
-				   totalLine += elem.length;
-				   totalPoints += elem.length*dim;
-				}
+      List<double[][]> output = compute.waitForOutput();
+      if (output != null) {
 
-				arrays.addAll(output);
-			}
-		}
+        for (double[][] elem : output) {
+          totalLine += elem.length;
+          totalPoints += elem.length * dim;
+        }
 
-		return arrays;
+        arrays.addAll(output);
+      }
+    }
 
-	} //}}}
+    return arrays;
 
-	public List<COO> readCOO(List<String> fileNames, String regex, Configuration conf, int numThreads)
-	{//{{{
+  } //}}}
 
-		List<ReadCOOTask> tasks = new LinkedList<>();
-		List<COO> outputRes = new LinkedList<>();
-		
-		for (int i = 0; i < numThreads; i++) {
-		   tasks.add(new ReadCOOTask(regex, conf));
-		}
+  public List<COO> readCOO(List<String> fileNames, String regex, Configuration conf, int numThreads) {//{{{
 
-		DynamicScheduler<String, List<COO>, ReadCOOTask> compute =
-			new DynamicScheduler<>(tasks);
+    List<ReadCOOTask> tasks = new LinkedList<>();
+    List<COO> outputRes = new LinkedList<>();
 
-		for (String fileName : fileNames) {
-			compute.submit(fileName);
-		}
+    for (int i = 0; i < numThreads; i++) {
+      tasks.add(new ReadCOOTask(regex, conf));
+    }
 
-		compute.start();
-		compute.stop();
+    DynamicScheduler<String, List<COO>, ReadCOOTask> compute =
+        new DynamicScheduler<>(tasks);
 
-		this.totalLine = 0;
-		this.totalPoints = 0;
-		while (compute.hasOutput()) 
-		{
+    for (String fileName : fileNames) {
+      compute.submit(fileName);
+    }
 
-			List<COO> output = compute.waitForOutput();
-			if (output != null) {
-				outputRes.addAll(output);
-				totalLine += output.size();
-				totalPoints += output.size()*3;
-			}
-		}
+    compute.start();
+    compute.stop();
 
-		return outputRes;
+    this.totalLine = 0;
+    this.totalPoints = 0;
+    while (compute.hasOutput()) {
 
-	}//}}}
+      List<COO> output = compute.waitForOutput();
+      if (output != null) {
+        outputRes.addAll(output);
+        totalLine += output.size();
+        totalPoints += output.size() * 3;
+      }
+    }
 
-	/**
-	 * @brief group COO entries by their row Ids or column ids
-	 *
-	 * @param inputData
-	 * @param isRow
-	 * @param conf
-	 * @param numThreads
-	 *
-	 * @return 
-	 */
-	public HashMap<Long, COOGroup> regroupCOO(List<COO> inputData, boolean isRow, Configuration conf, int numThreads)
-	{//{{{
-		List<RegroupCOOTask> tasks = new LinkedList<>();
-		for (int i = 0; i < numThreads; i++) 
-		   tasks.add(new RegroupCOOTask(conf, isRow));
+    return outputRes;
 
-		DynamicScheduler<List<COO>, Integer, RegroupCOOTask> compute =
-			new DynamicScheduler<>(tasks);
+  }//}}}
 
-		//split inputData into sublists and submit the tasks
-		int start_idx = 0;
-		int end_idx = 0;
-		int total_elem = inputData.size();
-		int idx_interval = (total_elem + numThreads - 1)/numThreads; 
-		while(start_idx < total_elem)
-		{
-			end_idx = (start_idx + idx_interval <= total_elem) ? (start_idx+idx_interval) : total_elem;
-			compute.submit(inputData.subList(start_idx, end_idx));
-			start_idx = end_idx;
-		}
-		
-		// launch the tasks
-		compute.start();
-		compute.stop();
+  /**
+   * @param inputData
+   * @param isRow
+   * @param conf
+   * @param numThreads
+   * @return
+   * @brief group COO entries by their row Ids or column ids
+   */
+  public HashMap<Long, COOGroup> regroupCOO(List<COO> inputData, boolean isRow, Configuration conf, int numThreads) {//{{{
+    List<RegroupCOOTask> tasks = new LinkedList<>();
+    for (int i = 0; i < numThreads; i++)
+      tasks.add(new RegroupCOOTask(conf, isRow));
 
-		while (compute.hasOutput()) 
-		  compute.waitForOutput();
+    DynamicScheduler<List<COO>, Integer, RegroupCOOTask> compute =
+        new DynamicScheduler<>(tasks);
 
-		//retrieval the group_maps from each thread tasks and merge them
-		HashMap<Long, COOGroup> base_map = tasks.get(0).getMap();
-		for(int j=1; j<numThreads;j++)
-		{
-		 	HashMap<Long, COOGroup> add_map = tasks.get(j).getMap(); 
-			for(Map.Entry<Long, COOGroup> entry : add_map.entrySet())
-			{
-				Long key = entry.getKey();
-				COOGroup val = entry.getValue();
+    //split inputData into sublists and submit the tasks
+    int start_idx = 0;
+    int end_idx = 0;
+    int total_elem = inputData.size();
+    int idx_interval = (total_elem + numThreads - 1) / numThreads;
+    while (start_idx < total_elem) {
+      end_idx = (start_idx + idx_interval <= total_elem) ? (start_idx + idx_interval) : total_elem;
+      compute.submit(inputData.subList(start_idx, end_idx));
+      start_idx = end_idx;
+    }
 
-				COOGroup base_entry = base_map.get(key);
-				if (base_entry == null)
-					base_map.put(key, val);
-				else
-					base_entry.add(val);
-			}
-		}
+    // launch the tasks
+    compute.start();
+    compute.stop();
 
-		return base_map;
+    while (compute.hasOutput())
+      compute.waitForOutput();
 
-	}//}}}
+    //retrieval the group_maps from each thread tasks and merge them
+    HashMap<Long, COOGroup> base_map = tasks.get(0).getMap();
+    for (int j = 1; j < numThreads; j++) {
+      HashMap<Long, COOGroup> add_map = tasks.get(j).getMap();
+      for (Map.Entry<Long, COOGroup> entry : add_map.entrySet()) {
+        Long key = entry.getKey();
+        COOGroup val = entry.getValue();
 
-	public int getTotalLines() {return this.totalLine; }
-	public int getTotalPoints() {return this.totalPoints; }
+        COOGroup base_entry = base_map.get(key);
+        if (base_entry == null)
+          base_map.put(key, val);
+        else
+          base_entry.add(val);
+      }
+    }
+
+    return base_map;
+
+  }//}}}
+
+  public int getTotalLines() {
+    return this.totalLine;
+  }
+
+  public int getTotalPoints() {
+    return this.totalPoints;
+  }
 
 }

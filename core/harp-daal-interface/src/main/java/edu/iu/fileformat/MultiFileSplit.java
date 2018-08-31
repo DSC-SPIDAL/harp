@@ -1,6 +1,6 @@
 /*
  * Copyright 2013-2016 Indiana University
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -28,7 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MultiFileSplit extends InputSplit
-  implements Writable {
+    implements Writable {
 
   private List<Path> files;
   private long length;
@@ -39,18 +39,15 @@ public class MultiFileSplit extends InputSplit
 
   /**
    * Constructs a split with host information
-   * 
-   * @param file
-   *          The file name
-   * @param length
-   *          The number of bytes in the file to
-   *          process
-   * @param hosts
-   *          The list of hosts containing the
-   *          block, possibly null
+   *
+   * @param file   The file name
+   * @param length The number of bytes in the file to
+   *               process
+   * @param hosts  The list of hosts containing the
+   *               block, possibly null
    */
   public MultiFileSplit(List<Path> files,
-    long length, String[] hosts) {
+                        long length, String[] hosts) {
     this.files = files;
     this.length = length;
     this.hosts = hosts;
@@ -62,7 +59,7 @@ public class MultiFileSplit extends InputSplit
 
   @Override
   public void write(DataOutput out)
-    throws IOException {
+      throws IOException {
     out.writeInt(files.size());
     for (Path file : files) {
       Text.writeString(out, file.toString());
@@ -72,7 +69,7 @@ public class MultiFileSplit extends InputSplit
 
   @Override
   public void readFields(DataInput in)
-    throws IOException {
+      throws IOException {
     int size = in.readInt();
     files = new ArrayList<>(size);
     for (int i = 0; i < size; i++) {
@@ -85,15 +82,15 @@ public class MultiFileSplit extends InputSplit
 
   @Override
   public long getLength() throws IOException,
-    InterruptedException {
+      InterruptedException {
     return length;
   }
 
   @Override
   public String[] getLocations()
-    throws IOException, InterruptedException {
+      throws IOException, InterruptedException {
     if (this.hosts == null) {
-      return new String[] {};
+      return new String[]{};
     } else {
       return this.hosts;
     }

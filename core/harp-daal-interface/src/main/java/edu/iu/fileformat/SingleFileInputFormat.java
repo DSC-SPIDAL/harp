@@ -1,6 +1,6 @@
 /*
  * Copyright 2013-2016 Indiana University
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -26,17 +26,17 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import java.io.IOException;
 
 public class SingleFileInputFormat extends
-  FileInputFormat<String, String> {
+    FileInputFormat<String, String> {
 
   protected boolean isSplitable(
-    JobContext context, Path filename) {
+      JobContext context, Path filename) {
     return false;
   }
 
   @Override
   public RecordReader<String, String>
-    createRecordReader(InputSplit split,
-      TaskAttemptContext context)
+  createRecordReader(InputSplit split,
+                     TaskAttemptContext context)
       throws IOException, InterruptedException {
     return new SingleFileRecordReader();
   }

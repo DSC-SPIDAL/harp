@@ -1,6 +1,6 @@
 /*
  * Copyright 2013-2016 Indiana University
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -28,27 +28,26 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class Rotator<P extends Simple> {
-
   protected static final Log LOG = LogFactory
-    .getLog(Rotator.class);
+      .getLog(Rotator.class);
 
   private StaticScheduler<Integer, List<Partition<P>>[], RotateTask<P>> rotation;
 
   public Rotator(Table<P>[] tableMap,
-    int numSplits, boolean randomSplit,
-    CollectiveMapper<?, ?, ?, ?> mapper,
-    int[] orders, String contextName) {
+                 int numSplits, boolean randomSplit,
+                 CollectiveMapper<?, ?, ?, ?> mapper,
+                 int[] orders, String contextName) {
     List<RotateTask<P>> rotateTasks =
-      new LinkedList<>();
+        new LinkedList<>();
     for (int i = 0; i < tableMap.length; i++) {
       rotateTasks.add(new RotateTask<>(
-        tableMap[i], mapper, orders, contextName));
+          tableMap[i], mapper, orders, contextName));
     }
     rotation = new StaticScheduler<>(rotateTasks);
   }
 
   public void getRotation(
-    int taskID) {
+      int taskID) {
     if (rotation.hasOutput(taskID)) {
       rotation.waitForOutput(taskID);
     } else {

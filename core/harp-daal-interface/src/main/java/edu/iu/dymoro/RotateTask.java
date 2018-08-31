@@ -1,6 +1,6 @@
 /*
  * Copyright 2013-2016 Indiana University
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -34,10 +34,10 @@ import edu.iu.harp.resource.Simple;
 import edu.iu.harp.schstatic.Task;
 
 public class RotateTask<P extends Simple> extends
-  Task<Integer, List<Partition<P>>[]> {
+    Task<Integer, List<Partition<P>>[]> {
 
   protected static final Log LOG = LogFactory
-    .getLog(RotateTask.class);
+      .getLog(RotateTask.class);
 
   private final CollectiveMapper<?, ?, ?, ?> mapper;
   private final Table<P> table;
@@ -55,13 +55,13 @@ public class RotateTask<P extends Simple> extends
   private long commTime;
 
   public RotateTask(Table<P> table,
-    CollectiveMapper<?, ?, ?, ?> mapper,
-    int[] orders, String contextName) {
+                    CollectiveMapper<?, ?, ?, ?> mapper,
+                    int[] orders, String contextName) {
     this.table = table;
     // this.numColSplits = numColSplits;
     // this.randomSplit = randomSplit;
     // random =
-      // new Random(System.currentTimeMillis());
+    // new Random(System.currentTimeMillis());
 
     this.splitMap = null;
     this.mapper = mapper;
@@ -77,7 +77,7 @@ public class RotateTask<P extends Simple> extends
       // Initialize partition positions
       for (int i = 0; i < numWorkers; i++) {
         dataWorkerMap
-          .put(i, orders[curOrderID++]);
+            .put(i, orders[curOrderID++]);
       }
       rotationMap = new Int2IntOpenHashMap();
     } else {
@@ -92,14 +92,14 @@ public class RotateTask<P extends Simple> extends
 
   @Override
   public List<Partition<P>>[] run(Integer cmd)
-    throws Exception {
+      throws Exception {
     long t1 = System.currentTimeMillis();
 
     updateRotationMap();
     mapper.rotate(contextName,
-      "rotate-" + table.getTableID() + "-"
-        + operationID, table, rotationMap);
-    
+        "rotate-" + table.getTableID() + "-"
+            + operationID, table, rotationMap);
+
     operationID++;
     long t2 = System.currentTimeMillis();
     commTime += (t2 - t1);
@@ -108,7 +108,7 @@ public class RotateTask<P extends Simple> extends
 
   private void updateRotationMap() {
     if (orders != null
-      && curOrderID < orders.length) {
+        && curOrderID < orders.length) {
       if (curOrderID % orderRowLen == 0) {
         // The start of row
         int lastShift = orders[curOrderID - 1];
@@ -116,14 +116,14 @@ public class RotateTask<P extends Simple> extends
           // Get data i, calculate the new
           // location
           int originWorkerID =
-            dataWorkerMap.get(i);
+              dataWorkerMap.get(i);
           int curWorkerID =
-            (originWorkerID + lastShift)
-              % numWorkers;
+              (originWorkerID + lastShift)
+                  % numWorkers;
           int newWorkerID = orders[curOrderID];
           dataWorkerMap.put(i, newWorkerID);
           rotationMap.put(curWorkerID,
-            newWorkerID);
+              newWorkerID);
           curOrderID++;
         }
       } else if (curOrderID % orderRowLen == numWorkers) {
@@ -133,10 +133,10 @@ public class RotateTask<P extends Simple> extends
           // location
           int curWorkerID = dataWorkerMap.get(i);
           int newWorkerID =
-            (curWorkerID + orders[curOrderID])
-              % numWorkers;
+              (curWorkerID + orders[curOrderID])
+                  % numWorkers;
           rotationMap.put(curWorkerID,
-            newWorkerID);
+              newWorkerID);
         }
         curOrderID++;
       } else {
@@ -144,15 +144,15 @@ public class RotateTask<P extends Simple> extends
           // Get data i, calculate the new
           // location
           int originWorkerID =
-            dataWorkerMap.get(i);
+              dataWorkerMap.get(i);
           int curWorkerID =
-            (originWorkerID + orders[curOrderID - 1])
-              % numWorkers;
+              (originWorkerID + orders[curOrderID - 1])
+                  % numWorkers;
           int newWorkerID =
-            (originWorkerID + orders[curOrderID])
-              % numWorkers;
+              (originWorkerID + orders[curOrderID])
+                  % numWorkers;
           rotationMap.put(curWorkerID,
-            newWorkerID);
+              newWorkerID);
         }
         curOrderID++;
       }

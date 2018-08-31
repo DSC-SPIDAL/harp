@@ -1,6 +1,6 @@
 /*
  * Copyright 2013-2016 Indiana University
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -30,7 +30,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Scheduler<D, S extends Simple, T extends MPTask<D, S>> {
   protected static final Log LOG =
-    LogFactory.getLog(Scheduler.class);
+      LogFactory.getLog(Scheduler.class);
 
   private final int[] rowCount;
   private final int numRowSplits;
@@ -53,8 +53,8 @@ public class Scheduler<D, S extends Simple, T extends MPTask<D, S>> {
   private final DynamicScheduler<RowColSplit<D, S>, RowColSplit<D, S>, T> compute;
 
   public Scheduler(int numRowSplits,
-    int numColSplits, D[] vWHMap, long time,
-    List<T> tasks) {
+                   int numColSplits, D[] vWHMap, long time,
+                   List<T> tasks) {
     rowCount = new int[numRowSplits];
     this.numRowSplits = numRowSplits;
     numRowLimit = numColSplits;
@@ -66,14 +66,14 @@ public class Scheduler<D, S extends Simple, T extends MPTask<D, S>> {
     freeCol = new int[numColSplits];
     numFreeCols = 0;
     splitMap =
-      new byte[numRowSplits][numColSplits];
+        new byte[numRowSplits][numColSplits];
     numItemsTrained = 0L;
     this.vWHMap = vWHMap;
 
     this.time = time;
     this.timer = new Timer();
     random =
-      new Random(System.currentTimeMillis());
+        new Random(System.currentTimeMillis());
     isRunning = new AtomicBoolean(true);
     compute = new DynamicScheduler<>(tasks);
     compute.start();
@@ -84,7 +84,7 @@ public class Scheduler<D, S extends Simple, T extends MPTask<D, S>> {
   }
 
   public void
-    schedule(List<Partition<S>>[] hMap) {
+  schedule(List<Partition<S>>[] hMap) {
     for (int i = 0; i < numRowSplits; i++) {
       freeRow[numFreeRows++] = i;
     }
@@ -93,7 +93,7 @@ public class Scheduler<D, S extends Simple, T extends MPTask<D, S>> {
     }
     while (numFreeRows > 0 && numFreeCols > 0) {
       RowColSplit<D, S> split =
-        new RowColSplit<>();
+          new RowColSplit<>();
       int rowIndex = random.nextInt(numFreeRows);
       int colIndex = random.nextInt(numFreeCols);
       split.row = freeRow[rowIndex];
@@ -117,7 +117,7 @@ public class Scheduler<D, S extends Simple, T extends MPTask<D, S>> {
     timer.schedule(timerTask, time);
     while (compute.hasOutput()) {
       RowColSplit<D, S> split =
-        compute.waitForOutput();
+          compute.waitForOutput();
       int freeRowID = -1;
       if (rowCount[split.row] < numRowLimit) {
         freeRowID = split.row;
@@ -140,14 +140,14 @@ public class Scheduler<D, S extends Simple, T extends MPTask<D, S>> {
               if (count == 1) {
                 selectedColIndex = i;
               } else if (random
-                .nextInt(count) == 0) {
+                  .nextInt(count) == 0) {
                 selectedColIndex = i;
               }
             }
           }
           if (count > 0) {
             RowColSplit<D, S> s =
-              new RowColSplit<>();
+                new RowColSplit<>();
             s.row = freeRowID;
             s.col = freeCol[selectedColIndex];
             s.rData = vWHMap[s.row];
@@ -157,7 +157,7 @@ public class Scheduler<D, S extends Simple, T extends MPTask<D, S>> {
             rowCount[s.row]++;
             colCount[s.col]++;
             freeCol[selectedColIndex] =
-              freeCol[--numFreeCols];
+                freeCol[--numFreeCols];
             freeRowID = -1;
             compute.submit(s);
           }
@@ -173,14 +173,14 @@ public class Scheduler<D, S extends Simple, T extends MPTask<D, S>> {
               if (count == 1) {
                 selectedRowIndex = i;
               } else if (random
-                .nextInt(count) == 0) {
+                  .nextInt(count) == 0) {
                 selectedRowIndex = i;
               }
             }
           }
           if (count > 0) {
             RowColSplit<D, S> s =
-              new RowColSplit<>();
+                new RowColSplit<>();
             s.row = freeRow[selectedRowIndex];
             s.col = freeColID;
             s.rData = vWHMap[s.row];
@@ -190,7 +190,7 @@ public class Scheduler<D, S extends Simple, T extends MPTask<D, S>> {
             rowCount[s.row]++;
             colCount[s.col]++;
             freeRow[selectedRowIndex] =
-              freeRow[--numFreeRows];
+                freeRow[--numFreeRows];
             freeColID = -1;
             compute.submit(s);
           }
@@ -210,7 +210,7 @@ public class Scheduler<D, S extends Simple, T extends MPTask<D, S>> {
     compute.pauseNow();
     while (compute.hasOutput()) {
       numItemsTrained +=
-        compute.waitForOutput().numItems;
+          compute.waitForOutput().numItems;
     }
     compute.cleanInputQueue();
     compute.start();

@@ -1,6 +1,6 @@
 /*
  * Copyright 2013-2016 Indiana University
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -26,10 +26,10 @@ import java.io.IOException;
 import java.util.Random;
 
 /**
- * @brief generator ascii Matrix Market format for Dense matrix 
+ * @brief generator ascii Matrix Market format for Dense matrix
  * (Array format column oriented)
  * used by daal_pca, daal_svd, daal_kmeans
- * each line contains one feature vector 
+ * each line contains one feature vector
  */
 public class DataGenMMDenseAndIntLabelTask implements Runnable {
 
@@ -43,20 +43,18 @@ public class DataGenMMDenseAndIntLabelTask implements Runnable {
   private String fileName;
 
   /**
-   * @brief multi-threading data points generator
-   * each thread generates pointsPerFile number of "vectorSize" dimensioned 
-   * point seperated by comma
-   *
    * @param pointsPerFile
    * @param localInputDir
    * @param fileName
    * @param vectorSize
-   *
-   * @return 
+   * @return
+   * @brief multi-threading data points generator
+   * each thread generates pointsPerFile number of "vectorSize" dimensioned
+   * point seperated by comma
    */
   public DataGenMMDenseAndIntLabelTask(int pointsPerFile,
-    String localInputDir, String fileName,
-    int vectorSize, double norm, double offset, int labelRange, String sep) {
+                                       String localInputDir, String fileName,
+                                       int vectorSize, double norm, double offset, int labelRange, String sep) {
     this.pointsPerFile = pointsPerFile;
     this.localDir = localInputDir;
     this.fileName = fileName;
@@ -73,27 +71,27 @@ public class DataGenMMDenseAndIntLabelTask implements Runnable {
     Random random = new Random();
     try {
 
-      BufferedWriter writer = new BufferedWriter(new FileWriter(this.localDir + 
-			      File.separator + "data_" + this.fileName));
+      BufferedWriter writer = new BufferedWriter(new FileWriter(this.localDir +
+          File.separator + "data_" + this.fileName));
 
       for (int i = 0; i < pointsPerFile; i++) {
 
         for (int j = 0; j < vectorSize; j++) {
 
-          point = random.nextDouble()*this.norm - this.offset;
+          point = random.nextDouble() * this.norm - this.offset;
           writer.write(String.valueOf(point));
           writer.write(sep);
         }
-	
-	//append the lable
-	writer.write(String.valueOf(random.nextInt(this.labelRange)));
-	writer.newLine();
+
+        //append the lable
+        writer.write(String.valueOf(random.nextInt(this.labelRange)));
+        writer.newLine();
       }
-      
+
       writer.close();
 
       System.out.println("Write file "
-        + this.fileName);
+          + this.fileName);
     } catch (FileNotFoundException e) {
       e.printStackTrace();
     } catch (IOException e) {
