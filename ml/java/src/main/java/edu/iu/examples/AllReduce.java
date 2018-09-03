@@ -43,21 +43,26 @@ public class AllReduce extends AbstractExampleMapper {
       allreduce("main", "all-reduce-" + i , mseTable);
 
       if (verify) {
-        ObjectCollection<Partition<DoubleArray>> partitions = mseTable.getPartitions();
-        for (Partition<DoubleArray> p : partitions) {
-          double[] dArray = p.get().get();
-          for (double d : dArray) {
-            if (d != expectedSum) {
-              throw new RuntimeException("Un-expected value, expected: " + expectedSum + " got: " + d);
-            }
-          }
-        }
-        expectedSum = expectedSum * numTasks;
-        LOG.info("Verification success");
+        expectedSum = verify(numTasks, mseTable, expectedSum);
       }
     }
     LOG.info(String.format("Op %s it %d ele %d par %d time %d", cmd, numIterations, elements, numPartitions,
         (System.currentTimeMillis() - startTime)));
+  }
+
+  private double verify(int numTasks, Table<DoubleArray> mseTable, double expectedSum) {
+    ObjectCollection<Partition<DoubleArray>> partitions = mseTable.getPartitions();
+    for (Partition<DoubleArray> p : partitions) {
+      double[] dArray = p.get().get();
+      for (double d : dArray) {
+        if (d != expectedSum) {
+          throw new RuntimeException("Un-expected value, expected: " + expectedSum + " got: " + d);
+        }
+      }
+    }
+    expectedSum = expectedSum * numTasks;
+    LOG.info("Verification success");
+    return expectedSum;
   }
 
   @NotNull
