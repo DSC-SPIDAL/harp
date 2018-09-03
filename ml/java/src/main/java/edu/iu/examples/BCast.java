@@ -24,6 +24,9 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 
+/**
+ * The broadcast example, where process 0 broadcast a table with a double array and other processes receive it
+ */
 public class BCast extends AbstractExampleMapper {
   @Override
   protected void mapCollective(KeyValReader reader, Context context) throws IOException, InterruptedException {

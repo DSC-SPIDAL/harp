@@ -50,6 +50,13 @@ public class AllReduce extends AbstractExampleMapper {
         (System.currentTimeMillis() - startTime)));
   }
 
+  /**
+   * Verify the results of all reduce operation
+   * @param numTasks num tasks
+   * @param mseTable table
+   * @param expectedSum expected sum
+   * @return next expected sum
+   */
   private double verify(int numTasks, Table<DoubleArray> mseTable, double expectedSum) {
     ObjectCollection<Partition<DoubleArray>> partitions = mseTable.getPartitions();
     for (Partition<DoubleArray> p : partitions) {
