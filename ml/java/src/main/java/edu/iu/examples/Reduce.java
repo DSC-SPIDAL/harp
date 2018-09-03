@@ -20,6 +20,7 @@ import edu.iu.harp.partition.Partition;
 import edu.iu.harp.partition.Table;
 import edu.iu.harp.resource.DoubleArray;
 import it.unimi.dsi.fastutil.objects.ObjectCollection;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 
@@ -29,6 +30,31 @@ import java.io.IOException;
 public class Reduce extends AbstractExampleMapper {
   @Override
   protected void mapCollective(KeyValReader reader, Context context) throws IOException, InterruptedException {
+
+
+    long startTime = System.currentTimeMillis();
+    double expected = getNumWorkers();
+    // we are going to call the same operation num iterations times
+    for (int i = 0; i < numIterations; i++) {
+      Table<DoubleArray> mseTable = createTable();
+      // When calling the operation, each invocation should have a unique operation name, otherwise the calls
+      // may not complete
+      reduce("reduce", "reduce-" + i, mseTable, 0);
+
+      if (verify) {
+        if (getSelfID() != 0) {
+          verify(mseTable, 1, i);
+        } else {
+          verify(mseTable, expected, i);
+        }
+      }
+    }
+    LOG.info(String.format("Op %s it %d ele %d par %d time %d", cmd, numIterations, elements, numPartitions,
+        (System.currentTimeMillis() - startTime)));
+  }
+
+  @NotNull
+  private Table<DoubleArray> createTable() {
     // lets prepare the data to be reduced
     Table<DoubleArray> mseTable = new Table<>(0, new DoubleArrPlus());
     for (int j = 0; j < numPartitions; j++) {
@@ -39,35 +65,7 @@ public class Reduce extends AbstractExampleMapper {
       }
       mseTable.addPartition(new Partition<>(0, new DoubleArray(values, 0, elements)));
     }
-
-    long startTime = System.currentTimeMillis();
-    double expected = getNumWorkers();
-    // we are going to call the same operation num iterations times
-    for (int i = 0; i < numIterations; i++) {
-
-      ObjectCollection<Partition<DoubleArray>> partitions = mseTable.getPartitions();
-      for (Partition<DoubleArray> p : partitions) {
-        double[] dArray = p.get().get();
-        for (double d : dArray) {
-          LOG.info(String.format("%d partition %d value %f", getSelfID(), p.id(), d));
-        }
-      }
-
-      // When calling the operation, each invocation should have a unique operation name, otherwise the calls
-      // may not complete
-      reduce("reduce", "reduce-" + i, mseTable, 0);
-
-      if (verify) {
-        if (getSelfID() != 0) {
-          verify(mseTable, 1, i);
-        } else {
-          expected = verify(mseTable, expected, i);
-        }
-      }
-    }
-    mseTable.free();
-    LOG.info(String.format("Op %s it %d ele %d par %d time %d", cmd, numIterations, elements, numPartitions,
-        (System.currentTimeMillis() - startTime)));
+    return mseTable;
   }
 
   /**
@@ -75,7 +73,7 @@ public class Reduce extends AbstractExampleMapper {
    * @param mseTable the data table
    * @param expected expected value
    */
-  private double verify(Table<DoubleArray> mseTable, double expected, int iteration) {
+  private void verify(Table<DoubleArray> mseTable, double expected, int iteration) {
     ObjectCollection<Partition<DoubleArray>> partitions = mseTable.getPartitions();
     for (Partition<DoubleArray> p : partitions) {
       double[] dArray = p.get().get();
@@ -87,6 +85,5 @@ public class Reduce extends AbstractExampleMapper {
       }
     }
     LOG.info("Verification success");
-    return expected + getNumWorkers() - 1;
   }
 }
