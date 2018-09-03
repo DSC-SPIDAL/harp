@@ -21,28 +21,59 @@ import edu.iu.harp.partition.Table;
 import edu.iu.harp.resource.DoubleArray;
 import it.unimi.dsi.fastutil.ints.Int2IntArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
-
-import java.io.IOException;
+import it.unimi.dsi.fastutil.objects.ObjectCollection;
+import org.jetbrains.annotations.NotNull;
 
 public class Rotate extends AbstractExampleMapper {
   @Override
-  protected void mapCollective(KeyValReader reader, Context context) throws IOException, InterruptedException {
+  protected void mapCollective(KeyValReader reader, Context context) {
+    Table<DoubleArray> mseTable = createTable(getSelfID());
+
+    long startTime = System.currentTimeMillis();
+    Int2IntMap rotate = new Int2IntArrayMap();
+    double expecting = (getSelfID() + 1) % getNumWorkers();
+    // we are going to call the same operation num iterations times
+    for (int i = 0; i < numIterations; i++) {
+      // When calling the operation, each invocation should have a unique
+      // operation name, otherwise the calls may not complete
+      rotate("main", "rotate-" + i, mseTable, null);
+      if (verify) {
+        verify(mseTable, expecting, i);
+        expecting = (expecting + 1) / getNumWorkers();
+      }
+    }
+    LOG.info(String.format("Op %s it %d ele %d par %d time %d", cmd, numIterations,
+        elements, numPartitions, (System.currentTimeMillis() - startTime)));
+  }
+
+  @NotNull
+  private Table<DoubleArray> createTable(int value) {
     // lets prepare the data to be reduced
     Table<DoubleArray> mseTable = new Table<>(0, new DoubleArrPlus());
     for (int j = 0; j < numPartitions; j++) {
       double[] values = new double[elements];
-      mseTable.addPartition(new Partition<>(0, new DoubleArray(values, 0, elements)));
+      mseTable.addPartition(new Partition<>(0,
+          new DoubleArray(values, 0, elements)));
     }
+    return mseTable;
+  }
 
-    long startTime = System.currentTimeMillis();
-    Int2IntMap rotate = new Int2IntArrayMap();
-    // we are going to call the same operation num iterations times
-    for (int i = 0; i < numIterations; i++) {
-      // When calling the operation, each invocation should have a unique operation name, otherwise the calls
-      // may not complete
-      rotate("main", "rotate-" + i, mseTable, rotate);
+  /**
+   * Verify the results after rotate
+   * @param mseTable the data table
+   * @param expected expected value
+   */
+  private void verify(Table<DoubleArray> mseTable, double expected, int iteration) {
+    ObjectCollection<Partition<DoubleArray>> partitions = mseTable.getPartitions();
+    for (Partition<DoubleArray> p : partitions) {
+      double[] dArray = p.get().get();
+      for (double d : dArray) {
+        if (d != expected) {
+          LOG.warn("Un-expected value, expected: " + expected + " got: "
+              + d + " iteration: " + iteration);
+        }
+      }
     }
-    LOG.info(String.format("Op %s it %d ele %d par %d time %d", cmd, numIterations, elements, numPartitions,
-        (System.currentTimeMillis() - startTime)));
+    LOG.info("Verification success");
   }
 }

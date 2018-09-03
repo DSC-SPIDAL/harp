@@ -30,8 +30,6 @@ import java.io.IOException;
 public class Reduce extends AbstractExampleMapper {
   @Override
   protected void mapCollective(KeyValReader reader, Context context) throws IOException, InterruptedException {
-
-
     long startTime = System.currentTimeMillis();
     double expected = getNumWorkers();
     // we are going to call the same operation num iterations times
