@@ -31,7 +31,6 @@ public class AllGather extends AbstractExampleMapper {
   @Override
   protected void mapCollective(KeyValReader reader, Context context) throws IOException, InterruptedException {
     long startTime = System.currentTimeMillis();
-
     // we are going to call the same operation numIterations times
     for (int i = 0; i < numIterations; i++) {
       // lets prepare the data to be reduced
@@ -41,25 +40,31 @@ public class AllGather extends AbstractExampleMapper {
       allgather("all-gather", "all-gather-" + i, mseTable);
 
       if (verify) {
-        ObjectCollection<Partition<DoubleArray>> partitions = mseTable.getPartitions();
-        for (Partition<DoubleArray> p : partitions) {
-          double[] dArray = p.get().get();
-          if (dArray.length != numMappers * elements) {
-            LOG.info("Un-expected length of array, expected: "
-                + numMappers * elements + " got: " + dArray.length);
-          }
-          for (double d : dArray) {
-            if (d != 2) {
-              throw new RuntimeException("Un-expected value, expected: " + 2 + " got: " + d);
-            }
-          }
-        }
-        LOG.info("Verification success");
+        verify(mseTable);
       }
     }
 
     LOG.info(String.format("Op %s it %d ele %d par %d time %d", cmd, numIterations, elements, numPartitions,
         (System.currentTimeMillis() - startTime)));
+  }
+
+  private void verify(Table<DoubleArray> mseTable) {
+    ObjectCollection<Partition<DoubleArray>> partitions = mseTable.getPartitions();
+
+    if (partitions.size() != numMappers * numPartitions) {
+      throw new RuntimeException("Un-expected number of partitions, expected: "
+          + numMappers * numPartitions + " got: " + partitions.size());
+    }
+
+    for (Partition<DoubleArray> p : partitions) {
+      double[] dArray = p.get().get();
+      for (double d : dArray) {
+        if (d != 2) {
+          throw new RuntimeException("Un-expected value, expected: " + 2 + " got: " + d);
+        }
+      }
+    }
+    LOG.info("Verification success");
   }
 
   @NotNull

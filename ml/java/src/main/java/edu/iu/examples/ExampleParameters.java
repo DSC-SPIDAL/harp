@@ -15,25 +15,43 @@
  */
 package edu.iu.examples;
 
-import java.util.logging.Logger;
-
 /**
  * Captures parameters for running the examples
  */
 public class ExampleParameters {
-  private static final Logger LOG = Logger.getLogger(ExampleParameters.class.getName());
+  /**
+   * Number of elements in each partition
+   */
   private int size;
 
+  /**
+   * Number of iterations
+   */
   private int iterations;
 
+  /**
+   * The operation
+   */
   private String operation;
 
+  /**
+   * Number of mappers
+   */
   private int mappers = 0;
 
+  /**
+   * Number of partitions in each data table
+   */
   private int partitions = 0;
 
+  /**
+   * Data type
+   */
   private String dataType;
 
+  /**
+   * Verify the results
+   */
   private boolean verify;
 
   public ExampleParameters(int mappers, int size, int iterations,

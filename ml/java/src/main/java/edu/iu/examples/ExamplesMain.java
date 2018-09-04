@@ -97,7 +97,8 @@ public class ExamplesMain extends Configured implements Tool {
     DataGen.generateData(parameters.getMappers(),
         inputDirPath, "/tmp/harp/examples", fs);
     doBenchmark(parameters.getOperation(), parameters.getSize(),
-        parameters.getPartitions(), parameters.getMappers(), parameters.getIterations(), parameters.isVerify(),
+        parameters.getPartitions(), parameters.getMappers(), parameters.getIterations(),
+        parameters.isVerify(),
         inputDirPath, outputDirPath);
   }
 
@@ -162,5 +163,4 @@ public class ExamplesMain extends Configured implements Tool {
     symbolListOption.setRequired(required);
     return symbolListOption;
   }
-
 }
