@@ -25,65 +25,48 @@ import edu.iu.harp.resource.DoubleArray;
 import edu.iu.kmeans.common.KMeansConstants;
 
 public class KmeansMapper extends
-  CollectiveMapper<String, String, Object, Object> {
+    CollectiveMapper<String, String, Object, Object> {
 
-  private int numMappers;
   private int vectorSize;
   private int iteration;
   private int numPoints;
   private double MSE;
 
   @Override
-  protected void setup(Context context)
-    throws IOException, InterruptedException {
-    LOG.info("start setup"
-      + new SimpleDateFormat("yyyyMMdd_HHmmss")
-        .format(
-          Calendar.getInstance().getTime()));
+  protected void setup(Context context) {
+    LOG.info("start setup" + new SimpleDateFormat("yyyyMMdd_HHmmss")
+        .format(Calendar.getInstance().getTime()));
+
     long startTime = System.currentTimeMillis();
-    Configuration configuration =
-      context.getConfiguration();
-    numMappers = configuration
-      .getInt(KMeansConstants.NUM_MAPPERS, 10);
-    vectorSize = configuration
-      .getInt(KMeansConstants.VECTOR_SIZE, 20);
-    iteration = configuration
-      .getInt(KMeansConstants.NUM_ITERATONS, 1);
+    Configuration configuration = context.getConfiguration();
+    vectorSize = configuration.getInt(KMeansConstants.VECTOR_SIZE, 20);
+    iteration = configuration.getInt(KMeansConstants.NUM_ITERATONS, 1);
     long endTime = System.currentTimeMillis();
-    LOG.info(
-      "config (ms) :" + (endTime - startTime));
+    LOG.info("config (ms) :" + (endTime - startTime));
   }
 
-  protected void mapCollective(
-    KeyValReader reader, Context context)
-    throws IOException, InterruptedException {
+  protected void mapCollective(KeyValReader reader, Context context)
+      throws IOException, InterruptedException {
     LOG.info("Start collective mapper.");
     long startTime = System.currentTimeMillis();
-    List<String> pointFiles =
-      new ArrayList<String>();
+    List<String> pointFiles = new ArrayList<String>();
     while (reader.nextKeyValue()) {
       String key = reader.getCurrentKey();
       String value = reader.getCurrentValue();
-      LOG.info(
-        "Key: " + key + ", Value: " + value);
+      LOG.info("Key: " + key + ", Value: " + value);
       pointFiles.add(value);
     }
-    Configuration conf =
-      context.getConfiguration();
+    Configuration conf = context.getConfiguration();
     runKmeans(pointFiles, conf, context);
-    LOG.info("Total iterations in master view: "
-      + (System.currentTimeMillis() - startTime));
+    LOG.info("Total iterations in master view: " + (System.currentTimeMillis() - startTime));
   }
 
-  private void broadcastCentroids(
-    Table<DoubleArray> cenTable)
-    throws IOException {
+  private void broadcastCentroids(Table<DoubleArray> cenTable) throws IOException {
     // broadcast centroids
     boolean isSuccess = false;
     try {
-      isSuccess =
-        broadcast("main", "broadcast-centroids",
-          cenTable, this.getMasterID(), false);
+      isSuccess = broadcast("main", "broadcast-centroids",
+              cenTable, this.getMasterID(), false);
     } catch (Exception e) {
       LOG.error("Fail to bcast.", e);
     }
@@ -92,23 +75,18 @@ public class KmeansMapper extends
     }
   }
 
-  private double computation(
-    Table<DoubleArray> cenTable,
-    Table<DoubleArray> previousCenTable,
-    ArrayList<DoubleArray> dataPoints) {
+  private double computation(Table<DoubleArray> cenTable, Table<DoubleArray> previousCenTable,
+                             ArrayList<DoubleArray> dataPoints) {
     double err = 0;
     for (DoubleArray aPoint : dataPoints) {
       // for each data point, find the nearest
       // centroid
       double minDist = -1;
-      double tempDist = 0;
+      double tempDist;
       int nearestPartitionID = -1;
-      for (Partition ap : previousCenTable
-        .getPartitions()) {
-        DoubleArray aCentroid =
-          (DoubleArray) ap.get();
-        tempDist = calcEucDistSquare(aPoint,
-          aCentroid, vectorSize);
+      for (Partition ap : previousCenTable.getPartitions()) {
+        DoubleArray aCentroid = (DoubleArray) ap.get();
+        tempDist = calcEucDistSquare(aPoint, aCentroid, vectorSize);
         if (minDist == -1 || tempDist < minDist) {
           minDist = tempDist;
           nearestPartitionID = ap.id();
@@ -119,28 +97,23 @@ public class KmeansMapper extends
       // for the certain data point, found the
       // nearest centroid.
       // add the data to a new cenTable.
-      double[] partial =
-        new double[vectorSize + 1];
+      double[] partial = new double[vectorSize + 1];
       for (int j = 0; j < vectorSize; j++) {
         partial[j] = aPoint.get()[j];
       }
       partial[vectorSize] = 1;
 
-      if (cenTable.getPartition(
-        nearestPartitionID) == null) {
-        Partition<DoubleArray> tmpAp =
-          new Partition<DoubleArray>(
-            nearestPartitionID, new DoubleArray(
-              partial, 0, vectorSize + 1));
+      if (cenTable.getPartition(nearestPartitionID) == null) {
+        Partition<DoubleArray> tmpAp = new Partition<DoubleArray>(nearestPartitionID, new DoubleArray(
+                partial, 0, vectorSize + 1));
         cenTable.addPartition(tmpAp);
-
       } else {
         Partition<DoubleArray> apInCenTable =
-          cenTable
-            .getPartition(nearestPartitionID);
+            cenTable
+                .getPartition(nearestPartitionID);
         for (int i = 0; i < vectorSize + 1; i++) {
           apInCenTable.get().get()[i] +=
-            partial[i];
+              partial[i];
         }
       }
     }
@@ -148,50 +121,38 @@ public class KmeansMapper extends
     return err;
   }
 
-  private void calcMSE(Configuration conf)
-    throws IOException {
-    double[] arrMSE = 
-      new double[2];
+  private void calcMSE(Configuration conf) throws IOException {
+    double[] arrMSE = new double[2];
     arrMSE[0] = numPoints;
     arrMSE[1] = MSE;
-    Table<DoubleArray> mseTable =
-        new Table<>(0, new DoubleArrPlus());
-    Partition<DoubleArray> tmpAp =
-        new Partition<DoubleArray>(
-          0, new DoubleArray(
-            arrMSE, 0, 2));
+    Table<DoubleArray> mseTable = new Table<>(0, new DoubleArrPlus());
+    Partition<DoubleArray> tmpAp = new Partition<>(0, new DoubleArray(
+        arrMSE, 0, 2));
     mseTable.addPartition(tmpAp);
 
     // allreduce
-    allreduce("main", "allreduce-mse",
-          mseTable);
+    allreduce("main", "allreduce-mse", mseTable);
 
     //get result
     double[] finalArrMSE = mseTable.getPartition(0).get().get();
-    double finalMSE = finalArrMSE[1]/finalArrMSE[0];
+    double finalMSE = finalArrMSE[1] / finalArrMSE[0];
 
     mseTable.release();
 
     //save
-    if (this.isMaster()){
+    if (this.isMaster()) {
       FileSystem fs = FileSystem.get(conf);
       Path path = new Path(conf.get(KMeansConstants.WORK_DIR) + "/evaluation");
-      FSDataOutputStream output =
-        fs.create(path, true);
-      BufferedWriter writer = new BufferedWriter(
-        new OutputStreamWriter(output));
+      FSDataOutputStream output = fs.create(path, true);
+      BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(output));
       writer.write("MSE : " + finalMSE + "\n");
       writer.close();
     }
   }
 
- 
 
-
-  private void runKmeans(List<String> fileNames,
-    Configuration conf, Context context)
-    throws IOException {
-    // -----------------------------------------------------
+  private void runKmeans(List<String> fileNames, Configuration conf, Context context)
+      throws IOException {
     // Load centroids
     // for every partition in the centoid table,
     // we will use the last element to store the
@@ -199,144 +160,123 @@ public class KmeansMapper extends
     // which are clustered to the particular
     // partitionID
     Table<DoubleArray> cenTable =
-      new Table<>(0, new DoubleArrPlus());
+        new Table<>(0, new DoubleArrPlus());
     if (this.isMaster()) {
       loadCentroids(cenTable, vectorSize,
-        conf.get(KMeansConstants.CFILE), conf);
+          conf.get(KMeansConstants.CFILE), conf);
     }
 
-    System.out.println("After loading centroids");
+    LOG.info("After loading centroids");
     printTable(cenTable);
 
     // broadcast centroids
     broadcastCentroids(cenTable);
 
     // after broadcasting
-    System.out
-      .println("After brodcasting centroids");
+    LOG.info("After brodcasting centroids");
     printTable(cenTable);
 
     // load data
-    ArrayList<DoubleArray> dataPoints =
-      loadData(fileNames, vectorSize, conf);
+    ArrayList<DoubleArray> dataPoints = loadData(fileNames, vectorSize, conf);
     numPoints = dataPoints.size();
 
-    Table<DoubleArray> previousCenTable = null;
+    Table<DoubleArray> previousCenTable;
     // iterations
     for (int iter = 0; iter < iteration; iter++) {
       previousCenTable = cenTable;
-      cenTable =
-        new Table<>(0, new DoubleArrPlus());
+      cenTable = new Table<>(0, new DoubleArrPlus());
 
-      System.out.println("Iteraton No." + iter);
+      LOG.info("Iteraton No." + iter);
 
       // compute new partial centroid table using
       // previousCenTable and data points
       MSE = computation(cenTable, previousCenTable,
-        dataPoints);
+          dataPoints);
 
       // AllReduce;
-      /****************************************/
       allreduce("main", "allreduce_" + iter,
-        cenTable);
+          cenTable);
       // we can calculate new centroids
       calculateCentroids(cenTable);
-      /****************************************/
 
       printTable(cenTable);
-
     }
 
     // output results
     calcMSE(conf);
     if (this.isMaster()) {
-      outputCentroids(cenTable, conf, context);
+      outputCentroids(cenTable, context);
     }
 
   }
 
   // output centroids
-  private void outputCentroids(
-    Table<DoubleArray> cenTable,
-    Configuration conf, Context context) {
-    String output = "";
-    for (Partition<DoubleArray> ap : cenTable
-      .getPartitions()) {
+  private void outputCentroids(Table<DoubleArray> cenTable, Context context) {
+    StringBuilder output = new StringBuilder();
+    for (Partition<DoubleArray> ap : cenTable.getPartitions()) {
       double res[] = ap.get().get();
-      for (int i = 0; i < vectorSize; i++)
-        output += res[i] + "\t";
-      output += "\n";
+      for (int i = 0; i < vectorSize; i++) {
+        output.append(res[i]).append("\t");
+      }
+      output.append("\n");
     }
     try {
-      context.write(null, new Text(output));
-    } catch (IOException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    } catch (InterruptedException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
+      context.write(null, new Text(output.toString()));
+    } catch (IOException | InterruptedException e) {
+      LOG.error("Failed to write the output", e);
     }
   }
 
-  private void calculateCentroids(
-    Table<DoubleArray> cenTable) {
-    for (Partition<DoubleArray> partialCenTable : cenTable
-      .getPartitions()) {
-      double[] doubles =
-        partialCenTable.get().get();
+  private void calculateCentroids(Table<DoubleArray> cenTable) {
+    for (Partition<DoubleArray> partialCenTable : cenTable.getPartitions()) {
+      double[] doubles = partialCenTable.get().get();
       for (int h = 0; h < vectorSize; h++) {
         doubles[h] /= doubles[vectorSize];
       }
       doubles[vectorSize] = 0;
     }
-    System.out
-      .println("after calculate new centroids");
+    LOG.info("after calculate new centroids");
     printTable(cenTable);
   }
 
   // calculate Euclidean distance.
   private double calcEucDistSquare(
-    DoubleArray aPoint, DoubleArray otherPoint,
-    int vectorSize) {
+      DoubleArray aPoint, DoubleArray otherPoint,
+      int vectorSize) {
     double dist = 0;
     for (int i = 0; i < vectorSize; i++) {
-      dist += Math.pow(
-        aPoint.get()[i] - otherPoint.get()[i], 2);
+      dist += Math.pow(aPoint.get()[i] - otherPoint.get()[i], 2);
     }
     return Math.sqrt(dist);
   }
 
   // load centroids from HDFS
   private void loadCentroids(
-    Table<DoubleArray> cenTable, int vectorSize,
-    String cFileName, Configuration configuration)
-    throws IOException {
+      Table<DoubleArray> cenTable, int vectorSize,
+      String cFileName, Configuration configuration)
+      throws IOException {
     Path cPath = new Path(cFileName);
     FileSystem fs = FileSystem.get(configuration);
     FSDataInputStream in = fs.open(cPath);
     BufferedReader br = new BufferedReader(
-      new InputStreamReader(in));
-    String line = "";
-    String[] vector = null;
+        new InputStreamReader(in));
+    String line;
+    String[] vector;
     int partitionId = 0;
     while ((line = br.readLine()) != null) {
       vector = line.split("\\s+");
       if (vector.length != vectorSize) {
-        System.out.println(
-          "Errors while loading centroids .");
+        LOG.error("Errors while loading centroids .");
         System.exit(-1);
       } else {
-        double[] aCen =
-          new double[vectorSize + 1];
+        double[] aCen = new double[vectorSize + 1];
 
         for (int i = 0; i < vectorSize; i++) {
           aCen[i] = Double.parseDouble(vector[i]);
         }
         aCen[vectorSize] = 0;
-        Partition<DoubleArray> ap =
-          new Partition<DoubleArray>(partitionId,
-            new DoubleArray(aCen, 0,
-              vectorSize + 1));
+        Partition<DoubleArray> ap = new Partition<>(partitionId, new DoubleArray(aCen, 0,
+            vectorSize + 1));
         cenTable.addPartition(ap);
         partitionId++;
       }
@@ -345,35 +285,28 @@ public class KmeansMapper extends
 
   // load data form HDFS
   private ArrayList<DoubleArray> loadData(
-    List<String> fileNames, int vectorSize,
-    Configuration conf) throws IOException {
-    ArrayList<DoubleArray> data =
-      new ArrayList<DoubleArray>();
+      List<String> fileNames, int vectorSize,
+      Configuration conf) throws IOException {
+    ArrayList<DoubleArray> data = new ArrayList<>();
     for (String filename : fileNames) {
       FileSystem fs = FileSystem.get(conf);
       Path dPath = new Path(filename);
       FSDataInputStream in = fs.open(dPath);
-      BufferedReader br = new BufferedReader(
-        new InputStreamReader(in));
-      String line = "";
-      String[] vector = null;
+      BufferedReader br = new BufferedReader(new InputStreamReader(in));
+      String line;
+      String[] vector;
       while ((line = br.readLine()) != null) {
         vector = line.split("\\s+");
 
         if (vector.length != vectorSize) {
-          System.out.println(
-            "Errors while loading data.");
+          LOG.error("Errors while loading data.");
           System.exit(-1);
         } else {
-          double[] aDataPoint =
-            new double[vectorSize];
-
+          double[] aDataPoint = new double[vectorSize];
           for (int i = 0; i < vectorSize; i++) {
-            aDataPoint[i] =
-              Double.parseDouble(vector[i]);
+            aDataPoint[i] = Double.parseDouble(vector[i]);
           }
-          DoubleArray da = new DoubleArray(
-            aDataPoint, 0, vectorSize);
+          DoubleArray da = new DoubleArray(aDataPoint, 0, vectorSize);
           data.add(da);
         }
       }
@@ -382,15 +315,13 @@ public class KmeansMapper extends
   }
 
   // for testing
-  private void
-    printTable(Table<DoubleArray> dataTable) {
-    for (Partition<DoubleArray> ap : dataTable
-      .getPartitions()) {
-
+  private void printTable(Table<DoubleArray> dataTable) {
+    for (Partition<DoubleArray> ap : dataTable.getPartitions()) {
       double res[] = ap.get().get();
       System.out.print("ID: " + ap.id() + ":");
-      for (int i = 0; i < res.length; i++)
-        System.out.print(res[i] + "\t");
+      for (double re : res) {
+        System.out.print(re + "\t");
+      }
       System.out.println();
     }
   }
