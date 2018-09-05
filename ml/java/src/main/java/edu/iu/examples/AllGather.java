@@ -22,14 +22,12 @@ import edu.iu.harp.resource.DoubleArray;
 import it.unimi.dsi.fastutil.objects.ObjectCollection;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.IOException;
-
 /**
  * This is an all gather example.
  */
 public class AllGather extends AbstractExampleMapper {
   @Override
-  protected void mapCollective(KeyValReader reader, Context context) throws IOException, InterruptedException {
+  protected void mapCollective(KeyValReader reader, Context context) {
     long startTime = System.currentTimeMillis();
     // we are going to call the same operation numIterations times
     for (int i = 0; i < numIterations; i++) {
@@ -44,8 +42,8 @@ public class AllGather extends AbstractExampleMapper {
       }
     }
 
-    LOG.info(String.format("Op %s it %d ele %d par %d time %d", cmd, numIterations, elements, numPartitions,
-        (System.currentTimeMillis() - startTime)));
+    LOG.info(String.format("Op %s it %d ele %d par %d time %d", cmd, numIterations, elements,
+        numPartitions, (System.currentTimeMillis() - startTime)));
   }
 
   private void verify(Table<DoubleArray> mseTable) {

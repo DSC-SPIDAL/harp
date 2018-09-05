@@ -29,7 +29,7 @@ import java.io.IOException;
  */
 public class BCast extends AbstractExampleMapper {
   @Override
-  protected void mapCollective(KeyValReader reader, Context context) throws IOException, InterruptedException {
+  protected void mapCollective(KeyValReader reader, Context context) {
     long startTime = System.currentTimeMillis();
     // we are going to call the same operation num iterations times
     for (int i = 0; i < numIterations; i++) {
@@ -38,15 +38,18 @@ public class BCast extends AbstractExampleMapper {
         value = 1;
       }
       Table<DoubleArray> mseTable = createTable(value);
-      // When calling the operation, each invocation should have a unique operation name, otherwise the calls
+      // When calling the operation, each invocation should have a unique
+      // operation name, otherwise the calls
       // may not complete
-      broadcast("bcast", "bcast-" + i, mseTable, 0, true);
+      broadcast("bcast", "bcast-" + i, mseTable,
+          0, true);
 
       if (verify) {
         verify(mseTable, 1);
       }
     }
-    LOG.info(String.format("Op %s it %d ele %d par %d time %d", cmd, numIterations, elements, numPartitions,
+    LOG.info(String.format("Op %s it %d ele %d par %d time %d", cmd,
+        numIterations, elements, numPartitions,
         (System.currentTimeMillis() - startTime)));
   }
 
@@ -77,7 +80,8 @@ public class BCast extends AbstractExampleMapper {
       for (int i = 0; i < values.length; i++) {
         values[i] = value;
       }
-      mseTable.addPartition(new Partition<>(0, new DoubleArray(values, 0, elements)));
+      mseTable.addPartition(new Partition<>(0, new DoubleArray(values,
+          0, elements)));
     }
     return mseTable;
   }

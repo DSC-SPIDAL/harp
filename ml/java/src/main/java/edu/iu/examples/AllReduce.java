@@ -22,14 +22,12 @@ import edu.iu.harp.resource.DoubleArray;
 import it.unimi.dsi.fastutil.objects.ObjectCollection;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.IOException;
-
 /**
  * This example demonstrate the use of AllReduce collective operation
  */
 public class AllReduce extends AbstractExampleMapper {
   @Override
-  protected void mapCollective(KeyValReader reader, Context context) throws IOException, InterruptedException {
+  protected void mapCollective(KeyValReader reader, Context context) {
     int numTasks = getNumWorkers();
     // lets prepare the data to be reduced
     Table<DoubleArray> mseTable = createTable();
@@ -38,16 +36,16 @@ public class AllReduce extends AbstractExampleMapper {
     double expectedSum = numTasks;
     // we are going to call the same operation num iterations times
     for (int i = 0; i < numIterations; i++) {
-       // When calling the operation, each invocation should have a unique operation name, otherwise the calls
-       // may not complete
+      // When calling the operation, each invocation should have a unique
+      // operation name, otherwise the callsmay not complete
       allreduce("main", "all-reduce-" + i , mseTable);
 
       if (verify) {
         expectedSum = verify(numTasks, mseTable, expectedSum);
       }
     }
-    LOG.info(String.format("Op %s it %d ele %d par %d time %d", cmd, numIterations, elements, numPartitions,
-        (System.currentTimeMillis() - startTime)));
+    LOG.info(String.format("Op %s it %d ele %d par %d time %d", cmd, numIterations,
+        elements, numPartitions, (System.currentTimeMillis() - startTime)));
   }
 
   /**
