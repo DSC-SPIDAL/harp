@@ -1,6 +1,6 @@
 /*
  * Copyright 2013-2017 Indiana University
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -29,11 +29,11 @@ import java.io.IOException;
  * which the key and the value are int-type
  ******************************************************/
 public class Int2IntKVPartition
-  extends KVPartition {
+    extends KVPartition {
 
   private Int2IntOpenHashMap kvMap;
   final static int defaultReturnVal =
-    Integer.MIN_VALUE;
+      Integer.MIN_VALUE;
 
   public Int2IntKVPartition() {
     super();
@@ -58,32 +58,28 @@ public class Int2IntKVPartition
    * combine the original value with the new
    * value; else, add the new key-value pair to
    * the partition
-   * 
-   * @param key
-   *          the new key
-   * @param val
-   *          the new value
-   * @param combiner
-   *          the combiner
+   *
+   * @param key      the new key
+   * @param val      the new value
+   * @param combiner the combiner
    * @return the ValStatus
    */
   public ValStatus putKeyVal(int key, int val,
-    TypeIntCombiner combiner) {
+                             TypeIntCombiner combiner) {
     int curVal = kvMap.put(key, val);
     if (curVal == defaultReturnVal) {
       return ValStatus.ADDED;
     } else {
       kvMap.put(key,
-        combiner.combine(curVal, val));
+          combiner.combine(curVal, val));
       return ValStatus.COMBINED;
     }
   }
 
   /**
    * Get the associated value of the key
-   * 
-   * @param key
-   *          the key
+   *
+   * @param key the key
    * @return the associated value
    */
   public int getVal(int key) {
@@ -92,7 +88,7 @@ public class Int2IntKVPartition
 
   /**
    * Get the Int2IntOpenHashMap
-   * 
+   *
    * @return the Int2IntOpenHashMap
    */
   public Int2IntOpenHashMap getKVMap() {
@@ -101,7 +97,7 @@ public class Int2IntKVPartition
 
   /**
    * Get the number of key-value pairs
-   * 
+   *
    * @return the number of key-value pairs
    */
   public int size() {
@@ -110,7 +106,7 @@ public class Int2IntKVPartition
 
   /**
    * Indicates if the partition is empty or not
-   * 
+   *
    * @return true if empty, false if not
    */
   public boolean isEmpty() {
@@ -138,10 +134,10 @@ public class Int2IntKVPartition
    */
   @Override
   public void write(DataOutput out)
-    throws IOException {
+      throws IOException {
     out.writeInt(kvMap.size());
     ObjectIterator<Int2IntMap.Entry> iterator =
-      kvMap.int2IntEntrySet().fastIterator();
+        kvMap.int2IntEntrySet().fastIterator();
     while (iterator.hasNext()) {
       Int2IntMap.Entry entry = iterator.next();
       out.writeInt(entry.getIntKey());
@@ -154,14 +150,14 @@ public class Int2IntKVPartition
    */
   @Override
   public void read(DataInput in)
-    throws IOException {
+      throws IOException {
     int size = in.readInt();
     if (kvMap != null) {
       kvMap.clear();
     } else {
       kvMap = new Int2IntOpenHashMap(size);
       this.kvMap
-        .defaultReturnValue(defaultReturnVal);
+          .defaultReturnValue(defaultReturnVal);
     }
     for (int i = 0; i < size; i++) {
       kvMap.put(in.readInt(), in.readInt());

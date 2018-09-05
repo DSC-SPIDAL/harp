@@ -1,6 +1,6 @@
 /*
  * Copyright 2013-2017 Indiana University
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -29,12 +29,12 @@ import it.unimi.dsi.fastutil.objects.ObjectIterator;
  * Int2IntKVPartition
  ******************************************************/
 class Int2IntKVPartitionCombiner
-  extends PartitionCombiner<Int2IntKVPartition> {
+    extends PartitionCombiner<Int2IntKVPartition> {
 
   private TypeIntCombiner valCombiner;
 
   Int2IntKVPartitionCombiner(
-    TypeIntCombiner combiner) {
+      TypeIntCombiner combiner) {
     this.valCombiner = combiner;
   }
 
@@ -43,15 +43,15 @@ class Int2IntKVPartitionCombiner
    */
   @Override
   public PartitionStatus combine(
-    Int2IntKVPartition op,
-    Int2IntKVPartition np) {
+      Int2IntKVPartition op,
+      Int2IntKVPartition np) {
     Int2IntOpenHashMap nMap = np.getKVMap();
     ObjectIterator<Int2IntMap.Entry> iterator =
-      nMap.int2IntEntrySet().fastIterator();
+        nMap.int2IntEntrySet().fastIterator();
     while (iterator.hasNext()) {
       Int2IntMap.Entry entry = iterator.next();
       op.putKeyVal(entry.getIntKey(),
-        entry.getIntValue(), valCombiner);
+          entry.getIntValue(), valCombiner);
     }
     return PartitionStatus.COMBINED;
   }
@@ -61,14 +61,14 @@ class Int2IntKVPartitionCombiner
  * A KVTable manages Int2IntKVPartitions
  ******************************************************/
 public class Int2IntKVTable
-  extends KVTable<Int2IntKVPartition> {
+    extends KVTable<Int2IntKVPartition> {
 
   private final TypeIntCombiner valCombiner;
 
   public Int2IntKVTable(int tableID,
-    TypeIntCombiner combiner) {
+                        TypeIntCombiner combiner) {
     super(tableID,
-      new Int2IntKVPartitionCombiner(combiner));
+        new Int2IntKVPartitionCombiner(combiner));
     this.valCombiner = combiner;
   }
 
@@ -77,28 +77,25 @@ public class Int2IntKVTable
    * key exists, combine the old one and the new
    * one, else, create a new partition and then
    * add the new key-value pair to it.
-   * 
-   * @param key
-   *          the key
-   * @param val
-   *          the value
+   *
+   * @param key the key
+   * @param val the value
    */
   public void addKeyVal(int key, int val) {
     Int2IntKVPartition partition =
-      getOrCreateKVPartition(key);
+        getOrCreateKVPartition(key);
     partition.putKeyVal(key, val, valCombiner);
   }
 
   /**
    * Get the value associated with the key
-   * 
-   * @param key
-   *          the key
+   *
+   * @param key the key
    * @return the value
    */
   public int getVal(int key) {
     Partition<Int2IntKVPartition> partition =
-      getKVPartition(key);
+        getKVPartition(key);
     if (partition != null) {
       return partition.get().getVal(key);
     } else {
@@ -109,20 +106,19 @@ public class Int2IntKVTable
   /**
    * Get a partition by key if exists, or create a
    * new partition if not.
-   * 
-   * @param key
-   *          the key
+   *
+   * @param key the key
    * @return the partition
    */
   private Int2IntKVPartition
-    getOrCreateKVPartition(int key) {
+  getOrCreateKVPartition(int key) {
     int partitionID = getKVPartitionID(key);
     Partition<Int2IntKVPartition> partition =
-      this.getPartition(partitionID);
+        this.getPartition(partitionID);
     if (partition == null) {
       partition =
-        new Partition<>(partitionID, Writable
-          .create(Int2IntKVPartition.class));
+          new Partition<>(partitionID, Writable
+              .create(Int2IntKVPartition.class));
       partition.get().initialize();
       this.insertPartition(partition);
     }
@@ -131,22 +127,20 @@ public class Int2IntKVTable
 
   /**
    * Get the partition by key
-   * 
-   * @param key
-   *          the key
+   *
+   * @param key the key
    * @return the partition
    */
   private Partition<Int2IntKVPartition>
-    getKVPartition(int key) {
+  getKVPartition(int key) {
     int partitionID = getKVPartitionID(key);
     return this.getPartition(partitionID);
   }
 
   /**
    * Get the partition Id by key
-   * 
-   * @param key
-   *          the key
+   *
+   * @param key the key
    * @return the partition id
    */
   protected int getKVPartitionID(int key) {

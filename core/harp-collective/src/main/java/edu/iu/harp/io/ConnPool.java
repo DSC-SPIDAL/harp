@@ -166,7 +166,7 @@ public class ConnPool {
    *          use cache or not
    * @return the connection object
    */
-  private Connection newConn(String host,
+  protected Connection newConn(String host,
     int port, boolean useCache) {
     Connection conn = null;
     boolean isFailed = false;

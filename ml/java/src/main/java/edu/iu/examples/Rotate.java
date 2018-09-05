@@ -24,7 +24,7 @@ import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.objects.ObjectCollection;
 import org.jetbrains.annotations.NotNull;
 
-public class Rotate extends AbstractExampleMapper {
+public class Rotate extends BaseExampleMapper {
   @Override
   protected void mapCollective(KeyValReader reader, Context context) {
     Table<DoubleArray> mseTable = createTable(getSelfID());

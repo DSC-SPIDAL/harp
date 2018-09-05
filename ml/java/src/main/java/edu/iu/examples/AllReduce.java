@@ -25,7 +25,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * This example demonstrate the use of AllReduce collective operation
  */
-public class AllReduce extends AbstractExampleMapper {
+public class AllReduce extends BaseExampleMapper {
   @Override
   protected void mapCollective(KeyValReader reader, Context context) {
     int numTasks = getNumWorkers();

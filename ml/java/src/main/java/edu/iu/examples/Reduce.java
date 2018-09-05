@@ -25,7 +25,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Reduce operation
  */
-public class Reduce extends AbstractExampleMapper {
+public class Reduce extends BaseExampleMapper {
   @Override
   protected void mapCollective(KeyValReader reader, Context context) {
     long startTime = System.currentTimeMillis();

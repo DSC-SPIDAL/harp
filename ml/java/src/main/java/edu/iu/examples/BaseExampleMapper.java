@@ -21,7 +21,7 @@ import org.apache.hadoop.mapred.CollectiveMapper;
 /**
  * The base class for Examples
  */
-public abstract class AbstractExampleMapper extends CollectiveMapper<String, String, Object, Object> {
+public abstract class BaseExampleMapper extends CollectiveMapper<String, String, Object, Object> {
   protected String cmd;
   protected int elements;
   protected int numPartitions;

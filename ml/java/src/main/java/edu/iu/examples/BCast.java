@@ -22,12 +22,10 @@ import edu.iu.harp.resource.DoubleArray;
 import it.unimi.dsi.fastutil.objects.ObjectCollection;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.IOException;
-
 /**
  * The broadcast example, where process 0 broadcast a table with a double array and other processes receive it
  */
-public class BCast extends AbstractExampleMapper {
+public class BCast extends BaseExampleMapper {
   @Override
   protected void mapCollective(KeyValReader reader, Context context) {
     long startTime = System.currentTimeMillis();

@@ -25,7 +25,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * This is an all gather example.
  */
-public class AllGather extends AbstractExampleMapper {
+public class AllGather extends BaseExampleMapper {
   @Override
   protected void mapCollective(KeyValReader reader, Context context) {
     long startTime = System.currentTimeMillis();
