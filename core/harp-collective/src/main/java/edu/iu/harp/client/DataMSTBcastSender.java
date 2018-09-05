@@ -1,6 +1,6 @@
 /*
  * Copyright 2013-2017 Indiana University
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -33,38 +33,34 @@ import java.io.IOException;
  * broadcasts to itself.
  ******************************************************/
 public class DataMSTBcastSender
-  extends DataSender {
+    extends DataSender {
 
   private static final Logger LOG =
-    Logger.getLogger(DataMSTBcastSender.class);
+      Logger.getLogger(DataMSTBcastSender.class);
 
   public DataMSTBcastSender(Data data,
-    Workers workers, byte command) {
+                            Workers workers, byte command) {
     super(data,
-      getDestID(workers.getSelfID(),
-        workers.getMinID(), workers.getMiddleID(),
-        workers.getMaxID()),
-      workers, command);
+        getDestID(workers.getSelfID(),
+            workers.getMinID(), workers.getMiddleID(),
+            workers.getMaxID()),
+        workers, command);
   }
 
   /**
    * Get the ID of the destination
-   * 
-   * @param selfID
-   *          the self
-   * @param left
-   *          the ID of the left worker
-   * @param middle
-   *          the ID of the middle worker
-   * @param right
-   *          the ID of the right worker
+   *
+   * @param selfID the self
+   * @param left   the ID of the left worker
+   * @param middle the ID of the middle worker
+   * @param right  the ID of the right worker
    * @return the ID of the destination
    */
   private static int getDestID(int selfID,
-    int left, int middle, int right) {
+                               int left, int middle, int right) {
     int half = middle - left + 1;
     int destID = (selfID <= middle
-      ? (selfID + half) : (selfID - half));
+        ? (selfID + half) : (selfID - half));
     // destID may be greater than right
     // but won't be less than left
     if (destID > right) {
@@ -80,20 +76,19 @@ public class DataMSTBcastSender
   /**
    * Get the ByteArray storing the size of the
    * head array
-   * 
-   * @param headArrSize
-   *          the size of the head array
+   *
+   * @param headArrSize the size of the head array
    * @return the ByteArray storing the size of the
-   *         head array
+   * head array
    */
   protected ByteArray
-    getOPByteArray(int headArrSize) {
+  getOPByteArray(int headArrSize) {
     ByteArray opArray =
-      ByteArray.create(12, true);
+        ByteArray.create(12, true);
     if (opArray != null) {
       try {
         Serializer serializer =
-          new Serializer(opArray);
+            new Serializer(opArray);
         serializer.writeInt(headArrSize);
         return opArray;
       } catch (Exception e) {
@@ -107,19 +102,16 @@ public class DataMSTBcastSender
 
   /**
    * Broadcast the data
-   * 
-   * @param conn
-   *          the Connection object
-   * @param opArray
-   *          the ByteArray storing the size of
-   *          the head array
-   * @param data
-   *          the Data to be broadcast
+   *
+   * @param conn    the Connection object
+   * @param opArray the ByteArray storing the size of
+   *                the head array
+   * @param data    the Data to be broadcast
    * @throws IOException
    */
   protected void sendDataBytes(Connection conn,
-    final ByteArray opArray, final Data data)
-    throws IOException {
+                               final ByteArray opArray, final Data data)
+      throws IOException {
     // Send data to other workers
     int selfID = getWorkers().getSelfID();
     int left = getWorkers().getMinID();
@@ -140,7 +132,7 @@ public class DataMSTBcastSender
       right = middle;
     }
     Serializer serializer = new Serializer(
-      new ByteArray(opArray.get(), 4, 8));
+        new ByteArray(opArray.get(), 4, 8));
     try {
       serializer.writeInt(destLeft);
       serializer.writeInt(destRight);
@@ -177,30 +169,30 @@ public class DataMSTBcastSender
       // LOG.info("MST Dest ID " + destID + " "
       // + destLeft + " " + destRight);
       serializer = new Serializer(
-        new ByteArray(opArray.get(), 4, 8));
+          new ByteArray(opArray.get(), 4, 8));
       try {
         serializer.writeInt(destLeft);
         serializer.writeInt(destRight);
       } catch (IOException e) {
         LOG.error(
-          "Fail to serialize to op array.", e);
+            "Fail to serialize to op array.", e);
         continue;
       }
       // Send data to destination
       WorkerInfo destWorker =
-        getWorkers().getWorkerInfo(destID);
+          getWorkers().getWorkerInfo(destID);
       if (destWorker != null) {
         Connection destConn =
-          Connection.create(destWorker.getNode(),
-            destWorker.getPort(), true);
+            Connection.create(destWorker.getNode(),
+                destWorker.getPort(), true);
         if (destConn != null) {
           try {
             super.sendDataBytes(destConn, opArray,
-              data);
+                data);
             destConn.release();
           } catch (IOException e) {
             LOG.error("Fail to send data bytes.",
-              e);
+                e);
             destConn.free();
             continue;
           }

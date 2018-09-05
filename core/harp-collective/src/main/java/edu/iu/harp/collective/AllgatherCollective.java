@@ -1,6 +1,6 @@
 /*
  * Copyright 2013-2017 Indiana University
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -47,42 +47,42 @@ import java.util.concurrent.TimeUnit;
 public class AllgatherCollective {
 
   private static final Logger LOG =
-    Logger.getLogger(AllgatherCollective.class);
+      Logger.getLogger(AllgatherCollective.class);
 
   public static void main(String args[])
-    throws Exception {
+      throws Exception {
     String driverHost = args[0];
     int driverPort = Integer.parseInt(args[1]);
     int workerID = Integer.parseInt(args[2]);
     long jobID = Long.parseLong(args[3]);
     int partitionByteSize =
-      Integer.parseInt(args[4]);
+        Integer.parseInt(args[4]);
     int numPartitions = Integer.parseInt(args[5]);
     Driver.initLogger(workerID);
     LOG.info("args[] " + driverHost + " "
-      + driverPort + " " + workerID + " " + jobID
-      + " " + partitionByteSize + " "
-      + numPartitions);
+        + driverPort + " " + workerID + " " + jobID
+        + " " + partitionByteSize + " "
+        + numPartitions);
     // ------------------------------------------------
     // Worker initialize
     EventQueue eventQueue = new EventQueue();
     DataMap dataMap = new DataMap();
     Workers workers = new Workers(workerID);
     Server server =
-      new Server(workers.getSelfInfo().getNode(),
-        workers.getSelfInfo().getPort(),
-        eventQueue, dataMap, workers);
+        new Server(workers.getSelfInfo().getNode(),
+            workers.getSelfInfo().getPort(),
+            eventQueue, dataMap, workers);
     server.start();
     String contextName = jobID + "";
     // Barrier guarantees the living workers get
     // the same view of the barrier result
     boolean isSuccess = Communication.barrier(
-      contextName, "barrier", dataMap, workers);
+        contextName, "barrier", dataMap, workers);
     LOG.info("Barrier: " + isSuccess);
     // -----------------------------------------------
     // Generate data partition
     Table<DoubleArray> table =
-      new Table<>(0, new DoubleArrPlus());
+        new Table<>(0, new DoubleArrPlus());
     int doublesSize = partitionByteSize / 8;
     if (doublesSize < 2) {
       doublesSize = 2;
@@ -98,81 +98,76 @@ public class AllgatherCollective {
       Partition<DoubleArray> partition = new Partition<>(
           workerID * numPartitions + i, doubleArray);
       LOG.info("Data Generate, WorkerID: "
-        + workerID + " Partition: "
-        + partition.id() + " Row count: "
-        + doubles[0] + " First element: "
-        + doubles[1] + " Last element: "
-        + doubles[doublesSize - 1]);
+          + workerID + " Partition: "
+          + partition.id() + " Row count: "
+          + doubles[0] + " First element: "
+          + doubles[1] + " Last element: "
+          + doubles[doublesSize - 1]);
       table.addPartition(partition);
     }
     // -------------------------------------------------
     // AllGather
     try {
       allgather(contextName, "allgather", table,
-        dataMap, workers);
+          dataMap, workers);
     } catch (Exception e) {
       LOG.error("Fail to allgather", e);
     }
     for (Partition<DoubleArray> partition : table
-      .getPartitions()) {
+        .getPartitions()) {
       double[] doubles = partition.get().get();
       int size = partition.get().size();
       LOG.info(" Partition: " + partition.id()
-        + " Row count: " + doubles[0]
-        + " First element: " + doubles[1]
-        + " Last element: " + doubles[size - 1]);
+          + " Row count: " + doubles[0]
+          + " First element: " + doubles[1]
+          + " Last element: " + doubles[size - 1]);
     }
     // ---------------------------------------------------
     Driver.reportToDriver(contextName,
-      "report-to-driver", workers.getSelfID(),
-      driverHost, driverPort);
+        "report-to-driver", workers.getSelfID(),
+        driverHost, driverPort);
     ConnPool.get().clean();
     server.stop();
     ForkJoinPool.commonPool().awaitQuiescence(
-      Constant.TERMINATION_TIMEOUT,
-      TimeUnit.SECONDS);
+        Constant.TERMINATION_TIMEOUT,
+        TimeUnit.SECONDS);
     System.exit(0);
   }
 
   /**
    * Allgather communication operation
-   * 
-   * @param contextName
-   *          the name of the context
-   * @param operationName
-   *          the name of the operation
-   * @param table
-   *          the data Table
-   * @param dataMap
-   *          the DataMap
-   * @param workers
-   *          the Workers
+   *
+   * @param contextName   the name of the context
+   * @param operationName the name of the operation
+   * @param table         the data Table
+   * @param dataMap       the DataMap
+   * @param workers       the Workers
    * @return true if succeeded, false otherwise
    */
   public static <P extends Simple> boolean
-    allgather(final String contextName,
-      final String operationName,
-      final Table<P> table, final DataMap dataMap,
-      final Workers workers) {
+  allgather(final String contextName,
+            final String operationName,
+            final Table<P> table, final DataMap dataMap,
+            final Workers workers) {
     if (workers.isTheOnlyWorker()) {
       return true;
     }
     LinkedList<Transferable> ownedPartitions =
-      new LinkedList<>(table.getPartitions());
+        new LinkedList<>(table.getPartitions());
     int numOwnedPartitions =
-      table.getNumPartitions();
+        table.getNumPartitions();
     // Get worker info
     int selfID = workers.getSelfID();
     int nextID = workers.getNextID();
     int numWorkers = workers.getNumWorkers();
     Data sendData =
-      new Data(DataType.PARTITION_LIST,
-        contextName, selfID, ownedPartitions,
-        DataUtil
-          .getNumTransListBytes(ownedPartitions),
-        operationName, numOwnedPartitions);
+        new Data(DataType.PARTITION_LIST,
+            contextName, selfID, ownedPartitions,
+            DataUtil
+                .getNumTransListBytes(ownedPartitions),
+            operationName, numOwnedPartitions);
     DataSender sender = new DataSender(sendData,
-      nextID, workers, Constant.SEND_DECODE);
+        nextID, workers, Constant.SEND_DECODE);
     sender.execute();
     // Release
     sendData.releaseHeadArray();
@@ -182,11 +177,11 @@ public class AllgatherCollective {
     // Received data and decoded data
     int recvSize = numWorkers - 1;
     LinkedList<Data> recvDataList =
-      new LinkedList<>();
+        new LinkedList<>();
     for (int i = 0; i < recvSize; i++) {
       // Wait data
       Data recvData = IOUtil.waitAndGet(dataMap,
-        contextName, operationName);
+          contextName, operationName);
       if (recvData == null) {
         isFailed = true;
         break;
@@ -194,7 +189,7 @@ public class AllgatherCollective {
       // Continue sending to your next neighbor
       if (recvData.getWorkerID() != nextID) {
         sender = new DataSender(recvData, nextID,
-          workers, Constant.SEND_DECODE);
+            workers, Constant.SEND_DECODE);
         sender.execute();
       }
       recvData.releaseHeadArray();
@@ -207,12 +202,12 @@ public class AllgatherCollective {
       }
     } else {
       List<Transferable> partitions =
-        new LinkedList<>();
+          new LinkedList<>();
       for (Data recvData : recvDataList) {
         partitions.addAll(recvData.getBody());
       }
       PartitionUtil
-        .addPartitionsToTable(partitions, table);
+          .addPartitionsToTable(partitions, table);
     }
     return !isFailed;
   }

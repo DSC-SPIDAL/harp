@@ -1,6 +1,6 @@
 /*
  * Copyright 2013-2017 Indiana University
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -59,33 +59,33 @@ import java.util.concurrent.TimeUnit;
 public class GraphCollective {
 
   private static final Logger LOG =
-    Logger.getLogger(GraphCollective.class);
+      Logger.getLogger(GraphCollective.class);
 
   public static void main(String args[])
-    throws Exception {
+      throws Exception {
     String driverHost = args[0];
     int driverPort = Integer.parseInt(args[1]);
     int workerID = Integer.parseInt(args[2]);
     long jobID = Long.parseLong(args[3]);
     Driver.initLogger(workerID);
     LOG.info(
-      "args[] " + driverHost + " " + driverPort
-        + " " + workerID + " " + jobID);
+        "args[] " + driverHost + " " + driverPort
+            + " " + workerID + " " + jobID);
     // ------------------------------------------------
     // Worker initialize
     EventQueue dataQueue = new EventQueue();
     DataMap dataMap = new DataMap();
     Workers workers = new Workers(workerID);
     Server server =
-      new Server(workers.getSelfInfo().getNode(),
-        workers.getSelfInfo().getPort(),
-        dataQueue, dataMap, workers);
+        new Server(workers.getSelfInfo().getNode(),
+            workers.getSelfInfo().getPort(),
+            dataQueue, dataMap, workers);
     server.start();
     String contextName = jobID + "";
     // Barrier guarantees the living workers get
     // the same view of the barrier result
     boolean isSuccess = Communication.barrier(
-      contextName, "barrier", dataMap, workers);
+        contextName, "barrier", dataMap, workers);
     LOG.info("Barrier: " + isSuccess);
     // -----------------------------------------------
     // Generate in-edge table and vertex table
@@ -95,7 +95,7 @@ public class GraphCollective {
     int edgeCountPerWorker = 3;
     int numWorkers = workers.getNumWorkers();
     int totalVtxCount =
-      vtxCountPerWorker * numWorkers;
+        vtxCountPerWorker * numWorkers;
     // Partition seed needs to be the same
     // across all graph tables
     LOG.info("Total vtx count: " + totalVtxCount);
@@ -104,16 +104,16 @@ public class GraphCollective {
       EdgeVal val = new EdgeVal();
       Random random = new Random(workerID);
       for (int i =
-        0; i < edgeCountPerWorker; i++) {
+           0; i < edgeCountPerWorker; i++) {
         int target =
-          random.nextInt(totalVtxCount);
+            random.nextInt(totalVtxCount);
         int source = 0;
         do {
           source = random.nextInt(totalVtxCount);
         } while (source == target);
         val.addEdge(source, 0, target);
         ValStatus status =
-          inEdgeTable.addKeyVal(target, val);
+            inEdgeTable.addKeyVal(target, val);
         if (status == ValStatus.ADDED) {
           val = new EdgeVal();
         } else {
@@ -131,10 +131,10 @@ public class GraphCollective {
       LOG.info("PRINT EDGE TABLE END");
       LOG.info("REGROUP START");
       isSuccess = RegroupCollective
-        .regroupCombine(contextName,
-          "regroup-edges", inEdgeTable,
-          new Partitioner(numWorkers), dataMap,
-          workers);
+          .regroupCombine(contextName,
+              "regroup-edges", inEdgeTable,
+              new Partitioner(numWorkers), dataMap,
+              workers);
       LOG.info("REGROUP End " + isSuccess);
       LOG.info("PRINT EDGE TABLE START");
       printEdgeTable(inEdgeTable);
@@ -147,25 +147,25 @@ public class GraphCollective {
     VertexTable vtxTable = new VertexTable(1);
     try {
       for (Partition<EdgePartition> partition : inEdgeTable
-        .getPartitions()) {
+          .getPartitions()) {
         ObjectIterator<Int2ObjectMap.Entry<EdgeVal>> iterator =
-          partition.get().getKVMap()
-            .int2ObjectEntrySet().fastIterator();
+            partition.get().getKVMap()
+                .int2ObjectEntrySet().fastIterator();
         while (iterator.hasNext()) {
           EdgeVal edgeVal =
-            iterator.next().getValue();
+              iterator.next().getValue();
           for (int i = 0; i < edgeVal
-            .getNumEdges(); i++) {
+              .getNumEdges(); i++) {
             vtxTable.addKeyVal(
-              edgeVal.getDest()[i],
-              new IntVal(1));
+                edgeVal.getDest()[i],
+                new IntVal(1));
           }
         }
       }
     } catch (Exception e) {
       LOG.error(
-        "Fail to create vertex table from the edge table.",
-        e);
+          "Fail to create vertex table from the edge table.",
+          e);
     }
     LOG.info("PRINT VTX TABLE START");
     printVtxTable(vtxTable);
@@ -176,18 +176,18 @@ public class GraphCollective {
     MessageTable msgTable = new MessageTable(2);
     IntVal msgVal = new IntVal();
     for (Partition<EdgePartition> partition : inEdgeTable
-      .getPartitions()) {
+        .getPartitions()) {
       ObjectIterator<Int2ObjectMap.Entry<EdgeVal>> iterator =
-        partition.get().getKVMap()
-          .int2ObjectEntrySet().fastIterator();
+          partition.get().getKVMap()
+              .int2ObjectEntrySet().fastIterator();
       while (iterator.hasNext()) {
         EdgeVal edgeVal =
-          iterator.next().getValue();
+            iterator.next().getValue();
         for (int i = 0; i < edgeVal
-          .getNumEdges(); i++) {
+            .getNumEdges(); i++) {
           msgVal.setInt(1);
           ValStatus status = msgTable.addKeyVal(
-            edgeVal.getSrc()[i], msgVal);
+              edgeVal.getSrc()[i], msgVal);
           if (status == ValStatus.ADDED) {
             msgVal = new IntVal();
           }
@@ -203,8 +203,8 @@ public class GraphCollective {
     LOG.info("All MSG TO ALL VTX START");
     try {
       join(contextName, "send-msg-to-vtx",
-        msgTable, null, vtxTable, dataMap,
-        workers);
+          msgTable, null, vtxTable, dataMap,
+          workers);
     } catch (Exception e) {
       LOG.error("Error in all msg to all vtx", e);
     }
@@ -214,38 +214,37 @@ public class GraphCollective {
     LOG.info("PRINT MSG TABLE END");
     // ----------------------------------------------------
     Driver.reportToDriver(contextName,
-      "report-to-driver", workers.getSelfID(),
-      driverHost, driverPort);
+        "report-to-driver", workers.getSelfID(),
+        driverHost, driverPort);
     ConnPool.get().clean();
     server.stop();
     ForkJoinPool.commonPool().awaitQuiescence(
-      Constant.TERMINATION_TIMEOUT,
-      TimeUnit.SECONDS);
+        Constant.TERMINATION_TIMEOUT,
+        TimeUnit.SECONDS);
     System.exit(0);
   }
 
   /**
    * Print the EdgeTable
-   * 
-   * @param edgeTable
-   *          the EdgeTable to be printed
+   *
+   * @param edgeTable the EdgeTable to be printed
    */
   private static void
-    printEdgeTable(EdgeTable edgeTable) {
+  printEdgeTable(EdgeTable edgeTable) {
     for (Partition<EdgePartition> partition : edgeTable
-      .getPartitions()) {
+        .getPartitions()) {
       ObjectIterator<Int2ObjectMap.Entry<EdgeVal>> iterator =
-        partition.get().getKVMap()
-          .int2ObjectEntrySet().fastIterator();
+          partition.get().getKVMap()
+              .int2ObjectEntrySet().fastIterator();
       while (iterator.hasNext()) {
         EdgeVal edgeVal =
-          iterator.next().getValue();
+            iterator.next().getValue();
         for (int i = 0; i < edgeVal
-          .getNumEdges(); i++) {
+            .getNumEdges(); i++) {
           LOG.info(
-            "Partiiton ID: " + partition.id()
-              + ", Edge: " + edgeVal.getSrc()[i]
-              + "->" + edgeVal.getDest()[i]);
+              "Partiiton ID: " + partition.id()
+                  + ", Edge: " + edgeVal.getSrc()[i]
+                  + "->" + edgeVal.getDest()[i]);
         }
       }
     }
@@ -253,98 +252,89 @@ public class GraphCollective {
 
   /**
    * Print the MessageTable
-   * 
-   * @param msgTable
-   *          the MessageTable to be printed
+   *
+   * @param msgTable the MessageTable to be printed
    */
   private static void
-    printMsgTable(MessageTable msgTable) {
+  printMsgTable(MessageTable msgTable) {
     for (Partition<MessagePartition> partition : msgTable
-      .getPartitions()) {
+        .getPartitions()) {
       ObjectIterator<Int2ObjectMap.Entry<IntVal>> iterator =
-        partition.get().getKVMap()
-          .int2ObjectEntrySet().fastIterator();
+          partition.get().getKVMap()
+              .int2ObjectEntrySet().fastIterator();
       while (iterator.hasNext()) {
         Int2ObjectMap.Entry<IntVal> entry =
-          iterator.next();
+            iterator.next();
         int key = entry.getIntKey();
         IntVal msgVal = entry.getValue();
         LOG.info("Partiiton ID: " + partition.id()
-          + ", Msg: " + key + "->"
-          + msgVal.getInt());
+            + ", Msg: " + key + "->"
+            + msgVal.getInt());
       }
     }
   }
 
   /**
    * Print the VertexTable
-   * 
-   * @param vtxTable
-   *          the VertexTable to be printed
+   *
+   * @param vtxTable the VertexTable to be printed
    */
   private static void
-    printVtxTable(VertexTable vtxTable) {
+  printVtxTable(VertexTable vtxTable) {
     for (Partition<VertexPartition> partition : vtxTable
-      .getPartitions()) {
+        .getPartitions()) {
       ObjectIterator<Int2ObjectMap.Entry<IntVal>> iterator =
-        partition.get().getKVMap()
-          .int2ObjectEntrySet().fastIterator();
+          partition.get().getKVMap()
+              .int2ObjectEntrySet().fastIterator();
       while (iterator.hasNext()) {
         Int2ObjectMap.Entry<IntVal> entry =
-          iterator.next();
+            iterator.next();
         int key = entry.getIntKey();
         IntVal vtxVal = entry.getValue();
         LOG.info("Partiiton ID: " + partition.id()
-          + ", Val: " + key + "->"
-          + vtxVal.getInt());
+            + ", Val: " + key + "->"
+            + vtxVal.getInt());
       }
     }
   }
 
   /**
    * The Join communication operation
-   * 
-   * @param contextName
-   *          the name of the context
-   * @param operationName
-   *          the name of the operation
-   * @param dynamicTable
-   *          the dynamic data Table
-   * @param partitioner
-   *          the Partitioner
-   * @param staticTable
-   *          the static data Table
-   * @param dataMap
-   *          the DataMap
-   * @param workers
-   *          the Workers
+   *
+   * @param contextName   the name of the context
+   * @param operationName the name of the operation
+   * @param dynamicTable  the dynamic data Table
+   * @param partitioner   the Partitioner
+   * @param staticTable   the static data Table
+   * @param dataMap       the DataMap
+   * @param workers       the Workers
    * @return true if succeeded, false otherwise
    */
   public static <P1 extends Simple, P2 extends Simple>
-    boolean join(String contextName,
-      String operationName,
-      Table<P1> dynamicTable,
-      Partitioner partitioner,
-      Table<P2> staticTable, DataMap dataMap,
-      Workers workers) {
+  boolean join(String contextName,
+               String operationName,
+               Table<P1> dynamicTable,
+               Partitioner partitioner,
+               Table<P2> staticTable, DataMap dataMap,
+               Workers workers) {
     if (workers.isTheOnlyWorker()) {
       return true;
     }
     final int selfID = workers.getSelfID();
     final int masterID = workers.getMasterID();
     final int numWorkers =
-      workers.getNumWorkers();
+        workers.getNumWorkers();
     // ---------------------------------------------------
     // Gather the partition information of the
     // static table to master
     // LOG.info("Gather static table info.");
     LinkedList<Transferable> recvStaticPSets =
-      new LinkedList<>();
+        new LinkedList<>();
     boolean isSuccess = PartitionUtil
-      .gatherPartitionSet(contextName,
-        operationName + ".gatherstatic",
-        staticTable, recvStaticPSets, dataMap,
-        workers);
+        .gatherPartitionSet(contextName,
+            operationName + ".gatherstatic",
+            staticTable, recvStaticPSets, dataMap,
+            workers);
     if (!isSuccess) {
       return false;
     }
@@ -353,12 +343,12 @@ public class GraphCollective {
     // partitions to master
     // LOG.info("Gather dynamic table info.");
     LinkedList<Transferable> recvDynamicPSets =
-      new LinkedList<>();
+        new LinkedList<>();
     isSuccess = PartitionUtil.gatherPartitionSet(
-      contextName,
-      operationName + ".gatherdynamic",
-      dynamicTable, recvDynamicPSets, dataMap,
-      workers);
+        contextName,
+        operationName + ".gatherdynamic",
+        dynamicTable, recvDynamicPSets, dataMap,
+        workers);
     // LOG.info("Dynamic table info is
     // gathered.");
     if (!isSuccess) {
@@ -369,10 +359,10 @@ public class GraphCollective {
     // join
     // Bcast partition regroup request
     LinkedList<Transferable> recvJoin =
-      new LinkedList<>();
+        new LinkedList<>();
     if (workers.isMaster()) {
       Join join = createJoin(recvStaticPSets,
-        recvDynamicPSets, partitioner);
+          recvDynamicPSets, partitioner);
       recvStaticPSets = null;
       recvDynamicPSets = null;
       recvJoin.add(join);
@@ -380,11 +370,11 @@ public class GraphCollective {
     // --------------------------------------------------
     // LOG.info("Bcast all-to-all information.");
     isSuccess =
-      Communication.mstBcastAndRecv(contextName,
-        masterID, operationName + ".bcast",
-        recvJoin, workers, dataMap);
+        Communication.mstBcastAndRecv(contextName,
+            masterID, operationName + ".bcast",
+            recvJoin, workers, dataMap);
     dataMap.cleanOperationData(contextName,
-      operationName + ".bcast");
+        operationName + ".bcast");
     Join join = (Join) recvJoin.removeFirst();
     recvJoin = null;
     // LOG.info("Join info is bcasted.");
@@ -392,19 +382,19 @@ public class GraphCollective {
     // Send partition
     // Optimize with broadcast
     LinkedList<Partition<P1>> bcastPartitions =
-      new LinkedList<>();
+        new LinkedList<>();
     @SuppressWarnings("unchecked")
     LinkedList<Partition<P1>>[] sendPartitionMap =
-      new LinkedList[numWorkers];
+        new LinkedList[numWorkers];
     int numSendWorkers = 0;
     IntArrayList rmPartitionIDs =
-      new IntArrayList();
+        new IntArrayList();
     int localCount = 0;
     for (Partition<P1> partition : dynamicTable
-      .getPartitions()) {
+        .getPartitions()) {
       int partitionID = partition.id();
       IntArrayList workerIDs =
-        join.getParToWorkerMap().get(partitionID);
+          join.getParToWorkerMap().get(partitionID);
       if (workerIDs != null) {
         boolean isLocal = false;
         if (workerIDs.size() == numWorkers) {
@@ -415,11 +405,11 @@ public class GraphCollective {
             if (workerID != selfID) {
               if (sendPartitionMap[workerID] == null) {
                 sendPartitionMap[workerID] =
-                  new LinkedList<>();
+                    new LinkedList<>();
                 numSendWorkers++;
               }
               sendPartitionMap[workerID]
-                .add(partition);
+                  .add(partition);
             } else {
               isLocal = true;
             }
@@ -434,54 +424,54 @@ public class GraphCollective {
     }
     if (!bcastPartitions.isEmpty()) {
       LocalGlobalSyncCollective.broadcast(
-        contextName, operationName,
-        bcastPartitions, workers);
+          contextName, operationName,
+          bcastPartitions, workers);
     }
     if (numSendWorkers > 0) {
       LocalGlobalSyncCollective.dispatch(
-        contextName, operationName,
-        sendPartitionMap, workers);
+          contextName, operationName,
+          sendPartitionMap, workers);
     }
     // --------------------------------------------------
     // Receive all the partitions
     int numRecvPartitions =
-      join.getWorkerParCountMap().get(selfID)
-        - localCount;
+        join.getWorkerParCountMap().get(selfID)
+            - localCount;
     // LOG.info("Total receive: "
     // + numRecvPartitions);
     join.release();
     join = null;
     return PartitionUtil.receivePartitions(
-      contextName, operationName, dynamicTable,
-      numRecvPartitions, rmPartitionIDs, dataMap);
+        contextName, operationName, dynamicTable,
+        numRecvPartitions, rmPartitionIDs, dataMap);
   }
 
   /**
    * Generate partition and worker mapping for
    * join
-   * 
+   *
    * @param recvStaticPSets
    * @param recvDynamicPSets
    * @param partitioner
    * @return a Join object
    */
   private static Join createJoin(
-    LinkedList<Transferable> recvStaticPSets,
-    LinkedList<Transferable> recvDynamicPSets,
-    Partitioner partitioner) {
+      LinkedList<Transferable> recvStaticPSets,
+      LinkedList<Transferable> recvDynamicPSets,
+      Partitioner partitioner) {
     // partition <-> workers mapping
     // based on static partition info
     Int2ObjectOpenHashMap<IntArrayList> parToWorkerMap =
-      new Int2ObjectOpenHashMap<>();
+        new Int2ObjectOpenHashMap<>();
     for (Transferable trans : recvStaticPSets) {
       PartitionSet recvPSet =
-        (PartitionSet) trans;
+          (PartitionSet) trans;
       int workerID = recvPSet.getWorkerID();
       IntArrayList pList = recvPSet.getParSet();
       // See which partition is on which workers
       for (int pID : pList) {
         IntArrayList destWorkerIDs =
-          parToWorkerMap.get(pID);
+            parToWorkerMap.get(pID);
         if (destWorkerIDs == null) {
           destWorkerIDs = new IntArrayList();
           parToWorkerMap.put(pID, destWorkerIDs);
@@ -493,28 +483,28 @@ public class GraphCollective {
     // worker <-> partition count
     // based on dynamic partition info
     Int2IntOpenHashMap workerParCountMap =
-      new Int2IntOpenHashMap();
+        new Int2IntOpenHashMap();
     for (Transferable trans : recvDynamicPSets) {
       PartitionSet recvPSet =
-        (PartitionSet) trans;
+          (PartitionSet) trans;
       IntArrayList pList = recvPSet.getParSet();
       for (int pID : pList) {
         IntArrayList destWorkerIDs =
-          parToWorkerMap.get(pID);
+            parToWorkerMap.get(pID);
         if (destWorkerIDs != null) {
           for (int destID : destWorkerIDs) {
             workerParCountMap.addTo(destID, 1);
           }
         } else if (partitioner != null) {
           int destWorkerID =
-            partitioner.getWorkerID(pID);
+              partitioner.getWorkerID(pID);
           if (destWorkerID != Constant.UNKNOWN_WORKER_ID) {
             destWorkerIDs = new IntArrayList();
             parToWorkerMap.put(pID,
-              destWorkerIDs);
+                destWorkerIDs);
             destWorkerIDs.add(destWorkerID);
             workerParCountMap.addTo(destWorkerID,
-              1);
+                1);
           }
         }
       }

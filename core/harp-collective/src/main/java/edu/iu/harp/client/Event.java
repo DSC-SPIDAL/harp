@@ -1,6 +1,6 @@
 /*
  * Copyright 2013-2017 Indiana University
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -22,7 +22,7 @@ import edu.iu.harp.resource.Simple;
  * An event includes the event type, the context
  * name, the source ID, the target ID and the
  * event body.
- * 
+ *
  * Note that no matter what source ID is assigned,
  * it dosen't make a mistake of the real worker
  * sender. no matter what target ID is set, if the
@@ -30,7 +30,7 @@ import edu.iu.harp.resource.Simple;
  * the event is still sent to the worker itself
  * (LOCAL_EVENT) or sent to the rest workers
  * (COLLECTIVE_EVENT)
- * 
+ *
  ******************************************************/
 public class Event {
   private final EventType eventType;
@@ -40,7 +40,7 @@ public class Event {
   private final Simple body;
 
   public Event(EventType type, String name,
-    int sourceID, int targetID, Simple b) {
+               int sourceID, int targetID, Simple b) {
     eventType = type;
     contextName = name;
     this.sourceID = sourceID;
@@ -50,7 +50,7 @@ public class Event {
 
   /**
    * Get the type of the event
-   * 
+   *
    * @return the EventType
    */
   public EventType getEventType() {
@@ -59,7 +59,7 @@ public class Event {
 
   /**
    * Get the name of the context
-   * 
+   *
    * @return
    */
   public String getContextName() {
@@ -68,7 +68,7 @@ public class Event {
 
   /**
    * Get the ID of the source
-   * 
+   *
    * @return the ID of the source
    */
   public int getSourceID() {
@@ -77,7 +77,7 @@ public class Event {
 
   /**
    * Get the ID of the target
-   * 
+   *
    * @return the ID of the target
    */
   public int getTargetID() {
@@ -86,7 +86,7 @@ public class Event {
 
   /**
    * Get the body of the event
-   * 
+   *
    * @return the body of the event
    */
   public Simple getBody() {

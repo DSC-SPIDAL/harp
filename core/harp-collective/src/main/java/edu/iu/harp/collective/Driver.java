@@ -1,6 +1,6 @@
 /*
  * Copyright 2013-2017 Indiana University
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -48,48 +48,50 @@ import java.util.concurrent.TimeUnit;
  * Test collective communication
  ******************************************************/
 public class Driver {
-  /** Class logger */
+  /**
+   * Class logger
+   */
   private static final Logger LOG =
-    Logger.getLogger(Driver.class);
+      Logger.getLogger(Driver.class);
   private static final String bcast_script =
-    Depl.getProjectHomePath()
-      + Depl.getBinDirectory()
-      + "collective/bcast.sh";
+      Depl.getProjectHomePath()
+          + Depl.getBinDirectory()
+          + "collective/bcast.sh";
   private static final String regroup_script =
-    Depl.getProjectHomePath()
-      + Depl.getBinDirectory()
-      + "collective/regroup.sh";
+      Depl.getProjectHomePath()
+          + Depl.getBinDirectory()
+          + "collective/regroup.sh";
   private static final String wordcount_script =
-    Depl.getProjectHomePath()
-      + Depl.getBinDirectory()
-      + "collective/wordcount.sh";
+      Depl.getProjectHomePath()
+          + Depl.getBinDirectory()
+          + "collective/wordcount.sh";
   private static final String allgather_script =
-    Depl.getProjectHomePath()
-      + Depl.getBinDirectory()
-      + "collective/allgather.sh";
+      Depl.getProjectHomePath()
+          + Depl.getBinDirectory()
+          + "collective/allgather.sh";
   private static final String allreduce_script =
-    Depl.getProjectHomePath()
-      + Depl.getBinDirectory()
-      + "collective/allreduce.sh";
+      Depl.getProjectHomePath()
+          + Depl.getBinDirectory()
+          + "collective/allreduce.sh";
   private static final String reduce_script =
-    Depl.getProjectHomePath()
-      + Depl.getBinDirectory()
-      + "collective/reduce.sh";
+      Depl.getProjectHomePath()
+          + Depl.getBinDirectory()
+          + "collective/reduce.sh";
   private static final String graph_script =
-    Depl.getProjectHomePath()
-      + Depl.getBinDirectory()
-      + "collective/graph.sh";
+      Depl.getProjectHomePath()
+          + Depl.getBinDirectory()
+          + "collective/graph.sh";
   private static final String event_script =
-    Depl.getProjectHomePath()
-      + Depl.getBinDirectory()
-      + "collective/event.sh";
+      Depl.getProjectHomePath()
+          + Depl.getBinDirectory()
+          + "collective/event.sh";
   private static final String lgs_script =
-    Depl.getProjectHomePath()
-      + Depl.getBinDirectory()
-      + "collective/lgs.sh";
+      Depl.getProjectHomePath()
+          + Depl.getBinDirectory()
+          + "collective/lgs.sh";
 
   public static void main(String args[])
-    throws Exception {
+      throws Exception {
     // args [driver host][driver port][task name]
     // Get driver host and port
     String driverHost = args[0];
@@ -102,118 +104,118 @@ public class Driver {
     DataMap dataMap = new DataMap();
     Workers workers = new Workers();
     Server server = new Server(driverHost,
-      driverPort, eventQueue, dataMap, workers);
+        driverPort, eventQueue, dataMap, workers);
     server.start();
     // Start workers
     LOG.info("Start all workers...");
     LOG.info("Number of workers: "
-      + workers.getNumWorkers());
+        + workers.getNumWorkers());
     boolean isRunning = false;
     if (task.equals("bcast")) {
       // args[3]: totalByteData
       // args[4]: numLoops
       isRunning = startAllWorkers(workers,
-        bcast_script, driverHost, driverPort,
-        jobID, args[3], args[4]);
+          bcast_script, driverHost, driverPort,
+          jobID, args[3], args[4]);
     } else if (task.equals("regroup")) {
       // args[3]: partitionByteData
       // args[4]: numPartitions
       isRunning = startAllWorkers(workers,
-        regroup_script, driverHost, driverPort,
-        jobID, args[3], args[4]);
+          regroup_script, driverHost, driverPort,
+          jobID, args[3], args[4]);
     } else if (task.equals("lgs")) {
       // args[3]: partitionByteData
       // args[4]: numPartitions
       isRunning = startAllWorkers(workers,
-        lgs_script, driverHost, driverPort, jobID,
-        args[3], args[4]);
+          lgs_script, driverHost, driverPort, jobID,
+          args[3], args[4]);
     } else if (task.equals("wordcount")) {
       isRunning =
-        startAllWorkers(workers, wordcount_script,
-          driverHost, driverPort, jobID);
+          startAllWorkers(workers, wordcount_script,
+              driverHost, driverPort, jobID);
     } else if (task.equals("allgather")) {
       // args[3]: partitionByteData
       // args[4]: numPartitions
       isRunning = startAllWorkers(workers,
-        allgather_script, driverHost, driverPort,
-        jobID, args[3], args[4]);
+          allgather_script, driverHost, driverPort,
+          jobID, args[3], args[4]);
     } else if (task.equals("allreduce")) {
       // args[3]: partitionByteData
       // args[4]: numPartitions
       isRunning = startAllWorkers(workers,
-        allreduce_script, driverHost, driverPort,
-        jobID, args[3], args[4]);
+          allreduce_script, driverHost, driverPort,
+          jobID, args[3], args[4]);
     } else if (task.equals("reduce")) {
       // args[3]: partitionByteData
       // args[4]: numPartitions
       isRunning = startAllWorkers(workers,
-        reduce_script, driverHost, driverPort,
-        jobID, args[3], args[4]);
+          reduce_script, driverHost, driverPort,
+          jobID, args[3], args[4]);
     } else if (task.equals("graph")) {
       isRunning =
-        startAllWorkers(workers, graph_script,
-          driverHost, driverPort, jobID);
+          startAllWorkers(workers, graph_script,
+              driverHost, driverPort, jobID);
     } else if (task.equals("event")) {
       isRunning =
-        startAllWorkers(workers, event_script,
-          driverHost, driverPort, jobID);
+          startAllWorkers(workers, event_script,
+              driverHost, driverPort, jobID);
     } else {
       LOG.info("Inccorect task command... ");
     }
     if (isRunning) {
       waitForAllWorkers(jobID + "",
-        "report-to-driver", dataMap, workers);
+          "report-to-driver", dataMap, workers);
     }
     ConnPool.get().clean();
     server.stop();
     ForkJoinPool.commonPool().awaitQuiescence(
-      Constant.TERMINATION_TIMEOUT,
-      TimeUnit.SECONDS);
+        Constant.TERMINATION_TIMEOUT,
+        TimeUnit.SECONDS);
     System.exit(0);
   }
 
   /**
    * It seems that the logger you get in static
    * field can be re-initialized later.
-   * 
+   *
    * @param workerID
    */
   static void initLogger(int workerID) {
     String fileName =
-      "harp-worker-" + workerID + ".log";
+        "harp-worker-" + workerID + ".log";
     File file = new File(fileName);
     if (file.exists()) {
       file.delete();
     }
     FileAppender fileAppender =
-      new FileAppender();
+        new FileAppender();
     fileAppender.setName("FileLogger");
     fileAppender.setFile(fileName);
     fileAppender.setLayout(new PatternLayout(
-      "%d{dd MMM yyyy HH:mm:ss,SSS} %-4r [%t] %-5p %c %x - %m%n"));
+        "%d{dd MMM yyyy HH:mm:ss,SSS} %-4r [%t] %-5p %c %x - %m%n"));
     fileAppender.setAppend(true);
     fileAppender.activateOptions();
     // Add appender to any Logger (here is root)
     Logger.getRootLogger()
-      .addAppender(fileAppender);
+        .addAppender(fileAppender);
   }
 
   private static boolean startAllWorkers(
-    Workers workers, String script,
-    String driverHost, int driverPort, long jobID,
-    String... otherArgs) {
+      Workers workers, String script,
+      String driverHost, int driverPort, long jobID,
+      String... otherArgs) {
     WorkerInfoList workerInfoList =
-      workers.getWorkerInfoList();
+        workers.getWorkerInfoList();
     for (WorkerInfo workerInfo : workerInfoList) {
       String workerNode = workerInfo.getNode();
       int workerID = workerInfo.getID();
       boolean isSuccess = startWorker(workerNode,
-        script, driverHost, driverPort, workerID,
-        jobID, otherArgs);
+          script, driverHost, driverPort, workerID,
+          jobID, otherArgs);
       LOG.info(
-        "Start worker ID: " + workerInfo.getID()
-          + " Node: " + workerInfo.getNode()
-          + " Result: " + isSuccess);
+          "Start worker ID: " + workerInfo.getID()
+              + " Node: " + workerInfo.getNode()
+              + " Result: " + isSuccess);
       if (!isSuccess) {
         return false;
       }
@@ -222,13 +224,13 @@ public class Driver {
   }
 
   private static boolean startWorker(
-    String workerHost, String script,
-    String driverHost, int driverPort,
-    int workerID, long jobID,
-    String... otherArgs) {
+      String workerHost, String script,
+      String driverHost, int driverPort,
+      int workerID, long jobID,
+      String... otherArgs) {
     int otherArgsLen = otherArgs.length;
     String cmdstr[] =
-      new String[8 + otherArgsLen];
+        new String[8 + otherArgsLen];
     cmdstr[0] = "ssh";
     cmdstr[1] = workerHost;
     cmdstr[2] = script;
@@ -241,20 +243,20 @@ public class Driver {
     }
     cmdstr[cmdstr.length - 1] = "&";
     Output cmdOutput =
-      Depl.executeCMDandNoWait(cmdstr);
+        Depl.executeCMDandNoWait(cmdstr);
     return cmdOutput.getExeStatus();
   }
 
   private static boolean waitForAllWorkers(
-    String contextName, String opName,
-    DataMap dataMap, Workers workers) {
+      String contextName, String opName,
+      DataMap dataMap, Workers workers) {
     int count = 0;
     while (count < workers.getNumWorkers()) {
       Data data = IOUtil.waitAndGet(dataMap,
-        contextName, opName);
+          contextName, opName);
       if (data != null) {
         LOG.info(
-          "Worker Status: " + data.getWorkerID());
+            "Worker Status: " + data.getWorkerID());
         data.release();
         data = null;
         count++;
@@ -269,22 +271,22 @@ public class Driver {
    * Report to driver that worker
    */
   public static boolean reportToDriver(
-    String contextName, String operationName,
-    int workerID, String driverHost,
-    int driverPort) {
+      String contextName, String operationName,
+      int workerID, String driverHost,
+      int driverPort) {
     LOG.info("Worker " + workerID + " reports. ");
     // Send ack to report worker status
     Ack ack = Writable.create(Ack.class);
     LinkedList<Transferable> transList =
-      new LinkedList<>();
+        new LinkedList<>();
     transList.add(ack);
     Data ackData = new Data(DataType.SIMPLE_LIST,
-      contextName, workerID, transList,
-      DataUtil.getNumTransListBytes(transList),
-      operationName);
+        contextName, workerID, transList,
+        DataUtil.getNumTransListBytes(transList),
+        operationName);
     Sender sender =
-      new DataSender(ackData, driverHost,
-        driverPort, Constant.SEND_DECODE);
+        new DataSender(ackData, driverHost,
+            driverPort, Constant.SEND_DECODE);
     boolean isSuccess = sender.execute();
     ackData.release();
     ackData = null;

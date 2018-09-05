@@ -1,6 +1,6 @@
 /*
  * Copyright 2013-2017 Indiana University
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -48,42 +48,42 @@ import java.util.concurrent.TimeUnit;
 public class AllreduceCollective {
 
   private static final Logger LOG =
-    Logger.getLogger(AllreduceCollective.class);
+      Logger.getLogger(AllreduceCollective.class);
 
   public static void main(String args[])
-    throws Exception {
+      throws Exception {
     String driverHost = args[0];
     int driverPort = Integer.parseInt(args[1]);
     int workerID = Integer.parseInt(args[2]);
     long jobID = Long.parseLong(args[3]);
     int partitionByteSize =
-      Integer.parseInt(args[4]);
+        Integer.parseInt(args[4]);
     int numPartitions = Integer.parseInt(args[5]);
     Driver.initLogger(workerID);
     LOG.info("args[] " + driverHost + " "
-      + driverPort + " " + workerID + " " + jobID
-      + " " + partitionByteSize + " "
-      + numPartitions);
+        + driverPort + " " + workerID + " " + jobID
+        + " " + partitionByteSize + " "
+        + numPartitions);
     // ------------------------------------------------
     // Worker initialize
     EventQueue eventQueue = new EventQueue();
     DataMap dataMap = new DataMap();
     Workers workers = new Workers(workerID);
     Server server =
-      new Server(workers.getSelfInfo().getNode(),
-        workers.getSelfInfo().getPort(),
-        eventQueue, dataMap, workers);
+        new Server(workers.getSelfInfo().getNode(),
+            workers.getSelfInfo().getPort(),
+            eventQueue, dataMap, workers);
     server.start();
     String contextName = jobID + "";
     // Barrier guarantees the living workers get
     // the same view of the barrier result
     boolean isSuccess = Communication.barrier(
-      contextName, "barrier", dataMap, workers);
+        contextName, "barrier", dataMap, workers);
     LOG.info("Barrier: " + isSuccess);
     // -----------------------------------------------
     // Generate data partition
     Table<DoubleArray> table =
-      new Table<>(0, new DoubleArrPlus());
+        new Table<>(0, new DoubleArrPlus());
     int doublesSize = partitionByteSize / 8;
     if (doublesSize < 2) {
       doublesSize = 2;
@@ -94,69 +94,64 @@ public class AllreduceCollective {
       doubles[0] = 1; // One row
       doubles[doublesSize - 1] = workerID;
       DoubleArray doubleArray =
-        new DoubleArray(doubles, 0, doublesSize);
+          new DoubleArray(doubles, 0, doublesSize);
       // The range of partition ids is based on
       // workerID
       Partition<DoubleArray> partition =
-        new Partition<DoubleArray>(i,
-          doubleArray);
+          new Partition<DoubleArray>(i,
+              doubleArray);
       LOG.info("Data Generate, WorkerID: "
-        + workerID + " Partition: "
-        + partition.id() + " Row count: "
-        + doubles[0] + " First element: "
-        + doubles[1] + " Last element: "
-        + doubles[doublesSize - 1]);
+          + workerID + " Partition: "
+          + partition.id() + " Row count: "
+          + doubles[0] + " First element: "
+          + doubles[1] + " Last element: "
+          + doubles[doublesSize - 1]);
       table.addPartition(partition);
     }
     // -------------------------------------------------
     // Allreduce
     try {
       allreduce(contextName, "allreduce", table,
-        dataMap, workers);
+          dataMap, workers);
     } catch (Exception e) {
       LOG.error("Fail to allreduce", e);
     }
     for (Partition<DoubleArray> partition : table
-      .getPartitions()) {
+        .getPartitions()) {
       double[] doubles = partition.get().get();
       int size = partition.get().size();
       LOG.info(" Partition: " + partition.id()
-        + " Row count: " + doubles[0]
-        + " First element: " + doubles[1]
-        + " Last element: " + doubles[size - 1]);
+          + " Row count: " + doubles[0]
+          + " First element: " + doubles[1]
+          + " Last element: " + doubles[size - 1]);
     }
     // ---------------------------------------------------
     Driver.reportToDriver(contextName,
-      "report-to-driver", workers.getSelfID(),
-      driverHost, driverPort);
+        "report-to-driver", workers.getSelfID(),
+        driverHost, driverPort);
     ConnPool.get().clean();
     server.stop();
     ForkJoinPool.commonPool().awaitQuiescence(
-      Constant.TERMINATION_TIMEOUT,
-      TimeUnit.SECONDS);
+        Constant.TERMINATION_TIMEOUT,
+        TimeUnit.SECONDS);
     System.exit(0);
   }
 
   /**
    * Allreduce communication operation.
-   * 
-   * @param contextName
-   *          the name of the context
-   * @param operationName
-   *          the name of the operation
-   * @param table
-   *          the data Table
-   * @param dataMap
-   *          the DataMap
-   * @param workers
-   *          the Workers
+   *
+   * @param contextName   the name of the context
+   * @param operationName the name of the operation
+   * @param table         the data Table
+   * @param dataMap       the DataMap
+   * @param workers       the Workers
    * @return true if succeeded, false otherwise
    */
   public static <P extends Simple> boolean
-    allreduce(final String contextName,
-      final String operationName,
-      final Table<P> table, final DataMap dataMap,
-      final Workers workers) {
+  allreduce(final String contextName,
+            final String operationName,
+            final Table<P> table, final DataMap dataMap,
+            final Workers workers) {
     if (workers.isTheOnlyWorker()) {
       return true;
     }
@@ -170,7 +165,7 @@ public class AllreduceCollective {
     boolean isDestAdjusted = false;
     boolean isFailed = false;
     Int2ObjectOpenHashMap<Data> cachedDataMap =
-      new Int2ObjectOpenHashMap<>();
+        new Int2ObjectOpenHashMap<>();
     while (left < right) {
       if (selfID <= middle) {
         destID = selfID + half;
@@ -189,18 +184,18 @@ public class AllreduceCollective {
       // + ", selfID " + selfID + ", destID "
       // + destID);
       List<Transferable> ownedPartitions =
-        new LinkedList<>(table.getPartitions());
+          new LinkedList<>(table.getPartitions());
       int numOwnedPartitions =
-        table.getNumPartitions();
+          table.getNumPartitions();
       // Send owned partitions
       Data sendData =
-        new Data(DataType.PARTITION_LIST,
-          contextName, selfID, ownedPartitions,
-          DataUtil.getNumTransListBytes(
-            ownedPartitions),
-          operationName, numOwnedPartitions);
+          new Data(DataType.PARTITION_LIST,
+              contextName, selfID, ownedPartitions,
+              DataUtil.getNumTransListBytes(
+                  ownedPartitions),
+              operationName, numOwnedPartitions);
       DataSender sender = new DataSender(sendData,
-        destID, workers, Constant.SEND_DECODE);
+          destID, workers, Constant.SEND_DECODE);
       sender.execute();
       // Release
       sendData.releaseHeadArray();
@@ -209,12 +204,12 @@ public class AllreduceCollective {
       ownedPartitions = null;
       if (!isDestAdjusted) {
         Data recvData =
-          cachedDataMap.remove(destID);
+            cachedDataMap.remove(destID);
         // Wait data
         if (recvData == null) {
           while (true) {
             recvData = IOUtil.waitAndGet(dataMap,
-              contextName, operationName);
+                contextName, operationName);
             if (recvData == null) {
               isFailed = true;
               break;
@@ -222,10 +217,10 @@ public class AllreduceCollective {
               recvData.releaseHeadArray();
               recvData.releaseBodyArray();
               if (recvData
-                .getWorkerID() != destID) {
+                  .getWorkerID() != destID) {
                 cachedDataMap.put(
-                  recvData.getWorkerID(),
-                  recvData);
+                    recvData.getWorkerID(),
+                    recvData);
               } else {
                 break;
               }
@@ -234,22 +229,22 @@ public class AllreduceCollective {
         }
         if (!isFailed) {
           PartitionUtil.addPartitionsToTable(
-            recvData.getBody(), table);
+              recvData.getBody(), table);
         }
       }
       // If range is odd, midID + 1 receive
       // additional data from midID
       if (range % 2 == 1 && selfID == (middle + 1)
-        && !isFailed) {
+          && !isFailed) {
         // LOG.info("Get extra data from middle: "
         // + middle);
         Data recvData =
-          cachedDataMap.remove(middle);
+            cachedDataMap.remove(middle);
         // Wait data
         if (recvData == null) {
           while (true) {
             recvData = IOUtil.waitAndGet(dataMap,
-              contextName, operationName);
+                contextName, operationName);
             if (recvData == null) {
               isFailed = true;
               break;
@@ -257,10 +252,10 @@ public class AllreduceCollective {
               recvData.releaseHeadArray();
               recvData.releaseBodyArray();
               if (recvData
-                .getWorkerID() != middle) {
+                  .getWorkerID() != middle) {
                 cachedDataMap.put(
-                  recvData.getWorkerID(),
-                  recvData);
+                    recvData.getWorkerID(),
+                    recvData);
               } else {
                 break;
               }
@@ -271,7 +266,7 @@ public class AllreduceCollective {
         // the data has been decoded
         if (!isFailed) {
           PartitionUtil.addPartitionsToTable(
-            recvData.getBody(), table);
+              recvData.getBody(), table);
         }
       }
       if (isFailed) {

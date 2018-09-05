@@ -1,6 +1,6 @@
 /*
  * Copyright 2013-2017 Indiana University
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -34,7 +34,7 @@ import java.util.concurrent.BlockingQueue;
 public class SyncQueue {
 
   protected static final Logger LOG =
-    Logger.getLogger(SyncQueue.class);
+      Logger.getLogger(SyncQueue.class);
 
   private final String contextName;
   private final int sourceID;
@@ -47,8 +47,8 @@ public class SyncQueue {
   private boolean isConsuming;
 
   SyncQueue(String contextName, int sourceID,
-    int destID, Workers workers,
-    BlockingQueue<SyncQueue> consumerQueue) {
+            int destID, Workers workers,
+            BlockingQueue<SyncQueue> consumerQueue) {
     this.contextName = contextName;
     this.sourceID = sourceID;
     this.destID = destID;
@@ -62,7 +62,7 @@ public class SyncQueue {
 
   /**
    * Get the context name
-   * 
+   *
    * @return the context name
    */
   String getContextName() {
@@ -71,7 +71,7 @@ public class SyncQueue {
 
   /**
    * Get the ID of the destination
-   * 
+   *
    * @return the ID of the destination
    */
   int getDestID() {
@@ -80,7 +80,7 @@ public class SyncQueue {
 
   /**
    * Add an element
-   * 
+   *
    * @param trans
    */
   synchronized void add(Simple trans) {
@@ -139,17 +139,17 @@ public class SyncQueue {
       return;
     }
     Data data = new Data(DataType.SIMPLE_LIST,
-      contextName, sourceID, transList,
-      DataUtil.getNumTransListBytes(transList));
+        contextName, sourceID, transList,
+        DataUtil.getNumTransListBytes(transList));
     if (destID == SyncClient.ALL_WORKERS) {
       // Broadcast events
       Sender sender = new DataMSTBcastSender(data,
-        workers, Constant.MST_BCAST_DECODE);
+          workers, Constant.MST_BCAST_DECODE);
       sender.execute();
     } else {
       // Send events to worker ID
       Sender sender = new DataSender(data, destID,
-        workers, Constant.SEND_DECODE);
+          workers, Constant.SEND_DECODE);
       sender.execute();
     }
     // Release the data
@@ -159,12 +159,12 @@ public class SyncQueue {
 
   /**
    * Check if it's in consuming state
-   * 
+   *
    * @return true if it's in consuming state,
-   *         false otherwise
+   * false otherwise
    */
   private synchronized boolean
-    inConsumeBarrier() {
+  inConsumeBarrier() {
     if (!inConsumerQueue && isConsuming) {
       return true;
     } else {
@@ -176,7 +176,7 @@ public class SyncQueue {
    * Exit the consuming state
    */
   private synchronized void
-    leaveConsumeBarrier() {
+  leaveConsumeBarrier() {
     if (!inConsumerQueue && isConsuming) {
       queue.clear();
       isConsuming = false;

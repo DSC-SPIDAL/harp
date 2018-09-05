@@ -1,6 +1,6 @@
 /*
  * Copyright 2013-2017 Indiana University
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -26,7 +26,7 @@ import org.apache.log4j.Logger;
 public abstract class Receiver {
 
   private static final Logger LOG =
-    Logger.getLogger(Receiver.class);
+      Logger.getLogger(Receiver.class);
 
   private final ServerConn conn;
   private final EventQueue eventQueue;
@@ -34,7 +34,7 @@ public abstract class Receiver {
   private final byte commandType;
 
   public Receiver(ServerConn conn,
-    EventQueue queue, DataMap map, byte command) {
+                  EventQueue queue, DataMap map, byte command) {
     this.conn = conn;
     this.eventQueue = queue;
     this.dataMap = map;
@@ -43,7 +43,7 @@ public abstract class Receiver {
 
   /**
    * The execution method
-   * 
+   *
    * @throws Exception
    */
   public void run() throws Exception {
@@ -57,7 +57,7 @@ public abstract class Receiver {
 
   /**
    * Get the type of the command
-   * 
+   *
    * @return the type of the command
    */
   protected byte getCommandType() {
@@ -66,7 +66,7 @@ public abstract class Receiver {
 
   /**
    * Get the EventQueue
-   * 
+   *
    * @return the EventQueue
    */
   protected EventQueue getEventQueue() {
@@ -75,7 +75,7 @@ public abstract class Receiver {
 
   /**
    * Get the DataMap
-   * 
+   *
    * @return the DataMap
    */
   protected DataMap getDataMap() {
@@ -84,11 +84,10 @@ public abstract class Receiver {
 
   /**
    * Abstract method for handling the data
-   * 
-   * @param conn
-   *          the Connection object
+   *
+   * @param conn the Connection object
    * @throws Exception
    */
   protected abstract void handleData(
-    final ServerConn conn) throws Exception;
+      final ServerConn conn) throws Exception;
 }

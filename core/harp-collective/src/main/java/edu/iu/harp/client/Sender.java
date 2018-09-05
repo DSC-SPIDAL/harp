@@ -1,6 +1,6 @@
 /*
  * Copyright 2013-2017 Indiana University
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -30,7 +30,7 @@ import org.apache.log4j.Logger;
 public abstract class Sender {
 
   private static final Logger LOG =
-    Logger.getLogger(Sender.class);
+      Logger.getLogger(Sender.class);
   private final Data data;
   private final String host;
   private final int port;
@@ -41,18 +41,14 @@ public abstract class Sender {
   /**
    * To send data between workers, sender and
    * receiver must both have valid IDs.
-   * 
-   * @param d
-   *          the data
-   * @param destID
-   *          the ID of the destination
-   * @param w
-   *          the workers
-   * @param command
-   *          the command
+   *
+   * @param d       the data
+   * @param destID  the ID of the destination
+   * @param w       the workers
+   * @param command the command
    */
   public Sender(Data d, int destID, Workers w,
-    byte command) {
+                byte command) {
     WorkerInfo selfInfo = w.getSelfInfo();
     WorkerInfo destInfo = w.getWorkerInfo(destID);
     if (selfInfo == null || destInfo == null) {
@@ -77,17 +73,17 @@ public abstract class Sender {
    * any to processes It can send data from a
    * process other than workers or send data from
    * a worker to a process outside.
-   * 
+   * <p>
    * If send data from outside, data's worker ID
    * should be unknown
-   * 
+   *
    * @param d
    * @param h
    * @param p
    * @param command
    */
   public Sender(Data d, String h, int p,
-    byte command) {
+                byte command) {
     data = d;
     destWorkerID = Constant.UNKNOWN_WORKER_ID;
     workers = null;
@@ -98,28 +94,28 @@ public abstract class Sender {
 
   /**
    * Send the data
-   * 
+   *
    * @return true if succeeded, false if not.
    */
   public boolean execute() {
     // Check if we can send
     if (data == null || host == null
-      || port == Constant.UNKNOWN_PORT
-      || commandType == Constant.UNKNOWN_CMD) {
+        || port == Constant.UNKNOWN_PORT
+        || commandType == Constant.UNKNOWN_CMD) {
       return false;
     }
     if (data
-      .getHeadStatus() == DataStatus.ENCODE_FAILED_DECODED
-      || data
+        .getHeadStatus() == DataStatus.ENCODE_FAILED_DECODED
+        || data
         .getBodyStatus() == DataStatus.ENCODE_FAILED_DECODED
-      || data
+        || data
         .getHeadStatus() == DataStatus.DECODE_FAILED
-      || data
+        || data
         .getBodyStatus() == DataStatus.DECODE_FAILED) {
       return false;
     }
     if (data
-      .getHeadStatus() == DataStatus.DECODED) {
+        .getHeadStatus() == DataStatus.DECODED) {
       DataStatus headStatus = data.encodeHead();
       if (headStatus == DataStatus.ENCODE_FAILED_DECODED) {
         return false;
@@ -127,7 +123,7 @@ public abstract class Sender {
     }
     // Encode body
     if (data
-      .getBodyStatus() == DataStatus.DECODED) {
+        .getBodyStatus() == DataStatus.DECODED) {
       DataStatus bodyStatus = data.encodeBody();
       if (bodyStatus == DataStatus.ENCODE_FAILED_DECODED) {
         // No generating encoded data
@@ -136,7 +132,7 @@ public abstract class Sender {
     }
     // Open connection
     Connection conn =
-      Connection.create(host, port, true);
+        Connection.create(host, port, true);
     if (conn == null) {
       // Do not release encoded arrays in data.
       return false;
@@ -157,7 +153,7 @@ public abstract class Sender {
 
   /**
    * Get the ID of the destination worker
-   * 
+   *
    * @return the ID of the destination worker
    */
   protected int getDestWorkerID() {
@@ -166,7 +162,7 @@ public abstract class Sender {
 
   /**
    * Get the workers
-   * 
+   *
    * @return the workers
    */
   protected Workers getWorkers() {
@@ -175,7 +171,7 @@ public abstract class Sender {
 
   /**
    * Get the command
-   * 
+   *
    * @return the command
    */
   protected byte getCommand() {
@@ -184,14 +180,12 @@ public abstract class Sender {
 
   /**
    * Abstract method for handling the data
-   * 
-   * @param conn
-   *          the connection object
-   * @param data
-   *          the Data
+   *
+   * @param conn the connection object
+   * @param data the Data
    * @throws Exception
    */
   protected abstract void handleData(
-    final Connection conn, final Data data)
-    throws Exception;
+      final Connection conn, final Data data)
+      throws Exception;
 }

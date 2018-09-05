@@ -1,6 +1,6 @@
 /*
  * Copyright 2013-2017 Indiana University
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -48,43 +48,43 @@ import java.util.concurrent.TimeUnit;
 public class RegroupCollective {
 
   protected static final Logger LOG =
-    Logger.getLogger(RegroupCollective.class);
+      Logger.getLogger(RegroupCollective.class);
 
   public static void main(String args[])
-    throws Exception {
+      throws Exception {
     String driverHost = args[0];
     int driverPort = Integer.parseInt(args[1]);
     int workerID = Integer.parseInt(args[2]);
     long jobID = Long.parseLong(args[3]);
     int partitionByteSize =
-      Integer.parseInt(args[4]);
+        Integer.parseInt(args[4]);
     int numPartitions = Integer.parseInt(args[5]);
     Driver.initLogger(workerID);
     LOG.info("args[] " + driverHost + " "
-      + driverPort + " " + workerID + " " + jobID
-      + " " + partitionByteSize + " "
-      + numPartitions);
+        + driverPort + " " + workerID + " " + jobID
+        + " " + partitionByteSize + " "
+        + numPartitions);
     // ---------------------------------------------------
     // Worker initialize
     EventQueue eventQueue = new EventQueue();
     DataMap dataMap = new DataMap();
     Workers workers = new Workers(workerID);
     Server server =
-      new Server(workers.getSelfInfo().getNode(),
-        workers.getSelfInfo().getPort(),
-        eventQueue, dataMap, workers);
+        new Server(workers.getSelfInfo().getNode(),
+            workers.getSelfInfo().getPort(),
+            eventQueue, dataMap, workers);
     server.start();
     String contextName = jobID + "";
     // Barrier guarantees the living workers get
     // the same view of the barrier result
     boolean isSuccess = Communication.barrier(
-      contextName, "barrier", dataMap, workers);
+        contextName, "barrier", dataMap, workers);
     LOG.info("Barrier: " + isSuccess);
     // ----------------------------------------------------
     // Generate data partition
     Table<DoubleArray> table =
-      new Table<DoubleArray>(0,
-        new DoubleArrPlus());
+        new Table<DoubleArray>(0,
+            new DoubleArrPlus());
     int doublesSize = partitionByteSize / 8;
     if (doublesSize < 2) {
       doublesSize = 2;
@@ -94,105 +94,99 @@ public class RegroupCollective {
     // Assuming count is 1
     for (int i = 0; i < numPartitions; i++) {
       DoubleArray doubleArray =
-        DoubleArray.create(doublesSize, false);
+          DoubleArray.create(doublesSize, false);
       double[] doubles = doubleArray.get();
       doubles[0] = 1; // count is 1
       double num = Math.random() * 100;
       doubles[doublesSize - 1] = num;
       Partition<DoubleArray> partition =
-        new Partition<DoubleArray>(i,
-          doubleArray);
+          new Partition<DoubleArray>(i,
+              doubleArray);
       table.addPartition(partition);
       LOG.info("Data Generate, WorkerID: "
-        + workerID + " Partition: "
-        + partition.id() + " Count: " + doubles[0]
-        + " First element: " + doubles[1]
-        + " Last element: "
-        + doubles[doublesSize - 1]);
+          + workerID + " Partition: "
+          + partition.id() + " Count: " + doubles[0]
+          + " First element: " + doubles[1]
+          + " Last element: "
+          + doubles[doublesSize - 1]);
     }
     // -------------------------------------------------
     // Regroup
     long startTime = System.currentTimeMillis();
     regroupCombine(contextName, "regroup", table,
-      new Partitioner(workers.getNumWorkers()),
-      dataMap, workers);
+        new Partitioner(workers.getNumWorkers()),
+        dataMap, workers);
     long endTime = System.currentTimeMillis();
     LOG.info(
-      "Regroup time: " + (endTime - startTime));
+        "Regroup time: " + (endTime - startTime));
     for (Partition<DoubleArray> partition : table
-      .getPartitions()) {
+        .getPartitions()) {
       double[] doubles = partition.get().get();
       int size = partition.get().size();
       LOG.info(" Partition: " + partition.id()
-        + " Count: " + doubles[0]
-        + " First element: " + doubles[1]
-        + " Last element: " + doubles[size - 1]);
+          + " Count: " + doubles[0]
+          + " First element: " + doubles[1]
+          + " Last element: " + doubles[size - 1]);
     }
     // ------------------------------------------------
     Driver.reportToDriver(contextName,
-      "report-to-driver", workers.getSelfID(),
-      driverHost, driverPort);
+        "report-to-driver", workers.getSelfID(),
+        driverHost, driverPort);
     ConnPool.get().clean();
     server.stop();
     ForkJoinPool.commonPool().awaitQuiescence(
-      Constant.TERMINATION_TIMEOUT,
-      TimeUnit.SECONDS);
+        Constant.TERMINATION_TIMEOUT,
+        TimeUnit.SECONDS);
     System.exit(0);
   }
 
   /**
    * The regroup communication operation
-   * 
-   * @param contextName
-   *          the name of the context
-   * @param operationName
-   *          the name of the operation
-   * @param table
-   *          the Table
-   * @param partitioner
-   *          the Partitioner
-   * @param dataMap
-   *          the DataMap
-   * @param workers
-   *          the Workers
+   *
+   * @param contextName   the name of the context
+   * @param operationName the name of the operation
+   * @param table         the Table
+   * @param partitioner   the Partitioner
+   * @param dataMap       the DataMap
+   * @param workers       the Workers
    * @return true if succeeded, false otherwise
    */
   public static <P extends Simple> boolean
-    regroupCombine(final String contextName,
-      String operationName, Table<P> table,
-      Partitioner partitioner, DataMap dataMap,
-      Workers workers) {
+  regroupCombine(final String contextName,
+                 String operationName, Table<P> table,
+                 Partitioner partitioner, DataMap dataMap,
+                 Workers workers) {
     if (workers.isTheOnlyWorker()) {
       return true;
     }
     final int selfID = workers.getSelfID();
     final int numWorkers =
-      workers.getNumWorkers();
+        workers.getNumWorkers();
     // -----------------------------------------
     // A partition to worker map
     Int2IntOpenHashMap partitionMap =
-      new Int2IntOpenHashMap(
-        table.getNumPartitions());
+        new Int2IntOpenHashMap(
+            table.getNumPartitions());
     if (partitioner == null) {
       partitioner = new Partitioner(numWorkers);
     }
     List<Transferable> recvPCounts =
-      new LinkedList<>();
+        new LinkedList<>();
     boolean isSuccess = PartitionUtil
-      .regroupPartitionCount(contextName,
-        operationName + ".regroup.meta", table,
-        recvPCounts, partitionMap, partitioner,
-        dataMap, workers);
+        .regroupPartitionCount(contextName,
+            operationName + ".regroup.meta", table,
+            recvPCounts, partitionMap, partitioner,
+            dataMap, workers);
     if (!isSuccess) {
       return false;
     }
     int numRecvPartitions = 0;
     for (Transferable trans : recvPCounts) {
       PartitionCount pCount =
-        (PartitionCount) trans;
+          (PartitionCount) trans;
       if (pCount.getWorkerID() != selfID) {
         numRecvPartitions +=
-          pCount.getPartitionCount();
+            pCount.getPartitionCount();
       }
     }
     DataUtil.releaseTransList(recvPCounts);
@@ -201,20 +195,20 @@ public class RegroupCollective {
     // Send partition
     @SuppressWarnings("unchecked")
     List<Partition<P>>[] sendPartitionMap =
-      new LinkedList[numWorkers];
+        new LinkedList[numWorkers];
     int numSendWorkers = 0;
     IntArrayList rmPartitionIDs =
-      new IntArrayList();
+        new IntArrayList();
     for (Partition<P> partition : table
-      .getPartitions()) {
+        .getPartitions()) {
       int partitionID = partition.id();
       int workerID =
-        partitionMap.get(partitionID);
+          partitionMap.get(partitionID);
       if (workerID != selfID
-        && workerID != Constant.UNKNOWN_WORKER_ID) {
+          && workerID != Constant.UNKNOWN_WORKER_ID) {
         if (sendPartitionMap[workerID] == null) {
           sendPartitionMap[workerID] =
-            new LinkedList<>();
+              new LinkedList<>();
           numSendWorkers++;
         }
         sendPartitionMap[workerID].add(partition);
@@ -223,30 +217,28 @@ public class RegroupCollective {
     }
     if (numSendWorkers > 0) {
       LocalGlobalSyncCollective.dispatch(
-        contextName, operationName,
-        sendPartitionMap, workers);
+          contextName, operationName,
+          sendPartitionMap, workers);
     }
     return PartitionUtil.receivePartitions(
-      contextName, operationName, table,
-      numRecvPartitions, rmPartitionIDs, dataMap);
+        contextName, operationName, table,
+        numRecvPartitions, rmPartitionIDs, dataMap);
   }
 
   /**
    * Apply the function the each partition in the
    * Table
-   * 
-   * @param table
-   *          the Table
-   * @param function
-   *          the function to be applied
+   *
+   * @param table    the Table
+   * @param function the function to be applied
    * @return true if succeeded, false otherwise
    */
   public static <P extends Simple, PF extends PartitionFunction<P>>
-    boolean applyPartitionFunction(Table<P> table,
-      PF function) {
+  boolean applyPartitionFunction(Table<P> table,
+                                 PF function) {
     if (function != null) {
       for (Partition<P> partition : table
-        .getPartitions()) {
+          .getPartitions()) {
         try {
           function.apply(partition.get());
         } catch (Exception e) {
@@ -258,49 +250,49 @@ public class RegroupCollective {
   }
 
   public static <P extends Simple, PF extends PartitionFunction<P>, PT extends Partitioner>
-    boolean regroupAggregate(String contextName,
-      String operationName, Table<P> table,
-      PT partitioner, PF function,
-      DataMap dataMap, Workers workers) {
+  boolean regroupAggregate(String contextName,
+                           String operationName, Table<P> table,
+                           PT partitioner, PF function,
+                           DataMap dataMap, Workers workers) {
     boolean isSuccess =
-      regroupCombine(contextName, operationName,
-        table, partitioner, dataMap, workers);
+        regroupCombine(contextName, operationName,
+            table, partitioner, dataMap, workers);
     if (!isSuccess) {
       return false;
     }
     isSuccess =
-      applyPartitionFunction(table, function);
+        applyPartitionFunction(table, function);
     return isSuccess;
   }
 
   public static <P extends Simple, PF extends PartitionFunction<P>, PT extends Partitioner>
-    boolean aggregate(String contextName,
-      String operationName, Table<P> table,
-      PT partitioner, PF function,
-      DataMap dataMap, Workers workers) {
+  boolean aggregate(String contextName,
+                    String operationName, Table<P> table,
+                    PT partitioner, PF function,
+                    DataMap dataMap, Workers workers) {
     boolean isSuccess = false;
     long time1 = System.currentTimeMillis();
     isSuccess = regroupAggregate(contextName,
-      operationName + ".regroup", table,
-      partitioner, function, dataMap, workers);
+        operationName + ".regroup", table,
+        partitioner, function, dataMap, workers);
     dataMap.cleanOperationData(contextName,
-      operationName + ".regroup");
+        operationName + ".regroup");
     if (!isSuccess) {
       return false;
     }
     long time2 = System.currentTimeMillis();
     isSuccess = AllgatherCollective.allgather(
-      contextName, operationName + ".allgather",
-      table, dataMap, workers);
+        contextName, operationName + ".allgather",
+        table, dataMap, workers);
     dataMap.cleanOperationData(contextName,
-      operationName + ".allgather");
+        operationName + ".allgather");
     if (!isSuccess) {
       return false;
     }
     long time3 = System.currentTimeMillis();
     LOG.info("Regroup-aggregate time (ms): "
-      + (time2 - time1) + " Allgather time (ms): "
-      + (time3 - time2));
+        + (time2 - time1) + " Allgather time (ms): "
+        + (time3 - time2));
     return true;
   }
 }

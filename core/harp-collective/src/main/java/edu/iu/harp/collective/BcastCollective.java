@@ -1,6 +1,6 @@
 /*
  * Copyright 2013-2017 Indiana University
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -52,10 +52,10 @@ import java.util.concurrent.TimeUnit;
 public class BcastCollective {
 
   protected static final Logger LOG =
-    Logger.getLogger(BcastCollective.class);
+      Logger.getLogger(BcastCollective.class);
 
   public static void main(String args[])
-    throws Exception {
+      throws Exception {
     String driverHost = args[0];
     int driverPort = Integer.parseInt(args[1]);
     int workerID = Integer.parseInt(args[2]);
@@ -65,8 +65,8 @@ public class BcastCollective {
     // Initialize log
     Driver.initLogger(workerID);
     LOG.info("args[] " + driverHost + " "
-      + driverPort + " " + workerID + " " + jobID
-      + " " + numBytes + " " + numLoops);
+        + driverPort + " " + workerID + " " + jobID
+        + " " + numBytes + " " + numLoops);
     // ------------------------------------------
     // Worker initialize
     EventQueue eventQueue = new EventQueue();
@@ -75,32 +75,32 @@ public class BcastCollective {
     String host = workers.getSelfInfo().getNode();
     int port = workers.getSelfInfo().getPort();
     Server server = new Server(host, port,
-      eventQueue, dataMap, workers);
+        eventQueue, dataMap, workers);
     server.start();
     String contextName = jobID + "";
     // Barrier guarantees the living workers get
     // the same view of the barrier result
     boolean isSuccess = Communication.barrier(
-      contextName, "barrier", dataMap, workers);
+        contextName, "barrier", dataMap, workers);
     LOG.info("Barrier: " + isSuccess);
     // ----------------------------------------------
     if (isSuccess) {
       try {
         runChainBcast(contextName,
-          workers.getSelfID(), numBytes, numLoops,
-          dataMap, workers);
+            workers.getSelfID(), numBytes, numLoops,
+            dataMap, workers);
       } catch (Exception e) {
         LOG.error("Fail to broadcast.", e);
       }
     }
     Driver.reportToDriver(contextName,
-      "report-to-driver", workers.getSelfID(),
-      driverHost, driverPort);
+        "report-to-driver", workers.getSelfID(),
+        driverHost, driverPort);
     ConnPool.get().clean();
     server.stop();
     ForkJoinPool.commonPool().awaitQuiescence(
-      Constant.TERMINATION_TIMEOUT,
-      TimeUnit.SECONDS);
+        Constant.TERMINATION_TIMEOUT,
+        TimeUnit.SECONDS);
     System.exit(0);
   }
 
@@ -108,18 +108,18 @@ public class BcastCollective {
    * Test for broadcasting using chain method
    */
   public static boolean runChainBcast(
-    String contextName, int workerID,
-    int numBytes, int numLoops, DataMap dataMap,
-    Workers workers) {
+      String contextName, int workerID,
+      int numBytes, int numLoops, DataMap dataMap,
+      Workers workers) {
     boolean isSuccess = runByteArrayChainBcast(
-      contextName, workerID, numBytes, numLoops,
-      dataMap, workers);
+        contextName, workerID, numBytes, numLoops,
+        dataMap, workers);
     if (!isSuccess) {
       return false;
     }
     isSuccess = runDoubleArrayTableBcast(
-      contextName, workerID, numBytes, numLoops,
-      dataMap, workers);
+        contextName, workerID, numBytes, numLoops,
+        dataMap, workers);
     if (!isSuccess) {
       return false;
     }
@@ -127,70 +127,70 @@ public class BcastCollective {
   }
 
   static ByteArray
-    generateByteArray(int numBytes) {
+  generateByteArray(int numBytes) {
     long a = System.currentTimeMillis();
     ByteArray byteArray =
-      ByteArray.create(numBytes, false);
+        ByteArray.create(numBytes, false);
     byte[] bytes = byteArray.get();
     bytes[0] = (byte) (Math.random() * 255);
     bytes[numBytes - 1] =
-      (byte) (Math.random() * 255);
+        (byte) (Math.random() * 255);
     LOG.info("Generate ByteArray: First byte: "
-      + bytes[0] + ", Last byte: "
-      + bytes[numBytes - 1]);
+        + bytes[0] + ", Last byte: "
+        + bytes[numBytes - 1]);
     LOG.info("Byte array generation time: "
-      + (System.currentTimeMillis() - a));
+        + (System.currentTimeMillis() - a));
     return byteArray;
   }
 
   static DoubleArray
-    generateDoubleArray(int numBytes) {
+  generateDoubleArray(int numBytes) {
     long start = System.currentTimeMillis();
     int size = (int) (numBytes / (double) 8);
     DoubleArray doubleArray =
-      DoubleArray.create(size, false);
+        DoubleArray.create(size, false);
     double[] doubles = doubleArray.get();
     doubles[0] = Math.random() * 1000;
     doubles[size - 1] = Math.random() * 1000;
     LOG.info(
-      "Generate Double Array: First double: "
-        + doubles[0] + ", last double: "
-        + doubles[size - 1]);
+        "Generate Double Array: First double: "
+            + doubles[0] + ", last double: "
+            + doubles[size - 1]);
     long end = System.currentTimeMillis();
     LOG.info("DoubleArray generate time: "
-      + (end - start));
+        + (end - start));
     return doubleArray;
   }
 
   public static boolean runByteArrayChainBcast(
-    String contextName, int workerID,
-    int numBytes, int numLoops, DataMap dataMap,
-    Workers workers) {
+      String contextName, int workerID,
+      int numBytes, int numLoops, DataMap dataMap,
+      Workers workers) {
     // Byte array bcast
     LinkedList<Transferable> objs =
-      new LinkedList<>();
+        new LinkedList<>();
     if (workers.isMaster()) {
       ByteArray byteArray =
-        generateByteArray(numBytes);
+          generateByteArray(numBytes);
       objs.add(byteArray);
     }
     boolean isSuccess = false;
     for (int i = 0; i < numLoops; i++) {
       long t1 = System.currentTimeMillis();
       isSuccess = Communication.chainBcastAndRecv(
-        contextName, workers.getMasterID(),
-        "byte-array-bcast-" + i, objs, workers,
-        dataMap);
+          contextName, workers.getMasterID(),
+          "byte-array-bcast-" + i, objs, workers,
+          dataMap);
       // Release recv data
       if (!workers.isMaster()) {
         ByteArray recvByteArr =
-          (ByteArray) objs.removeFirst();
+            (ByteArray) objs.removeFirst();
         int start = recvByteArr.start();
         int size = recvByteArr.size();
         LOG.info("Receive ByteArray: First byte: "
-          + recvByteArr.get()[start]
-          + ", Last byte: "
-          + recvByteArr.get()[start + size - 1]);
+            + recvByteArr.get()[start]
+            + ", Last byte: "
+            + recvByteArr.get()[start + size - 1]);
         recvByteArr.release();
       }
       if (!isSuccess) {
@@ -198,11 +198,11 @@ public class BcastCollective {
       }
       // Wait for ACK
       waitForACK(contextName,
-        "byte-array-ack-" + i,
-        workers.getMasterID(), dataMap, workers);
+          "byte-array-ack-" + i,
+          workers.getMasterID(), dataMap, workers);
       long t2 = System.currentTimeMillis();
       LOG.info("Loop " + i
-        + " byte array bcast time: " + (t2 - t1));
+          + " byte array bcast time: " + (t2 - t1));
     }
     // Release send data
     if (workers.isMaster()) {
@@ -212,73 +212,73 @@ public class BcastCollective {
   }
 
   private static void waitForACK(
-    String contextName, String operationName,
-    int bcastID, DataMap dataMap,
-    Workers workers) {
+      String contextName, String operationName,
+      int bcastID, DataMap dataMap,
+      Workers workers) {
     // Wait for the ACK object
     if (bcastID == workers.getSelfID()) {
       Data data = IOUtil.waitAndGet(dataMap,
-        contextName, operationName);
+          contextName, operationName);
       if (data != null) {
         data.release();
       }
     } else if (workers.getNextID() == bcastID) {
       Ack ack = Writable.create(Ack.class);
       LinkedList<Transferable> transList =
-        new LinkedList<>();
+          new LinkedList<>();
       transList.add(ack);
       Data ackData =
-        new Data(DataType.SIMPLE_LIST,
-          contextName, workers.getSelfID(),
-          transList, DataUtil
-            .getNumTransListBytes(transList),
-          operationName);
+          new Data(DataType.SIMPLE_LIST,
+              contextName, workers.getSelfID(),
+              transList, DataUtil
+              .getNumTransListBytes(transList),
+              operationName);
       Sender sender = new DataSender(ackData,
-        bcastID, workers, Constant.SEND_DECODE);
+          bcastID, workers, Constant.SEND_DECODE);
       sender.execute();
       ackData.release();
     }
   }
 
   public static boolean runDoubleArrayTableBcast(
-    String contextName, int workerID,
-    int numBytes, int numLoops, DataMap dataMap,
-    Workers workers) {
+      String contextName, int workerID,
+      int numBytes, int numLoops, DataMap dataMap,
+      Workers workers) {
     // Double table bcast
     Table<DoubleArray> arrTable =
-      new Table<>(0, new DoubleArrPlus());
+        new Table<>(0, new DoubleArrPlus());
     if (workers.isMaster()) {
       // Generate 8 partitions
       for (int i = 0; i < 2; i++) {
         DoubleArray doubleArray =
-          generateDoubleArray(numBytes / 8);
+            generateDoubleArray(numBytes / 8);
         arrTable.addPartition(
-          new Partition<DoubleArray>(i,
-            doubleArray));
+            new Partition<DoubleArray>(i,
+                doubleArray));
       }
     }
     boolean isSuccess = false;
     for (int i = 0; i < numLoops; i++) {
       long t1 = System.currentTimeMillis();
       isSuccess = broadcast(contextName,
-        "chain-array-table-bcast-" + i, arrTable,
-        workers.getMasterID(), false, dataMap,
-        workers);
+          "chain-array-table-bcast-" + i, arrTable,
+          workers.getMasterID(), false, dataMap,
+          workers);
       long t2 = System.currentTimeMillis();
       LOG.info(
-        "Total array table chain bcast time: "
-          + (t2 - t1));
+          "Total array table chain bcast time: "
+              + (t2 - t1));
       // Release
       if (!workers.isMaster()) {
         for (Partition<DoubleArray> partition : arrTable
-          .getPartitions()) {
+            .getPartitions()) {
           DoubleArray doubleArray =
-            partition.get();
+              partition.get();
           int start = doubleArray.start();
           int size = doubleArray.size();
           LOG.info("Receive Double Array: first: "
-            + doubleArray.get()[start]
-            + ", last: " + doubleArray.get()[start
+              + doubleArray.get()[start]
+              + ", last: " + doubleArray.get()[start
               + size - 1]);
         }
         arrTable.release();
@@ -290,24 +290,24 @@ public class BcastCollective {
     for (int i = 0; i < numLoops; i++) {
       long t1 = System.currentTimeMillis();
       isSuccess = broadcast(contextName,
-        "mst-array-table-bcast-" + i, arrTable,
-        workers.getMasterID(), true, dataMap,
-        workers);
+          "mst-array-table-bcast-" + i, arrTable,
+          workers.getMasterID(), true, dataMap,
+          workers);
       long t2 = System.currentTimeMillis();
       LOG
-        .info("Total array table mst bcast time: "
-          + (t2 - t1));
+          .info("Total array table mst bcast time: "
+              + (t2 - t1));
       // Release
       if (!workers.isMaster()) {
         for (Partition<DoubleArray> partition : arrTable
-          .getPartitions()) {
+            .getPartitions()) {
           DoubleArray doubleArray =
-            partition.get();
+              partition.get();
           int start = doubleArray.start();
           int size = doubleArray.size();
           LOG.info("Receive Double Array. first: "
-            + doubleArray.get()[start]
-            + ", last: " + doubleArray.get()[start
+              + doubleArray.get()[start]
+              + ", last: " + doubleArray.get()[start
               + size - 1]);
         }
         arrTable.release();
@@ -325,50 +325,43 @@ public class BcastCollective {
 
   /**
    * The broadcast communication operation
-   * 
-   * @param contextName
-   *          the name of the context
-   * @param operationName
-   *          the name of the operation
-   * @param table
-   *          the data Table
-   * @param bcastWorkerID
-   *          the worker which broadcasts
-   * @param useMSTBcast
-   *          use MST method or not
-   * @param dataMap
-   *          the DataMap
-   * @param workers
-   *          the Workers
+   *
+   * @param contextName   the name of the context
+   * @param operationName the name of the operation
+   * @param table         the data Table
+   * @param bcastWorkerID the worker which broadcasts
+   * @param useMSTBcast   use MST method or not
+   * @param dataMap       the DataMap
+   * @param workers       the Workers
    * @return true if succeeded, false otherwise
    */
   public static <P extends Simple> boolean
-    broadcast(String contextName,
-      String operationName, Table<P> table,
-      int bcastWorkerID, boolean useMSTBcast,
-      DataMap dataMap, Workers workers) {
+  broadcast(String contextName,
+            String operationName, Table<P> table,
+            int bcastWorkerID, boolean useMSTBcast,
+            DataMap dataMap, Workers workers) {
     if (workers.isTheOnlyWorker()) {
       return true;
     }
     if (workers.getSelfID() == bcastWorkerID) {
       int numOwnedPartitions =
-        table.getNumPartitions();
+          table.getNumPartitions();
       LinkedList<Transferable> ownedPartitions =
-        new LinkedList<>(table.getPartitions());
+          new LinkedList<>(table.getPartitions());
       Data sendData = new Data(
-        DataType.PARTITION_LIST, contextName,
-        bcastWorkerID, ownedPartitions,
-        DataUtil
-          .getNumTransListBytes(ownedPartitions),
-        operationName, numOwnedPartitions);
+          DataType.PARTITION_LIST, contextName,
+          bcastWorkerID, ownedPartitions,
+          DataUtil
+              .getNumTransListBytes(ownedPartitions),
+          operationName, numOwnedPartitions);
       Sender sender = null;
       if (useMSTBcast) {
         sender = new DataMSTBcastSender(sendData,
-          workers, Constant.MST_BCAST_DECODE);
+            workers, Constant.MST_BCAST_DECODE);
       } else {
         sender =
-          new DataChainBcastSender(sendData,
-            workers, Constant.CHAIN_BCAST_DECODE);
+            new DataChainBcastSender(sendData,
+                workers, Constant.CHAIN_BCAST_DECODE);
       }
       boolean isSuccess = sender.execute();
       sendData.releaseHeadArray();
@@ -379,12 +372,12 @@ public class BcastCollective {
     } else {
       // Wait for data
       Data recvData = IOUtil.waitAndGet(dataMap,
-        contextName, operationName);
+          contextName, operationName);
       if (recvData != null) {
         recvData.releaseHeadArray();
         recvData.releaseBodyArray();
         PartitionUtil.addPartitionsToTable(
-          recvData.getBody(), table);
+            recvData.getBody(), table);
         return true;
       } else {
         return false;
