@@ -25,7 +25,12 @@ import edu.iu.harp.resource.DoubleArray;
 import edu.iu.kmeans.common.KMeansConstants;
 
 /**
- * The idea behind this implementation is to use
+ * The idea behind this implementation is to partition the points among the mappers and
+ * do the assignment to centroid calculation in parallel.
+ *
+ * In each mapper each point is assigned to a centroid. These locally assingned points are
+ * summed up and averaged globally to get the global assignment. In order to do the global
+ * calculation, this implementation uses all-reduce collective.
  */
 public class KmeansMapper extends CollectiveMapper<String, String, Object, Object> {
   // number of features in a point
