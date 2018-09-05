@@ -1,6 +1,6 @@
 /*
  * Copyright 2013-2017 Indiana University
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -43,29 +43,28 @@ import java.util.List;
 public class DataUtil {
 
   private static final Logger LOG =
-    Logger.getLogger(DataUtil.class);
+      Logger.getLogger(DataUtil.class);
 
   /**
    * Deserialize the data from a Deserializer as a
    * ByteArray
-   * 
-   * @param din
-   *          the Deserializer
+   *
+   * @param din the Deserializer
    * @return a ByteArray deserialized from the
-   *         Deserializer
+   * Deserializer
    */
   public static ByteArray
-    deserializeByteArray(Deserializer din) {
+  deserializeByteArray(Deserializer din) {
     int bytesSize = 0;
     try {
       bytesSize = din.readInt();
     } catch (Exception e) {
       LOG.error("Fail to deserialize byte array",
-        e);
+          e);
       return null;
     }
     ByteArray byteArray =
-      ByteArray.create(bytesSize, false);
+        ByteArray.create(bytesSize, false);
     if (byteArray != null) {
       byte[] bytes = byteArray.get();
       try {
@@ -73,7 +72,7 @@ public class DataUtil {
         return byteArray;
       } catch (Exception e) {
         LOG.error(
-          "Fail to deserialize byte array", e);
+            "Fail to deserialize byte array", e);
         byteArray.release();
         return null;
       }
@@ -85,14 +84,13 @@ public class DataUtil {
   /**
    * Deserialize the data from a Deserializer as a
    * ShortArray
-   * 
-   * @param din
-   *          the Deserializer
+   *
+   * @param din the Deserializer
    * @return a ShortArray deserialized from the
-   *         Deserializer
+   * Deserializer
    */
   public static ShortArray
-    deserializeShortArray(Deserializer din) {
+  deserializeShortArray(Deserializer din) {
     int shortsSize = 0;
     try {
       shortsSize = din.readInt();
@@ -100,7 +98,7 @@ public class DataUtil {
       return null;
     }
     ShortArray shortArray =
-      ShortArray.create(shortsSize, false);
+        ShortArray.create(shortsSize, false);
     try {
       short[] shorts = shortArray.get();
       for (int i = 0; i < shortsSize; i++) {
@@ -116,14 +114,13 @@ public class DataUtil {
   /**
    * Deserialize the data from a Deserializer as a
    * IntArray
-   * 
-   * @param din
-   *          the Deserializer
+   *
+   * @param din the Deserializer
    * @return a IntArray deserialized from the
-   *         Deserializer
+   * Deserializer
    */
   public static IntArray
-    deserializeIntArray(Deserializer din) {
+  deserializeIntArray(Deserializer din) {
     int intsSize = 0;
     try {
       intsSize = din.readInt();
@@ -131,7 +128,7 @@ public class DataUtil {
       return null;
     }
     IntArray intAray =
-      IntArray.create(intsSize, false);
+        IntArray.create(intsSize, false);
     try {
       int[] ints = intAray.get();
       for (int i = 0; i < intsSize; i++) {
@@ -147,14 +144,13 @@ public class DataUtil {
   /**
    * Deserialize the data from a Deserializer as a
    * FloatArray
-   * 
-   * @param din
-   *          the Deserializer
+   *
+   * @param din the Deserializer
    * @return a FloatArray deserialized from the
-   *         Deserializer
+   * Deserializer
    */
   public static FloatArray
-    deserializeFloatArray(Deserializer din) {
+  deserializeFloatArray(Deserializer din) {
     int floatsSize = 0;
     try {
       floatsSize = din.readInt();
@@ -162,7 +158,7 @@ public class DataUtil {
       return null;
     }
     FloatArray floatArray =
-      FloatArray.create(floatsSize, false);
+        FloatArray.create(floatsSize, false);
     try {
       float[] floats = floatArray.get();
       for (int i = 0; i < floatsSize; i++) {
@@ -178,24 +174,23 @@ public class DataUtil {
   /**
    * Deserialize the data from a Deserializer as a
    * LongArray
-   * 
-   * @param din
-   *          the Deserializer
+   *
+   * @param din the Deserializer
    * @return a LongArray deserialized from the
-   *         Deserializer
+   * Deserializer
    */
   public static LongArray
-    deserializeLongArray(Deserializer din) {
+  deserializeLongArray(Deserializer din) {
     int longsSize = 0;
     try {
       longsSize = din.readInt();
     } catch (IOException e) {
       LOG.error("Fail to deserialize long array",
-        e);
+          e);
       return null;
     }
     LongArray longArray =
-      LongArray.create(longsSize, false);
+        LongArray.create(longsSize, false);
     try {
       long[] longs = longArray.get();
       for (int i = 0; i < longsSize; i++) {
@@ -204,7 +199,7 @@ public class DataUtil {
       return longArray;
     } catch (Exception e) {
       LOG.error("Fail to deserialize long array",
-        e);
+          e);
       longArray.release();
       return null;
     }
@@ -213,24 +208,23 @@ public class DataUtil {
   /**
    * Deserialize the data from a Deserializer as a
    * DoubleArray
-   * 
-   * @param din
-   *          the Deserializer
+   *
+   * @param din the Deserializer
    * @return a DoubleArray deserialized from the
-   *         Deserializer
+   * Deserializer
    */
   public static DoubleArray
-    deserializeDoubleArray(Deserializer din) {
+  deserializeDoubleArray(Deserializer din) {
     int doublesSize = 0;
     try {
       doublesSize = din.readInt();
     } catch (IOException e) {
       LOG.error(
-        "Fail to deserialize double array", e);
+          "Fail to deserialize double array", e);
       return null;
     }
     DoubleArray doubleArray =
-      DoubleArray.create(doublesSize, false);
+        DoubleArray.create(doublesSize, false);
     if (doubleArray == null) {
       return null;
     }
@@ -242,7 +236,7 @@ public class DataUtil {
       return doubleArray;
     } catch (Exception e) {
       LOG.error(
-        "Fail to deserialize double array", e);
+          "Fail to deserialize double array", e);
       doubleArray.release();
       return null;
     }
@@ -251,24 +245,23 @@ public class DataUtil {
   /**
    * Deserialize the data from a Deserializer as a
    * Writable
-   * 
-   * @param din
-   *          the Deserializer
+   *
+   * @param din the Deserializer
    * @return a Writable deserialized from the
-   *         Deserializer
+   * Deserializer
    */
   public static Writable
-    deserializeWritable(DataInput din) {
+  deserializeWritable(DataInput din) {
     String className = null;
     try {
       className = din.readUTF();
     } catch (Exception e) {
       LOG.error(
-        "Fail to deserialize the class name", e);
+          "Fail to deserialize the class name", e);
       return null;
     }
     Writable obj = Writable
-      .create(Writable.forClass(className));
+        .create(Writable.forClass(className));
     if (obj == null) {
       return null;
     }
@@ -277,9 +270,9 @@ public class DataUtil {
       return obj;
     } catch (Exception e) {
       LOG.error(
-        "Fail to deserialize writable with class name "
-          + className,
-        e);
+          "Fail to deserialize writable with class name "
+              + className,
+          e);
       obj.release();
       return null;
     }
@@ -288,18 +281,17 @@ public class DataUtil {
   /**
    * Decode the ByteArray as a list of
    * Transferable objects
-   * 
-   * @param byteArray
-   *          the ByteArray to be decoded
+   *
+   * @param byteArray the ByteArray to be decoded
    * @return a list of Transferable objects
    */
   public static List<Transferable>
-    decodeSimpleList(final ByteArray byteArray) {
+  decodeSimpleList(final ByteArray byteArray) {
     List<Transferable> objs = new LinkedList<>();
     Deserializer decoder =
-      new Deserializer(byteArray);
+        new Deserializer(byteArray);
     while (decoder.getPos() < decoder
-      .getLength()) {
+        .getLength()) {
       byte dataType = DataType.UNKNOWN_DATA_TYPE;
       try {
         dataType = decoder.readByte();
@@ -339,26 +331,25 @@ public class DataUtil {
 
   /**
    * Decode the ByteArray as a list of Partitions
-   * 
-   * @param byteArray
-   *          the ByteArray to be decoded
+   *
+   * @param byteArray the ByteArray to be decoded
    * @return a list of Partitions
    */
   public static List<Transferable>
-    decodePartitionList(
+  decodePartitionList(
       final ByteArray byteArray) {
     List<Transferable> partitions =
-      new LinkedList<>();
+        new LinkedList<>();
     Deserializer decoder =
-      new Deserializer(byteArray);
+        new Deserializer(byteArray);
     while (decoder.getPos() < decoder
-      .getLength()) {
+        .getLength()) {
       byte dataType = DataType.UNKNOWN_DATA_TYPE;
       try {
         dataType = decoder.readByte();
       } catch (Exception e) {
         LOG.error(
-          "Fail to decode partition list.", e);
+            "Fail to decode partition list.", e);
         releaseTransList(partitions);
         return null;
       }
@@ -369,17 +360,17 @@ public class DataUtil {
         partition = deserializeByteArray(decoder);
       } else if (dataType == DataType.SHORT_ARRAY) {
         partition =
-          deserializeShortArray(decoder);
+            deserializeShortArray(decoder);
       } else if (dataType == DataType.INT_ARRAY) {
         partition = deserializeIntArray(decoder);
       } else if (dataType == DataType.FLOAT_ARRAY) {
         partition =
-          deserializeFloatArray(decoder);
+            deserializeFloatArray(decoder);
       } else if (dataType == DataType.LONG_ARRAY) {
         partition = deserializeLongArray(decoder);
       } else if (dataType == DataType.DOUBLE_ARRAY) {
         partition =
-          deserializeDoubleArray(decoder);
+            deserializeDoubleArray(decoder);
       } else if (dataType == DataType.WRITABLE) {
         partition = deserializeWritable(decoder);
       } else {
@@ -392,7 +383,7 @@ public class DataUtil {
         try {
           int partitionID = decoder.readInt();
           partitions.add(new Partition<Simple>(
-            partitionID, partition));
+              partitionID, partition));
         } catch (IOException e) {
           releaseTransList(partitions);
           return null;
@@ -405,26 +396,25 @@ public class DataUtil {
   /**
    * Serialize multiple Transferable with
    * different data types
-   * 
-   * @param objs
-   *          the data to be serialized
+   *
+   * @param objs the data to be serialized
    * @return the ByteArray resulted from
-   *         serialization
+   * serialization
    */
   public static ByteArray
-    encodeTransList(List<Transferable> objs) {
+  encodeTransList(List<Transferable> objs) {
     int size = getNumTransListBytes(objs);
     ByteArray byteArray =
-      ByteArray.create(size, true);
+        ByteArray.create(size, true);
     if (byteArray != null) {
       Serializer serializer =
-        new Serializer(byteArray);
+          new Serializer(byteArray);
       try {
         encodeTransList(objs, size, serializer);
         return byteArray;
       } catch (Exception e) {
         LOG.error(
-          "Fail to encode transferable list.", e);
+            "Fail to encode transferable list.", e);
         byteArray.release();
         return null;
       }
@@ -435,13 +425,12 @@ public class DataUtil {
 
   /**
    * Get the size in bytes of the encoded data
-   * 
-   * @param objs
-   *          the data
+   *
+   * @param objs the data
    * @return the size in bytes of the data
    */
   public static int getNumTransListBytes(
-    List<Transferable> objs) {
+      List<Transferable> objs) {
     int size = 0;
     for (Transferable obj : objs) {
       size += obj.getNumEnocdeBytes();
@@ -454,21 +443,18 @@ public class DataUtil {
 
   /**
    * Encode the data to DataOutput
-   * 
-   * @param objs
-   *          the objects to be encoded
-   * @param size
-   *          the size of the encoded data
-   * @param dataOut
-   *          the DataOutput
-   * @throws Exception
+   *
+   * @param objs    the objects to be encoded
+   * @param size    the size of the encoded data
+   * @param dataOut the DataOutput
+   * @throws Exception if an error happens
    */
   public static void encodeTransList(
-    List<Transferable> objs, int size,
-    DataOutput dataOut) throws Exception {
+      List<Transferable> objs, int size,
+      DataOutput dataOut) throws Exception {
     if (size == 1) {
       dataOut
-        .writeByte(DataType.UNKNOWN_DATA_TYPE);
+          .writeByte(DataType.UNKNOWN_DATA_TYPE);
     } else {
       for (Transferable obj : objs) {
         obj.encode(dataOut);
@@ -479,12 +465,10 @@ public class DataUtil {
   /**
    * Transferable List may include different types
    * Identify each of them and release
-   * 
-   * @param pool
-   * @param trans
+   *
+   * @param transList list
    */
-  public static void releaseTransList(
-    List<Transferable> transList) {
+  public static void releaseTransList(List<Transferable> transList) {
     for (Transferable trans : transList) {
       trans.release();
     }
@@ -497,22 +481,17 @@ public class DataUtil {
    * DataMap; else if the Data isData, and the
    * bodyType of the Data is DataType.SIMPLE_LIST,
    * add it to the EventQueue
-   * 
-   * @param selfID
-   *          the ID of current worker
-   * @param eventQueue
-   *          the queue for events
-   * @param eventType
-   *          the type of the event
-   * @param dataMap
-   *          the DataMap
-   * @param data
-   *          the Data
+   *
+   * @param selfID     the ID of current worker
+   * @param eventQueue the queue for events
+   * @param eventType  the type of the event
+   * @param dataMap    the DataMap
+   * @param data       the Data
    */
   public static void addDataToQueueOrMap(
-    int selfID, EventQueue eventQueue,
-    EventType eventType, DataMap dataMap,
-    Data data) {
+      int selfID, EventQueue eventQueue,
+      EventType eventType, DataMap dataMap,
+      Data data) {
     // LOG.info("Add data - " + "context name: "
     // + data.getContextName() + ", worker ID: "
     // + data.getWorkerID() + ", operation name: "
@@ -525,23 +504,23 @@ public class DataUtil {
     // + data.getHeadStatus() + ", body status: "
     // + data.getBodyStatus());
     if ((data
-      .getHeadStatus() == DataStatus.ENCODED_ARRAY_DECODED)
-      && (data
+        .getHeadStatus() == DataStatus.ENCODED_ARRAY_DECODED)
+        && (data
         .getBodyStatus() == DataStatus.ENCODED_ARRAY
         || data
-          .getBodyStatus() == DataStatus.ENCODED_ARRAY_DECODED)) {
+        .getBodyStatus() == DataStatus.ENCODED_ARRAY_DECODED)) {
       if (data.isOperationData()) {
         dataMap.putData(data);
       } else if (data.isData()) {
         if (data
-          .getBodyType() == DataType.SIMPLE_LIST) {
+            .getBodyType() == DataType.SIMPLE_LIST) {
           List<Transferable> objs =
-            data.getBody();
+              data.getBody();
           for (Transferable obj : objs) {
             eventQueue.addEvent(new Event(
-              eventType, data.getContextName(),
-              data.getWorkerID(), selfID,
-              (Simple) obj));
+                eventType, data.getContextName(),
+                data.getWorkerID(), selfID,
+                (Simple) obj));
           }
         }
       }

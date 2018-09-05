@@ -1,6 +1,6 @@
 /*
  * Copyright 2013-2017 Indiana University
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -38,28 +38,24 @@ public class Connection {
 
   /**
    * Construct a connection
-   * 
-   * @param node
-   *          the host
-   * @param port
-   *          the port
-   * @param timeOutMs
-   *          the timeout value to be used in
-   *          milliseconds.
-   * @param useCache
-   *          use cache or not
+   *
+   * @param node      the host
+   * @param port      the port
+   * @param timeOutMs the timeout value to be used in
+   *                  milliseconds.
+   * @param useCache  use cache or not
    * @throws Exception
    */
   Connection(String node, int port, int timeOutMs,
-    boolean useCache) throws Exception {
+             boolean useCache) throws Exception {
     this.node = node;
     this.port = port;
     this.useCache = useCache;
     try {
       InetAddress addr =
-        InetAddress.getByName(node);
+          InetAddress.getByName(node);
       SocketAddress sockaddr =
-        new InetSocketAddress(addr, port);
+          new InetSocketAddress(addr, port);
       this.socket = new Socket();
       IOUtil.setSocketOptions(socket);
       this.socket.connect(sockaddr, timeOutMs);
@@ -73,7 +69,7 @@ public class Connection {
 
   /**
    * Get the host
-   * 
+   *
    * @return the host
    */
   public String getNode() {
@@ -82,7 +78,7 @@ public class Connection {
 
   /**
    * Get the port
-   * 
+   *
    * @return the port
    */
   public int getPort() {
@@ -91,7 +87,7 @@ public class Connection {
 
   /**
    * Get the OutputStream
-   * 
+   *
    * @return the OutputStream
    */
   public OutputStream getOutputStream() {
@@ -100,7 +96,7 @@ public class Connection {
 
   /**
    * Get the InputStream
-   * 
+   *
    * @return the InputStream
    */
   public InputStream getInputDtream() {
@@ -112,7 +108,7 @@ public class Connection {
    */
   void close() {
     if (out != null || in != null
-      || socket != null) {
+        || socket != null) {
       try {
         if (out != null) {
           out.close();
@@ -139,19 +135,16 @@ public class Connection {
 
   /**
    * Get a connection from the ConnPool
-   * 
-   * @param host
-   *          the host
-   * @param port
-   *          the port
-   * @param useCache
-   *          use cache or not
+   *
+   * @param host     the host
+   * @param port     the port
+   * @param useCache use cache or not
    * @return the connection object
    */
   public static Connection create(String host,
-    int port, boolean useCache) {
+                                  int port, boolean useCache) {
     return ConnPool.get().getConn(host, port,
-      useCache);
+        useCache);
   }
 
   /**

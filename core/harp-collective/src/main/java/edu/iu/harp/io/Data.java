@@ -1,6 +1,6 @@
 /*
  * Copyright 2013-2017 Indiana University
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -31,23 +31,37 @@ import java.util.List;
 public class Data {
 
   private static final Logger LOG =
-    Logger.getLogger(Data.class);
-  /** The type of body data, array or object */
+      Logger.getLogger(Data.class);
+  /**
+   * The type of body data, array or object
+   */
   private byte bodyType =
-    DataType.UNKNOWN_DATA_TYPE;
-  /** This usually is the name of event handler */
+      DataType.UNKNOWN_DATA_TYPE;
+  /**
+   * This usually is the name of event handler
+   */
   private String contextName = null;
-  /** Source worker ID */
+  /**
+   * Source worker ID
+   */
   private int workerID =
-    Constant.UNKNOWN_WORKER_ID;
-  /** Only required in collective communication */
+      Constant.UNKNOWN_WORKER_ID;
+  /**
+   * Only required in collective communication
+   */
   private String operationName = null;
-  /** Only required in collective communication */
+  /**
+   * Only required in collective communication
+   */
   private int partitionID =
-    Constant.UNKNOWN_PARTITION_ID;
-  /** The size in bytes of the body */
+      Constant.UNKNOWN_PARTITION_ID;
+  /**
+   * The size in bytes of the body
+   */
   private int bodySize = 0;
-  /** Data object contained */
+  /**
+   * Data object contained
+   */
   private List<Transferable> body = null;
 
   private ByteArray headArray = null;
@@ -56,9 +70,11 @@ public class Data {
   private DataStatus headStatus;
   private DataStatus bodyStatus;
 
-  /** Construct a data */
+  /**
+   * Construct a data
+   */
   public Data(byte type, String conName, int wID,
-    List<Transferable> object, int s) {
+              List<Transferable> object, int s) {
     bodyType = type;
     contextName = conName;
     workerID = wID;
@@ -73,10 +89,12 @@ public class Data {
     }
   }
 
-  /** Construct an operation data */
+  /**
+   * Construct an operation data
+   */
   public Data(byte type, String conName, int wID,
-    List<Transferable> object, int s,
-    String opName) {
+              List<Transferable> object, int s,
+              String opName) {
     bodyType = type;
     contextName = conName;
     workerID = wID;
@@ -96,8 +114,8 @@ public class Data {
    * Construct a partition data in an operation
    */
   public Data(byte type, String conName, int wID,
-    List<Transferable> object, int s,
-    String opName, int parID) {
+              List<Transferable> object, int s,
+              String opName, int parID) {
     bodyType = type;
     contextName = conName;
     workerID = wID;
@@ -118,7 +136,7 @@ public class Data {
     headArray = headArr;
     headStatus = DataStatus.ENCODED_ARRAY;
     if (headArray == null
-      || headArray.get() == null) {
+        || headArray.get() == null) {
       headArray = null;
       headStatus = DataStatus.DECODE_FAILED;
     }
@@ -127,15 +145,15 @@ public class Data {
   }
 
   public Data(ByteArray headArr,
-    ByteArray bodyArr) {
+              ByteArray bodyArr) {
     headArray = headArr;
     bodyArray = bodyArr;
     headStatus = DataStatus.ENCODED_ARRAY;
     bodyStatus = DataStatus.ENCODED_ARRAY;
     if (headArray == null
-      || headArray.get() == null
-      || bodyArray == null
-      || bodyArray.get() == null) {
+        || headArray.get() == null
+        || bodyArray == null
+        || bodyArray.get() == null) {
       headArray = null;
       headStatus = DataStatus.DECODE_FAILED;
       bodyArray = null;
@@ -149,9 +167,9 @@ public class Data {
    */
   public boolean isData() {
     if (bodyType == DataType.UNKNOWN_DATA_TYPE
-      || contextName == null || bodySize == 0
-    // We don't detect worker ID
-    ) {
+        || contextName == null || bodySize == 0
+      // We don't detect worker ID
+        ) {
       return false;
     }
     return true;
@@ -159,7 +177,7 @@ public class Data {
 
   /**
    * Check if this is an operation data
-   * 
+   *
    * @return true if this is an operation data
    */
   public boolean isOperationData() {
@@ -172,7 +190,7 @@ public class Data {
 
   /**
    * Check if this is a partition data
-   * 
+   *
    * @return true if this is a partition data
    */
   public boolean isPartitionData() {
@@ -198,7 +216,7 @@ public class Data {
 
   /**
    * Get the type of the body
-   * 
+   *
    * @return the type of the body
    */
   public byte getBodyType() {
@@ -207,7 +225,7 @@ public class Data {
 
   /**
    * Get the name of the context
-   * 
+   *
    * @return the name of the context
    */
   public String getContextName() {
@@ -216,7 +234,7 @@ public class Data {
 
   /**
    * Get the ID of the Worker
-   * 
+   *
    * @return the ID of the Worker
    */
   public int getWorkerID() {
@@ -225,7 +243,7 @@ public class Data {
 
   /**
    * Get the name of the operation
-   * 
+   *
    * @return the name of the operation
    */
   public String getOperationName() {
@@ -234,7 +252,7 @@ public class Data {
 
   /**
    * Get the ID of the partition
-   * 
+   *
    * @return the ID of the partition
    */
   public int getPartitionID() {
@@ -243,7 +261,7 @@ public class Data {
 
   /**
    * Get the size of the body
-   * 
+   *
    * @return the size of the body
    */
   public int getBodySize() {
@@ -252,7 +270,7 @@ public class Data {
 
   /**
    * Get the body
-   * 
+   *
    * @return the body
    */
   public List<Transferable> getBody() {
@@ -261,7 +279,7 @@ public class Data {
 
   /**
    * Get the head array
-   * 
+   *
    * @return the head array
    */
   public ByteArray getHeadArray() {
@@ -270,7 +288,7 @@ public class Data {
 
   /**
    * Get the body array
-   * 
+   *
    * @return the body array
    */
   public ByteArray getBodyArray() {
@@ -279,7 +297,7 @@ public class Data {
 
   /**
    * Get the DataStatus of the head
-   * 
+   *
    * @return the DataStatus of the head
    */
   public DataStatus getHeadStatus() {
@@ -288,7 +306,7 @@ public class Data {
 
   /**
    * Get the DataStatus of the body
-   * 
+   *
    * @return the DataStatus of the body
    */
   public DataStatus getBodyStatus() {
@@ -347,7 +365,7 @@ public class Data {
     // In these two cases
     // we need to release body object
     if (bodyStatus == DataStatus.DECODED
-      || bodyStatus == DataStatus.ENCODE_FAILED_DECODED) {
+        || bodyStatus == DataStatus.ENCODE_FAILED_DECODED) {
       releaseBody(body);
     }
     resetData();
@@ -357,18 +375,17 @@ public class Data {
 
   /**
    * Release the body object
-   * 
-   * @param trans
-   *          the body
+   *
+   * @param trans the body
    */
   private void
-    releaseBody(List<Transferable> trans) {
+  releaseBody(List<Transferable> trans) {
     DataUtil.releaseTransList(trans);
   }
 
   /**
    * Decode the headArray as the head
-   * 
+   *
    * @return
    */
   public DataStatus decodeHeadArray() {
@@ -377,7 +394,7 @@ public class Data {
       // If head array is null, the status cannot
       // be encoded array
       Deserializer deserializer =
-        new Deserializer(headArray);
+          new Deserializer(headArray);
       boolean isFailed = false;
       try {
         bodyType = deserializer.readByte();
@@ -391,39 +408,39 @@ public class Data {
         isFailed = true;
       }
       if (!isFailed && (deserializer
-        .getPos() < deserializer.getLength())) {
+          .getPos() < deserializer.getLength())) {
         try {
           operationName = deserializer.readUTF();
         } catch (IOException e) {
           LOG.error(
-            "Fail to decode operation name", e);
+              "Fail to decode operation name", e);
           resetHead();
           isFailed = true;
         }
       }
       if (!isFailed && (deserializer
-        .getPos() < deserializer.getLength())) {
+          .getPos() < deserializer.getLength())) {
         try {
           partitionID = deserializer.readInt();
         } catch (IOException e) {
           LOG.error("Fail to decode partition ID",
-            e);
+              e);
           resetHead();
           isFailed = true;
         }
       }
       if (isFailed) {
         headStatus =
-          DataStatus.ENCODED_ARRAY_DECODE_FAILED;
+            DataStatus.ENCODED_ARRAY_DECODE_FAILED;
       } else {
         headStatus =
-          DataStatus.ENCODED_ARRAY_DECODED;
+            DataStatus.ENCODED_ARRAY_DECODED;
         if (bodyArray == null
-          && bodyStatus == DataStatus.DECODE_FAILED) {
+            && bodyStatus == DataStatus.DECODE_FAILED) {
           // Prepare body array
           // if there is no such one
           bodyArray =
-            ByteArray.create(bodySize, true);
+              ByteArray.create(bodySize, true);
           if (bodyArray != null) {
             bodyStatus = DataStatus.ENCODED_ARRAY;
           }
@@ -447,33 +464,33 @@ public class Data {
 
   /**
    * Decode the bodyArray as the body
-   * 
+   *
    * @return the DataStatus
    */
   public DataStatus decodeBodyArray() {
     if ((headStatus == DataStatus.DECODED
-      || headStatus == DataStatus.ENCODED_ARRAY_DECODED
-      || headStatus == DataStatus.ENCODE_FAILED_DECODED)
-      && bodyStatus == DataStatus.ENCODED_ARRAY) {
+        || headStatus == DataStatus.ENCODED_ARRAY_DECODED
+        || headStatus == DataStatus.ENCODE_FAILED_DECODED)
+        && bodyStatus == DataStatus.ENCODED_ARRAY) {
       // If body status is encoded array
       // body array cannot be null.
       // body object must be null;
       if (bodyType == DataType.SIMPLE_LIST) {
         body =
-          DataUtil.decodeSimpleList(bodyArray);
+            DataUtil.decodeSimpleList(bodyArray);
       } else if (bodyType == DataType.PARTITION_LIST) {
         body =
-          DataUtil.decodePartitionList(bodyArray);
+            DataUtil.decodePartitionList(bodyArray);
       } else {
         LOG.error("Cannot decode unknown body: "
-          + bodyType);
+            + bodyType);
       }
       if (body == null) {
         bodyStatus =
-          DataStatus.ENCODED_ARRAY_DECODE_FAILED;
+            DataStatus.ENCODED_ARRAY_DECODE_FAILED;
       } else {
         bodyStatus =
-          DataStatus.ENCODED_ARRAY_DECODED;
+            DataStatus.ENCODED_ARRAY_DECODED;
       }
     }
     return bodyStatus;
@@ -481,7 +498,7 @@ public class Data {
 
   /**
    * Encode the head as a ByteArray
-   * 
+   *
    * @return the DataStatus
    */
   public DataStatus encodeHead() {
@@ -491,18 +508,18 @@ public class Data {
       boolean isParData = isPartitionData();
       // bodyType, contextName, workerID, bodySize
       int headArrSize =
-        9 + (4 + 2 * contextName.length());
+          9 + (4 + 2 * contextName.length());
       if (isOpData) {
         headArrSize +=
-          (4 + 2 * operationName.length());
+            (4 + 2 * operationName.length());
       }
       if (isParData) {
         headArrSize += 4;
       }
       headArray =
-        ByteArray.create(headArrSize, true);
+          ByteArray.create(headArrSize, true);
       Serializer serializer =
-        new Serializer(headArray);
+          new Serializer(headArray);
       boolean isFailed = false;
       try {
         serializer.writeByte(bodyType);
@@ -511,9 +528,9 @@ public class Data {
         serializer.writeInt(bodySize);
       } catch (Exception e) {
         LOG.error(
-          "Fail to encode body type, context name"
-            + "and worker ID.",
-          e);
+            "Fail to encode body type, context name"
+                + "and worker ID.",
+            e);
         isFailed = true;
       }
       if (!isFailed & isOpData) {
@@ -521,7 +538,7 @@ public class Data {
           serializer.writeUTF(operationName);
         } catch (Exception e) {
           LOG.error(
-            "Fail to encode operation name.", e);
+              "Fail to encode operation name.", e);
           isFailed = true;
         }
       }
@@ -530,7 +547,7 @@ public class Data {
           serializer.writeInt(partitionID);
         } catch (Exception e) {
           LOG.error(
-            "Fail to encode parititon ID.", e);
+              "Fail to encode parititon ID.", e);
           isFailed = true;
         }
       }
@@ -542,10 +559,10 @@ public class Data {
         headArray.release();
         headArray = null;
         headStatus =
-          DataStatus.ENCODE_FAILED_DECODED;
+            DataStatus.ENCODE_FAILED_DECODED;
       } else {
         headStatus =
-          DataStatus.ENCODED_ARRAY_DECODED;
+            DataStatus.ENCODED_ARRAY_DECODED;
       }
     }
     return headStatus;
@@ -553,43 +570,43 @@ public class Data {
 
   /**
    * Encode the body as a ByteArray
-   * 
+   *
    * @return the DataStatus
    */
   public DataStatus encodeBody() {
     if (bodyStatus == DataStatus.DECODED) {
       if (headStatus == DataStatus.DECODED
-        || headStatus == DataStatus.ENCODED_ARRAY_DECODED
-        || headStatus == DataStatus.ENCODE_FAILED_DECODED) {
+          || headStatus == DataStatus.ENCODED_ARRAY_DECODED
+          || headStatus == DataStatus.ENCODE_FAILED_DECODED) {
         // Use body size info for encoding
         bodyArray =
-          ByteArray.create(bodySize, true);
+            ByteArray.create(bodySize, true);
       } else {
         int size =
-          DataUtil.getNumTransListBytes(body);
+            DataUtil.getNumTransListBytes(body);
         bodyArray = ByteArray.create(size, true);
       }
       DataOutput dataOut =
-        new Serializer(bodyArray);
+          new Serializer(bodyArray);
       if (bodyType == DataType.SIMPLE_LIST
-        || bodyType == DataType.PARTITION_LIST) {
+          || bodyType == DataType.PARTITION_LIST) {
         try {
           DataUtil.encodeTransList(body, bodySize,
-            dataOut);
+              dataOut);
         } catch (Exception e) {
           bodyArray.release();
           bodyArray = null;
         }
       } else {
         LOG.info(
-          "Cannot encode unknown data type.");
+            "Cannot encode unknown data type.");
       }
       if (bodyArray != null) {
         bodyStatus =
-          DataStatus.ENCODED_ARRAY_DECODED;
+            DataStatus.ENCODED_ARRAY_DECODED;
       } else {
         bodyStatus =
-          DataStatus.ENCODE_FAILED_DECODED;
+            DataStatus.ENCODE_FAILED_DECODED;
       }
     }
     return bodyStatus;

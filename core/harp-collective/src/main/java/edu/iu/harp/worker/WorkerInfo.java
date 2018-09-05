@@ -1,6 +1,6 @@
 /*
  * Copyright 2013-2017 Indiana University
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -22,13 +22,15 @@ package edu.iu.harp.worker;
 public class WorkerInfo {
 
   private final int id;
-  /** Hostname or IP */
+  /**
+   * Hostname or IP
+   */
   private final String node;
   private final int port;
   private final int rack;
 
   public WorkerInfo(int id, String node, int port,
-    int rack) {
+                    int rack) {
     this.id = id;
     this.node = node;
     this.port = port;
@@ -37,7 +39,7 @@ public class WorkerInfo {
 
   /**
    * Get the id
-   * 
+   *
    * @return the id
    */
   public int getID() {
@@ -46,7 +48,7 @@ public class WorkerInfo {
 
   /**
    * Get the hostname or IP
-   * 
+   *
    * @return the hostname or IP
    */
   public String getNode() {
@@ -55,7 +57,7 @@ public class WorkerInfo {
 
   /**
    * Get the port
-   * 
+   *
    * @return the port
    */
   public int getPort() {
@@ -64,7 +66,7 @@ public class WorkerInfo {
 
   /**
    * Get the rack id
-   * 
+   *
    * @return the rack id
    */
   public int getRack() {

@@ -1,6 +1,6 @@
 /*
  * Copyright 2013-2017 Indiana University
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -37,15 +37,15 @@ public class DataSender extends Sender {
 
   @SuppressWarnings("unused")
   private static final Logger LOG =
-    Logger.getLogger(DataSender.class);
+      Logger.getLogger(DataSender.class);
 
   public DataSender(Data data, int destWorkerID,
-    Workers workers, byte command) {
+                    Workers workers, byte command) {
     super(data, destWorkerID, workers, command);
   }
 
   public DataSender(Data data, String host,
-    int port, byte command) {
+                    int port, byte command) {
     super(data, host, port, command);
   }
 
@@ -54,14 +54,14 @@ public class DataSender extends Sender {
    */
   @Override
   protected void handleData(final Connection conn,
-    final Data data) throws Exception {
+                            final Data data) throws Exception {
     // Get head size and body size
     int headArrSize = getHeadSize(data);
     ByteArray opArray =
-      getOPByteArray(headArrSize);
+        getOPByteArray(headArrSize);
     if (opArray == null) {
       throw new IOException(
-        "Cannot get op array.");
+          "Cannot get op array.");
     }
     try {
       sendDataBytes(conn, opArray, data);
@@ -74,11 +74,10 @@ public class DataSender extends Sender {
 
   /**
    * Get the size of the head array
-   * 
-   * @param data
-   *          the Data
+   *
+   * @param data the Data
    * @return the size of the head array of the
-   *         data
+   * data
    */
   protected int getHeadSize(Data data) {
     return data.getHeadArray().size();
@@ -87,19 +86,18 @@ public class DataSender extends Sender {
   /**
    * Get the ByteArray storing the size of the
    * head array
-   * 
-   * @param headArrSize
-   *          the size of the head array
+   *
+   * @param headArrSize the size of the head array
    * @return the ByteArray storing the size of the
-   *         head array
+   * head array
    */
   protected ByteArray
-    getOPByteArray(int headArrSize) {
+  getOPByteArray(int headArrSize) {
     ByteArray opArray = ByteArray.create(4, true);
     if (opArray != null) {
       try {
         Serializer serializer =
-          new Serializer(opArray);
+            new Serializer(opArray);
         serializer.writeInt(headArrSize);
         return opArray;
       } catch (Exception e) {
@@ -113,19 +111,16 @@ public class DataSender extends Sender {
 
   /**
    * Send the data
-   * 
-   * @param conn
-   *          the Connection object
-   * @param opArray
-   *          the ByteArray storing the size of
-   *          the head array
-   * @param data
-   *          the Data to be sent
+   *
+   * @param conn    the Connection object
+   * @param opArray the ByteArray storing the size of
+   *                the head array
+   * @param data    the Data to be sent
    * @throws IOException
    */
   protected void sendDataBytes(Connection conn,
-    final ByteArray opArray, final Data data)
-    throws IOException {
+                               final ByteArray opArray, final Data data)
+      throws IOException {
     // Get op bytes and size
     OutputStream out = conn.getOutputStream();
     byte[] opBytes = opArray.get();
@@ -137,12 +132,12 @@ public class DataSender extends Sender {
     try {
       out.write(getCommand());
       IOUtil.sendBytes(out, opBytes, 0,
-        opArrSize);
+          opArrSize);
       out.flush();
       // Send head bytes
       if (headArrSize > 0) {
         IOUtil.sendBytes(out, headBytes, 0,
-          headArrSize);
+            headArrSize);
       }
       sendBodyBytes(out, data);
     } catch (IOException e) {
@@ -152,26 +147,24 @@ public class DataSender extends Sender {
 
   /**
    * Send the data body
-   * 
-   * @param out
-   *          the OutputStream
-   * @param data
-   *          the Data
+   *
+   * @param out  the OutputStream
+   * @param data the Data
    * @throws IOException
    */
   private void sendBodyBytes(
-    final OutputStream out, final Data data)
-    throws IOException {
+      final OutputStream out, final Data data)
+      throws IOException {
     // Send content data, check the array size
     // first. Sending or receiving null array is
     // allowed
     DataStatus bodyStatus = data.getBodyStatus();
     if (bodyStatus == DataStatus.ENCODED_ARRAY_DECODED
-      || bodyStatus == DataStatus.ENCODED_ARRAY
-      || bodyStatus == DataStatus.ENCODED_ARRAY_DECODE_FAILED) {
+        || bodyStatus == DataStatus.ENCODED_ARRAY
+        || bodyStatus == DataStatus.ENCODED_ARRAY_DECODE_FAILED) {
       ByteArray bodyArray = data.getBodyArray();
       IOUtil.sendBytes(out, bodyArray.get(),
-        bodyArray.start(), bodyArray.size());
+          bodyArray.start(), bodyArray.size());
     }
   }
 }

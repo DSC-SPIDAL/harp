@@ -1,6 +1,6 @@
 /*
  * Copyright 2013-2017 Indiana University
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -31,9 +31,11 @@ public class IntCount extends Value {
   private int val;
   private int count;
 
-  public IntCount() {
-  }
-
+  /**
+   * Construct
+   * @param v value
+   * @param c count
+   */
   public IntCount(int v, int c) {
     this.val = v;
     this.count = c;
@@ -41,9 +43,8 @@ public class IntCount extends Value {
 
   /**
    * Set the value
-   * 
-   * @param val
-   *          the value
+   *
+   * @param val the value
    */
   public void setInt(int val) {
     this.val = val;
@@ -51,7 +52,7 @@ public class IntCount extends Value {
 
   /**
    * Get the value
-   * 
+   *
    * @return the value
    */
   public int getInt() {
@@ -60,7 +61,7 @@ public class IntCount extends Value {
 
   /**
    * Get the count
-   * 
+   *
    * @return the count
    */
   public int getCount() {
@@ -69,9 +70,8 @@ public class IntCount extends Value {
 
   /**
    * Set the count
-   * 
-   * @param count
-   *          the count
+   *
+   * @param count the count
    */
   public void setCount(int count) {
     this.count = count;
@@ -82,7 +82,7 @@ public class IntCount extends Value {
    */
   @Override
   public void write(DataOutput out)
-    throws IOException {
+      throws IOException {
     out.writeInt(val);
     out.writeInt(count);
   }
@@ -92,7 +92,7 @@ public class IntCount extends Value {
    */
   @Override
   public void read(DataInput in)
-    throws IOException {
+      throws IOException {
     this.val = in.readInt();
     this.count = in.readInt();
   }

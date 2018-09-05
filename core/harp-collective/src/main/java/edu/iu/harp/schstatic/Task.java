@@ -1,6 +1,6 @@
 /*
  * Copyright 2013-2017 Indiana University
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -27,9 +27,8 @@ public abstract class Task<I, O> {
 
   /**
    * The main computation of the task
-   * 
-   * @param input
-   *          the input
+   *
+   * @param input the input
    * @return the output
    * @throws Exception
    */
@@ -37,7 +36,7 @@ public abstract class Task<I, O> {
 
   /**
    * Get the ID of the task
-   * 
+   *
    * @return
    */
   public int getTaskID() {
@@ -46,7 +45,7 @@ public abstract class Task<I, O> {
 
   /**
    * Set the ID of the task
-   * 
+   *
    * @param taskID
    */
   void setTaskID(int taskID) {
@@ -55,7 +54,7 @@ public abstract class Task<I, O> {
 
   /**
    * Get the number of the task
-   * 
+   *
    * @return
    */
   public int getNumTasks() {
@@ -64,7 +63,7 @@ public abstract class Task<I, O> {
 
   /**
    * Set the number of the task
-   * 
+   *
    * @param numTasks
    */
   void setNumTasks(int numTasks) {
@@ -73,7 +72,7 @@ public abstract class Task<I, O> {
 
   /**
    * Get the Submitter of this task
-   * 
+   *
    * @return the Submitter
    */
   public Submitter<I> getSubmitter() {
@@ -82,9 +81,8 @@ public abstract class Task<I, O> {
 
   /**
    * Set the Submitter for this task
-   * 
-   * @param submitter
-   *          the Submitter
+   *
+   * @param submitter the Submitter
    */
   void setSubmitter(Submitter<I> submitter) {
     this.submitter = submitter;

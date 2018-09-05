@@ -1,6 +1,6 @@
 /*
  * Copyright 2013-2017 Indiana University
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -37,18 +37,24 @@ import java.util.TreeMap;
 public class Nodes {
 
   private static final Logger LOG =
-    Logger.getLogger(Nodes.class);
+      Logger.getLogger(Nodes.class);
 
-  /** Rack ID and its related nodes */
+  /**
+   * Rack ID and its related nodes
+   */
   private Map<Integer, List<String>> nodes;
-  /** Maintain the order of racks */
+  /**
+   * Maintain the order of racks
+   */
   private LinkedList<Integer> nodeRackIDs;
-  /** The number of physical nodes */
+  /**
+   * The number of physical nodes
+   */
   private int numPhysicalNodes;
 
   public Nodes() throws Exception {
     BufferedReader reader = new BufferedReader(
-      new FileReader(Depl.nodes_file));
+        new FileReader(Depl.nodes_file));
     initializeNodes(reader);
     reader.close();
   }
@@ -61,12 +67,12 @@ public class Nodes {
   }
 
   public Nodes(BufferedReader reader)
-    throws Exception {
+      throws Exception {
     if (reader == null) {
       LOG.info("Read from default nodes file. "
-        + Depl.nodes_file);
+          + Depl.nodes_file);
       reader = new BufferedReader(
-        new FileReader(Depl.nodes_file));
+          new FileReader(Depl.nodes_file));
       initializeNodes(reader);
       reader.close();
     } else {
@@ -76,13 +82,12 @@ public class Nodes {
 
   /**
    * Initialization
-   * 
-   * @param reader
-   *          the BufferedReader
+   *
+   * @param reader the BufferedReader
    * @throws Exception
    */
   private void initializeNodes(
-    BufferedReader reader) throws Exception {
+      BufferedReader reader) throws Exception {
     nodes = new HashMap<Integer, List<String>>();
     nodeRackIDs = new LinkedList<Integer>();
     int currentRackID = 0;
@@ -107,20 +112,16 @@ public class Nodes {
       }
       numPhysicalNodes = nodeSet.size();
     } catch (Exception e) {
-      LOG.error(
-        "Errors when reading nodes information.",
-        e);
+      LOG.error("Errors when reading nodes information.", e);
       throw e;
     }
   }
 
   /**
    * Add the node to the rack
-   * 
-   * @param rackID
-   *          the ID of the rack
-   * @param line
-   *          the string of the node
+   *
+   * @param rackID the ID of the rack
+   * @param line   the string of the node
    */
   private void addNode(int rackID, String line) {
     List<String> nodeList = nodes.get(rackID);
@@ -140,7 +141,7 @@ public class Nodes {
 
   /**
    * Get the number of physical nodes
-   * 
+   *
    * @return
    */
   public int getNumPhysicalNodes() {
@@ -150,17 +151,16 @@ public class Nodes {
   /**
    * Get the map from rackID to its associated
    * nodes
-   * 
+   *
    * @return
    */
-  protected Map<Integer, List<String>>
-    getNodes() {
+  protected Map<Integer, List<String>> getNodes() {
     return nodes;
   }
 
   /**
    * Get the list of the racks
-   * 
+   *
    * @return the ID list of the racks
    */
   protected List<Integer> getRackList() {
@@ -169,14 +169,14 @@ public class Nodes {
 
   /**
    * Get the list of all the nodes
-   * 
+   *
    * @return the list of all the nodes
    */
   public List<String> getNodeList() {
     List<String> nodeList =
-      new LinkedList<String>();
+        new LinkedList<String>();
     for (Entry<Integer, List<String>> entry : nodes
-      .entrySet()) {
+        .entrySet()) {
       nodeList.addAll(entry.getValue());
     }
     return nodeList;
@@ -189,17 +189,17 @@ public class Nodes {
    */
   public void sortRacks() {
     SortedMap<Integer, Integer> sortedRacks =
-      new TreeMap<>();
+        new TreeMap<>();
     // Sort racks based on sizes in Natural
     // ordering
     for (Entry<Integer, List<String>> entry : nodes
-      .entrySet()) {
+        .entrySet()) {
       sortedRacks.put(entry.getValue().size(),
-        entry.getKey());
+          entry.getKey());
     }
     // Put to list
     List<Integer> rackIDs =
-      new LinkedList<>(sortedRacks.values());
+        new LinkedList<>(sortedRacks.values());
     nodeRackIDs.clear();
     // From the highest to the lowest
     for (int rackID : rackIDs) {
@@ -209,12 +209,12 @@ public class Nodes {
 
   /**
    * print the rack and the nodes information
-   * 
+   *
    * @return the rack and the nodes information
    */
   public List<String> printToNodesFile() {
     List<String> rackNodeList =
-      new LinkedList<String>();
+        new LinkedList<String>();
     for (int rackID : nodeRackIDs) {
       rackNodeList.add("#" + rackID);
       rackNodeList.addAll(nodes.get(rackID));

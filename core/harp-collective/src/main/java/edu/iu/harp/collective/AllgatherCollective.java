@@ -89,17 +89,14 @@ public class AllgatherCollective {
     }
     // Generate partition data
     for (int i = 0; i < numPartitions; i++) {
-      DoubleArray doubleArray =
-        DoubleArray.create(doublesSize, false);
+      DoubleArray doubleArray = DoubleArray.create(doublesSize, false);
       double[] doubles = doubleArray.get();
       doubles[0] = 1; // One row
       doubles[doublesSize - 1] = workerID;
       // The range of partition ids is based on
       // workerID
-      Partition<DoubleArray> partition =
-        new Partition<DoubleArray>(
-          workerID * numPartitions + i,
-          doubleArray);
+      Partition<DoubleArray> partition = new Partition<>(
+          workerID * numPartitions + i, doubleArray);
       LOG.info("Data Generate, WorkerID: "
         + workerID + " Partition: "
         + partition.id() + " Row count: "
@@ -180,8 +177,6 @@ public class AllgatherCollective {
     // Release
     sendData.releaseHeadArray();
     sendData.releaseBodyArray();
-    sendData = null;
-    ownedPartitions = null;
     // Receive starts
     boolean isFailed = false;
     // Received data and decoded data

@@ -1,6 +1,6 @@
 /*
  * Copyright 2013-2017 Indiana University
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -36,33 +36,31 @@ public class Table<P extends Simple> {
 
   /**
    * Constructor.
-   * 
-   * @param tableID
-   *          a table is assigned with an ID which
-   *          is convenient for reference. Any ID
-   *          is allowed.
-   * @param combiner
-   *          the combiner used for partitions
+   *
+   * @param tableID  a table is assigned with an ID which
+   *                 is convenient for reference. Any ID
+   *                 is allowed.
+   * @param combiner the combiner used for partitions
    */
   public Table(int tableID,
-    PartitionCombiner<P> combiner) {
+               PartitionCombiner<P> combiner) {
     this.tableID = tableID;
     this.partitions =
-      new Int2ObjectOpenHashMap<>();
+        new Int2ObjectOpenHashMap<>();
     this.combiner = combiner;
   }
 
   public Table(int tableID,
-    PartitionCombiner<P> combiner, int size) {
+               PartitionCombiner<P> combiner, int size) {
     this.tableID = tableID;
     this.partitions =
-      new Int2ObjectOpenHashMap<>(size);
+        new Int2ObjectOpenHashMap<>(size);
     this.combiner = combiner;
   }
 
   /**
    * Get the table ID
-   * 
+   *
    * @return table ID
    */
   public int getTableID() {
@@ -71,7 +69,7 @@ public class Table<P extends Simple> {
 
   /**
    * Get the combiner
-   * 
+   *
    * @return combiner
    */
   public PartitionCombiner<P> getCombiner() {
@@ -80,7 +78,7 @@ public class Table<P extends Simple> {
 
   /**
    * Get the number of partitions in this table
-   * 
+   *
    * @return number of partitions
    */
   public final int getNumPartitions() {
@@ -89,7 +87,7 @@ public class Table<P extends Simple> {
 
   /**
    * Get the IDs of the partitions in this table
-   * 
+   *
    * @return ID set
    */
   public final IntSet getPartitionIDs() {
@@ -98,11 +96,10 @@ public class Table<P extends Simple> {
 
   /**
    * Get the partitions in this table
-   * 
+   *
    * @return partition collection
    */
-  public final ObjectCollection<Partition<P>>
-    getPartitions() {
+  public final ObjectCollection<Partition<P>> getPartitions() {
     return partitions.values();
   }
 
@@ -112,64 +109,60 @@ public class Table<P extends Simple> {
    * combine this new partition with the partition
    * of the same ID in this table. Otherwise,
    * insert this new partition to the table.
-   * 
+   *
    * @param partition
    * @return partition status
    */
-  public final PartitionStatus
-    addPartition(Partition<P> partition) {
+  public final PartitionStatus addPartition(Partition<P> partition) {
     if (partition == null) {
       return PartitionStatus.ADD_FAILED;
     }
     Partition<P> curPartition =
-      this.partitions.get(partition.id());
+        this.partitions.get(partition.id());
     if (curPartition == null) {
       return insertPartition(partition);
     } else {
       return combiner.combine(curPartition.get(),
-        partition.get());
+          partition.get());
     }
   }
 
   /**
    * Insert a partition to this table
-   * 
+   *
    * @param partition
    * @return PartitionStatus.ADDED
    */
-  protected final PartitionStatus
-    insertPartition(Partition<P> partition) {
+  protected final PartitionStatus insertPartition(Partition<P> partition) {
     partitions.put(partition.id(), partition);
     return PartitionStatus.ADDED;
   }
 
   /**
    * Get the partition by partitionID
-   * 
+   *
    * @param partitionID
    * @return the partition associated with the
-   *         partitionID
+   * partitionID
    */
-  public final Partition<P>
-    getPartition(int partitionID) {
+  public final Partition<P> getPartition(int partitionID) {
     return partitions.get(partitionID);
   }
 
   /**
    * Remove the partition from this table
-   * 
+   *
    * @param partitionID
    * @return the removed partition
    */
-  public final Partition<P>
-    removePartition(int partitionID) {
+  public final Partition<P> removePartition(int partitionID) {
     return partitions.remove(partitionID);
   }
 
   /**
    * If this table is empty, return true; else,
    * return false.
-   * 
+   *
    * @return true or false
    */
   public final boolean isEmpty() {
@@ -181,7 +174,7 @@ public class Table<P extends Simple> {
    */
   public final void release() {
     for (Partition<P> partition : partitions
-      .values()) {
+        .values()) {
       partition.release();
     }
     partitions.clear();
@@ -192,7 +185,7 @@ public class Table<P extends Simple> {
    */
   public final void free() {
     for (Partition<P> partition : partitions
-      .values()) {
+        .values()) {
       partition.free();
     }
     partitions.clear();

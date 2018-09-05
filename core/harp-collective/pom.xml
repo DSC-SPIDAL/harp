@@ -15,7 +15,7 @@
     <version>0.1.0</version>
 
     <properties>
-        <main.basedir>${project.parent.parent.basedir}</main.basedir>
+        <main.basedir>${project.basedir}</main.basedir>
         <checkstyle.skip>false</checkstyle.skip>
     </properties>
 

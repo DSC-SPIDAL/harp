@@ -1,6 +1,6 @@
 /*
  * Copyright 2013-2017 Indiana University
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -34,9 +34,8 @@ public class Output {
 
   /**
    * Set the status of the execution
-   * 
-   * @param isSuccess
-   *          the status
+   *
+   * @param isSuccess the status
    */
   void setExeStatus(boolean isSuccess) {
     status = isSuccess;
@@ -44,9 +43,9 @@ public class Output {
 
   /**
    * Get the status of the execution
-   * 
+   *
    * @return true if the execution succeeded,
-   *         false other wise
+   * false other wise
    */
   public boolean getExeStatus() {
     return status;
@@ -54,7 +53,7 @@ public class Output {
 
   /**
    * Get the output from the command execution
-   * 
+   *
    * @return
    */
   public List<String> getExeOutput() {

@@ -1,6 +1,6 @@
 /*
  * Copyright 2013-2017 Indiana University
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -27,19 +27,17 @@ import java.util.concurrent.Semaphore;
 public class ComputeUtil {
 
   protected static final Logger LOG =
-    Logger.getLogger(ComputeUtil.class);
+      Logger.getLogger(ComputeUtil.class);
 
   /**
    * Acquires the given number of permits from
    * this semaphore
-   * 
-   * @param sem
-   *          the Semaphore
-   * @param count
-   *          the number of permits to acquire
+   *
+   * @param sem   the Semaphore
+   * @param count the number of permits to acquire
    */
   public static void acquire(Semaphore sem,
-    int count) {
+                             int count) {
     boolean isFailed = false;
     do {
       try {
@@ -48,16 +46,15 @@ public class ComputeUtil {
       } catch (Exception e) {
         isFailed = true;
         LOG.error(
-          "Error when acquiring semaphore", e);
+            "Error when acquiring semaphore", e);
       }
     } while (isFailed);
   }
 
   /**
    * Acquires a permit from this semaphore
-   * 
-   * @param sem
-   *          the Semaphore
+   *
+   * @param sem the Semaphore
    */
   public static void acquire(Semaphore sem) {
     boolean isFailed = false;
@@ -68,16 +65,15 @@ public class ComputeUtil {
       } catch (Exception e) {
         isFailed = true;
         LOG.error(
-          "Error when acquiring semaphore", e);
+            "Error when acquiring semaphore", e);
       }
     } while (isFailed);
   }
 
   /**
    * Join the thread
-   * 
-   * @param thread
-   *          the thread to be joined
+   *
+   * @param thread the thread to be joined
    */
   public static void joinThread(Thread thread) {
     boolean isFailed = false;
@@ -87,7 +83,7 @@ public class ComputeUtil {
         thread.join();
       } catch (Exception e) {
         LOG.error("Error when joining thread.",
-          e);
+            e);
         isFailed = true;
       }
     } while (isFailed);

@@ -1,6 +1,6 @@
 /*
  * Copyright 2013-2017 Indiana University
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -29,18 +29,18 @@ public class StringKey extends Key {
 
   private String str;
 
-  public StringKey() {
-  }
-
+  /**
+   * String key
+   * @param str key
+   */
   public StringKey(String str) {
     this.str = str;
   }
 
   /**
    * Set string
-   * 
-   * @param str
-   *          the string
+   *
+   * @param str the string
    */
   public void setStringKey(String str) {
     this.str = str;
@@ -48,7 +48,7 @@ public class StringKey extends Key {
 
   /**
    * Get the string
-   * 
+   *
    * @return the string
    */
   public String getStringKey() {
@@ -61,7 +61,7 @@ public class StringKey extends Key {
   @Override
   public boolean equals(Object object) {
     if (object.getClass()
-      .equals(StringKey.class)) {
+        .equals(StringKey.class)) {
       StringKey strKey = (StringKey) object;
       return str.equals(strKey.getStringKey());
     } else {
@@ -82,7 +82,7 @@ public class StringKey extends Key {
    */
   @Override
   public void write(DataOutput out)
-    throws IOException {
+      throws IOException {
     out.writeUTF(str);
   }
 
@@ -91,7 +91,7 @@ public class StringKey extends Key {
    */
   @Override
   public void read(DataInput in)
-    throws IOException {
+      throws IOException {
     this.str = in.readUTF();
   }
 

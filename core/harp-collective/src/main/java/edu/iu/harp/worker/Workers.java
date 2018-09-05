@@ -1,6 +1,6 @@
 /*
  * Copyright 2013-2017 Indiana University
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -32,26 +32,44 @@ import java.util.concurrent.ConcurrentHashMap;
  ******************************************************/
 public class Workers extends Nodes {
 
-  /** Map from worker id to worker info */
+  /**
+   * Map from worker id to worker info
+   */
   private final Map<Integer, WorkerInfo> workerInfos;
-  /** Map from rack id to worker id */
+  /**
+   * Map from rack id to worker id
+   */
   private final Map<Integer, List<Integer>> rackWorkers;
-  /** Worker ID of the current worker */
+  /**
+   * Worker ID of the current worker
+   */
   private final int selfID;
-  /** Master ID (communication coordinator) */
+  /**
+   * Master ID (communication coordinator)
+   */
   private final int masterID;
-  /** Master info */
+  /**
+   * Master info
+   */
   private final WorkerInfo masterInfo;
-  /** Max worker ID */
+  /**
+   * Max worker ID
+   */
   private final int maxID;
-  /** Min worker ID */
+  /**
+   * Min worker ID
+   */
   private final int minID;
-  /** Middle worker ID */
+  /**
+   * Middle worker ID
+   */
   private final int middleID;
-  /** Worker ID of the next worker */
+  /**
+   * Worker ID of the next worker
+   */
   private final int nextID;
   private final int initCapacity =
-    Constant.NUM_THREADS;
+      Constant.NUM_THREADS;
 
   public Workers() throws Exception {
     // Get workers,
@@ -83,37 +101,35 @@ public class Workers extends Nodes {
   /**
    * Initialization the workers. Assign IDs to
    * workers; Master is the worker with ID 0;
-   * 
-   * @param reader
-   *          the BufferedReader
-   * @param selfid
-   *          this worker's id
+   *
+   * @param reader the BufferedReader
+   * @param selfid this worker's id
    * @throws Exception
    */
   public Workers(BufferedReader reader,
-    int selfid) throws Exception {
+                 int selfid) throws Exception {
     super(reader);
     int workerPortBase =
-      Constant.DEFAULT_WORKER_POART_BASE;
+        Constant.DEFAULT_WORKER_POART_BASE;
     workerInfos =
-      new ConcurrentHashMap<>(initCapacity);
+        new ConcurrentHashMap<>(initCapacity);
     rackWorkers =
-      new ConcurrentHashMap<>(initCapacity);
+        new ConcurrentHashMap<>(initCapacity);
     Map<Integer, List<String>> nodes =
-      this.getNodes();
+        this.getNodes();
     // Load based on the order in node file.
     int workerID = -1;
     for (int rackID : getRackList()) {
       List<Integer> workerIDs =
-        new LinkedList<>();
+          new LinkedList<>();
       rackWorkers.put(rackID, workerIDs);
       for (String node : nodes.get(rackID)) {
         // Generate next worker ID
         workerID++;
         // Port: workerPortBase + workerID
         workerInfos.put(workerID,
-          new WorkerInfo(workerID, node,
-            workerPortBase + workerID, rackID));
+            new WorkerInfo(workerID, node,
+                workerPortBase + workerID, rackID));
         workerIDs.add(workerID);
       }
     }
@@ -133,7 +149,7 @@ public class Workers extends Nodes {
 
   /**
    * Get the number of the workers
-   * 
+   *
    * @return
    */
   public int getNumWorkers() {
@@ -142,9 +158,9 @@ public class Workers extends Nodes {
 
   /**
    * Check if this is the only worker or not
-   * 
+   *
    * @return true if this is the only worker,
-   *         false otherwise
+   * false otherwise
    */
   public boolean isTheOnlyWorker() {
     return workerInfos.size() <= 1;
@@ -152,7 +168,7 @@ public class Workers extends Nodes {
 
   /**
    * Get the ID of the master
-   * 
+   *
    * @return the ID of the master
    */
   public int getMasterID() {
@@ -161,9 +177,9 @@ public class Workers extends Nodes {
 
   /**
    * Check if this is the master or not
-   * 
+   *
    * @return true if this is the master, false
-   *         otherwise
+   * otherwise
    */
   public boolean isMaster() {
     return selfID == masterID;
@@ -171,7 +187,7 @@ public class Workers extends Nodes {
 
   /**
    * Get the WorkerInfo of the master
-   * 
+   *
    * @return the WorkerInfo of the master
    */
   public WorkerInfo getMasterInfo() {
@@ -180,7 +196,7 @@ public class Workers extends Nodes {
 
   /**
    * Get the ID of this worker
-   * 
+   *
    * @return the ID of this worker
    */
   public int getSelfID() {
@@ -189,9 +205,9 @@ public class Workers extends Nodes {
 
   /**
    * Check if this worker is in the Workers
-   * 
+   *
    * @return true if this worker is in the
-   *         workers, false otherwise
+   * workers, false otherwise
    */
   public boolean isSelfInWorker() {
     if (selfID >= 0 && selfID <= maxID) {
@@ -203,7 +219,7 @@ public class Workers extends Nodes {
 
   /**
    * Get the WorkerInfo of this worker
-   * 
+   *
    * @return the WorkerInfo of this worker
    */
   public WorkerInfo getSelfInfo() {
@@ -213,7 +229,7 @@ public class Workers extends Nodes {
   /**
    * Check if the ID of this worker is the maximum
    * among all the workers
-   * 
+   *
    * @return true if yes, false otherwise
    */
   public boolean isMax() {
@@ -222,7 +238,7 @@ public class Workers extends Nodes {
 
   /**
    * Get the minimum ID among all the workers
-   * 
+   *
    * @return the minimum ID
    */
   public int getMinID() {
@@ -231,7 +247,7 @@ public class Workers extends Nodes {
 
   /**
    * Get the middle ID among all the workers
-   * 
+   *
    * @return the middle ID
    */
   public int getMiddleID() {
@@ -240,7 +256,7 @@ public class Workers extends Nodes {
 
   /**
    * Get the maximum ID among all the workers
-   * 
+   *
    * @return the maximum ID
    */
   public int getMaxID() {
@@ -249,7 +265,7 @@ public class Workers extends Nodes {
 
   /**
    * Get the next ID of this worker
-   * 
+   *
    * @return the next ID
    */
   public int getNextID() {
@@ -258,7 +274,7 @@ public class Workers extends Nodes {
 
   /**
    * Get the WorkerInfo of the next worker
-   * 
+   *
    * @return the WorkerInfo of the next worker
    */
   public WorkerInfo getNextInfo() {
@@ -267,9 +283,8 @@ public class Workers extends Nodes {
 
   /**
    * Get the WorkerInfo of the worker
-   * 
-   * @param workerID
-   *          the worker
+   *
+   * @param workerID the worker
    * @return the WorkerInfo of the worker
    */
   public WorkerInfo getWorkerInfo(int workerID) {
@@ -278,7 +293,7 @@ public class Workers extends Nodes {
 
   /**
    * Get the iterable class of the WorkerInfos
-   * 
+   *
    * @return the iterable class of the WorkerInfos
    */
   public WorkerInfoList getWorkerInfoList() {
@@ -289,7 +304,7 @@ public class Workers extends Nodes {
    * The iterable list of WorkerInfo.
    ******************************************************/
   public class WorkerInfoList
-    implements Iterable<WorkerInfo> {
+      implements Iterable<WorkerInfo> {
 
     /**
      * Get the iterator
@@ -304,7 +319,7 @@ public class Workers extends Nodes {
    * The iterator class of WorkerInfo.
    ******************************************************/
   public class WorkerInfoIterator
-    implements Iterator<WorkerInfo> {
+      implements Iterator<WorkerInfo> {
     protected int workerID = -1;
 
     /**

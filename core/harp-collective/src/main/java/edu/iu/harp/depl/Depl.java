@@ -1,6 +1,6 @@
 /*
  * Copyright 2013-2017 Indiana University
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -36,33 +36,31 @@ import java.util.regex.Pattern;
 public class Depl {
 
   private static final Logger LOG =
-    Logger.getLogger(Depl.class);
+      Logger.getLogger(Depl.class);
 
   final static String java_home = getJavaHome();
   final static String prjt_home =
-    getProjectHome();
+      getProjectHome();
   final static String bin_directory = "scripts/";
   public final static String nodes_file =
-    prjt_home + bin_directory + "nodes";
+      prjt_home + bin_directory + "nodes";
 
   /**
    * Execute the command and get the output
-   * 
-   * @param cmd
-   *          the command
+   *
+   * @param cmd the command
    * @return the output from the command execution
    */
-  private static Output
-    executeCMDandReturn(String[] cmd) {
+  private static Output executeCMDandReturn(String[] cmd) {
     Output cmdOutput = new Output();
     List<String> output =
-      cmdOutput.getExeOutput();
+        cmdOutput.getExeOutput();
     try {
       Process q = Runtime.getRuntime().exec(cmd);
       q.waitFor();
       InputStream is = q.getInputStream();
       InputStreamReader isr =
-        new InputStreamReader(is);
+          new InputStreamReader(is);
       BufferedReader br = new BufferedReader(isr);
 
       String line;
@@ -76,7 +74,7 @@ public class Depl {
       }
     } catch (Exception e) {
       LOG.error(
-        "Errors happen in executing " + cmd);
+          "Errors happen in executing " + cmd);
       cmdOutput.setExeStatus(false);
       output.clear();
     }
@@ -86,12 +84,10 @@ public class Depl {
   /**
    * Just do execution. The output is not
    * returned, it shows on the screen directly
-   * 
-   * @param cmd
-   *          the command
+   *
+   * @param cmd the command
    */
-  public static Output
-    executeCMDandForward(String[] cmd) {
+  public static Output executeCMDandForward(String[] cmd) {
     Output cmdOutput = new Output();
     try {
       Process q = Runtime.getRuntime().exec(cmd);
@@ -109,13 +105,11 @@ public class Depl {
   /**
    * Execute the command and doesn't wait for
    * outputs
-   * 
-   * @param cmd
-   *          the command
+   *
+   * @param cmd the command
    * @return the Output
    */
-  public static Output
-    executeCMDandNoWait(String[] cmd) {
+  public static Output executeCMDandNoWait(String[] cmd) {
     Output cmdOutput = new Output();
     try {
       Runtime.getRuntime().exec(cmd);
@@ -129,22 +123,22 @@ public class Depl {
 
   /**
    * Get the JAVA home directory from the system
-   * 
+   *
    * @return the JAVA home directory
    */
   private static String getJavaHome() {
     // It seems the only way to execute echo
     // command
     String cmdstr[] =
-      { "bash", "-c", "echo $JAVA_HOME" };
+        {"bash", "-c", "echo $JAVA_HOME"};
     Output cmdOutput =
-      Depl.executeCMDandReturn(cmdstr);
+        Depl.executeCMDandReturn(cmdstr);
     String java_home = null;
     if (cmdOutput.getExeStatus()) {
       // Home directory is returned with "/" at
       // the end
       java_home =
-        cmdOutput.getExeOutput().get(0) + "/";
+          cmdOutput.getExeOutput().get(0) + "/";
       java_home = java_home.replace("//", "/");
       java_home = java_home.replace(" ", "\\ ");
     }
@@ -154,22 +148,22 @@ public class Depl {
   /**
    * Get the project home directory from the
    * system
-   * 
+   *
    * @return the project home directory
    */
   private static String getProjectHome() {
     // It seems the only way to execute echo
     // command
     String cmdstr[] =
-      { "bash", "-c", "echo $HARP_HOME" };
+        {"bash", "-c", "echo $HARP_HOME"};
     Output cmdOutput =
-      Depl.executeCMDandReturn(cmdstr);
+        Depl.executeCMDandReturn(cmdstr);
     String harp_home = null;
     if (cmdOutput.getExeStatus()) {
       // Home directory is returned with "/" at
       // the end
       harp_home =
-        cmdOutput.getExeOutput().get(0) + "/";
+          cmdOutput.getExeOutput().get(0) + "/";
       harp_home = harp_home.replace("//", "/");
       harp_home = harp_home.replace(" ", "\\ ");
     }
@@ -178,7 +172,7 @@ public class Depl {
 
   /**
    * Return the java home path
-   * 
+   *
    * @return the java home path
    */
   public static String getJavaHomePath() {
@@ -187,7 +181,7 @@ public class Depl {
 
   /**
    * Return the project home path
-   * 
+   *
    * @return the project home path
    */
   public static String getProjectHomePath() {
@@ -196,7 +190,7 @@ public class Depl {
 
   /**
    * Return the bin directory
-   * 
+   *
    * @return the bin directory
    */
   public static String getBinDirectory() {
@@ -205,14 +199,12 @@ public class Depl {
 
   /**
    * Write a list of strings to lines
-   * 
-   * @param filePath
-   *          the file to be written into
-   * @param contents
-   *          the contents to write
+   *
+   * @param filePath the file to be written into
+   * @param contents the contents to write
    */
   static boolean writeToFile(String filePath,
-    List<String> contents) {
+                             List<String> contents) {
     boolean status = true;
     // delete the original file
     File file = new File(filePath);
@@ -221,7 +213,7 @@ public class Depl {
     }
     try {
       BufferedWriter writer = new BufferedWriter(
-        new FileWriter(filePath));
+          new FileWriter(filePath));
       for (int i = 0; i < contents.size(); i++) {
         writer.write(contents.get(i));
         // if it is not the last line, enter
@@ -233,7 +225,7 @@ public class Depl {
       writer.close();
     } catch (Exception e) {
       System.err.println(
-        "Errors happen in writing " + filePath);
+          "Errors happen in writing " + filePath);
       status = false;
     }
     return status;
@@ -241,9 +233,8 @@ public class Depl {
 
   /**
    * Check if this string is a tag of rack or not
-   * 
-   * @param line
-   *          the string
+   *
+   * @param line the string
    * @return true if this string is a tag of rack
    */
   public static boolean isRack(String line) {
@@ -254,9 +245,8 @@ public class Depl {
 
   /**
    * Get the rack ID from the string
-   * 
-   * @param line
-   *          the string
+   *
+   * @param line the string
    * @return the rack ID
    */
   public static int getRackID(String line) {
@@ -276,36 +266,36 @@ public class Depl {
       invalidJavaHome = true;
     } else {
       File javaHomeFile =
-        new File(Depl.getJavaHomePath());
+          new File(Depl.getJavaHomePath());
       if (!javaHomeFile.exists()) {
         invalidJavaHome = true;
       }
     }
     if (invalidJavaHome) {
       LOG
-        .info("Java Home is not set properly...");
+          .info("Java Home is not set properly...");
       System.exit(-1);
     } else {
       LOG.info(
-        "Java Home: " + Depl.getJavaHomePath());
+          "Java Home: " + Depl.getJavaHomePath());
     }
     // Project home detection
     if (Depl.getProjectHomePath() == null) {
       invalidProjectHome = true;
     } else {
       File homeFile =
-        new File(Depl.getProjectHomePath());
+          new File(Depl.getProjectHomePath());
       if (!homeFile.exists()) {
         invalidProjectHome = true;
       }
     }
     if (invalidProjectHome) {
       LOG
-        .info("Harp Home is not set properly...");
+          .info("Harp Home is not set properly...");
       System.exit(-1);
     } else {
       LOG.info("Harp Home: "
-        + Depl.getProjectHomePath());
+          + Depl.getProjectHomePath());
     }
     // Check nodes information
     Nodes nodes = null;
@@ -315,12 +305,12 @@ public class Depl {
       e.printStackTrace();
     }
     if (nodes == null
-      || nodes.getNumPhysicalNodes() == 0) {
+        || nodes.getNumPhysicalNodes() == 0) {
       invalidNodes = true;
     }
     if (invalidNodes) {
       LOG.error(
-        "No or wrong nodes file format is provided.");
+          "No or wrong nodes file format is provided.");
       System.exit(-1);
     }
     // Check Project location.
@@ -331,10 +321,10 @@ public class Depl {
     LOG.info("Start deploying nodes.");
     nodes.sortRacks();
     configureStatus = writeToFile(Depl.nodes_file,
-      nodes.printToNodesFile());
+        nodes.printToNodesFile());
     if (!configureStatus) {
       LOG
-        .error(" Errors when configuring nodes.");
+          .error(" Errors when configuring nodes.");
       System.exit(-1);
     } else {
       LOG.info("Deployment is done.");
