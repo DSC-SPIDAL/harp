@@ -19,6 +19,7 @@ package edu.iu.kmeans.common;
 import edu.iu.harp.partition.Partition;
 import edu.iu.harp.partition.Table;
 import edu.iu.harp.resource.DoubleArray;
+import edu.iu.harp.example.DoubleArrPlus;
 import edu.iu.harp.schdynamic.Task;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -31,9 +32,9 @@ public class calcCenTask
         LogFactory.getLog(calcCenTask.class);
 
     // the centroids data synchronized
-    private double[][] centroids;
+    private Table<DoubleArray> centroids;
     // the sum of local pts assigned to each centroids
-    private double[][] pts_assign_sum;
+    private Table<DoubleArray> pts_assign_sum;
 
     private final int vectorSize;
     private final int cenVecSize;
@@ -44,15 +45,15 @@ public class calcCenTask
     // constructor
     public calcCenTask(Table<DoubleArray> cenTable, int vectorSize) 
     {
-        this.centroids = new double[cenTable.getNumPartitions()][];
-        this.pts_assign_sum = new double[centroids.length][];
+        this.centroids = new Table<>(0, new DoubleArrPlus());
+        this.pts_assign_sum = new Table<>(0, new DoubleArrPlus());
 
         for (Partition<DoubleArray> partition : cenTable.getPartitions()) 
         {
             int partitionID = partition.id();
             DoubleArray array = partition.get();
-            this.centroids[partitionID] = array.get();
-            this.pts_assign_sum[partitionID] = new double[array.size()];
+            this.centroids.addPartition(new Partition(partitionID, array));
+            this.pts_assign_sum.addPartition(new Partition(partitionID, DoubleArray.create(array.size(),false)));
         }
 
         // the last number is the accumulated number of pts for this 
@@ -71,13 +72,13 @@ public class calcCenTask
         this.tempDist = 0;
         int nearestPartitionID = -1;
 
-        for(int i=0; i<this.centroids.length;i++)
+        for(Partition<DoubleArray> par : this.centroids.getPartitions())
         {
-            this.tempDist = calcEucDistSquare(aPoint, this.centroids[i], this.vectorSize);
+            this.tempDist = calcEucDistSquare(aPoint, par.get().get(), this.vectorSize);
             if (this.minDist == -1 || this.tempDist < this.minDist)
             {
                 this.minDist = tempDist;
-                nearestPartitionID = i; 
+                nearestPartitionID = par.id(); 
             }
         }
 
@@ -85,16 +86,17 @@ public class calcCenTask
 
         // update the pts_assign_sum values
         for(int j=0;j<this.vectorSize;j++)
-            this.pts_assign_sum[nearestPartitionID][j] += aPoint[j]; 
+            this.pts_assign_sum.getPartition(nearestPartitionID).get().get()[j] += aPoint[j];
 
         // sum up the number of added pts
-        this.pts_assign_sum[nearestPartitionID][this.vectorSize] += 1;
+        this.pts_assign_sum.getPartition(nearestPartitionID).get().get()[this.vectorSize] += 1;
+
         return null;
         
     }
 
     public double getError() {return this.error;}
-    public double[][] getPtsAssignSum() { return this.pts_assign_sum; }
+    public Table<DoubleArray> getPtsAssignSum() { return this.pts_assign_sum; }
 
     private double calcEucDistSquare(double[] aPoint, double[] centroid, int length)
     {

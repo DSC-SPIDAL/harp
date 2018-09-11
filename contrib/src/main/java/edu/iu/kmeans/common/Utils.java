@@ -203,21 +203,24 @@ public class Utils {
       {
           // adds up all error
           err += taskExecutor.get(i).getError(); 
-          double[][] pts_assign_sum = taskExecutor.get(i).getPtsAssignSum();
-          for(int j=0;j<pts_assign_sum.length;j++)
+          Table<DoubleArray> pts_assign_sum = taskExecutor.get(i).getPtsAssignSum();
+
+          for(Partition<DoubleArray> par : pts_assign_sum.getPartitions())
           {
-              if (cenTable.getPartition(j) != null)
+              if (cenTable.getPartition(par.id()) != null)
               {
-                  double[] newCentroids = cenTable.getPartition(j).get().get();
+                  double[] newCentroids = cenTable.getPartition(par.id()).get().get();
                   for(int k=0;k<vectorSize+1;k++)
-                      newCentroids[k] += pts_assign_sum[j][k];
+                      newCentroids[k] += par.get().get()[k];
               }
               else
               {
-                  cenTable.addPartition(new Partition<DoubleArray>(j, new DoubleArray(pts_assign_sum[j], 0, vectorSize+1)));
+                  cenTable.addPartition(new Partition<DoubleArray>(par.id(), 
+                              new DoubleArray(par.get().get(), 0, vectorSize+1)));
               }
               
           }
+          
       }
       
       System.out.println("Errors: " + err);
