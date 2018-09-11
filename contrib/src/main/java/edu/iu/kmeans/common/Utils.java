@@ -8,6 +8,15 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+
+import edu.iu.harp.example.DoubleArrPlus;
+import edu.iu.harp.partition.Partition;
+import edu.iu.harp.partition.Table;
+import edu.iu.harp.resource.DoubleArray;
+import edu.iu.harp.schdynamic.DynamicScheduler;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
@@ -150,5 +159,71 @@ public class Utils {
     System.out
       .println("Wrote centroids data to file");
   }
+
+  /**
+   * @brief compute the distance by
+   * using multi-threading
+   * dynamic scheduler
+   *
+   * @param cenTable
+   * @param previousCenTable
+   * @param dataPoints
+   *
+   * @return 
+   */
+  public static double computationMultiThd(
+    Table<DoubleArray> cenTable,
+    Table<DoubleArray> previousCenTable,
+    ArrayList<DoubleArray> dataPoints, int threadNum, int vectorSize) 
+  {//{{{
+
+      double err = 0;
+      // create the task executor
+      List<calcCenTask> taskExecutor = new LinkedList<>();
+      for(int i=0;i<threadNum;i++)
+          taskExecutor.add(new calcCenTask(previousCenTable, vectorSize));
+
+      // create the dynamic scheduler 
+      DynamicScheduler<double[], Object, calcCenTask> calcScheduler =
+          new DynamicScheduler<>(taskExecutor);
+
+      // launching the scheduler
+      calcScheduler.start();
+
+      // feed the scheduler with tasks
+      for (DoubleArray aPoint : dataPoints) 
+          calcScheduler.submit(aPoint.get());
+
+      // wait until all of the tasks finished
+      while(calcScheduler.hasOutput())
+          calcScheduler.waitForOutput();
+
+      // update the new centroid table
+      for(int i=0;i<threadNum;i++)
+      {
+          // adds up all error
+          err += taskExecutor.get(i).getError(); 
+          double[][] pts_assign_sum = taskExecutor.get(i).getPtsAssignSum();
+          for(int j=0;j<pts_assign_sum.length;j++)
+          {
+              if (cenTable.getPartition(j) != null)
+              {
+                  double[] newCentroids = cenTable.getPartition(j).get().get();
+                  for(int k=0;k<vectorSize+1;k++)
+                      newCentroids[k] += pts_assign_sum[j][k];
+              }
+              else
+              {
+                  cenTable.addPartition(new Partition<DoubleArray>(j, new DoubleArray(pts_assign_sum[j], 0, vectorSize+1)));
+              }
+              
+          }
+      }
+      
+      System.out.println("Errors: " + err);
+      return err;
+
+  }//}}}
+
 
 }

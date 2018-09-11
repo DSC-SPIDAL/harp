@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package edu.iu.kmeans.allreduce;
+package edu.iu.kmeans.common;
 
 import edu.iu.harp.partition.Partition;
 import edu.iu.harp.partition.Table;
