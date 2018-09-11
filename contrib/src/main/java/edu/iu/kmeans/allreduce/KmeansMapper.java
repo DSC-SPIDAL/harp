@@ -59,7 +59,7 @@ public class KmeansMapper extends
       .getInt(KMeansConstants.NUM_ITERATONS, 1);
 
     threadNum = configuration.
-        getInt(KMeansConstants.NUM_THREADS, 4);
+        getInt(KMeansConstants.NUM_THREADS, 1);
 
     long endTime = System.currentTimeMillis();
 
@@ -136,10 +136,10 @@ public class KmeansMapper extends
       // record time
       long startTime = System.currentTimeMillis();
 
-      MSE = computation(cenTable, previousCenTable,
-        dataPoints);
-      // MSE = Utils.computationMultiThd(cenTable, previousCenTable,
-      //   dataPoints, this.threadNum, this.vectorSize);
+      // MSE = computation(cenTable, previousCenTable,
+      //   dataPoints);
+      MSE = Utils.computationMultiThd(cenTable, previousCenTable,
+        dataPoints, this.threadNum, this.vectorSize);
       // MSE = Utils.computationMultiThdStatic(cenTable, previousCenTable,
       //   dataPoints, this.threadNum, this.vectorSize);
 
@@ -183,6 +183,7 @@ public class KmeansMapper extends
       writer.write("MSE : " + this.finalMSE + "\n");
       writer.write("Compute Time : " + this.compute_time + "\n");
       writer.write("Comm Time : " + this.comm_time + "\n");
+      writer.write("Using Thread : " + this.threadNum + "\n");
       writer.close();
 
     }

@@ -39,6 +39,7 @@ runtest()
        # <num of centriods>: the number of centroids you want to clustering the data to
        # <size of vector>: the number of dimension of the data
        # <number of map tasks>: number of map tasks
+       # <number of threads>: number of threads per task 
        # <number of iteration>: the number of iterations to run
        # <work dir>: the root directory for this running in HDFS
        # <local dir>: the harp kmeans will firstly generate files which contain data points to local directory. Set this argument to determine the local directory.
@@ -48,7 +49,7 @@ runtest()
        # 	[broadcast-reduce]: use broadcast and reduce operation to synchronize centroids
        # 	[push-pull]: use push and pull operation to synchronize centroids
        # <mem per mapper>
-    hadoop jar $bin edu.iu.kmeans.common.KmeansMapCollective $1 $2 $3 $4 $5 $hdfsoutput/$6 /tmp/kmeans $6 $7
+    hadoop jar $bin edu.iu.kmeans.common.KmeansMapCollective $1 $2 $3 $4 $5 $6 $hdfsoutput/$7 /tmp/kmeans $7 $8
     
     if [ $? -ne 0 ]; then
         echo "run km failure"
@@ -56,16 +57,15 @@ runtest()
     fi
     
     ## retrieve the results from HDFS
-    if [ -d ./$6 ];then
-	 rm -rf ./$6/*
+    if [ -d ./$7 ];then
+	 rm -rf ./$7/*
     else
-	 mkdir -p ./$6
+	 mkdir -p ./$7
     fi
 
-    hdfs dfs -get $hdfsoutput/$6/evaluation ./$6
-    hdfs dfs -get $hdfsoutput/$6/centroids ./$6
+    hdfs dfs -get $hdfsoutput/$7/evaluation ./$7
+    hdfs dfs -get $hdfsoutput/$7/centroids ./$7
 }
 
 #run test
-# runtest 1000 10 100 2 100 allreduce 2000
-runtest 1000 10 100 2 100 broadcast-reduce 2000
+runtest 1000 10 100 2 12 100 allreduce 2000

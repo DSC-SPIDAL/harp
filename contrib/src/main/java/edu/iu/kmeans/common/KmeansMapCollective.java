@@ -33,10 +33,10 @@ public class KmeansMapCollective
 
   @Override
   public int run(String[] args) throws Exception {
-    if (args.length < 7) {
+    if (args.length < 8) {
       System.err.println(
         "Usage: KmeansMapCollective <numOfDataPoints> <num of Centroids> "
-          + "<size of vector> <number of map tasks> <number of iteration> <workDir> <localDir> <communication operation> <mem per mapper>\n"
+          + "<size of vector> <number of map tasks> <number of threads> <number of iteration> <workDir> <localDir> <communication operation> <mem per mapper>\n"
           + "<communication operation> includes:\n  "
           + "[allreduce]: use allreduce operation to synchronize centroids \n"
           + "[regroup-allgather]: use regroup and allgather operation to synchronize centroids \n"
@@ -53,13 +53,14 @@ public class KmeansMapCollective
     int numCentroids = Integer.parseInt(args[1]);
     int sizeOfVector = Integer.parseInt(args[2]);
     int numMapTasks = Integer.parseInt(args[3]);
-    int numIteration = Integer.parseInt(args[4]);
-    String workDir = args[5];
-    String localDir = args[6];
-    String operation = args[7];
+    int numThreads = Integer.parseInt(args[4]);
+    int numIteration = Integer.parseInt(args[5]);
+    String workDir = args[6];
+    String localDir = args[7];
+    String operation = args[8];
 
-    if (args.length > 7)
-	this.mem_per_mapper = Integer.parseInt(args[8]);
+    if (args.length > 8)
+	this.mem_per_mapper = Integer.parseInt(args[9]);
 
     System.out.println(
       "Number of Map Tasks = " + numMapTasks);
@@ -71,7 +72,7 @@ public class KmeansMapCollective
     System.out.println();
 
     launch(numOfDataPoints, numCentroids,
-      sizeOfVector, numMapTasks, numIteration,
+      sizeOfVector, numMapTasks, numThreads, numIteration,
       workDir, localDir, operation);
     System.out.println("HarpKmeans Completed");
     return 0;
@@ -79,7 +80,7 @@ public class KmeansMapCollective
 
   void launch(int numOfDataPoints,
     int numCentroids, int sizeOfVector,
-    int numMapTasks, int numIteration,
+    int numMapTasks, int numThreads, int numIteration,
     String workDir, String localDir,
     String operation) throws IOException,
     URISyntaxException, InterruptedException,
@@ -111,7 +112,7 @@ public class KmeansMapCollective
 
     runKMeans(numOfDataPoints, numCentroids,
       sizeOfVector, numIteration, JobID,
-      numMapTasks, configuration, workDirPath,
+      numMapTasks, numThreads, configuration, workDirPath,
       dataDir, cenDir, outDir, operation);
     long endTime = System.currentTimeMillis();
     System.out
@@ -122,6 +123,7 @@ public class KmeansMapCollective
   private void runKMeans(int numOfDataPoints,
     int numCentroids, int vectorSize,
     int numIterations, int JobID, int numMapTasks,
+    int numThreads,
     Configuration configuration, Path workDirPath,
     Path dataDir, Path cDir, Path outDir,
     String operation)
@@ -144,7 +146,7 @@ public class KmeansMapCollective
 
       Job kmeansJob = configureKMeansJob(
         numOfDataPoints, numCentroids, vectorSize,
-        numMapTasks, configuration, workDirPath,
+        numMapTasks, numThreads, configuration, workDirPath,
         dataDir, cDir, outDir, JobID,
         numIterations, operation);
 
@@ -186,7 +188,7 @@ public class KmeansMapCollective
 
   private Job configureKMeansJob(
     int numOfDataPoints, int numCentroids,
-    int vectorSize, int numMapTasks,
+    int vectorSize, int numMapTasks, int numThreads,
     Configuration configuration, Path workDirPath,
     Path dataDir, Path cDir, Path outDir,
     int jobID, int numIterations,
@@ -219,6 +221,11 @@ public class KmeansMapCollective
     jobConfig.setInt(
       KMeansConstants.NUM_ITERATONS,
       numIterations);
+
+    jobConfig.setInt(
+      KMeansConstants.NUM_THREADS,
+      numThreads);
+
     job.setInputFormatClass(
       MultiFileInputFormat.class);
     job.setJarByClass(KmeansMapCollective.class);
