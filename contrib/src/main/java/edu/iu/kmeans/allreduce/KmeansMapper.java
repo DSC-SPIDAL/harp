@@ -136,10 +136,12 @@ public class KmeansMapper extends
       // record time
       long startTime = System.currentTimeMillis();
 
-      // MSE = computation(cenTable, previousCenTable,
-      //   dataPoints);
-      MSE = Utils.computationMultiThd(cenTable, previousCenTable,
-        dataPoints, this.threadNum, this.vectorSize);
+      MSE = computation(cenTable, previousCenTable,
+        dataPoints);
+      // MSE = Utils.computationMultiThd(cenTable, previousCenTable,
+      //   dataPoints, this.threadNum, this.vectorSize);
+      // MSE = Utils.computationMultiThdStatic(cenTable, previousCenTable,
+      //   dataPoints, this.threadNum, this.vectorSize);
 
       this.compute_time += (System.currentTimeMillis() - startTime);
 

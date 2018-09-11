@@ -16,7 +16,9 @@ import edu.iu.harp.example.DoubleArrPlus;
 import edu.iu.harp.partition.Partition;
 import edu.iu.harp.partition.Table;
 import edu.iu.harp.resource.DoubleArray;
+
 import edu.iu.harp.schdynamic.DynamicScheduler;
+import edu.iu.harp.schstatic.StaticScheduler;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
@@ -228,5 +230,63 @@ public class Utils {
 
   }//}}}
 
+  public static double computationMultiThdStatic(
+    Table<DoubleArray> cenTable,
+    Table<DoubleArray> previousCenTable,
+    ArrayList<DoubleArray> dataPoints, int threadNum, int vectorSize) 
+  {//{{{
+
+      double err = 0;
+      // create the task executor
+      List<calcCenTaskStatic> taskExecutor = new LinkedList<>();
+      for(int i=0;i<threadNum;i++)
+          taskExecutor.add(new calcCenTaskStatic(previousCenTable, vectorSize));
+
+      // create the static scheduler 
+      StaticScheduler<double[], Integer, calcCenTaskStatic> calcScheduler = new StaticScheduler<>(taskExecutor);
+
+      // launching the scheduler
+      calcScheduler.start();
+
+      // feed the scheduler with tasks
+      for(int i=0;i<dataPoints.size();i++)
+          calcScheduler.submit((i%threadNum), dataPoints.get(i).get());
+
+      // wait until all of the tasks finished
+      for(int i=0;i<threadNum;i++)
+      {
+          while(calcScheduler.hasOutput(i))
+              calcScheduler.waitForOutput(i);
+      }
+
+      // update the new centroid table
+      for(int i=0;i<threadNum;i++)
+      {
+          // adds up all error
+          err += taskExecutor.get(i).getError(); 
+          Table<DoubleArray> pts_assign_sum = taskExecutor.get(i).getPtsAssignSum();
+
+          for(Partition<DoubleArray> par : pts_assign_sum.getPartitions())
+          {
+              if (cenTable.getPartition(par.id()) != null)
+              {
+                  double[] newCentroids = cenTable.getPartition(par.id()).get().get();
+                  for(int k=0;k<vectorSize+1;k++)
+                      newCentroids[k] += par.get().get()[k];
+              }
+              else
+              {
+                  cenTable.addPartition(new Partition<DoubleArray>(par.id(), 
+                              new DoubleArray(par.get().get(), 0, vectorSize+1)));
+              }
+              
+          }
+          
+      }
+      
+      System.out.println("Errors: " + err);
+      return err;
+
+  }//}}}
 
 }

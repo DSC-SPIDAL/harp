@@ -67,4 +67,5 @@ runtest()
 }
 
 #run test
-runtest 1000 10 100 2 100 allreduce 2000
+# runtest 1000 10 100 2 100 allreduce 2000
+runtest 1000 10 100 2 100 broadcast-reduce 2000
