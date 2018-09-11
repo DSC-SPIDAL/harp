@@ -8,6 +8,7 @@ import java.io.OutputStreamWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.hadoop.conf.Configuration;
@@ -22,6 +23,7 @@ import edu.iu.harp.example.DoubleArrPlus;
 import edu.iu.harp.partition.Partition;
 import edu.iu.harp.partition.Table;
 import edu.iu.harp.resource.DoubleArray;
+import edu.iu.harp.schdynamic.DynamicScheduler;
 import edu.iu.kmeans.common.KMeansConstants;
 
 public class KmeansMapper extends
@@ -35,6 +37,8 @@ public class KmeansMapper extends
   private long comm_time;
   private double MSE;
   private double finalMSE;
+
+  private int threadNum;
 
   @Override
   protected void setup(Context context)
@@ -52,9 +56,13 @@ public class KmeansMapper extends
       .getInt(KMeansConstants.VECTOR_SIZE, 20);
     iteration = configuration
       .getInt(KMeansConstants.NUM_ITERATONS, 1);
+
+    threadNum = configuration.
+        getInt(KMeansConstants.NUM_THREADS, 4);
+
     long endTime = System.currentTimeMillis();
-    LOG.info(
-      "config (ms) :" + (endTime - startTime));
+
+    LOG.info("config (ms) :" + (endTime - startTime));
   }
 
   protected void mapCollective(
@@ -127,7 +135,9 @@ public class KmeansMapper extends
       // record time
       long startTime = System.currentTimeMillis();
 
-      MSE = computation(cenTable, previousCenTable,
+      // MSE = computation(cenTable, previousCenTable,
+      //   dataPoints);
+      MSE = computationMultiThd(cenTable, previousCenTable,
         dataPoints);
 
       this.compute_time += (System.currentTimeMillis() - startTime);
@@ -250,6 +260,72 @@ public class KmeansMapper extends
     System.out.println("Errors: " + err);
     return err;
   }
+
+  /**
+   * @brief compute the distance by
+   * using multi-threading
+   * dynamic scheduler
+   *
+   * @param cenTable
+   * @param previousCenTable
+   * @param dataPoints
+   *
+   * @return 
+   */
+  private double computationMultiThd(
+    Table<DoubleArray> cenTable,
+    Table<DoubleArray> previousCenTable,
+    ArrayList<DoubleArray> dataPoints) 
+  {//{{{
+
+      double err = 0;
+      // create the task executor
+      List<calcCenTask> taskExecutor = new LinkedList<>();
+      for(int i=0;i<this.threadNum;i++)
+          taskExecutor.add(new calcCenTask(previousCenTable, vectorSize));
+
+      // create the dynamic scheduler 
+      DynamicScheduler<double[], Object, calcCenTask> calcScheduler =
+          new DynamicScheduler<>(taskExecutor);
+
+      // launching the scheduler
+      calcScheduler.start();
+
+      // feed the scheduler with tasks
+      for (DoubleArray aPoint : dataPoints) 
+          calcScheduler.submit(aPoint.get());
+
+      // wait until all of the tasks finished
+      while(calcScheduler.hasOutput())
+          calcScheduler.waitForOutput();
+
+      // update the new centroid table
+      for(int i=0;i<this.threadNum;i++)
+      {
+          // adds up all error
+          err += taskExecutor.get(i).getError(); 
+          double[][] pts_assign_sum = taskExecutor.get(i).getPtsAssignSum();
+          for(int j=0;j<pts_assign_sum.length;j++)
+          {
+              if (cenTable.getPartition(j) != null)
+              {
+                  double[] newCentroids = cenTable.getPartition(j).get().get();
+                  for(int k=0;k<this.vectorSize+1;k++)
+                      newCentroids[k] += pts_assign_sum[j][k];
+              }
+              else
+              {
+                  cenTable.addPartition(new Partition<DoubleArray>(j, new DoubleArray(pts_assign_sum[j], 0, vectorSize+1)));
+              }
+              
+          }
+      }
+      
+      System.out.println("Errors: " + err);
+      return err;
+
+  }//}}}
+
   // output centroids
   private void outputCentroids(
     Table<DoubleArray> cenTable,
