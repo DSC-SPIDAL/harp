@@ -173,59 +173,15 @@ public class Utils {
    *
    * @return 
    */
-  public static double computationMultiThd(
+  public static double computationMultiThdDynamic(
     Table<DoubleArray> cenTable,
     Table<DoubleArray> previousCenTable,
     ArrayList<DoubleArray> dataPoints, int threadNum, int vectorSize) 
   {//{{{
 
       double err = 0;
-      // create the task executor
-      List<calcCenTask> taskExecutor = new LinkedList<>();
-      for(int i=0;i<threadNum;i++)
-          taskExecutor.add(new calcCenTask(previousCenTable, vectorSize));
+      //TODO
 
-      // create the dynamic scheduler 
-      DynamicScheduler<double[], Object, calcCenTask> calcScheduler =
-          new DynamicScheduler<>(taskExecutor);
-
-      // launching the scheduler
-      calcScheduler.start();
-
-      // feed the scheduler with tasks
-      for (DoubleArray aPoint : dataPoints) 
-          calcScheduler.submit(aPoint.get());
-
-      // wait until all of the tasks finished
-      while(calcScheduler.hasOutput())
-          calcScheduler.waitForOutput();
-
-      // update the new centroid table
-      for(int i=0;i<threadNum;i++)
-      {
-          // adds up all error
-          err += taskExecutor.get(i).getError(); 
-          Table<DoubleArray> pts_assign_sum = taskExecutor.get(i).getPtsAssignSum();
-
-          for(Partition<DoubleArray> par : pts_assign_sum.getPartitions())
-          {
-              if (cenTable.getPartition(par.id()) != null)
-              {
-                  double[] newCentroids = cenTable.getPartition(par.id()).get().get();
-                  for(int k=0;k<vectorSize+1;k++)
-                      newCentroids[k] += par.get().get()[k];
-              }
-              else
-              {
-                  cenTable.addPartition(new Partition<DoubleArray>(par.id(), 
-                              new DoubleArray(par.get().get(), 0, vectorSize+1)));
-              }
-              
-          }
-          
-      }
-      
-      System.out.println("Errors: " + err);
       return err;
 
   }//}}}

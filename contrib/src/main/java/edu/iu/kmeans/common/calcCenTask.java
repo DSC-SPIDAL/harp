@@ -31,72 +31,24 @@ public class calcCenTask
     protected static final Log LOG =
         LogFactory.getLog(calcCenTask.class);
 
-    // the centroids data synchronized
-    private Table<DoubleArray> centroids;
-    // the sum of local pts assigned to each centroids
-    private Table<DoubleArray> pts_assign_sum;
-
-    private final int vectorSize;
-    private final int cenVecSize;
-    private double error;
-    private double tempDist;
-    private double minDist;
-
+    //TODO: add necessary private data members
+    
     // constructor
     public calcCenTask(Table<DoubleArray> cenTable, int vectorSize) 
     {
-        this.centroids = new Table<>(0, new DoubleArrPlus());
-        this.pts_assign_sum = new Table<>(0, new DoubleArrPlus());
-
-        for (Partition<DoubleArray> partition : cenTable.getPartitions()) 
-        {
-            int partitionID = partition.id();
-            DoubleArray array = partition.get();
-            this.centroids.addPartition(new Partition(partitionID, array));
-            this.pts_assign_sum.addPartition(new Partition(partitionID, DoubleArray.create(array.size(),false)));
-        }
-
-        // the last number is the accumulated number of pts for this 
-        // centroid
-        this.vectorSize = vectorSize;
-        this.cenVecSize = vectorSize+1 ;
-        this.error = 0;
-        this.tempDist = 0;
-        this.minDist = -1;
+        //TODO: add constructor
+        
     }
 
     @Override
     public Object run(double[] aPoint) throws Exception 
     {
-        this.minDist = -1;
-        this.tempDist = 0;
-        int nearestPartitionID = -1;
-
-        for(Partition<DoubleArray> par : this.centroids.getPartitions())
-        {
-            this.tempDist = calcEucDistSquare(aPoint, par.get().get(), this.vectorSize);
-            if (this.minDist == -1 || this.tempDist < this.minDist)
-            {
-                this.minDist = tempDist;
-                nearestPartitionID = par.id(); 
-            }
-        }
-
-        this.error += this.minDist;
-
-        // update the pts_assign_sum values
-        for(int j=0;j<this.vectorSize;j++)
-            this.pts_assign_sum.getPartition(nearestPartitionID).get().get()[j] += aPoint[j];
-
-        // sum up the number of added pts
-        this.pts_assign_sum.getPartition(nearestPartitionID).get().get()[this.vectorSize] += 1;
+        //TODO: add codes
 
         return null;
         
     }
 
-    public double getError() {return this.error;}
-    public Table<DoubleArray> getPtsAssignSum() { return this.pts_assign_sum; }
 
     private double calcEucDistSquare(double[] aPoint, double[] centroid, int length)
     {
