@@ -68,4 +68,4 @@ runtest()
 }
 
 #run test
-runtest 1000 10 100 2 12 100 allreduce 2000
+runtest 100000 10 100 1 4 100 allreduce 110000

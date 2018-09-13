@@ -97,6 +97,8 @@ public class KMeansDaalLauncher extends Configured
 	  Path initCenDir = new Path(cenDir, "init_centroids");
 	  DataGenerator.generateDenseDataSingle(numCentroids, nFeatures, 1000, 0, " ", initCenDir, fs);
 	  thisjobConf.set(HarpDAALConstants.CEN_DIR, cenDir.toString());
+	  thisjobConf.set(HarpDAALConstants.WORK_DIR, workPath.toString());
+
 	  thisjobConf.set(HarpDAALConstants.CENTROID_FILE_NAME, "init_centroids");
 
 	  //generate Data if required

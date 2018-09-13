@@ -74,6 +74,7 @@ public class KMeansDaalCollectiveMapper extends CollectiveMapper<String, String,
 	private int harpThreads;
 	private int numIterations;
 	private String cenDir;
+	private String workDir;
 	private String cenDirInit;
 	private List<String> inputFiles;
 	private Configuration conf;
@@ -108,6 +109,8 @@ public class KMeansDaalCollectiveMapper extends CollectiveMapper<String, String,
 		this.numCenPars = numThreads;
 		this.numIterations = this.conf.getInt(HarpDAALConstants.NUM_ITERATIONS, 10);
 		this.cenDir = this.conf.get(HarpDAALConstants.CEN_DIR);
+		this.workDir = this.conf.get(HarpDAALConstants.WORK_DIR);
+
 		this.cenDirInit = this.conf.get(HarpDAALConstants.CENTROID_FILE_NAME);
 		//always use the maximum hardware threads to load in data and convert data 
       		this.harpThreads = Runtime.getRuntime().availableProcessors();
@@ -157,6 +160,10 @@ public class KMeansDaalCollectiveMapper extends CollectiveMapper<String, String,
 	{//{{{
 
 		long start_execution = System.currentTimeMillis();
+        long compute_time = 0;
+        long comm_time = 0;
+        long start_comp =0;
+        long start_comm = 0;
 
 		// ---------------- load in training data ----------------
 		NumericTable trainingdata_daal = this.datasource.createDenseNumericTable(this.inputFiles, this.vectorSize, ",", this.daal_Context);
@@ -184,6 +191,7 @@ public class KMeansDaalCollectiveMapper extends CollectiveMapper<String, String,
 		// start the iteration
 		for (int i = 0; i < numIterations; i++) {
 
+            start_comp = System.currentTimeMillis();
 			//Convert Centroids data from Harp to DAAL
 			printTable(cenTable, 10, 10, i); 
 			convertCenTableHarpToDAAL(cenTable, cenTable_daal);
@@ -191,24 +199,31 @@ public class KMeansDaalCollectiveMapper extends CollectiveMapper<String, String,
 			kmeansLocal.input.set(InputId.inputCentroids, cenTable_daal);
 			// first step of local computation by using DAAL kernels to get partial result
 			PartialResult pres = kmeansLocal.compute();
+
+            compute_time += (System.currentTimeMillis() - start_comp);
+            start_comm = System.currentTimeMillis();
+
 			// comm by regroup-allgather
 			comm_regroup_allgather(cenTable, pres);
 			// comm_allreduce(cenTable, pres);
 			// comm_broadcastreduce(cenTable, pres);
 			// comm_push_pull(cenTable, pres);
+            comm_time += (System.currentTimeMillis() - start_comm);
 		}
 
 		// free memory and record time
 		cenTable_daal.freeDataMemory();
 		trainingdata_daal.freeDataMemory();
 
+		LOG.info("Execution Time: " + (System.currentTimeMillis() - start_execution));
+
 		// Write out centroids
 		if (this.isMaster()) {
 			storeCentroids(this.cenDir, cenTable, this.cenVecSize, "output");
+            outputEval(compute_time, comm_time);
 		}
 
 		cenTable.release();
-		LOG.info("Execution Time: " + (System.currentTimeMillis() - start_execution));
 
 	}//}}}
 
@@ -658,7 +673,8 @@ public class KMeansDaalCollectiveMapper extends CollectiveMapper<String, String,
 	}//}}}
 
 	private void storeCentroids(String cenDir, Table<DoubleArray> cenTable, int cenVecSize, String name) throws IOException 
-	{
+	{//{{{
+
 		String cFile = cenDir + File.separator + "out" + File.separator + name;
 		Path cPath = new Path(cFile);
 		LOG.info("centroids path: " + cPath.toString());
@@ -687,5 +703,30 @@ public class KMeansDaalCollectiveMapper extends CollectiveMapper<String, String,
 		}
 		bw.flush();
 		bw.close();
-	}
+
+	}//}}}
+
+    private void outputEval(long time_comp, long time_comm) throws IOException 
+	{//{{{
+
+		String eFile = this.workDir + File.separator + "evaluation";
+		Path ePath = new Path(eFile);
+		LOG.info("evaluation path: " + ePath.toString());
+
+		FileSystem fs = FileSystem.get(this.conf);
+		fs.delete(ePath, true);
+
+		FSDataOutputStream out = fs.create(ePath);
+
+		BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(out));
+
+        bw.write("Compute Time : " + time_comp + "\n");
+        bw.write("Comm Time : " + time_comm + "\n");
+        bw.write("Using Thread : " + this.numThreads + "\n");
+
+        bw.flush();
+		bw.close();
+
+	}//}}}
+
 }

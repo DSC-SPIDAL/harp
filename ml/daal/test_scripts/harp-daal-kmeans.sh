@@ -1,6 +1,7 @@
 #!/bin/bash
 
 ## root path of harp  
+curfolder=$( pwd )
 cd ../../../
 export HARP_ROOT=$(pwd)
 cd ${HARP_ROOT}
@@ -32,16 +33,16 @@ export LIBJARS=${HARP_ROOT}/third_party/daal-2018/lib/daal.jar
 hdfs dfs -mkdir -p /Hadoop/kmeans-input
 
 ## log directory
-mkdir -p ${HADOOP_HOME}/Harp-DAAL-Kmeans
-logDir=${HADOOP_HOME}/Harp-DAAL-Kmeans
+mkdir -p ${curfolder}/Harp-DAAL-Kmeans
+logDir=${curfolder}/Harp-DAAL-Kmeans
 
 ## parameters
 # num of training data points
-Pts=10000
+Pts=100000
 # num of training data centroids
 Ced=10
 # feature vector dimension
-Dim=10
+Dim=100
 # file per mapper
 File=5
 # iteration times
@@ -50,12 +51,23 @@ ITR=100
 Mem=110000
 GenData=true
 # num of mappers (nodes)
-Node=2
+Node=1
 # num of threads on each mapper(node)
-Thd=16
+Thd=24
 Dataset=kmeans-P$Pts-C$Ced-D$Dim-F$File-N$Node
 
+logName=Test-daal-kmeans-P$Pts-C$Ced-D$Dim-F$File-ITR$ITR-N$Node-Thd$Thd.log
 echo "Test-daal-kmeans-P$Pts-C$Ced-D$Dim-F$File-ITR$ITR-N$Node-Thd$Thd Start" 
-hadoop jar harp-daal-0.1.0.jar edu.iu.daal_kmeans.regroupallgather.KMeansDaalLauncher -libjars ${LIBJARS} $Pts $Ced $Dim $File $Node $Thd $ITR $Mem /Hadoop/kmeans-input/$Dataset /tmp/kmeans $GenData 2>$logDir/Test-daal-kmeans-P$Pts-C$Ced-D$Dim-F$File-ITR$ITR-N$Node-Thd$Thd.log
+hadoop jar harp-daal-0.1.0.jar edu.iu.daal_kmeans.regroupallgather.KMeansDaalLauncher -libjars ${LIBJARS} $Node $Thd $Mem $ITR /Hadoop/kmeans-input/$Dataset /Hadoop/kmeans-work $Dim $Dim $Ced $GenData $Pts $File /tmp/kmeans 2>$logDir/${logName}  
 echo "Test-daal-kmeans-P$Pts-C$Ced-D$Dim-F$File-ITR$ITR-N$Node-Thd$Thd End" 
 
+if [ -f ${logDir}/evaluation ];then
+    rm ${logDir}/evaluation
+fi
+
+if [ -f ${logDir}/output ];then
+    rm ${logDir}/output
+fi
+
+hdfs dfs -get /Hadoop/kmeans-work/evaluation ${logDir} 
+hdfs dfs -get /Hadoop/kmeans-work/centroids/out/output ${logDir} 
