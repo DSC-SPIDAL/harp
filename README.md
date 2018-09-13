@@ -1,19 +1,12 @@
-gbt-test
+HarpGBT
 ========
-testbed of gbt optimization project
+Testbed of gbt optimization project
 
-### Directory Structure
+### Milestones
 
-    bin     ---- shared scripts
-    doc     ---- document artifacts
-    run     ---- experiments scripts, data and results
-    3rd     ---- other systems
-    src     ---- code 
++ 10032018    Survey finish
 
-### Dependency
+### Work in progress
 
-    software                |   reference
-    ----------------------  |  -------------
-    python, numpy, scipy    |  http://continuum.io/downloads 
-    gnu parallel            |  http://www.gnu.org/software/parallel/
-    c3                      |  http://www.csm.ornl.gov/torc/C3
++ 09192018    Report on GBT distributed implementations, at the biweekly meeting with Intel Daal Team.
++ 09262018    Report on Histogram in GBT, by Miao
