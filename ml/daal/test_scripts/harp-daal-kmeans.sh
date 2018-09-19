@@ -53,7 +53,7 @@ GenData=true
 # num of mappers (nodes)
 Node=1
 # num of threads on each mapper(node)
-Thd=24
+Thd=4
 Dataset=kmeans-P$Pts-C$Ced-D$Dim-F$File-N$Node
 
 logName=Test-daal-kmeans-P$Pts-C$Ced-D$Dim-F$File-ITR$ITR-N$Node-Thd$Thd.log
