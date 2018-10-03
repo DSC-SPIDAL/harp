@@ -35,39 +35,39 @@ public class Workers extends Nodes {
   /**
    * Map from worker id to worker info
    */
-  private final Map<Integer, WorkerInfo> workerInfos;
+  private Map<Integer, WorkerInfo> workerInfos;
   /**
    * Map from rack id to worker id
    */
-  private final Map<Integer, List<Integer>> rackWorkers;
+  private Map<Integer, List<Integer>> rackWorkers;
   /**
    * Worker ID of the current worker
    */
-  private final int selfID;
+  private int selfID;
   /**
    * Master ID (communication coordinator)
    */
-  private final int masterID;
+  private int masterID;
   /**
    * Master info
    */
-  private final WorkerInfo masterInfo;
+  private WorkerInfo masterInfo;
   /**
    * Max worker ID
    */
-  private final int maxID;
+  private int maxID;
   /**
    * Min worker ID
    */
-  private final int minID;
+  private int minID;
   /**
    * Middle worker ID
    */
-  private final int middleID;
+  private int middleID;
   /**
    * Worker ID of the next worker
    */
-  private final int nextID;
+  private int nextID;
   private final int initCapacity =
       Constant.NUM_THREADS;
 
@@ -98,28 +98,37 @@ public class Workers extends Nodes {
     this.minID = minID;
   }
 
+  public Workers(Map<Integer, List<String>> nodes, LinkedList<Integer> nodeRackIDs,
+                  int numPhysicalNodes,int selfID)  {
+       super(nodes,nodeRackIDs,numPhysicalNodes);
+       this.setInitParams(nodes,nodeRackIDs,selfID);
+  }
+
   /**
    * Initialization the workers. Assign IDs to
    * workers; Master is the worker with ID 0;
    *
    * @param reader the BufferedReader
-   * @param selfid this worker's id
+   * @param selfID this worker's id
    * @throws Exception
    */
   public Workers(BufferedReader reader,
-                 int selfid) throws Exception {
+                 int selfID) throws Exception {
     super(reader);
+    this.setInitParams(getNodes(),getRackList(),selfID);
+  }
+
+  private void setInitParams(Map<Integer, List<String>> nodes,List<Integer> rackList,int selfID){
+    this.workerInfos =
+        new ConcurrentHashMap<>(initCapacity);
+    this.rackWorkers =
+        new ConcurrentHashMap<>(initCapacity);
     int workerPortBase =
         Constant.DEFAULT_WORKER_POART_BASE;
-    workerInfos =
-        new ConcurrentHashMap<>(initCapacity);
-    rackWorkers =
-        new ConcurrentHashMap<>(initCapacity);
-    Map<Integer, List<String>> nodes =
-        this.getNodes();
+
     // Load based on the order in node file.
     int workerID = -1;
-    for (int rackID : getRackList()) {
+    for (int rackID : rackList) {
       List<Integer> workerIDs =
           new LinkedList<>();
       rackWorkers.put(rackID, workerIDs);
@@ -133,17 +142,17 @@ public class Workers extends Nodes {
         workerIDs.add(workerID);
       }
     }
-    selfID = selfid;
-    masterID = 0;
-    masterInfo = workerInfos.get(masterID);
-    minID = 0;
-    maxID = workerID;
-    middleID = workerID / 2;
+    this.selfID = selfID;
+    this.masterID = 0;
+    this.masterInfo = workerInfos.get(masterID);
+    this.minID = 0;
+    this.maxID = workerID;
+    this.middleID = workerID / 2;
     // Set next worker ID
     if (selfID >= 0 && selfID < maxID) {
-      nextID = selfID + 1;
+      this.nextID = selfID + 1;
     } else {
-      nextID = 0;
+      this.nextID = 0;
     }
   }
 
