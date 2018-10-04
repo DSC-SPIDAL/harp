@@ -1,0 +1,306 @@
+
+
+r4.8xlarge    32 cores 250GB RAM
+
+
+-----------------------------------------------------------------
+
+h2o via R   3.10.4.6 (cran)
+
+1M:
+
+   user  system elapsed
+  0.393   0.002  24.992
+
+[1] 0.7623672  
+
+
+10M:
+
+   user  system elapsed
+  1.249   0.084 142.375
+
+[1] 0.7763126
+
+
+
+-----------------------------------------------------------------
+
+
+xgboost via R    0.6-4 (cran)
+
+1M:
+
+   user  system elapsed
+372.812   0.231  20.860
+
+[1] 0.7507367
+
+
+10M:
+
+Tree method is automatically selected to be 'approx' for faster speed. to use old behavior(exact greedy algorithm on single machine), set tree_method to 'exact'
+
+    user   system  elapsed
+9120.303    5.818  289.899
+
+[1] 0.7511081
+
+
+---   github 6776292 
+
+      tree_method = "hist", grow_policy = "lossguide")
+
+1M:
+
+   user  system elapsed
+469.296   0.368  15.677
+
+0.7494959
+
+
+10M:
+
+    user   system  elapsed 
+2191.264    1.736  110.007 
+
+[1] 0.7551197
+
+
+---       tree_method = "hist", grow_policy = "lossguide")
+           max_depth=0, max_leaves=255
+
+1M:
+
+   user  system elapsed 
+648.028   0.256  21.389 
+
+[1] 0.7663244
+
+
+10M:
+
+    user   system  elapsed 
+3421.696    3.732  170.689 
+
+[1] 0.7728121
+
+
+
+-----------------------------------------------------------------
+
+lightgbm  CL  v2.0 (github release)
+
+1M:
+
+real    0m6.610s
+user    2m59.174s
+sys     0m0.273s
+
+[1] 0.7627659
+
+
+10M:
+
+real    0m47.022s
+user    17m30.154s
+sys     0m0.979s
+
+[1] 0.7739444
+
+
+----------------------------
+
+lightgbm  via R   github https://github.com/Microsoft/LightGBM/tree/97ca38d1db904c9daa88f3ded2259cc9f91edf04
+
+1M:
+
+   user  system elapsed
+175.736   0.196   6.220
+
+[1] 0.7649044
+
+
+10M:
+
+    user   system  elapsed
+1025.732    0.558   44.055
+
+[1] 0.7753221
+
+
+-----
+
+dealing with cats as suggested by @Laurae2 here https://github.com/szilard/GBM-perf/issues/2#issuecomment-304437441
+
+1M:
+
+   user  system elapsed
+138.049   0.146   4.832
+
+[1] 0.7662695
+
+
+10M:
+
+   user  system elapsed
+918.005   0.390  37.600
+
+[1] 0.7758901
+
+
+-----
+
+better maching xgboost depth params as suggested by @Laurae2 here https://github.com/szilard/GBM-perf/issues/2#issuecomment-304437441
+
+10M:
+
+[LightGBM] [Info] Trained a tree with leaves=507 and max_depth=10
+
+   user  system elapsed
+613.247   0.409  28.547
+
+[1] 0.7563627
+
+
+============================================================================
+
+
+GPU
+
+p2.xlarge     Tesla K80  12GB     4 cores 60GB RAM
+
+
+-----------------------------------------------------------------
+
+xgboost   via python with GPU support   https://github.com/dmlc/xgboost/tree/master/plugin/updater_gpu
+                    version github  commit 6776292951565c8cd72e69afd9d94de1474f00c0
+
+1M:
+
+p2.xlarge -- r4.8xlarge   --- AUC
+
+params = {'max_depth':10, 'eta':0.1, 'objective':'binary:logistic'}
+51.9485359192  --  18.7552878857   --- 0.75132778517359111
+
+params = {'max_depth':10, 'eta':0.1, 'objective':'binary:logistic', 'updater':'grow_colmaker'}
+51.9320878983  --  18.8291950226   --- 0.75132778517359111
+
+params = {'max_depth':10, 'eta':0.1, 'objective':'binary:logistic', 'updater':'grow_fast_histmaker'}
+20.5155758858   --  13.0155651569    --- 0.75028728324140626
+
+params = {'max_depth':10, 'eta':0.1, 'objective':'binary:logistic', 'updater':'grow_gpu'}
+61.838160038    --  no NVIDIA devices found    --- 0.7501515701398791
+
+params = {'max_depth':10, 'eta':0.1, 'objective':'binary:logistic', 'updater':'grow_gpu_hist'}
+13.5080471039   --  no NVIDIA devices found    --- 0.73525323806070153
+
+
+10M:
+
+time -- AUC
+
+r4.8xlarge    params = {'max_depth':10, 'eta':0.1, 'objective':'binary:logistic', 'updater':'grow_colmaker'}
+240.093116999  --  0.73511011321422837
+
+r4.8xlarge    params = {'max_depth':10, 'eta':0.1, 'objective':'binary:logistic', 'updater':'grow_fast_histmaker'}
+108.615642071 -- 0.7556663607506835
+
+p2.xlarge   params = {'max_depth':10, 'eta':0.1, 'objective':'binary:logistic', 'updater':'grow_gpu'}
+*crash*
+
+p2.xlarge   params = {'max_depth':10, 'eta':0.1, 'objective':'binary:logistic', 'updater':'grow_gpu_hist'}
+*crash*
+
+[04:51:54] /home/ubuntu/dwnl/xgboost/dmlc-core/include/dmlc/././logging.h:300: [04:51:54] /home/ubuntu/dwnl/xgboost/plugin/updater_gpu/src/gpu_hist_builder.cu:582: Check failed: fmat.SingleColBlock() grow_gpu_hist: must have single column block. Try setting 'tree_method' parameter to 'exact'
+
+
+-----------------------
+
+xgboost   via python with GPU support   https://github.com/dmlc/xgboost/tree/master/plugin/updater_gpu
+                    version github  commit 64c8f6fa6d01e284143f6cdaab3ade163924ceca
+
+p2.xlarge 
+
+1M:
+
+6.05611491203   0.75050752895096418
+
+10M:
+
+52.6796450615   0.74017468716491752
+
+
+-----------------------------------------------------------------
+
+xgboost via h2o deep water
+
+1M: 
+
+cpu (4 cores):
+
+   user  system elapsed 
+  2.392   0.120 186.944 
+
+[1] 0.7153808
+
+GPU:
+
+   user  system elapsed 
+  0.392   0.016  22.341
+  
+[1] 0.715096
+
+
+10:
+
+cpu (4 cores):
+
+10 trees only (instead of 100 - too slow)
+
+   user  system elapsed 
+  3.320   0.108 278.294 
+  
+AUC (10 trees!) 0.7086457  
+
+GPU:
+
+   user  system elapsed 
+  1.704   0.100 177.388 
+  
+[1] 0.7088061
+
+
+  
+-----------------------------------------------------------------
+
+lightgbm
+
+1M:
+
+real    0m30.237s
+user    1m45.092s
+sys     0m2.176s
+
+[1] 0.7718316
+
+
+10M:
+
+real    2m5.791s
+user    7m19.632s
+sys     0m5.760s
+
+[1] 0.7899527
+
+
+
+
+
+
+
+  
+
+
+
+

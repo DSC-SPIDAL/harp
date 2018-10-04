@@ -1,0 +1,70 @@
+
+
+2018-03-28
+
+
+p3.2xlarge
+
+cuda 9.0
+0.2-nccl-cuda9/h2o4gpu-0.2.0-cp36-cp36m-linux_x86_64.whl
+virtualenv
+
+1M
+
+
+Matrix::sparse.model.matrix
+
+Error in resolve_model_input(x) :
+  Input x of type "dgCMatrix" is not currently supported.
+
+  
+model.matrix
+
+   user  system elapsed
+ 39.864   9.012  48.256
+[1] 0.748418
+
+vs xgboost 8sec / 0.748
+or xgboost non-sparse 26sec / 0.748418
+
+
+python:
+
+>>> md = h2o4gpu.GradientBoostingClassifier(n_estimators = 100, learning_rate = 0.1, max_depth = 10,
+...       backend = "h2o4gpu", tree_method = "gpu_hist").fit(X_train, y_train)
+12.16761326789856
+0.7496957066608251
+
+>>> param = {'max_depth':10, 'eta':0.1, 'objective':'binary:logistic',
+...              'tree_method':'gpu_hist',
+>>> md = xgb.train(param, dxgb_train, num_boost_round = 100)
+8.336868524551392
+0.7496957066608251
+
+
+
+
+2018-04-11
+
+sparse matrix support added to reticulate
+
+   user  system elapsed
+ 14.572   2.236  15.650
+[1] 0.7482041
+
+
+
+10M records:
+
+   user  system elapsed
+ 83.120  10.012  88.265
+[1] 0.755452
+
+xgb R: 26sec / 0.7556
+
+py h2o4gpu: 66 sec / 0.7569
+
+xgb py: 26sec / 0.7557
+
+
+
