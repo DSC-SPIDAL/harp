@@ -1,6 +1,6 @@
 /*
  * Copyright 2013-2017 Indiana University
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,8 +20,10 @@ import edu.iu.harp.io.Constant;
 import edu.iu.harp.io.DataMap;
 import edu.iu.harp.io.EventQueue;
 import edu.iu.harp.worker.Workers;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
+import java.io.IOException;
 import java.io.InputStream;
 
 /*******************************************************
@@ -31,7 +33,7 @@ import java.io.InputStream;
 public class Acceptor implements Runnable {
 
   private static final Logger LOG =
-    Logger.getLogger(Acceptor.class);
+          Logger.getLogger(Acceptor.class);
 
   private final ServerConn conn;
   private final EventQueue eventQueue;
@@ -40,15 +42,28 @@ public class Acceptor implements Runnable {
   private byte commandType;
   private final int selfID;
 
+  private InputStream in;
+
   public Acceptor(ServerConn conn,
-    EventQueue queue, DataMap map, Workers w,
-    byte command) {
+                  EventQueue queue, DataMap map, Workers w,
+                  byte command) {
     this.conn = conn;
     this.eventQueue = queue;
     this.dataMap = map;
     this.workers = w;
     this.commandType = command;
     this.selfID = workers.getSelfID();
+    this.in = conn.getInputDtream();
+  }
+
+  public void forceStop(){
+    if(this.in!=null){
+      try {
+        this.in.close();
+      } catch (IOException e) {
+        LOG.log(Level.DEBUG,"Error occurred when closing input stream",e);
+      }
+    }
   }
 
   /**
@@ -59,7 +74,6 @@ public class Acceptor implements Runnable {
   public void run() {
     // All commands should use positive byte
     // integer 0 ~ 127
-    InputStream in = conn.getInputDtream();
     try {
       do {
         if (commandType == Constant.CONNECTION_END) {

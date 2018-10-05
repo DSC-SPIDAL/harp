@@ -1,6 +1,6 @@
 /*
  * Copyright 2013-2017 Indiana University
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -40,7 +40,7 @@ import java.util.List;
 public class Server implements Runnable {
 
   private static final Logger LOG =
-    Logger.getLogger(Server.class);
+          Logger.getLogger(Server.class);
 
   /** Data queue shared with the event machine */
   private final EventQueue eventQueue;
@@ -50,9 +50,12 @@ public class Server implements Runnable {
    */
   private final DataMap dataMap;
   private Thread server;
-  private List<Thread> acceptors;
+  private List<Thread> acceptorThreads;
+  private List<Acceptor> acceptors;
   /** Make sure the access is synchronized */
   private final Workers workers;
+
+  private boolean forceStopped;
 
   /**
    * Cache necessary information since "workers"
@@ -65,7 +68,7 @@ public class Server implements Runnable {
 
   /**
    * Initialization
-   * 
+   *
    * @param node
    *          the host
    * @param port
@@ -79,11 +82,13 @@ public class Server implements Runnable {
    * @throws Exception
    */
   public Server(String node, int port,
-    EventQueue queue, DataMap map,
-    Workers workers) throws Exception {
+                EventQueue queue, DataMap map,
+                Workers workers) throws Exception {
     this.eventQueue = queue;
     this.dataMap = map;
     server = new Thread(this);
+    server.setName("Harp-Server");
+    acceptorThreads = new ObjectArrayList<>();
     acceptors = new ObjectArrayList<>();
     this.workers = workers;
     // Cache local information
@@ -94,13 +99,13 @@ public class Server implements Runnable {
       serverSocket = new ServerSocket();
       IOUtil.setServerSocketOptions(serverSocket);
       serverSocket
-        .bind(new InetSocketAddress(node, port));
+              .bind(new InetSocketAddress(node, port));
     } catch (Exception e) {
       LOG.error("Error in starting receiver.", e);
       throw new Exception(e);
     }
     LOG.info("Server on " + this.node + " "
-      + this.port + " starts.");
+            + this.port + " starts.");
   }
 
   /**
@@ -111,33 +116,51 @@ public class Server implements Runnable {
   }
 
   /**
-   * Stop the server. Close acceptors and the
+   * Stop the server. Close acceptorThreads and the
    * server
    */
   public void stop() {
-    for (Thread thread : acceptors) {
-      ComputeUtil.joinThread(thread);
+    this.stop(false);
+  }
+
+  public void stop(boolean force){
+    if(!force) {
+      closeServer(this.node, this.port);
+      for (Thread thread : acceptorThreads) {
+        ComputeUtil.joinThread(thread);
+      }
+      ComputeUtil.joinThread(server);
+      this.closeSocket();
+    }else{
+      this.closeSocket();
+      this.forceStopped = true;
+      for (Acceptor acceptor : acceptors) {
+        acceptor.forceStop();
+      }
+      ComputeUtil.joinThread(server);
     }
-    closeServer(this.node, this.port);
-    ComputeUtil.joinThread(server);
+
+  }
+
+  private void closeSocket(){
     try {
       serverSocket.close();
     } catch (IOException e) {
       LOG.error("Fail to stop the server.", e);
     }
     LOG.info("Server on " + this.node + " "
-      + this.port + " is stopped.");
+            + this.port + " is stopped.");
   }
 
   /**
    * Close the server
-   * 
+   *
    * @param ip
    * @param port
    */
   private void closeServer(String ip, int port) {
     Connection conn =
-      Connection.create(ip, port, false);
+            Connection.create(ip, port, false);
     if (conn == null) {
       LOG.error("Fail to close the server");
       return;
@@ -162,7 +185,8 @@ public class Server implements Runnable {
     // All commands should use positive byte
     // integer 0 ~ 127
     byte commandType = -1;
-    while (true) {
+    int threadNum=0;
+    while (!this.forceStopped) {
       ServerConn conn = null;
       try {
         Socket socket = serverSocket.accept();
@@ -184,11 +208,13 @@ public class Server implements Runnable {
         break;
       } else {
         Acceptor acceptor =
-          new Acceptor(conn, eventQueue, dataMap,
-            workers, commandType);
+                new Acceptor(conn, eventQueue, dataMap,
+                        workers, commandType);
+        acceptors.add(acceptor);
         Thread thread = new Thread(acceptor);
+        thread.setName("harp-thread-"+(threadNum++));
         thread.start();
-        acceptors.add(thread);
+        acceptorThreads.add(thread);
       }
     }
   }
