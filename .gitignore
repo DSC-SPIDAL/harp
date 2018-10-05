@@ -99,3 +99,4 @@ debug/
 #ctags
 tags
 test/
+_results/
