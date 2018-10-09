@@ -1,0 +1,4 @@
+*.o
+prog*
+*.optrpt
+*.sh
