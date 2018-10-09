@@ -6,6 +6,7 @@ import numpy as np
 from optparse import OptionParser
 import sys, os
 from time import time
+import datetime
 from sklearn import metrics
 from pandas import read_csv
 from xgboost import XGBClassifier 
@@ -17,6 +18,9 @@ from sklearn.preprocessing import OneHotEncoder
 
 def load_option():
     op = OptionParser()
+    op.add_option("--eval",
+                  action="store", type=str, default="", 
+                  help="evaluate on the result predictions.")
     op.add_option("--trainfile",
                   action="store", type=str, default="", 
                   help="define the train dataset file name, train.cut by default.")
@@ -55,13 +59,22 @@ def load_option():
 def runxgb_v0(trainfile, testfile, label_col):
 
     # label_column specifies the index of the column containing the true label
-    dtrain = xgb.DMatrix('%s?format=csv&label_column=%d'%(trainfile, label_col))
-    dtest = xgb.DMatrix('%s?format=csv&label_column=%d'%(testfile, label_col))
+    #dtrain = xgb.DMatrix('%s?format=csv&label_column=%d'%(trainfile, label_col))
+    #dtest = xgb.DMatrix('%s?format=csv&label_column=%d'%(testfile, label_col))
+    dtrain = xgb.DMatrix(trainfile)
+    dtest = xgb.DMatrix(testfile)
 
-    param = {'max_depth': 16, 'eta': 0.01, 'silent': 1, 'objective': 'binary:logistic'}
-    param['nthread'] = 4
+
+    #param = {'max_depth': 16, 'eta': 0.01, 'silent': 1, 'objective': 'binary:logistic'}
+    #param['nthread'] = 4
+    #param['eval_metric'] = 'auc'
+    #num_round = 1000
+
+    param = {'max_depth': 6, 'eta': 0.1, 'silent': 1, 'objective': 'binary:logistic'}
+    param['nthread'] = -1
     param['eval_metric'] = 'auc'
-    num_round = 1000
+    num_round = 300
+
 
     bst = xgb.train(param, dtrain, num_round)
 
@@ -109,12 +122,23 @@ def encodedata(X, encode_cols=[0,1,2,4,5,6]):
 
     return encoded_x
 
-def savedata(outfile, X, Y):
+def savedata(outfile, X, Y, fmt='libsvm'):
     with open(outfile, 'w') as outf:
-        for i in range(X.shape[0]):
-            rec = ["%s"%(x) for x in X[i]]
-            recstr = ','.join(rec) + ',%s'%Y[i] + ',\n'
-            outf.write(recstr)
+        if fmt=='libsvm':
+            for i in range(X.shape[0]):
+                vec = X[i]
+                ss = str(Y[i])   #label
+                for j in range(vec.shape[0]):
+                    if vec[j] != 0.0:
+                        ss += ' %d:%s'%(j, vec[j])
+                recstr = '%s\n'%ss
+                outf.write(recstr)
+
+        else:
+            for i in range(X.shape[0]):
+                rec = ["%s"%(x) for x in X[i]]
+                recstr = ','.join(rec) + ',%s'%Y[i] + ',\n'
+                outf.write(recstr)
 
 def sStr(vec):
     ss = ''
@@ -122,6 +146,26 @@ def sStr(vec):
         if vec[i] != 0.0:
             ss += ' %d:%s'%(i, vec[i])
     return ss
+
+
+def runeval(predfile, testfile, label_col):
+    data = read_csv(testfile, header=None)
+    dataset = data.values
+    y_test = dataset[:,-2]
+
+    pred = np.loadtxt(predfile)
+    y_pred = np.array([1 if x>0.5 else 0 for x in pred]).reshape((pred.shape[0],1))
+
+    for i in range(5):
+        logger.info('ID=%d, Y=%s,X=%s', i, y_test[i],y_pred[i])
+
+    # evaluate predictions
+    accuracy = accuracy_score(y_test, y_pred)
+    print("Accuracy: %.2f%%" % (accuracy * 100.0))
+
+    auc_score = metrics.roc_auc_score(y_test, y_pred)
+    logger.info('auc = %f', auc_score)
+
 
 
 def runxgb(trainfile, testfile, label_col):
@@ -152,18 +196,29 @@ def runxgb(trainfile, testfile, label_col):
 
 
     #save data
-    #savedata('encoded_train.csv', X_train, y_train)
-    #savedata('encoded_test.csv', X_test, y_test)
+    if not os.path.exists('encoded_train.csv'):
+        savedata('encoded_train.csv', X_train, y_train, fmt='csv')
+        savedata('encoded_test.csv', X_test, y_test, fmt='csv')
+        savedata('encoded_train.libsvm', X_train, y_train, fmt='libsvm')
+        savedata('encoded_test.libsvm', X_test, y_test, fmt='libsvm')
+    else:
+        logger.info('encoded data file exist, skip overwriting')
 
     #train
     #
     #GBM: 100 trees, depth 10, learning rate 0.1
     #
+    logger.info('Start training...')
     #model = XGBClassifier(max_depth=10, learning_rate=0.1, n_estimators=100, silent=True, objective='binary:logistic', booster='gbtree', n_jobs=-1, nthread=None, gamma=0, min_child_weight=1, max_delta_step=0, subsample=1, colsample_bytree=1, colsample_bylevel=1, reg_alpha=0, reg_lambda=1)
-    model = XGBClassifier(max_depth=10, learning_rate=0.1, n_estimators=100, objective='binary:logistic', booster='gbtree', n_jobs=-1)
+    model = XGBClassifier(max_depth=6, learning_rate=0.1, n_estimators=300, objective='binary:logistic', n_jobs=-1, subsample = 0.5)
+    start = datetime.datetime.now()
     model.fit(X_train, y_train)
+    end = datetime.datetime.now()
+    #elapsed = (end.microsecond - start.microsecond)/1e6
+    elapsed = (end - start).total_seconds()
 
-    logger.info('Training finished, model=%s', model)
+    logger.info('Training finished, elapsed time=%.4f', elapsed)
+    logger.info('model=%s', model)
 
     # make predictions for test data
     y_pred = model.predict(X_test)
@@ -173,7 +228,7 @@ def runxgb(trainfile, testfile, label_col):
     logger.info('True Positive Count = %d', np.sum(y_test[:]>0))
     logger.info('Pred Positive Count = %d', np.sum(y_pred[:]>0))
 
-    for i in range(20):
+    for i in range(5):
         logger.info('ID=%d, Y=%s,X=%s', i, y_test[i],y_pred[i])
 
     predictions = [round(value) for value in y_pred]
@@ -197,6 +252,9 @@ if __name__=="__main__":
 
     opt = load_option()
 
-    runxgb(opt.trainfile, opt.testfile, opt.label_col)
+    if opt.eval:
+        runeval(opt.eval, opt.testfile, opt.label_col)
+    else:
+        runxgb(opt.trainfile, opt.testfile, opt.label_col)
 
 

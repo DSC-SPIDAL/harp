@@ -30,6 +30,7 @@
 #include "service.h"
 #include <chrono>
 #include <vector>
+#include <fstream>
 
 using namespace std;
 using namespace daal;
@@ -173,6 +174,33 @@ void testModel(const training::ResultPtr& trainingResult)
     //printNumericTable(predictionResult->get(classifier::prediction::prediction),
     //    "Gragient boosted trees prediction results (first 10 rows):", 10);
     //printNumericTable(testGroundTruth, "Ground truth (first 10 rows):", 10);
+    //save result to 'daal-pred.txt'
+    //
+    //saveNumericTable(predictionResult->get(classifier::prediction::prediction));
+    {
+    ofstream write;
+    write.open("daal-pred.txt");
+    NumericTablePtr table = predictionResult->get(classifier::prediction::prediction);
+    BlockDescriptor<float> block;
+    int nReadRows = table->getNumberOfRows();
+    int nColumns = table->getNumberOfColumns();
+    table->getBlockOfRows(0, table->getNumberOfRows(), readOnly, block);
+    float *array = block.getBlockPtr();
+    for (size_t row = 0; row < nReadRows; row++)
+    {
+        for (size_t col = 0; col < nColumns; col++)
+        {
+            //std::cout << array[row * nColumns + col] << "   ";
+            write << array[row * nColumns + col] << "   ";
+        }
+        // std::cout << std::endl;
+        write << std::endl;
+    }
+    table->releaseBlockOfRows(block);
+    write.close();
+    }
+
+
 }
 
 void loadData(const std::string& fileName, NumericTablePtr& pData, NumericTablePtr& pDependentVar)
