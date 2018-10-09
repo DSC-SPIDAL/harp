@@ -1,0 +1,36 @@
+
+
+spark-2.0.0-bin-hadoop2.7/bin/spark-shell --driver-memory 10G --executor-memory 10G 
+
+
+import org.apache.spark.sql.DataFrame
+import org.apache.spark.ml.linalg.Vectors
+import org.apache.spark.ml.classification.LogisticRegression
+import org.apache.spark.ml.evaluation.BinaryClassificationEvaluator
+
+def load(filename: String): DataFrame = {
+  sc.textFile(filename)
+  .map { line =>
+    val vv = line.split(',').map(_.toDouble)
+    val label = vv(0)
+    val features = Vectors.dense(vv.slice(1, vv.length)).toSparse
+    (label, features)
+  }.toDF("label", "features")
+}
+
+val d_train = load("spark-train-1m.csv").repartition(32).cache()
+val d_test = load("spark-test-1m.csv").repartition(32).cache()
+d_train.count()
+d_test.count()
+
+
+val now = System.nanoTime
+val lr = new LogisticRegression().setTol(1e-4)
+val model = lr.fit(d_train)
+( System.nanoTime - now )/1e9
+
+val evaluator = new BinaryClassificationEvaluator().setMetricName("areaUnderROC")
+evaluator.evaluate(model.transform(d_test))
+
+
+
