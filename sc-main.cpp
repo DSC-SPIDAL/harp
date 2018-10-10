@@ -1,5 +1,3 @@
-
-
 #include <omp.h>
 
 #include <stdio.h>
@@ -17,13 +15,14 @@
 #include <climits>
 
 #include "Graph.hpp"
+#include "Count.hpp"
 
 using namespace std;
 
 int main(int argc, char** argv)
 {
-    bool load_binary = false;
-    bool write_binary = false;
+    int load_binary = 0;
+    int write_binary = 0;
     string graph_name;
     string template_name;
     int iterations;
@@ -33,9 +32,13 @@ int main(int argc, char** argv)
     template_name = argv[2];
     iterations = atoi(argv[3]);
     comp_thds = atoi(argv[4]);
+    load_binary = atoi(argv[5]);
+    write_binary = atoi(argv[6]); 
 
     Graph input_graph;
     Graph input_template;
+
+    printf("Start the prog sc-vec\n");
 
     // load input graph 
     if (load_binary)
@@ -57,6 +60,11 @@ int main(int argc, char** argv)
 
     // load input templates
     input_template.read_enlist(template_name);
+
+    // start computing
+    Count executor;
+    executor.initialization(input_graph, comp_thds, iterations);
+    executor.compute(input_template);
 
     return 0;
 

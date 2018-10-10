@@ -1,5 +1,8 @@
 // This is the data structure to hold the 
 // input graph and template data
+#ifndef __GRAPH_H__
+#define __GRAPH_H__
+
 #include <fstream>
 #include <string>
 
@@ -18,18 +21,11 @@ class Graph {
             deg_list = NULL;
         }
 
-        ~Graph() 
-        {
-
-            if (adj_list != NULL)
-                delete[] adj_list;
-
-            if (deg_list != NULL)
-                delete[] deg_list;
-        }
+        ~Graph() { release(); }
 
         // read txt data in enlist format
         void read_enlist(string file_name);
+        void build_graph(int vert, int edge, int* src_edge, int* dst_edge);
 
         // serialization 
         void serialize(ofstream& output);
@@ -49,6 +45,8 @@ class Graph {
         int* get_adj_list() const {return adj_list;}
         int* get_adj_list(int vert) {return &adj_list[deg_list[vert]];}
 
+        // release the memory of adj_list and deg_list
+        void release();
 
     private:
 
@@ -59,3 +57,5 @@ class Graph {
         int* adj_list;
         unsigned* deg_list;
 };
+
+#endif

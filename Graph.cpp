@@ -14,7 +14,7 @@ void Graph::read_enlist(string file_name)
 
     // get the vert num
     std::getline(file_strm, line);
-    vert_num = atoi(line.c_str());
+    int verts = atoi(line.c_str());
     // get the edge num
     std::getline(file_strm, line);
     edge_file = atoi(line.c_str());
@@ -36,10 +36,10 @@ void Graph::read_enlist(string file_name)
 
     file_strm.close();
 
-    if (max_id != vert_num - 1)
+    if (max_id != verts - 1)
     {
         // remove "holes"
-        printf("Start remove holes; max_id: %d, n_g: %d\n", max_id, vert_num);
+        printf("Start remove holes; max_id: %d, n_g: %d\n", max_id, verts);
 
         int* v_id = new int[max_id+1];
         std::memset(v_id, 0, (max_id+1)*sizeof(int));
@@ -69,7 +69,19 @@ void Graph::read_enlist(string file_name)
     
     // build the internal graph datastructure
     // change it to undirected graph
-    edge_num = 2*edge_file;
+    build_graph(verts, edge_file, src_edge, dst_edge);
+    
+}/*}}}*/
+
+void Graph::build_graph(int verts, int edges, int* src_edge, int* dst_edge)
+{
+    //debug
+    printf("Start building graph\n");
+    std::fflush(stdout);
+
+    vert_num = verts;
+    edge_file = edges;
+    edge_num = 2*edges;
     max_deg = 0;
 
     adj_list = new int[edge_num];
@@ -90,7 +102,7 @@ void Graph::read_enlist(string file_name)
 
     for(int j=0;j<vert_num;j++)
         deg_list[j+1] = deg_list[j] + tmp_list[j];
-    
+
     std::memcpy(tmp_list, deg_list, vert_num*sizeof(unsigned));
 
     for(unsigned j=0;j< edge_file; j++)
@@ -105,8 +117,7 @@ void Graph::read_enlist(string file_name)
     printf("Avg Deg is : %d\n", (deg_list[vert_num]/vert_num));
 
     delete[] tmp_list;
-    
-}/*}}}*/
+}
 
 Graph& Graph::operator= (const Graph& obj)
 {
@@ -139,4 +150,21 @@ void Graph::deserialize(ifstream& input)
     input.read((char*)adj_list, edge_num*sizeof(int));
     deg_list = new unsigned[vert_num+1];
     input.read((char*)deg_list, (vert_num+1)*sizeof(unsigned));
+
+    printf("Total vertices is : %d\n", vert_num);
+    printf("Total Edges is : %d\n", edge_num);
+    printf("Max Deg is : %d\n", max_deg);
+    printf("Avg Deg is : %d\n", (deg_list[vert_num]/vert_num));
+}
+
+void Graph::release()
+{
+    if (adj_list != NULL)
+        delete[] adj_list;
+
+    if (deg_list != NULL)
+        delete[] deg_list;
+
+    adj_list = NULL;
+    deg_list = NULL;
 }
