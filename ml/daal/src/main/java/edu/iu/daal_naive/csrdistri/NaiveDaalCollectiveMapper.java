@@ -16,43 +16,6 @@
 
 package edu.iu.daal_naive.csrdistri;
 
-import org.apache.commons.io.IOUtils;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Arrays;
-import java.util.ListIterator;
-import java.nio.DoubleBuffer;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FSDataInputStream;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.LocatedFileStatus;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.fs.RemoteIterator;
-import org.apache.hadoop.mapred.CollectiveMapper;
-
-import edu.iu.harp.example.DoubleArrPlus;
-import edu.iu.harp.partition.Partition;
-import edu.iu.harp.partition.Partitioner;
-import edu.iu.harp.partition.Table;
-import edu.iu.harp.resource.DoubleArray;
-import edu.iu.harp.resource.ByteArray;
-import edu.iu.harp.schdynamic.DynamicScheduler;
-import edu.iu.datasource.*;
-import edu.iu.data_aux.*;
-import edu.iu.data_comm.*;
-
-import java.nio.DoubleBuffer;
-
-//import daal.jar API
 import com.intel.daal.algorithms.classifier.prediction.ModelInputId;
 import com.intel.daal.algorithms.classifier.prediction.NumericTableInputId;
 import com.intel.daal.algorithms.classifier.prediction.PredictionResult;
@@ -60,12 +23,25 @@ import com.intel.daal.algorithms.classifier.prediction.PredictionResultId;
 import com.intel.daal.algorithms.classifier.training.InputId;
 import com.intel.daal.algorithms.classifier.training.TrainingResultId;
 import com.intel.daal.algorithms.multinomial_naive_bayes.Model;
-import com.intel.daal.algorithms.multinomial_naive_bayes.prediction.*;
+import com.intel.daal.algorithms.multinomial_naive_bayes.prediction.PredictionBatch;
+import com.intel.daal.algorithms.multinomial_naive_bayes.prediction.PredictionMethod;
 import com.intel.daal.algorithms.multinomial_naive_bayes.training.*;
-import com.intel.daal.data_management.data.*;
-import com.intel.daal.data_management.data_source.*;
+import com.intel.daal.data_management.data.NumericTable;
+import com.intel.daal.data_management.data.SerializableBase;
 import com.intel.daal.services.DaalContext;
 import com.intel.daal.services.Environment;
+import edu.iu.data_aux.HarpDAALConstants;
+import edu.iu.data_aux.Service;
+import edu.iu.data_comm.HarpDAALComm;
+import edu.iu.datasource.HarpDAALDataSource;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.mapred.CollectiveMapper;
+
+import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
+
+//import daal.jar API
 
 
 /**

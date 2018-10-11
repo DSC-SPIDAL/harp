@@ -16,19 +16,21 @@
 
 package edu.iu.daal_kmeans.regroupallgather;
 
-
-
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.File;
-import java.io.IOException;
-
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Arrays;
-
+import com.intel.daal.algorithms.kmeans.*;
+import com.intel.daal.data_management.data.HomogenNumericTable;
+import com.intel.daal.data_management.data.NumericTable;
+import com.intel.daal.services.DaalContext;
+import com.intel.daal.services.Environment;
+import edu.iu.data_aux.HarpDAALConstants;
+import edu.iu.data_comm.HarpDAALComm;
+import edu.iu.datasource.HarpDAALDataSource;
+import edu.iu.harp.example.DoubleArrPlus;
+import edu.iu.harp.partition.Partition;
+import edu.iu.harp.partition.Partitioner;
+import edu.iu.harp.partition.Table;
+import edu.iu.harp.resource.DoubleArray;
+import edu.iu.harp.schdynamic.DynamicScheduler;
+import it.unimi.dsi.fastutil.ints.IntArrays;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
@@ -36,27 +38,13 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.CollectiveMapper;
 
-import it.unimi.dsi.fastutil.ints.IntArrays;
-
-import edu.iu.harp.example.DoubleArrPlus;
-import edu.iu.harp.partition.Partition;
-import edu.iu.harp.partition.Partitioner;
-import edu.iu.harp.partition.Table;
-import edu.iu.harp.resource.DoubleArray;
-import edu.iu.harp.schdynamic.DynamicScheduler;
-
-import edu.iu.datasource.*;
-import edu.iu.data_aux.*;
-import edu.iu.data_comm.*;
-import edu.iu.data_gen.*;
+import java.io.*;
 import java.nio.DoubleBuffer;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 //import daa.jar API
-import com.intel.daal.algorithms.kmeans.*;
-import com.intel.daal.algorithms.kmeans.init.*;
-import com.intel.daal.data_management.data.*;
-import com.intel.daal.services.DaalContext;
-import com.intel.daal.services.Environment;
 
 /**
  * @brief the Harp mapper for running K-means

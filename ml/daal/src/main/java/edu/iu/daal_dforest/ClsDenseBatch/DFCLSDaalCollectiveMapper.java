@@ -18,60 +18,38 @@
 
 package edu.iu.daal_dforest.ClsDenseBatch;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.nio.DoubleBuffer;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Arrays;
-
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FSDataInputStream;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapred.CollectiveMapper;
-
-import edu.iu.harp.example.DoubleArrPlus;
-import edu.iu.harp.resource.DoubleArray;
-import edu.iu.harp.schdynamic.DynamicScheduler;
-import edu.iu.harp.example.IntArrPlus;
-
-import edu.iu.harp.partition.Partition;
-import edu.iu.harp.partition.PartitionStatus;
-import edu.iu.harp.partition.Partitioner;
-import edu.iu.harp.partition.Table;
-
-import edu.iu.harp.resource.DoubleArray;
-import edu.iu.harp.resource.IntArray;
-import edu.iu.harp.resource.ByteArray;
-import edu.iu.harp.resource.LongArray;
-
-import edu.iu.datasource.*;
-import edu.iu.data_aux.*;
-
-// intel daal algorithms 
 import com.intel.daal.algorithms.classifier.prediction.ModelInputId;
 import com.intel.daal.algorithms.classifier.prediction.NumericTableInputId;
-import com.intel.daal.algorithms.classifier.training.InputId;
-import com.intel.daal.algorithms.classifier.training.TrainingResultId;
 import com.intel.daal.algorithms.classifier.prediction.PredictionResult;
 import com.intel.daal.algorithms.classifier.prediction.PredictionResultId;
+import com.intel.daal.algorithms.classifier.training.InputId;
+import com.intel.daal.algorithms.classifier.training.TrainingResultId;
+import com.intel.daal.algorithms.decision_forest.ResultsToComputeId;
+import com.intel.daal.algorithms.decision_forest.VariableImportanceModeId;
 import com.intel.daal.algorithms.decision_forest.classification.Model;
-import com.intel.daal.algorithms.decision_forest.classification.prediction.*;
-import com.intel.daal.algorithms.decision_forest.classification.training.*;
-import com.intel.daal.algorithms.decision_forest.*;
-
-// intel daal data structures and services
-import com.intel.daal.data_management.data.*;
-import com.intel.daal.data_management.data_source.*;
+import com.intel.daal.algorithms.decision_forest.classification.prediction.PredictionBatch;
+import com.intel.daal.algorithms.decision_forest.classification.prediction.PredictionMethod;
+import com.intel.daal.algorithms.decision_forest.classification.training.ResultNumericTableId;
+import com.intel.daal.algorithms.decision_forest.classification.training.TrainingBatch;
+import com.intel.daal.algorithms.decision_forest.classification.training.TrainingMethod;
+import com.intel.daal.algorithms.decision_forest.classification.training.TrainingResult;
+import com.intel.daal.data_management.data.DataFeature;
+import com.intel.daal.data_management.data.DataFeatureUtils;
+import com.intel.daal.data_management.data.NumericTable;
 import com.intel.daal.services.DaalContext;
 import com.intel.daal.services.Environment;
+import edu.iu.data_aux.HarpDAALConstants;
+import edu.iu.data_aux.Service;
+import edu.iu.datasource.HarpDAALDataSource;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.mapred.CollectiveMapper;
+
+import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
+
+// intel daal algorithms
+// intel daal data structures and services
 
 /**
  * @brief the Harp mapper for running K-means

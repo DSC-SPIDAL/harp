@@ -18,54 +18,27 @@
 
 package edu.iu.daal_optimization_solvers.SGDDenseBatch;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.nio.DoubleBuffer;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Arrays;
-
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FSDataInputStream;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapred.CollectiveMapper;
-
-import edu.iu.harp.example.DoubleArrPlus;
-import edu.iu.harp.resource.DoubleArray;
-import edu.iu.harp.schdynamic.DynamicScheduler;
-import edu.iu.harp.example.IntArrPlus;
-
-import edu.iu.harp.partition.Partition;
-import edu.iu.harp.partition.PartitionStatus;
-import edu.iu.harp.partition.Partitioner;
-import edu.iu.harp.partition.Table;
-
-import edu.iu.harp.resource.DoubleArray;
-import edu.iu.harp.resource.IntArray;
-import edu.iu.harp.resource.ByteArray;
-import edu.iu.harp.resource.LongArray;
-
-import edu.iu.datasource.*;
-import edu.iu.data_aux.*;
-
-// daal algorithm specific 
-import com.intel.daal.algorithms.optimization_solver.sgd.*;
 import com.intel.daal.algorithms.optimization_solver.iterative_solver.InputId;
 import com.intel.daal.algorithms.optimization_solver.iterative_solver.Result;
 import com.intel.daal.algorithms.optimization_solver.iterative_solver.ResultId;
-
-// daal data structure and service
-import com.intel.daal.data_management.data_source.*;
-import com.intel.daal.data_management.data.*;
+import com.intel.daal.algorithms.optimization_solver.sgd.Batch;
+import com.intel.daal.algorithms.optimization_solver.sgd.Method;
+import com.intel.daal.data_management.data.HomogenNumericTable;
+import com.intel.daal.data_management.data.NumericTable;
 import com.intel.daal.services.DaalContext;
 import com.intel.daal.services.Environment;
+import edu.iu.data_aux.HarpDAALConstants;
+import edu.iu.data_aux.Service;
+import edu.iu.datasource.HarpDAALDataSource;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.mapred.CollectiveMapper;
+
+import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
+
+// daal algorithm specific
+// daal data structure and service
 
 /**
  * @brief the Harp mapper for running K-means

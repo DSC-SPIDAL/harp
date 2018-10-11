@@ -1,6 +1,6 @@
 /*
  * Copyright 2013-2016 Indiana University
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,52 +16,25 @@
 
 package edu.iu.daal_kmeans.allreducecsr;
 
-import org.apache.commons.io.IOUtils;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Arrays;
-import java.util.ListIterator;
-import java.nio.DoubleBuffer;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.nio.DoubleBuffer;
-
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FSDataInputStream;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.LocatedFileStatus;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.fs.RemoteIterator;
-import org.apache.hadoop.mapred.CollectiveMapper;
-
-import edu.iu.harp.example.DoubleArrPlus;
-import edu.iu.harp.partition.Partition;
-import edu.iu.harp.partition.Partitioner;
-import edu.iu.harp.partition.Table;
-import edu.iu.harp.resource.DoubleArray;
-import edu.iu.harp.resource.ByteArray;
-import edu.iu.harp.schdynamic.DynamicScheduler;
-
-import edu.iu.datasource.*;
-import edu.iu.data_aux.*;
-import edu.iu.data_comm.*;
-
-
-//import daal api for algorithms 
 import com.intel.daal.algorithms.kmeans.*;
 import com.intel.daal.algorithms.kmeans.init.*;
-
-//import daal api for data management/services 
-import com.intel.daal.data_management.data.*;
-import com.intel.daal.data_management.data_source.*;
+import com.intel.daal.data_management.data.NumericTable;
+import com.intel.daal.data_management.data.SerializableBase;
 import com.intel.daal.services.DaalContext;
 import com.intel.daal.services.Environment;
+import edu.iu.data_aux.HarpDAALConstants;
+import edu.iu.data_aux.Service;
+import edu.iu.data_comm.HarpDAALComm;
+import edu.iu.datasource.HarpDAALDataSource;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.mapred.CollectiveMapper;
+
+import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
+
+//import daal api for algorithms
+//import daal api for data management/services
 
 /**
  * @brief the Harp mapper for running Kmeans CSR distri
@@ -92,14 +65,14 @@ public class KmeansDaalCollectiveMapper
 		private DistributedStep2Master masterAlgorithm = null;
 
 		private static HarpDAALDataSource datasource;
-		private static HarpDAALComm harpcomm;	
+		private static HarpDAALComm harpcomm;
 		private static DaalContext daal_Context = new DaalContext();
 
 		/**
 		 * Mapper configuration.
 		 */
 		@Override
-		protected void setup(Context context) throws IOException, InterruptedException 
+		protected void setup(Context context) throws IOException, InterruptedException
 		{
 
 			long startTime = System.currentTimeMillis();
@@ -111,7 +84,7 @@ public class KmeansDaalCollectiveMapper
 			this.nVectorsInBlock = this.conf.getInt(Constants.NUM_VEC_BLOCK, 8000);
 			this.nIterations = this.conf.getInt(HarpDAALConstants.NUM_ITERATIONS, 5);
 
-			//always use the maximum hardware threads to load in data and convert data 
+			//always use the maximum hardware threads to load in data and convert data
 			harpThreads = Runtime.getRuntime().availableProcessors();
 
 			//set thread number used in DAAL
@@ -130,7 +103,7 @@ public class KmeansDaalCollectiveMapper
 
 		}
 
-		protected void mapCollective(KeyValReader reader, Context context) throws IOException, InterruptedException 
+		protected void mapCollective(KeyValReader reader, Context context) throws IOException, InterruptedException
 		{
 			this.inputFiles = new LinkedList<String>();
 			//splitting files between mapper
@@ -155,13 +128,13 @@ public class KmeansDaalCollectiveMapper
 
 		}
 
-		private void runKmeans(Context context) throws IOException 
+		private void runKmeans(Context context) throws IOException
 		{
 
 			initDataCentroids();
 			calcCentroids();
 			calcAssignments();
-			
+
 			if (this.isMaster())
 			{
 				/* Print the results */
@@ -169,14 +142,14 @@ public class KmeansDaalCollectiveMapper
 				Service.printNumericTable("First 10 dimensions of centroids:", centroids, 20, 10);
 				Service.printNumericTable("Objective function value:", objectiveFunction);
 			}
-			                        
+
 			daal_Context.dispose();
-                       
+
 		}
 
 		private void initDataCentroids() throws IOException
 		{//{{{
-			
+
 
 			//load csr training table
 			this.trainData = this.datasource.loadCSRNumericTable(this.inputFiles, ",", daal_Context);
@@ -186,7 +159,7 @@ public class KmeansDaalCollectiveMapper
 			/* Set the input data to the algorithm */
             		initLocal.input.set(InitInputId.data, trainData);
             		initPres = initLocal.compute();
-	
+
 			if (this.isMaster())
 			{
 				this.initMaster = new InitDistributedStep2Master(daal_Context, Double.class,
@@ -207,14 +180,14 @@ public class KmeansDaalCollectiveMapper
 			{
 			   initMaster.compute();
 			   initResult = initMaster.finalizeCompute();
-			   centroids = initResult.get(InitResultId.centroids); 
+			   centroids = initResult.get(InitResultId.centroids);
 			}
 
 			this.barrier("kmeans", "finish compute init pres");
 
-			//broadcaset centroids 
+			//broadcaset centroids
 			this.centroids = (NumericTable)(this.harpcomm.harpdaal_braodcast(this.centroids, "kmeans", "bcast", true));
-			
+
 		}//}}}
 
 		private void calcCentroids() throws IOException
@@ -224,9 +197,9 @@ public class KmeansDaalCollectiveMapper
 		     masterAlgorithm = new DistributedStep2Master(daal_Context, Double.class, Method.lloydCSR, nClasses);
 
 		   //start the iterations
-        	   for (int it = 0; it < nIterations; it++) 
+        	   for (int it = 0; it < nIterations; it++)
 		   {
-			   DistributedStep1Local algorithm = new DistributedStep1Local(daal_Context, Double.class, 
+			   DistributedStep1Local algorithm = new DistributedStep1Local(daal_Context, Double.class,
 					   Method.lloydCSR, nClasses);
 
 			   /* Set the input data to the algorithm */

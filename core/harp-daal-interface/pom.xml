@@ -33,19 +33,18 @@
             <version>0.1.0</version>
         </dependency>
 
-	<dependency>
-		<groupId>org.apache.commons</groupId>
-		<artifactId>commons-lang3</artifactId>
-		<version>3.7</version>
-	</dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.7</version>
+        </dependency>
 
         <dependency>
             <groupId>daal</groupId>
             <artifactId>daal</artifactId>
             <scope>system</scope>
             <version>1.0</version>
-			<systemPath>${basedir}/../../third_party/daal-2018/lib/daal.jar</systemPath>
+            <systemPath>${basedir}/../../third_party/daal-2018/lib/daal.jar</systemPath>
         </dependency>
     </dependencies>
-    
 </project>

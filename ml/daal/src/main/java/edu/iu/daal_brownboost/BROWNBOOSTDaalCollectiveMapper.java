@@ -18,59 +18,33 @@
 
 package edu.iu.daal_brownboost;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.nio.DoubleBuffer;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Arrays;
-
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FSDataInputStream;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapred.CollectiveMapper;
-
-import edu.iu.harp.example.DoubleArrPlus;
-import edu.iu.harp.resource.DoubleArray;
-import edu.iu.harp.schdynamic.DynamicScheduler;
-import edu.iu.harp.example.IntArrPlus;
-
-import edu.iu.harp.partition.Partition;
-import edu.iu.harp.partition.PartitionStatus;
-import edu.iu.harp.partition.Partitioner;
-import edu.iu.harp.partition.Table;
-
-import edu.iu.harp.resource.DoubleArray;
-import edu.iu.harp.resource.IntArray;
-import edu.iu.harp.resource.ByteArray;
-import edu.iu.harp.resource.LongArray;
-
-import edu.iu.datasource.*;
-import edu.iu.data_aux.*;
-
-// daal algorithm module
 import com.intel.daal.algorithms.brownboost.Model;
-import com.intel.daal.algorithms.brownboost.prediction.*;
-import com.intel.daal.algorithms.brownboost.training.*;
+import com.intel.daal.algorithms.brownboost.prediction.PredictionBatch;
+import com.intel.daal.algorithms.brownboost.prediction.PredictionMethod;
+import com.intel.daal.algorithms.brownboost.training.TrainingBatch;
+import com.intel.daal.algorithms.brownboost.training.TrainingMethod;
+import com.intel.daal.algorithms.brownboost.training.TrainingResult;
 import com.intel.daal.algorithms.classifier.prediction.ModelInputId;
 import com.intel.daal.algorithms.classifier.prediction.NumericTableInputId;
 import com.intel.daal.algorithms.classifier.prediction.PredictionResult;
 import com.intel.daal.algorithms.classifier.prediction.PredictionResultId;
 import com.intel.daal.algorithms.classifier.training.InputId;
 import com.intel.daal.algorithms.classifier.training.TrainingResultId;
-
-// daal data structure and service module
-import com.intel.daal.data_management.data.*;
-import com.intel.daal.data_management.data_source.*;
+import com.intel.daal.data_management.data.NumericTable;
 import com.intel.daal.services.DaalContext;
 import com.intel.daal.services.Environment;
+import edu.iu.data_aux.HarpDAALConstants;
+import edu.iu.data_aux.Service;
+import edu.iu.datasource.HarpDAALDataSource;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.mapred.CollectiveMapper;
+
+import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
+
+// daal algorithm module
+// daal data structure and service module
 
 /**
  * @brief the Harp mapper for running brownboost  
