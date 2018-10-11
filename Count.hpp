@@ -7,6 +7,7 @@
 
 #include "Graph.hpp"
 #include "DivideTemplates.hpp"
+#include "IndexSys.hpp"
 #include "CountsTable.hpp"
 
 using namespace std;
@@ -39,6 +40,9 @@ class Count {
         // templates and sub-temps chain
         Graph* _templates; 
         Graph* _subtmp_array;
+        int _total_sub_num;
+        // total color num equals to the size of template
+        int _color_num;
 
         // local coloring for each verts
         int* _colors_local;
@@ -53,6 +57,7 @@ class Count {
         // divide the templates into sub-templates
         DivideTemplates div_tp;
         // CountsTable table;
+        IndexSys indexer;
 
 
         // index system

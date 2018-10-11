@@ -20,7 +20,7 @@ void DivideTemplates::DivideTp(Graph& tp)
 
 void DivideTemplates::initial()
 {
-    tmp_subtps = new Graph[100];
+    tmp_subtps = new Graph[1000];
     parents = vector<int>(0);
     node_main = vector<int>(0);
     node_aux = vector<int>(0);
@@ -113,6 +113,8 @@ void DivideTemplates::finalize()
     }
 
     delete[] tmp_subtps;
+
+    
 
     tp_valid = new bool[total_subtp];
     for(int i=0;i<total_subtp;i++)
@@ -229,6 +231,7 @@ int DivideTemplates::split_nodes(int& sub, int& root, int& rest)
        printf("dst: %d\n", dst_list[i]);
 
    tmp_subtps[cur_index].build_graph(num_vert, num_edge, &src_list[0], &dst_list[0]);
+   // tmp_subtps[cur_index].build_graph(num_vert, num_edge, src_copy, dst_copy);
    cur_index++;
 
    // delete[] src_copy;
@@ -321,6 +324,11 @@ void DivideTemplates::sort_tps()
                     node_main[parents[i]] = (i-1);
                 else if (node_aux[parents[i]] == i)
                     node_aux[parents[i]] = (i-1);
+
+                if (node_main[parents[i-1]] == (i-1))
+                    node_main[parents[i-1]] = i;
+                else if (node_aux[parents[i-1]] == (i-1))
+                    node_aux[parents[i-1]] = i;
 
                 all_subtps[i] = all_subtps[i-1];
                 parents[i] = parents[i-1];
