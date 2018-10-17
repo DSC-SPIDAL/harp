@@ -81,7 +81,7 @@ ifndef TBBROOT
 endif
 TBB_PATH = "$(TBBROOT)/lib/$(_IA)_lin/gcc4.4"
 
-EXT_LIB := -lpthread -ldl
+EXT_LIB := -lpthread -ldl -lrt
 
 ifeq ($(threading),sequential)
     DAAL_LIB_T := $(DAAL_PATH)/libdaal_sequential.$(RES_EXT)

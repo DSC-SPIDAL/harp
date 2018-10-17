@@ -32,10 +32,12 @@
 #include <vector>
 #include <fstream>
 
+#include <time.h>
 using namespace std;
 using namespace daal;
 using namespace daal::algorithms;
 using namespace daal::algorithms::gbt::classification;
+using namespace daal::services;
 
 //
 // As Daal Library does not suppoert log for timing and option parser,
@@ -60,15 +62,41 @@ vector<size_t> categoricalFeaturesIndices;
 size_t nFeatures  = 50;  /* Number of features in training and testing data sets */
 
 /* Gradient boosted trees training parameters */
-size_t maxIterations = 500;
+size_t maxIterations = 300;
+size_t maxTreeDepth = 6;
 size_t minObservationsInLeafNode = 1;
-
+size_t splitMethod = 1;
+bool memorySavingMode = false;
 size_t nClasses = 2;  /* Number of classes */
+float shrinkage = 0.1;
 
 
 training::ResultPtr trainModel();
 void testModel(const training::ResultPtr& res);
 void loadData(const std::string& fileName, NumericTablePtr& pData, NumericTablePtr& pDependentVar);
+
+
+#define __linux__
+inline double GetTime(void) {
+  #if DMLC_USE_CXX11
+  return std::chrono::duration<double>(
+      std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+  #elif defined __MACH__
+  clock_serv_t cclock;
+  mach_timespec_t mts;
+  host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock);
+  mach_port_deallocate(mach_task_self(), cclock);
+  return static_cast<double>(mts.tv_sec) + static_cast<double>(mts.tv_nsec) * 1e-9;
+  #else
+  #if defined(__unix__) || defined(__linux__)
+  timespec ts;
+  clock_gettime(CLOCK_REALTIME, &ts);
+  return static_cast<double>(ts.tv_sec) + static_cast<double>(ts.tv_nsec) * 1e-9;
+  #else
+  return static_cast<double>(time(NULL));
+  #endif
+  #endif
+}
 
 int main(int argc, char *argv[])
 {
@@ -77,7 +105,7 @@ int main(int argc, char *argv[])
     //
 
     if (argc < 6){
-        cout << "Usage: daalgbt <trainfile> <testfile> <epoch> <nClasses> <nFeatures> <categoricalFeatures>\n";
+        cout << "Usage: daalgbt <trainfile> <testfile> <epoch> <nClasses> <nFeatures> <treedepth> <splitMethod> <memorySaveModel> <categoricalFeatures>\n";
         return -1;
     }
 
@@ -88,9 +116,18 @@ int main(int argc, char *argv[])
     nClasses = stoi(argv[4]);
     nFeatures = stoi(argv[5]);
 
-    if (argc == 7){
+    if (argc > 6)
+        maxTreeDepth = stoi(argv[6]);
+    if (argc > 7)
+        splitMethod = stoi(argv[7]);
+    if (argc > 8)
+        memorySavingMode = (stoi(argv[8]) == 1)? true:false;
+    if (argc > 9)
+        shrinkage = stof(argv[9]);
+
+    if (argc == 11){
         //get cate features
-        string s = argv[6];
+        string s = argv[10];
         size_t pos = 0;
         std::string token;
         cout << "categoricalFeatures:" ;
@@ -104,19 +141,55 @@ int main(int argc, char *argv[])
     }
 
 
+    /*
+     */
+    daal::services::interface1::Environment* env = daal::services::interface1::Environment::getInstance();
+    int curCpuId = env->getCpuId();
+    std::cout << "cpuid:" << curCpuId << "\n";
+
+
+    env->setCpuId(4);
+
+
     // run it
 
     auto start = std::chrono::system_clock::now();
+
+
+    const double startX = GetTime();
     training::ResultPtr trainingResult = trainModel();
+
+    double elapsed = GetTime() - startX;
+    std::cout << "GetTime Training time : " << elapsed << " s\n";
+
     auto end = std::chrono::system_clock::now();
     std::chrono::duration<double> diff = end-start;
     std::cout << "Training time : " << diff.count() << " s\n";
+
+    {
+    size_t nNodes = 2; // nNodes = pow(2, nLvl+1) - 1
+    for(size_t i = 0; i < maxTreeDepth; ++i) nNodes *= 2;
+    nNodes--;
+
+
+    //size_t nNode = daal::algorithms::gbt::internal::getNumberOfNodesByLvls(maxTreeDepth);
+    std::cout << "nNode:" << nNodes << "\n";
+
+    }
+
+    //GbtDecisionTree* model =  trainingResult->get(classifier::training::model);
+    //nNode = model->getNumberOfNodes();
+    //std::cout << "nNode:" << nNode << "\n";
+
 
     start = std::chrono::system_clock::now();
     testModel(trainingResult);
     end = std::chrono::system_clock::now();
     diff = end-start;
     std::cout << "Testing time : " << diff.count() << " s\n";
+
+    //ModelFileWriter writer("./model.bin");
+    //writer.serializeToFile( trainingResult->get(classifier::training::model) );
 
     return 0;
 }
@@ -130,7 +203,8 @@ training::ResultPtr trainModel()
     loadData(trainDatasetFileName, trainData, trainDependentVariable);
 
     /* Create an algorithm object to train the gradient boosted trees classification model */
-    training::Batch<> algorithm(nClasses);
+    training::Batch<float> algorithm(nClasses);
+    //training::Batch<double> algorithm(nClasses);
 
     /* Pass a training data set and dependent values to the algorithm */
     algorithm.input.set(classifier::training::data, trainData);
@@ -139,6 +213,24 @@ training::ResultPtr trainModel()
     algorithm.parameter().maxIterations = maxIterations;
     algorithm.parameter().featuresPerNode = nFeatures;
     algorithm.parameter().minObservationsInLeafNode = minObservationsInLeafNode;
+    algorithm.parameter().maxTreeDepth = maxTreeDepth;
+
+    algorithm.parameter().splitMethod = daal::algorithms::gbt::training::SplitMethod(splitMethod);
+    algorithm.parameter().memorySavingMode = memorySavingMode;
+    algorithm.parameter().shrinkage =shrinkage;
+
+/* 
+ * vtune trigger
+ * */
+  if(1){
+    ofstream write;
+    write.open("vtune-flag.txt");
+    write << "okay" << std::endl;
+    write.close();
+  }
+
+
+
 
     /* Build the gradient boosted trees classification model */
     algorithm.compute();
@@ -160,7 +252,8 @@ void testModel(const training::ResultPtr& trainingResult)
     //printNumericTable(testGroundTruth, "Ground truth (first 2 rows):", 2);
 
     /* Create an algorithm object to predict values of gradient boosted trees classification */
-    prediction::Batch<> algorithm(nClasses);
+    prediction::Batch<float> algorithm(nClasses);
+    //prediction::Batch<double> algorithm(nClasses);
 
     /* Pass a testing data set and the trained model to the algorithm */
     algorithm.input.set(classifier::prediction::data, testData);

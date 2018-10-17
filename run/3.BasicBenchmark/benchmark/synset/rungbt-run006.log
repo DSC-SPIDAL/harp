@@ -1,0 +1,28 @@
+[09:24:33] 250000x50 matrix with 12500000 entries loaded from dtest.dm
+[09:24:33] 750000x50 matrix with 37500000 entries loaded from dtrain.dm
+Training with 'exact'
+Train Time: 121.886162043 seconds
+Traceback (most recent call last):
+  File "/N/u/fg474admin/anaconda2/lib/python2.7/runpy.py", line 174, in _run_module_as_main
+    "__main__", fname, loader, pkg_name)
+  File "/N/u/fg474admin/anaconda2/lib/python2.7/runpy.py", line 72, in _run_code
+    exec code in run_globals
+  File "/N/u/pengb/hpda/gbt-test/src/runner/xgb_benchmark.py", line 83, in <module>
+    run_benchmark(args)
+  File "/N/u/pengb/hpda/gbt-test/src/runner/xgb_benchmark.py", line 66, in run_benchmark
+    preds = xgb.predict(dtest)
+AttributeError: 'module' object has no attribute 'predict'
+[09:26:37] 1250000x50 matrix with 62500000 entries loaded from dtest.dm
+[09:26:39] 3750000x50 matrix with 187500000 entries loaded from dtrain.dm
+Training with 'exact'
+Train Time: 783.575642109 seconds
+Traceback (most recent call last):
+  File "/N/u/fg474admin/anaconda2/lib/python2.7/runpy.py", line 174, in _run_module_as_main
+    "__main__", fname, loader, pkg_name)
+  File "/N/u/fg474admin/anaconda2/lib/python2.7/runpy.py", line 72, in _run_code
+    exec code in run_globals
+  File "/N/u/pengb/hpda/gbt-test/src/runner/xgb_benchmark.py", line 83, in <module>
+    run_benchmark(args)
+  File "/N/u/pengb/hpda/gbt-test/src/runner/xgb_benchmark.py", line 66, in run_benchmark
+    preds = xgb.predict(dtest)
+AttributeError: 'module' object has no attribute 'predict'

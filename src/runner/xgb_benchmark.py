@@ -2,6 +2,7 @@
 import sys, argparse
 import xgboost as xgb
 import numpy as np
+from sklearn import metrics
 from sklearn.datasets import make_classification
 from sklearn.model_selection import train_test_split
 import time
@@ -47,15 +48,26 @@ def run_benchmark(args):
         dtest.save_binary('dtest.dm')
         dtrain.save_binary('dtrain.dm')
 
-    param = {'objective': 'binary:logistic'}
+    param = {'max_depth': 6, 'eta': 0.1, 'silent': 1, 'objective': 'binary:logistic'}
     if args.params is not '':
         param.update(ast.literal_eval(args.params))
 
     param['tree_method'] = args.tree_method
     print("Training with '%s'" % param['tree_method'])
     tmp = time.time()
-    xgb.train(param, dtrain, args.iterations, evals=[(dtest, "test")])
+    param['nthread'] = 24
+    param['eval_metric'] = 'auc'
+
+    #xgb.train(param, dtrain, args.iterations, evals=[(dtest, "test")])
+    xgb.train(param, dtrain, args.iterations)
     print ("Train Time: %s seconds" % (str(time.time() - tmp)))
+
+    # this is prediction
+    preds = xgb.predict(dtest)
+    y_test = dtest.get_label()
+    auc_score = metrics.roc_auc_score(y_test, preds)
+    logger.info('auc = %f', auc_score)
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--tree_method', default='hist')

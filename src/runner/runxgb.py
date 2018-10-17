@@ -210,7 +210,10 @@ def runxgb(trainfile, testfile, label_col):
     #
     logger.info('Start training...')
     #model = XGBClassifier(max_depth=10, learning_rate=0.1, n_estimators=100, silent=True, objective='binary:logistic', booster='gbtree', n_jobs=-1, nthread=None, gamma=0, min_child_weight=1, max_delta_step=0, subsample=1, colsample_bytree=1, colsample_bylevel=1, reg_alpha=0, reg_lambda=1)
-    model = XGBClassifier(max_depth=6, learning_rate=0.1, n_estimators=300, objective='binary:logistic', n_jobs=-1, subsample = 0.5)
+    #model = XGBClassifier(max_depth=6, learning_rate=0.1, n_estimators=300, objective='binary:logistic', n_jobs=-1, subsample = 0.5)
+    #model = XGBClassifier(max_depth=6, learning_rate=0.1, n_estimators=300, objective='binary:logistic', n_jobs=-1, tree_method='hist')
+    #model = XGBClassifier(max_depth=6, learning_rate=0.1, n_estimators=300, objective='binary:logistic', n_jobs=24, tree_method='exact')
+    model = XGBClassifier(max_depth=6, learning_rate=0.1, n_estimators=300, objective='binary:logistic', n_jobs=24, tree_method='hist')
     start = datetime.datetime.now()
     model.fit(X_train, y_train)
     end = datetime.datetime.now()
