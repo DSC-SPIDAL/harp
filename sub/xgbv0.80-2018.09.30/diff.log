@@ -1,0 +1,73 @@
+diff --git a/src/cli_main.cc b/src/cli_main.cc
+index eb27191..fdcefdb 100644
+--- a/src/cli_main.cc
++++ b/src/cli_main.cc
+@@ -21,7 +21,7 @@
+ #include <vector>
+ #include "./common/sync.h"
+ #include "./common/config.h"
+-
++#include <fstream>
+ 
+ namespace xgboost {
+ 
+@@ -197,6 +197,20 @@ void CLITrain(const CLIParam& param) {
+   if (param.silent == 0) {
+     LOG(INFO) << "Loading data: " << dmlc::GetTime() - tstart_data_load << " sec";
+   }
++
++/* 
++ * vtune trigger
++ * */
++  if(1){
++      std::ofstream write;
++    write.open("vtune-flag.txt");
++    write << "okay" << std::endl;
++    write.close();
++  }
++
++
++
++
+   // start training.
+   const double start = dmlc::GetTime();
+   for (int i = version / 2; i < param.num_round; ++i) {
+diff --git a/src/common/hist_util.h b/src/common/hist_util.h
+index 4c8f4a3..45e45bf 100644
+--- a/src/common/hist_util.h
++++ b/src/common/hist_util.h
+@@ -140,6 +140,18 @@ struct GHistIndexMatrix {
+       }
+     }
+   }
++  /*
++   * debug
++   * */
++  inline void printBinStat() const {
++    auto nfeature = cut.row_ptr.size() - 1;
++    for (unsigned fid = 0; fid < nfeature; ++fid) {
++      auto ibegin = cut.row_ptr[fid];
++      auto iend = cut.row_ptr[fid + 1];
++      std::cout << fid << " " << iend - ibegin << "\n";
++    }
++  }
++
+ 
+  private:
+   std::vector<size_t> hit_count_tloc_;
+diff --git a/src/tree/updater_fast_hist.cc b/src/tree/updater_fast_hist.cc
+index dff1647..6400b5b 100644
+--- a/src/tree/updater_fast_hist.cc
++++ b/src/tree/updater_fast_hist.cc
+@@ -74,6 +74,11 @@ class FastHistMaker: public TreeUpdater {
+       if (fhparam_.enable_feature_grouping > 0) {
+         gmatb_.Init(gmat_, column_matrix_, fhparam_);
+       }
++
++      /*
++       */
++      gmat_.printBinStat(); 
++
+       is_gmat_initialized_ = true;
+       if (param_.debug_verbose > 0) {
+         LOG(INFO) << "Generating gmat: " << dmlc::GetTime() - tstart << " sec";
