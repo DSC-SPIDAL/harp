@@ -27,9 +27,9 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RecursiveAction;
 
-/*******************************************************
+/**
  * Synchronous client
- ******************************************************/
+ **/
 public class SyncClient implements Runnable {
 
   protected static final Logger LOG = Logger.getLogger(SyncClient.class);
@@ -43,30 +43,27 @@ public class SyncClient implements Runnable {
   private final BlockingQueue<SyncQueue> consumerQueue;
   private final Thread client;
 
-  final static int ALL_WORKERS =
-      Integer.MAX_VALUE;
-  final static int NO_WORKERS = Integer.MIN_VALUE;
-  private final int initCapacity =
-      Constant.NUM_THREADS;
+  final static int ALL_WORKERS = Integer.MAX_VALUE;
+  private final static int NO_WORKERS = Integer.MIN_VALUE;
+  private final int initCapacity = Constant.NUM_THREADS;
 
   public SyncClient(Workers workers) {
     this.workers = workers;
     this.selfID = workers.getSelfID();
-    eventQueueMap =
-        new ConcurrentHashMap<>(initCapacity);
+    eventQueueMap = new ConcurrentHashMap<>(initCapacity);
     consumerQueue = new LinkedBlockingQueue<>();
     this.client = new Thread(this);
   }
 
-  /*******************************************************
+  /**
    * Task definition for sending
-   ******************************************************/
+   **/
   private class SendTask extends RecursiveAction {
     /**
      * Generated serial ID
      */
     private static final long serialVersionUID =
-        2147825101521531758L;
+            2147825101521531758L;
 
     private final SyncQueue queue;
 
@@ -100,12 +97,12 @@ public class SyncClient implements Runnable {
     // Message Event to separate worker queues
     // Add queue to the consumer blocking queue
     if (event
-        .getEventType() == EventType.MESSAGE_EVENT
-        && event.getBody() != null) {
+            .getEventType() == EventType.MESSAGE_EVENT
+            && event.getBody() != null) {
       if (event.getTargetID() != selfID) {
         SyncQueue queue =
-            getSyncQueue(event.getTargetID(),
-                event.getContextName());
+                getSyncQueue(event.getTargetID(),
+                        event.getContextName());
         queue.add(event.getBody());
         return true;
       } else {
@@ -127,10 +124,10 @@ public class SyncClient implements Runnable {
     // Collective event to a special queue
     // Add queue to the consumer blocking queue
     if (event
-        .getEventType() == EventType.COLLECTIVE_EVENT
-        && event.getBody() != null) {
+            .getEventType() == EventType.COLLECTIVE_EVENT
+            && event.getBody() != null) {
       SyncQueue queue = getSyncQueue(ALL_WORKERS,
-          event.getContextName());
+              event.getContextName());
       queue.add(event.getBody());
       return true;
     } else {
@@ -148,12 +145,12 @@ public class SyncClient implements Runnable {
   private SyncQueue getSyncQueue(int destID,
                                  String contextName) {
     ConcurrentMap<String, SyncQueue> queueMap =
-        eventQueueMap.get(destID);
+            eventQueueMap.get(destID);
     if (queueMap == null) {
       queueMap = new ConcurrentHashMap<>();
       ConcurrentMap<String, SyncQueue> oldQueueMap =
-          eventQueueMap.putIfAbsent(destID,
-              queueMap);
+              eventQueueMap.putIfAbsent(destID,
+                      queueMap);
       if (oldQueueMap != null) {
         queueMap = oldQueueMap;
       }
@@ -161,9 +158,9 @@ public class SyncClient implements Runnable {
     SyncQueue queue = queueMap.get(contextName);
     if (queue == null) {
       queue = new SyncQueue(contextName, selfID,
-          destID, workers, consumerQueue);
+              destID, workers, consumerQueue);
       SyncQueue oldQueue =
-          queueMap.putIfAbsent(contextName, queue);
+              queueMap.putIfAbsent(contextName, queue);
       if (oldQueue != null) {
         queue = oldQueue;
       }
@@ -190,7 +187,7 @@ public class SyncClient implements Runnable {
         queue = consumerQueue.take();
       } catch (InterruptedException e) {
         LOG.error(
-            "Error when taking from the queue", e);
+                "Error when taking from the queue", e);
         continue;
       }
       if (queue.getDestID() != NO_WORKERS) {
@@ -207,7 +204,7 @@ public class SyncClient implements Runnable {
    */
   public void stop() {
     SyncQueue queue =
-        getSyncQueue(NO_WORKERS, "");
+            getSyncQueue(NO_WORKERS, "");
     queue.add(null);
     ComputeUtil.joinThread(client);
   }

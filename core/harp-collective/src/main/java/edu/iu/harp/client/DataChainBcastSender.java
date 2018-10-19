@@ -23,24 +23,17 @@ import edu.iu.harp.resource.ByteArray;
 import edu.iu.harp.worker.Workers;
 import org.apache.log4j.Logger;
 
-/*******************************************************
+/**
  * The actual sender for broadcasting the data
  * using chain method We don't allow the worker
  * broadcasts to itself.
- ******************************************************/
-public class DataChainBcastSender
-    extends DataSender {
-  /**
-   * Class logger
-   */
-  @SuppressWarnings("unused")
-  private static final Logger LOG =
-      Logger.getLogger(DataChainBcastSender.class);
+ **/
+public class DataChainBcastSender extends DataSender {
 
   public DataChainBcastSender(Data data,
                               Workers workers, byte command) {
     super(data, getDestID(workers.getSelfID(),
-        workers.getNextID()), workers, command);
+            workers.getNextID()), workers, command);
   }
 
   /**
@@ -73,11 +66,9 @@ public class DataChainBcastSender
     ByteArray opArray = ByteArray.create(8, true);
     if (opArray != null) {
       try {
-        Serializer serializer =
-            new Serializer(opArray);
+        Serializer serializer = new Serializer(opArray);
         serializer.writeInt(headArrSize);
-        serializer
-            .writeInt(getWorkers().getSelfID());
+        serializer.writeInt(getWorkers().getSelfID());
         return opArray;
       } catch (Exception e) {
         opArray.release();
