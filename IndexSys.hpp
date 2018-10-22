@@ -29,15 +29,15 @@ class IndexSys
         void release();
         int comb_calc(int a, int b);
 
-
     private:
 
         void perm_set_init(int*& perm_set, int size);
-        void perm_set_next(int*& perm_set, int size, int colors);
-        
+        void perm_set_next(int*& perm_set, int size, int colors);       
         void gen_index();
         void gen_colors();
         void gen_comb_hash_table();
+        void releaseColorSets();
+        void releaseIndexSets();
         int get_color_hash(int* perm_set, int size);
 
 

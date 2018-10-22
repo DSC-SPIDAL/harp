@@ -33,12 +33,109 @@ void IndexSys::initialization(int color_num, int sub_len, Graph** sub_tps, Divid
 
     // create the hash table
     gen_comb_hash_table();
+
+    // release tmp color table
+    releaseColorSets();
+
+    // release tmp index vals
+    releaseIndexSets();
 }
+
+void IndexSys::releaseColorSets()
+{/*{{{*/
+    for (int i = 0; i < _sub_len; ++i) {
+
+        int subSize = _sub_vert_num[i]; 
+        if (subSize > 1) {
+            
+            int curComb = _comb_table[_color_num][subSize];
+            for (int n = 0; n < curComb; ++n) {
+
+                int mainCombNum = subSize - 1;
+                for (int c = 0; c < mainCombNum; ++c) {
+
+                    int mainCombSets = comb_calc(subSize, (c+1));
+                    for (int j = 0; j < mainCombSets; ++j) {
+                        delete[] _colors_tmp[i][n][c][j];    
+                    }
+
+                    delete[] _colors_tmp[i][n][c];
+                }
+
+                delete[] _colors_tmp[i][n];
+                
+            }
+
+            delete[] _colors_tmp[i];
+        }
+        
+    }
+
+    delete[] _colors_tmp;
+
+}/*}}}*/
+
+void IndexSys::releaseIndexSets()
+{/*{{{*/
+    for (int i = 0; i < _color_num-1; ++i) {
+
+        int valNum = i+2;
+        for (int j = 0; j < (valNum-1); ++j) {
+
+            int setSize = j+1;
+            int combNum = comb_calc(valNum, setSize);
+            for (int k = 0; k < combNum; ++k) {
+                delete[] _index_tmp[i][j][k]; 
+            }
+
+            delete[] _index_tmp[i][j];
+            
+        }
+        delete[] _index_tmp[i];
+    }
+
+    delete[] _index_tmp;
+}/*}}}*/
 
 void IndexSys::release()
-{
+{/*{{{*/
+    // delete all of the tables
+    for (int s = 0; s < _sub_len; ++s) {
 
-}
+        int subSize = _sub_vert_num[s];
+
+        if (subSize > 1) {
+
+            int curComb = _comb_table[_color_num][subSize];
+            for (int n = 0; n < curComb; ++n) {
+                _i_sub_c_split_to_counts[0][s][n];
+                _i_sub_c_split_to_counts[1][s][n];
+            }
+
+            delete[] _i_sub_c_split_to_counts[0][s];
+            delete[] _i_sub_c_split_to_counts[1][s];
+            delete[] _i_sub_precomp_to_counts[s];
+
+        }
+
+        delete[] _i_sub_c_to_counts[s];
+        
+    }
+
+    delete[] _i_sub_c_split_to_counts[0];
+    delete[] _i_sub_c_split_to_counts[1];
+    delete[] _i_sub_c_split_to_counts;
+    delete[] _i_sub_precomp_to_counts;
+    delete[] _i_sub_c_to_counts;
+
+    for (int j = 0; j < _color_num+1; ++j) {
+       delete[] _comb_table[j]; 
+    }
+
+    delete[] _comb_table;
+    delete[] _sub_vert_num;
+
+}/*}}}*/
 
 void IndexSys::gen_index()
 {/*{{{*/
@@ -284,9 +381,6 @@ void IndexSys::gen_comb_hash_table()
     }
 
 }/*}}}*/
-
-
-
 
 
 

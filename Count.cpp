@@ -54,5 +54,13 @@ double Count::compute(Graph& templates)
     printf("Finish creating indexer\n");
     std::fflush(stdout);
 
-    
+    _dTable.initDataTable(_subtmp_array, &indexer, _total_sub_num, _color_num, _vert_num);
+
+    printf("Finish initializaing datatable\n");
+    std::fflush(stdout);
+
+    // start counting
+    //
+    // finish counting
+
 }

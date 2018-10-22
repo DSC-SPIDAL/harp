@@ -8,7 +8,7 @@
 #include "Graph.hpp"
 #include "DivideTemplates.hpp"
 #include "IndexSys.hpp"
-#include "CountsTable.hpp"
+#include "DataTable.hpp"
 
 using namespace std;
 
@@ -57,10 +57,11 @@ class Count {
         // divide the templates into sub-templates
         DivideTemplates div_tp;
         // CountsTable table;
-        IndexSys indexer;
 
+        DataTabble _dTable;
 
         // index system
+        IndexSys indexer;
         
         // counts container
         double* _appro_vert_counts;
