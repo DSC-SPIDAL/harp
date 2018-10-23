@@ -1,6 +1,7 @@
 #include "IndexSys.hpp"
 #include "Graph.hpp"
 #include <cassert>
+#include <stdlib.h>
 
 using namespace std;
 
@@ -114,8 +115,13 @@ void IndexSys::release()
 
             delete[] _i_sub_c_split_to_counts[0][s];
             delete[] _i_sub_c_split_to_counts[1][s];
-            delete[] _i_sub_c_split_to_counts_vec[0][s];
-            delete[] _i_sub_c_split_to_counts_vec[1][s];
+#ifdef __INTEL_COMPILER
+            _mm_free(_i_sub_c_split_to_counts_vec[0][s]);
+            _mm_free(_i_sub_c_split_to_counts_vec[1][s]);
+#else
+            free(_i_sub_c_split_to_counts_vec[0][s]);
+            free(_i_sub_c_split_to_counts_vec[1][s]);
+#endif
             delete[] _i_sub_precomp_to_counts[s];
 
         }
@@ -336,8 +342,13 @@ void IndexSys::gen_comb_hash_table()
 
             int split_main_comb = comb_calc(sub_vert_num, split_main_num);
             // create vec
-            _i_sub_c_split_to_counts_vec[0][s] = new int[sub_comb_num*split_main_comb];
-            _i_sub_c_split_to_counts_vec[1][s] = new int[sub_comb_num*split_main_comb];
+#ifdef __INTEL_COMPILER 
+            _i_sub_c_split_to_counts_vec[0][s] = (int*)_mm_malloc(sub_comb_num*split_main_comb*sizeof(int), 64);
+            _i_sub_c_split_to_counts_vec[1][s] = (int*)_mm_malloc(sub_comb_num*split_main_comb*sizeof(int), 64);
+#else
+            _i_sub_c_split_to_counts_vec[0][s] = (int*)aligned_alloc(64, sub_comb_num*split_main_comb*sizeof(int));
+            _i_sub_c_split_to_counts_vec[1][s] = (int*)aligned_alloc(64, sub_comb_num*split_main_comb*sizeof(int));
+#endif
 
             // create precompute
             _i_sub_precomp_to_counts[s] = (int*) malloc(comb_calc(sub_vert_num, split_main_num)*

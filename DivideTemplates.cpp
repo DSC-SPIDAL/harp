@@ -1,7 +1,6 @@
 // implementation of sub-templates divide
 
 #include "DivideTemplates.hpp"
-#include "Constants.hpp"
 #include <cstring>
 
 void DivideTemplates::DivideTp(Graph& tp)

@@ -10,7 +10,7 @@ void Graph::read_enlist(string file_name)
 
     string line;
     ifstream file_strm;
-    file_strm.open(file_name);
+    file_strm.open(file_name.c_str());
 
     // get the vert num
     std::getline(file_strm, line);

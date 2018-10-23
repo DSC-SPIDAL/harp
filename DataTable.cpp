@@ -1,5 +1,6 @@
 #include "DataTable.hpp"
 #include <cstring>
+#include <stdlib.h>
 
 using namespace std;
 
@@ -72,7 +73,13 @@ void DataTabble::cleanSubTempTable(int subsId)
 #pragma omp parallel for 
         for (int v = 0; v < _vertsNum; ++v) {
             if (_dataTable[subsId][v] != NULL)
+            {
+#ifdef __INTEL_COMPILER
+                _mm_free(_dataTable[subsId][v]);
+#else
                 free(_dataTable[subsId][v]);
+#endif
+            }
         }
     }
 
@@ -142,8 +149,11 @@ float* DataTabble::getAuxArray(int vertId)
 void DataTabble::setTableCell(int subsId, int vertId, int combIdx, float val)
 {
     if (_dataTable[subsId][vertId] == NULL) {
-        
+#ifdef __INTEL_COMPILER
+        _dataTable[subsId][vertId] = (float*) _mm_malloc(_tableLen[subsId]*sizeof(float),64);
+#else
         _dataTable[subsId][vertId] = (float*) aligned_alloc(64, _tableLen[subsId]*sizeof(float));
+#endif
         std::memset(_dataTable[subsId][vertId], 0, _tableLen[subsId]*sizeof(float));
     }
 
@@ -154,7 +164,11 @@ void DataTabble::setCurTableCell(int vertId, int combIdx, float val)
 {
     if (_curTable[vertId] == NULL) {
 
+#ifdef __INTEL_COMPILER
+        _curTable[vertId] = (float*) _mm_malloc(_tableLen[_curSubId]*sizeof(float), 64);
+#else
         _curTable[vertId] = (float*) aligned_alloc(64, _tableLen[_curSubId]*sizeof(float));
+#endif
         std::memset(_curTable[vertId], 0, _tableLen[_curSubId]*sizeof(float));
     }
 

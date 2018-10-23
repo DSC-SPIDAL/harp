@@ -10,6 +10,8 @@
 
 #include "Count.hpp"
 
+#include "Helper.hpp"
+
 using namespace std;
 
 void Count::initialization(Graph& graph, int thd_num, int itr_num)
@@ -70,11 +72,16 @@ double Count::compute(Graph& templates)
     std::fflush(stdout);
 
     // start counting
+    double timeStart = utility::timer();
+
     double iterCount = 0.0;
     for (int i = 0; i < _itr_num; ++i) {
         iterCount += colorCounting();
     }
    
+    printf("\nTime for count per iter: %9.6lf seconds\n", (utility::timer() - timeStart)/_itr_num);
+    std::fflush(stdout);
+
     // finish counting
     double finalCount = iterCount/(double)_itr_num;
     double probColorful = factorial(_color_num) / 
@@ -163,6 +170,13 @@ double Count::countNonBottome(int subsId)
         int* auxSplitVecLocal = (indexer.getSplitToCountVecTable())[1][subsId]; 
         int* combToCountLocal = (indexer.getCombToCountTable())[subsId];
 
+#ifdef __INTEL_COMPILER
+        __assume_aligned(mainSplitVecLocal, 64);
+        __assume_aligned(auxSplitVecLocal, 64);
+#else
+        __builtin_assume_aligned(mainSplitVecLocal, 64);
+        __builtin_assume_aligned(auxSplitVecLocal, 64);
+#endif
         #pragma omp for schedule(static) reduction(+:countSum)
         for (int v = 0; v < _vert_num; ++v) {
 
@@ -184,18 +198,36 @@ double Count::countNonBottome(int subsId)
 
                if (countNbrValid)
                {
+#ifdef __INTEL_COMPILER
+                   float* countBuf = (float*) _mm_malloc(vecNum*sizeof(float), 64);
+#else
                    float* countBuf = (float*) aligned_alloc(64, vecNum*sizeof(float));
+#endif
                    std::memset(countBuf, 0, vecNum*sizeof(float));
-                    __builtin_assume_aligned(countBuf, 64);
-                    __builtin_assume_aligned(countMainVal, 64);
 
+#ifdef __INTEL_COMPILER
+                   __assume_aligned(countBuf, 64);
+                   __assume_aligned(countMainVal, 64);
+#else
+                   __builtin_assume_aligned(countBuf, 64);
+                   __builtin_assume_aligned(countMainVal, 64);
+#endif
                    // multiplicaiton
                    for (int i = 0; i < countNbrValid; ++i) {
                        
                        float*  countAuxVal= dTableLocal->getAuxArray(nbrListValid[i]);
-                       __builtin_assume_aligned(countAuxVal, 64);
 
+#ifdef __INTEL_COMPILER
+                       __assume_aligned(countAuxVal, 64);
+#else
+                       __builtin_assume_aligned(countAuxVal, 64);
+#endif
+
+#ifdef __INTEL_COMPILER
+                       #pragma vector always
+#else
                        #pragma GCC ivdep
+#endif
                        for (int j = 0; j < vecNum; ++j) {
                            countBuf[j] += (countMainVal[mainSplitVecLocal[j]]*
                                    countAuxVal[auxSplitVecLocal[j]]);
@@ -218,8 +250,11 @@ double Count::countNonBottome(int subsId)
                           dTableLocal->setCurTableCell(v, combToCountLocal[i], (double)res); 
                        }
                    }
-
+#ifdef __INTEL_COMPILER
+                   _mm_free(countBuf);
+#else
                    free(countBuf);
+#endif
 
                } // end of valid nbr
 

@@ -6,7 +6,7 @@
 #define __DIVIDETEMPLATES_H__
 
 #include "Graph.hpp"
-#include "Constants.hpp"
+#include "Helper.hpp"
 #include <vector>
 
 using namespace std;
@@ -20,6 +20,7 @@ class DivideTemplates
             tmp_subtps = NULL;
             all_subtps = NULL;
             tp_valid = NULL;
+            dummy_val = 93620;
         }
 
         ~DivideTemplates() { release(); }
@@ -64,7 +65,7 @@ class DivideTemplates
         int total_subtp;
         bool* tp_valid;
         // int dummy_val = 3245493620;
-        int dummy_val = 93620;
+        int dummy_val;
         // int dummy_val = DUMMY_VAL;
 
 

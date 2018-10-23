@@ -43,7 +43,7 @@ int main(int argc, char** argv)
     // load input graph 
     if (load_binary)
     {
-      ifstream input_file(graph_name, ios::binary);
+      ifstream input_file(graph_name.c_str(), ios::binary);
       input_graph.deserialize(input_file);
       input_file.close();
     }
