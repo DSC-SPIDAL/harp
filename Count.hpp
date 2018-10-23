@@ -22,20 +22,28 @@ class Count {
             _templates=NULL;
             _subtmp_array=NULL;
             _colors_local=NULL;
-            _appro_vert_counts=NULL;
         }
 
         void initialization(Graph& graph, int thd_num, int itr_num);
 
         double compute(Graph& templates);
 
-        ~Count() {}
+        ~Count() {
+            if (_colors_local != NULL)
+                free(_colors_local);
+        }
 
     private:
+
+        double colorCounting();
+        double countNonBottome(int subsId);
+        void colorInit();
+        int factorial(int n);
 
         // local graph data
         Graph* _graph;
         int _vert_num;
+        int _max_deg;
 
         // templates and sub-temps chain
         Graph* _templates; 
@@ -62,9 +70,6 @@ class Count {
 
         // index system
         IndexSys indexer;
-        
-        // counts container
-        double* _appro_vert_counts;
         
 };
 

@@ -78,6 +78,7 @@ void DataTabble::cleanSubTempTable(int subsId)
 
     if (_isSubInited[subsId] && _dataTable[subsId] != NULL) {
         free(_dataTable[subsId]);
+        _dataTable[subsId] = NULL;
     }
 
     _isSubInited[subsId] = false;
@@ -140,7 +141,7 @@ float* DataTabble::getAuxArray(int vertId)
 
 void DataTabble::setTableCell(int subsId, int vertId, int combIdx, float val)
 {
-    if (!_dataTable[subsId][vertId]) {
+    if (_dataTable[subsId][vertId] == NULL) {
         
         _dataTable[subsId][vertId] = (float*) aligned_alloc(64, _tableLen[subsId]*sizeof(float));
         std::memset(_dataTable[subsId][vertId], 0, _tableLen[subsId]*sizeof(float));
@@ -151,7 +152,7 @@ void DataTabble::setTableCell(int subsId, int vertId, int combIdx, float val)
 
 void DataTabble::setCurTableCell(int vertId, int combIdx, float val)
 {
-    if (!_curTable[vertId]) {
+    if (_curTable[vertId] == NULL) {
 
         _curTable[vertId] = (float*) aligned_alloc(64, _tableLen[_curSubId]*sizeof(float));
         std::memset(_curTable[vertId], 0, _tableLen[_curSubId]*sizeof(float));

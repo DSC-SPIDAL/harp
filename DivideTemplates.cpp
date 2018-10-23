@@ -59,7 +59,10 @@ void DivideTemplates::divide(int sub, int root)
     printf("Finish setting nodes\n");
     std::fflush(stdout);
 
-    if (tmp_subtps[main_index].get_vert_num() > 1)
+    int mainSize = tmp_subtps[main_index].get_vert_num();
+    int auxSize = tmp_subtps[aux_index].get_vert_num();
+
+    if ( mainSize > 1)
     {
         divide(main_index, root_main);
     }
@@ -69,7 +72,7 @@ void DivideTemplates::divide(int sub, int root)
         set_nodes(node_aux, main_index, dummy_val);
     }
     //
-    if (tmp_subtps[aux_index].get_vert_num() > 1)
+    if ( auxSize > 1)
     {
         divide(aux_index, root_aux);
     }

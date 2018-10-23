@@ -64,7 +64,8 @@ class DivideTemplates
         int total_subtp;
         bool* tp_valid;
         // int dummy_val = 3245493620;
-        int dummy_val = DUMMY_VAL;
+        int dummy_val = 93620;
+        // int dummy_val = DUMMY_VAL;
 
 
 };

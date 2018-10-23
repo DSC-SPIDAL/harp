@@ -114,6 +114,8 @@ void IndexSys::release()
 
             delete[] _i_sub_c_split_to_counts[0][s];
             delete[] _i_sub_c_split_to_counts[1][s];
+            delete[] _i_sub_c_split_to_counts_vec[0][s];
+            delete[] _i_sub_c_split_to_counts_vec[1][s];
             delete[] _i_sub_precomp_to_counts[s];
 
         }
@@ -124,7 +126,13 @@ void IndexSys::release()
 
     delete[] _i_sub_c_split_to_counts[0];
     delete[] _i_sub_c_split_to_counts[1];
+
+    delete[] _i_sub_c_split_to_counts_vec[0];
+    delete[] _i_sub_c_split_to_counts_vec[1];
+
     delete[] _i_sub_c_split_to_counts;
+    delete[] _i_sub_c_split_to_counts_vec;
+
     delete[] _i_sub_precomp_to_counts;
     delete[] _i_sub_c_to_counts;
 
@@ -287,9 +295,13 @@ void IndexSys::gen_comb_hash_table()
 {/*{{{*/
 
     _i_sub_c_split_to_counts = new int***[2];
+    _i_sub_c_split_to_counts_vec = new int**[2];
 
     _i_sub_c_split_to_counts[0] = new int**[_sub_len];
     _i_sub_c_split_to_counts[1] = new int**[_sub_len];
+
+    _i_sub_c_split_to_counts_vec[0] = new int*[_sub_len];
+    _i_sub_c_split_to_counts_vec[1] = new int*[_sub_len];
 
     _i_sub_precomp_to_counts = new int*[_sub_len];
 
@@ -322,6 +334,12 @@ void IndexSys::gen_comb_hash_table()
             split_main_num = _divider->get_main_node_vert_num(s); 
             split_aux_num = _divider->get_aux_node_vert_num(s);
 
+            int split_main_comb = comb_calc(sub_vert_num, split_main_num);
+            // create vec
+            _i_sub_c_split_to_counts_vec[0][s] = new int[sub_comb_num*split_main_comb];
+            _i_sub_c_split_to_counts_vec[1][s] = new int[sub_comb_num*split_main_comb];
+
+            // create precompute
             _i_sub_precomp_to_counts[s] = (int*) malloc(comb_calc(sub_vert_num, split_main_num)*
                     sub_comb_num*sizeof(int));
 
@@ -363,6 +381,8 @@ void IndexSys::gen_comb_hash_table()
 
                     _i_sub_c_split_to_counts[0][s][n][main_itr] = color_index_main;
                     _i_sub_c_split_to_counts[1][s][n][aux_itr] = color_index_aux;
+                    _i_sub_c_split_to_counts_vec[0][s][n*split_main_comb + main_itr] = color_index_main; 
+                    _i_sub_c_split_to_counts_vec[1][s][n*split_main_comb + main_itr] = color_index_aux; 
 
                     _i_sub_precomp_to_counts[s][n*split_main_comb + aux_itr] = 
                         (color_index_main*aux_count_len + color_index_aux);
