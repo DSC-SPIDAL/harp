@@ -18,7 +18,8 @@ ARCH_is_$(ARCH)         := yes
 -avx := $(if $(COMPILER_is_icc), $(if $(ARCH_is_knl), -xMIC-AVX512, $(if $(ARCH_is_skl), -xCORE-AVX512, ) ),)
 -rpt := $(if $(COMPILER_is_icc), -qopt-report=5, )
 ## for nec mpi version
--nccflag := $(if $(COMPILER_is_ncc), -I${NMPI_ROOT} -DSC_NEC,)
+-nccflag := $(if $(COMPILER_is_ncc), -DNEC -DSXVE,)
+-nccdep := $(if $(COMPILER_is_ncc), -M,)
 ## for knl MCDRAM
 -knlflag := $(if $(ARCH_is_knl), -DSC_MEMKIND -I./memkind/include -L./memkind/lib -lmemkind, )
 
@@ -54,22 +55,23 @@ $(shell mkdir -p $(dir $(DEPS)) >/dev/null)
 # C compiler
 CC := $(if $(COMPILER_is_ncc), ncc, $(if $(COMPILER_is_icc), icc, gcc))
 # C++ compiler
-CXX := $(if $(COMPILER_is_ncc), n++, $(if $(COMPILER_is_icc), icpc, g++))
+CXX := $(if $(COMPILER_is_ncc), ncc, $(if $(COMPILER_is_icc), icpc, g++))
 # linker
-LD := $(if $(COMPILER_is_ncc), n++, $(if $(COMPILER_is_icc), icpc, g++))
+LD := $(if $(COMPILER_is_ncc), g++, $(if $(COMPILER_is_icc), icpc, g++))
 # tar
 TAR := tar
 
 # C flags
-CFLAGS := -std=c11 $(-omp) -O3
+CFLAGS := -std=c11 $(-nccflag) $(-omp) $(-avx) $(-rpt) -O3
 # C++ flags
-CXXFLAGS := -std=c++11 $(-omp) -O3
+CXXFLAGS := -std=c++11 $(-nccflag) $(-omp) $(-avx) $(-rpt) -O3
 # C/C++ flags
-CPPFLAGS := -g -Wall -Wextra -pedantic
+# CPPFLAGS := -g -Wall -Wextra -pedantic
+CPPFLAGS := -g -Wall -pedantic
 # linker flags
 LDFLAGS := $(-omp) 
 # flags required for dependency generation; passed to compilers
-DEPFLAGS = -MT $@ -MD -MP -MF $(DEPDIR)/$*.Td
+DEPFLAGS = $(-nccdep) -MT $@ -MD -MP -MF  $(DEPDIR)/$*.Td
 
 # compile C source files
 COMPILE.c = $(CC) $(DEPFLAGS) $(CFLAGS) $(CPPFLAGS) -c -o $@

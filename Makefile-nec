@@ -1,0 +1,19 @@
+## ----------- start of compilation -----------
+CXX := nc++ 
+CXXFLAGS := -std=c++11 -DNEC -fopenmp -O3 -I.
+DEPS := $(wildcard *.hpp)
+Obj := sc-main.o Count.o DataTable.o DivideTemplates.o Graph.o Helper.o IndexSys.o
+
+all: sc-nec-ncc.bin 
+
+%.o: %.cpp $(DEPS)
+	$(CXX) -c -o $@ $< $(CXXFLAGS)
+
+sc-nec-ncc.bin: $(Obj)
+	$(CXX) -o $@ $^ $(CXXFLAGS)
+
+clean:
+	rm *.o
+
+cleandist:
+	rm *.o sc-nec-ncc.bin
