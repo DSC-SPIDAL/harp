@@ -26,6 +26,11 @@ void IndexSys::initialization(int color_num, int sub_len, Graph** sub_tps, Divid
     for(int i=0;i<_sub_len;i++)
         _sub_vert_num[i] = (*_sub_tps)[i].get_vert_num();
 
+#ifdef VERBOSE
+    printf("Start generating index system\n"); 
+    std::fflush(stdout);
+#endif
+
     // create tmp index table 
     gen_index();
 
@@ -40,6 +45,12 @@ void IndexSys::initialization(int color_num, int sub_len, Graph** sub_tps, Divid
 
     // release tmp index vals
     releaseIndexSets();
+
+#ifdef VERBOSE
+    printf("Finish generating index system\n"); 
+    std::fflush(stdout);
+#endif
+
 }
 
 void IndexSys::releaseColorSets()
@@ -367,13 +378,6 @@ void IndexSys::gen_comb_hash_table()
             {
                 int* colors_main = NULL;
                 int* colors_aux = NULL;
-
-                //debug
-                // printf("cur_colorset: %d, %d, %d, %d\n", s, n, (split_main_num-1), (sub_vert_num -1));
-                // std::fflush(stdout);
-
-                // assert( (split_main_num-1) >=0 && (split_main_num -1) < (sub_vert_num -1));
-                // assert(_colors_tmp[s][n][split_main_num-1] != NULL);
 
                 int** cur_colorset = _colors_tmp[s][n][split_main_num-1];
                 int split_main_comb = comb_calc(sub_vert_num, split_main_num);

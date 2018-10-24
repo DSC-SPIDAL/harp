@@ -13,8 +13,18 @@ void DivideTemplates::DivideTp(Graph& tp)
 
     // a recursive process to divide the templates
     // into sub-templates
+#ifdef VERBOSE
+    printf("Start dividing templates\n"); 
+    std::fflush(stdout);
+#endif    
+    
     divide(0, 0);
     finalize();
+
+#ifdef VERBOSE
+    printf("Finish dividing templates\n"); 
+    std::fflush(stdout);
+#endif    
 
 }
 
@@ -39,13 +49,7 @@ void DivideTemplates::divide(int sub, int root)
     int root_main = 0;
     int root_aux = 0;
 
-    printf("Start splitting\n");
-    std::fflush(stdout);
-
     split(sub, root, root_main, root_aux);
-
-    printf("Finish splitting\n");
-    std::fflush(stdout);
 
     int main_index = cur_index - 2;
     int aux_index = cur_index -1;
@@ -54,9 +58,6 @@ void DivideTemplates::divide(int sub, int root)
     set_nodes(node_aux, sub, aux_index);
     set_nodes(parents, main_index, sub);
     set_nodes(parents, aux_index, sub);
-
-    printf("Finish setting nodes\n");
-    std::fflush(stdout);
 
     int mainSize = tmp_subtps[main_index].get_vert_num();
     int auxSize = tmp_subtps[aux_index].get_vert_num();
@@ -132,22 +133,10 @@ void DivideTemplates::split(int& sub, int& root, int& new_main, int& new_aux)
     // may change this for better performance
     int new_node = adjs[0];
 
-    //debug
-    printf("new node is %d\n", new_node);
-    std::fflush(stdout);
-
     // start the split job
     new_main = split_nodes(sub, root, new_node);
 
-    //debug
-    printf("new main index is %d\n", new_main);
-    std::fflush(stdout);
-
     new_aux = split_nodes(sub, new_node, root);
-    
-    //debug
-    printf("new aux index is %d\n", new_aux);
-    std::fflush(stdout);
 
 }/*}}}*/
 
@@ -219,26 +208,9 @@ int DivideTemplates::split_nodes(int& sub, int& root, int& rest)
    }
 
    int val_return = src_list[0];
-   // int* src_copy = new int[src_list.size()];
-   // int* dst_copy = new int[dst_list.size()];
-   // std::memcpy(src_copy, src_list.data(), src_list.size()*sizeof(int));
-   // std::memcpy(dst_copy, dst_list.data(), dst_list.size()*sizeof(int));
-
-   //debug
-   printf("build graph: num_vert is %d, num_edge is %d\n", num_vert, num_edge);
-   std::fflush(stdout);
-   for(int i= 0;i<src_list.size();i++)
-       printf("src: %d\n", src_list[i]);
-
-   for(int i= 0;i<dst_list.size();i++)
-       printf("dst: %d\n", dst_list[i]);
 
    tmp_subtps[cur_index].build_graph(num_vert, num_edge, &src_list[0], &dst_list[0]);
-   // tmp_subtps[cur_index].build_graph(num_vert, num_edge, src_copy, dst_copy);
    cur_index++;
-
-   // delete[] src_copy;
-   // delete[] dst_copy;
 
    return val_return;
 
