@@ -20,6 +20,7 @@
 
 	<properties>
 		<hadoop-version>2.6.0</hadoop-version>
+		<mvn-assembly-version>3.1.0</mvn-assembly-version>
 	</properties>
 
 	<dependencyManagement>
@@ -195,6 +196,14 @@
 						</configuration>
 					</execution>
 				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<version>${mvn-assembly-version}</version>
+				<configuration>
+					<tarLongFileMode>posix</tarLongFileMode>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>
