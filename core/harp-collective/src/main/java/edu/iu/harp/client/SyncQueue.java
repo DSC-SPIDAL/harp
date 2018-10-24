@@ -28,13 +28,13 @@ import org.apache.log4j.Logger;
 import java.util.LinkedList;
 import java.util.concurrent.BlockingQueue;
 
-/*******************************************************
+/**
  * Synchronous queue
- ******************************************************/
+ **/
 public class SyncQueue {
 
   protected static final Logger LOG =
-      Logger.getLogger(SyncQueue.class);
+          Logger.getLogger(SyncQueue.class);
 
   private final String contextName;
   private final int sourceID;
@@ -139,17 +139,17 @@ public class SyncQueue {
       return;
     }
     Data data = new Data(DataType.SIMPLE_LIST,
-        contextName, sourceID, transList,
-        DataUtil.getNumTransListBytes(transList));
+            contextName, sourceID, transList,
+            DataUtil.getNumTransListBytes(transList));
     if (destID == SyncClient.ALL_WORKERS) {
       // Broadcast events
       Sender sender = new DataMSTBcastSender(data,
-          workers, Constant.MST_BCAST_DECODE);
+              workers, Constant.MST_BCAST_DECODE);
       sender.execute();
     } else {
       // Send events to worker ID
       Sender sender = new DataSender(data, destID,
-          workers, Constant.SEND_DECODE);
+              workers, Constant.SEND_DECODE);
       sender.execute();
     }
     // Release the data
@@ -163,27 +163,20 @@ public class SyncQueue {
    * @return true if it's in consuming state,
    * false otherwise
    */
-  private synchronized boolean
-  inConsumeBarrier() {
-    if (!inConsumerQueue && isConsuming) {
-      return true;
-    } else {
-      return false;
-    }
+  private synchronized boolean inConsumeBarrier() {
+    return !inConsumerQueue && isConsuming;
   }
 
   /**
    * Exit the consuming state
    */
-  private synchronized void
-  leaveConsumeBarrier() {
+  private synchronized void leaveConsumeBarrier() {
     if (!inConsumerQueue && isConsuming) {
       queue.clear();
       isConsuming = false;
       if (!localList.isEmpty()) {
         // Exchange the local list and the queue
-        LinkedList<Transferable> tmpList = null;
-        tmpList = queue;
+        LinkedList<Transferable> tmpList = queue;
         queue = localList;
         localList = tmpList;
         consumerQueue.add(this);

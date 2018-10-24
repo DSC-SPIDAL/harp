@@ -18,21 +18,24 @@ package edu.iu.harp.client;
 
 import edu.iu.harp.resource.Simple;
 
-/*******************************************************
+/**
+ * <p>
  * An event includes the event type, the context
  * name, the source ID, the target ID and the
  * event body.
- *
+ * </p>
+ * <p>
  * Note that no matter what source ID is assigned,
- * it dosen't make a mistake of the real worker
+ * it doesn't make a mistake of the real worker
  * sender. no matter what target ID is set, if the
  * event type is LOCAL_EVENT or COLLECTIVE_EVENT,
  * the event is still sent to the worker itself
  * (LOCAL_EVENT) or sent to the rest workers
  * (COLLECTIVE_EVENT)
- *
- ******************************************************/
+ * </p>
+ **/
 public class Event {
+
   private final EventType eventType;
   private final String contextName;
   private final int sourceID;
@@ -41,11 +44,11 @@ public class Event {
 
   public Event(EventType type, String name,
                int sourceID, int targetID, Simple b) {
-    eventType = type;
-    contextName = name;
+    this.eventType = type;
+    this.contextName = name;
     this.sourceID = sourceID;
     this.targetID = targetID;
-    body = b;
+    this.body = b;
   }
 
   /**

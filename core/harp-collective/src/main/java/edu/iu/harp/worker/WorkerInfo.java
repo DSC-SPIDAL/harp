@@ -72,4 +72,14 @@ public class WorkerInfo {
   public int getRack() {
     return rack;
   }
+
+  @Override
+  public String toString() {
+    return "WorkerInfo{" +
+            "id=" + id +
+            ", node='" + node + '\'' +
+            ", port=" + port +
+            ", rack=" + rack +
+            '}';
+  }
 }

@@ -27,24 +27,23 @@ import org.apache.log4j.Logger;
 
 import java.io.IOException;
 
-/*******************************************************
+/**
  * The actual sender for broadcasting the data
  * using MST method We don't allow the worker
  * broadcasts to itself.
- ******************************************************/
-public class DataMSTBcastSender
-    extends DataSender {
+ */
+public class DataMSTBcastSender extends DataSender {
 
   private static final Logger LOG =
-      Logger.getLogger(DataMSTBcastSender.class);
+          Logger.getLogger(DataMSTBcastSender.class);
 
   public DataMSTBcastSender(Data data,
                             Workers workers, byte command) {
     super(data,
-        getDestID(workers.getSelfID(),
-            workers.getMinID(), workers.getMiddleID(),
-            workers.getMaxID()),
-        workers, command);
+            getDestID(workers.getSelfID(),
+                    workers.getMinID(), workers.getMiddleID(),
+                    workers.getMaxID()),
+            workers, command);
   }
 
   /**
@@ -59,8 +58,7 @@ public class DataMSTBcastSender
   private static int getDestID(int selfID,
                                int left, int middle, int right) {
     int half = middle - left + 1;
-    int destID = (selfID <= middle
-        ? (selfID + half) : (selfID - half));
+    int destID = (selfID <= middle ? (selfID + half) : (selfID - half));
     // destID may be greater than right
     // but won't be less than left
     if (destID > right) {
@@ -81,14 +79,11 @@ public class DataMSTBcastSender
    * @return the ByteArray storing the size of the
    * head array
    */
-  protected ByteArray
-  getOPByteArray(int headArrSize) {
-    ByteArray opArray =
-        ByteArray.create(12, true);
+  protected ByteArray getOPByteArray(int headArrSize) {
+    ByteArray opArray = ByteArray.create(12, true);
     if (opArray != null) {
       try {
-        Serializer serializer =
-            new Serializer(opArray);
+        Serializer serializer = new Serializer(opArray);
         serializer.writeInt(headArrSize);
         return opArray;
       } catch (Exception e) {
@@ -109,9 +104,8 @@ public class DataMSTBcastSender
    * @param data    the Data to be broadcast
    * @throws IOException
    */
-  protected void sendDataBytes(Connection conn,
-                               final ByteArray opArray, final Data data)
-      throws IOException {
+  protected void sendDataBytes(Connection conn, final ByteArray opArray, final Data data)
+          throws IOException {
     // Send data to other workers
     int selfID = getWorkers().getSelfID();
     int left = getWorkers().getMinID();
@@ -131,8 +125,11 @@ public class DataMSTBcastSender
       destLeft = middle + 1;
       right = middle;
     }
+
     Serializer serializer = new Serializer(
-        new ByteArray(opArray.get(), 4, 8));
+            new ByteArray(opArray.get(), 4, 8)
+    );
+
     try {
       serializer.writeInt(destLeft);
       serializer.writeInt(destRight);
@@ -169,30 +166,32 @@ public class DataMSTBcastSender
       // LOG.info("MST Dest ID " + destID + " "
       // + destLeft + " " + destRight);
       serializer = new Serializer(
-          new ByteArray(opArray.get(), 4, 8));
+              new ByteArray(opArray.get(), 4, 8)
+      );
+
       try {
         serializer.writeInt(destLeft);
         serializer.writeInt(destRight);
       } catch (IOException e) {
         LOG.error(
-            "Fail to serialize to op array.", e);
+                "Fail to serialize to op array.", e);
         continue;
       }
       // Send data to destination
       WorkerInfo destWorker =
-          getWorkers().getWorkerInfo(destID);
+              getWorkers().getWorkerInfo(destID);
       if (destWorker != null) {
         Connection destConn =
-            Connection.create(destWorker.getNode(),
-                destWorker.getPort(), true);
+                Connection.create(destWorker.getNode(),
+                        destWorker.getPort(), true);
         if (destConn != null) {
           try {
             super.sendDataBytes(destConn, opArray,
-                data);
+                    data);
             destConn.release();
           } catch (IOException e) {
             LOG.error("Fail to send data bytes.",
-                e);
+                    e);
             destConn.free();
             continue;
           }

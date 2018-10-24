@@ -358,4 +358,20 @@ public class Workers extends Nodes {
     public void remove() {
     }
   }
+
+  @Override
+  public String toString() {
+    return "Workers{" +
+            "workerInfos=" + workerInfos +
+            ", rackWorkers=" + rackWorkers +
+            ", selfID=" + selfID +
+            ", masterID=" + masterID +
+            ", masterInfo=" + masterInfo +
+            ", maxID=" + maxID +
+            ", minID=" + minID +
+            ", middleID=" + middleID +
+            ", nextID=" + nextID +
+            ", initCapacity=" + initCapacity +
+            '}';
+  }
 }

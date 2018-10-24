@@ -24,13 +24,12 @@ import edu.iu.harp.worker.WorkerInfo;
 import edu.iu.harp.worker.Workers;
 import org.apache.log4j.Logger;
 
-/*******************************************************
+/**
  * The abstract class for sending the data
- ******************************************************/
+ **/
 public abstract class Sender {
 
-  private static final Logger LOG =
-      Logger.getLogger(Sender.class);
+  private static final Logger LOG = Logger.getLogger(Sender.class);
   private final Data data;
   private final String host;
   private final int port;
@@ -100,22 +99,22 @@ public abstract class Sender {
   public boolean execute() {
     // Check if we can send
     if (data == null || host == null
-        || port == Constant.UNKNOWN_PORT
-        || commandType == Constant.UNKNOWN_CMD) {
+            || port == Constant.UNKNOWN_PORT
+            || commandType == Constant.UNKNOWN_CMD) {
       return false;
     }
     if (data
-        .getHeadStatus() == DataStatus.ENCODE_FAILED_DECODED
-        || data
-        .getBodyStatus() == DataStatus.ENCODE_FAILED_DECODED
-        || data
-        .getHeadStatus() == DataStatus.DECODE_FAILED
-        || data
-        .getBodyStatus() == DataStatus.DECODE_FAILED) {
+            .getHeadStatus() == DataStatus.ENCODE_FAILED_DECODED
+            || data
+            .getBodyStatus() == DataStatus.ENCODE_FAILED_DECODED
+            || data
+            .getHeadStatus() == DataStatus.DECODE_FAILED
+            || data
+            .getBodyStatus() == DataStatus.DECODE_FAILED) {
       return false;
     }
     if (data
-        .getHeadStatus() == DataStatus.DECODED) {
+            .getHeadStatus() == DataStatus.DECODED) {
       DataStatus headStatus = data.encodeHead();
       if (headStatus == DataStatus.ENCODE_FAILED_DECODED) {
         return false;
@@ -123,7 +122,7 @@ public abstract class Sender {
     }
     // Encode body
     if (data
-        .getBodyStatus() == DataStatus.DECODED) {
+            .getBodyStatus() == DataStatus.DECODED) {
       DataStatus bodyStatus = data.encodeBody();
       if (bodyStatus == DataStatus.ENCODE_FAILED_DECODED) {
         // No generating encoded data
@@ -132,7 +131,7 @@ public abstract class Sender {
     }
     // Open connection
     Connection conn =
-        Connection.create(host, port, true);
+            Connection.create(host, port, true);
     if (conn == null) {
       // Do not release encoded arrays in data.
       return false;
@@ -186,6 +185,6 @@ public abstract class Sender {
    * @throws Exception
    */
   protected abstract void handleData(
-      final Connection conn, final Data data)
-      throws Exception;
+          final Connection conn, final Data data)
+          throws Exception;
 }
