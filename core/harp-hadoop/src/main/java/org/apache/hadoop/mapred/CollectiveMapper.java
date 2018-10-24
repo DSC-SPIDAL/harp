@@ -1,6 +1,6 @@
 /*
  * Copyright 2013-2017 Indiana University
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -58,7 +58,7 @@ import java.util.concurrent.TimeUnit;
  * CollectiveMapper is extended from original
  * mapper in Hadoop. It includes new APIs for
  * in-memory collective communication.
- * 
+ *
  * @param <KEYIN>
  *          Input key
  * @param <VALUEIN>
@@ -69,8 +69,7 @@ import java.util.concurrent.TimeUnit;
  *          Output value
  ******************************************************/
 public class CollectiveMapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT>
-  extends
-  Mapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT> {
+  extends  Mapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT> {
 
   protected static final Log LOG =
     LogFactory.getLog(CollectiveMapper.class);
@@ -86,7 +85,7 @@ public class CollectiveMapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT>
    * A Key-Value reader to read key-value inputs
    * for this worker.
    ******************************************************/
-  protected class KeyValReader {
+  public class KeyValReader {
     private Context context;
 
     protected KeyValReader(Context context) {
@@ -95,7 +94,7 @@ public class CollectiveMapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT>
 
     /**
      * Get the next key-value
-     * 
+     *
      * @return the next key-value
      * @throws IOException
      * @throws InterruptedException
@@ -107,7 +106,7 @@ public class CollectiveMapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT>
 
     /**
      * Get the current key
-     * 
+     *
      * @return the current key
      * @throws IOException
      * @throws InterruptedException
@@ -119,7 +118,7 @@ public class CollectiveMapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT>
 
     /**
      * Get the current value
-     * 
+     *
      * @return the current value
      * @throws IOException
      * @throws InterruptedException
@@ -142,7 +141,7 @@ public class CollectiveMapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT>
    * also launched. The workers will also continue
    * to work after all the workers are launched
    * correctly.
-   * 
+   *
    * @param lockFile
    *          the lock file
    * @param fs
@@ -186,7 +185,7 @@ public class CollectiveMapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT>
   /**
    * Load the map from the task file. The map is
    * from task to worker.
-   * 
+   *
    * @param tasksFile
    *          the tasks file
    * @param fs
@@ -224,7 +223,7 @@ public class CollectiveMapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT>
   /**
    * Get the BufferedReader for reading the
    * "nodes" file
-   * 
+   *
    * @param nodesFile
    * @param fs
    * @return
@@ -245,7 +244,7 @@ public class CollectiveMapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT>
   /**
    * Initialize collective communication
    * components.
-   * 
+   *
    * @param context
    *          the context
    * @return true if succeeded, false is not
@@ -312,7 +311,7 @@ public class CollectiveMapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT>
 
   /**
    * Get the ID of this worker.
-   * 
+   *
    * @return Worker ID
    */
   public int getSelfID() {
@@ -321,7 +320,7 @@ public class CollectiveMapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT>
 
   /**
    * Get the ID of the master worker.
-   * 
+   *
    * @return Master ID
    */
   public int getMasterID() {
@@ -330,7 +329,7 @@ public class CollectiveMapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT>
 
   /**
    * Check if this worker is the master worker.
-   * 
+   *
    * @return is this the master worker ID?
    */
   public boolean isMaster() {
@@ -339,7 +338,7 @@ public class CollectiveMapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT>
 
   /**
    * Get the total number of workers.
-   * 
+   *
    * @return the number of workers
    */
   public int getNumWorkers() {
@@ -348,7 +347,7 @@ public class CollectiveMapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT>
 
   /**
    * Get the minimum worker ID.
-   * 
+   *
    * @return worker ID
    */
   public int getMinID() {
@@ -357,7 +356,7 @@ public class CollectiveMapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT>
 
   /**
    * Get the maximum worker ID
-   * 
+   *
    * @return
    */
   public int getMaxID() {
@@ -366,7 +365,7 @@ public class CollectiveMapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT>
 
   /**
    * Synchronize workers through a barrier
-   * 
+   *
    * @param contextName
    * @param operationName
    * @return a boolean tells if the operation
@@ -385,7 +384,7 @@ public class CollectiveMapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT>
   /**
    * Broadcast the partitions of the table on a
    * worker to other workers.
-   * 
+   *
    * @param contextName
    *          the name of the operation context
    * @param operationName
@@ -417,7 +416,7 @@ public class CollectiveMapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT>
   /**
    * Reduce the partitions of the tables to one of
    * them.
-   * 
+   *
    * @param contextName
    *          the name of the operation context
    * @param operationName
@@ -443,7 +442,7 @@ public class CollectiveMapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT>
   /**
    * Allgather partitions of the tables to all the
    * local tables.
-   * 
+   *
    * @param contextName
    *          the name of the operation context
    * @param operationName
@@ -467,7 +466,7 @@ public class CollectiveMapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT>
   /**
    * Allreduce partitions of the tables to all the
    * local tables.
-   * 
+   *
    * @param contextName
    *          the name of the operation context
    * @param operationName
@@ -491,7 +490,7 @@ public class CollectiveMapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT>
   /**
    * Regroup the partitions of the tables based on
    * a partitioner.
-   * 
+   *
    * @param contextName
    *          the name of the operation context
    * @param operationName
@@ -520,7 +519,7 @@ public class CollectiveMapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT>
    * local tables. If any partition ID conflicts
    * with the partition ID in the local table,
    * combines them.
-   * 
+   *
    * @param contextName
    *          the name of the operation context
    * @param operationName
@@ -552,7 +551,7 @@ public class CollectiveMapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT>
   /**
    * Push the partitions of local tables to the
    * global table.
-   * 
+   *
    * @param contextName
    *          the name of the operation context
    * @param operationName
@@ -590,7 +589,7 @@ public class CollectiveMapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT>
    * rotation, every worker sends its partitions
    * to one of the other worker, and receive
    * partitions from one of the other workers
-   * 
+   *
    * @param contextName
    *          the name of the operation context
    * @param operationName
@@ -617,7 +616,7 @@ public class CollectiveMapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT>
 
   /**
    * Get an event from the event queue.
-   * 
+   *
    * @return an event object, null if the queue is
    *         empty
    */
@@ -627,7 +626,7 @@ public class CollectiveMapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT>
 
   /**
    * Wait for an event from the queue
-   * 
+   *
    * @return the event object
    */
   public Event waitEvent() {
@@ -638,7 +637,7 @@ public class CollectiveMapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT>
    * Send an event to the local (local event), to
    * a remote worker (message event), or to the
    * rest workers (collective event).
-   * 
+   *
    * @param event
    *          an event
    * @return true if succeeded, false if not
@@ -665,7 +664,7 @@ public class CollectiveMapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT>
 
   /**
    * Free the objects cached in the pool.
-   * 
+   *
    * @return the resource pool
    */
   protected void freeMemory() {
@@ -674,7 +673,7 @@ public class CollectiveMapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT>
 
   /**
    * Free the connections cached in the pool.
-   * 
+   *
    * @return the resource pool
    */
   protected void freeConn() {
@@ -744,7 +743,7 @@ public class CollectiveMapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT>
   /**
    * Override this method to support collective
    * communications among Mappers
-   * 
+   *
    * @param context
    *          the context
    * @throws IOException
