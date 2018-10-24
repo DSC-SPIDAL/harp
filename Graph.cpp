@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <cstring>
 
+
 using namespace std;
 
 void Graph::read_enlist(string file_name)
@@ -38,9 +39,12 @@ void Graph::read_enlist(string file_name)
 
     if (max_id != verts - 1)
     {
+#ifdef VERBOSE
         // remove "holes"
-        printf("Start remove holes; max_id: %d, n_g: %d\n", max_id, verts);
-
+        printf("Start remove holes; max_id: %d, n_g: %d\n", max_id, verts); 
+        std::fflush(stdout);
+#endif
+   
         int* v_id = new int[max_id+1];
         std::memset(v_id, 0, (max_id+1)*sizeof(int));
 
@@ -62,8 +66,10 @@ void Graph::read_enlist(string file_name)
             src_edge[i] = v_id[src_edge[i]];
             dst_edge[i] = v_id[dst_edge[i]];
         }
-
+#ifdef VERBOSE
         printf("Finish remove holes\n");
+        std::fflush(stdout);
+#endif
         delete[] v_id;
     }
     
@@ -75,9 +81,10 @@ void Graph::read_enlist(string file_name)
 
 void Graph::build_graph(int verts, int edges, int* src_edge, int* dst_edge)
 {
-    //debug
+#ifdef VERBOSE
     printf("Start building graph\n");
     std::fflush(stdout);
+#endif
 
     vert_num = verts;
     edge_file = edges;
@@ -110,11 +117,13 @@ void Graph::build_graph(int verts, int edges, int* src_edge, int* dst_edge)
         adj_list[tmp_list[src_edge[j]]++] = dst_edge[j];
         adj_list[tmp_list[dst_edge[j]]++] = src_edge[j];
     }
-
+#ifdef VERBOSE
     printf("Total vertices is : %d\n", vert_num);
     printf("Total Edges is : %d\n", edge_num);
     printf("Max Deg is : %d\n", max_deg);
-    printf("Avg Deg is : %d\n", (deg_list[vert_num]/vert_num));
+    printf("Avg Deg is : %d\n", (deg_list[vert_num]/vert_num));   
+    std::fflush(stdout);
+#endif
 
     delete[] tmp_list;
 }
@@ -150,11 +159,14 @@ void Graph::deserialize(ifstream& input)
     input.read((char*)adj_list, edge_num*sizeof(int));
     deg_list = new unsigned[vert_num+1];
     input.read((char*)deg_list, (vert_num+1)*sizeof(unsigned));
-
+#ifdef VERBOSE
     printf("Total vertices is : %d\n", vert_num);
     printf("Total Edges is : %d\n", edge_num);
     printf("Max Deg is : %d\n", max_deg);
-    printf("Avg Deg is : %d\n", (deg_list[vert_num]/vert_num));
+    printf("Avg Deg is : %d\n", (deg_list[vert_num]/vert_num)); 
+    std::fflush(stdout); 
+#endif
+   
 }
 
 void Graph::release()

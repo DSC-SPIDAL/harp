@@ -31,15 +31,13 @@ double Count::compute(Graph& templates)
     _templates = &templates; 
     _color_num = _templates->get_vert_num();
 
-    printf("Start subtemplates Dividing\n");
-    std::fflush(stdout);
-
     div_tp.DivideTp(*(_templates));
     div_tp.sort_tps();
 
     _subtmp_array = div_tp.get_subtps();
     _total_sub_num = div_tp.get_subtps_num();
 
+#ifdef VERBOSE
     //check the sub vert num
     // debug
     for(int s=0;s<_total_sub_num;s++)
@@ -50,26 +48,32 @@ double Count::compute(Graph& templates)
             int main_leaf = div_tp.get_main_node_vert_num(s);
             int aux_leaf = div_tp.get_aux_node_vert_num(s);
             printf("Vert: %d, main: %d, aux: %d\n", vert_self, main_leaf, aux_leaf);
-            // printf("Vert: %d, main: %d, aux: %d\n", s, main_idx, aux_idx);
             std::fflush(stdout);
             assert((main_leaf + aux_leaf == vert_self));
 
         }
-    }
-    
-    printf("Finish subtemplates Dividing\n");
-    std::fflush(stdout);
-
+    } 
+#endif
+   
     // create the index tables
     indexer.initialization(_color_num, _total_sub_num, &_subtmp_array, &div_tp);
 
-    printf("Finish creating indexer\n");
-    std::fflush(stdout);
+#ifdef VERBOSE
+    printf("Start initializaing datatable\n");
+    std::fflush(stdout); 
+#endif
 
     _dTable.initDataTable(_subtmp_array, &indexer, _total_sub_num, _color_num, _vert_num);
 
+#ifdef VERBOSE
     printf("Finish initializaing datatable\n");
-    std::fflush(stdout);
+    std::fflush(stdout); 
+#endif
+
+#ifdef VERBOSE
+    printf("Start counting\n");
+    std::fflush(stdout); 
+#endif
 
     // start counting
     double timeStart = utility::timer();
@@ -78,7 +82,12 @@ double Count::compute(Graph& templates)
     for (int i = 0; i < _itr_num; ++i) {
         iterCount += colorCounting();
     }
-   
+
+#ifdef VERBOSE
+    printf("Finish counting\n");
+    std::fflush(stdout); 
+#endif
+  
     printf("\nTime for count per iter: %9.6lf seconds\n", (utility::timer() - timeStart)/_itr_num);
     std::fflush(stdout);
 
@@ -115,9 +124,6 @@ double Count::colorCounting()
         int auxIdx = div_tp.get_aux_node_idx(s);
 
         _dTable.initSubTempTable(s, mainIdx, auxIdx);
-        // debug
-        // printf("Finish init sub templte %d, vert: %d\n", s, subSize);
-        // std::fflush(stdout);
         int* idxCombToCount = (indexer.getSubCToCount())[s]; 
 
         if (subSize == 1) {
@@ -154,9 +160,11 @@ double Count::countNonBottome(int subsId)
     int splitCombNum = indexer.getCombTable()[subSize][mainSize];
     int vecNum = countCombNum*splitCombNum;
 
+#ifdef VERBOSE
     printf("Finish init sub templte %d, vert: %d, comb: %d, splitNum: %d\n", subsId, subSize, 
             countCombNum, splitCombNum);
-    std::fflush(stdout);
+    std::fflush(stdout); 
+#endif
 
     double countSum = 0.0;
     #pragma omp parallel num_threads(_thd_num)
@@ -264,9 +272,10 @@ double Count::countNonBottome(int subsId)
 
         free(nbrListValid);
     }
-
+#ifdef VERBOSE
     printf("Sub %d, NonBottom raw count %f\n", subsId, countSum);
-    std::fflush(stdout);
+    std::fflush(stdout); 
+#endif
 
     return countSum;
 }/*}}}*/

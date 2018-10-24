@@ -16,6 +16,7 @@
 
 #include "Graph.hpp"
 #include "Count.hpp"
+#include "Helper.hpp"
 
 using namespace std;
 
@@ -38,17 +39,29 @@ int main(int argc, char** argv)
     Graph input_graph;
     Graph input_template;
 
-    printf("Start the prog sc-vec\n");
+    double startTime = utility::timer();
 
     // load input graph 
     if (load_binary)
     {
-      ifstream input_file(graph_name.c_str(), ios::binary);
-      input_graph.deserialize(input_file);
-      input_file.close();
+
+#ifdef VERBOSE 
+         printf("Start the loading graph data in binary format\n");
+         std::fflush(stdout);   
+#endif
+
+        ifstream input_file(graph_name.c_str(), ios::binary);
+        input_graph.deserialize(input_file);
+        input_file.close();
     }
     else
+    {
+#ifdef VERBOSE
+        printf("Start the loading graph data in text format\n");
+        std::fflush(stdout);           
+#endif
         input_graph.read_enlist(graph_name);
+    }
 
     if (write_binary)
     {
@@ -60,6 +73,9 @@ int main(int argc, char** argv)
 
     // load input templates
     input_template.read_enlist(template_name);
+
+    printf("Loading data using %f secs\n", (utility::timer() - startTime));
+    std::fflush(stdout);           
 
     // start computing
     Count executor;
