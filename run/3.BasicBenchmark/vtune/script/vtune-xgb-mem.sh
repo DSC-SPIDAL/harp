@@ -1,5 +1,12 @@
 #!/bin/bash
 
+conf=hist
+if [ $# -eq "1" ]; then
+    conf=$1
+fi
+CONFFILE=higgs_${conf}.conf
+
+
 CurDir=$(pwd)
 
 Arch=hsw
@@ -50,7 +57,7 @@ src_path_tbb=/opt/intel/compilers_and_libraries/linux/tbb
 knob_runsa_avx=INST_RETIRED.ANY,UOPS_EXECUTED.CORE,UOPS_RETIRED.ALL_PS,MEM_UOPS_RETIRED.ALL_LOADS_PS,MEM_UOPS_RETIRED.ALL_STORES_PS,AVX_INSTS.ALL
 
 ## result path
-obj=R-$Arch-$Name-iter$thread-$action-$type
+obj=R-$Arch-$Name-iter$thread-$action-$type-$conf
 resDir=/scratch_hdd/hpda/optgbt/test/vtune/logs/$obj
 echo "Result dir: $resDir"
 if [ -d $resDir ]; then
@@ -70,7 +77,7 @@ trigger_vtune=0
 max_wait_time=0
 
 # launch the program
-../bin/xgboost-orig-vtune higgs_hist.conf &
+../bin/xgboost-orig-vtune $CONFFILE &
 exec_pid=$!
 
 # sleep 10
@@ -121,7 +128,8 @@ amplxe-cl -report $report_type \
     -result-dir $resDir \
     -report-output $CurDir/$obj-$report_type-$group.csv -format csv -csv-delimiter comma
 
-report_type=hotspots
+#report_type=hotspots
+report_type=$type
 group=thread,function
 amplxe-cl -report $report_type \
     -result-dir $resDir \
