@@ -77,7 +77,7 @@ void CSRGraph::createFromEdgeListFile(CSRGraph::idxType numVerts, CSRGraph::idxT
 
 void CSRGraph::SpMVNaive(valType* x, valType* y)
 {
-    printf("spmv len: %d\n", _numVertices);
+    // printf("spmv len: %d\n", _numVertices);
 
 #pragma omp parallel for
     for(idxType i = 0; i<_numVertices; i++)
@@ -90,8 +90,8 @@ void CSRGraph::SpMVNaive(valType* x, valType* y)
 
         #pragma GCC ivdep
         for(idxType j=0; j<rowLen;j++)
-            sum += rowElem[j] * (y[rowColIdx[j]]);
+            sum += rowElem[j] * (x[rowColIdx[j]]);
 
-        x[i] = sum;
+        y[i] = sum;
     }
 }

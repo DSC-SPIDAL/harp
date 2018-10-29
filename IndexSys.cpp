@@ -395,7 +395,8 @@ void IndexSys::gen_comb_hash_table()
                     int color_index_aux = get_color_hash(colors_aux, split_aux_num);
 
                     _i_sub_c_split_to_counts[0][s][n][main_itr] = color_index_main;
-                    _i_sub_c_split_to_counts[1][s][n][aux_itr] = color_index_aux;
+                    // _i_sub_c_split_to_counts[1][s][n][aux_itr] = color_index_aux;
+                    _i_sub_c_split_to_counts[1][s][n][main_itr] = color_index_aux;
                     _i_sub_c_split_to_counts_vec[0][s][n*split_main_comb + main_itr] = color_index_main; 
                     _i_sub_c_split_to_counts_vec[1][s][n*split_main_comb + main_itr] = color_index_aux; 
 

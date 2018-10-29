@@ -22,7 +22,6 @@ class DataTabble
         }
 
         ~DataTabble(){ cleanTable();}
-        // ~DataTabble(){ }
 
         void initDataTable(Graph* subTempsList, IndexSys* indexer, int subsNum, int colorNum, int vertsNum);
         void initSubTempTable(int subsId);

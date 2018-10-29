@@ -54,6 +54,8 @@ class CSRGraph
 
         void SpMVNaive(valType* x, valType* y);
 
+        idxType getNumVertices() {return _numVertices;} 
+
     private:
 
         void createFromEdgeListFile(idxType numVerts, idxType numEdges, 
