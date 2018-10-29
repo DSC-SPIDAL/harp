@@ -20,8 +20,8 @@ void Graph::read_enlist(string file_name)
     std::getline(file_strm, line);
     edge_file = atoi(line.c_str());
 
-    int* src_edge = new int[edge_file];
-    int* dst_edge = new int[edge_file];
+    src_edge = new int[edge_file];
+    dst_edge = new int[edge_file];
 
     int max_id = 0;
     for(unsigned j=0;j<edge_file;j++)
@@ -176,6 +176,15 @@ void Graph::release()
 
     if (deg_list != NULL)
         delete[] deg_list;
+
+    if (src_edge != NULL)
+        delete[] src_edge;
+
+    if (dst_edge != NULL)
+        delete[] dst_edge;
+
+    src_edge = NULL;
+    dst_edge = NULL;
 
     adj_list = NULL;
     deg_list = NULL;
