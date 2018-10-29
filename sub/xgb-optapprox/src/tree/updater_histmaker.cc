@@ -533,6 +533,10 @@ class CQHistMaker: public HistMaker<TStats> {
     // initialize sbuilder for use
     std::vector<HistEntry> &hbuilder = *p_temp;
     hbuilder.resize(tree.param.num_nodes);
+
+    LOG(CONSOLE) << "InitHistCol: num_nodes=" << tree.param.num_nodes <<
+            ", qexpand.size=" << this->qexpand_.size() ;
+
     for (size_t i = 0; i < this->qexpand_.size(); ++i) {
       const unsigned nid = this->qexpand_[i];
       const unsigned wid = this->node2workindex_[nid];
@@ -557,6 +561,8 @@ class CQHistMaker: public HistMaker<TStats> {
 
       const auto nsize = static_cast<bst_omp_uint>(fset.size());
       std::cout  << "InitHistIndex : fset.size=" << nsize << "\n";
+      
+      thread_hist_.resize(omp_get_max_threads());
 
       // start accumulating statistics
       for (const auto &batch : p_fmat->GetSortedColumnBatches()) {
@@ -792,6 +798,12 @@ class CQHistMaker: public HistMaker<TStats> {
 // global proposal
 template<typename TStats>
 class GlobalProposalHistMaker: public CQHistMaker<TStats> {
+
+ public:
+  GlobalProposalHistMaker(){
+      this->isInitializedHistIndex = false;
+  }
+
  protected:
   void ResetPosAndPropose(const std::vector<GradientPair> &gpair,
                           DMatrix *p_fmat,
@@ -809,8 +821,8 @@ class GlobalProposalHistMaker: public CQHistMaker<TStats> {
 
 
       /* OptApprox:: init bindid in pmat */
-      CQHistMaker<TStats>::InitHistIndex(p_fmat, fset, tree);
-
+      //CQHistMaker<TStats>::InitHistIndex(p_fmat, fset, tree);
+      //this->isInitializedHistIndex = false;
 
     } else {
       this->wspace_.cut.clear();
@@ -856,6 +868,12 @@ class GlobalProposalHistMaker: public CQHistMaker<TStats> {
       this->work_set_.resize(
           std::unique(this->work_set_.begin(), this->work_set_.end()) - this->work_set_.begin());
 
+      /* OptApprox:: init bindid in pmat */
+      if (!this->isInitializedHistIndex){
+        CQHistMaker<TStats>::InitHistIndex(p_fmat, fset, tree);
+        this->isInitializedHistIndex = true;
+      }
+
       // start accumulating statistics
       for (const auto &batch : p_fmat->GetSortedColumnBatches()) {
         // TWOPASS: use the real set + split set in the column iteration.
@@ -894,6 +912,8 @@ class GlobalProposalHistMaker: public CQHistMaker<TStats> {
   std::vector<unsigned> cached_rptr_;
   // cached cut value.
   std::vector<bst_float> cached_cut_;
+  // flag of initialization
+  bool isInitializedHistIndex;
 };
 
 

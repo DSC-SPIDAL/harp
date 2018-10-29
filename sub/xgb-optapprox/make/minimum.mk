@@ -20,3 +20,4 @@ USE_AZURE = 0
 # - librabit_empty.a Non distributed mock version,
 LIB_RABIT = librabit_empty.a
 
+USE_DEBUG = 1

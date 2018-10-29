@@ -82,6 +82,11 @@ ifeq ($(USE_SSE), 1)
 endif
 endif
 
+ifeq ($(USE_DEBUG), 1)
+	CFLAGS += -g
+endif
+
+
 ifndef LINT_LANG
 	LINT_LANG= "all"
 endif

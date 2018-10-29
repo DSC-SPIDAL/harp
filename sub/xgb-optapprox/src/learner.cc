@@ -186,6 +186,11 @@ class LearnerImpl : public Learner {
         cfg_["predictor"] = "gpu_predictor";
       }
     }
+
+    /* print the selected updater */
+    LOG(CONSOLE) << "Treemethod=" << tparam_.tree_method <<
+                " dsplit=" << tparam_.dsplit <<
+                " updater=" << cfg_["updater"] << "\n";
   }
 
   void Configure(
