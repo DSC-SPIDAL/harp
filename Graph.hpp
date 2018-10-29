@@ -19,6 +19,8 @@ class Graph {
             max_deg = 0;
             adj_list = NULL;
             deg_list = NULL;
+            src_edge = NULL;
+            dst_edge = NULL;
         }
 
         ~Graph() { release(); }
@@ -56,6 +58,9 @@ class Graph {
         unsigned  max_deg;
         int* adj_list;
         unsigned* deg_list;
+        int* src_edge;
+        int* dst_edge;
+
 };
 
 #endif

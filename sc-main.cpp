@@ -13,10 +13,13 @@
 #include <cstring>
 #include <unistd.h>
 #include <climits>
+#include <stdint.h>
 
 #include "Graph.hpp"
+#include "CSRGraph.hpp"
 #include "Count.hpp"
 #include "Helper.hpp"
+#include "EdgeList.hpp"
 
 using namespace std;
 
@@ -71,11 +74,51 @@ int main(int argc, char** argv)
         output_file.close();
     }
 
-    // load input templates
-    input_template.read_enlist(template_name);
-
     printf("Loading data using %f secs\n", (utility::timer() - startTime));
     std::fflush(stdout);           
+
+    // read in graph file and make CSR format
+    printf("Start debug CSR format\n");
+    std::fflush(stdout);
+
+    startTime = utility::timer();
+
+    EdgeList elist(graph_name); 
+    CSRGraph csrInpuG(elist.getNumVertices(), elist.getNumEdges(), elist.getSrcList(), elist.getDstList());
+
+    printf("Finish debug CSR format\n");
+    std::fflush(stdout);
+    printf("Loading CSR data using %f secs\n", (utility::timer() - startTime));
+    std::fflush(stdout);           
+
+    printf("Start debug CSR SpMV len %d\n", elist.getNumVertices());
+    std::fflush(stdout);
+
+
+    // test SpMV sequential
+    // y = CSRGraph*x
+    float* xArray = new float[elist.getNumVertices()];
+    float* yArray = new float[elist.getNumVertices()];
+    for(int i=0;i<elist.getNumVertices(); i++)
+    {
+        xArray[i] = 2.0;
+        yArray[i] = 0.0;
+    }
+
+    startTime = utility::timer();
+    csrInpuG.SpMVNaive(xArray, yArray);
+    printf("Compute CSR SpMV using %f secs\n", (utility::timer() - startTime));
+    std::fflush(stdout);           
+
+    delete[] xArray;
+    delete[] yArray;
+
+    printf("Finish debug CSR SpMV\n");
+    std::fflush(stdout);
+    
+
+    // load input templates
+    input_template.read_enlist(template_name);
 
     // start computing
     Count executor;
