@@ -1,6 +1,6 @@
 /*!
  * Copyright 2014 by Contributors
- * \file updater_histmaker.cc
+ * \file updater_HistMakerCompact.cc
  * \brief use histogram counting to construct a tree
  * \author Tianqi Chen
  */
@@ -8,18 +8,20 @@
 #include <xgboost/tree_updater.h>
 #include <vector>
 #include <algorithm>
+#include "../data/compact_dmatrix.h"
 #include "../common/sync.h"
 #include "../common/quantile.h"
 #include "../common/group_data.h"
 #include "./updater_basemaker-inl.h"
+#include <fstream>
 
 namespace xgboost {
 namespace tree {
 
-DMLC_REGISTRY_FILE_TAG(updater_histmaker);
+DMLC_REGISTRY_FILE_TAG(updater_pmatcompact);
 
 template<typename TStats>
-class HistMaker: public BaseMaker {
+class HistMakerCompact: public BaseMaker {
  public:
   void Update(HostDeviceVector<GradientPair> *gpair,
               DMatrix *p_fmat,
@@ -59,6 +61,7 @@ class HistMaker: public BaseMaker {
       CHECK_LT(i, size);
       data[i].Add(gpair, info, ridx);
     }
+    
   };
   /*! \brief a set of histograms from different index */
   struct HistSet {
@@ -74,6 +77,7 @@ class HistMaker: public BaseMaker {
                       &data[0] + rptr[fid],
                       rptr[fid+1] - rptr[fid]);
     }
+
   };
   // thread workspace
   struct ThreadWSpace {
@@ -267,14 +271,74 @@ class HistMaker: public BaseMaker {
 };
 
 template<typename TStats>
-class CQHistMaker: public HistMaker<TStats> {
+class CQHistMakerCompact: public HistMakerCompact<TStats> {
  public:
-  CQHistMaker()  = default;
+  CQHistMakerCompact()  = default;
 
  protected:
   struct HistEntry {
-    typename HistMaker<TStats>::HistUnit hist;
+    typename HistMakerCompact<TStats>::HistUnit hist;
     unsigned istart;
+
+    /* OptApprox:: init bindid in pmat */
+    inline unsigned GetBinId(bst_float fv) {
+      unsigned start = 0;
+      while (start < hist.size && !(fv < hist.cut[start])) ++start;
+      CHECK_NE(start, hist.size);
+      return start;
+    }
+
+#ifdef USE_BINID
+    inline void AddWithIndex(unsigned binid,
+                    GradientPair gstats) {
+        //hist.data[binid].Add(gstats);
+        hist.data[binid].Add(gstats);
+    }
+    inline void AddWithIndex(unsigned binid,
+                    const std::vector<GradientPair> &gpair,
+                    const MetaInfo &info,
+                    const bst_uint ridx) {
+      CHECK_NE(binid, hist.size);
+      hist.data[binid].Add(gpair, info, ridx);
+    }
+#endif
+
+
+    //inline void AddWithIndex(const float* binidptr,
+    //                GradientPair gstats) {
+    //    //hist.data[binid].Add(gstats);
+    //  float* ptr = binidptr;
+    //    unsigned int binid = *(reinterpret_cast<unsigned int*>(ptr));
+    //    hist.data[binid].Add(gstats);
+    //}
+    //inline void AddWithIndex(const float* binidptr,
+    //                const std::vector<GradientPair> &gpair,
+    //                const MetaInfo &info,
+    //                const bst_uint ridx) {
+    //  float* ptr = binidptr;
+    //  unsigned int binid = *(reinterpret_cast<unsigned int*>(ptr));
+    //  CHECK_NE(binid, hist.size);
+    //  hist.data[binid].Add(gpair, info, ridx);
+    //}
+
+#ifdef USE_BINIDUNION
+    inline void AddWithIndex(float ptr,
+                    GradientPair gstats) {
+        //hist.data[binid].Add(gstats);
+        unsigned int binid = static_cast<unsigned int>(ptr);
+        hist.data[binid].Add(gstats);
+    }
+    inline void AddWithIndex(float ptr,
+                    const std::vector<GradientPair> &gpair,
+                    const MetaInfo &info,
+                    const bst_uint ridx) {
+      unsigned int binid = static_cast<unsigned int>(ptr);
+      CHECK_NE(binid, hist.size);
+      hist.data[binid].Add(gpair, info, ridx);
+    }
+#endif
+
+
     /*!
      * \brief add a histogram to data,
      * do linear scan, start from istart
@@ -489,6 +553,148 @@ class CQHistMaker: public HistMaker<TStats> {
              (fset.size() + 1) * this->qexpand_.size() + 1);
   }
 
+  /* OptApprox:: init bindid in pmat */
+  inline void InitHistCol(const SparsePage::Inst &col,
+                            const RegTree &tree,
+                            const std::vector<bst_uint> &fset,
+                            bst_uint fid_offset,
+                            std::vector<HistEntry> *p_temp) {
+
+    if (col.size() == 0) return;
+    // initialize sbuilder for use
+    std::vector<HistEntry> &hbuilder = *p_temp;
+    hbuilder.resize(tree.param.num_nodes);
+
+    LOG(CONSOLE) << "InitHistCol: num_nodes=" << tree.param.num_nodes <<
+            ", qexpand.size=" << this->qexpand_.size() ;
+
+    for (size_t i = 0; i < this->qexpand_.size(); ++i) {
+      const unsigned nid = this->qexpand_[i];
+      const unsigned wid = this->node2workindex_[nid];
+      hbuilder[nid].istart = 0;
+      hbuilder[nid].hist = this->wspace_.hset[0][fid_offset + wid * (fset.size()+1)];
+    }
+    for (auto& c : col) {
+      const bst_uint ridx = c.index;
+      const int nid = this->position_[ridx];
+      if (nid >= 0) {
+          // update binid in pmat
+          unsigned binid = hbuilder[nid].GetBinId(c.fvalue);
+          c.addBinid(binid);
+      }
+    }
+  } 
+
+
+  void InitHistIndex( DMatrix *p_fmat,
+                      const std::vector<bst_uint> &fset,
+                     const RegTree &tree){
+
+      const auto nsize = static_cast<bst_omp_uint>(fset.size());
+      std::cout  << "InitHistIndex : fset.size=" << nsize << "\n";
+      
+      thread_hist_.resize(omp_get_max_threads());
+
+      // start accumulating statistics
+      for (const auto &batch : p_fmat->GetSortedColumnBatches()) {
+        // start enumeration
+        //const auto nsize = static_cast<bst_omp_uint>(fset.size());
+        #pragma omp parallel for schedule(dynamic, 1)
+        for (bst_omp_uint i = 0; i < nsize; ++i) {
+          int fid = fset[i];
+          int offset = feat2workindex_[fid];
+          if (offset >= 0) {
+            this->InitHistCol(batch[fid], tree,
+                                fset, offset,
+                                &thread_hist_[omp_get_thread_num()]);
+          }
+        }
+      }
+  }
+  inline void UpdateHistColWithIndex(const std::vector<GradientPair> &gpair,
+                            const DMatrixCompact::Inst &col,
+                            const MetaInfo &info,
+                            const RegTree &tree,
+                            const std::vector<bst_uint> &fset,
+                            bst_uint fid_offset,
+                            std::vector<HistEntry> *p_temp) {
+    if (col.size() == 0) return;
+    // initialize sbuilder for use
+    std::vector<HistEntry> &hbuilder = *p_temp;
+    hbuilder.resize(tree.param.num_nodes);
+    for (size_t i = 0; i < this->qexpand_.size(); ++i) {
+      const unsigned nid = this->qexpand_[i];
+      const unsigned wid = this->node2workindex_[nid];
+      hbuilder[nid].istart = 0;
+      hbuilder[nid].hist = this->wspace_.hset[0][fid_offset + wid * (fset.size()+1)];
+      //hbuilder[nid].hist = this->wspace_.hset[0][fid_offset];
+    }
+    if (TStats::kSimpleStats != 0 && this->param_.cache_opt != 0) {
+      constexpr bst_uint kBuffer = 32;
+      bst_uint align_length = col.size() / kBuffer * kBuffer;
+      int buf_position[kBuffer];
+      GradientPair buf_gpair[kBuffer];
+      for (bst_uint j = 0; j < align_length; j += kBuffer) {
+        for (bst_uint i = 0; i < kBuffer; ++i) {
+          bst_uint ridx = col[j + i].index();
+          buf_position[i] = this->position_[ridx];
+          buf_gpair[i] = gpair[ridx];
+        }
+        for (bst_uint i = 0; i < kBuffer; ++i) {
+          const int nid = buf_position[i];
+          if (nid >= 0) {
+            //hbuilder[nid].Add(col[j + i].fvalue, buf_gpair[i]);
+//#ifdef USE_BINID
+            hbuilder[nid].AddWithIndex(col[j + i].binid(), buf_gpair[i]);
+//#endif
+
+            
+#ifdef USE_BINIDUNION
+            //hbuilder[nid].AddWithIndex(*(reinterpret_cast<bst_uint*>(&col[j + i].fvalue)), buf_gpair[i]);
+            //hbuilder[nid].AddWithIndex(&(col[j + i].fvalue), buf_gpair[i]);
+            //hbuilder[nid].AddWithIndex(col[j + i].fvalue, buf_gpair[i]);
+#endif
+          }
+        }
+      }
+      for (bst_uint j = align_length; j < col.size(); ++j) {
+        const bst_uint ridx = col[j].index();
+        const int nid = this->position_[ridx];
+        if (nid >= 0) {
+          //hbuilder[nid].Add(col[j].fvalue, gpair[ridx]);
+ 
+#ifdef USE_BINID
+          hbuilder[nid].AddWithIndex(col[j].binid(), gpair[ridx]);
+#endif
+          
+#ifdef USE_BINIDUNION
+          //hbuilder[nid].AddWithIndex(*(reinterpret_cast<bst_uint*>(&col[j].fvalue)), gpair[ridx]);
+          //hbuilder[nid].AddWithIndex(&(col[j].fvalue), gpair[ridx]);
+          //hbuilder[nid].AddWithIndex(col[j].fvalue, gpair[ridx]);
+#endif
+        }
+      }
+    } else {
+      for (const auto& c : col) {
+        const bst_uint ridx = c.index();
+        const int nid = this->position_[ridx];
+        if (nid >= 0) {
+          //hbuilder[nid].Add(c.fvalue, gpair, info, ridx);
+#ifdef USE_BINID
+          hbuilder[nid].AddWithIndex(c.binid(), gpair, info, ridx);
+#endif
+          
+#ifdef USE_BINIDUNION
+          //hbuilder[nid].AddWithIndex(*(reinterpret_cast<bst_uint*>(&c.fvalue)), gpair, info, ridx);
+          //hbuilder[nid].AddWithIndex(&(c.fvalue), gpair, info, ridx);
+          //hbuilder[nid].AddWithIndex(c.fvalue, gpair, info, ridx);
+#endif
+        }
+      }
+    }
+  }
+ 
+
   inline void UpdateHistCol(const std::vector<GradientPair> &gpair,
                             const SparsePage::Inst &col,
                             const MetaInfo &info,
@@ -648,7 +854,13 @@ class CQHistMaker: public HistMaker<TStats> {
 
 // global proposal
 template<typename TStats>
-class GlobalProposalHistMaker: public CQHistMaker<TStats> {
+class GlobalProposalHistMakerCompact: public CQHistMakerCompact<TStats> {
+
+ public:
+  GlobalProposalHistMakerCompact(){
+      this->isInitializedHistIndex = false;
+  }
+
  protected:
   void ResetPosAndPropose(const std::vector<GradientPair> &gpair,
                           DMatrix *p_fmat,
@@ -660,10 +872,17 @@ class GlobalProposalHistMaker: public CQHistMaker<TStats> {
     }
     if (cached_rptr_.size() == 0) {
       CHECK_EQ(this->qexpand_.size(), 1U);
-      CQHistMaker<TStats>::ResetPosAndPropose(gpair, p_fmat, fset, tree);
+      CQHistMakerCompact<TStats>::ResetPosAndPropose(gpair, p_fmat, fset, tree);
       cached_rptr_ = this->wspace_.rptr;
       cached_cut_ = this->wspace_.cut;
+
+
+      /* OptApprox:: init bindid in pmat */
+      //CQHistMakerCompact<TStats>::InitHistIndex(p_fmat, fset, tree);
+      //this->isInitializedHistIndex = false;
+
     } else {
+        
       this->wspace_.cut.clear();
       this->wspace_.rptr.clear();
       this->wspace_.rptr.push_back(0);
@@ -680,6 +899,42 @@ class GlobalProposalHistMaker: public CQHistMaker<TStats> {
     }
   }
 
+  //dup func
+  inline void CorrectNonDefaultPositionByBatch2(
+      DMatrixCompact &batch, const std::vector<bst_uint> &sorted_split_set,
+      const RegTree &tree) {
+    for (size_t fid = 0; fid < batch.Size(); ++fid) {
+      auto col = batch[fid];
+      auto it = std::lower_bound(sorted_split_set.begin(), sorted_split_set.end(), fid);
+
+      if (it != sorted_split_set.end() && *it == fid) {
+        const auto ndata = static_cast<bst_omp_uint>(col.size());
+        #pragma omp parallel for schedule(static)
+        for (bst_omp_uint j = 0; j < ndata; ++j) {
+
+          //const bst_uint ridx = col[j].index;
+          //const bst_float fvalue = col[j].fvalue;
+          const bst_uint ridx = col[j].index();
+          const bst_uint binid = col[j].binid();
+
+
+          const int nid = this->DecodePosition(ridx);
+          CHECK(tree[nid].IsLeaf());
+          int pid = tree[nid].Parent();
+
+          // go back to parent, correct those who are not default
+          if (!tree[nid].IsRoot() && tree[pid].SplitIndex() == fid) {
+            if (binid < tree[pid].SplitCond()) {
+              this->SetEncodePosition(ridx, tree[pid].LeftChild());
+            } else {
+              this->SetEncodePosition(ridx, tree[pid].RightChild());
+            }
+          }
+        }
+      }
+    }
+  }
+ 
   // code to create histogram
   void CreateHist(const std::vector<GradientPair> &gpair,
                   DMatrix *p_fmat,
@@ -707,10 +962,22 @@ class GlobalProposalHistMaker: public CQHistMaker<TStats> {
       this->work_set_.resize(
           std::unique(this->work_set_.begin(), this->work_set_.end()) - this->work_set_.begin());
 
+      /* OptApprox:: init bindid in pmat */
+      if (!this->isInitializedHistIndex){
+        CQHistMakerCompact<TStats>::InitHistIndex(p_fmat, fset, tree);
+        this->isInitializedHistIndex = true;
+
+        p_hmat = new DMatrixCompact();
+        p_hmat->Init(*p_fmat->GetSortedColumnBatches().begin());
+
+      }
+
       // start accumulating statistics
-      for (const auto &batch : p_fmat->GetSortedColumnBatches()) {
+      //for (const auto &batch : p_fmat->GetSortedColumnBatches()) 
+      //only one page
+      {
         // TWOPASS: use the real set + split set in the column iteration.
-        this->CorrectNonDefaultPositionByBatch(batch, this->fsplit_set_, tree);
+        this->CorrectNonDefaultPositionByBatch2(*p_hmat, this->fsplit_set_, tree);
 
         // start enumeration
         const auto nsize = static_cast<bst_omp_uint>(this->work_set_.size());
@@ -719,7 +986,9 @@ class GlobalProposalHistMaker: public CQHistMaker<TStats> {
           int fid = this->work_set_[i];
           int offset = this->feat2workindex_[fid];
           if (offset >= 0) {
-            this->UpdateHistCol(gpair, batch[fid], info, tree,
+            //this->UpdateHistCol(gpair, batch[fid], info, tree,
+            //this->UpdateHistColWithIndex(gpair, batch[fid], info, tree,
+            this->UpdateHistColWithIndex(gpair, (*p_hmat)[fid], info, tree,
                                 fset, offset,
                                 &this->thread_hist_[omp_get_thread_num()]);
           }
@@ -744,148 +1013,17 @@ class GlobalProposalHistMaker: public CQHistMaker<TStats> {
   std::vector<unsigned> cached_rptr_;
   // cached cut value.
   std::vector<bst_float> cached_cut_;
+  // flag of initialization
+  bool isInitializedHistIndex;
+  // hist mat compact
+  DMatrixCompact* p_hmat;
 };
 
 
-template<typename TStats>
-class QuantileHistMaker: public HistMaker<TStats> {
- protected:
-  using WXQSketch = common::WXQuantileSketch<bst_float, bst_float>;
-  void ResetPosAndPropose(const std::vector<GradientPair> &gpair,
-                          DMatrix *p_fmat,
-                          const std::vector <bst_uint> &fset,
-                          const RegTree &tree) override {
-    const MetaInfo &info = p_fmat->Info();
-    // initialize the data structure
-    const int nthread = omp_get_max_threads();
-    sketchs_.resize(this->qexpand_.size() * tree.param.num_feature);
-    for (size_t i = 0; i < sketchs_.size(); ++i) {
-      sketchs_[i].Init(info.num_row_, this->param_.sketch_eps);
-    }
-    // start accumulating statistics
-    for (const auto &batch : p_fmat->GetRowBatches()) {
-      // parallel convert to column major format
-      common::ParallelGroupBuilder<Entry>
-          builder(&col_ptr_, &col_data_, &thread_col_ptr_);
-      builder.InitBudget(tree.param.num_feature, nthread);
-
-      const bst_omp_uint nbatch = static_cast<bst_omp_uint>(batch.Size());
-      #pragma omp parallel for schedule(static)
-      for (bst_omp_uint i = 0; i < nbatch; ++i) {
-        SparsePage::Inst inst = batch[i];
-        const bst_uint ridx = static_cast<bst_uint>(batch.base_rowid + i);
-        int nid = this->position_[ridx];
-        if (nid >= 0) {
-          if (!tree[nid].IsLeaf()) {
-            this->position_[ridx] = nid = HistMaker<TStats>::NextLevel(inst, tree, nid);
-          }
-          if (this->node2workindex_[nid] < 0) {
-            this->position_[ridx] = ~nid;
-          } else {
-            for (auto& ins : inst) {
-              builder.AddBudget(ins.index, omp_get_thread_num());
-            }
-          }
-        }
-      }
-      builder.InitStorage();
-      #pragma omp parallel for schedule(static)
-      for (bst_omp_uint i = 0; i < nbatch; ++i) {
-        SparsePage::Inst inst = batch[i];
-        const bst_uint ridx = static_cast<bst_uint>(batch.base_rowid + i);
-        const int nid = this->position_[ridx];
-        if (nid >= 0) {
-          for (auto& ins : inst) {
-            builder.Push(ins.index,
-                         Entry(nid, ins.fvalue),
-                         omp_get_thread_num());
-          }
-        }
-      }
-      // start putting things into sketch
-      const bst_omp_uint nfeat = col_ptr_.size() - 1;
-      #pragma omp parallel for schedule(dynamic, 1)
-      for (bst_omp_uint k = 0; k < nfeat; ++k) {
-        for (size_t i = col_ptr_[k]; i < col_ptr_[k+1]; ++i) {
-          const Entry &e = col_data_[i];
-          const int wid = this->node2workindex_[e.index];
-          sketchs_[wid * tree.param.num_feature + k].Push(e.fvalue, gpair[e.index].GetHess());
-        }
-      }
-    }
-    // setup maximum size
-    unsigned max_size = this->param_.MaxSketchSize();
-    // synchronize sketch
-    summary_array_.resize(sketchs_.size());
-    for (size_t i = 0; i < sketchs_.size(); ++i) {
-      common::WQuantileSketch<bst_float, bst_float>::SummaryContainer out;
-      sketchs_[i].GetSummary(&out);
-      summary_array_[i].Reserve(max_size);
-      summary_array_[i].SetPrune(out, max_size);
-    }
-
-    size_t nbytes = WXQSketch::SummaryContainer::CalcMemCost(max_size);
-    sreducer_.Allreduce(dmlc::BeginPtr(summary_array_), nbytes, summary_array_.size());
-    // now we get the final result of sketch, setup the cut
-    this->wspace_.cut.clear();
-    this->wspace_.rptr.clear();
-    this->wspace_.rptr.push_back(0);
-    for (size_t wid = 0; wid < this->qexpand_.size(); ++wid) {
-      for (int fid = 0; fid < tree.param.num_feature; ++fid) {
-        const WXQSketch::Summary &a = summary_array_[wid * tree.param.num_feature + fid];
-        for (size_t i = 1; i < a.size; ++i) {
-          bst_float cpt = a.data[i].value - kRtEps;
-          if (i == 1 || cpt > this->wspace_.cut.back()) {
-            this->wspace_.cut.push_back(cpt);
-          }
-        }
-        // push a value that is greater than anything
-        if (a.size != 0) {
-          bst_float cpt = a.data[a.size - 1].value;
-          // this must be bigger than last value in a scale
-          bst_float last = cpt + fabs(cpt) + kRtEps;
-          this->wspace_.cut.push_back(last);
-        }
-        this->wspace_.rptr.push_back(this->wspace_.cut.size());
-      }
-      // reserve last value for global statistics
-      this->wspace_.cut.push_back(0.0f);
-      this->wspace_.rptr.push_back(this->wspace_.cut.size());
-    }
-    CHECK_EQ(this->wspace_.rptr.size(),
-             (tree.param.num_feature + 1) * this->qexpand_.size() + 1);
-  }
-
- private:
-  // summary array
-  std::vector<WXQSketch::SummaryContainer> summary_array_;
-  // reducer for summary
-  rabit::SerializeReducer<WXQSketch::SummaryContainer> sreducer_;
-  // local temp column data structure
-  std::vector<size_t> col_ptr_;
-  // local storage of column data
-  std::vector<Entry> col_data_;
-  std::vector<std::vector<size_t> > thread_col_ptr_;
-  // per node, per feature sketch
-  std::vector<common::WQuantileSketch<bst_float, bst_float> > sketchs_;
-};
-
-XGBOOST_REGISTER_TREE_UPDATER(LocalHistMaker, "grow_local_histmaker")
-.describe("Tree constructor that uses approximate histogram construction.")
-.set_body([]() {
-    return new CQHistMaker<GradStats>();
-  });
-
-XGBOOST_REGISTER_TREE_UPDATER(GlobalHistMaker, "grow_global_histmaker")
-.describe("Tree constructor that uses approximate global proposal of histogram construction.")
-.set_body([]() {
-    return new GlobalProposalHistMaker<GradStats>();
-  });
-
-XGBOOST_REGISTER_TREE_UPDATER(HistMaker, "grow_histmaker")
+XGBOOST_REGISTER_TREE_UPDATER(HistMakerCompact, "grow_pmatcompact")
 .describe("Tree constructor that uses approximate global of histogram construction.")
 .set_body([]() {
-    return new GlobalProposalHistMaker<GradStats>();
+    return new GlobalProposalHistMakerCompact<GradStats>();
   });
 }  // namespace tree
 }  // namespace xgboost
