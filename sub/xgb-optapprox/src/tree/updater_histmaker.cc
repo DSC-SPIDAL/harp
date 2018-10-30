@@ -8,6 +8,7 @@
 #include <xgboost/tree_updater.h>
 #include <vector>
 #include <algorithm>
+#include "../data/compact_dmatrix.h"
 #include "../common/sync.h"
 #include "../common/quantile.h"
 #include "../common/group_data.h"
@@ -611,7 +612,7 @@ class CQHistMaker: public HistMaker<TStats> {
       }
   }
   inline void UpdateHistColWithIndex(const std::vector<GradientPair> &gpair,
-                            const SparsePage::Inst &col,
+                            const DMatrixCompact::Inst &col,
                             const MetaInfo &info,
                             const RegTree &tree,
                             const std::vector<bst_uint> &fset,
@@ -635,7 +636,7 @@ class CQHistMaker: public HistMaker<TStats> {
       GradientPair buf_gpair[kBuffer];
       for (bst_uint j = 0; j < align_length; j += kBuffer) {
         for (bst_uint i = 0; i < kBuffer; ++i) {
-          bst_uint ridx = col[j + i].index;
+          bst_uint ridx = col[j + i].index();
           buf_position[i] = this->position_[ridx];
           buf_gpair[i] = gpair[ridx];
         }
@@ -644,7 +645,7 @@ class CQHistMaker: public HistMaker<TStats> {
           if (nid >= 0) {
             //hbuilder[nid].Add(col[j + i].fvalue, buf_gpair[i]);
 //#ifdef USE_BINID
-            hbuilder[nid].AddWithIndex(col[j + i].binid, buf_gpair[i]);
+            hbuilder[nid].AddWithIndex(col[j + i].binid(), buf_gpair[i]);
 //#endif
 
             
@@ -657,13 +658,13 @@ class CQHistMaker: public HistMaker<TStats> {
         }
       }
       for (bst_uint j = align_length; j < col.size(); ++j) {
-        const bst_uint ridx = col[j].index;
+        const bst_uint ridx = col[j].index();
         const int nid = this->position_[ridx];
         if (nid >= 0) {
           //hbuilder[nid].Add(col[j].fvalue, gpair[ridx]);
  
 #ifdef USE_BINID
-          hbuilder[nid].AddWithIndex(col[j].binid, gpair[ridx]);
+          hbuilder[nid].AddWithIndex(col[j].binid(), gpair[ridx]);
 #endif
           
 #ifdef USE_BINIDUNION
@@ -675,12 +676,12 @@ class CQHistMaker: public HistMaker<TStats> {
       }
     } else {
       for (const auto& c : col) {
-        const bst_uint ridx = c.index;
+        const bst_uint ridx = c.index();
         const int nid = this->position_[ridx];
         if (nid >= 0) {
           //hbuilder[nid].Add(c.fvalue, gpair, info, ridx);
 #ifdef USE_BINID
-          hbuilder[nid].AddWithIndex(c.binid, gpair, info, ridx);
+          hbuilder[nid].AddWithIndex(c.binid(), gpair, info, ridx);
 #endif
           
 #ifdef USE_BINIDUNION
@@ -898,6 +899,42 @@ class GlobalProposalHistMaker: public CQHistMaker<TStats> {
     }
   }
 
+  //dup func
+  inline void CorrectNonDefaultPositionByBatch2(
+      DMatrixCompact &batch, const std::vector<bst_uint> &sorted_split_set,
+      const RegTree &tree) {
+    for (size_t fid = 0; fid < batch.Size(); ++fid) {
+      auto col = batch[fid];
+      auto it = std::lower_bound(sorted_split_set.begin(), sorted_split_set.end(), fid);
+
+      if (it != sorted_split_set.end() && *it == fid) {
+        const auto ndata = static_cast<bst_omp_uint>(col.size());
+        #pragma omp parallel for schedule(static)
+        for (bst_omp_uint j = 0; j < ndata; ++j) {
+
+          //const bst_uint ridx = col[j].index;
+          //const bst_float fvalue = col[j].fvalue;
+          const bst_uint ridx = col[j].index();
+          const bst_uint binid = col[j].binid();
+
+
+          const int nid = this->DecodePosition(ridx);
+          CHECK(tree[nid].IsLeaf());
+          int pid = tree[nid].Parent();
+
+          // go back to parent, correct those who are not default
+          if (!tree[nid].IsRoot() && tree[pid].SplitIndex() == fid) {
+            if (binid < tree[pid].SplitCond()) {
+              this->SetEncodePosition(ridx, tree[pid].LeftChild());
+            } else {
+              this->SetEncodePosition(ridx, tree[pid].RightChild());
+            }
+          }
+        }
+      }
+    }
+  }
+ 
   // code to create histogram
   void CreateHist(const std::vector<GradientPair> &gpair,
                   DMatrix *p_fmat,
@@ -929,12 +966,18 @@ class GlobalProposalHistMaker: public CQHistMaker<TStats> {
       if (!this->isInitializedHistIndex){
         CQHistMaker<TStats>::InitHistIndex(p_fmat, fset, tree);
         this->isInitializedHistIndex = true;
+
+        p_hmat = new DMatrixCompact();
+        p_hmat->Init(*p_fmat->GetSortedColumnBatches().begin());
+
       }
 
       // start accumulating statistics
-      for (const auto &batch : p_fmat->GetSortedColumnBatches()) {
+      //for (const auto &batch : p_fmat->GetSortedColumnBatches()) 
+      //only one page
+      {
         // TWOPASS: use the real set + split set in the column iteration.
-        this->CorrectNonDefaultPositionByBatch(batch, this->fsplit_set_, tree);
+        this->CorrectNonDefaultPositionByBatch2(*p_hmat, this->fsplit_set_, tree);
 
         // start enumeration
         const auto nsize = static_cast<bst_omp_uint>(this->work_set_.size());
@@ -944,7 +987,8 @@ class GlobalProposalHistMaker: public CQHistMaker<TStats> {
           int offset = this->feat2workindex_[fid];
           if (offset >= 0) {
             //this->UpdateHistCol(gpair, batch[fid], info, tree,
-            this->UpdateHistColWithIndex(gpair, batch[fid], info, tree,
+            //this->UpdateHistColWithIndex(gpair, batch[fid], info, tree,
+            this->UpdateHistColWithIndex(gpair, (*p_hmat)[fid], info, tree,
                                 fset, offset,
                                 &this->thread_hist_[omp_get_thread_num()]);
           }
@@ -971,6 +1015,8 @@ class GlobalProposalHistMaker: public CQHistMaker<TStats> {
   std::vector<bst_float> cached_cut_;
   // flag of initialization
   bool isInitializedHistIndex;
+  // hist mat compact
+  DMatrixCompact* p_hmat;
 };
 
 

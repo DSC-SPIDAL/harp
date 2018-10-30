@@ -160,7 +160,8 @@ class LearnerImpl : public Learner {
         if (tparam_.dsplit == 1) {
           cfg_["updater"] = "distcol";
         } else if (tparam_.dsplit == 2) {
-          cfg_["updater"] = "grow_histmaker,prune";
+          //cfg_["updater"] = "grow_histmaker,prune";
+          cfg_["updater"] = "grow_histmaker";
         }
       }
     } else if (tparam_.tree_method == 3) {
