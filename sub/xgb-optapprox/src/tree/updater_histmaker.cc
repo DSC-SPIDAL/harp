@@ -60,15 +60,6 @@ class HistMaker: public BaseMaker {
       CHECK_LT(i, size);
       data[i].Add(gpair, info, ridx);
     }
-    inline void AddWithIndex(bst_float fv,
-                    const std::vector<GradientPair> &gpair,
-                    const MetaInfo &info,
-                    const bst_uint ridx) {
-      unsigned i = std::upper_bound(cut, cut + size, fv) - cut;
-      CHECK_NE(size, 0U) << "try insert into size=0";
-      CHECK_LT(i, size);
-      data[i].Add(gpair, info, ridx);
-    }
     
   };
   /*! \brief a set of histograms from different index */
@@ -295,8 +286,11 @@ class CQHistMaker: public HistMaker<TStats> {
       CHECK_NE(start, hist.size);
       return start;
     }
+
+#ifdef USE_BINID
     inline void AddWithIndex(unsigned binid,
                     GradientPair gstats) {
+        //hist.data[binid].Add(gstats);
         hist.data[binid].Add(gstats);
     }
     inline void AddWithIndex(unsigned binid,
@@ -306,6 +300,42 @@ class CQHistMaker: public HistMaker<TStats> {
       CHECK_NE(binid, hist.size);
       hist.data[binid].Add(gpair, info, ridx);
     }
+#endif
+
+
+    //inline void AddWithIndex(const float* binidptr,
+    //                GradientPair gstats) {
+    //    //hist.data[binid].Add(gstats);
+    //  float* ptr = binidptr;
+    //    unsigned int binid = *(reinterpret_cast<unsigned int*>(ptr));
+    //    hist.data[binid].Add(gstats);
+    //}
+    //inline void AddWithIndex(const float* binidptr,
+    //                const std::vector<GradientPair> &gpair,
+    //                const MetaInfo &info,
+    //                const bst_uint ridx) {
+    //  float* ptr = binidptr;
+    //  unsigned int binid = *(reinterpret_cast<unsigned int*>(ptr));
+    //  CHECK_NE(binid, hist.size);
+    //  hist.data[binid].Add(gpair, info, ridx);
+    //}
+
+#ifdef USE_BINIDUNION
+    inline void AddWithIndex(float ptr,
+                    GradientPair gstats) {
+        //hist.data[binid].Add(gstats);
+        unsigned int binid = static_cast<unsigned int>(ptr);
+        hist.data[binid].Add(gstats);
+    }
+    inline void AddWithIndex(float ptr,
+                    const std::vector<GradientPair> &gpair,
+                    const MetaInfo &info,
+                    const bst_uint ridx) {
+      unsigned int binid = static_cast<unsigned int>(ptr);
+      CHECK_NE(binid, hist.size);
+      hist.data[binid].Add(gpair, info, ridx);
+    }
+#endif
 
 
     /*!
@@ -596,6 +626,7 @@ class CQHistMaker: public HistMaker<TStats> {
       const unsigned wid = this->node2workindex_[nid];
       hbuilder[nid].istart = 0;
       hbuilder[nid].hist = this->wspace_.hset[0][fid_offset + wid * (fset.size()+1)];
+      //hbuilder[nid].hist = this->wspace_.hset[0][fid_offset];
     }
     if (TStats::kSimpleStats != 0 && this->param_.cache_opt != 0) {
       constexpr bst_uint kBuffer = 32;
@@ -612,8 +643,16 @@ class CQHistMaker: public HistMaker<TStats> {
           const int nid = buf_position[i];
           if (nid >= 0) {
             //hbuilder[nid].Add(col[j + i].fvalue, buf_gpair[i]);
+//#ifdef USE_BINID
             hbuilder[nid].AddWithIndex(col[j + i].binid, buf_gpair[i]);
+//#endif
 
+            
+#ifdef USE_BINIDUNION
+            //hbuilder[nid].AddWithIndex(*(reinterpret_cast<bst_uint*>(&col[j + i].fvalue)), buf_gpair[i]);
+            //hbuilder[nid].AddWithIndex(&(col[j + i].fvalue), buf_gpair[i]);
+            //hbuilder[nid].AddWithIndex(col[j + i].fvalue, buf_gpair[i]);
+#endif
           }
         }
       }
@@ -622,7 +661,16 @@ class CQHistMaker: public HistMaker<TStats> {
         const int nid = this->position_[ridx];
         if (nid >= 0) {
           //hbuilder[nid].Add(col[j].fvalue, gpair[ridx]);
+ 
+#ifdef USE_BINID
           hbuilder[nid].AddWithIndex(col[j].binid, gpair[ridx]);
+#endif
+          
+#ifdef USE_BINIDUNION
+          //hbuilder[nid].AddWithIndex(*(reinterpret_cast<bst_uint*>(&col[j].fvalue)), gpair[ridx]);
+          //hbuilder[nid].AddWithIndex(&(col[j].fvalue), gpair[ridx]);
+          //hbuilder[nid].AddWithIndex(col[j].fvalue, gpair[ridx]);
+#endif
         }
       }
     } else {
@@ -631,7 +679,15 @@ class CQHistMaker: public HistMaker<TStats> {
         const int nid = this->position_[ridx];
         if (nid >= 0) {
           //hbuilder[nid].Add(c.fvalue, gpair, info, ridx);
+#ifdef USE_BINID
           hbuilder[nid].AddWithIndex(c.binid, gpair, info, ridx);
+#endif
+          
+#ifdef USE_BINIDUNION
+          //hbuilder[nid].AddWithIndex(*(reinterpret_cast<bst_uint*>(&c.fvalue)), gpair, info, ridx);
+          //hbuilder[nid].AddWithIndex(&(c.fvalue), gpair, info, ridx);
+          //hbuilder[nid].AddWithIndex(c.fvalue, gpair, info, ridx);
+#endif
         }
       }
     }
@@ -825,6 +881,7 @@ class GlobalProposalHistMaker: public CQHistMaker<TStats> {
       //this->isInitializedHistIndex = false;
 
     } else {
+        
       this->wspace_.cut.clear();
       this->wspace_.rptr.clear();
       this->wspace_.rptr.push_back(0);

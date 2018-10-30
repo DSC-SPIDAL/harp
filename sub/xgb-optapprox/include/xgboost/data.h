@@ -134,7 +134,9 @@ struct Entry {
   /*! \brief feature value */
   bst_float fvalue;
   /*! \brief binid value */
+#ifdef USE_BINID
   bst_uint binid;
+#endif
 
   /*! \brief default constructor */
   Entry() = default;
@@ -155,7 +157,15 @@ struct Entry {
   /* OptApprox:: init bindid in pmat */
   inline void addBinid(unsigned id) const{
       Entry* ptr = const_cast<Entry*> (this);
+#ifdef USE_BINID
       ptr->binid = id;
+#endif
+
+#ifdef USE_BINIDUNION
+      //*(reinterpret_cast<bst_uint*>(&(ptr->fvalue))) = id;
+      ptr->fvalue = static_cast<float>(id);
+#endif
+
   }
 };
 
