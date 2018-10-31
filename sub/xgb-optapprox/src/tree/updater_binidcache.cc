@@ -13,6 +13,7 @@
 #include "../common/group_data.h"
 #include "./updater_basemaker-inl.h"
 #include <fstream>
+#include "../common/debug.h"
 
 namespace xgboost {
 namespace tree {
@@ -138,13 +139,26 @@ class HistMakerBinid: public BaseMaker {
     for (int depth = 0; depth < param_.max_depth; ++depth) {
       // reset and propose candidate split
       this->ResetPosAndPropose(gpair, p_fmat, fwork_set_, *p_tree);
+
+    printtree(p_tree, "ResetPosAndPropose");
       // create histogram
       this->CreateHist(gpair, p_fmat, fwork_set_, *p_tree);
+
+    printtree(p_tree, "After CreateHist");
+
       // find split based on histogram statistics
       this->FindSplit(depth, gpair, p_fmat, fwork_set_, p_tree);
+
+    printtree(p_tree, "FindSplit");
+
       // reset position after split
       this->ResetPositionAfterSplit(p_fmat, *p_tree);
+
+    printtree(p_tree, "ResetPositionAfterSPlit");
+
       this->UpdateQueueExpand(*p_tree);
+
+    printtree(p_tree, "UpdateQueueExpand");
       // if nothing left to be expand, break
       if (qexpand_.size() == 0) break;
     }
@@ -152,6 +166,9 @@ class HistMakerBinid: public BaseMaker {
       const int nid = qexpand_[i];
       (*p_tree)[nid].SetLeaf(p_tree->Stat(nid).base_weight * param_.learning_rate);
     }
+
+    /* optApprox */
+    printtree(p_tree);
   }
   // this function does two jobs
   // (1) reset the position in array position, to be the latest leaf id
@@ -929,6 +946,10 @@ class GlobalProposalHistMakerBinid: public CQHistMakerBinid<TStats> {
       if (!this->isInitializedHistIndex){
         CQHistMakerBinid<TStats>::InitHistIndex(p_fmat, fset, tree);
         this->isInitializedHistIndex = true;
+
+        //DEBUG
+        printdmat(*p_fmat->GetSortedColumnBatches().begin());
+
       }
 
       // start accumulating statistics

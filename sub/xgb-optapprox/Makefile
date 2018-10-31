@@ -86,7 +86,7 @@ ifeq ($(USE_DEBUG), 1)
 	CFLAGS += -g
 endif
 
-CFLAGS += -fpermissive -fno-strict-aliasing -DUSE_BINID=1
+CFLAGS += -fpermissive -fno-strict-aliasing -DUSE_BINID=1 -DUSE_DEBUG=1
 
 
 ifndef LINT_LANG
