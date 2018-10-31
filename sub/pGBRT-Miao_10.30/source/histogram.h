@@ -21,11 +21,12 @@ public:
     double getResidule();
     double setHistogram(int n, int i);
     Bin mergeHistogram(Bin a,Bin b);
-
+    Bin addElement(Bin a,int element);
+   
 private:
     int numBin;
-    Bin* bins;
-    double* label;    
+    vector<Bin> bins; 
+    double label;    
 };
 
 histogram::histogram(int numberofbins) {
@@ -39,7 +40,7 @@ histogram::~histogram() {
 	
 	// delete all 2-d arrays: rawfeatures, sortedfeatures, sortedindices
     for (int i=0; i<numBin; i++) {
-           delete Bin[i];
+           bins.pop();
            Bin[i] = NULL;
         
     }
@@ -49,8 +50,9 @@ histogram::~histogram() {
 
 
 histogram::update_histogram(){
-
-
+    for (int i=0;i<numBin;i++){
+    	
+    }
 
 }
 
@@ -60,3 +62,8 @@ histogram::merge_histogram(Bin a,Bin b){
    return NULL;
 }
 
+histogram::addElement(Bin* a,int element){
+   double cur=a->   
+
+   return Null;
+}
