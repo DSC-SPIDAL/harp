@@ -2,6 +2,7 @@
 #include <cstring>
 #include <cstdlib>
 #include <stdio.h>
+#include "mkl.h"
 
 using namespace std;
 
@@ -77,7 +78,6 @@ void CSRGraph::createFromEdgeListFile(CSRGraph::idxType numVerts, CSRGraph::idxT
 
 void CSRGraph::SpMVNaive(valType* x, valType* y)
 {
-    // printf("spmv len: %d\n", _numVertices);
 
 #pragma omp parallel for
     for(idxType i = 0; i<_numVertices; i++)
@@ -88,10 +88,19 @@ void CSRGraph::SpMVNaive(valType* x, valType* y)
         valType* rowElem = getEdgeVals(i); 
         idxType* rowColIdx = getColIdx(i);
 
-        #pragma GCC ivdep
+        #pragma omp simd reduction(+:sum) 
         for(idxType j=0; j<rowLen;j++)
             sum += rowElem[j] * (x[rowColIdx[j]]);
 
         y[i] = sum;
     }
 }
+
+void CSRGraph::SpMVMKL(valType* x, valType* y, int thdNum)
+{
+    // mkl_set_num_threads(thdNum);
+    const char tran = 'N';
+    mkl_cspblas_scsrgemv(&tran, &_numVertices, _edgeVal, _indexRow, _indexCol, x, y);
+}
+
+

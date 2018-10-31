@@ -16,12 +16,14 @@ ARCH_is_$(ARCH)         := yes
 -omp := $(if $(COMPILER_is_icc), -qopenmp, -fopenmp)
 ## for intel avx
 -avx := $(if $(COMPILER_is_icc), $(if $(ARCH_is_knl), -xMIC-AVX512, $(if $(ARCH_is_skl), -xCORE-AVX512, ) ),)
--rpt := $(if $(COMPILER_is_icc), -qopt-report=5, )
+-rpt := $(if $(COMPILER_is_icc), -qopt-report=5, -ftree-vectorize -fopt-info-vec-missed)
 ## for nec mpi version
 -nccflag := $(if $(COMPILER_is_ncc), -DNEC -DSXVE,)
 -nccdep := $(if $(COMPILER_is_ncc), -M,)
 ## for knl MCDRAM
 -knlflag := $(if $(ARCH_is_knl), -DSC_MEMKIND -I./memkind/include -L./memkind/lib -lmemkind, )
+-mkl := $(if $(COMPILER_is_icc), -I/opt/intel/mkl/include, )
+-mklld := $(if $(COMPILER_is_icc), -L/opt/intel/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core,)
 
 ## ----------- start of compilation -----------
 
@@ -62,14 +64,14 @@ LD := $(if $(COMPILER_is_ncc), g++, $(if $(COMPILER_is_icc), icpc, g++))
 TAR := tar
 
 # C flags
-CFLAGS := -std=c11 $(-nccflag) $(-omp) $(-avx) $(-rpt) -O3
+CFLAGS := -std=c11 $(-nccflag) $(-omp) $(-avx) $(-rpt) $(-mkl) -O3
 # C++ flags
-CXXFLAGS := -std=c++11 $(-nccflag) $(-omp) $(-avx) $(-rpt) -O3
+CXXFLAGS := -std=c++11 $(-nccflag) $(-omp) $(-avx) $(-rpt) $(-mkl) -O3
 # C/C++ flags
-# CPPFLAGS := -g -Wall -Wextra -pedantic
-CPPFLAGS := -g -Wall -pedantic -DVERBOSE
+CPPFLAGS := -g -Wall -Wextra -pedantic -DVTUNE -DVERBOSE
+# CPPFLAGS := -g -Wall -pedantic -DVERBOSE
 # linker flags
-LDFLAGS := $(-omp) 
+LDFLAGS := $(-omp) $(-mklld)
 # flags required for dependency generation; passed to compilers
 DEPFLAGS = $(-nccdep) -MT $@ -MD -MP -MF  $(DEPDIR)/$*.Td
 

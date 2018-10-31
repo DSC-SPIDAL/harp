@@ -15,7 +15,8 @@ class DataTableColMajor
        typedef int32_t idxType;
        DataTableColMajor(): _subTempsList(nullptr), _dataTable(nullptr), 
     _tableLen(nullptr), _curTable(nullptr), _curMainTable(nullptr), 
-    _curAuxTable(nullptr), _indexer(nullptr), _thdNum(1), _blockSizeBasic(1), _blockSize(nullptr){}
+    _curAuxTable(nullptr), _indexer(nullptr), _thdNum(1), _blockSizeBasic(1), _blockSize(nullptr),
+    _blockPtrDst(nullptr), _blockPtrA(nullptr), _blockPtrB(nullptr){}
 
         ~DataTableColMajor () {cleanTable();}
 
@@ -45,6 +46,7 @@ class DataTableColMajor
         void setAuxArray(int colIdx, float*& vals);
         void countCurBottom(int*& idxCToC, int*& colorVals);
         void arrayWiseFMA(float*& dst, float*& a, float*& b);
+        void arrayWiseFMANaive(float* dst, float* a, float* b);
         void updateArrayVec(float*& src, float*& dst);
 
     private:
@@ -71,6 +73,9 @@ class DataTableColMajor
         float** _curTable;
         float** _curMainTable;
         float** _curAuxTable;
+        float** _blockPtrDst;
+        float** _blockPtrA;
+        float** _blockPtrB;
 
         
 

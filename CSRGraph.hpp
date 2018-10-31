@@ -53,6 +53,7 @@ class CSRGraph
         }
 
         void SpMVNaive(valType* x, valType* y);
+        void SpMVMKL(valType* x, valType* y, int thdNum);
 
         idxType getNumVertices() {return _numVertices;} 
 

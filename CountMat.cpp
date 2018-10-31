@@ -17,7 +17,6 @@ void CountMat::initialization(CSRGraph& graph, int thd_num, int itr_num)
 {
     _graph = &graph;
     _vert_num = _graph->getNumVertices();
-    // _max_deg = _graph->get_max_deg();
     _thd_num = thd_num;
     _itr_num = itr_num;
     _colors_local = (int*)malloc(_vert_num*sizeof(int));
@@ -114,6 +113,8 @@ double CountMat::compute(Graph& templates)
     printf("Final count is %e\n", finalCount);
     std::fflush(stdout);
 
+    return finalCount;
+
 }/*}}}*/
 
 double CountMat::colorCounting()
@@ -160,6 +161,17 @@ double CountMat::colorCounting()
 double CountMat::countNonBottome(int subsId)
 {/*{{{*/
 
+    if (subsId == 1)
+    {
+        // for vtune
+#ifdef VTUNE
+        ofstream vtune_trigger;
+        vtune_trigger.open("vtune-flag.txt");
+        vtune_trigger << "Start training process and trigger vtune profiling.\n";
+        vtune_trigger.close();
+#endif
+    }
+
     int subSize = _subtmp_array[subsId].get_vert_num();
 
     int idxMain = div_tp.get_main_node_idx(subsId);
@@ -167,7 +179,6 @@ double CountMat::countNonBottome(int subsId)
 
     int countCombNum = indexer.getCombTable()[_color_num][subSize];
     int splitCombNum = indexer.getCombTable()[subSize][mainSize];
-    // int vecNum = countCombNum*splitCombNum;
 
 #ifdef VERBOSE
     printf("Finish init sub templte %d, vert: %d, comb: %d, splitNum: %d\n", subsId, subSize, 
@@ -194,18 +205,21 @@ double CountMat::countNonBottome(int subsId)
 
     }
 
+#ifdef VERBOSE
+    double startTime = utility::timer();
+    double startTimeComp = 0.0;
+    double eltSpmv = 0.0;
+    double eltMul = 0.0;
+#endif
+   
     for(int i=0; i<countCombNum; i++)
     {
         int combIdx = combToCountLocal[i];
-        
+
         if (subsId == 0)
             objArray = bufLastSub;
         else
-        {
             objArray = _dTable.getCurTableArray(combIdx);
-            //clear previous data
-            std::memset(objArray, 0, _vert_num*sizeof(float)); 
-        }
 
         for (int j = 0; j < splitCombNum; ++j) {
 
@@ -214,10 +228,26 @@ double CountMat::countNonBottome(int subsId)
 
             float* auxArraySelect = _dTable.getAuxArray(auxIdx);
             // spmv
-            _graph->SpMVNaive(auxArraySelect, _bufVec);
-            float* mainArraySelect = _dTable.getMainArray(mainIdx);
+#ifdef VERBOSE
+            startTimeComp = utility::timer();
+#endif
+            // _graph->SpMVNaive(auxArraySelect, _bufVec);
+            _graph->SpMVMKL(auxArraySelect, _bufVec, _thd_num);
+#ifdef VERBOSE
+            eltSpmv += (utility::timer() - startTimeComp);
+#endif
+
             // element-wise mul 
-            _dTable.arrayWiseFMA(objArray, _bufVec, mainArraySelect);
+            float* mainArraySelect = _dTable.getMainArray(mainIdx);
+#ifdef VERBOSE
+            startTimeComp = utility::timer();
+#endif
+
+            _dTable.arrayWiseFMANaive(objArray, _bufVec, mainArraySelect);
+#ifdef VERBOSE
+            eltMul += (utility::timer() - startTimeComp);
+#endif
+
         }
     }
 
@@ -233,6 +263,12 @@ double CountMat::countNonBottome(int subsId)
         free(bufLastSub);
 #endif
     }
+
+#ifdef VERBOSE
+    printf("Sub %d, counting time %f, Spmv time %f, Mul time %f \n", subsId, (utility::timer() - startTime), eltSpmv, eltMul);
+    // printf("Sub %d, counting time %f\n", subsId, (utility::timer() - startTime));
+    std::fflush(stdout); 
+#endif
 
 #ifdef VERBOSE
     printf("Sub %d, NonBottom raw count %f\n", subsId, countSum);

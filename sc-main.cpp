@@ -79,7 +79,7 @@ int main(int argc, char** argv)
 //     std::fflush(stdout);           
 
     // read in graph file and make CSR format
-    printf("Start debug CSR format\n");
+    printf("Start CSR format\n");
     std::fflush(stdout);
 
     startTime = utility::timer();
@@ -87,15 +87,15 @@ int main(int argc, char** argv)
     EdgeList elist(graph_name); 
     CSRGraph csrInpuG(elist.getNumVertices(), elist.getNumEdges(), elist.getSrcList(), elist.getDstList());
 
-    printf("Finish debug CSR format\n");
+    printf("Finish CSR format\n");
     std::fflush(stdout);
     printf("Loading CSR data using %f secs\n", (utility::timer() - startTime));
     std::fflush(stdout);           
 
     // printf("Start debug CSR SpMV len %d\n", elist.getNumVertices());
     // std::fflush(stdout);
-
-    // // test SpMV sequential
+    //
+    // // test SpMV mkl
     // // y = CSRGraph*x
     // float* xArray = new float[elist.getNumVertices()];
     // float* yArray = new float[elist.getNumVertices()];
@@ -106,16 +106,14 @@ int main(int argc, char** argv)
     // }
     //
     // startTime = utility::timer();
-    // csrInpuG.SpMVNaive(xArray, yArray);
-    // printf("Compute CSR SpMV using %f secs\n", (utility::timer() - startTime));
+    // csrInpuG.SpMVMKL(xArray, yArray, comp_thds);
+    // printf("Compute CSR SpMV MKL using %f secs\n", (utility::timer() - startTime));
     // std::fflush(stdout);           
     //
-    // //debug
-    // for(int i=0;i<10;i++)
-    // {
-    //     printf("yarray %d is %f\n", i, yArray[i]);
-    //     std::fflush(stdout);
-    // }
+    // startTime = utility::timer();
+    // csrInpuG.SpMVNaive(xArray, yArray);
+    // printf("Compute CSR SpMV Naive using %f secs\n", (utility::timer() - startTime));
+    // std::fflush(stdout);           
     //
     // delete[] xArray;
     // delete[] yArray;
@@ -126,17 +124,10 @@ int main(int argc, char** argv)
     // load input templates
     input_template.read_enlist(template_name);
 
+   
     // start CSR mat computing
     CountMat executor;
-
-    printf("Start initialize CountMat\n");
-    std::fflush(stdout);
-
     executor.initialization(csrInpuG, comp_thds, iterations);
-
-    printf("Finish initialize CountMat\n");
-    std::fflush(stdout);
-
     executor.compute(input_template);
     
     return 0;
