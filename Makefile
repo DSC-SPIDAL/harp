@@ -67,7 +67,7 @@ CFLAGS := -std=c11 $(-nccflag) $(-omp) $(-avx) $(-rpt) -O3
 CXXFLAGS := -std=c++11 $(-nccflag) $(-omp) $(-avx) $(-rpt) -O3
 # C/C++ flags
 # CPPFLAGS := -g -Wall -Wextra -pedantic
-CPPFLAGS := -g -Wall -pedantic -DVERBOSE
+CPPFLAGS := -g -Wall -pedantic -DVERBOSE -DVTUNE
 # linker flags
 LDFLAGS := $(-omp) 
 # flags required for dependency generation; passed to compilers

@@ -161,12 +161,39 @@ double Count::countNonBottome(int subsId)
     int vecNum = countCombNum*splitCombNum;
 
 #ifdef VERBOSE
+    double startTime = utility::timer();
+#endif
+
+    if (subsId == 1)
+    {
+        // for vtune
+#ifdef VTUNE
+        ofstream vtune_trigger;
+        vtune_trigger.open("vtune-flag.txt");
+        vtune_trigger << "Start training process and trigger vtune profiling.\n";
+        vtune_trigger.close();
+#endif
+    }
+
+#ifdef VERBOSE
     printf("Finish init sub templte %d, vert: %d, comb: %d, splitNum: %d\n", subsId, subSize, 
             countCombNum, splitCombNum);
     std::fflush(stdout); 
 #endif
 
+// #ifdef VERBOSE
+//     // debug check the zero-valued (skipped) vertices
+//     int zerovNum = 0;
+//     for (int i = 0; i < _vert_num; ++i) {
+//        if (!_dTable.isVertInitMain(i)) 
+//            zerovNum++;
+//     }
+//     printf("skipped vertice for sub %d is %d\n", subsId, zerovNum);
+//     std::fflush(stdout); 
+// #endif
+
     double countSum = 0.0;
+    int validAdjs = 0;
     #pragma omp parallel num_threads(_thd_num)
     {
         // local vars for each omp thread
@@ -185,6 +212,7 @@ double Count::countNonBottome(int subsId)
         __builtin_assume_aligned(mainSplitVecLocal, 64);
         __builtin_assume_aligned(auxSplitVecLocal, 64);
 #endif
+        // #pragma omp for schedule(static) reduction(+:countSum) reduction(+:validAdjs)
         #pragma omp for schedule(static) reduction(+:countSum)
         for (int v = 0; v < _vert_num; ++v) {
 
@@ -203,6 +231,8 @@ double Count::countNonBottome(int subsId)
                        nbrListValid[countNbrValid++] = adjVal;
                    }
                }
+
+               // validAdjs += countNbrValid;
 
                if (countNbrValid)
                {
@@ -272,8 +302,15 @@ double Count::countNonBottome(int subsId)
 
         free(nbrListValid);
     }
+
 #ifdef VERBOSE
     printf("Sub %d, NonBottom raw count %f\n", subsId, countSum);
+    std::fflush(stdout); 
+    // printf("Sub %d, valid verts %d, total adjs %d\n", subsId, validAdjs, _graph->get_edge_num());
+    // std::fflush(stdout); 
+#endif
+#ifdef VERBOSE
+    printf("Sub %d, counting time %f\n", subsId, (utility::timer() - startTime));
     std::fflush(stdout); 
 #endif
 
