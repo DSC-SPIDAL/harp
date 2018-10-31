@@ -20,6 +20,7 @@ public:
     void update_histogram();
     double getResidule();
     double setHistogram(int n, int i);
+    Bin mergeHistogram(Bin a,Bin b);
 
 private:
     int numBin;
@@ -51,5 +52,11 @@ histogram::update_histogram(){
 
 
 
+}
+
+
+histogram::merge_histogram(Bin a,Bin b){
+   
+   return NULL;
 }
 
