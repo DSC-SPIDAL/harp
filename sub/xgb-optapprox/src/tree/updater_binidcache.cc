@@ -15,6 +15,7 @@
 #include <fstream>
 #include "../common/debug.h"
 
+//#define _INIT_PER_TREE_ 1
 namespace xgboost {
 namespace tree {
 
@@ -125,6 +126,7 @@ class HistMakerBinid: public BaseMaker {
   rabit::Reducer<TStats, TStats::Reduce> histred_;
   // set of working features
   std::vector<bst_uint> fwork_set_;
+  std::vector<bst_uint> fsplit_set_;
   // update function implementation
   virtual void Update(const std::vector<GradientPair> &gpair,
                       DMatrix *p_fmat,
@@ -159,6 +161,13 @@ class HistMakerBinid: public BaseMaker {
       this->UpdateQueueExpand(*p_tree);
 
     printtree(p_tree, "UpdateQueueExpand");
+
+    std::ostringstream stringStream;
+    stringStream << "fsplit_set size:" << this->fsplit_set_.size();
+    printmsg(stringStream.str());
+
+
+
       // if nothing left to be expand, break
       if (qexpand_.size() == 0) break;
     }
@@ -460,7 +469,7 @@ class CQHistMakerBinid: public HistMakerBinid<TStats> {
   }
   void ResetPositionAfterSplit(DMatrix *p_fmat,
                                const RegTree &tree) override {
-    this->GetSplitSet(this->qexpand_, tree, &fsplit_set_);
+    this->GetSplitSet(this->qexpand_, tree, &this->fsplit_set_);
   }
   void ResetPosAndPropose(const std::vector<GradientPair> &gpair,
                           DMatrix *p_fmat,
@@ -498,14 +507,14 @@ class CQHistMakerBinid: public HistMakerBinid<TStats> {
 
       // TWOPASS: use the real set + split set in the column iteration.
       this->SetDefaultPostion(p_fmat, tree);
-      work_set_.insert(work_set_.end(), fsplit_set_.begin(), fsplit_set_.end());
+      work_set_.insert(work_set_.end(), this->fsplit_set_.begin(), this->fsplit_set_.end());
       std::sort(work_set_.begin(), work_set_.end());
       work_set_.resize(std::unique(work_set_.begin(), work_set_.end()) - work_set_.begin());
 
       // start accumulating statistics
       for (const auto &batch : p_fmat->GetSortedColumnBatches()) {
         // TWOPASS: use the real set + split set in the column iteration.
-        this->CorrectNonDefaultPositionByBatch(batch, fsplit_set_, tree);
+        this->CorrectNonDefaultPositionByBatch(batch, this->fsplit_set_, tree);
 
         // start enumeration
         const auto nsize = static_cast<bst_omp_uint>(work_set_.size());
@@ -660,9 +669,9 @@ class CQHistMakerBinid: public HistMakerBinid<TStats> {
           const int nid = buf_position[i];
           if (nid >= 0) {
             //hbuilder[nid].Add(col[j + i].fvalue, buf_gpair[i]);
-//#ifdef USE_BINID
+#ifdef USE_BINID
             hbuilder[nid].AddWithIndex(col[j + i].binid, buf_gpair[i]);
-//#endif
+#endif
 
             
 #ifdef USE_BINIDUNION
@@ -851,7 +860,7 @@ class CQHistMakerBinid: public HistMakerBinid<TStats> {
   // set of index from fset that are current work set
   std::vector<bst_uint> work_set_;
   // set of index from that are split candidates.
-  std::vector<bst_uint> fsplit_set_;
+  //std::vector<bst_uint> fsplit_set_;
   // thread temp data
   std::vector<std::vector<BaseMaker::SketchEntry> > thread_sketch_;
   // used to hold statistics
@@ -882,23 +891,30 @@ class GlobalProposalHistMakerBinid: public CQHistMakerBinid<TStats> {
                           DMatrix *p_fmat,
                           const std::vector<bst_uint> &fset,
                           const RegTree &tree) override {
+
+//#ifdef _INIT_PER_TREE_
+//#define _INIT_PER_TREE_BINID_ 1
+#ifdef _INIT_PER_TREE_BINID_
     if (this->qexpand_.size() == 1) {
       cached_rptr_.clear();
       cached_cut_.clear();
     }
     if (cached_rptr_.size() == 0) {
+#else
+
+    if (!isInitializedHistIndex && this->qexpand_.size() == 1) {
+      cached_rptr_.clear();
+      cached_cut_.clear();
+#endif
+
       CHECK_EQ(this->qexpand_.size(), 1U);
       CQHistMakerBinid<TStats>::ResetPosAndPropose(gpair, p_fmat, fset, tree);
       cached_rptr_ = this->wspace_.rptr;
       cached_cut_ = this->wspace_.cut;
 
-
-      /* OptApprox:: init bindid in pmat */
-      //CQHistMakerBinid<TStats>::InitHistIndex(p_fmat, fset, tree);
-      //this->isInitializedHistIndex = false;
-
+      LOG(CONSOLE) << "ResetPosAndPropose call in globalproposal";
     } else {
-        
+     LOG(CONSOLE) << "ResetPosAndPropose: copy histgram bins";
       this->wspace_.cut.clear();
       this->wspace_.rptr.clear();
       this->wspace_.rptr.push_back(0);
@@ -943,13 +959,17 @@ class GlobalProposalHistMakerBinid: public CQHistMakerBinid<TStats> {
           std::unique(this->work_set_.begin(), this->work_set_.end()) - this->work_set_.begin());
 
       /* OptApprox:: init bindid in pmat */
+#ifdef _INIT_PER_TREE_
+      if(this->qexpand_.size() == 1){
+#else
       if (!this->isInitializedHistIndex){
+#endif
+        
         CQHistMakerBinid<TStats>::InitHistIndex(p_fmat, fset, tree);
         this->isInitializedHistIndex = true;
 
         //DEBUG
         printdmat(*p_fmat->GetSortedColumnBatches().begin());
-
       }
 
       // start accumulating statistics

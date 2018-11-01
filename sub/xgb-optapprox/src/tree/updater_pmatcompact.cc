@@ -16,6 +16,7 @@
 #include <fstream>
 #include "../common/debug.h"
 
+//#define _INIT_PER_TREE_ 1
 namespace xgboost {
 namespace tree {
 
@@ -883,6 +884,7 @@ class GlobalProposalHistMakerCompact: public CQHistMakerCompact<TStats> {
  public:
   GlobalProposalHistMakerCompact(){
       this->isInitializedHistIndex = false;
+      p_hmat = new DMatrixCompact();
   }
 
  protected:
@@ -890,23 +892,28 @@ class GlobalProposalHistMakerCompact: public CQHistMakerCompact<TStats> {
                           DMatrix *p_fmat,
                           const std::vector<bst_uint> &fset,
                           const RegTree &tree) override {
+
+#ifdef _INIT_PER_TREE_
     if (this->qexpand_.size() == 1) {
       cached_rptr_.clear();
       cached_cut_.clear();
     }
     if (cached_rptr_.size() == 0) {
+#else
+
+    if (!isInitializedHistIndex && this->qexpand_.size() == 1) {
+      cached_rptr_.clear();
+      cached_cut_.clear();
+#endif
+
       CHECK_EQ(this->qexpand_.size(), 1U);
       CQHistMakerCompact<TStats>::ResetPosAndPropose(gpair, p_fmat, fset, tree);
       cached_rptr_ = this->wspace_.rptr;
       cached_cut_ = this->wspace_.cut;
 
       LOG(CONSOLE) << "ResetPosAndPropose call in globalproposal";
-      /* OptApprox:: init bindid in pmat */
-      //CQHistMakerCompact<TStats>::InitHistIndex(p_fmat, fset, tree);
-      //this->isInitializedHistIndex = false;
-
     } else {
-        
+     LOG(CONSOLE) << "ResetPosAndPropose: copy histgram bins";
       this->wspace_.cut.clear();
       this->wspace_.rptr.clear();
       this->wspace_.rptr.push_back(0);
@@ -987,11 +994,14 @@ class GlobalProposalHistMakerCompact: public CQHistMakerCompact<TStats> {
           std::unique(this->work_set_.begin(), this->work_set_.end()) - this->work_set_.begin());
 
       /* OptApprox:: init bindid in pmat */
+      
+#ifdef _INIT_PER_TREE_
+      if(this->qexpand_.size() == 1){
+#else
       if (!this->isInitializedHistIndex){
+#endif
         CQHistMakerCompact<TStats>::InitHistIndex(p_fmat, fset, tree);
         this->isInitializedHistIndex = true;
-
-        p_hmat = new DMatrixCompact();
         p_hmat->Init(*p_fmat->GetSortedColumnBatches().begin());
 
         //DEBUG
@@ -1005,7 +1015,9 @@ class GlobalProposalHistMakerCompact: public CQHistMakerCompact<TStats> {
       //only one page
       {
         // TWOPASS: use the real set + split set in the column iteration.
-        this->CorrectNonDefaultPositionByBatch2(*p_hmat, this->fsplit_set_, tree);
+        //this->CorrectNonDefaultPositionByBatch2(*p_hmat, this->fsplit_set_, tree);
+        auto batch = *p_fmat->GetSortedColumnBatches().begin();
+        this->CorrectNonDefaultPositionByBatch(batch, this->fsplit_set_, tree);
 
         // start enumeration
         const auto nsize = static_cast<bst_omp_uint>(this->work_set_.size());

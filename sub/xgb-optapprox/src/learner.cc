@@ -118,6 +118,7 @@ struct LearnerTrainParam : public dmlc::Parameter<LearnerTrainParam> {
         .add_enum("gpu_hist", 5)
         .add_enum("binidcache", 6)
         .add_enum("pmatcompact", 7)
+        .add_enum("pmatfasthist", 8)
         .describe("Choice of tree construction method.");
     DMLC_DECLARE_FIELD(test_flag).set_default("").describe(
         "Internal test flag");
@@ -170,6 +171,8 @@ class LearnerImpl : public Learner {
       cfg_["updater"] = "grow_binidcache,prune";
     } else if (tparam_.tree_method == 7) {
       cfg_["updater"] = "grow_pmatcompact,prune";
+    } else if (tparam_.tree_method == 8) {
+      cfg_["updater"] = "grow_pmatfasthist,prune";
     } else if (tparam_.tree_method == 3) {
       /* histogram-based algorithm */
       LOG(CONSOLE) << "Tree method is selected to be \'hist\', which uses a "

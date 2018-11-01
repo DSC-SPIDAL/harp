@@ -16,12 +16,13 @@
 namespace xgboost {
 //namespace data {
 
-class EntryCompact2{
+#ifndef USE_COMPACT_BINID
+class EntryCompact{
     public:
         unsigned int _index;
         unsigned int _binid;
 
-        EntryCompact2(unsigned int index, unsigned int binid):
+        EntryCompact(unsigned int index, unsigned int binid):
             _index(index),_binid(binid){}
 
         inline unsigned int index() const{
@@ -33,6 +34,7 @@ class EntryCompact2{
         }
 };
 
+#else
 class EntryCompact{
     public:
         unsigned int _data;
@@ -48,6 +50,7 @@ class EntryCompact{
             return _data >> 24;
         }
 };
+#endif
 
 class DMatrixCompact {
  private:

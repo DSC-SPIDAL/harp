@@ -22,6 +22,7 @@
 #include "../common/hist_util.h"
 #include "../common/row_set.h"
 #include "../common/column_matrix.h"
+#include "../common/debug.h"
 
 namespace xgboost {
 namespace tree {
@@ -78,6 +79,9 @@ class FastHistMaker: public TreeUpdater {
       /*
        */
       gmat_.printBinStat(); 
+      printdmat(*dmat->GetSortedColumnBatches().begin());
+      printgmat(gmat_);
+      printcut(gmat_.cut);
 
       is_gmat_initialized_ = true;
       if (param_.debug_verbose > 0) {
@@ -248,6 +252,11 @@ class FastHistMaker: public TreeUpdater {
 
           ++num_leaves;  // give two and take one, as parent is no longer a leaf
         }
+
+        //one level
+
+        printtree(p_tree, "Expand one level");
+
       }
 
       // set all the rest expanding nodes to leaf
@@ -265,6 +274,10 @@ class FastHistMaker: public TreeUpdater {
         p_tree->Stat(nid).sum_hess = static_cast<float>(snode_[nid].stats.sum_hess);
         snode_[nid].stats.SetLeafVec(param_, p_tree->Leafvec(nid));
       }
+
+
+      printtree(p_tree);
+
 
       pruner_->Update(gpair, p_fmat, std::vector<RegTree*>{p_tree});
 

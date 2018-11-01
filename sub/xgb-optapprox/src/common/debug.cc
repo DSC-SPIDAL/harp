@@ -7,7 +7,7 @@
 
 namespace xgboost {
 
-#if defined(USE_DEBUG)
+#ifdef USE_DEBUG
 void printtree(RegTree* ptree, std::string header=""){
 
    if (header==""){ 
@@ -16,14 +16,73 @@ void printtree(RegTree* ptree, std::string header=""){
     std::cout << "===" << header << "===\n" ;
 
    }
-   int id = 0;
-   for(auto node : ptree->GetNodes()){ 
+
+   std::cout << "Tree.param nodes=" << ptree->param.num_nodes <<
+       ",num_roots=" << ptree->param.num_roots <<
+       ",deleted=" << ptree->param.num_deleted << "\n";
+
+   int nsize = ptree->GetNodes().size();
+   for(int i=0; i< nsize; i++){
+       auto node = ptree->GetNodes()[i];
+       auto stat = ptree->Stat(i);
+
        unsigned split_index = node.SplitIndex();
        float split_value = node.SplitCond();
+       if (node.IsLeaf()){
+           std::cout << i << ":leaf";
+       }
+       else{
+           std::cout << i << ":" << split_index << ":" << split_value;
+       }
 
-       std::cout << id << ":" << split_index << ":" << split_value << " ";
+       std::cout << "<l" << stat.loss_chg << "h" << stat.sum_hess <<
+           "w" << stat.base_weight << "c" << stat.leaf_child_cnt << ">\n";
    }
+ 
+   //int id = 0;
+   //for(auto node : ptree->GetNodes()){ 
+   //    unsigned split_index = node.SplitIndex();
+   //    float split_value = node.SplitCond();
+   //    if (node.IsLeaf()){
+
+   //    }
+   //    else{
+   //        std::cout << id << ":" << split_index << ":" << split_value << " ";
+   //    }
+   //}
    std::cout << "\n";
+}
+
+void printmsg(std::string msg){
+    std::cout << "MSG:" << msg << "\n";
+}
+
+void printcut(HistCutMatrix& cut){
+  std::cout << "GHistCutMAT======================================\n";
+  int nfeature = cut.row_ptr.size() - 1;
+
+  for (size_t fid = 0; fid < nfeature; ++fid) {
+    auto a = cut[fid];
+    std::cout << "F:" << fid << " "; 
+    for (bst_omp_uint j = 0; j < a.size; ++j) {
+        std::cout << j << ":" << a.cut[j] << " ";
+     }
+    std::cout << "\n";
+  }
+}
+
+void printgmat(GHistIndexMatrix& gmat){
+  std::cout << "GHistIndexMAT======================================\n";
+  int nrows = gmat.row_ptr.size() - 1;
+
+  for (size_t id = 0; id < nrows; ++id) {
+    auto a = gmat[id];
+    std::cout << "R:" << id << " "; 
+    for (bst_omp_uint j = 0; j < a.size; ++j) {
+        std::cout << j << ":" << a.index[j] << " ";
+     }
+    std::cout << "\n";
+  }
 }
 
 
@@ -73,7 +132,7 @@ void printdmat(const SparsePage& dmat){
 }
 #else
 
-void printtree(RegTree* ptree){}
+void printtree(RegTree* ptree, std::string header=""){}
 void printdmat(DMatrixCompact& dmat){}
 void printdmat(const SparsePage& dmat){}
 

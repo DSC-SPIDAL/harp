@@ -75,8 +75,10 @@ export JAVAINCFLAGS = -I${JAVA_HOME}/include -I./java
 
 ifeq ($(TEST_COVER), 1)
 	CFLAGS += -g -O0 -fprofile-arcs -ftest-coverage
-else
-	CFLAGS += -O3 -funroll-loops
+#else
+#	CFLAGS += -O3 -funroll-loops
+endif
+
 ifeq ($(USE_SSE), 1)
 	CFLAGS += -msse2
 endif
@@ -86,7 +88,16 @@ ifeq ($(USE_DEBUG), 1)
 	CFLAGS += -g
 endif
 
-CFLAGS += -fpermissive -fno-strict-aliasing -DUSE_BINID=1 -DUSE_DEBUG=1
+ifeq ($(DEBUG), 1)
+CFLAGS += -fpermissive -fno-strict-aliasing -DUSE_BINID=1 -DUSE_DEBUG=1 -g
+TARGET = xgboost-debug
+WORKDIR = build-debug
+else
+CFLAGS += -O3 -funroll-loops
+CFLAGS += -fpermissive -fno-strict-aliasing -DUSE_BINID=1
+TARGET = xgboost
+WORKDIR = build
+endif
 
 
 ifndef LINT_LANG
@@ -127,7 +138,8 @@ CFLAGS += $(OPENMP_FLAGS)
 #.PHONY: clean all lint clean_all doxygen rcpplint pypack Rpack Rbuild Rcheck java pylint
 .PHONY: all lint
 
-all: lib/libxgboost.a $(XGBOOST_DYLIB) xgboost
+#all: lib/libxgboost.a $(XGBOOST_DYLIB) xgboost
+all: lib/libxgboost.a $(XGBOOST_DYLIB) $(TARGET)
 
 $(DMLC_CORE)/libdmlc.a: $(wildcard $(DMLC_CORE)/src/*.cc $(DMLC_CORE)/src/*/*.cc)
 	+ cd $(DMLC_CORE); "$(MAKE)" libdmlc.a config=$(ROOTDIR)/$(config); cd $(ROOTDIR)
@@ -138,16 +150,16 @@ $(RABIT)/lib/$(LIB_RABIT): $(wildcard $(RABIT)/src/*.cc)
 jvm: jvm-packages/lib/libxgboost4j.so
 
 SRC = $(wildcard src/*.cc src/*/*.cc)
-ALL_OBJ = $(patsubst src/%.cc, build/%.o, $(SRC)) $(PLUGIN_OBJS)
+ALL_OBJ = $(patsubst src/%.cc, $(WORKDIR)/%.o, $(SRC)) $(PLUGIN_OBJS)
 AMALGA_OBJ = amalgamation/xgboost-all0.o
 LIB_DEP = $(DMLC_CORE)/libdmlc.a $(RABIT)/lib/$(LIB_RABIT)
-ALL_DEP = $(filter-out build/cli_main.o, $(ALL_OBJ)) $(LIB_DEP)
-CLI_OBJ = build/cli_main.o
+ALL_DEP = $(filter-out $(WORKDIR)/cli_main.o, $(ALL_OBJ)) $(LIB_DEP)
+CLI_OBJ = $(WORKDIR)/cli_main.o
 include tests/cpp/xgboost_test.mk
 
-build/%.o: src/%.cc
+$(WORKDIR)/%.o: src/%.cc
 	@mkdir -p $(@D)
-	$(CXX) $(CFLAGS) -MM -MT build/$*.o $< >build/$*.d
+	$(CXX) $(CFLAGS) -MM -MT $(WORKDIR)/$*.o $< >$(WORKDIR)/$*.d
 	$(CXX) -c $(CFLAGS) $< -o $@
 
 build_plugin/%.o: plugin/%.cc
@@ -177,8 +189,16 @@ jvm-packages/lib/libxgboost4j.so: jvm-packages/xgboost4j/src/native/xgboost4j.cp
 	$(CXX) $(CFLAGS) $(JAVAINCFLAGS) -shared -o $@ $(filter %.cpp %.o %.a, $^) $(LDFLAGS)
 
 
+#xgboost: $(CLI_OBJ) $(ALL_DEP)
+$TARGET): $(CLI_OBJ) $(ALL_DEP)
+	$(CXX) $(CFLAGS) -o $@  $(filter %.o %.a, $^)  $(LDFLAGS)
+
 xgboost: $(CLI_OBJ) $(ALL_DEP)
 	$(CXX) $(CFLAGS) -o $@  $(filter %.o %.a, $^)  $(LDFLAGS)
+xgboost-debug: $(CLI_OBJ) $(ALL_DEP)
+	$(CXX) $(CFLAGS) -o $@  $(filter %.o %.a, $^)  $(LDFLAGS)
+
+
 
 rcpplint:
 	python2 dmlc-core/scripts/lint.py xgboost ${LINT_LANG} R-package/src
@@ -204,7 +224,7 @@ cover: check
 endif
 
 clean:
-	$(RM) -rf build build_plugin lib bin *~ */*~ */*/*~ */*/*/*~ */*.o */*/*.o */*/*/*.o #xgboost
+	$(RM) -rf $(WORKDIR) build_plugin lib bin *~ */*~ */*/*~ */*/*/*~ */*.o */*/*.o */*/*/*.o #xgboost
 	$(RM) -rf build_tests *.gcov tests/cpp/xgboost_test
 	if [ -d "R-package/src" ]; then \
 		cd R-package/src; \
@@ -279,6 +299,6 @@ Rbuild: Rpack
 Rcheck: Rbuild
 	R CMD check xgboost*.tar.gz
 
--include build/*.d
--include build/*/*.d
--include build_plugin/*/*.d
+-include $(WORKDIR)/*.d
+-include $(WORKDIR)/*/*.d
+-include $(WORKDIR)_plugin/*/*.d

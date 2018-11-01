@@ -13,6 +13,10 @@ namespace xgboost {
 
 void DMatrixCompact::Init(const SparsePage& page){
 
+    //clear
+    this->data.clear();
+    this->offset.clear();
+
     //go through all columns
     int _size = page.Size();
     for(int i=0; i < _size; i++){
