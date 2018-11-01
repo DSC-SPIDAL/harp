@@ -132,9 +132,12 @@ void printdmat(const SparsePage& dmat){
 }
 #else
 
+void printmsg(std::string msg){}
 void printtree(RegTree* ptree, std::string header=""){}
 void printdmat(DMatrixCompact& dmat){}
 void printdmat(const SparsePage& dmat){}
+void printgmat(GHistIndexMatrix& gmat){}
+void printcut(HistCutMatrix& gmat){}
 
 #endif
 

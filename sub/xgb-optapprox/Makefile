@@ -77,7 +77,6 @@ ifeq ($(TEST_COVER), 1)
 	CFLAGS += -g -O0 -fprofile-arcs -ftest-coverage
 #else
 #	CFLAGS += -O3 -funroll-loops
-endif
 
 ifeq ($(USE_SSE), 1)
 	CFLAGS += -msse2
@@ -89,7 +88,7 @@ ifeq ($(USE_DEBUG), 1)
 endif
 
 ifeq ($(DEBUG), 1)
-CFLAGS += -fpermissive -fno-strict-aliasing -DUSE_BINID=1 -DUSE_DEBUG=1 -g
+CFLAGS += -fpermissive -fno-strict-aliasing -DUSE_BINID=1 -DUSE_DEBUG=1 -g -O0
 TARGET = xgboost-debug
 WORKDIR = build-debug
 else

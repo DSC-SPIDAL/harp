@@ -7,7 +7,7 @@
 # See additional instruction in doc/build.md
 set -e
 
-if make -j 8; then
+if make -j 24; then
     echo "Successfully build multi-thread xgboost"
 else
 
