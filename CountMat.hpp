@@ -20,24 +20,18 @@ class CountMat {
         typedef int32_t idxType;
         typedef float valType;
 
-        CountMat() 
-        {
-            _graph = NULL;
-            _templates=NULL;
-            _subtmp_array=NULL;
-            _colors_local=NULL;
-            _bufVec = NULL;
-        }
+        CountMat(): _graph(nullptr), _templates(nullptr), _subtmp_array(nullptr), _colors_local(nullptr), _bufVec(nullptr), _bufVecThd(nullptr) {} 
 
         void initialization(CSRGraph& graph, int thd_num, int itr_num);
 
         double compute(Graph& templates);
 
-        ~CountMat() {
-            if (_colors_local != NULL)
+        ~CountMat() 
+        {
+            if (_colors_local != nullptr)
                 free(_colors_local);
 
-            if (_bufVec != NULL) 
+            if (_bufVec != nullptr) 
             {
 #ifdef __INTEL_COMPILER
                 _mm_free(_bufVec); 
@@ -45,12 +39,28 @@ class CountMat {
                 free(_bufVec); 
 #endif
             }
+
+            if (_bufVecThd != nullptr)
+            {
+                for (int i = 0; i < _thd_num; ++i) {
+                    if (_bufVecThd[i] != nullptr) 
+                    {
+#ifdef __INTEL_COMPILER
+                        _mm_free(_bufVecThd[i]);
+#else
+                        free(_bufVecThd[i]); 
+#endif
+                    }
+                }
+                free(_bufVecThd);
+            }
         }
 
     private:
 
         double colorCounting();
         double countNonBottome(int subsId);
+        double countNonBottomePrecompute(int subsId);
         void colorInit();
         int factorial(int n);
 
@@ -85,6 +95,7 @@ class CountMat {
         IndexSys indexer;
         
         float* _bufVec;
+        float** _bufVecThd;
 };
 
 #endif

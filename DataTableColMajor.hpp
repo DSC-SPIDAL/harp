@@ -47,6 +47,7 @@ class DataTableColMajor
         void countCurBottom(int*& idxCToC, int*& colorVals);
         void arrayWiseFMA(float*& dst, float*& a, float*& b);
         void arrayWiseFMANaive(float* dst, float* a, float* b);
+        void arrayWiseFMANaive(float* dst, float* a, float* b, int thdNum);
         void updateArrayVec(float*& src, float*& dst);
 
     private:

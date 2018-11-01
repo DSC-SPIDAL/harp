@@ -94,14 +94,14 @@ void DivideTemplates::set_nodes(vector<int>& nodes_list, int sub, int node)
 
 void DivideTemplates::release()
 {/*{{{*/
-    if (tp_valid != NULL)
+    if (tp_valid != nullptr)
         delete[] tp_valid;
 
-    if (all_subtps != NULL)
+    if (all_subtps != nullptr)
         delete[] all_subtps;
 
-    tp_valid = NULL;
-    all_subtps = NULL;
+    tp_valid = nullptr;
+    all_subtps = nullptr;
 }/*}}}*/
 
 void DivideTemplates::finalize()

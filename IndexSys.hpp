@@ -3,6 +3,7 @@
 
 #include "Graph.hpp"
 #include "DivideTemplates.hpp"
+#include <vector>
 
 using namespace std;
 
@@ -12,16 +13,17 @@ class IndexSys
 
         IndexSys() 
         {
-            _comb_table = NULL;
-            _sub_vert_num = NULL;
-            _comb_table = NULL;
-            _index_tmp = NULL;
-            _colors_tmp = NULL;
-            _i_sub_c_to_counts = NULL;
-            _i_sub_c_split_to_counts = NULL;
-            _i_sub_c_split_to_counts_vec = NULL;
-            _i_sub_precomp_to_counts = NULL;
-            _divider = NULL;
+            _comb_table = nullptr;
+            _sub_vert_num = nullptr;
+            _comb_table = nullptr;
+            _index_tmp = nullptr;
+            _colors_tmp = nullptr;
+            _i_sub_c_to_counts = nullptr;
+            _i_sub_c_split_to_counts = nullptr;
+            _i_sub_c_split_to_counts_vec = nullptr;
+            _i_sub_precomp_to_counts = nullptr;
+            _divider = nullptr;
+            _effecAuxIdx = nullptr;
         }
 
         ~IndexSys() { release(); }
@@ -35,6 +37,7 @@ class IndexSys
         int**** getSplitToCountTable() {return _i_sub_c_split_to_counts;}
         int*** getSplitToCountVecTable() {return _i_sub_c_split_to_counts_vec;}
         int** getCombToCountTable() {return _i_sub_c_to_counts;}
+        std::vector<int>* getEffectiveAuxIndices() {return _effecAuxIdx;}
 
     private:
 
@@ -78,9 +81,11 @@ class IndexSys
         // a new index sytem, given sub, return 
         // all of the comb index in precompute buf
         int** _i_sub_precomp_to_counts;
+
+        // store the effective indices of aux indices for each subs
+        std::vector<int>* _effecAuxIdx;
         
         DivideTemplates* _divider;
-
 
 };
 

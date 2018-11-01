@@ -15,14 +15,7 @@ class DivideTemplates
 {
     public:
 
-        DivideTemplates() 
-        {
-            tmp_subtps = NULL;
-            all_subtps = NULL;
-            tp_valid = NULL;
-            dummy_val = 93620;
-        }
-
+        DivideTemplates(): tmp_subtps(nullptr), all_subtps(nullptr), tp_valid(nullptr), dummy_val(93620) {} 
         ~DivideTemplates() { release(); }
 
         void DivideTp(Graph& tp);

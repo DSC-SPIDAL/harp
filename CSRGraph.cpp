@@ -96,6 +96,25 @@ void CSRGraph::SpMVNaive(valType* x, valType* y)
     }
 }
 
+void CSRGraph::SpMVNaive(valType* x, valType* y, int thdNum)
+{
+
+#pragma omp parallel for num_threads(thdNum)
+    for(idxType i = 0; i<_numVertices; i++)
+    {
+        valType sum = 0.0;
+
+        idxType rowLen = getRowLen(i);
+        valType* rowElem = getEdgeVals(i); 
+        idxType* rowColIdx = getColIdx(i);
+
+        #pragma omp simd reduction(+:sum) 
+        for(idxType j=0; j<rowLen;j++)
+            sum += rowElem[j] * (x[rowColIdx[j]]);
+
+        y[i] = sum;
+    }
+}
 void CSRGraph::SpMVMKL(valType* x, valType* y, int thdNum)
 {
     mkl_set_num_threads(thdNum);

@@ -85,8 +85,8 @@ void DataTableColMajor::initSubTempTable(int subsId, int mainId, int auxId)
     }
     else
     {
-        _curMainTable = NULL;
-        _curAuxTable = NULL;
+        _curMainTable = nullptr;
+        _curAuxTable = nullptr;
         _curMainLen = 0;
         _curAuxLen = 0;
     }
@@ -99,7 +99,7 @@ void DataTableColMajor::initSubTempTable(int subsId, int mainId, int auxId)
 
 void DataTableColMajor::cleanSubTempTable(int subsId)
 {
-    if (_dataTable[subsId] != NULL)
+    if (_dataTable[subsId] != nullptr)
     {
 #pragma omp parallel for 
         for (int i = 0; i < _tableLen[subsId]; ++i) 
@@ -233,13 +233,22 @@ void DataTableColMajor::arrayWiseFMA(float*& dst, float*& a, float*& b)
 void DataTableColMajor::arrayWiseFMANaive(float* dst, float* a, float* b)
 {
 
-#pragma omp for simd schedule(static) aligned(dst, a, b: 64)
+#pragma omp parallel for simd schedule(static) aligned(dst, a, b: 64)
     for (int i = 0; i < _vertsNum; ++i) {
         dst[i] = dst[i] + a[i]*b[i]; 
     }
 
 }
 
+void DataTableColMajor::arrayWiseFMANaive(float* dst, float* a, float* b, int thdNum)
+{
+
+#pragma omp parallel for simd schedule(static) num_threads(thdNum) aligned(dst, a, b: 64)
+    for (int i = 0; i < _vertsNum; ++i) {
+        dst[i] = dst[i] + a[i]*b[i]; 
+    }
+
+}
 
 void DataTableColMajor::countCurBottom(int*& idxCToC, int*& colorVals)
 {

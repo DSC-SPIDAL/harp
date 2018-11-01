@@ -2,6 +2,7 @@
 #include "Graph.hpp"
 #include <cassert>
 #include <stdlib.h>
+#include <cstring>
 
 using namespace std;
 
@@ -25,6 +26,8 @@ void IndexSys::initialization(int color_num, int sub_len, Graph** sub_tps, Divid
     _sub_vert_num = new int[_sub_len];
     for(int i=0;i<_sub_len;i++)
         _sub_vert_num[i] = (*_sub_tps)[i].get_vert_num();
+
+    _effecAuxIdx = new std::vector<int>[_sub_len];
 
 #ifdef VERBOSE
     printf("Start generating index system\n"); 
@@ -159,6 +162,7 @@ void IndexSys::release()
 
     delete[] _comb_table;
     delete[] _sub_vert_num;
+    delete[] _effecAuxIdx;
 
 }/*}}}*/
 
@@ -371,6 +375,9 @@ void IndexSys::gen_comb_hash_table()
 
         }
 
+        int* effectAuxIdxTable = new int[aux_count_len]; 
+        std::memset(effectAuxIdxTable, 0, aux_count_len*sizeof(int));
+
         for(int n=0;n< sub_comb_num; n++)
         {
             _i_sub_c_to_counts[s][n] = get_color_hash(perm_colors, sub_vert_num);
@@ -394,6 +401,8 @@ void IndexSys::gen_comb_hash_table()
                     int color_index_main = get_color_hash(colors_main, split_main_num);
                     int color_index_aux = get_color_hash(colors_aux, split_aux_num);
 
+                    effectAuxIdxTable[color_index_aux] = 1;
+
                     _i_sub_c_split_to_counts[0][s][n][main_itr] = color_index_main;
                     // _i_sub_c_split_to_counts[1][s][n][aux_itr] = color_index_aux;
                     _i_sub_c_split_to_counts[1][s][n][main_itr] = color_index_aux;
@@ -413,6 +422,14 @@ void IndexSys::gen_comb_hash_table()
         }
 
         delete[] perm_colors;
+
+        // if sub size > 1 create the effective aux indices
+        if (sub_vert_num > 1) {
+           for (int i = 0; i < aux_count_len; ++i) {
+               if (effectAuxIdxTable[i] > 0)
+                   _effecAuxIdx[s].push_back(i);
+           } 
+        } 
 
     }
 

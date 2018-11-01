@@ -7,6 +7,7 @@
 #include<ctime>
 #include <cstring>
 #include <omp.h>
+#include <vector>
 
 #include "CountMat.hpp"
 #include "Helper.hpp"
@@ -28,6 +29,15 @@ void CountMat::initialization(CSRGraph& graph, int thd_num, int itr_num)
     _bufVec = (float*) aligned_alloc(64, _vert_num*sizeof(float)); 
 #endif
     std::memset(_bufVec, 0, _vert_num*sizeof(float));
+
+    _bufVecThd = (float**) malloc (_thd_num*sizeof(float*));
+    for (int i = 0; i < _thd_num; ++i) {
+       #ifdef __INTEL_COMPILER
+          _bufVecThd[i] =  (float*) _mm_malloc(_vert_num*sizeof(float), 64); 
+       #else
+          _bufVecThd[i] =  (float*) aligned_alloc(64, _vert_num*sizeof(float)); 
+       #endif 
+    }
 }
 
 double CountMat::compute(Graph& templates)
@@ -63,6 +73,17 @@ double CountMat::compute(Graph& templates)
     // create the index tables
     indexer.initialization(_color_num, _total_sub_num, &_subtmp_array, &div_tp);
 
+    // // check the effective aux indices
+    // for (int s = 0; s < _total_sub_num; ++s) {
+    //     printf("Effectiv sub %d\n", s);
+    //     std::fflush(stdout);
+    //     std::vector<int>* effectVector = indexer.getEffectiveAuxIndices();
+    //     for (int i = 0; i < effectVector[s].size(); ++i) {
+    //         printf("index: %d\n", effectVector[s][i]); 
+    //         std::fflush(stdout);
+    //     }
+    // }
+
 #ifdef VERBOSE
     printf("Start initializaing datatable\n");
     std::fflush(stdout); 
@@ -92,7 +113,7 @@ double CountMat::compute(Graph& templates)
     printf("Finish counting\n");
     std::fflush(stdout); 
 #endif
-  
+
     printf("\nTime for count per iter: %9.6lf seconds\n", (utility::timer() - timeStart)/_itr_num);
     std::fflush(stdout);
 
@@ -134,18 +155,13 @@ double CountMat::colorCounting()
         int* idxCombToCount = (indexer.getSubCToCount())[s]; 
 
         if (subSize == 1) {
-            // init the bottom of counts
-            // do it once
-// #pragma omp parallel for num_threads(_thd_num)
-//             for (int v = 0; v < _vert_num; ++v) {
-//                 _dTable.setCurTableCell(v, idxCombToCount[_colors_local[v]], 1.0); 
-//             }
             _dTable.countCurBottom(idxCombToCount, _colors_local);          
         }
         else
         {
             //non-bottom case
-            countTotal = countNonBottome(s);
+            // countTotal = countNonBottome(s);
+            countTotal = countNonBottomePrecompute(s);
         }
 
         if (mainIdx != DUMMY_VAL)
@@ -155,6 +171,7 @@ double CountMat::colorCounting()
     }
 
     return countTotal;
+
 
 }/*}}}*/
 
@@ -175,8 +192,18 @@ double CountMat::countNonBottome(int subsId)
     int subSize = _subtmp_array[subsId].get_vert_num();
 
     int idxMain = div_tp.get_main_node_idx(subsId);
-    int mainSize = indexer.getSubsSize()[idxMain];
+    int idxAux = div_tp.get_aux_node_idx(subsId);
 
+    int mainSize = indexer.getSubsSize()[idxMain];
+    int auxSize = indexer.getSubsSize()[idxAux];
+
+#ifdef VERBOSE
+    // debug find out the effective index of aux-node in SpMV
+    int auxArrayLen = indexer.getCombTable()[_color_num][auxSize];
+    int* auxArrayEffecIdx = (int*) malloc (auxArrayLen*sizeof(int));
+    std::memset(auxArrayEffecIdx, 0, auxArrayLen*sizeof(int));
+#endif
+   
     int countCombNum = indexer.getCombTable()[_color_num][subSize];
     int splitCombNum = indexer.getCombTable()[subSize][mainSize];
 
@@ -226,27 +253,31 @@ double CountMat::countNonBottome(int subsId)
             int mainIdx = mainSplitLocal[i][j];
             int auxIdx = auxSplitLocal[i][j];
 
+#ifdef VERBOSE
+            // debug record the auxIdx 
+            auxArrayEffecIdx[auxIdx] = 1;
+#endif
             float* auxArraySelect = _dTable.getAuxArray(auxIdx);
             // spmv
-#ifdef VERBOSE
-            startTimeComp = utility::timer();
-#endif
-            // _graph->SpMVNaive(auxArraySelect, _bufVec);
-            _graph->SpMVMKL(auxArraySelect, _bufVec, _thd_num);
-#ifdef VERBOSE
-            eltSpmv += (utility::timer() - startTimeComp);
-#endif
+// #ifdef VERBOSE
+//             startTimeComp = utility::timer();
+// #endif
+            // _graph->SpMVMKL(auxArraySelect, _bufVec, _thd_num);
+            _graph->SpMVNaive(auxArraySelect, _bufVec);
+// #ifdef VERBOSE
+//             eltSpmv += (utility::timer() - startTimeComp);
+// #endif
 
             // element-wise mul 
             float* mainArraySelect = _dTable.getMainArray(mainIdx);
-#ifdef VERBOSE
-            startTimeComp = utility::timer();
-#endif
+// #ifdef VERBOSE
+//             startTimeComp = utility::timer();
+// #endif
 
             _dTable.arrayWiseFMANaive(objArray, _bufVec, mainArraySelect);
-#ifdef VERBOSE
-            eltMul += (utility::timer() - startTimeComp);
-#endif
+// #ifdef VERBOSE
+//             eltMul += (utility::timer() - startTimeComp);
+// #endif
 
         }
     }
@@ -265,8 +296,149 @@ double CountMat::countNonBottome(int subsId)
     }
 
 #ifdef VERBOSE
-    printf("Sub %d, counting time %f, Spmv time %f, Mul time %f \n", subsId, (utility::timer() - startTime), eltSpmv, eltMul);
-    // printf("Sub %d, counting time %f\n", subsId, (utility::timer() - startTime));
+    // debug sum up the nonzeor effective idx of aux node
+    // move this to indexer 
+    int effectAuxIdxNum = 0;
+    std::vector<int>* effectAuxIdxIndicator = indexer.getEffectiveAuxIndices();
+
+    for (int i = 0; i < auxArrayLen; ++i) {
+        if (auxArrayEffecIdx[i] > 0) {
+           effectAuxIdxNum++; 
+        } 
+    }
+    printf("Sub %d, SpMV number %d, effect aux idx num %d, effect num from indexer %d\n", subsId, (countCombNum*splitCombNum), effectAuxIdxNum, effectAuxIdxIndicator[subsId].size());
+    std::fflush(stdout); 
+    for (int i = 0; i < effectAuxIdxIndicator[subsId].size(); ++i) {
+       printf("Effective index: %d\n", effectAuxIdxIndicator[subsId][i]);  
+       std::fflush(stdout); 
+    }
+
+    free(auxArrayEffecIdx);
+#endif
+
+#ifdef VERBOSE
+    // printf("Sub %d, counting time %f, Spmv time %f, Mul time %f \n", subsId, (utility::timer() - startTime), eltSpmv, eltMul);
+    printf("Sub %d, counting time %f\n", subsId, (utility::timer() - startTime));
+    std::fflush(stdout); 
+#endif
+
+#ifdef VERBOSE
+    printf("Sub %d, NonBottom raw count %f\n", subsId, countSum);
+    std::fflush(stdout); 
+#endif
+
+    return countSum;
+
+}/*}}}*/
+
+//reduce the num of SpMV
+double CountMat::countNonBottomePrecompute(int subsId)
+{/*{{{*/
+
+    if (subsId == 1)
+    {
+        // for vtune
+#ifdef VTUNE
+        ofstream vtune_trigger;
+        vtune_trigger.open("vtune-flag.txt");
+        vtune_trigger << "Start training process and trigger vtune profiling.\n";
+        vtune_trigger.close();
+#endif
+    }
+
+    int subSize = _subtmp_array[subsId].get_vert_num();
+
+    int idxMain = div_tp.get_main_node_idx(subsId);
+    int idxAux = div_tp.get_aux_node_idx(subsId);
+
+    int mainSize = indexer.getSubsSize()[idxMain];
+    int auxSize = indexer.getSubsSize()[idxAux];
+   
+    int countCombNum = indexer.getCombTable()[_color_num][subSize];
+    int splitCombNum = indexer.getCombTable()[subSize][mainSize];
+
+#ifdef VERBOSE
+    printf("Finish init sub templte %d, vert: %d, comb: %d, splitNum: %d\n", subsId, subSize, 
+            countCombNum, splitCombNum);
+    std::fflush(stdout); 
+#endif
+
+    double countSum = 0.0;
+    int** mainSplitLocal = (indexer.getSplitToCountTable())[0][subsId]; 
+    int** auxSplitLocal = (indexer.getSplitToCountTable())[1][subsId]; 
+    int* combToCountLocal = (indexer.getCombToCountTable())[subsId];
+
+    float* bufLastSub = nullptr;
+    float* objArray = nullptr;
+
+    if (subsId == 0)
+    {
+#ifdef __INTEL_COMPILER
+      bufLastSub = (float*) _mm_malloc(_vert_num*sizeof(float), 64); 
+#else
+      bufLastSub = (float*) aligned_alloc(64, _vert_num*sizeof(float)); 
+#endif
+      std::memset(bufLastSub, 0, _vert_num*sizeof(float)); 
+
+    }
+
+#ifdef VERBOSE
+    double startTime = utility::timer();
+    double startTimeComp = 0.0;
+    double eltSpmv = 0.0;
+    double eltMul = 0.0;
+#endif
+
+// first the precompute of SpMV results and have a in-place storage
+   std::vector<int>* effectAuxIds = indexer.getEffectiveAuxIndices();
+   int numAuxIds = effectAuxIds[subsId].size();
+   for (int i = 0; i < numAuxIds; ++i) {
+       float* auxObjArray = _dTable.getAuxArray(effectAuxIds[subsId][i]);
+       _graph->SpMVNaive(auxObjArray, _bufVec); 
+       // copy data back to aux array
+       std::memcpy(auxObjArray, _bufVec, _vert_num*sizeof(float));
+   }
+   
+// a second part only involves element-wise multiplication and updating
+    for(int i=0; i<countCombNum; i++)
+    {
+        int combIdx = combToCountLocal[i];
+
+        if (subsId == 0)
+            objArray = bufLastSub;
+        else
+            objArray = _dTable.getCurTableArray(combIdx);
+
+        for (int j = 0; j < splitCombNum; ++j) {
+
+            int mainIdx = mainSplitLocal[i][j];
+            int auxIdx = auxSplitLocal[i][j];
+
+            // already pre-computed by SpMV
+            float* auxArraySelect = _dTable.getAuxArray(auxIdx);
+            // element-wise mul 
+            float* mainArraySelect = _dTable.getMainArray(mainIdx);
+
+            _dTable.arrayWiseFMANaive(objArray, auxArraySelect, mainArraySelect);
+        }
+    }
+
+    if (subsId == 0)
+    {
+        // sum the vals from bufLastSub  
+        for (int k = 0; k < _vert_num; ++k) {
+            countSum += bufLastSub[k];
+        }
+#ifdef __INTEL_COMPILER
+        _mm_free(bufLastSub);
+#else
+        free(bufLastSub);
+#endif
+    }
+
+#ifdef VERBOSE
+    // printf("Sub %d, counting time %f, Spmv time %f, Mul time %f \n", subsId, (utility::timer() - startTime), eltSpmv, eltMul);
+    printf("Sub %d, counting time %f\n", subsId, (utility::timer() - startTime));
     std::fflush(stdout); 
 #endif
 
