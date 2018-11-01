@@ -57,6 +57,12 @@ class CSRGraph
 
         idxType getNumVertices() {return _numVertices;} 
 
+        idxType getNNZ() {return _indexRow[_numVertices];}
+        idxType* getIndexRow() {return _indexRow;}
+        idxType* getIndexCol() {return _indexCol;}
+        valType* getNNZVal() {return _edgeVal;} 
+        
+
     private:
 
         void createFromEdgeListFile(idxType numVerts, idxType numEdges, 

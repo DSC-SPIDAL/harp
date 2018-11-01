@@ -15,12 +15,14 @@
 #include <climits>
 #include <stdint.h>
 
+#include "mkl.h"
 #include "Graph.hpp"
 #include "CSRGraph.hpp"
-#include "Count.hpp"
 #include "CountMat.hpp"
 #include "Helper.hpp"
 #include "EdgeList.hpp"
+// use csr5-spmv
+#include "anonymouslib_avx2.hpp"
 
 using namespace std;
 
@@ -92,29 +94,61 @@ int main(int argc, char** argv)
     printf("Loading CSR data using %f secs\n", (utility::timer() - startTime));
     std::fflush(stdout);           
 
+    // // test SpMV naive, mkl, and csr5 using double
+    // // y = CSRGraph*x
     // printf("Start debug CSR SpMV len %d\n", elist.getNumVertices());
     // std::fflush(stdout);
     //
-    // // test SpMV mkl
-    // // y = CSRGraph*x
-    // float* xArray = new float[elist.getNumVertices()];
-    // float* yArray = new float[elist.getNumVertices()];
-    // for(int i=0;i<elist.getNumVertices(); i++)
+    // int csrNNZA = csrInpuG.getNNZ(); 
+    // int csrRows = csrInpuG.getNumVertices();
+    // int* csrRowIdx = csrInpuG.getIndexRow();
+    // int* csrColIdx = csrInpuG.getIndexCol();
+    // float* csrVals = csrInpuG.getNNZVal();
+    // double* csrValsDouble = (double*) malloc(csrNNZA*sizeof(double)); 
+    // for (int i = 0; i < csrNNZA; ++i) {
+    //    csrValsDouble[i] = csrVals[i]; 
+    // }
+    //
+    // // double* xArray = new double[csrRows];
+    // // double* yArray = new double[csrRows];
+    // float* xArray = new float[csrRows];
+    // float* yArray = new float[csrRows];
+    //
+    // for(int i=0;i<csrRows; i++)
     // {
     //     xArray[i] = 2.0;
     //     yArray[i] = 0.0;
     // }
     //
     // startTime = utility::timer();
-    // csrInpuG.SpMVMKL(xArray, yArray, comp_thds);
+    // const char tran = 'N';
+    // // mkl_cspblas_dcsrgemv(&tran, &csrRows, csrValsDouble, csrRowIdx, csrColIdx, xArray, yArray);
+    // mkl_cspblas_scsrgemv(&tran, &csrRows, csrVals, csrRowIdx, csrColIdx, xArray, yArray);
     // printf("Compute CSR SpMV MKL using %f secs\n", (utility::timer() - startTime));
     // std::fflush(stdout);           
+    // std::memset(yArray,0, csrRows*sizeof(float));
+
+    // anonymouslibHandle<int, unsigned int, double> csr5Mat(csrRows, csrRows);
+    // csr5Mat.inputCSR(csrNNZA, csrRowIdx, csrColIdx, csrValsDouble);
+    // // csr5Mat.inputCSR(csrNNZA, csrRowIdx, csrColIdx, csrVals);
+    // csr5Mat.setX(xArray);
+    // int sigma = ANONYMOUSLIB_CSR5_SIGMA;
+    // csr5Mat.setSigma(sigma);
     //
     // startTime = utility::timer();
-    // csrInpuG.SpMVNaive(xArray, yArray);
-    // printf("Compute CSR SpMV Naive using %f secs\n", (utility::timer() - startTime));
+    // csr5Mat.asCSR5();
+    // printf("Convert CSR to CSR5 using %f secs\n", (utility::timer() - startTime));
     // std::fflush(stdout);           
     //
+    // for (int j = 0; j < 100; ++j) {
+    //     csr5Mat.spmv(1.0, yArray);
+    // }
+    //
+    // startTime = utility::timer();
+    // csr5Mat.spmv(1.0, yArray);
+    // printf("CSR5 SpMV using %f secs\n", (utility::timer() - startTime));
+    // std::fflush(stdout);           
+
     // delete[] xArray;
     // delete[] yArray;
     //
@@ -124,12 +158,11 @@ int main(int argc, char** argv)
     // load input templates
     input_template.read_enlist(template_name);
 
-   
     // start CSR mat computing
     CountMat executor;
     executor.initialization(csrInpuG, comp_thds, iterations);
     executor.compute(input_template);
-    
+
     return 0;
 
 }

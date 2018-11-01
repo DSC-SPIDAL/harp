@@ -98,7 +98,7 @@ void CSRGraph::SpMVNaive(valType* x, valType* y)
 
 void CSRGraph::SpMVMKL(valType* x, valType* y, int thdNum)
 {
-    // mkl_set_num_threads(thdNum);
+    mkl_set_num_threads(thdNum);
     const char tran = 'N';
     mkl_cspblas_scsrgemv(&tran, &_numVertices, _edgeVal, _indexRow, _indexCol, x, y);
 }

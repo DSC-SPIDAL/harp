@@ -9,7 +9,6 @@
 #include "CSRGraph.hpp"
 #include "DivideTemplates.hpp"
 #include "IndexSys.hpp"
-#include "DataTable.hpp"
 #include "DataTableColMajor.hpp"
 
 using namespace std;
