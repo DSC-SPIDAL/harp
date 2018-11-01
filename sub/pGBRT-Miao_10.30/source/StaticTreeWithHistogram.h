@@ -14,7 +14,7 @@ using namespace std;
 
 class StaticNode {
 public:
-	int feature;
+    int feature;
     float split;
     double label, loss;
     
@@ -27,4 +27,18 @@ class StaticTree {
 public:
 
 	StaticTree(int depth); 
+        ~StaticTree();
+        void clear();
+	void startNextLayer();
 
+private:
+	StaticNode*** layers;
+	int depth, layer, nodes;
+	
+    	int nodesAtDepth(int d);
+    	void clearNode(StaticNode* node);
+    	double classifyDataPoint(InstanceData* data, int p);
+	void updateBestSplits(FeatureData* data, int f);
+    	void printNode(int level, int i, double learningrate);
+
+};
