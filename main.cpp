@@ -1,14 +1,6 @@
 #include <iostream>
-#include "vector"
-#include <mpi.h>
-#include "data_structures/Partition.h"
-#include "data_structures/Partition.cpp"
-#include "data_structures/Array.h"
-#include "data_structures/Array.cpp"
-#include "data_structures/Table.h"
-#include "data_structures/Table.cpp"
+#include "data_structures/inculdes.h";
 #include "worker/Worker.h"
-//#include "worker/Worker.cpp"
 
 using namespace std;
 using namespace harp::ds;
