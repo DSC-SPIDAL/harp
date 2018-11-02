@@ -1,5 +1,4 @@
 #include <iostream>
-#include "add_x.h"
 #include "vector"
 //#include <mpi.h>
 #include "data_structures/Partition.h"
@@ -9,28 +8,6 @@
 
 using namespace std;
 using namespace harp;
-
-
-namespace Yo {
-    namespace X {
-        template<class A, class B>
-        class Thing {
-        public:
-            int a = 0;
-
-            A doThings(A x, A y) {
-                this->a = x;
-                return x + y;
-            }
-        };
-    }
-}
-
-
-void doThings(Yo::X::Thing<int, double> t) {
-    t.doThings(5, 10);
-}
-
 
 int main() {
 
