@@ -10,13 +10,16 @@ namespace harp {
         private:
             int id;
             SAMPLE *data;
+            long size;
         public:
 
-            Partition(int id, SAMPLE *data);
+            Partition(int id, SAMPLE *data, long size);
 
             int getId();
 
             SAMPLE *getData();
+
+            long getSize();
         };
 
         enum PartitionState {

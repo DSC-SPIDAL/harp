@@ -10,7 +10,6 @@ namespace harp {
         int worldSize;
         MPI_Comm_size(MPI_COMM_WORLD, &worldSize);
 
-        int worldRank;
         MPI_Comm_rank(MPI_COMM_WORLD, &this->workerId);
     }
 

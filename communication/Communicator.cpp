@@ -16,7 +16,7 @@ namespace harp {
         }
 
         template<class SIMPLE>
-        void Communicator::broadcast(ds::Table<SIMPLE> *table, int bcastWorkerId) {
+        void Communicator::broadcast(harp::ds::Table<SIMPLE> *table, int bcastWorkerId) {
 
             int workerId;
             MPI_Comm_rank(MPI_COMM_WORLD, &workerId);
@@ -34,7 +34,7 @@ namespace harp {
             if (bcastWorkerId == workerId) {
                 for (const auto p : table->getPartitions()) {
                     partitionIds[index++] = p.first;
-                    partitionIds[index++] = p.second->getData()->getSize();
+                    partitionIds[index++] = p.second->getSize();
                 }
             }
             MPI_Bcast(&partitionIds, partitionCount * 2, MPI_INT, bcastWorkerId, MPI_COMM_WORLD);
@@ -45,12 +45,19 @@ namespace harp {
             for (long i = 0; i < partitionCount; i += 2) {
                 long partitionId = partitionIds[i];
                 long partitionSize = partitionIds[i + 1];
-
-
+                SIMPLE *data = (SIMPLE *) malloc(sizeof(SIMPLE) * partitionSize);
+                if (bcastWorkerId == workerId) {
+                    data = table->getPartition(partitionId)->getData();
+                }
+                MPI_Bcast(data, partitionSize, MPI_INT, bcastWorkerId, MPI_COMM_WORLD);
+                if (bcastWorkerId != workerId) {
+                    harp::ds::Partition<SIMPLE> partition(partitionId, data, partitionSize);
+                    table->addPartition(&partition);
+                }
             }
 
 
-            printf("%d %d %s\n", partitionCount, partitionIds[partitionCount - 1], typeid(SIMPLE).name());
+            printf("%d %d %d\n", partitionCount, partitionIds[partitionCount - 1], sizeof(typeid(int)));
         }
     }
 }

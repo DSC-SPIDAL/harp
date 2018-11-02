@@ -6,9 +6,10 @@
 namespace harp {
     namespace ds {
         template<class SAMPLE>
-        Partition<SAMPLE>::Partition(int id, SAMPLE* data) {
+        Partition<SAMPLE>::Partition(int id, SAMPLE *data, long size) {
             this->id = id;
             this->data = data;
+            this->size = size;
         }
 
         template<class SAMPLE>
@@ -17,8 +18,13 @@ namespace harp {
         }
 
         template<class SAMPLE>
-        SAMPLE* Partition<SAMPLE>::getData() {
+        SAMPLE *Partition<SAMPLE>::getData() {
             return this->data;
+        }
+
+        template<class SAMPLE>
+        long Partition<SAMPLE>::getSize() {
+            return this->size;
         }
     }
 }

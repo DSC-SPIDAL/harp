@@ -3,6 +3,8 @@
 #include "worker/Worker.h"
 #include "communication/Communicator.cpp"
 
+
+//todo remove Array and directly use partition
 using namespace std;
 using namespace harp::ds;
 
@@ -13,25 +15,23 @@ class MyWorker : public harp::Worker {
         comm->barrier();
         cout << "woker " << workerId << " after barrier" << endl;
 
-        Table<Array<int >> tab(1);
+        Table<int> tab(1);
 
 
         if (workerId == 0) {
             //p1
             int a[4] = {1, 2, 3, 4};
-            Array<int> intArr(a, 4, -1);
-            Partition<Array<int>> p(1, &intArr);
+            Partition<int> p(1, a, 4);
             tab.addPartition(&p);
 
             //p2
             int a2[4] = {1, 2, 3, 4};
-            Array<int> intArr2(a2, 4, -1);
-            Partition<Array<int>> p2(2, &intArr2);
+            Partition<int> p2(2, a2, 4);
             tab.addPartition(&p2);
         }
 
 
-        comm->broadcast<Array<int >>(&tab, 0);
+        comm->broadcast<int>(&tab, 0);
     }
 };
 
