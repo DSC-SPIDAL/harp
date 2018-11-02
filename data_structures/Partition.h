@@ -9,14 +9,18 @@ namespace harp {
         class Partition {
         private:
             int id;
-            SAMPLE* data;
+            SAMPLE *data;
         public:
 
-            Partition(int id, SAMPLE* data);
+            Partition(int id, SAMPLE *data);
 
             int getId();
 
-            SAMPLE* getData();
+            SAMPLE *getData();
+        };
+
+        enum PartitionState {
+            ADDED, ADD_FAILED, COMBINED, COMBINE_FAILED
         };
     }
 }
