@@ -59,7 +59,6 @@ class CountMat {
     private:
 
         double colorCounting();
-        double countNonBottome(int subsId);
         double countNonBottomePrecompute(int subsId);
         void colorInit();
         int factorial(int n);

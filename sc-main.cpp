@@ -21,8 +21,6 @@
 #include "CountMat.hpp"
 #include "Helper.hpp"
 #include "EdgeList.hpp"
-// use csr5-spmv
-#include "anonymouslib_avx2.hpp"
 
 using namespace std;
 
