@@ -15,7 +15,8 @@ namespace harp {
     }
 
     void Worker::start() {
-        this->execute(this->workerId);
+        com::Communicator comm;
+        this->execute(this->workerId, &comm);
         MPI_Finalize();
     }
 }

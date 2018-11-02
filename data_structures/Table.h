@@ -22,7 +22,7 @@ namespace harp {
 
             long getPartitionCount();
 
-            std::map<int, Partition<SIMPLE>> getPartitions();
+            std::map<int, Partition<SIMPLE> *> getPartitions();
 
             PartitionState addPartition(Partition<SIMPLE> *partition);
 

@@ -18,7 +18,7 @@ namespace harp {
         }
 
         template<class SIMPLE>
-        std::map<int, Partition<SIMPLE>> Table<SIMPLE>::getPartitions() {
+        std::map<int, Partition<SIMPLE> *> Table<SIMPLE>::getPartitions() {
             return this->partitionMap;
         }
 
