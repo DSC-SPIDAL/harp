@@ -40,6 +40,7 @@ int main(int argc, char** argv)
     comp_thds = atoi(argv[4]);
     load_binary = atoi(argv[5]);
     write_binary = atoi(argv[6]); 
+
     isPruned = atoi(argv[7]); 
 
     Graph input_graph;
