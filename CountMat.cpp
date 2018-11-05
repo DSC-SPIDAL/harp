@@ -14,12 +14,13 @@
 
 using namespace std;
 
-void CountMat::initialization(CSRGraph& graph, int thd_num, int itr_num)
+void CountMat::initialization(CSRGraph& graph, int thd_num, int itr_num, int isPruned)
 {
     _graph = &graph;
     _vert_num = _graph->getNumVertices();
     _thd_num = thd_num;
     _itr_num = itr_num;
+    _isPruned = isPruned;
     _colors_local = (int*)malloc(_vert_num*sizeof(int));
     std::memset(_colors_local, 0, _vert_num*sizeof(int));
 
@@ -125,8 +126,16 @@ double CountMat::compute(Graph& templates)
     std::fflush(stdout); 
 #endif
 
-    printf("\nTime for count per iter: %9.6lf seconds\n", (utility::timer() - timeStart)/_itr_num);
+    double totalCountTime = (utility::timer() - timeStart);
+    printf("\nTime for count per iter: %9.6lf seconds\n", totalCountTime/_itr_num);
     std::fflush(stdout);
+
+#ifdef VERBOSE
+    printf("spmv ratio %f\% \n", 100*(_spmvTime/totalCountTime));
+    std::fflush(stdout);
+    printf("eMA ratio %f\% \n", 100*(_eMATime/totalCountTime));
+    std::fflush(stdout);
+#endif
 
     // finish counting
     double finalCount = iterCount/(double)_itr_num;
@@ -171,8 +180,10 @@ double CountMat::colorCounting()
         else
         {
             //non-bottom case
-            // countTotal = countNonBottome(s);
-            countTotal = countNonBottomePrecompute(s);
+            if (_isPruned == 1)
+                countTotal = countNonBottomePruned(s);
+            else
+                countTotal = countNonBottomeOriginal(s);
         }
 
         if (mainIdx != DUMMY_VAL)
@@ -187,7 +198,7 @@ double CountMat::colorCounting()
 }/*}}}*/
 
 //reduce the num of SpMV
-double CountMat::countNonBottomePrecompute(int subsId)
+double CountMat::countNonBottomePruned(int subsId)
 {/*{{{*/
 
     if (subsId == 1)
@@ -211,6 +222,7 @@ double CountMat::countNonBottomePrecompute(int subsId)
    
     int countCombNum = indexer.getCombTable()[_color_num][subSize];
     int splitCombNum = indexer.getCombTable()[subSize][mainSize];
+    int auxTableLen = indexer.getCombTable()[_color_num][auxSize];
 
 #ifdef VERBOSE
     printf("Finish init sub templte %d, vert: %d, comb: %d, splitNum: %d\n", subsId, subSize, 
@@ -245,15 +257,22 @@ double CountMat::countNonBottomePrecompute(int subsId)
 #endif
 
 // first the precompute of SpMV results and have a in-place storage
-   std::vector<int>* effectAuxIds = indexer.getEffectiveAuxIndices();
-   int numAuxIds = effectAuxIds[subsId].size();
-   for (int i = 0; i < numAuxIds; ++i) {
-       float* auxObjArray = _dTable.getAuxArray(effectAuxIds[subsId][i]);
+#ifdef VERBOSE
+   startTimeComp = utility::timer(); 
+#endif
+   for (int i = 0; i < auxTableLen; ++i) {
+       float* auxObjArray = _dTable.getAuxArray(i);
        _graph->SpMVNaive(auxObjArray, _bufVec); 
        // copy data back to aux array
        std::memcpy(auxObjArray, _bufVec, _vert_num*sizeof(float));
    }
-   
+#ifdef VERBOSE
+   eltSpmv += (utility::timer() - startTimeComp); 
+#endif   
+
+#ifdef VERBOSE
+   startTimeComp = utility::timer(); 
+#endif
 // a second part only involves element-wise multiplication and updating
     for(int i=0; i<countCombNum; i++)
     {
@@ -277,6 +296,9 @@ double CountMat::countNonBottomePrecompute(int subsId)
             _dTable.arrayWiseFMANaive(objArray, auxArraySelect, mainArraySelect);
         }
     }
+#ifdef VERBOSE
+   eltMul += (utility::timer() - startTimeComp); 
+#endif
 
     if (subsId == 0)
     {
@@ -292,8 +314,132 @@ double CountMat::countNonBottomePrecompute(int subsId)
     }
 
 #ifdef VERBOSE
-    // printf("Sub %d, counting time %f, Spmv time %f, Mul time %f \n", subsId, (utility::timer() - startTime), eltSpmv, eltMul);
-    printf("Sub %d, counting time %f\n", subsId, (utility::timer() - startTime));
+    double subsTime = (utility::timer() - startTime);
+    printf("Sub %d, counting time %f, Spmv time %f: ratio: %f\%,  Mul time %f: ratio: %f\% \n", subsId, subsTime, eltSpmv, 100*(eltSpmv/subsTime), eltMul, 100*(eltMul/subsTime));
+    _spmvTime += eltSpmv;
+    _eMATime += eltMul;
+    // printf("Sub %d, counting time %f\n", subsId, subsTime);
+    std::fflush(stdout); 
+#endif
+
+#ifdef VERBOSE
+    printf("Sub %d, NonBottom raw count %f\n", subsId, countSum);
+    std::fflush(stdout); 
+#endif
+
+    return countSum;
+
+}/*}}}*/
+
+double CountMat::countNonBottomeOriginal(int subsId)
+{/*{{{*/
+
+    if (subsId == 1)
+    {
+        // for vtune
+#ifdef VTUNE
+        ofstream vtune_trigger;
+        vtune_trigger.open("vtune-flag.txt");
+        vtune_trigger << "Start training process and trigger vtune profiling.\n";
+        vtune_trigger.close();
+#endif
+    }
+
+    int subSize = _subtmp_array[subsId].get_vert_num();
+
+    int idxMain = div_tp.get_main_node_idx(subsId);
+    int mainSize = indexer.getSubsSize()[idxMain];
+
+    int countCombNum = indexer.getCombTable()[_color_num][subSize];
+    int splitCombNum = indexer.getCombTable()[subSize][mainSize];
+
+#ifdef VERBOSE
+    printf("Finish init sub templte %d, vert: %d, comb: %d, splitNum: %d\n", subsId, subSize, 
+            countCombNum, splitCombNum);
+    std::fflush(stdout); 
+#endif
+
+    double countSum = 0.0;
+    int** mainSplitLocal = (indexer.getSplitToCountTable())[0][subsId]; 
+    int** auxSplitLocal = (indexer.getSplitToCountTable())[1][subsId]; 
+    int* combToCountLocal = (indexer.getCombToCountTable())[subsId];
+
+    float* bufLastSub = nullptr;
+    float* objArray = nullptr;
+
+    if (subsId == 0)
+    {
+#ifdef __INTEL_COMPILER
+      bufLastSub = (float*) _mm_malloc(_vert_num*sizeof(float), 64); 
+#else
+      bufLastSub = (float*) aligned_alloc(64, _vert_num*sizeof(float)); 
+#endif
+      std::memset(bufLastSub, 0, _vert_num*sizeof(float)); 
+
+    }
+
+#ifdef VERBOSE
+    double startTime = utility::timer();
+    double startTimeComp = 0.0;
+    double eltSpmv = 0.0;
+    double eltMul = 0.0;
+#endif
+   
+    for(int i=0; i<countCombNum; i++)
+    {
+        int combIdx = combToCountLocal[i];
+
+        if (subsId == 0)
+            objArray = bufLastSub;
+        else
+            objArray = _dTable.getCurTableArray(combIdx);
+
+        for (int j = 0; j < splitCombNum; ++j) {
+
+            int mainIdx = mainSplitLocal[i][j];
+            int auxIdx = auxSplitLocal[i][j];
+
+            float* auxArraySelect = _dTable.getAuxArray(auxIdx);
+            // spmv
+#ifdef VERBOSE
+            startTimeComp = utility::timer();
+#endif
+            _graph->SpMVNaive(auxArraySelect, _bufVec);
+            // _graph->SpMVMKL(auxArraySelect, _bufVec, _thd_num);
+#ifdef VERBOSE
+            eltSpmv += (utility::timer() - startTimeComp);
+#endif
+
+            // element-wise mul 
+            float* mainArraySelect = _dTable.getMainArray(mainIdx);
+#ifdef VERBOSE
+            startTimeComp = utility::timer();
+#endif
+
+            _dTable.arrayWiseFMANaive(objArray, _bufVec, mainArraySelect);
+#ifdef VERBOSE
+            eltMul += (utility::timer() - startTimeComp);
+#endif
+
+        }
+    }
+
+    if (subsId == 0)
+    {
+        // sum the vals from bufLastSub  
+        for (int k = 0; k < _vert_num; ++k) {
+            countSum += bufLastSub[k];
+        }
+#ifdef __INTEL_COMPILER
+        _mm_free(bufLastSub);
+#else
+        free(bufLastSub);
+#endif
+    }
+
+#ifdef VERBOSE
+    printf("Sub %d, counting time %f, Spmv time %f, Mul time %f \n", subsId, (utility::timer() - startTime), eltSpmv, eltMul);
+    // printf("Sub %d, counting time %f\n", subsId, (utility::timer() - startTime));
     std::fflush(stdout); 
 #endif
 

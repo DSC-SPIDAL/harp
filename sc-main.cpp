@@ -32,6 +32,7 @@ int main(int argc, char** argv)
     string template_name;
     int iterations;
     int comp_thds;
+    int isPruned = 1;
 
     graph_name = argv[1];
     template_name = argv[2];
@@ -39,6 +40,7 @@ int main(int argc, char** argv)
     comp_thds = atoi(argv[4]);
     load_binary = atoi(argv[5]);
     write_binary = atoi(argv[6]); 
+    isPruned = atoi(argv[7]); 
 
     Graph input_graph;
     Graph input_template;
@@ -158,7 +160,7 @@ int main(int argc, char** argv)
 
     // start CSR mat computing
     CountMat executor;
-    executor.initialization(csrInpuG, comp_thds, iterations);
+    executor.initialization(csrInpuG, comp_thds, iterations, isPruned);
     executor.compute(input_template);
 
     return 0;

@@ -20,9 +20,9 @@ class CountMat {
         typedef int32_t idxType;
         typedef float valType;
 
-        CountMat(): _graph(nullptr), _templates(nullptr), _subtmp_array(nullptr), _colors_local(nullptr), _bufVec(nullptr), _bufVecThd(nullptr) {} 
+        CountMat(): _graph(nullptr), _templates(nullptr), _subtmp_array(nullptr), _colors_local(nullptr), _bufVec(nullptr), _bufVecThd(nullptr), _spmvTime(0), _eMATime(0), _isPruned(1) {} 
 
-        void initialization(CSRGraph& graph, int thd_num, int itr_num);
+        void initialization(CSRGraph& graph, int thd_num, int itr_num, int isPruned);
 
         double compute(Graph& templates);
 
@@ -59,7 +59,8 @@ class CountMat {
     private:
 
         double colorCounting();
-        double countNonBottomePrecompute(int subsId);
+        double countNonBottomePruned(int subsId);
+        double countNonBottomeOriginal(int subsId);
         void colorInit();
         int factorial(int n);
 
@@ -95,6 +96,9 @@ class CountMat {
         
         float* _bufVec;
         float** _bufVecThd;
+        double _spmvTime;
+        double _eMATime;
+        int _isPruned;
 };
 
 #endif
