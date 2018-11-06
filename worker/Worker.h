@@ -5,14 +5,15 @@
 
 namespace harp {
     class Worker {
-    private:
+    protected:
         int workerId;
+        int worldSize;
     public:
         void init();
 
         void start();
 
-        virtual void execute(int workerId, com::Communicator *comm) = 0;
+        virtual void execute(com::Communicator *comm) = 0;
     };
 }
 

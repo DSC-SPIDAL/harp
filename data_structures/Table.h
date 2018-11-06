@@ -29,6 +29,8 @@ namespace harp {
             Partition<SIMPLE> *getPartition(int tid);
 
             Partition<SIMPLE> *removePartition(int tid);
+
+            void clear();
         };
     }
 }

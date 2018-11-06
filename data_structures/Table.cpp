@@ -38,5 +38,9 @@ namespace harp {
             return this->partitionMap.erase(tid);
         }
 
+        template<class SIMPLE>
+        void Table<SIMPLE>::clear() {
+            this->partitionMap.clear();
+        }
     }
 }

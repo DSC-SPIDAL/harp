@@ -1,37 +1,47 @@
 #include <iostream>
 #include "data_structures/inculdes.h"
 #include "worker/Worker.h"
-#include "communication/Communicator.cpp"
+#include <time.h>
 
-
-//todo remove Array and directly use partition
 using namespace std;
 using namespace harp::ds;
+using namespace harp::com;
+
+void printParitions(int worker, Table<int> *tab) {
+    string pri = to_string(worker) + "[";
+    for (auto f:tab->getPartitions()) {
+        int *arr = f.second->getData();
+
+        for (int j = 0; j < f.second->getSize(); j++) {
+            pri += (to_string(arr[j]) + ",");
+        }
+        pri += "|";
+    }
+    pri += "]";
+    cout << pri << endl;
+}
 
 class MyWorker : public harp::Worker {
 
-    void execute(int workerId, harp::com::Communicator *comm) override {
-        cout << "woker " << workerId << " before barrier" << endl;
-        comm->barrier();
-        cout << "woker " << workerId << " after barrier" << endl;
-
+    void execute(Communicator *comm) override {
         Table<int> tab(1);
-
-
-        if (workerId == 0) {
-            //p1
-            int a[4] = {1, 2, 3, 4};
-            Partition<int> p(1, a, 4);
-            tab.addPartition(&p);
-
-            //p2
-            int a2[4] = {1, 2, 3, 4};
-            Partition<int> p2(2, a2, 4);
-            tab.addPartition(&p2);
+        srand(workerId + time(NULL));
+        int numOfPartitions = rand() % 4;
+        for (int p = 0; p < numOfPartitions; p++) {
+            int partitionSize = rand() % 10;
+            int *data = (int *) malloc(partitionSize * sizeof(int));
+            for (int j = 0; j < partitionSize; j++) {
+                data[j] = rand() % 10;
+            }
+            Partition<int> partition(p, data, partitionSize);
+            tab.addPartition(&partition);
         }
 
-
-        comm->broadcast<int>(&tab, 0);
+        printParitions(workerId, &tab);
+        comm->barrier();
+        comm->rotate<int>(&tab, 0);
+        comm->barrier();
+        printParitions(workerId, &tab);
     }
 };
 
@@ -39,7 +49,6 @@ int main() {
     MyWorker worker;
     worker.init();
     worker.start();
-
     return 0;
 }
 

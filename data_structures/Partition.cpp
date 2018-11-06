@@ -26,6 +26,11 @@ namespace harp {
         long Partition<SAMPLE>::getSize() {
             return this->size;
         }
+
+        template<class SAMPLE>
+        void Partition<SAMPLE>::free() {
+            std::free(this->data);
+        }
     }
 }
 
