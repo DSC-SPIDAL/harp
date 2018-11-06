@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <cstdlib>
+#include <fstream>
 
 using namespace std;
 
@@ -17,14 +18,14 @@ class CSRGraph
 
         CSRGraph(): _isDirected(false), _numEdges(-1), _numVertices(-1), 
             _edgeVal(nullptr), _indexRow(nullptr), _indexCol(nullptr), 
-            _degList(nullptr){}
+            _degList(nullptr) {}
 
         // construct CSRGraph from edgelist file
-        CSRGraph(idxType numEdges, idxType numVerts, 
-                idxType* srcList, idxType* dstList): _isDirected(false)
-        {
-            createFromEdgeListFile(numEdges, numVerts, srcList, dstList);
-        }
+        // CSRGraph(idxType numEdges, idxType numVerts, 
+        //         idxType* srcList, idxType* dstList): _isDirected(false)
+        // {
+        //     createFromEdgeListFile(numEdges, numVerts, srcList, dstList);
+        // }
 
         ~CSRGraph(){
             if (_edgeVal != nullptr)
@@ -62,12 +63,14 @@ class CSRGraph
         idxType* getIndexRow() {return _indexRow;}
         idxType* getIndexCol() {return _indexCol;}
         valType* getNNZVal() {return _edgeVal;} 
-        
+         
+        void createFromEdgeListFile(idxType numVerts, idxType numEdges, 
+                idxType* srcList, idxType* dstList);       
+
+        void serialize(ofstream& outputFile);
+        void deserialize(ifstream& inputFile);
 
     private:
-
-        void createFromEdgeListFile(idxType numVerts, idxType numEdges, 
-                idxType* srcList, idxType* dstList);
 
         bool _isDirected;
         idxType _numEdges;

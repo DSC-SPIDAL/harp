@@ -122,4 +122,34 @@ void CSRGraph::SpMVMKL(valType* x, valType* y, int thdNum)
     mkl_cspblas_scsrgemv(&tran, &_numVertices, _edgeVal, _indexRow, _indexCol, x, y);
 }
 
+void CSRGraph::serialize(ofstream& outputFile)
+{
+    outputFile.write((char*)&_numEdges, sizeof(idxType));
+    outputFile.write((char*)&_numVertices, sizeof(idxType));
+    outputFile.write((char*)_degList, _numVertices*sizeof(idxType));
+    outputFile.write((char*)_indexRow, (_numVertices+1)*sizeof(idxType));
+    outputFile.write((char*)_indexCol, (_indexRow[_numVertices])*sizeof(idxType));
+    outputFile.write((char*)_edgeVal, (_indexRow[_numVertices])*sizeof(valType));
+}
 
+void CSRGraph::deserialize(ifstream& inputFile)
+{
+    inputFile.read((char*)&_numEdges, sizeof(idxType));
+    inputFile.read((char*)&_numVertices, sizeof(idxType));
+
+    _degList = (idxType*) malloc (_numVertices*sizeof(idxType)); 
+    inputFile.read((char*)_degList, _numVertices*sizeof(idxType));
+
+    _indexRow = (idxType*) malloc ((_numVertices+1)*sizeof(idxType)); 
+    inputFile.read((char*)_indexRow, (_numVertices+1)*sizeof(idxType));
+
+    _indexCol = (idxType*) malloc ((_indexRow[_numVertices])*sizeof(idxType)); 
+    inputFile.read((char*)_indexCol, (_indexRow[_numVertices])*sizeof(idxType));
+
+    _edgeVal = (valType*) malloc ((_indexRow[_numVertices])*sizeof(valType)); 
+    inputFile.read((char*)_edgeVal, (_indexRow[_numVertices])*sizeof(valType));
+
+    printf("Total vertices is : %d\n", _numVertices);
+    printf("Total Edges is : %d\n", _numEdges);
+    std::fflush(stdout); 
+}

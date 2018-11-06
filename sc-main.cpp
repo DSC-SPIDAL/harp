@@ -43,52 +43,47 @@ int main(int argc, char** argv)
 
     isPruned = atoi(argv[7]); 
 
-    Graph input_graph;
+    CSRGraph csrInpuG;
     Graph input_template;
-
     double startTime = utility::timer();
 
-//     // load input graph 
-//     if (load_binary)
-//     {
-//
-// #ifdef VERBOSE 
-//          printf("Start the loading graph data in binary format\n");
-//          std::fflush(stdout);   
-// #endif
-//
-//         ifstream input_file(graph_name.c_str(), ios::binary);
-//         input_graph.deserialize(input_file);
-//         input_file.close();
-//     }
-//     else
-//     {
-// #ifdef VERBOSE
-//         printf("Start the loading graph data in text format\n");
-//         std::fflush(stdout);           
-// #endif
-//         input_graph.read_enlist(graph_name);
-//     }
-//
-//     if (write_binary)
-//     {
-//         // save graph into binary file, graph is a data structure
-//         ofstream output_file("graph.data", ios::binary);
-//         input_graph.serialize(output_file);
-//         output_file.close();
-//     }
-//
-//     printf("Loading data using %f secs\n", (utility::timer() - startTime));
-//     std::fflush(stdout);           
-
     // read in graph file and make CSR format
-    printf("Start CSR format\n");
+    printf("Start loading CSR datasets\n");
     std::fflush(stdout);
 
     startTime = utility::timer();
 
-    EdgeList elist(graph_name); 
-    CSRGraph csrInpuG(elist.getNumVertices(), elist.getNumEdges(), elist.getSrcList(), elist.getDstList());
+    // load input graph 
+    if (load_binary)
+    {
+
+#ifdef VERBOSE 
+         printf("Start the loading graph data in binary format\n");
+         std::fflush(stdout);   
+#endif
+
+        ifstream input_file(graph_name.c_str(), ios::binary);
+        csrInpuG.deserialize(input_file);
+        input_file.close();
+    }
+    else
+    {
+#ifdef VERBOSE
+        printf("Start the loading graph data in text format\n");
+        std::fflush(stdout);           
+#endif
+
+        EdgeList elist(graph_name); 
+        csrInpuG.createFromEdgeListFile(elist.getNumVertices(), elist.getNumEdges(), elist.getSrcList(), elist.getDstList());
+    }
+
+    if (write_binary)
+    {
+        // save graph into binary file, graph is a data structure
+        ofstream output_file("graph.data", ios::binary);
+        csrInpuG.serialize(output_file);
+        output_file.close();
+    }
 
     printf("Finish CSR format\n");
     std::fflush(stdout);
