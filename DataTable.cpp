@@ -146,6 +146,11 @@ float* DataTabble::getAuxArray(int vertId)
     return _curAuxTable[vertId];
 }
 
+void DataTabble::setAuxArray(int vertId, float* input)
+{
+  _curAuxTable[vertId] = input;
+}
+
 void DataTabble::setTableCell(int subsId, int vertId, int combIdx, float val)
 {
     if (_dataTable[subsId][vertId] == NULL) {

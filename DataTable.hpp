@@ -36,6 +36,7 @@ class DataTabble
         float* getTableArray(int subsId, int vertId);
         float* getMainArray(int vertId);
         float* getAuxArray(int vertId);
+        void setAuxArray(int vertId, float* array);
 
         void setTableCell(int subsId, int vertId, int combIdx, float val);
         void setCurTableCell(int vertId, int combIdx, float val);

@@ -22,9 +22,10 @@ class Count {
             _templates=NULL;
             _subtmp_array=NULL;
             _colors_local=NULL;
+            _algoMode = 0;
         }
 
-        void initialization(Graph& graph, int thd_num, int itr_num);
+        void initialization(Graph& graph, int thd_num, int itr_num, int algoMode);
 
         double compute(Graph& templates);
 
@@ -36,7 +37,10 @@ class Count {
     private:
 
         double colorCounting();
-        double countNonBottome(int subsId);
+        double countNonBottomeFascia(int subsId);
+        double countNonBottomeFasciaPruned(int subsId);
+        double countNonBottomeVec(int subsId);
+        double countNonBottomePruned(int subsId);
         void colorInit();
         int factorial(int n);
 
@@ -61,6 +65,8 @@ class Count {
 
         // omp threads num
         int _thd_num;
+
+        int _algoMode;
 
         // divide the templates into sub-templates
         DivideTemplates div_tp;

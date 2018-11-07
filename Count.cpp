@@ -14,13 +14,14 @@
 
 using namespace std;
 
-void Count::initialization(Graph& graph, int thd_num, int itr_num)
+void Count::initialization(Graph& graph, int thd_num, int itr_num, int algoMode)
 {
     _graph = &graph;
     _vert_num = _graph->get_vert_num();
     _max_deg = _graph->get_max_deg();
     _thd_num = thd_num;
     _itr_num = itr_num;
+    _algoMode = algoMode;
     _colors_local = (int*)malloc(_vert_num*sizeof(int));
     std::memset(_colors_local, 0, _vert_num*sizeof(int));
 }
@@ -136,7 +137,12 @@ double Count::colorCounting()
         else
         {
             //non-bottom case
-            countTotal = countNonBottome(s);
+            if (_algoMode == 1)
+              countTotal = countNonBottomeFasciaPruned(s);
+            else if (_algoMode == 2)
+              countTotal = countNonBottomeFascia(s);
+            else
+              countTotal = countNonBottomePruned(s);
         }
 
         if (mainIdx != DUMMY_VAL)
@@ -148,7 +154,338 @@ double Count::colorCounting()
     return countTotal;
 }/*}}}*/
 
-double Count::countNonBottome(int subsId)
+double Count::countNonBottomeFascia(int subsId)
+{/*{{{*/
+
+    int subSize = _subtmp_array[subsId].get_vert_num();
+    int idxMain = div_tp.get_main_node_idx(subsId);
+    int mainSize = indexer.getSubsSize()[idxMain];
+
+    int countCombNum = indexer.getCombTable()[_color_num][subSize];
+    int splitCombNum = indexer.getCombTable()[subSize][mainSize];
+
+#ifdef VERBOSE
+    double startTime = utility::timer();
+#endif
+
+    if (subsId == 1)
+    {
+        // for vtune
+#ifdef VTUNE
+        ofstream vtune_trigger;
+        vtune_trigger.open("vtune-flag.txt");
+        vtune_trigger << "Start training process and trigger vtune profiling.\n";
+        vtune_trigger.close();
+#endif
+    }
+
+#ifdef VERBOSE
+    printf("Finish init sub templte %d, vert: %d, comb: %d, splitNum: %d\n", subsId, subSize, countCombNum, splitCombNum);
+    std::fflush(stdout); 
+#endif
+
+    double countSum = 0.0;
+    #pragma omp parallel num_threads(_thd_num)
+    {
+        // local vars for each omp thread
+        int* nbrListValid = (int*)malloc(_max_deg*sizeof(int));
+        int countNbrValid = 0;
+        Graph* gLocal = _graph; 
+        DataTabble* dTableLocal = &_dTable;
+
+
+        int* combToCountLocal = (indexer.getCombToCountTable())[subsId];
+
+        #pragma omp for schedule(static) reduction(+:countSum)
+        for (int v = 0; v < _vert_num; ++v) {
+
+           countNbrValid = 0; 
+           if (dTableLocal->isVertInitMain(v))
+           {
+               // select the valid nbrs
+               int* adjList = gLocal->get_adj_list(v);
+               int adjEnd = gLocal->get_out_deg(v);
+               float* countMainVal = dTableLocal->getMainArray(v);
+
+               for (int j = 0; j < adjEnd; ++j) {
+
+                   int adjVal = adjList[j];
+                   if (dTableLocal->isVertInitAux(adjVal)) {
+                       nbrListValid[countNbrValid++] = adjVal;
+                   }
+               }
+
+               if (countNbrValid)
+               {
+
+                   // loop over comb of colorsets
+                   for (int n = 0; n <countCombNum; ++n) 
+                   {
+                       double newColorCount = 0.0;
+                       int* mainSplitLocal = (indexer.getSplitToCountTable())[0][subsId][n]; 
+                       int* auxSplitLocal = (indexer.getSplitToCountTable())[1][subsId][n]; 
+                       int auxPtr = splitCombNum -1;
+
+                       // loop over split comb
+                       for (int mainPtr = 0; mainPtr < splitCombNum; ++mainPtr, --auxPtr) {
+
+                           float countMain = countMainVal[mainSplitLocal[mainPtr]]; 
+                           if (countMain > 0)
+                           {
+                               // loop over nbrs
+                               for (int j = 0; j < countNbrValid; ++j) {
+
+                                   newColorCount += ((double)countMain)*dTableLocal->getAuxCell(nbrListValid[j], 
+                                           auxSplitLocal[auxPtr]);
+                               }
+                           }
+                       }
+
+                       // update
+                       if (newColorCount > 0.0)
+                       {
+                           countSum += newColorCount;
+                           if (subsId != 0)
+                               dTableLocal->setCurTableCell(v, combToCountLocal[n], (float)newColorCount);
+
+                       }
+                   }
+
+               }
+
+           }
+        
+        } // end of vert loop
+
+
+        free(nbrListValid);
+    }
+
+#ifdef VERBOSE
+    printf("Sub %d, NonBottom raw count %f\n", subsId, countSum);
+    std::fflush(stdout); 
+#endif
+#ifdef VERBOSE
+    printf("Sub %d, counting time %f\n", subsId, (utility::timer() - startTime));
+    std::fflush(stdout); 
+#endif
+
+    return countSum;
+
+}/*}}}*/
+
+double Count::countNonBottomeFasciaPruned(int subsId)
+{/*{{{*/
+
+    int subSize = _subtmp_array[subsId].get_vert_num();
+    int idxMain = div_tp.get_main_node_idx(subsId);
+    int idxAux = div_tp.get_aux_node_idx(subsId);
+    int mainSize = indexer.getSubsSize()[idxMain];
+    int auxSize = indexer.getSubsSize()[idxAux];
+
+    int countCombNum = indexer.getCombTable()[_color_num][subSize];
+    int splitCombNum = indexer.getCombTable()[subSize][mainSize];
+    int auxTableLen = indexer.getCombTable()[_color_num][auxSize];
+
+#ifdef VERBOSE
+    double startTime = utility::timer();
+#endif
+
+    if (subsId == 1)
+    {
+        // for vtune
+#ifdef VTUNE
+        ofstream vtune_trigger;
+        vtune_trigger.open("vtune-flag.txt");
+        vtune_trigger << "Start training process and trigger vtune profiling.\n";
+        vtune_trigger.close();
+#endif
+    }
+
+#ifdef VERBOSE
+    printf("Finish init sub templte %d, vert: %d, comb: %d, splitNum: %d, auxTableLen: %d\n", subsId, subSize, 
+            countCombNum, splitCombNum, auxTableLen);
+    std::fflush(stdout); 
+#endif
+
+    double countSum = 0.0;
+    float* pruneBuf = (float*) malloc (_vert_num*sizeof(float));
+
+    // decouple the valid nbrs computation
+    std::vector<int>* validNbrIdx = new std::vector<int>[_vert_num]; 
+#pragma omp parallel for num_threads(_thd_num)
+    for (int v = 0; v < _vert_num; ++v) {
+        DataTabble* dTableLocal = &_dTable;
+        Graph* gLocal = _graph; 
+        // not all v colculat the valid nbrs list
+        if (dTableLocal->isVertInitMain(v))
+        {
+            int* adjList = gLocal->get_adj_list(v);
+            int adjEnd = gLocal->get_out_deg(v);
+            for (int j = 0; j < adjEnd; ++j) 
+            {
+                int adjVal = adjList[j];
+                if (dTableLocal->isVertInitAux(adjVal)) {
+                    validNbrIdx[v].push_back(adjVal);
+                }
+            }
+        }
+        
+    }
+
+#ifdef VERBOSE
+    printf("Finish creating valid nbrs list\n");
+    std::fflush(stdout); 
+#endif
+
+    // first loop on auxTableLen
+    for (int i = 0; i < auxTableLen; ++i) {
+
+        // clear the buffer
+        std::memset(pruneBuf, 0, _vert_num*sizeof(float));
+
+#pragma omp parallel for num_threads(_thd_num)
+        for (int v = 0; v < _vert_num; ++v) 
+        {
+            DataTabble* dTableLocal = &_dTable;
+            if (dTableLocal->isVertInitMain(v))
+            {
+                for (int j = 0; j < validNbrIdx[v].size(); ++j) {
+
+                    float* countAuxValLocal = dTableLocal->getAuxArray(validNbrIdx[v][j]);
+                    if (countAuxValLocal != NULL)
+                        pruneBuf[v] += countAuxValLocal[i]; 
+                }
+
+             
+            }
+        }
+
+#pragma omp parallel for num_threads(_thd_num)
+        for (int v = 0; v < _vert_num; ++v) 
+        {
+            DataTabble* dTableLocal = &_dTable;
+            if (dTableLocal->isVertInitMain(v))
+            {
+                float* countAuxValUpdate = dTableLocal->getAuxArray(v);
+                if (countAuxValUpdate == NULL)
+                {
+                    #ifdef __INTEL_COMPILER
+                        countAuxValUpdate = (float*) _mm_malloc(auxTableLen*sizeof(float), 64); 
+                    #else
+                        countAuxValUpdate = (float*) aligned_alloc(64, auxTableLen*sizeof(float)); 
+                    #endif
+
+                    dTableLocal->setAuxArray(v, countAuxValUpdate);
+                }
+
+                countAuxValUpdate[i] = pruneBuf[v];
+            }
+        }
+    }
+
+#ifdef VERBOSE
+    printf("Finish pruned aux computing\n");
+    std::fflush(stdout); 
+#endif
+
+
+    #pragma omp parallel num_threads(_thd_num)
+    {
+        // local vars for each omp thread
+        // int* nbrListValid = (int*)malloc(_max_deg*sizeof(int));
+        // int countNbrValid = 0;
+        Graph* gLocal = _graph; 
+        DataTabble* dTableLocal = &_dTable;
+
+
+        int* combToCountLocal = (indexer.getCombToCountTable())[subsId];
+
+        #pragma omp for schedule(static) reduction(+:countSum)
+        for (int v = 0; v < _vert_num; ++v) {
+
+           // countNbrValid = 0; 
+           if (dTableLocal->isVertInitMain(v))
+           {
+               // select the valid nbrs
+               // int* adjList = gLocal->get_adj_list(v);
+               // int adjEnd = gLocal->get_out_deg(v);
+               //
+               // for (int j = 0; j < adjEnd; ++j) {
+               //
+               //     int adjVal = adjList[j];
+               //     if (dTableLocal->isVertInitAux(adjVal)) {
+               //         nbrListValid[countNbrValid++] = adjVal;
+               //     }
+               // }
+
+               float* countMainVal = dTableLocal->getMainArray(v);
+
+               // if (countNbrValid)
+               if (validNbrIdx[v].size() > 0)
+               {
+
+                   // loop over comb of colorsets
+                   for (int n = 0; n <countCombNum; ++n) 
+                   {
+                       double newColorCount = 0.0;
+                       int* mainSplitLocal = (indexer.getSplitToCountTable())[0][subsId][n]; 
+                       int* auxSplitLocal = (indexer.getSplitToCountTable())[1][subsId][n]; 
+                       int auxPtr = splitCombNum -1;
+
+                       // loop over split comb
+                       for (int mainPtr = 0; mainPtr < splitCombNum; ++mainPtr, --auxPtr) {
+
+                           float countMain = countMainVal[mainSplitLocal[mainPtr]]; 
+                           if (countMain > 0)
+                           {
+                               // loop over nbrs
+                               // for (int j = 0; j < countNbrValid; ++j) 
+                               // {
+
+                                   newColorCount += ((double)countMain)*dTableLocal->getAuxCell(v, 
+                                           auxSplitLocal[auxPtr]);
+                               // }
+                           }
+                       }
+
+                       // update
+                       if (newColorCount > 0.0)
+                       {
+                           countSum += newColorCount;
+                           if (subsId != 0)
+                               dTableLocal->setCurTableCell(v, combToCountLocal[n], (float)newColorCount);
+
+                       }
+                   }
+
+               }
+
+           }
+        
+        } // end of vert loop
+
+
+        // free(nbrListValid);
+    }
+
+#ifdef VERBOSE
+    printf("Sub %d, NonBottom raw count %f\n", subsId, countSum);
+    std::fflush(stdout); 
+#endif
+#ifdef VERBOSE
+    printf("Sub %d, counting time %f\n", subsId, (utility::timer() - startTime));
+    std::fflush(stdout); 
+#endif
+
+    free(pruneBuf);
+    delete[] validNbrIdx;
+
+    return countSum;
+
+}/*}}}*/
+
+double Count::countNonBottomeVec(int subsId)
 {/*{{{*/
 
     int subSize = _subtmp_array[subsId].get_vert_num();
@@ -315,6 +652,247 @@ double Count::countNonBottome(int subsId)
 #endif
 
     return countSum;
+}/*}}}*/
+
+double Count::countNonBottomePruned(int subsId)
+{/*{{{*/
+
+    int subSize = _subtmp_array[subsId].get_vert_num();
+
+    int idxMain = div_tp.get_main_node_idx(subsId);
+    int idxAux = div_tp.get_aux_node_idx(subsId);
+    int mainSize = indexer.getSubsSize()[idxMain];
+    int auxSize = indexer.getSubsSize()[idxAux];
+
+    int countCombNum = indexer.getCombTable()[_color_num][subSize];
+    int splitCombNum = indexer.getCombTable()[subSize][mainSize];
+    int vecNum = countCombNum*splitCombNum;
+    int auxTableLen = indexer.getCombTable()[_color_num][auxSize];
+
+#ifdef VERBOSE
+    double startTime = utility::timer();
+#endif
+
+    if (subsId == 1)
+    {
+        // for vtune
+#ifdef VTUNE
+        ofstream vtune_trigger;
+        vtune_trigger.open("vtune-flag.txt");
+        vtune_trigger << "Start training process and trigger vtune profiling.\n";
+        vtune_trigger.close();
+#endif
+    }
+
+#ifdef VERBOSE
+    printf("Finish init sub templte %d, vert: %d, comb: %d, splitNum: %d, auxTableLen: %d\n", subsId, subSize, 
+            countCombNum, splitCombNum, auxTableLen);
+    std::fflush(stdout); 
+#endif
+
+    double countSum = 0.0;
+    // decouple the neighbour list looping from the computation
+    // create a buffer to store P_{s,j}
+    float* pruneBuf = (float*) malloc (_vert_num*sizeof(float));
+
+    // decouple the valid nbrs computation
+    std::vector<int>* validNbrIdx = new std::vector<int>[_vert_num]; 
+#pragma omp parallel for num_threads(_thd_num)
+    for (int v = 0; v < _vert_num; ++v) {
+        DataTabble* dTableLocal = &_dTable;
+        Graph* gLocal = _graph; 
+        // not all v colculat the valid nbrs list
+        if (dTableLocal->isVertInitMain(v))
+        {
+            int* adjList = gLocal->get_adj_list(v);
+            int adjEnd = gLocal->get_out_deg(v);
+            for (int j = 0; j < adjEnd; ++j) 
+            {
+                int adjVal = adjList[j];
+                if (dTableLocal->isVertInitAux(adjVal)) {
+                    validNbrIdx[v].push_back(adjVal);
+                }
+            }
+        }
+        
+    }
+
+#ifdef VERBOSE
+    printf("Finish creating valid nbrs list\n");
+    std::fflush(stdout); 
+#endif
+
+    // first loop on auxTableLen
+    for (int i = 0; i < auxTableLen; ++i) {
+
+        // clear the buffer
+        std::memset(pruneBuf, 0, _vert_num*sizeof(float));
+
+#pragma omp parallel for num_threads(_thd_num)
+        for (int v = 0; v < _vert_num; ++v) 
+        {
+            DataTabble* dTableLocal = &_dTable;
+            if (dTableLocal->isVertInitMain(v))
+            {
+                for (int j = 0; j < validNbrIdx[v].size(); ++j) {
+
+                    float* countAuxValLocal = dTableLocal->getAuxArray(validNbrIdx[v][j]);
+                    if (countAuxValLocal != NULL)
+                        pruneBuf[v] += countAuxValLocal[i]; 
+                }
+
+             
+            }
+        }
+
+#pragma omp parallel for num_threads(_thd_num)
+        for (int v = 0; v < _vert_num; ++v) 
+        {
+            DataTabble* dTableLocal = &_dTable;
+            if (dTableLocal->isVertInitMain(v))
+            {
+                float* countAuxValUpdate = dTableLocal->getAuxArray(v);
+                if (countAuxValUpdate == NULL)
+                {
+                    #ifdef __INTEL_COMPILER
+                        countAuxValUpdate = (float*) _mm_malloc(auxTableLen*sizeof(float), 64); 
+                    #else
+                        countAuxValUpdate = (float*) aligned_alloc(64, auxTableLen*sizeof(float)); 
+                    #endif
+
+                    dTableLocal->setAuxArray(v, countAuxValUpdate);
+                }
+
+                countAuxValUpdate[i] = pruneBuf[v];
+            }
+        }
+    }
+
+#ifdef VERBOSE
+    printf("Finish pruned aux computing\n");
+    std::fflush(stdout); 
+#endif
+
+    // compute the multiplication and addition
+    #pragma omp parallel num_threads(_thd_num)
+    {
+        // local vars for each omp thread
+        // int* nbrListValid = (int*)malloc(_max_deg*sizeof(int));
+        // int countNbrValid = 0;
+        Graph* gLocal = _graph; 
+        DataTabble* dTableLocal = &_dTable;
+        int* mainSplitVecLocal = (indexer.getSplitToCountVecTable())[0][subsId]; 
+        int* auxSplitVecLocal = (indexer.getSplitToCountVecTable())[1][subsId]; 
+        int* combToCountLocal = (indexer.getCombToCountTable())[subsId];
+
+#ifdef __INTEL_COMPILER
+        __assume_aligned(mainSplitVecLocal, 64);
+        __assume_aligned(auxSplitVecLocal, 64);
+#else
+        __builtin_assume_aligned(mainSplitVecLocal, 64);
+        __builtin_assume_aligned(auxSplitVecLocal, 64);
+#endif
+        #pragma omp for schedule(static) reduction(+:countSum)
+        for (int v = 0; v < _vert_num; ++v) {
+
+           // countNbrValid = 0; 
+           if (dTableLocal->isVertInitMain(v))
+           {
+               // select the valid nbrs
+               // int* adjList = gLocal->get_adj_list(v);
+               // int adjEnd = gLocal->get_out_deg(v);
+               float* countMainVal = dTableLocal->getMainArray(v);
+
+               // for (int j = 0; j < adjEnd; ++j) {
+               //
+               //     int adjVal = adjList[j];
+               //     if (dTableLocal->isVertInitAux(adjVal)) {
+               //         nbrListValid[countNbrValid++] = adjVal;
+               //     }
+               // }
+               
+               float*  countAuxVal= dTableLocal->getAuxArray(v);
+               if (validNbrIdx[v].size() > 0 && countAuxVal != NULL)
+               {
+
+#ifdef __INTEL_COMPILER
+                   float* countBuf = (float*) _mm_malloc(vecNum*sizeof(float), 64);
+#else
+                   float* countBuf = (float*) aligned_alloc(64, vecNum*sizeof(float));
+#endif
+                   std::memset(countBuf, 0, vecNum*sizeof(float));
+
+#ifdef __INTEL_COMPILER
+                   __assume_aligned(countBuf, 64);
+                   __assume_aligned(countMainVal, 64);
+#else
+                   __builtin_assume_aligned(countBuf, 64);
+                   __builtin_assume_aligned(countMainVal, 64);
+#endif
+                   // multiplicaiton
+                   // for (int i = 0; i < validNbrIdx[v].size(); ++i) 
+                   // {
+
+                       // float*  countAuxVal= dTableLocal->getAuxArray(validNbrIdx[v][i]);
+
+#ifdef __INTEL_COMPILER
+                       __assume_aligned(countAuxVal, 64);
+#else
+                       __builtin_assume_aligned(countAuxVal, 64);
+#endif
+
+#ifdef __INTEL_COMPILER
+#pragma vector always
+#else
+#pragma GCC ivdep
+#endif
+                       for (int j = 0; j < vecNum; ++j) {
+                           countBuf[j] = (countMainVal[mainSplitVecLocal[j]]*countAuxVal[auxSplitVecLocal[j]]);
+                           // countBuf[j] += (countMainVal[mainSplitVecLocal[j]]*countAuxVal[auxSplitVecLocal[j]]);
+                       }
+
+                   // } // end of nbr loop
+
+                   // reduction
+                   for (int i = 0; i < vecNum; i+=splitCombNum) {
+                       for (int j = 1; j < splitCombNum; ++j) {
+                           countBuf[i] += countBuf[i+j];
+                       }
+                   }
+
+                   // updating
+                   for (int i = 0; i < countCombNum; ++i) 
+                   {
+                       float res = countBuf[i*splitCombNum];
+                       countSum += (double)res;
+                       if (subsId != 0 && res > 0) {
+                          dTableLocal->setCurTableCell(v, combToCountLocal[i], (double)res); 
+                       }
+                   }
+#ifdef __INTEL_COMPILER
+                   _mm_free(countBuf);
+#else
+                   free(countBuf);
+#endif
+
+               } // end of valid nbr
+           }
+        } // end of vert loop
+    }
+
+#ifdef VERBOSE
+    printf("Sub %d, NonBottom raw count %f\n", subsId, countSum);
+    std::fflush(stdout); 
+#endif
+#ifdef VERBOSE
+    printf("Sub %d, counting time %f\n", subsId, (utility::timer() - startTime));
+    std::fflush(stdout); 
+#endif
+
+    free(pruneBuf);
+    delete[] validNbrIdx;
+    return countSum;
+
 }/*}}}*/
 
 void Count::colorInit()
