@@ -41,7 +41,8 @@ int main(int argc, char** argv)
     load_binary = atoi(argv[5]);
     write_binary = atoi(argv[6]); 
 
-    isPruned = atoi(argv[7]); 
+    if (argc > 7)
+        isPruned = atoi(argv[7]); 
 
     CSRGraph csrInpuG;
     Graph input_template;
