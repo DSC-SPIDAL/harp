@@ -109,6 +109,12 @@ class HistMakerCompactFastHist: public BaseMaker {
         hset[tid].rptr = dmlc::BeginPtr(rptr);
         hset[tid].cut = dmlc::BeginPtr(cut);
         hset[tid].data.resize(cut.size(), TStats(param));
+
+        std::ostringstream stringStream;
+        stringStream << "Init hset: rptreSize:" << rptr.size() <<
+            ",cutSize:" <<  cut.size();
+        printmsg(stringStream.str());
+
       }
     }
     // aggregate all statistics to hset[0]
@@ -149,6 +155,10 @@ class HistMakerCompactFastHist: public BaseMaker {
     }
 
     for (int depth = 0; depth < param_.max_depth; ++depth) {
+
+        
+    printVec("ResetPos::fwork_set=", fwork_set_);
+
       // reset and propose candidate split
       this->ResetPosAndPropose(gpair, p_fmat, fwork_set_, *p_tree);
 
@@ -156,7 +166,8 @@ class HistMakerCompactFastHist: public BaseMaker {
       // create histogram
       this->CreateHist(gpair, p_fmat, fwork_set_, *p_tree);
 
-    printtree(p_tree, "After CreateHist");
+    printVec("CreateHist::fwork_set=", fwork_set_);
+    //printtree(p_tree, "After CreateHist");
 
       // find split based on histogram statistics
       this->FindSplit(depth, gpair, p_fmat, fwork_set_, p_tree);
@@ -167,12 +178,12 @@ class HistMakerCompactFastHist: public BaseMaker {
       // reset position after split
       this->ResetPositionAfterSplit(p_fmat, *p_tree);
 
-    printtree(p_tree, "ResetPositionAfterSPlit");
+    //printtree(p_tree, "ResetPositionAfterSPlit");
 
 
       this->UpdateQueueExpand(*p_tree);
 
-    printtree(p_tree, "UpdateQueueExpand");
+    //printtree(p_tree, "UpdateQueueExpand");
     
     std::ostringstream stringStream;
     stringStream << "fsplit_set size:" << this->fsplit_set_.size();
@@ -252,13 +263,23 @@ class HistMakerCompactFastHist: public BaseMaker {
         }
       }
     }
+
+    //debug
+    printSplit(*best);
+
+   
   }
   inline void FindSplit(int depth,
                         const std::vector<GradientPair> &gpair,
                         DMatrix *p_fmat,
                         const std::vector <bst_uint> &fset,
                         RegTree *p_tree) {
+    
     const size_t num_feature = fset.size();
+    //printInt("FindSplit::num_feature = ", num_feature);
+    printVec("FindSplit::fset=", fset);
+    
+
     // get the best split condition for each node
     std::vector<SplitEntry> sol(qexpand_.size());
     std::vector<TStats> left_sum(qexpand_.size());
@@ -270,8 +291,12 @@ class HistMakerCompactFastHist: public BaseMaker {
       SplitEntry &best = sol[wid];
       TStats &node_sum = wspace_.hset[0][num_feature + wid * (num_feature + 1)].data[0];
       for (size_t i = 0; i < fset.size(); ++i) {
+        //int fid = this->fset[i];
+        //int offset = this->feat2workindex_[fid];
         EnumerateSplit(this->wspace_.hset[0][i + wid * (num_feature+1)],
                        node_sum, fset[i], &best, &left_sum[wid]);
+        //EnumerateSplit(this->wspace_.hset[0][offset + wid * (num_feature+1)],
+        //               node_sum, fid, &best, &left_sum[wid]);
       }
     }
     // get the best result, we can synchronize the solution
@@ -423,7 +448,18 @@ class CQHistMakerCompactFastHist: public HistMakerCompactFastHist<TStats> {
       cache_dmatrix_ = p_fmat;
     }
     feat_helper_.SyncInfo();
-    feat_helper_.SampleCol(this->param_.colsample_bytree, p_fset);
+
+    /*
+     * These codes will change the contents and order of the fwork_set
+     * Therefore, the initialized cut_ which depends on the fid order
+     * may have trouble for new trees.
+     */
+    //feat_helper_.SampleCol(this->param_.colsample_bytree, p_fset);
+    p_fset->resize(tree.param.num_feature);
+    for (size_t i = 0; i < p_fset->size(); ++i) {
+      (*p_fset)[i] = static_cast<unsigned>(i);
+    }
+ 
   }
   // code to create histogram
   void CreateHist(const std::vector<GradientPair> &gpair,
@@ -485,49 +521,6 @@ class CQHistMakerCompactFastHist: public HistMakerCompactFastHist<TStats> {
                                const RegTree &tree) override {
     this->GetSplitSet(this->qexpand_, tree, &this->fsplit_set_);
   }
-  void ResetPosAndProposeOld(const std::vector<GradientPair> &gpair,
-                          DMatrix *p_fmat,
-                          const std::vector<bst_uint> &fset,
-                          const RegTree &tree) {
-    const MetaInfo &info = p_fmat->Info();
-    // fill in reverse map
-    feat2workindex_.resize(tree.param.num_feature);
-    std::fill(feat2workindex_.begin(), feat2workindex_.end(), -1);
-    work_set_.clear();
-    for (auto fidx : fset) {
-      if (feat_helper_.Type(fidx) == 2) {
-        feat2workindex_[fidx] = static_cast<int>(work_set_.size());
-        work_set_.push_back(fidx);
-      } else {
-        feat2workindex_[fidx] = -2;
-      }
-    }
-    const size_t work_set_size = work_set_.size();
-
-    cut_.Init(p_fmat,256); 
-
-    CHECK_EQ(this->qexpand_.size(), 1);
-
-    // now we get the final result of sketch, setup the cut
-    this->wspace_.cut.clear();
-    this->wspace_.rptr.clear();
-    for (size_t wid = 0; wid < this->qexpand_.size(); ++wid) {
-      for (size_t i = 1; i < cut_.cut.size(); ++i) {
-          this->wspace_.cut.push_back(cut_.cut[i]);
-      }
-
-      for (size_t i = 1; i < cut_.row_ptr.size(); ++i) {
-          this->wspace_.rptr.push_back(cut_.row_ptr[i]);
-      }
-        
-      //this->wspace_.rptr.push_back(static_cast<unsigned>(this->wspace_.cut.size()));
-      // reserve last value for global statistics
-      this->wspace_.cut.push_back(0.0f);
-      this->wspace_.rptr.push_back(static_cast<unsigned>(this->wspace_.cut.size()));
-    }
-    CHECK_EQ(this->wspace_.rptr.size(),
-             (fset.size() + 1) * this->qexpand_.size() + 1);
-  }
 
   void ResetPosAndPropose(const std::vector<GradientPair> &gpair,
                           DMatrix *p_fmat,
@@ -550,6 +543,9 @@ class CQHistMakerCompactFastHist: public HistMakerCompactFastHist<TStats> {
 
     if (!isInitializedHistIndex && this->qexpand_.size() == 1) {
         cut_.Init(p_fmat,256); 
+    //}
+
+    //if (this->qexpand_.size() == 1) {
 
         CHECK_EQ(this->qexpand_.size(), 1);
 
@@ -560,9 +556,11 @@ class CQHistMakerCompactFastHist: public HistMakerCompactFastHist<TStats> {
         for (size_t wid = 0; wid < this->qexpand_.size(); ++wid) {
             
           for (unsigned int fid : fset) {
+            int offset = feat2workindex_[fid];
+            if (offset >= 0) {
               auto a = cut_[fid];
 
-              for (size_t i = 1; i < a.size; ++i) {
+              for (size_t i = 0; i < a.size; ++i) {
                 this->wspace_.cut.push_back(a.cut[i]);
               }
               // push a value that is greater than anything
@@ -573,6 +571,13 @@ class CQHistMakerCompactFastHist: public HistMakerCompactFastHist<TStats> {
                 this->wspace_.cut.push_back(last);
               }
               this->wspace_.rptr.push_back(static_cast<unsigned>(this->wspace_.cut.size()));
+            } else {
+              CHECK_EQ(offset, -2);
+              bst_float cpt = feat_helper_.MaxValue(fid);
+              this->wspace_.cut.push_back(cpt + fabs(cpt) + kRtEps);
+              this->wspace_.rptr.push_back(static_cast<unsigned>(this->wspace_.cut.size()));
+            }
+ 
           }
 
           //this->wspace_.rptr.push_back(static_cast<unsigned>(this->wspace_.cut.size()));
@@ -849,8 +854,10 @@ class GlobalProposalHistMakerCompactFastHist: public CQHistMakerCompactFastHist<
         
       if (this->qexpand_.size() == 1) {
         // init a new tree
-          CQHistMakerCompactFastHist<TStats>::ResetPosAndPropose(gpair, p_fmat, fset, tree);
-        LOG(CONSOLE) << "ResetPosAndPropose: init a tree";
+        //CQHistMakerCompactFastHist<TStats>::ResetPosAndPropose(gpair, p_fmat, fset, tree);
+        //this->fsplit_set_.clear();
+        LOG(CONSOLE) << "ResetPosAndPropose: init a tree x";
+        //return;
       }
       else{
         LOG(CONSOLE) << "ResetPosAndPropose: copy histgram bins";
@@ -981,6 +988,7 @@ class GlobalProposalHistMakerCompactFastHist: public CQHistMakerCompactFastHist<
         
         printcut(this->cut_);
       }
+        //printcut(this->cut_);
 
       // start accumulating statistics
       //for (const auto &batch : p_fmat->GetSortedColumnBatches()) 

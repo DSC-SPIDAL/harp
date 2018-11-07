@@ -81,13 +81,15 @@ class FastHistMaker: public TreeUpdater {
       gmat_.printBinStat(); 
       printdmat(*dmat->GetSortedColumnBatches().begin());
       printgmat(gmat_);
-      printcut(gmat_.cut);
+      //printcut(gmat_.cut);
 
       is_gmat_initialized_ = true;
       if (param_.debug_verbose > 0) {
         LOG(INFO) << "Generating gmat: " << dmlc::GetTime() - tstart << " sec";
       }
     }
+    printcut(gmat_.cut);
+
     // rescale learning rate according to size of trees
     float lr = param_.learning_rate;
     param_.learning_rate = lr / trees.size();
@@ -143,7 +145,7 @@ class FastHistMaker: public TreeUpdater {
     }
   };
   // actual builder that runs the algorithm
-
+    
   struct Builder {
    public:
     // constructor
@@ -253,10 +255,9 @@ class FastHistMaker: public TreeUpdater {
           ++num_leaves;  // give two and take one, as parent is no longer a leaf
         }
 
-        //one level
-
-        printtree(p_tree, "Expand one level");
-
+        //one node
+        //printtree(p_tree, "Expand one node");
+        this->printnodes(snode_, "Expand one node");
       }
 
       // set all the rest expanding nodes to leaf
@@ -308,6 +309,40 @@ class FastHistMaker: public TreeUpdater {
                   << std::fixed << std::setw(6) << std::setprecision(4) << total_time;
       }
     }
+  void printnodes(std::vector<NodeEntry>& nodes, std::string header=""){
+
+    if (header==""){ 
+     std::cout << "RegTree===========================\n" ;
+     }else{
+     std::cout << "===" << header << "===\n" ;
+
+    }
+
+    std::cout << "Tree.param nodes=" << nodes.size() << "\n";
+
+    int nsize = nodes.size();
+    for(int i=0; i< nsize; i++){
+        auto split = nodes[i].best;
+        auto stat = nodes[i].stats;
+
+        unsigned split_index = split.sindex & ((1U << 31) - 1U);
+        float split_value = split.split_value;
+        bool split_left = ((split.sindex >> 31) != 0);
+        //if (node.IsLeaf()){
+        //    std::cout << i << ":leaf";
+        //}
+        //else{
+            std::cout << i << ":" << split_index << ":" << split_value
+                << ":" << (split_left?1:0);
+        //}
+
+        std::cout << "<l" << split.loss_chg << "h" << stat.sum_hess <<
+            "w" << nodes[i].weight << ">\n";
+    }
+ 
+    std::cout << "\n";
+    }
+
 
     inline void BuildHist(const std::vector<GradientPair>& gpair,
                           const RowSetCollection::Elem row_indices,
@@ -502,14 +537,20 @@ class FastHistMaker: public TreeUpdater {
       for (bst_omp_uint i = 0; i < nfeature; ++i) {
         const bst_uint fid = feature_set[i];
         const unsigned tid = omp_get_thread_num();
-        this->EnumerateSplit(-1, gmat, hist[nid], snode_[nid], info,
+       this->EnumerateSplit(+1, gmat, hist[nid], snode_[nid], info,
           &best_split_tloc_[tid], fid, nid);
-        this->EnumerateSplit(+1, gmat, hist[nid], snode_[nid], info,
+       this->EnumerateSplit(-1, gmat, hist[nid], snode_[nid], info,
           &best_split_tloc_[tid], fid, nid);
+       
+        printSplit(best_split_tloc_[tid]);
       }
       for (unsigned tid = 0; tid < nthread; ++tid) {
         snode_[nid].best.Update(best_split_tloc_[tid]);
       }
+
+      //debug
+      //printSplit(snode_[nid].best);
+
     }
 
     inline void ApplySplit(int nid,

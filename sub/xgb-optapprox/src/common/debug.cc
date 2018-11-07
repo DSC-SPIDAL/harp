@@ -8,6 +8,40 @@
 namespace xgboost {
 
 #ifdef USE_DEBUG
+//void printnodes(std::vector<NodeEntry>& nodes, std::string header=""){
+//
+//   if (header==""){ 
+//    std::cout << "RegTree===========================\n" ;
+//    }else{
+//    std::cout << "===" << header << "===\n" ;
+//
+//   }
+//
+//   std::cout << "Tree.param nodes=" << nodes.size() << "\n";
+//
+//   int nsize = nodes.size();
+//   for(int i=0; i< nsize; i++){
+//       auto split = nodes[i].best;
+//       auto stat = nodes[i].stats;
+//
+//       unsigned split_index = split.sindex_ & ((1U << 31) - 1U);
+//       float split_value = split.split_value;
+//       bool split_left = (split.(sindex_ >> 31) != 0);
+//       //if (node.IsLeaf()){
+//       //    std::cout << i << ":leaf";
+//       //}
+//       //else{
+//           std::cout << i << ":" << split_index << ":" << split_value
+//               << ":" << (split_left?1:0);
+//       //}
+//
+//       std::cout << "<l" << split.loss_chg << "h" << stat.sum_hess <<
+//           "w" << nodes[i].weight << ">\n";
+//   }
+// 
+//   std::cout << "\n";
+//}
+
 void printtree(RegTree* ptree, std::string header=""){
 
    if (header==""){ 
@@ -28,11 +62,13 @@ void printtree(RegTree* ptree, std::string header=""){
 
        unsigned split_index = node.SplitIndex();
        float split_value = node.SplitCond();
+       bool split_left = node.DefaultLeft();
        if (node.IsLeaf()){
            std::cout << i << ":leaf";
        }
        else{
-           std::cout << i << ":" << split_index << ":" << split_value;
+           std::cout << i << ":" << split_index << ":" << split_value
+               << ":" << (split_left?1:0);
        }
 
        std::cout << "<l" << stat.loss_chg << "h" << stat.sum_hess <<
@@ -57,13 +93,34 @@ void printmsg(std::string msg){
     std::cout << "MSG:" << msg << "\n";
 }
 
+void printInt(std::string msg, int val){
+    std::ostringstream stringStream;
+    stringStream << msg << ":" << val;
+    printmsg(stringStream.str());
+}
+void printVec(std::string msg, std::vector<unsigned int> vec){
+    std::ostringstream stringStream;
+    stringStream << msg ;
+    for(int i=0; i< vec.size(); i++){
+    stringStream << vec[i] << ",";
+    }
+    printmsg(stringStream.str());
+}
+
+
+
 void printcut(HistCutMatrix& cut){
   std::cout << "GHistCutMAT======================================\n";
   int nfeature = cut.row_ptr.size() - 1;
 
+  nfeature = std::min(nfeature, 50);
+
   for (size_t fid = 0; fid < nfeature; ++fid) {
     auto a = cut[fid];
     std::cout << "F:" << fid << " "; 
+
+    int asize = std::min(a.size, 50U);
+
     for (bst_omp_uint j = 0; j < a.size; ++j) {
         std::cout << j << ":" << a.cut[j] << " ";
      }
@@ -74,6 +131,8 @@ void printcut(HistCutMatrix& cut){
 void printgmat(GHistIndexMatrix& gmat){
   std::cout << "GHistIndexMAT======================================\n";
   int nrows = gmat.row_ptr.size() - 1;
+
+  nrows = std::min(nrows, 50);
 
   for (size_t id = 0; id < nrows; ++id) {
     auto a = gmat[id];
@@ -88,9 +147,15 @@ void printgmat(GHistIndexMatrix& gmat){
 
 void printdmat(DMatrixCompact& dmat){
   std::cout << "HMAT======================================\n";
-  for (size_t fid = 0; fid < dmat.Size(); ++fid) {
+  int nrows = dmat.Size();
+  nrows = std::min(nrows, 50);
+
+  for (size_t fid = 0; fid < nrows; ++fid) {
     auto col = dmat[fid];
-    const auto ndata = static_cast<bst_omp_uint>(col.size());
+    auto ndata = static_cast<bst_omp_uint>(col.size());
+
+    ndata = std::min(ndata, 50U);
+
     std::cout << "F:" << fid << " "; 
     for (bst_omp_uint j = 0; j < ndata; ++j) {
         const bst_uint ridx = col[j].index();
@@ -103,10 +168,17 @@ void printdmat(DMatrixCompact& dmat){
 }
 
 void printdmat(const SparsePage& dmat){
-  std::cout << "DMAT======================================\n";
-  for (size_t fid = 0; fid < dmat.Size(); ++fid) {
+  std::cout << "XDMAT======================================\n";
+
+  unsigned int nrows = dmat.Size();
+  nrows = std::min(nrows, 50U);
+
+  for (size_t fid = 0; fid < nrows; ++fid) {
     auto col = dmat[fid];
-    const auto ndata = static_cast<bst_omp_uint>(col.size());
+    auto ndata = static_cast<bst_omp_uint>(col.size());
+    
+    ndata = std::min(ndata, 50U);
+
     std::cout << "F:" << fid << " "; 
     for (bst_omp_uint j = 0; j < ndata; ++j) {
         const bst_uint ridx = col[j].index;
@@ -117,9 +189,12 @@ void printdmat(const SparsePage& dmat){
     std::cout << "\n";
   }
   
-  for (size_t fid = 0; fid < dmat.Size(); ++fid) {
+  for (size_t fid = 0; fid < nrows; ++fid) {
     auto col = dmat[fid];
-    const auto ndata = static_cast<bst_omp_uint>(col.size());
+    auto ndata = static_cast<bst_omp_uint>(col.size());
+
+    ndata = std::min(ndata, 50U);
+
     std::cout << "F:" << fid << " "; 
     for (bst_omp_uint j = 0; j < ndata; ++j) {
         const bst_uint ridx = col[j].index;
@@ -130,6 +205,52 @@ void printdmat(const SparsePage& dmat){
     std::cout << "\n";
   }
 }
+
+
+void printSplit(SplitEntry& split){
+    unsigned split_index = split.sindex & ((1U << 31) - 1U);
+    bool split_left = ((split.sindex >> 31) != 0);
+
+    static std::mutex m;
+
+    m.lock();
+    std::cout << "FindSplit best=i" << split_index << ",v" << 
+        split.split_value << ",l" << split.loss_chg 
+        << ":" << (split_left?1:0) << "\n";
+    m.unlock();
+}
+
+void save_preds(int iterid, int tree_method, HostDeviceVector<bst_float>& preds){
+    std::ostringstream ss;
+    ss << "preds_" << iterid << "_" << tree_method;
+
+    std::ofstream write;
+    write.open(ss.str());
+    bst_float* data = preds.HostPointer();
+    int nsize = preds.Size();
+    for(int i=0; i< nsize; i++){
+        write << data[i] << std::endl;
+    }
+
+    write.close();
+}
+
+void save_grads(int iterid, int tree_method, HostDeviceVector<GradientPair>& gpair){
+    std::ostringstream ss;
+    ss << "gpair_" << iterid << "_" << tree_method;
+
+    std::ofstream write;
+    write.open(ss.str());
+    GradientPair* data = gpair.HostPointer();
+    int nsize = gpair.Size();
+    for(int i=0; i< nsize; i++){
+        write << data[i].GetGrad() <<" " << data[i].GetHess() << std::endl;
+    }
+
+    write.close();
+}
+
+
 #else
 
 void printmsg(std::string msg){}
@@ -138,7 +259,13 @@ void printdmat(DMatrixCompact& dmat){}
 void printdmat(const SparsePage& dmat){}
 void printgmat(GHistIndexMatrix& gmat){}
 void printcut(HistCutMatrix& gmat){}
+void printSplit(SplitEntry& split){}
+void printInt(std::string msg, int val){}
+//void printnodes(std::vector<NodeEntry>& nodes, std::string header=""){}
+void printVec(std::string msg, std::vector<unsigned int> vec){}
 
+void save_preds(int iterid, int tree_method, HostDeviceVector<bst_float>& preds){}
+void save_grads(int iterid, int tree_method, HostDeviceVector<GradientPair>& gpair){}
 #endif
 
 }  // namespace xgboost

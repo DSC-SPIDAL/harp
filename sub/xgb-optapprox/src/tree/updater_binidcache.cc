@@ -239,6 +239,10 @@ class HistMakerBinid: public BaseMaker {
         }
       }
     }
+
+    //debug
+    printSplit(*best);
+
   }
   inline void FindSplit(int depth,
                         const std::vector<GradientPair> &gpair,
@@ -260,6 +264,10 @@ class HistMakerBinid: public BaseMaker {
         EnumerateSplit(this->wspace_.hset[0][i + wid * (num_feature+1)],
                        node_sum, fset[i], &best, &left_sum[wid]);
       }
+
+      //debug
+
+
     }
     // get the best result, we can synchronize the solution
     for (bst_omp_uint wid = 0; wid < nexpand; ++wid) {

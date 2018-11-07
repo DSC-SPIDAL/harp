@@ -19,7 +19,9 @@
 #include "./common/host_device_vector.h"
 #include "./common/io.h"
 #include "./common/random.h"
+#include "./common/debug.h"
 #include "common/timer.h"
+#include <fstream>
 
 namespace {
 
@@ -28,6 +30,8 @@ const char* kMaxDeltaStepDefaultValue = "0.7";
 }  // anonymous namespace
 
 namespace xgboost {
+
+
 // implementation of base learner.
 bool Learner::AllowLazyCheckPoint() const {
   return gbm_->AllowLazyCheckPoint();
@@ -395,11 +399,23 @@ class LearnerImpl : public Learner {
     monitor_.Start("PredictRaw");
     this->PredictRaw(train, &preds_);
     monitor_.Stop("PredictRaw");
+
+    //save preds
+    //
+    save_preds(this->iterid_, this->tparam_.tree_method, preds_);
+
+
     monitor_.Start("GetGradient");
     obj_->GetGradient(preds_, train->Info(), iter, &gpair_);
     monitor_.Stop("GetGradient");
+    
+    
+    save_grads(this->iterid_, this->tparam_.tree_method, gpair_);
+
     gbm_->DoBoost(train, &gpair_, obj_.get());
     monitor_.Stop("UpdateOneIter");
+
+    this->iterid_++;
   }
 
   void BoostOneIter(int iter, DMatrix* train,
@@ -572,6 +588,9 @@ class LearnerImpl : public Learner {
   HostDeviceVector<bst_float> preds_;
   // gradient pairs
   HostDeviceVector<GradientPair> gpair_;
+
+  // iterid
+  int iterid_{0};
 
  private:
   /*! \brief random number transformation seed. */

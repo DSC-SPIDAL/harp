@@ -15,6 +15,9 @@
 #include <vector>
 #include <string>
 #include <sstream>
+#include <algorithm>
+#include <thread>
+#include <mutex>
 
 #include <xgboost/tree_model.h>
 #include "../data/compact_dmatrix.h"
@@ -24,12 +27,23 @@ namespace xgboost {
 
 using xgboost::common::HistCutMatrix;
 using xgboost::common::GHistIndexMatrix;
+using xgboost::tree::SplitEntry;
 
+
+void printVec(std::string msg, std::vector<unsigned int> vec);
+void printInt(std::string msg, int val);
 void printmsg(std::string msg);
 void printtree(RegTree* ptree, std::string header="");
 void printdmat(DMatrixCompact& dmat);
 void printdmat(const SparsePage& dmat);
 void printgmat(GHistIndexMatrix& gmat);
 void printcut(HistCutMatrix& gmat);
+
+//void printnodes(std::vector<NodeEntry>& nodes, std::string header="");
+void printSplit(SplitEntry& split);
+
+void save_preds(int iterid, int tree_method, HostDeviceVector<bst_float>& preds);
+void save_grads(int iterid, int tree_method, HostDeviceVector<GradientPair>& gpair);
+
 }  // namespace xgboost
 #endif  // XGBOOST_DEBUG_DEBUG_H_
