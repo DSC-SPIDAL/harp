@@ -21,6 +21,8 @@ namespace harp {
 
             SAMPLE *getData();
 
+            void setData(SAMPLE * data);
+
             long getSize();
 
             void clear();

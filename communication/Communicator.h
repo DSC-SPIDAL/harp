@@ -48,9 +48,19 @@ namespace harp {
             }
 
             template<class TYPE>
-            void allGather(harp::ds::Table<TYPE> *table, int bcastWorkerId) {
-                for (auto *p : table->getPartitions()) {
-
+            void allReduce(harp::ds::Table<TYPE> *table, MPI_Op operation) {
+                MPI_Datatype dataType = this->getDataType(typeid(TYPE).hash_code());
+                for (auto p : table->getPartitions()) {//keys are ordered
+                    auto *data = new TYPE[p.second->getSize()];
+                    MPI_Allreduce(
+                            p.second->getData(),
+                            data,
+                            p.second->getSize(),
+                            dataType,
+                            operation,
+                            MPI_COMM_WORLD
+                    );
+                    p.second->setData(data);
                 }
             }
 
@@ -82,7 +92,7 @@ namespace harp {
                     int partitionId = static_cast<int>(partitionIds[i]);
                     long partitionSize = partitionIds[i + 1];
                     if (partitionSize > 0) {
-                        auto *data = (TYPE *) malloc(sizeof(TYPE) * partitionSize);
+                        auto *data = new TYPE[partitionSize];//(TYPE *) malloc(sizeof(TYPE) * partitionSize);
                         if (bcastWorkerId == this->workerId) {
                             data = table->getPartition(partitionId)->getData();
                         }
@@ -140,7 +150,7 @@ namespace harp {
                 for (long i = 0; i < numOfPartitionsToRecv * 2; i += 2) {
                     int partitionId = static_cast<int>(partitionIdsToRecv[i]);
                     long partitionSize = partitionIdsToRecv[i + 1];
-                    auto *data = (TYPE *) malloc(sizeof(TYPE) * partitionSize);
+                    auto *data = new TYPE[partitionSize];//(TYPE *) malloc(sizeof(TYPE) * partitionSize);
                     MPI_Recv(data, partitionSize, dataType, receiveFrom, partitionId, MPI_COMM_WORLD,
                              MPI_STATUS_IGNORE);
                     auto *newPartition = new harp::ds::Partition<TYPE>(partitionId, data, partitionSize);

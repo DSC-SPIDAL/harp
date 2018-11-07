@@ -29,13 +29,20 @@ namespace harp {
         }
 
         template<class TYPE>
-        Partition<TYPE> *Table<TYPE>::getPartition(int tid) {
-            return this->partitionMap.at(tid);
+        Partition<TYPE> *Table<TYPE>::getPartition(int pid) {
+            return this->partitionMap.at(pid);
         }
 
         template<class TYPE>
-        long Table<TYPE>::removePartition(int tid, bool clearMemory) {
-            return this->partitionMap.erase(tid);
+        long Table<TYPE>::removePartition(int pid, bool clearMemory) {
+            if (this->partitionMap.count(pid) > 0) {
+                if (clearMemory) {
+                    delete this->getPartition(pid);
+                }
+                return this->partitionMap.erase(pid);//remove from map
+            } else {
+                return 0;
+            }
         }
 
         template<class TYPE>
@@ -49,6 +56,12 @@ namespace harp {
         template<class TYPE>
         Table<TYPE>::~Table() {
             this->clear();
+        }
+
+        template<class TYPE>
+        void Table<TYPE>::replaceParition(int pid, Partition<TYPE> *partition) {
+            this->removePartition(pid);
+            this->addPartition(partition);
         }
     }
 }

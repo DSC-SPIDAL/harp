@@ -28,9 +28,11 @@ namespace harp {
 
             PartitionState addPartition(Partition<TYPE> *partition);
 
-            Partition<TYPE> *getPartition(int tid);
+            Partition<TYPE> *getPartition(int pid);
 
-            long removePartition(int tid, bool clearMemory = true);
+            long removePartition(int pid, bool clearMemory = true);
+
+            void replaceParition(int pid, Partition<TYPE> *partition);
 
             void clear();
         };

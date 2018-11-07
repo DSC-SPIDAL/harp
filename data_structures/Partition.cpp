@@ -36,6 +36,12 @@ namespace harp {
         Partition<SAMPLE>::~Partition() {
             this->clear();
         }
+
+        template<class SAMPLE>
+        void Partition<SAMPLE>::setData(SAMPLE *data) {
+            this->clear();
+            this->data = data;
+        }
     }
 }
 
