@@ -659,7 +659,7 @@ class CQHistMakerCompact: public HistMakerCompact<TStats> {
       GradientPair buf_gpair[kBuffer];
       for (bst_uint j = 0; j < align_length; j += kBuffer) {
         for (bst_uint i = 0; i < kBuffer; ++i) {
-          bst_uint ridx = col[j + i].index();
+          bst_uint ridx = col[j + i]._index();
           buf_position[i] = this->position_[ridx];
           buf_gpair[i] = gpair[ridx];
         }
@@ -668,7 +668,7 @@ class CQHistMakerCompact: public HistMakerCompact<TStats> {
           if (nid >= 0) {
             //hbuilder[nid].Add(col[j + i].fvalue, buf_gpair[i]);
 //#ifdef USE_BINID
-            hbuilder[nid].AddWithIndex(col[j + i].binid(), buf_gpair[i]);
+            hbuilder[nid].AddWithIndex(col[j + i]._binid(), buf_gpair[i]);
 //#endif
 
             
@@ -681,13 +681,13 @@ class CQHistMakerCompact: public HistMakerCompact<TStats> {
         }
       }
       for (bst_uint j = align_length; j < col.size(); ++j) {
-        const bst_uint ridx = col[j].index();
+        const bst_uint ridx = col[j]._index();
         const int nid = this->position_[ridx];
         if (nid >= 0) {
           //hbuilder[nid].Add(col[j].fvalue, gpair[ridx]);
  
 #ifdef USE_BINID
-          hbuilder[nid].AddWithIndex(col[j].binid(), gpair[ridx]);
+          hbuilder[nid].AddWithIndex(col[j]._binid(), gpair[ridx]);
 #endif
           
 #ifdef USE_BINIDUNION
@@ -699,12 +699,12 @@ class CQHistMakerCompact: public HistMakerCompact<TStats> {
       }
     } else {
       for (const auto& c : col) {
-        const bst_uint ridx = c.index();
+        const bst_uint ridx = c._index();
         const int nid = this->position_[ridx];
         if (nid >= 0) {
           //hbuilder[nid].Add(c.fvalue, gpair, info, ridx);
 #ifdef USE_BINID
-          hbuilder[nid].AddWithIndex(c.binid(), gpair, info, ridx);
+          hbuilder[nid].AddWithIndex(c._binid(), gpair, info, ridx);
 #endif
           
 #ifdef USE_BINIDUNION
@@ -945,8 +945,8 @@ class GlobalProposalHistMakerCompact: public CQHistMakerCompact<TStats> {
 
           //const bst_uint ridx = col[j].index;
           //const bst_float fvalue = col[j].fvalue;
-          const bst_uint ridx = col[j].index();
-          const bst_uint binid = col[j].binid();
+          const bst_uint ridx = col[j]._index();
+          const bst_uint binid = col[j]._binid();
 
 
           const int nid = this->DecodePosition(ridx);

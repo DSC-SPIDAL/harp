@@ -30,7 +30,7 @@ void DMatrixCompact::Init(const SparsePage& page){
     this->offset.push_back(this->data.size());
 
     LOG(CONSOLE) << "DMatrixCompact::Init size=" << _size <<
-        ",memory=" << this->data.size();
+        ",memory=" << this->data.size()*sizeof(EntryCompact)/(1024*1024) << "MB";
 
 }
 

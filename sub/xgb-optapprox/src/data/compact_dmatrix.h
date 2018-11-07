@@ -19,18 +19,18 @@ namespace xgboost {
 #ifndef USE_COMPACT_BINID
 class EntryCompact{
     public:
-        unsigned int _index;
-        unsigned int _binid;
+        unsigned int index;
+        unsigned int binid;
 
         EntryCompact(unsigned int index, unsigned int binid):
-            _index(index),_binid(binid){}
+            index(index),binid(binid){}
 
-        inline unsigned int index() const{
-            return _index;
+        inline unsigned int _index() const{
+            return index;
         }
 
-        inline unsigned int binid() const{
-            return _binid;
+        inline unsigned int _binid() const{
+            return binid;
         }
 };
 
@@ -42,11 +42,11 @@ class EntryCompact{
             _data = (binid << 24) | ( index & 0xffffff);
         }
 
-        inline unsigned int index() const{
+        inline unsigned int _index() const{
             return _data & 0xffffff;
         }
 
-        inline unsigned int binid() const{
+        inline unsigned int _binid() const{
             return _data >> 24;
         }
 };

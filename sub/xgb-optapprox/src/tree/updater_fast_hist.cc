@@ -257,7 +257,9 @@ class FastHistMaker: public TreeUpdater {
 
         //one node
         //printtree(p_tree, "Expand one node");
+        #ifdef USE_DEBUG        
         this->printnodes(snode_, "Expand one node");
+        #endif
       }
 
       // set all the rest expanding nodes to leaf
@@ -309,6 +311,8 @@ class FastHistMaker: public TreeUpdater {
                   << std::fixed << std::setw(6) << std::setprecision(4) << total_time;
       }
     }
+
+#ifdef USE_DEBUG
   void printnodes(std::vector<NodeEntry>& nodes, std::string header=""){
 
     if (header==""){ 
@@ -317,9 +321,7 @@ class FastHistMaker: public TreeUpdater {
      std::cout << "===" << header << "===\n" ;
 
     }
-
     std::cout << "Tree.param nodes=" << nodes.size() << "\n";
-
     int nsize = nodes.size();
     for(int i=0; i< nsize; i++){
         auto split = nodes[i].best;
@@ -342,6 +344,7 @@ class FastHistMaker: public TreeUpdater {
  
     std::cout << "\n";
     }
+#endif
 
 
     inline void BuildHist(const std::vector<GradientPair>& gpair,

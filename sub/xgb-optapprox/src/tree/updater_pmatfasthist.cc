@@ -278,8 +278,6 @@ class HistMakerCompactFastHist: public BaseMaker {
     const size_t num_feature = fset.size();
     //printInt("FindSplit::num_feature = ", num_feature);
     printVec("FindSplit::fset=", fset);
-    
-
     // get the best split condition for each node
     std::vector<SplitEntry> sol(qexpand_.size());
     std::vector<TStats> left_sum(qexpand_.size());
@@ -675,7 +673,7 @@ class CQHistMakerCompactFastHist: public HistMakerCompactFastHist<TStats> {
       GradientPair buf_gpair[kBuffer];
       for (bst_uint j = 0; j < align_length; j += kBuffer) {
         for (bst_uint i = 0; i < kBuffer; ++i) {
-          bst_uint ridx = col[j + i].index();
+          bst_uint ridx = col[j + i]._index();
           buf_position[i] = this->position_[ridx];
           buf_gpair[i] = gpair[ridx];
         }
@@ -684,7 +682,7 @@ class CQHistMakerCompactFastHist: public HistMakerCompactFastHist<TStats> {
           if (nid >= 0) {
             //hbuilder[nid].Add(col[j + i].fvalue, buf_gpair[i]);
 //#ifdef USE_BINID
-            hbuilder[nid].AddWithIndex(col[j + i].binid(), buf_gpair[i]);
+            hbuilder[nid].AddWithIndex(col[j + i]._binid(), buf_gpair[i]);
 //#endif
 
             
@@ -697,13 +695,13 @@ class CQHistMakerCompactFastHist: public HistMakerCompactFastHist<TStats> {
         }
       }
       for (bst_uint j = align_length; j < col.size(); ++j) {
-        const bst_uint ridx = col[j].index();
+        const bst_uint ridx = col[j]._index();
         const int nid = this->position_[ridx];
         if (nid >= 0) {
           //hbuilder[nid].Add(col[j].fvalue, gpair[ridx]);
  
 #ifdef USE_BINID
-          hbuilder[nid].AddWithIndex(col[j].binid(), gpair[ridx]);
+          hbuilder[nid].AddWithIndex(col[j]._binid(), gpair[ridx]);
 #endif
           
 #ifdef USE_BINIDUNION
@@ -715,12 +713,12 @@ class CQHistMakerCompactFastHist: public HistMakerCompactFastHist<TStats> {
       }
     } else {
       for (const auto& c : col) {
-        const bst_uint ridx = c.index();
+        const bst_uint ridx = c._index();
         const int nid = this->position_[ridx];
         if (nid >= 0) {
           //hbuilder[nid].Add(c.fvalue, gpair, info, ridx);
 #ifdef USE_BINID
-          hbuilder[nid].AddWithIndex(c.binid(), gpair, info, ridx);
+          hbuilder[nid].AddWithIndex(c._binid(), gpair, info, ridx);
 #endif
           
 #ifdef USE_BINIDUNION
@@ -760,30 +758,33 @@ class CQHistMakerCompactFastHist: public HistMakerCompactFastHist<TStats> {
       GradientPair buf_gpair[kBuffer];
       for (bst_uint j = 0; j < align_length; j += kBuffer) {
         for (bst_uint i = 0; i < kBuffer; ++i) {
-          bst_uint ridx = col[j + i].index;
+          bst_uint ridx = col[j + i]._index();
           buf_position[i] = this->position_[ridx];
           buf_gpair[i] = gpair[ridx];
         }
         for (bst_uint i = 0; i < kBuffer; ++i) {
           const int nid = buf_position[i];
           if (nid >= 0) {
-            hbuilder[nid].Add(col[j + i].fvalue, buf_gpair[i]);
+            //hbuilder[nid].Add(col[j + i].fvalue, buf_gpair[i]);
+            hbuilder[nid].AddWithIndex(col[j + i]._binid(), buf_gpair[i]);
           }
         }
       }
       for (bst_uint j = align_length; j < col.size(); ++j) {
-        const bst_uint ridx = col[j].index;
+        const bst_uint ridx = col[j]._index();
         const int nid = this->position_[ridx];
         if (nid >= 0) {
-          hbuilder[nid].Add(col[j].fvalue, gpair[ridx]);
+          //hbuilder[nid].Add(col[j].fvalue, gpair[ridx]);
+          hbuilder[nid].AddWithIndex(col[j]._binid(), gpair[ridx]);
         }
       }
     } else {
       for (const auto& c : col) {
-        const bst_uint ridx = c.index;
+        const bst_uint ridx = c._index();
         const int nid = this->position_[ridx];
         if (nid >= 0) {
-          hbuilder[nid].Add(c.fvalue, gpair, info, ridx);
+          //hbuilder[nid].Add(c.fvalue, gpair, info, ridx);
+          hbuilder[nid].AddWithIndex(c._binid(), gpair, info, ridx);
         }
       }
     }
@@ -817,11 +818,15 @@ class GlobalProposalHistMakerCompactFastHist: public CQHistMakerCompactFastHist<
  public:
   GlobalProposalHistMakerCompactFastHist(){
       this->isInitializedHistIndex = false;
+#ifdef USE_COMPACT
       p_hmat = new DMatrixCompact();
+#endif
   }
 
   ~GlobalProposalHistMakerCompactFastHist(){
+#ifdef USE_COMPACT
     delete p_hmat;
+#endif
   }
 
  protected:
@@ -893,8 +898,8 @@ class GlobalProposalHistMakerCompactFastHist: public CQHistMakerCompactFastHist<
 
           //const bst_uint ridx = col[j].index;
           //const bst_float fvalue = col[j].fvalue;
-          const bst_uint ridx = col[j].index();
-          const bst_uint binid = col[j].binid();
+          const bst_uint ridx = col[j]._index();
+          const bst_uint binid = col[j]._binid();
 
 
           const int nid = this->DecodePosition(ridx);
@@ -914,35 +919,35 @@ class GlobalProposalHistMakerCompactFastHist: public CQHistMakerCompactFastHist<
     }
   }
 
-  inline void CorrectNonDefaultPositionByBatchOrig(
-      const SparsePage &batch, const std::vector<bst_uint> &sorted_split_set,
-      const RegTree &tree) {
-    for (size_t fid = 0; fid < batch.Size(); ++fid) {
-      auto col = batch[fid];
-      auto it = std::lower_bound(sorted_split_set.begin(), sorted_split_set.end(), fid);
+  //inline void CorrectNonDefaultPositionByBatchOrig(
+  //    const SparsePage &batch, const std::vector<bst_uint> &sorted_split_set,
+  //    const RegTree &tree) {
+  //  for (size_t fid = 0; fid < batch.Size(); ++fid) {
+  //    auto col = batch[fid];
+  //    auto it = std::lower_bound(sorted_split_set.begin(), sorted_split_set.end(), fid);
 
-      if (it != sorted_split_set.end() && *it == fid) {
-        const auto ndata = static_cast<bst_omp_uint>(col.size());
-        #pragma omp parallel for schedule(static)
-        for (bst_omp_uint j = 0; j < ndata; ++j) {
-          const bst_uint ridx = col[j].index;
-          const bst_float fvalue = col[j].fvalue;
-          const int nid = this->DecodePosition(ridx);
-          CHECK(tree[nid].IsLeaf());
-          int pid = tree[nid].Parent();
+  //    if (it != sorted_split_set.end() && *it == fid) {
+  //      const auto ndata = static_cast<bst_omp_uint>(col.size());
+  //      #pragma omp parallel for schedule(static)
+  //      for (bst_omp_uint j = 0; j < ndata; ++j) {
+  //        const bst_uint ridx = col[j].index;
+  //        const bst_float fvalue = col[j].fvalue;
+  //        const int nid = this->DecodePosition(ridx);
+  //        CHECK(tree[nid].IsLeaf());
+  //        int pid = tree[nid].Parent();
 
-          // go back to parent, correct those who are not default
-          if (!tree[nid].IsRoot() && tree[pid].SplitIndex() == fid) {
-            if (fvalue < tree[pid].SplitCond()) {
-              this->SetEncodePosition(ridx, tree[pid].LeftChild());
-            } else {
-              this->SetEncodePosition(ridx, tree[pid].RightChild());
-            }
-          }
-        }
-      }
-    }
-  }
+  //        // go back to parent, correct those who are not default
+  //        if (!tree[nid].IsRoot() && tree[pid].SplitIndex() == fid) {
+  //          if (fvalue < tree[pid].SplitCond()) {
+  //            this->SetEncodePosition(ridx, tree[pid].LeftChild());
+  //          } else {
+  //            this->SetEncodePosition(ridx, tree[pid].RightChild());
+  //          }
+  //        }
+  //      }
+  //    }
+  //  }
+  //}
  
   // code to create histogram
   void CreateHist(const std::vector<GradientPair> &gpair,
@@ -980,24 +985,28 @@ class GlobalProposalHistMakerCompactFastHist: public CQHistMakerCompactFastHist<
 #endif
         CQHistMakerCompactFastHist<TStats>::InitHistIndex(p_fmat, fset, tree);
         this->isInitializedHistIndex = true;
+
+#ifdef USE_COMPACT        
         p_hmat->Init(*p_fmat->GetSortedColumnBatches().begin());
+        printdmat(*p_hmat);
+#endif
 
         //DEBUG
         printdmat(*p_fmat->GetSortedColumnBatches().begin());
-        printdmat(*p_hmat);
         
         printcut(this->cut_);
       }
         //printcut(this->cut_);
 
       // start accumulating statistics
-      //for (const auto &batch : p_fmat->GetSortedColumnBatches()) 
+      for (const auto &batch : p_fmat->GetSortedColumnBatches()) 
       //only one page
       {
         // TWOPASS: use the real set + split set in the column iteration.
         //this->CorrectNonDefaultPositionByBatch2(*p_hmat, this->fsplit_set_, tree);
-        auto batch = *p_fmat->GetSortedColumnBatches().begin();
-        this->CorrectNonDefaultPositionByBatchOrig(batch, this->fsplit_set_, tree);
+        //auto batch = *p_fmat->GetSortedColumnBatches().begin();
+        //this->CorrectNonDefaultPositionByBatchOrig(batch, this->fsplit_set_, tree);
+        this->CorrectNonDefaultPositionByBatch(batch, this->fsplit_set_, tree);
 
         // start enumeration
         const auto nsize = static_cast<bst_omp_uint>(this->work_set_.size());
@@ -1006,11 +1015,16 @@ class GlobalProposalHistMakerCompactFastHist: public CQHistMakerCompactFastHist<
           int fid = this->work_set_[i];
           int offset = this->feat2workindex_[fid];
           if (offset >= 0) {
-            //this->UpdateHistCol(gpair, batch[fid], info, tree,
-            //this->UpdateHistColWithIndex(gpair, batch[fid], info, tree,
-            this->UpdateHistColWithIndex(gpair, (*p_hmat)[fid], info, tree,
+#ifdef USE_COMPACT
+             this->UpdateHistColWithIndex(gpair, (*p_hmat)[fid], info, tree,
                                 fset, offset,
                                 &this->thread_hist_[omp_get_thread_num()]);
+#else
+
+            this->UpdateHistCol(gpair, batch[fid], info, tree,
+                                fset, offset,
+                                &this->thread_hist_[omp_get_thread_num()]);
+#endif
           }
         }
       }
@@ -1034,7 +1048,10 @@ class GlobalProposalHistMakerCompactFastHist: public CQHistMakerCompactFastHist<
   // cached cut value.
   std::vector<bst_float> cached_cut_;
  // hist mat compact
+#ifdef USE_COMPACT
   DMatrixCompact* p_hmat;
+#endif
+
 };
 
 

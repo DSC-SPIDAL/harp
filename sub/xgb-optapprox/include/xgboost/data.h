@@ -136,6 +136,13 @@ struct Entry {
   /*! \brief binid value */
 #ifdef USE_BINID
   bst_uint binid;
+  inline unsigned int _index() const{
+      return index;
+  }
+
+  inline unsigned int _binid() const{
+      return binid;
+  }
 #endif
 
   /*! \brief default constructor */

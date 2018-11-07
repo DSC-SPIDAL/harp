@@ -98,6 +98,12 @@ TARGET = xgboost
 WORKDIR = build
 endif
 
+ifeq ($(USE_COMPACT), 1)
+	CFLAGS += -DUSE_COMPACT=1
+endif
+ifeq ($(USE_COMPACT_BINID), 1)
+	CFLAGS += -DUSE_COMPACT_BINID=1
+endif
 
 ifndef LINT_LANG
 	LINT_LANG= "all"

@@ -910,7 +910,8 @@ class GlobalProposalHistMakerBinid: public CQHistMakerBinid<TStats> {
     if (cached_rptr_.size() == 0) {
 #else
 
-    if (!isInitializedHistIndex && this->qexpand_.size() == 1) {
+    //if (!isInitializedHistIndex && this->qexpand_.size() == 1) {
+    if (this->qexpand_.size() == 1) {
       cached_rptr_.clear();
       cached_cut_.clear();
 #endif
