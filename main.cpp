@@ -25,23 +25,29 @@ class MyWorker : public harp::Worker {
 
     void execute(Communicator *comm) override {
         Table<int> tab(1);
-        srand(workerId + time(NULL));
-        int numOfPartitions = rand() % 4;
-        for (int p = 0; p < numOfPartitions; p++) {
-            int partitionSize = rand() % 10;
-            int *data = (int *) malloc(partitionSize * sizeof(int));
-            for (int j = 0; j < partitionSize; j++) {
-                data[j] = rand() % 10;
+        if(workerId ==0) {
+            srand(workerId + time(NULL));
+            int numOfPartitions = rand() % 4;
+            for (int p = 0; p < numOfPartitions; p++) {
+                int partitionSize = rand() % 5;
+                int *data = (int *) malloc(partitionSize * sizeof(int));
+                for (int j = 0; j < partitionSize; j++) {
+                    data[j] = rand() % 100;
+                }
+                auto *partition = new Partition<int>(p, data, partitionSize);
+                tab.addPartition(partition);
             }
-            Partition<int> partition(p, data, partitionSize);
-            tab.addPartition(&partition);
         }
 
         printParitions(workerId, &tab);
-        comm->barrier();
-        comm->rotate<int>(&tab, 0);
+//        comm->barrier();
+//        comm->rotate<int>(&tab, 0);
+//        comm->barrier();
+//        printParitions(workerId, &tab);
+        comm->broadcast(&tab, 0);
         comm->barrier();
         printParitions(workerId, &tab);
+        tab.clear();
     }
 };
 

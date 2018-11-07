@@ -10,17 +10,17 @@ namespace harp {
             this->worldSize = worldSize;
         }
 
-        void Communicator::barrier() {
-            MPI_Barrier(MPI_COMM_WORLD);
-        }
+//        void Communicator::barrier() {
+//            MPI_Barrier(MPI_COMM_WORLD);
+//        }
 
-//        template<class SIMPLE>
-//        void Communicator::allGather(harp::ds::Table<SIMPLE> *table) {
+//        template<class TYPE>
+//        void Communicator::allGather(harp::ds::Table<TYPE> *table) {
 //
 //        }
 
-//        template<class SIMPLE>
-//        void Communicator::broadcast(harp::ds::Table<SIMPLE> *table, int bcastWorkerId) {
+//        template<class TYPE>
+//        void Communicator::broadcast(harp::ds::Table<TYPE> *table, int bcastWorkerId) {
 //            //todo recheck int, double confusion
 //
 //            //determining number of partitions to bcast
@@ -47,13 +47,13 @@ namespace harp {
 //            for (long i = 0; i < partitionCount; i += 2) {
 //                int partitionId = static_cast<int>(partitionIds[i]);
 //                long partitionSize = partitionIds[i + 1];
-//                SIMPLE *data = (SIMPLE *) malloc(sizeof(SIMPLE) * partitionSize);
+//                TYPE *data = (TYPE *) malloc(sizeof(TYPE) * partitionSize);
 //                if (bcastWorkerId == this->workerId) {
 //                    data = table->getPartition(partitionId)->getData();
 //                }
 //                MPI_Bcast(data, partitionSize, MPI_INT, bcastWorkerId, MPI_COMM_WORLD);
 //                if (bcastWorkerId != this->workerId) {
-//                    harp::ds::Partition<SIMPLE> partition(partitionId, data, partitionSize);
+//                    harp::ds::Partition<TYPE> partition(partitionId, data, partitionSize);
 //                    table->addPartition(&partition);
 //                }
 //            }
@@ -62,8 +62,8 @@ namespace harp {
 //            printf("%d %li %zu\n", partitionCount, partitionIds[partitionCount - 1], sizeof(typeid(int)));
 //        }
 //
-//        template<class SIMPLE>
-//        void Communicator::rotate(ds::Table<SIMPLE> *table, int bcastWorkerId) {
+//        template<class TYPE>
+//        void Communicator::rotate(ds::Table<TYPE> *table, int bcastWorkerId) {
 //
 //        }
     }

@@ -15,13 +15,15 @@ namespace harp {
 
             Partition(int id, SAMPLE* data, long size);
 
+            ~Partition();
+
             int getId();
 
             SAMPLE *getData();
 
             long getSize();
 
-            void free();
+            void clear();
         };
 
         enum PartitionState {

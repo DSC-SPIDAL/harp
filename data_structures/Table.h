@@ -9,26 +9,28 @@
 
 namespace harp {
     namespace ds {
-        template<class SIMPLE>
+        template<class TYPE>
         class Table {
         private:
-            std::map<int, Partition<SIMPLE> *> partitionMap;
+            std::map<int, Partition<TYPE> *> partitionMap;
             std::set<int> partitionIds;
             int id;
         public:
             Table(int id);//todo add combiner
 
+            ~Table();
+
             int getId();
 
             long getPartitionCount();
 
-            std::map<int, Partition<SIMPLE> *> getPartitions();
+            std::map<int, Partition<TYPE> *> getPartitions();
 
-            PartitionState addPartition(Partition<SIMPLE> *partition);
+            PartitionState addPartition(Partition<TYPE> *partition);
 
-            Partition<SIMPLE> *getPartition(int tid);
+            Partition<TYPE> *getPartition(int tid);
 
-            Partition<SIMPLE> *removePartition(int tid);
+            long removePartition(int tid, bool clearMemory = true);
 
             void clear();
         };

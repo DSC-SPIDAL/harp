@@ -28,8 +28,13 @@ namespace harp {
         }
 
         template<class SAMPLE>
-        void Partition<SAMPLE>::free() {
+        void Partition<SAMPLE>::clear() {
             std::free(this->data);
+        }
+
+        template<class SAMPLE>
+        Partition<SAMPLE>::~Partition() {
+            this->clear();
         }
     }
 }

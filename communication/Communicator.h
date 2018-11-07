@@ -1,6 +1,7 @@
 #ifndef HARPC_COMMUNICATOR_H
 #define HARPC_COMMUNICATOR_H
 
+#include <iostream>
 #include "mpi.h"
 #include "../data_structures/inculdes.h"
 
@@ -21,21 +22,40 @@ namespace harp {
                 MPI_Wait(&mpi_request, MPI_STATUSES_IGNORE);
             }
 
+            MPI_Datatype getDataType(size_t type_hash) {//todo possible hash collisions?
+                if (type_hash == typeid(int).hash_code()) {
+                    return MPI_INT;
+                } else if (type_hash == typeid(double).hash_code()) {
+                    return MPI_DOUBLE;
+                } else if (type_hash == typeid(float).hash_code()) {
+                    return MPI_FLOAT;
+                } else {
+                    throw "Unknown data type";
+                }
+            }
+
         public:
 
             Communicator(int workerId, int worldSize);
 
-            void barrier();
+            void barrier() {
+                MPI_Barrier(MPI_COMM_WORLD);
+            }
 
-            template<class SIMPLE>
-            void allGather(harp::ds::Table<SIMPLE> *table) {
+            template<class TYPE>
+            void allGather(harp::ds::Table<TYPE> *table) {
 
             }
 
-            template<class SIMPLE>
-            void broadcast(harp::ds::Table<SIMPLE> *table, int bcastWorkerId) {
-//todo recheck int, double confusion
+            template<class TYPE>
+            void allGather(harp::ds::Table<TYPE> *table, int bcastWorkerId) {
+                for (auto *p : table->getPartitions()) {
 
+                }
+            }
+
+            template<class TYPE>
+            void broadcast(harp::ds::Table<TYPE> *table, int bcastWorkerId) {
                 //determining number of partitions to bcast
                 int partitionCount;
                 if (bcastWorkerId == this->workerId) {
@@ -52,32 +72,34 @@ namespace harp {
                         partitionIds[index++] = p.second->getSize();
                     }
                 }
-                MPI_Bcast(&partitionIds, partitionCount * 2, MPI_INT, bcastWorkerId, MPI_COMM_WORLD);
+                MPI_Bcast(&partitionIds, partitionCount * 2, MPI_LONG, bcastWorkerId, MPI_COMM_WORLD);
 
-                MPI_Datatype datatype;//todo determine data type.. currently assuming all int
+                MPI_Datatype dataType = this->getDataType(
+                        typeid(TYPE).hash_code());
 
                 //now receiving partitions
-                for (long i = 0; i < partitionCount; i += 2) {
+                for (long i = 0; i < partitionCount * 2; i += 2) {
                     int partitionId = static_cast<int>(partitionIds[i]);
                     long partitionSize = partitionIds[i + 1];
-                    SIMPLE *data = (SIMPLE *) malloc(sizeof(SIMPLE) * partitionSize);
-                    if (bcastWorkerId == this->workerId) {
-                        data = table->getPartition(partitionId)->getData();
-                    }
-                    MPI_Bcast(data, partitionSize, MPI_INT, bcastWorkerId, MPI_COMM_WORLD);
-                    if (bcastWorkerId != this->workerId) {
-                        harp::ds::Partition<SIMPLE> partition(partitionId, data, partitionSize);
-                        table->addPartition(&partition);
+                    if (partitionSize > 0) {
+                        auto *data = (TYPE *) malloc(sizeof(TYPE) * partitionSize);
+                        if (bcastWorkerId == this->workerId) {
+                            data = table->getPartition(partitionId)->getData();
+                        }
+                        MPI_Bcast(data, partitionSize, dataType, bcastWorkerId, MPI_COMM_WORLD);
+                        if (bcastWorkerId != this->workerId) {
+                            auto *newPartition = new harp::ds::Partition<TYPE>(partitionId, data, partitionSize);
+                            table->addPartition(newPartition);
+                        }
                     }
                 }
-
-
-                printf("%d %li %zu\n", partitionCount, partitionIds[partitionCount - 1], sizeof(typeid(int)));
             }
 
-            template<class SIMPLE>
-            void rotate(harp::ds::Table<SIMPLE> *table, int bcastWorkerId) {
+            template<class TYPE>
+            void rotate(harp::ds::Table<TYPE> *table, int bcastWorkerId) {
                 //todo assuming MPI_Send doesn't block, change later if that is false
+
+                MPI_Datatype dataType = this->getDataType(typeid(TYPE).hash_code());
 
                 int sendTo = (this->workerId + 1) % this->worldSize;
                 int receiveFrom = (this->workerId + this->worldSize - 1) % this->worldSize;
@@ -109,20 +131,20 @@ namespace harp {
                 for (long i = 0; i < numOfPartitionsToSend * 2; i += 2) {
                     int partitionId = static_cast<int>(partitionIdsToSend[i]);
                     long partitionSize = partitionIdsToSend[i + 1];
-                    SIMPLE *data = table->getPartition(partitionId)->getData();
-                    MPI_Isend(data, partitionSize, MPI_INT, sendTo, partitionId, MPI_COMM_WORLD,
+                    TYPE *data = table->getPartition(partitionId)->getData();
+                    MPI_Isend(data, partitionSize, dataType, sendTo, partitionId, MPI_COMM_WORLD,
                               &dataSendRequests[i / 2]);
                 }
 
-                table->clear();
                 //receiving DATA
                 for (long i = 0; i < numOfPartitionsToRecv * 2; i += 2) {
                     int partitionId = static_cast<int>(partitionIdsToRecv[i]);
                     long partitionSize = partitionIdsToRecv[i + 1];
-                    SIMPLE *data = (SIMPLE *) malloc(sizeof(SIMPLE) * partitionSize);
-                    MPI_Recv(data, partitionSize, MPI_INT, receiveFrom, partitionId, MPI_COMM_WORLD,
+                    auto *data = (TYPE *) malloc(sizeof(TYPE) * partitionSize);
+                    MPI_Recv(data, partitionSize, dataType, receiveFrom, partitionId, MPI_COMM_WORLD,
                              MPI_STATUS_IGNORE);
-                    auto *newPartition = new harp::ds::Partition<SIMPLE>(partitionId, data, partitionSize);
+                    auto *newPartition = new harp::ds::Partition<TYPE>(partitionId, data, partitionSize);
+                    table->removePartition(partitionId);//todo clear memory
                     table->addPartition(newPartition);
                 }
 
