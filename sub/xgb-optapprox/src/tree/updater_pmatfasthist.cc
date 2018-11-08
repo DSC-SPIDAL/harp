@@ -168,40 +168,39 @@ class HistMakerCompactFastHist: public BaseMaker {
       (*p_tree)[i].SetLeaf(0.0f, 0);
     }
 
+    /*
+     * Initialize the histogram and DMatrixCompact
+     */
+    printVec("ResetPos::fwork_set=", fwork_set_);
+    // reset and propose candidate split
+    this->ResetPosAndPropose(gpair, p_fmat, fwork_set_, *p_tree);
+    printtree(p_tree, "ResetPosAndPropose");
+
+
     for (int depth = 0; depth < param_.max_depth; ++depth) {
 
-        
-    printVec("ResetPos::fwork_set=", fwork_set_);
-
-      // reset and propose candidate split
-      this->ResetPosAndPropose(gpair, p_fmat, fwork_set_, *p_tree);
-
-    printtree(p_tree, "ResetPosAndPropose");
       // create histogram
       this->CreateHist(gpair, p_fmat, fwork_set_, *p_tree);
 
-    printVec("CreateHist::fwork_set=", fwork_set_);
-    //printtree(p_tree, "After CreateHist");
+      //printVec("CreateHist::fwork_set=", fwork_set_);
+      //printtree(p_tree, "After CreateHist");
 
       // find split based on histogram statistics
       this->FindSplit(depth, gpair, p_fmat, fwork_set_, p_tree);
 
-
-    printtree(p_tree, "FindSplit");
+      printtree(p_tree, "FindSplit");
 
       // reset position after split
       this->ResetPositionAfterSplit(p_fmat, *p_tree);
-
-    //printtree(p_tree, "ResetPositionAfterSPlit");
+      //printtree(p_tree, "ResetPositionAfterSPlit");
 
 
       this->UpdateQueueExpand(*p_tree);
-
-    //printtree(p_tree, "UpdateQueueExpand");
-    
-    std::ostringstream stringStream;
-    stringStream << "fsplit_set size:" << this->fsplit_set_.size();
-    printmsg(stringStream.str());
+      //printtree(p_tree, "UpdateQueueExpand");
+      
+      std::ostringstream stringStream;
+      stringStream << "fsplit_set size:" << this->fsplit_set_.size();
+      printmsg(stringStream.str());
 
       // if nothing left to be expand, break
       if (qexpand_.size() == 0) break;
@@ -855,55 +854,23 @@ class GlobalProposalHistMakerCompactFastHist: public CQHistMakerCompactFastHist<
                           const std::vector<bst_uint> &fset,
                           const RegTree &tree) override {
 
-#ifdef _INIT_PER_TREE_
-    if (this->qexpand_.size() == 1) {
-      cached_rptr_.clear();
-      cached_cut_.clear();
-    }
-    if (cached_rptr_.size() == 0) {
-#else
+      if(!this->isInitializedHistIndex){
+        CHECK_EQ(this->qexpand_.size(), 1U);
+        CQHistMakerCompactFastHist<TStats>::ResetPosAndPropose(gpair, p_fmat, fset, tree);
+        LOG(CONSOLE) << "ResetPosAndPropose call in globalproposal";
 
-    if (!this->isInitializedHistIndex && this->qexpand_.size() == 1) {
-      //first call
-      //cached_rptr_.clear();
-      //cached_cut_.clear();
-#endif
+        this->wspace_.Init(this->param_, 1, 1);
+        CQHistMakerCompactFastHist<TStats>::InitHistIndex(p_fmat, fset, tree);
+        this->isInitializedHistIndex = true;
 
-      CHECK_EQ(this->qexpand_.size(), 1U);
-      CQHistMakerCompactFastHist<TStats>::ResetPosAndPropose(gpair, p_fmat, fset, tree);
-      //cached_rptr_ = this->wspace_.rptr;
-      //cached_cut_ = this->wspace_.cut;
-
-      LOG(CONSOLE) << "ResetPosAndPropose call in globalproposal";
-    } else{
-      // single cut
-      return;
-
-      if (this->qexpand_.size() == 1) {
-        // init a new tree
-        //CQHistMakerCompactFastHist<TStats>::ResetPosAndPropose(gpair, p_fmat, fset, tree);
-        //this->fsplit_set_.clear();
-        LOG(CONSOLE) << "ResetPosAndPropose: init a tree x";
-        //return;
+#ifdef   USE_COMPACT
+        p_hmat->Init(*p_fmat->GetSortedColumnBatches().begin());
+        printdmat(*p_hmat);
+#endif  
+        //DEBUG
+        printdmat(*p_fmat->GetSortedColumnBatches().begin());
+        printcut(this->cut_);
       }
-      else{
-        LOG(CONSOLE) << "ResetPosAndPropose: copy histgram bins";
-      }
-
-      this->wspace_.cut.clear();
-      this->wspace_.rptr.clear();
-      this->wspace_.rptr.push_back(0);
-      for (size_t i = 0; i < this->qexpand_.size(); ++i) {
-        for (size_t j = 0; j < cached_rptr_.size() - 1; ++j) {
-          this->wspace_.rptr.push_back(
-              this->wspace_.rptr.back() + cached_rptr_[j + 1] - cached_rptr_[j]);
-        }
-        this->wspace_.cut.insert(this->wspace_.cut.end(), cached_cut_.begin(), cached_cut_.end());
-      }
-      CHECK_EQ(this->wspace_.rptr.size(),
-               (fset.size() + 1) * this->qexpand_.size() + 1);
-      CHECK_EQ(this->wspace_.rptr.back(), this->wspace_.cut.size());
-    }
   }
 
   //dup func
@@ -999,28 +966,6 @@ class GlobalProposalHistMakerCompactFastHist: public CQHistMakerCompactFastHist<
       std::sort(this->work_set_.begin(), this->work_set_.end());
       this->work_set_.resize(
           std::unique(this->work_set_.begin(), this->work_set_.end()) - this->work_set_.begin());
-
-      /* OptApprox:: init bindid in pmat */
-      
-#ifdef _INIT_PER_TREE_
-      if(this->qexpand_.size() == 1){
-#else
-      if (!this->isInitializedHistIndex){
-#endif
-        CQHistMakerCompactFastHist<TStats>::InitHistIndex(p_fmat, fset, tree);
-        this->isInitializedHistIndex = true;
-
-#ifdef USE_COMPACT        
-        p_hmat->Init(*p_fmat->GetSortedColumnBatches().begin());
-        printdmat(*p_hmat);
-#endif
-
-        //DEBUG
-        printdmat(*p_fmat->GetSortedColumnBatches().begin());
-        
-        printcut(this->cut_);
-      }
-        //printcut(this->cut_);
 
       // start accumulating statistics
       for (const auto &batch : p_fmat->GetSortedColumnBatches()) 
