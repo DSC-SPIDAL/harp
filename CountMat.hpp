@@ -20,7 +20,8 @@ class CountMat {
         typedef int32_t idxType;
         typedef float valType;
 
-        CountMat(): _graph(nullptr), _templates(nullptr), _subtmp_array(nullptr), _colors_local(nullptr), _bufVec(nullptr), _bufVecThd(nullptr), _spmvTime(0), _eMATime(0), _isPruned(1) {} 
+        CountMat(): _graph(nullptr), _templates(nullptr), _subtmp_array(nullptr), _colors_local(nullptr), 
+        _bufVec(nullptr), _bufVecLeaf(nullptr), _bufVecThd(nullptr), _spmvTime(0), _eMATime(0), _isPruned(1) {} 
 
         void initialization(CSRGraph& graph, int thd_num, int itr_num, int isPruned);
 
@@ -38,6 +39,20 @@ class CountMat {
 #else
                 free(_bufVec); 
 #endif
+            }
+
+            if (_bufVecLeaf != nullptr) 
+            {
+                for (int i = 0; i < _color_num; ++i) 
+                {
+#ifdef __INTEL_COMPILER
+                    _mm_free(_bufVecLeaf[i]); 
+#else
+                    free(_bufVecLeaf[i]); 
+#endif                   
+                }
+
+                free(_bufVecLeaf);
             }
 
             if (_bufVecThd != nullptr)
@@ -95,6 +110,7 @@ class CountMat {
         IndexSys indexer;
         
         float* _bufVec;
+        float** _bufVecLeaf;
         float** _bufVecThd;
         double _spmvTime;
         double _eMATime;

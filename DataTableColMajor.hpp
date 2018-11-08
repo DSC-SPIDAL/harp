@@ -23,7 +23,7 @@ class DataTableColMajor
         void initDataTable(Graph* subTempsList, IndexSys* indexer, int subsNum, int colorNum, idxType vertsNum, int thdNum);
         void initSubTempTable(int subsId);
         void initSubTempTable(int subsId, int mainId, int auxId);
-        void cleanSubTempTable(int subsId);
+        void cleanSubTempTable(int subsId, bool isBottom);
         void cleanTable();
 
         int getMainLen(){ return _curMainLen;}

@@ -32,6 +32,7 @@ void CountMat::initialization(CSRGraph& graph, int thd_num, int itr_num, int isP
     std::memset(_bufVec, 0, _vert_num*sizeof(float));
 
     _bufVecThd = (float**) malloc (_thd_num*sizeof(float*));
+
     for (int i = 0; i < _thd_num; ++i) {
        #ifdef __INTEL_COMPILER
           _bufVecThd[i] =  (float*) _mm_malloc(_vert_num*sizeof(float), 64); 
@@ -69,6 +70,7 @@ double CountMat::compute(Graph& templates)
 
         }
     } 
+
 #endif
    
     // create the index tables
@@ -112,6 +114,16 @@ double CountMat::compute(Graph& templates)
     printf("Start counting\n");
     std::fflush(stdout); 
 #endif
+
+    // allocating the bufVecLeaf buffer
+    _bufVecLeaf = (float**) malloc (_color_num*sizeof(float*));
+    for (int i = 0; i < _color_num; ++i) {
+       #ifdef __INTEL_COMPILER
+          _bufVecLeaf[i] =  (float*) _mm_malloc(_vert_num*sizeof(float), 64); 
+       #else
+          _bufVecLeaf[i] =  (float*) aligned_alloc(64, _vert_num*sizeof(float)); 
+       #endif 
+    }
 
     // start counting
     double timeStart = utility::timer();
@@ -187,9 +199,9 @@ double CountMat::colorCounting()
         }
 
         if (mainIdx != DUMMY_VAL)
-            _dTable.cleanSubTempTable(mainIdx);
+            _dTable.cleanSubTempTable(mainIdx, false);
         if (auxIdx != DUMMY_VAL)
-            _dTable.cleanSubTempTable(auxIdx);
+            _dTable.cleanSubTempTable(auxIdx, false);
     }
 
     return countTotal;
@@ -264,7 +276,12 @@ double CountMat::countNonBottomePruned(int subsId)
        float* auxObjArray = _dTable.getAuxArray(i);
        _graph->SpMVNaive(auxObjArray, _bufVec); 
        // copy data back to aux array
-       std::memcpy(auxObjArray, _bufVec, _vert_num*sizeof(float));
+       
+       // check the size of auxArray
+       if (auxSize > 1)
+          std::memcpy(auxObjArray, _bufVec, _vert_num*sizeof(float));
+       else
+          std::memcpy(_bufVecLeaf[i], _bufVec, _vert_num*sizeof(float));
    }
 #ifdef VERBOSE
    eltSpmv += (utility::timer() - startTimeComp); 
@@ -289,7 +306,12 @@ double CountMat::countNonBottomePruned(int subsId)
             int auxIdx = auxSplitLocal[i][j];
 
             // already pre-computed by SpMV
-            float* auxArraySelect = _dTable.getAuxArray(auxIdx);
+            float* auxArraySelect = nullptr;
+            if (auxSize > 1)
+                auxArraySelect = _dTable.getAuxArray(auxIdx);
+            else
+                auxArraySelect = _bufVecLeaf[auxIdx];
+
             // element-wise mul 
             float* mainArraySelect = _dTable.getMainArray(mainIdx);
 

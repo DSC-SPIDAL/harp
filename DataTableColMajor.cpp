@@ -52,26 +52,49 @@ void DataTableColMajor::initDataTable(Graph* subTempsList, IndexSys* indexer, in
 void DataTableColMajor::initSubTempTable(int subsId)
 {
 
-    int lenCur = _tableLen[subsId];
-    _dataTable[subsId] = (float**)malloc(lenCur*sizeof(float*));
-    _curTable = _dataTable[subsId];
-    _curSubId = subsId;
-
-    // initialize and allocate the memory
-#pragma omp parallel for
-    for (int i = 0; i < lenCur; ++i) 
+    if (_subTempsList[subsId].get_vert_num() > 1 || subsId == _subsNum -1)
     {
 
+
+        int lenCur = _tableLen[subsId];
+        _dataTable[subsId] = (float**)malloc(lenCur*sizeof(float*));
+        _curTable = _dataTable[subsId];
+        _curSubId = subsId;
+
+        // initialize and allocate the memory
+#pragma omp parallel for
+        for (int i = 0; i < lenCur; ++i) 
+        {
+
 #ifdef __INTEL_COMPILER
-       _curTable[i] = (float*) _mm_malloc(_vertsNum*sizeof(float), 64); 
+            _curTable[i] = (float*) _mm_malloc(_vertsNum*sizeof(float), 64); 
 #else
-       _curTable[i] = (float*) aligned_alloc(64, _vertsNum*sizeof(float)); 
+            _curTable[i] = (float*) aligned_alloc(64, _vertsNum*sizeof(float)); 
 #endif
 
-       std::memset(_curTable[i], 0, _vertsNum*sizeof(float));
+            std::memset(_curTable[i], 0, _vertsNum*sizeof(float));
+        }
+
+        _isSubInited[subsId] = true;
+    }
+    else
+    {
+        #ifdef VERBOSE
+           printf("Link to the last subtemplate\n"); 
+           std::fflush(stdout);
+        #endif
+        
+        // point to the last sub-template
+        _dataTable[subsId] = _dataTable[_subsNum - 1];
+        _curTable = _dataTable[subsId];
+        _curSubId = subsId;
+
+        _isSubInited[subsId] = true;
     }
 
-    _isSubInited[subsId] = true;
+    // debug check the total memory usage (GB) 
+    // printf("Vert num: %d, curLen: %d, mem: %f GB\n", _vertsNum, lenCur, ((double)(_vertsNum*lenCur)*4/1024/1024/1024));
+    // std::fflush(stdout);
 
 }
 
@@ -97,37 +120,44 @@ void DataTableColMajor::initSubTempTable(int subsId, int mainId, int auxId)
 
 }
 
-void DataTableColMajor::cleanSubTempTable(int subsId)
+void DataTableColMajor::cleanSubTempTable(int subsId, bool isBottom)
 {
-    if (_dataTable[subsId] != nullptr)
+    if (_subTempsList[subsId].get_vert_num() > 1 && isBottom)
     {
-#pragma omp parallel for 
-        for (int i = 0; i < _tableLen[subsId]; ++i) 
+        if (_dataTable[subsId] != nullptr)
         {
-            if (_dataTable[subsId][i] != nullptr)
+#pragma omp parallel for 
+            for (int i = 0; i < _tableLen[subsId]; ++i) 
             {
+                if (_dataTable[subsId][i] != nullptr)
+                {
 #ifdef __INTEL_COMPILER
-                _mm_free(_dataTable[subsId][i]);
+                    _mm_free(_dataTable[subsId][i]);
 #else
-                free(_dataTable[subsId][i]);
+                    free(_dataTable[subsId][i]);
 #endif
+                }
             }
         }
-    }
 
-    if (_isSubInited[subsId] && _dataTable[subsId] != nullptr) {
-        free(_dataTable[subsId]);
-        _dataTable[subsId] = nullptr;
-    }
+        if (_isSubInited[subsId] && _dataTable[subsId] != nullptr) {
 
-    _isSubInited[subsId] = false;
+            free(_dataTable[subsId]);
+            _dataTable[subsId] = nullptr;
+        }
+
+        _isSubInited[subsId] = false;
+    }
 }
 
 void DataTableColMajor::cleanTable()
 {
-    for (int i = 0; i < _subsNum; ++i) {
-       cleanSubTempTable(i); 
+    for (int i = 0; i < _subsNum-1; ++i) {
+       cleanSubTempTable(i, false); 
     }
+
+    // clean bottom template 
+    cleanSubTempTable(_subsNum-1, true); 
 
     free(_dataTable);
     free(_isSubInited);
@@ -252,13 +282,17 @@ void DataTableColMajor::arrayWiseFMANaive(float* dst, float* a, float* b, int th
 
 void DataTableColMajor::countCurBottom(int*& idxCToC, int*& colorVals)
 {
-#pragma omp parallel for
-    for(idxType v=0; v<_vertsNum; v++)
+    if (_curSubId == _subsNum - 1)
     {
-        int* idxCToCLocal = idxCToC;
-        int* colorValsLocal = colorVals;
-        float** curTableLocal = _curTable;
-        int idxLocal = idxCToCLocal[colorValsLocal[v]];
-        curTableLocal[idxLocal][v] = 1.0; 
+#pragma omp parallel for
+        for(idxType v=0; v<_vertsNum; v++)
+        {
+            int* idxCToCLocal = idxCToC;
+            int* colorValsLocal = colorVals;
+            float** curTableLocal = _curTable;
+            int idxLocal = idxCToCLocal[colorValsLocal[v]];
+            curTableLocal[idxLocal][v] = 1.0; 
+        }
     }
+    
 }
