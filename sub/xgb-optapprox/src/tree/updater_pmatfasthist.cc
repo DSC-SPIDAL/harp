@@ -85,6 +85,7 @@ class HistMakerCompactFastHist: public BaseMaker {
 
     //add fset size
     size_t fsetSize;
+    size_t featnum;
 
     /*! \brief */
     inline HistUnit operator[](size_t fid) {
@@ -124,6 +125,7 @@ class HistMakerCompactFastHist: public BaseMaker {
         hset[tid].rptr = dmlc::BeginPtr(rptr);
         hset[tid].cut = dmlc::BeginPtr(cut);
         hset[tid].fsetSize = rptr.back();
+        hset[tid].featnum = rptr.size() - 2;
         hset[tid].data.resize(cut.size() * nodesize, TStats(param));
 
         LOG(CONSOLE)<< "Init hset: rptrSize:" << rptr.size() <<
@@ -131,6 +133,38 @@ class HistMakerCompactFastHist: public BaseMaker {
             ",fsetSize" << rptr.back();
       }
     }
+
+    void saveGHSum(int treeid, int depth, int nodecnt){
+      std::ostringstream ss;
+      ss << "ghsum_" << treeid << "_" << depth;
+
+      std::ofstream write;
+      write.open(ss.str());
+ 
+      int pagesize = hset[0].data.size() / nodecnt;
+
+      LOG(CONSOLE) << "saveGHSUM(" << treeid << "," << depth << "," 
+          << nodecnt << ") pagesize=" << pagesize <<
+          "fset=" << hset[0].featnum;
+
+      for(int i=0; i< nodecnt; i++){
+          write << "NODE:" << i << "\n";
+
+          for (int fid = 0; fid < hset[0].featnum; fid++){
+            write << "\tF:" << fid << "\t";
+
+            int sumlen = hset[0].rptr[fid+1] - hset[0].rptr[fid]; 
+            for (int j=0; j < sumlen; j++){ 
+              auto offset = j + i*pagesize + hset[0].rptr[fid];
+              write << hset[0].data[offset].sum_grad <<"," << hset[0].data[offset].sum_hess << " ";
+            }
+            write << "\n";
+          }
+      }
+
+      write.close();
+    }
+
     // aggregate all statistics to hset[0]
     inline void Aggregate() {
       bst_omp_uint nsize = static_cast<bst_omp_uint>(cut.size());
@@ -157,6 +191,9 @@ class HistMakerCompactFastHist: public BaseMaker {
   // set of working features
   std::vector<bst_uint> fwork_set_;
   std::vector<bst_uint> fsplit_set_;
+
+  int treeid_{0};
+
   // update function implementation
   virtual void Update(const std::vector<GradientPair> &gpair,
                       DMatrix *p_fmat,
@@ -184,6 +221,10 @@ class HistMakerCompactFastHist: public BaseMaker {
 
       //printVec("CreateHist::fwork_set=", fwork_set_);
       //printtree(p_tree, "After CreateHist");
+
+#ifdef USE_DEBUG_SAVE
+      this->wspace_.saveGHSum(treeid_, depth, this->qexpand_.size());
+#endif
 
       // find split based on histogram statistics
       this->FindSplit(depth, gpair, p_fmat, fwork_set_, p_tree);
@@ -215,7 +256,14 @@ class HistMakerCompactFastHist: public BaseMaker {
     /* optApprox */
     printtree(p_tree);
 
+    //reset the binid to fvalue in this tree
+    ResetTree(*p_tree);
+    printtree(p_tree);
+    
+    treeid_ ++;
   }
+  virtual void ResetTree(RegTree& tree){ }
+
   // this function does two jobs
   // (1) reset the position in array position, to be the latest leaf id
   // (2) propose a set of candidate cuts and set wspace.rptr wspace.cut correctly
@@ -257,7 +305,8 @@ class HistMakerCompactFastHist: public BaseMaker {
         c.SetSubstract(node_sum, s);
         if (c.sum_hess >= param_.min_child_weight) {
           double loss_chg = s.CalcGain(param_) + c.CalcGain(param_) - root_gain;
-          if (best->Update(static_cast<bst_float>(loss_chg), fid, hist.cut[i], false)) {
+          //if (best->Update(static_cast<bst_float>(loss_chg), fid, hist.cut[i], false)) {
+          if (best->Update(static_cast<bst_float>(loss_chg), fid, i, false)) {
             *left_sum = s;
           }
         }
@@ -270,7 +319,8 @@ class HistMakerCompactFastHist: public BaseMaker {
         c.SetSubstract(node_sum, s);
         if (c.sum_hess >= param_.min_child_weight) {
           double loss_chg = s.CalcGain(param_) + c.CalcGain(param_) - root_gain;
-          if (best->Update(static_cast<bst_float>(loss_chg), fid, hist.cut[i-1], true)) {
+          //if (best->Update(static_cast<bst_float>(loss_chg), fid, hist.cut[i-1], true)) {
+          if (best->Update(static_cast<bst_float>(loss_chg), fid, i-1, true)) {
             *left_sum = c;
           }
         }
@@ -859,17 +909,17 @@ class GlobalProposalHistMakerCompactFastHist: public CQHistMakerCompactFastHist<
         CQHistMakerCompactFastHist<TStats>::ResetPosAndPropose(gpair, p_fmat, fset, tree);
         LOG(CONSOLE) << "ResetPosAndPropose call in globalproposal";
 
-        this->wspace_.Init(this->param_, 1, 1);
-        CQHistMakerCompactFastHist<TStats>::InitHistIndex(p_fmat, fset, tree);
-        this->isInitializedHistIndex = true;
+        //this->wspace_.Init(this->param_, 1, 1);
+        //CQHistMakerCompactFastHist<TStats>::InitHistIndex(p_fmat, fset, tree);
+        //this->isInitializedHistIndex = true;
 
-#ifdef   USE_COMPACT
-        p_hmat->Init(*p_fmat->GetSortedColumnBatches().begin());
-        printdmat(*p_hmat);
-#endif  
-        //DEBUG
-        printdmat(*p_fmat->GetSortedColumnBatches().begin());
-        printcut(this->cut_);
+        //#ifdef   USE_COMPACT
+        //p_hmat->Init(*p_fmat->GetSortedColumnBatches().begin());
+        //printdmat(*p_hmat);
+        //#endif  
+        ////DEBUG
+        //printdmat(*p_fmat->GetSortedColumnBatches().begin());
+        //printcut(this->cut_);
       }
   }
 
@@ -938,7 +988,59 @@ class GlobalProposalHistMakerCompactFastHist: public CQHistMakerCompactFastHist<
   //    }
   //  }
   //}
- 
+
+  bool UpdatePredictionCache(const DMatrix* p_fmat,
+                             HostDeviceVector<bst_float>* p_out_preds) override {
+    if ( this->param_.subsample < 1.0f) {
+      return false;
+    } else {
+      std::vector<bst_float>& out_preds = p_out_preds->HostVector();
+
+      // p_last_fmat_ is a valid pointer as long as UpdatePredictionCache() is called in
+      // conjunction with Update().
+      if (!p_last_tree_) {
+        return false;
+      }
+
+      CHECK_GT(out_preds.size(), 0U);
+
+      //get leaf_value for all nodes
+      const auto nodes = p_last_tree_->GetNodes();
+      std::vector<float> leaf_values;
+      leaf_values.resize(nodes.size());
+
+      for (int nid = 0; nid < nodes.size(); nid ++){
+          bst_float leaf_value;
+          int tnid;
+          // if a node is marked as deleted by the pruner, traverse upward to locate
+          // a non-deleted leaf.
+          if ((*p_last_tree_)[nid].IsDeleted()) {
+            while ((*p_last_tree_)[nid].IsDeleted()) {
+              tnid = (*p_last_tree_)[nid].Parent();
+            }
+            CHECK((*p_last_tree_)[tnid].IsLeaf());
+          }
+          else{
+              tnid = nid;
+          }
+          leaf_values[nid] = (*p_last_tree_)[tnid].LeafValue();
+      }
+
+      const auto nrows = static_cast<bst_omp_uint>(p_fmat->Info().num_row_);
+      for(int ridx=0; ridx < nrows; ridx++){
+        const int nid = this->position_[ridx];
+        //update   
+        out_preds[ridx] += leaf_values[nid];
+      }
+
+      LOG(CONSOLE) << "UpdatePredictionCache: nodes size=" << 
+          nodes.size() << ",rowscnt=" << nrows;
+
+      return true;
+    }
+  }
+
+
   // code to create histogram
   void CreateHist(const std::vector<GradientPair> &gpair,
                   DMatrix *p_fmat,
@@ -967,15 +1069,29 @@ class GlobalProposalHistMakerCompactFastHist: public CQHistMakerCompactFastHist<
       this->work_set_.resize(
           std::unique(this->work_set_.begin(), this->work_set_.end()) - this->work_set_.begin());
 
+      /* OptApprox:: init bindid in pmat */
+      if (!this->isInitializedHistIndex){
+        CQHistMakerCompactFastHist<TStats>::InitHistIndex(p_fmat, fset, tree);
+        this->isInitializedHistIndex = true;
+
+#ifdef   USE_COMPACT
+        p_hmat->Init(*p_fmat->GetSortedColumnBatches().begin());
+        printdmat(*p_hmat);
+#endif  
+        //DEBUG
+        printdmat(*p_fmat->GetSortedColumnBatches().begin());
+        printcut(this->cut_);
+      }
+
       // start accumulating statistics
-      for (const auto &batch : p_fmat->GetSortedColumnBatches()) 
+      //for (const auto &batch : p_fmat->GetSortedColumnBatches()) 
       //only one page
       {
         // TWOPASS: use the real set + split set in the column iteration.
-        //this->CorrectNonDefaultPositionByBatch2(*p_hmat, this->fsplit_set_, tree);
+        this->CorrectNonDefaultPositionByBatch2(*p_hmat, this->fsplit_set_, tree);
         //auto batch = *p_fmat->GetSortedColumnBatches().begin();
         //this->CorrectNonDefaultPositionByBatchOrig(batch, this->fsplit_set_, tree);
-        this->CorrectNonDefaultPositionByBatch(batch, this->fsplit_set_, tree);
+        //this->CorrectNonDefaultPositionByBatch(batch, this->fsplit_set_, tree);
 
         // start enumeration
         const auto nsize = static_cast<bst_omp_uint>(this->work_set_.size());
@@ -1012,7 +1128,32 @@ class GlobalProposalHistMakerCompactFastHist: public CQHistMakerCompactFastHist<
     }
     this->histred_.Allreduce(dmlc::BeginPtr(this->wspace_.hset[0].data),
                             this->wspace_.hset[0].data.size());
+
+    //save the last tree point
+    p_last_tree_ = &tree;
   }
+
+  virtual void ResetTree(RegTree& tree) override{
+
+    const auto nodes = tree.GetNodes();
+    for(int i=0; i < nodes.size(); i++){
+        if (tree[i].IsLeaf()){
+            continue;
+        }
+
+        unsigned sindex = tree[i].SplitIndex();
+        auto splitCond = tree[i].SplitCond();
+        auto defaultLeft = tree[i].DefaultLeft();
+
+        //turn splitCond from binid to fvalue
+        //splitCond is binid now
+        float fvalue = this->wspace_.cut[this->wspace_.rptr[sindex] + static_cast<int>(splitCond)];
+        tree[i].SetSplit(sindex, fvalue, defaultLeft);
+    }
+
+  }
+
+
 
   // cached unit pointer
   std::vector<unsigned> cached_rptr_;
@@ -1022,6 +1163,9 @@ class GlobalProposalHistMakerCompactFastHist: public CQHistMakerCompactFastHist<
 #ifdef USE_COMPACT
   DMatrixCompact* p_hmat;
 #endif
+  //for predict cache
+  RegTree* p_last_tree_;
+
 
 };
 

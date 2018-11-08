@@ -18,6 +18,7 @@
 #include <algorithm>
 #include <thread>
 #include <mutex>
+#include <fstream>
 
 #include <xgboost/tree_model.h>
 #include "../data/compact_dmatrix.h"

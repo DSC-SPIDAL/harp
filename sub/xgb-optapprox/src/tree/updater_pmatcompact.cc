@@ -85,6 +85,7 @@ class HistMakerCompact: public BaseMaker {
 
     //add fset size
     size_t fsetSize;
+    size_t featnum;
 
     /*! \brief */
     inline HistUnit operator[](size_t fid) {
@@ -124,6 +125,7 @@ class HistMakerCompact: public BaseMaker {
         hset[tid].rptr = dmlc::BeginPtr(rptr);
         hset[tid].cut = dmlc::BeginPtr(cut);
         hset[tid].fsetSize = rptr.back();
+        hset[tid].featnum = rptr.size() - 2;
         hset[tid].data.resize(cut.size() * nodesize, TStats(param));
 
         LOG(CONSOLE)<< "Init hset: rptrSize:" << rptr.size() <<
@@ -131,6 +133,39 @@ class HistMakerCompact: public BaseMaker {
             ",fsetSize" << rptr.back();
       }
     }
+
+    void saveGHSum(int treeid, int depth, int nodecnt){
+      std::ostringstream ss;
+      ss << "ghsum_" << treeid << "_" << depth;
+
+      std::ofstream write;
+      write.open(ss.str());
+ 
+      int pagesize = hset[0].data.size() / nodecnt;
+
+      LOG(CONSOLE) << "saveGHSUM(" << treeid << "," << depth << "," 
+          << nodecnt << ") pagesize=" << pagesize <<
+          "fset=" << hset[0].featnum;
+
+      for(int i=0; i< nodecnt; i++){
+          write << "NODE:" << i << "\n";
+
+          for (int fid = 0; fid < hset[0].featnum; fid++){
+            write << "\tF:" << fid << "\t";
+
+            int sumlen = hset[0].rptr[fid+1] - hset[0].rptr[fid]; 
+            for (int j=0; j < sumlen; j++){ 
+              auto offset = j + i*pagesize + hset[0].rptr[fid];
+              write << hset[0].data[offset].sum_grad <<"," << hset[0].data[offset].sum_hess << " ";
+            }
+            write << "\n";
+          }
+      }
+
+      write.close();
+    }
+
+
     // aggregate all statistics to hset[0]
     inline void Aggregate() {
       bst_omp_uint nsize = static_cast<bst_omp_uint>(cut.size());
@@ -157,6 +192,9 @@ class HistMakerCompact: public BaseMaker {
   // set of working features
   std::vector<bst_uint> fwork_set_;
   std::vector<bst_uint> fsplit_set_;
+  
+  int treeid_{0};
+
   // update function implementation
   virtual void Update(const std::vector<GradientPair> &gpair,
                       DMatrix *p_fmat,
@@ -182,6 +220,10 @@ class HistMakerCompact: public BaseMaker {
 
     printVec("CreateHist::fwork_set=", fwork_set_);
     //printtree(p_tree, "After CreateHist");
+#ifdef USE_DEBUG_SAVE
+      this->wspace_.saveGHSum(treeid_, depth, this->qexpand_.size());
+#endif
+
 
       // find split based on histogram statistics
       this->FindSplit(depth, gpair, p_fmat, fwork_set_, p_tree);
@@ -215,7 +257,7 @@ class HistMakerCompact: public BaseMaker {
 
     /* optApprox */
     printtree(p_tree);
-
+    treeid_ ++;
   }
   // this function does two jobs
   // (1) reset the position in array position, to be the latest leaf id

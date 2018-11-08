@@ -158,8 +158,8 @@ void printdmat(DMatrixCompact& dmat){
 
     std::cout << "F:" << fid << " "; 
     for (bst_omp_uint j = 0; j < ndata; ++j) {
-        const bst_uint ridx = col[j].index();
-        const bst_uint binid = col[j].binid();
+        const bst_uint ridx = col[j]._index();
+        const bst_uint binid = col[j]._binid();
 
         std::cout << ridx << ":" << binid << " ";
      }
@@ -220,6 +220,22 @@ void printSplit(SplitEntry& split){
     m.unlock();
 }
 
+#else
+void printmsg(std::string msg){}
+void printtree(RegTree* ptree, std::string header=""){}
+void printdmat(DMatrixCompact& dmat){}
+void printdmat(const SparsePage& dmat){}
+void printgmat(GHistIndexMatrix& gmat){}
+void printcut(HistCutMatrix& gmat){}
+void printSplit(SplitEntry& split){}
+void printInt(std::string msg, int val){}
+//void printnodes(std::vector<NodeEntry>& nodes, std::string header=""){}
+void printVec(std::string msg, std::vector<unsigned int> vec){}
+
+#endif
+
+#ifdef USE_DEBUG_SAVE
+
 void save_preds(int iterid, int tree_method, HostDeviceVector<bst_float>& preds){
     std::ostringstream ss;
     ss << "preds_" << iterid << "_" << tree_method;
@@ -250,19 +266,7 @@ void save_grads(int iterid, int tree_method, HostDeviceVector<GradientPair>& gpa
     write.close();
 }
 
-
 #else
-
-void printmsg(std::string msg){}
-void printtree(RegTree* ptree, std::string header=""){}
-void printdmat(DMatrixCompact& dmat){}
-void printdmat(const SparsePage& dmat){}
-void printgmat(GHistIndexMatrix& gmat){}
-void printcut(HistCutMatrix& gmat){}
-void printSplit(SplitEntry& split){}
-void printInt(std::string msg, int val){}
-//void printnodes(std::vector<NodeEntry>& nodes, std::string header=""){}
-void printVec(std::string msg, std::vector<unsigned int> vec){}
 
 void save_preds(int iterid, int tree_method, HostDeviceVector<bst_float>& preds){}
 void save_grads(int iterid, int tree_method, HostDeviceVector<GradientPair>& gpair){}

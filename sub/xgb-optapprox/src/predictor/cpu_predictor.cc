@@ -185,7 +185,8 @@ class CPUPredictor : public Predictor {
                          model.trees.size());
       } else if (model.param.num_output_group == 1 && updaters->size() > 0 &&
                  num_new_trees == 1 &&
-                 updaters->back()->UpdatePredictionCache(e.data.get(),
+                 /*updaters->back()->UpdatePredictionCache(e.data.get(),*/
+                 updaters->front()->UpdatePredictionCache(e.data.get(),
                                                          &(e.predictions))) {
         {}  // do nothing
       } else {
