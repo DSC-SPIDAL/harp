@@ -82,12 +82,27 @@ class HistMakerCompactFastHist: public BaseMaker {
     const bst_float *cut;
     /*! \brief data in different hist unit */
     std::vector<TStats> data;
+
+    //add fset size
+    size_t fsetSize;
+
     /*! \brief */
     inline HistUnit operator[](size_t fid) {
       return HistUnit(cut + rptr[fid],
                       &data[0] + rptr[fid],
                       rptr[fid+1] - rptr[fid]);
     }
+
+    /*
+     * new interface without duplicate cut for each thread
+     * all threads share the cut 
+     */
+    inline HistUnit GetHistUnit(size_t fid, size_t nid) {
+      return HistUnit(cut + rptr[fid],
+                      &data[0] + rptr[fid] + nid*(fsetSize),
+                      rptr[fid+1] - rptr[fid]);
+    }
+
 
   };
   // thread workspace
@@ -99,7 +114,7 @@ class HistMakerCompactFastHist: public BaseMaker {
     // per thread histset
     std::vector<HistSet> hset;
     // initialize the hist set
-    inline void Init(const TrainParam &param, int nthread) {
+    inline void Init(const TrainParam &param, int nthread, int nodesize) {
       hset.resize(nthread);
       // cleanup statistics
       for (int tid = 0; tid < nthread; ++tid) {
@@ -108,13 +123,12 @@ class HistMakerCompactFastHist: public BaseMaker {
         }
         hset[tid].rptr = dmlc::BeginPtr(rptr);
         hset[tid].cut = dmlc::BeginPtr(cut);
-        hset[tid].data.resize(cut.size(), TStats(param));
+        hset[tid].fsetSize = rptr.back();
+        hset[tid].data.resize(cut.size() * nodesize, TStats(param));
 
-        std::ostringstream stringStream;
-        stringStream << "Init hset: rptreSize:" << rptr.size() <<
-            ",cutSize:" <<  cut.size();
-        printmsg(stringStream.str());
-
+        LOG(CONSOLE)<< "Init hset: rptrSize:" << rptr.size() <<
+            ",cutSize:" <<  cut.size() <<",nodesize:" << nodesize <<
+            ",fsetSize" << rptr.back();
       }
     }
     // aggregate all statistics to hset[0]
@@ -287,11 +301,13 @@ class HistMakerCompactFastHist: public BaseMaker {
       const int nid = qexpand_[wid];
       CHECK_EQ(node2workindex_[nid], static_cast<int>(wid));
       SplitEntry &best = sol[wid];
-      TStats &node_sum = wspace_.hset[0][num_feature + wid * (num_feature + 1)].data[0];
+      //TStats &node_sum = wspace_.hset[0][num_feature + wid * (num_feature + 1)].data[0];
+      TStats &node_sum = wspace_.hset[0].GetHistUnit(num_feature, wid).data[0];
       for (size_t i = 0; i < fset.size(); ++i) {
         //int fid = this->fset[i];
         //int offset = this->feat2workindex_[fid];
-        EnumerateSplit(this->wspace_.hset[0][i + wid * (num_feature+1)],
+        //EnumerateSplit(this->wspace_.hset[0][i + wid * (num_feature+1)],
+        EnumerateSplit(this->wspace_.hset[0].GetHistUnit(i, wid),
                        node_sum, fset[i], &best, &left_sum[wid]);
         //EnumerateSplit(this->wspace_.hset[0][offset + wid * (num_feature+1)],
         //               node_sum, fid, &best, &left_sum[wid]);
@@ -301,7 +317,8 @@ class HistMakerCompactFastHist: public BaseMaker {
     for (bst_omp_uint wid = 0; wid < nexpand; ++wid) {
       const int nid = qexpand_[wid];
       const SplitEntry &best = sol[wid];
-      const TStats &node_sum = wspace_.hset[0][num_feature + wid * (num_feature + 1)].data[0];
+      //const TStats &node_sum = wspace_.hset[0][num_feature + wid * (num_feature + 1)].data[0];
+      const TStats &node_sum = wspace_.hset[0].GetHistUnit(num_feature, wid).data[0];
       this->SetStats(p_tree, nid, node_sum);
       // set up the values
       p_tree->Stat(nid).loss_chg = best.loss_chg;
@@ -472,7 +489,7 @@ class CQHistMakerCompactFastHist: public HistMakerCompactFastHist<TStats> {
       feat2workindex_[fset[i]] = static_cast<int>(i);
     }
     // start to work
-    this->wspace_.Init(this->param_, 1);
+    this->wspace_.Init(this->param_, 1, this->qexpand_.size());
     // if it is C++11, use lazy evaluation for Allreduce,
     // to gain speedup in recovery
 #if __cplusplus >= 201103L
@@ -501,7 +518,8 @@ class CQHistMakerCompactFastHist: public HistMakerCompactFastHist<TStats> {
       for (size_t i = 0; i < this->qexpand_.size(); ++i) {
         const int nid = this->qexpand_[i];
         const int wid = this->node2workindex_[nid];
-        this->wspace_.hset[0][fset.size() + wid * (fset.size()+1)]
+        //this->wspace_.hset[0][fset.size() + wid * (fset.size()+1)]
+        this->wspace_.hset[0].GetHistUnit(fset.size(), wid)
             .data[0] = node_stats_[nid];
       }
     };
@@ -609,7 +627,8 @@ class CQHistMakerCompactFastHist: public HistMakerCompactFastHist<TStats> {
       const unsigned nid = this->qexpand_[i];
       const unsigned wid = this->node2workindex_[nid];
       hbuilder[nid].istart = 0;
-      hbuilder[nid].hist = this->wspace_.hset[0][fid_offset + wid * (fset.size()+1)];
+      //hbuilder[nid].hist = this->wspace_.hset[0][fid_offset + wid * (fset.size()+1)];
+      hbuilder[nid].hist = this->wspace_.hset[0].GetHistUnit(fid_offset,wid);
     }
     for (auto& c : col) {
       const bst_uint ridx = c.index;
@@ -663,8 +682,8 @@ class CQHistMakerCompactFastHist: public HistMakerCompactFastHist<TStats> {
       const unsigned nid = this->qexpand_[i];
       const unsigned wid = this->node2workindex_[nid];
       hbuilder[nid].istart = 0;
-      hbuilder[nid].hist = this->wspace_.hset[0][fid_offset + wid * (fset.size()+1)];
-      //hbuilder[nid].hist = this->wspace_.hset[0][fid_offset];
+      //hbuilder[nid].hist = this->wspace_.hset[0][fid_offset + wid * (fset.size()+1)];
+      hbuilder[nid].hist = this->wspace_.hset[0].GetHistUnit(fid_offset, wid);
     }
     if (TStats::kSimpleStats != 0 && this->param_.cache_opt != 0) {
       constexpr bst_uint kBuffer = 32;
@@ -749,7 +768,8 @@ class CQHistMakerCompactFastHist: public HistMakerCompactFastHist<TStats> {
       const unsigned nid = this->qexpand_[i];
       const unsigned wid = this->node2workindex_[nid];
       hbuilder[nid].istart = 0;
-      hbuilder[nid].hist = this->wspace_.hset[0][fid_offset + wid * (fset.size()+1)];
+      //hbuilder[nid].hist = this->wspace_.hset[0][fid_offset + wid * (fset.size()+1)];
+      hbuilder[nid].hist = this->wspace_.hset[0].GetHistUnit(fid_offset, wid);
     }
     if (TStats::kSimpleStats != 0 && this->param_.cache_opt != 0) {
       constexpr bst_uint kBuffer = 32;
@@ -845,18 +865,20 @@ class GlobalProposalHistMakerCompactFastHist: public CQHistMakerCompactFastHist<
 
     if (!this->isInitializedHistIndex && this->qexpand_.size() == 1) {
       //first call
-      cached_rptr_.clear();
-      cached_cut_.clear();
+      //cached_rptr_.clear();
+      //cached_cut_.clear();
 #endif
 
       CHECK_EQ(this->qexpand_.size(), 1U);
       CQHistMakerCompactFastHist<TStats>::ResetPosAndPropose(gpair, p_fmat, fset, tree);
-      cached_rptr_ = this->wspace_.rptr;
-      cached_cut_ = this->wspace_.cut;
+      //cached_rptr_ = this->wspace_.rptr;
+      //cached_cut_ = this->wspace_.cut;
 
       LOG(CONSOLE) << "ResetPosAndPropose call in globalproposal";
     } else{
-        
+      // single cut
+      return;
+
       if (this->qexpand_.size() == 1) {
         // init a new tree
         //CQHistMakerCompactFastHist<TStats>::ResetPosAndPropose(gpair, p_fmat, fset, tree);
@@ -867,6 +889,7 @@ class GlobalProposalHistMakerCompactFastHist: public CQHistMakerCompactFastHist<
       else{
         LOG(CONSOLE) << "ResetPosAndPropose: copy histgram bins";
       }
+
       this->wspace_.cut.clear();
       this->wspace_.rptr.clear();
       this->wspace_.rptr.push_back(0);
@@ -963,7 +986,8 @@ class GlobalProposalHistMakerCompactFastHist: public CQHistMakerCompactFastHist<
       this->feat2workindex_[fset[i]] = static_cast<int>(i);
     }
     // start to work
-    this->wspace_.Init(this->param_, 1);
+    //this->wspace_.Init(this->param_, 1);
+    this->wspace_.Init(this->param_, 1, this->qexpand_.size());
     // to gain speedup in recovery
     {
       this->thread_hist_.resize(omp_get_max_threads());
@@ -1035,7 +1059,9 @@ class GlobalProposalHistMakerCompactFastHist: public CQHistMakerCompactFastHist<
       for (size_t i = 0; i < this->qexpand_.size(); ++i) {
         const int nid = this->qexpand_[i];
         const int wid = this->node2workindex_[nid];
-        this->wspace_.hset[0][fset.size() + wid * (fset.size()+1)]
+        //this->wspace_.hset[0][fset.size() + wid * (fset.size()+1)]
+        //    .data[0] = this->node_stats_[nid];
+        this->wspace_.hset[0].GetHistUnit(fset.size(),wid)
             .data[0] = this->node_stats_[nid];
       }
     }
