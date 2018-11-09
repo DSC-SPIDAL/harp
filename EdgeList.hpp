@@ -40,6 +40,7 @@ class EdgeList
     private:
 
         void readfromfile(string fileName);
+        void readfromfileNoVerticesNum(string fileName);
 
         idxType _numEdges;
         idxType _numVertices;

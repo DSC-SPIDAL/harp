@@ -122,7 +122,7 @@ void DataTableColMajor::initSubTempTable(int subsId, int mainId, int auxId)
 
 void DataTableColMajor::cleanSubTempTable(int subsId, bool isBottom)
 {
-    if (_subTempsList[subsId].get_vert_num() > 1 && isBottom)
+    if (_subTempsList[subsId].get_vert_num() > 1 || isBottom == true)
     {
         if (_dataTable[subsId] != nullptr)
         {
