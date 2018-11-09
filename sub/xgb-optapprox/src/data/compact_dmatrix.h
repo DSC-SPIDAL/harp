@@ -76,7 +76,10 @@ class DMatrixCompact : public xgboost::data::SparsePageDMatrix {
     return offset.size() - 1; 
   }
 
-  inline MetaInfo& Info(){
+  MetaInfo& Info() override{
+      return info_;
+  }
+  const MetaInfo& Info() const override{
       return info_;
   }
 };
