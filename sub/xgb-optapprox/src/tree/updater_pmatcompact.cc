@@ -218,7 +218,7 @@ class HistMakerCompact: public BaseMaker {
       // create histogram
       this->CreateHist(gpair, p_fmat, fwork_set_, *p_tree);
 
-    printVec("CreateHist::fwork_set=", fwork_set_);
+    printVec("position:", this->position_); 
     //printtree(p_tree, "After CreateHist");
 #ifdef USE_DEBUG_SAVE
       this->wspace_.saveGHSum(treeid_, depth, this->qexpand_.size());

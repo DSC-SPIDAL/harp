@@ -104,6 +104,10 @@ endif
 ifeq ($(USE_COMPACT_BINID), 1)
 	CFLAGS += -DUSE_COMPACT_BINID=1
 endif
+ifeq ($(USE_DEBUG_SAVE), 1)
+	CFLAGS += -DUSE_DEBUG_SAVE=1
+endif
+
 
 ifndef LINT_LANG
 	LINT_LANG= "all"

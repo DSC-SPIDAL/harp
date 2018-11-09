@@ -219,7 +219,7 @@ class HistMakerCompactFastHist: public BaseMaker {
       // create histogram
       this->CreateHist(gpair, p_fmat, fwork_set_, *p_tree);
 
-      //printVec("CreateHist::fwork_set=", fwork_set_);
+      printVec("position:", this->position_);
       //printtree(p_tree, "After CreateHist");
 
 #ifdef USE_DEBUG_SAVE
@@ -247,6 +247,12 @@ class HistMakerCompactFastHist: public BaseMaker {
       if (qexpand_.size() == 0) break;
     }
 
+    if(this->fsplit_set_.size() > 0){
+        //update the position for update cache
+        printVec("before updatepos:", this->position_);
+        this->CreateHist(gpair, p_fmat, fwork_set_, *p_tree);
+        printVec("after updatepos:", this->position_);
+    }
 
     for (size_t i = 0; i < qexpand_.size(); ++i) {
       const int nid = qexpand_[i];
@@ -948,7 +954,7 @@ class GlobalProposalHistMakerCompactFastHist: public CQHistMakerCompactFastHist<
 
           // go back to parent, correct those who are not default
           if (!tree[nid].IsRoot() && tree[pid].SplitIndex() == fid) {
-            if (binid < tree[pid].SplitCond()) {
+            if (binid <= tree[pid].SplitCond()) {
               this->SetEncodePosition(ridx, tree[pid].LeftChild());
             } else {
               this->SetEncodePosition(ridx, tree[pid].RightChild());
@@ -1011,31 +1017,32 @@ class GlobalProposalHistMakerCompactFastHist: public CQHistMakerCompactFastHist<
 
       for (int nid = 0; nid < nodes.size(); nid ++){
           bst_float leaf_value;
-          int tnid;
+          int tnid = nid;
           // if a node is marked as deleted by the pruner, traverse upward to locate
           // a non-deleted leaf.
-          if ((*p_last_tree_)[nid].IsDeleted()) {
-            while ((*p_last_tree_)[nid].IsDeleted()) {
-              tnid = (*p_last_tree_)[nid].Parent();
+          if ((*p_last_tree_)[tnid].IsDeleted()) {
+            while ((*p_last_tree_)[tnid].IsDeleted()) {
+              tnid = (*p_last_tree_)[tnid].Parent();
             }
             CHECK((*p_last_tree_)[tnid].IsLeaf());
           }
-          else{
-              tnid = nid;
-          }
+
           leaf_values[nid] = (*p_last_tree_)[tnid].LeafValue();
       }
 
       const auto nrows = static_cast<bst_omp_uint>(p_fmat->Info().num_row_);
       for(int ridx=0; ridx < nrows; ridx++){
-        const int nid = this->position_[ridx];
+        const int nid = this->DecodePosition(ridx);
+
         //update   
         out_preds[ridx] += leaf_values[nid];
       }
 
       LOG(CONSOLE) << "UpdatePredictionCache: nodes size=" << 
           nodes.size() << ",rowscnt=" << nrows;
+    
 
+      printVec("updatech:", this->position_);
       return true;
     }
   }
@@ -1089,6 +1096,12 @@ class GlobalProposalHistMakerCompactFastHist: public CQHistMakerCompactFastHist<
       {
         // TWOPASS: use the real set + split set in the column iteration.
         this->CorrectNonDefaultPositionByBatch2(*p_hmat, this->fsplit_set_, tree);
+
+        if (this->qexpand_.size() == 0){
+            //last step to update position 
+            return;
+        }
+
         //auto batch = *p_fmat->GetSortedColumnBatches().begin();
         //this->CorrectNonDefaultPositionByBatchOrig(batch, this->fsplit_set_, tree);
         //this->CorrectNonDefaultPositionByBatch(batch, this->fsplit_set_, tree);
@@ -1150,6 +1163,10 @@ class GlobalProposalHistMakerCompactFastHist: public CQHistMakerCompactFastHist<
         float fvalue = this->wspace_.cut[this->wspace_.rptr[sindex] + static_cast<int>(splitCond)];
         tree[i].SetSplit(sindex, fvalue, defaultLeft);
     }
+
+    //update the position for update cache
+    //this->CorrectNonDefaultPositionByBatch2(*p_hmat, this->fsplit_set_, tree);
+
 
   }
 

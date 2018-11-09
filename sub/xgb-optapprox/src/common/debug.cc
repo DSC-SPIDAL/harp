@@ -98,7 +98,7 @@ void printInt(std::string msg, int val){
     stringStream << msg << ":" << val;
     printmsg(stringStream.str());
 }
-void printVec(std::string msg, std::vector<unsigned int> vec){
+void printVec(std::string msg, const std::vector<unsigned int>& vec){
     std::ostringstream stringStream;
     stringStream << msg ;
     for(int i=0; i< vec.size(); i++){
@@ -106,6 +106,15 @@ void printVec(std::string msg, std::vector<unsigned int> vec){
     }
     printmsg(stringStream.str());
 }
+void printVec(std::string msg, const std::vector<int>& vec){
+    std::ostringstream stringStream;
+    stringStream << msg ;
+    for(int i=0; i< vec.size(); i++){
+    stringStream << vec[i] << ",";
+    }
+    printmsg(stringStream.str());
+}
+
 
 
 
@@ -230,7 +239,8 @@ void printcut(HistCutMatrix& gmat){}
 void printSplit(SplitEntry& split){}
 void printInt(std::string msg, int val){}
 //void printnodes(std::vector<NodeEntry>& nodes, std::string header=""){}
-void printVec(std::string msg, std::vector<unsigned int> vec){}
+void printVec(std::string msg, const std::vector<unsigned int>& vec){}
+void printVec(std::string msg, const std::vector<int>& vec){}
 
 #endif
 

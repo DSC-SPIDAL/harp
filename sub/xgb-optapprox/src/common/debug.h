@@ -31,7 +31,8 @@ using xgboost::common::GHistIndexMatrix;
 using xgboost::tree::SplitEntry;
 
 
-void printVec(std::string msg, std::vector<unsigned int> vec);
+void printVec(std::string msg, const std::vector<unsigned int>& vec);
+void printVec(std::string msg, const std::vector<int>& vec);
 void printInt(std::string msg, int val);
 void printmsg(std::string msg);
 void printtree(RegTree* ptree, std::string header="");
