@@ -212,12 +212,14 @@ class HistMakerCompactFastHist: public BaseMaker {
     // reset and propose candidate split
     this->ResetPosAndPropose(gpair, p_fmat, fwork_set_, *p_tree);
     printtree(p_tree, "ResetPosAndPropose");
-
+    
+    // initialize the histogram only
+    this->InitializeHist(gpair, p_fmat, fwork_set_, *p_tree);
 
     for (int depth = 0; depth < param_.max_depth; ++depth) {
 
       // create histogram
-      this->CreateHist(gpair, p_fmat, fwork_set_, *p_tree);
+      this->CreateHist(gpair, fwork_set_, *p_tree);
 
       printVec("position:", this->position_);
       //printtree(p_tree, "After CreateHist");
@@ -227,12 +229,12 @@ class HistMakerCompactFastHist: public BaseMaker {
 #endif
 
       // find split based on histogram statistics
-      this->FindSplit(depth, gpair, p_fmat, fwork_set_, p_tree);
+      this->FindSplit(depth, gpair, fwork_set_, p_tree);
 
       printtree(p_tree, "FindSplit");
 
       // reset position after split
-      this->ResetPositionAfterSplit(p_fmat, *p_tree);
+      this->ResetPositionAfterSplit(NULL, *p_tree);
       //printtree(p_tree, "ResetPositionAfterSPlit");
 
 
@@ -250,7 +252,7 @@ class HistMakerCompactFastHist: public BaseMaker {
     if(this->fsplit_set_.size() > 0){
         //update the position for update cache
         printVec("before updatepos:", this->position_);
-        this->CreateHist(gpair, p_fmat, fwork_set_, *p_tree);
+        this->CreateHist(gpair, fwork_set_, *p_tree);
         printVec("after updatepos:", this->position_);
     }
 
@@ -290,8 +292,13 @@ class HistMakerCompactFastHist: public BaseMaker {
   virtual void ResetPositionAfterSplit(DMatrix *p_fmat,
                                        const RegTree &tree) {
   }
+  virtual void InitializeHist(const std::vector<GradientPair> &gpair,
+                          DMatrix* p_fmat,
+                          const std::vector <bst_uint> &fset,
+                          const RegTree &tree)  = 0;
+
+
   virtual void CreateHist(const std::vector<GradientPair> &gpair,
-                          DMatrix *p_fmat,
                           const std::vector <bst_uint> &fset,
                           const RegTree &tree)  = 0;
 
@@ -340,7 +347,6 @@ class HistMakerCompactFastHist: public BaseMaker {
   }
   inline void FindSplit(int depth,
                         const std::vector<GradientPair> &gpair,
-                        DMatrix *p_fmat,
                         const std::vector <bst_uint> &fset,
                         RegTree *p_tree) {
     
@@ -531,63 +537,18 @@ class CQHistMakerCompactFastHist: public HistMakerCompactFastHist<TStats> {
     }
  
   }
+
   // code to create histogram
   void CreateHist(const std::vector<GradientPair> &gpair,
-                  DMatrix *p_fmat,
                   const std::vector<bst_uint> &fset,
                   const RegTree &tree) override {
-    const MetaInfo &info = p_fmat->Info();
-    // fill in reverse map
-    feat2workindex_.resize(tree.param.num_feature);
-    std::fill(feat2workindex_.begin(), feat2workindex_.end(), -1);
-    for (size_t i = 0; i < fset.size(); ++i) {
-      feat2workindex_[fset[i]] = static_cast<int>(i);
-    }
-    // start to work
-    this->wspace_.Init(this->param_, 1, this->qexpand_.size());
-    // if it is C++11, use lazy evaluation for Allreduce,
-    // to gain speedup in recovery
-#if __cplusplus >= 201103L
-    auto lazy_get_hist = [&]()
-#endif
-    {
-      thread_hist_.resize(omp_get_max_threads());
-      // start accumulating statistics
-      for (const auto &batch : p_fmat->GetSortedColumnBatches()) {
-        // start enumeration
-        const auto nsize = static_cast<bst_omp_uint>(fset.size());
-        #pragma omp parallel for schedule(dynamic, 1)
-        for (bst_omp_uint i = 0; i < nsize; ++i) {
-          int fid = fset[i];
-          int offset = feat2workindex_[fid];
-          if (offset >= 0) {
-            this->UpdateHistCol(gpair, batch[fid], info, tree,
-                                fset, offset,
-                                &thread_hist_[omp_get_thread_num()]);
-          }
-        }
-      }
-      // update node statistics.
-      this->GetNodeStats(gpair, *p_fmat, tree,
-                         &thread_stats_, &node_stats_);
-      for (size_t i = 0; i < this->qexpand_.size(); ++i) {
-        const int nid = this->qexpand_[i];
-        const int wid = this->node2workindex_[nid];
-        //this->wspace_.hset[0][fset.size() + wid * (fset.size()+1)]
-        this->wspace_.hset[0].GetHistUnit(fset.size(), wid)
-            .data[0] = node_stats_[nid];
-      }
-    };
-    // sync the histogram
-    // if it is C++11, use lazy evaluation for Allreduce
-#if __cplusplus >= 201103L
-    this->histred_.Allreduce(dmlc::BeginPtr(this->wspace_.hset[0].data),
-                            this->wspace_.hset[0].data.size(), lazy_get_hist);
-#else
-    this->histred_.Allreduce(dmlc::BeginPtr(this->wspace_.hset[0].data),
-                            this->wspace_.hset[0].data.size());
-#endif
   }
+  void InitializeHist(const std::vector<GradientPair> &gpair,
+                          DMatrix* p_fmat,
+                          const std::vector <bst_uint> &fset,
+                          const RegTree &tree) override{
+  }
+
   void ResetPositionAfterSplit(DMatrix *p_fmat,
                                const RegTree &tree) override {
     this->GetSplitSet(this->qexpand_, tree, &this->fsplit_set_);
@@ -675,8 +636,8 @@ class CQHistMakerCompactFastHist: public HistMakerCompactFastHist<TStats> {
     std::vector<HistEntry> &hbuilder = *p_temp;
     hbuilder.resize(tree.param.num_nodes);
 
-    LOG(CONSOLE) << "InitHistCol: num_nodes=" << tree.param.num_nodes <<
-            ", qexpand.size=" << this->qexpand_.size() ;
+    //LOG(CONSOLE) << "InitHistCol: num_nodes=" << tree.param.num_nodes <<
+    //        ", qexpand.size=" << this->qexpand_.size() ;
 
     for (size_t i = 0; i < this->qexpand_.size(); ++i) {
       const unsigned nid = this->qexpand_[i];
@@ -1049,10 +1010,11 @@ class GlobalProposalHistMakerCompactFastHist: public CQHistMakerCompactFastHist<
 
 
   // code to create histogram
-  void CreateHist(const std::vector<GradientPair> &gpair,
+  void InitializeHist(const std::vector<GradientPair> &gpair,
                   DMatrix *p_fmat,
                   const std::vector<bst_uint> &fset,
                   const RegTree &tree) override {
+
     const MetaInfo &info = p_fmat->Info();
     // fill in reverse map
     this->feat2workindex_.resize(tree.param.num_feature);
@@ -1082,13 +1044,55 @@ class GlobalProposalHistMakerCompactFastHist: public CQHistMakerCompactFastHist<
         this->isInitializedHistIndex = true;
 
 #ifdef   USE_COMPACT
-        p_hmat->Init(*p_fmat->GetSortedColumnBatches().begin());
+        p_hmat->Init(*p_fmat->GetSortedColumnBatches().begin(), p_fmat->Info());
         printdmat(*p_hmat);
 #endif  
         //DEBUG
         printdmat(*p_fmat->GetSortedColumnBatches().begin());
         printcut(this->cut_);
       }
+    }
+  }
+ 
+  void CreateHist(const std::vector<GradientPair> &gpair,
+                  const std::vector<bst_uint> &fset,
+                  const RegTree &tree) override {
+    const MetaInfo &info = p_hmat->Info();
+    // fill in reverse map
+    this->feat2workindex_.resize(tree.param.num_feature);
+    this->work_set_ = fset;
+    std::fill(this->feat2workindex_.begin(), this->feat2workindex_.end(), -1);
+    for (size_t i = 0; i < fset.size(); ++i) {
+      this->feat2workindex_[fset[i]] = static_cast<int>(i);
+    }
+    // start to work
+    //this->wspace_.Init(this->param_, 1);
+    this->wspace_.Init(this->param_, 1, this->qexpand_.size());
+    // to gain speedup in recovery
+    {
+      this->thread_hist_.resize(omp_get_max_threads());
+
+      // TWOPASS: use the real set + split set in the column iteration.
+      this->SetDefaultPostion(p_hmat, tree);
+      this->work_set_.insert(this->work_set_.end(), this->fsplit_set_.begin(),
+                             this->fsplit_set_.end());
+      std::sort(this->work_set_.begin(), this->work_set_.end());
+      this->work_set_.resize(
+          std::unique(this->work_set_.begin(), this->work_set_.end()) - this->work_set_.begin());
+
+//      /* OptApprox:: init bindid in pmat */
+//      if (!this->isInitializedHistIndex){
+//        CQHistMakerCompactFastHist<TStats>::InitHistIndex(p_fmat, fset, tree);
+//        this->isInitializedHistIndex = true;
+//
+//#ifdef   USE_COMPACT
+//        p_hmat->Init(*p_fmat->GetSortedColumnBatches().begin(), p_fmat->Info());
+//        printdmat(*p_hmat);
+//#endif  
+//        //DEBUG
+//        printdmat(*p_fmat->GetSortedColumnBatches().begin());
+//        printcut(this->cut_);
+//      }
 
       // start accumulating statistics
       //for (const auto &batch : p_fmat->GetSortedColumnBatches()) 
@@ -1128,7 +1132,7 @@ class GlobalProposalHistMakerCompactFastHist: public CQHistMakerCompactFastHist<
       }
 
       // update node statistics.
-      this->GetNodeStats(gpair, *p_fmat, tree,
+      this->GetNodeStats(gpair, *p_hmat, tree,
                          &(this->thread_stats_), &(this->node_stats_));
       for (size_t i = 0; i < this->qexpand_.size(); ++i) {
         const int nid = this->qexpand_[i];

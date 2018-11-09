@@ -11,7 +11,13 @@
 namespace xgboost {
 //namespace data {
 
-void DMatrixCompact::Init(const SparsePage& page){
+void DMatrixCompact::Init(const SparsePage& page, MetaInfo& info){
+
+    //save the info
+    //shallow copy only the num_
+    info_.num_row_ = info.num_row_;
+    info_.num_col_ = info.num_col_;
+    info_.num_nonzero_ = info.num_nonzero_;
 
     //clear
     this->data.clear();
@@ -30,7 +36,8 @@ void DMatrixCompact::Init(const SparsePage& page){
     this->offset.push_back(this->data.size());
 
     LOG(CONSOLE) << "DMatrixCompact::Init size=" << _size <<
-        ",memory=" << this->data.size()*sizeof(EntryCompact)/(1024*1024) << "MB";
+        ",memory=" << this->data.size()*sizeof(EntryCompact)/(1024*1024) << "MB" <<
+        ",rowxcol=" << info_.num_row_ << "x" << info_.num_col_ << ",nonzero=" << info_.num_nonzero_;
 
 }
 

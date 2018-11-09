@@ -1053,7 +1053,7 @@ class GlobalProposalHistMakerCompact: public CQHistMakerCompact<TStats> {
         this->isInitializedHistIndex = true;
 
 #ifdef USE_COMPACT        
-        p_hmat->Init(*p_fmat->GetSortedColumnBatches().begin());
+        p_hmat->Init(*p_fmat->GetSortedColumnBatches().begin(), p_fmat->Info());
         printdmat(*p_hmat);
 #endif
 

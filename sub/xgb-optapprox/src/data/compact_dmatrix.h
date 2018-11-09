@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <cstring>
 #include <vector>
+#include "sparse_page_dmatrix.h"
 
 namespace xgboost {
 //namespace data {
@@ -52,16 +53,17 @@ class EntryCompact{
 };
 #endif
 
-class DMatrixCompact {
+class DMatrixCompact : public xgboost::data::SparsePageDMatrix {
  private:
      std::vector<EntryCompact> data;
      std::vector<size_t> offset;
+     MetaInfo info_;
 
  public:
   explicit DMatrixCompact(){}
 
   //initialize
-  void Init(const SparsePage& page);
+  void Init(const SparsePage& page, MetaInfo& info);
 
   using Inst = common::Span<EntryCompact const>;
 
@@ -72,6 +74,10 @@ class DMatrixCompact {
 
   inline int Size(){
     return offset.size() - 1; 
+  }
+
+  inline MetaInfo& Info(){
+      return info_;
   }
 };
 //}  // namespace data
