@@ -213,9 +213,9 @@ double CountMat::colorCounting()
 double CountMat::countNonBottomePruned(int subsId)
 {/*{{{*/
 
-    if (subsId == 1)
+    if (subsId == 3)
     {
-        // for vtune
+        // for vtune miami u15-2 subids==3 takes 103 secs
 #ifdef VTUNE
         ofstream vtune_trigger;
         vtune_trigger.open("vtune-flag.txt");
@@ -295,6 +295,11 @@ double CountMat::countNonBottomePruned(int subsId)
     {
         int combIdx = combToCountLocal[i];
 
+// #ifdef VERBOSE
+//         printf("Sub: %d, comb: %d, combIdx: %d\n", subsId, i, combIdx);
+//         std::fflush(stdout);
+// #endif
+
         if (subsId == 0)
             objArray = bufLastSub;
         else
@@ -304,6 +309,10 @@ double CountMat::countNonBottomePruned(int subsId)
 
             int mainIdx = mainSplitLocal[i][j];
             int auxIdx = auxSplitLocal[i][j];
+// #ifdef VERBOSE
+//         printf("Sub: %d, mainIdx: %d, auxIdx: %d\n", subsId, mainIdx, auxIdx);
+//         std::fflush(stdout);
+// #endif
 
             // already pre-computed by SpMV
             float* auxArraySelect = nullptr;
@@ -315,7 +324,10 @@ double CountMat::countNonBottomePruned(int subsId)
             // element-wise mul 
             float* mainArraySelect = _dTable.getMainArray(mainIdx);
 
-            _dTable.arrayWiseFMANaive(objArray, auxArraySelect, mainArraySelect);
+            // _dTable.arrayWiseFMANaive(objArray, auxArraySelect, mainArraySelect);
+            // _dTable.arrayWiseFMANaiveAVX(objArray, auxArraySelect, mainArraySelect);
+            // _dTable.arrayWiseFMA(objArray, auxArraySelect, mainArraySelect);
+            _dTable.arrayWiseFMAAVX(objArray, auxArraySelect, mainArraySelect);
         }
     }
 #ifdef VERBOSE

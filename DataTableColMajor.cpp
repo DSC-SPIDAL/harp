@@ -2,6 +2,12 @@
 #include <cstring>
 #include <stdlib.h>
 
+#ifdef __INTEL_COMPILER
+// use avx intrinsics
+#include "immintrin.h"
+#include "zmmintrin.h"
+#endif
+
 using namespace std;
 
 void DataTableColMajor::initDataTable(Graph* subTempsList, IndexSys* indexer, int subsNum, int colorNum, idxType vertsNum, 
@@ -41,9 +47,9 @@ void DataTableColMajor::initDataTable(Graph* subTempsList, IndexSys* indexer, in
     _blockPtrA = (float**) malloc(_thdNum*sizeof(float*));
     _blockPtrB = (float**) malloc(_thdNum*sizeof(float*));
     for (int i = 0; i < _thdNum; ++i) {
-       _blockPtrDst = nullptr; 
-       _blockPtrA = nullptr; 
-       _blockPtrB = nullptr; 
+       _blockPtrDst[i] = nullptr; 
+       _blockPtrA[i] = nullptr; 
+       _blockPtrB[i] = nullptr; 
     }
 
     _isInited = true;
@@ -232,12 +238,12 @@ void DataTableColMajor::updateArrayVec(float*& src, float*& dst)
  * @param a
  * @param b
  */
-void DataTableColMajor::arrayWiseFMA(float*& dst, float*& a, float*& b)
+void DataTableColMajor::arrayWiseFMA(float* dst, float* a, float* b)
 {
     _blockPtrDst[0] = dst; 
     _blockPtrA[0] = a;
     _blockPtrB[0] = b;
-
+    //
     for (int i = 1; i < _thdNum; ++i) {
         _blockPtrDst[i] = _blockPtrDst[i-1] + _blockSizeBasic; 
         _blockPtrA[i] = _blockPtrA[i-1] + _blockSizeBasic;
@@ -253,9 +259,73 @@ void DataTableColMajor::arrayWiseFMA(float*& dst, float*& a, float*& b)
         float* blockPtrBLocal = _blockPtrB[i]; 
         int blockSizeLocal = _blockSize[i];
 
-#pragma omp simd aligned(blockPtrDstLocal, blockPtrALocal, blockPtrBLocal: 64)
+#pragma omp simd aligned(dst, a, b: 64)
         for(int j=0; j<blockSizeLocal;j++)
             blockPtrDstLocal[j] = blockPtrDstLocal[j] + blockPtrALocal[j]*blockPtrBLocal[j];
+    }
+
+}
+
+void DataTableColMajor::arrayWiseFMAAVX(float* dst, float* a, float* b)
+{
+    _blockPtrDst[0] = dst; 
+    _blockPtrA[0] = a;
+    _blockPtrB[0] = b;
+    //
+    for (int i = 1; i < _thdNum; ++i) {
+        _blockPtrDst[i] = _blockPtrDst[i-1] + _blockSizeBasic; 
+        _blockPtrA[i] = _blockPtrA[i-1] + _blockSizeBasic;
+        _blockPtrB[i] = _blockPtrB[i-1] + _blockSizeBasic;
+    }
+
+#pragma omp parallel for schedule(static) num_threads(_thdNum)
+    for(int i=0; i<_thdNum; i++)
+    {
+
+        float* blockPtrDstLocal = _blockPtrDst[i]; 
+        float* blockPtrALocal = _blockPtrA[i]; 
+        float* blockPtrBLocal = _blockPtrB[i]; 
+        int blockSizeLocal = _blockSize[i];
+
+#ifdef __INTEL_COMPILER
+
+    // unrolled by 16 float
+    int n16 = blockSizeLocal & ~(16-1); 
+    __m512 tmpzero = _mm512_set1_ps (0);
+    __mmask16 mask = (1 << (blockSizeLocal - n16)) - 1;
+
+    __m512 vecA;
+    __m512 vecB;
+    __m512 vecC;
+    __m512 vecBuf;
+
+    for (int j = 0; j < n16; j+=16)
+    {
+        vecA = _mm512_load_ps (&(blockPtrALocal[j]));
+        vecB = _mm512_load_ps (&(blockPtrBLocal[j]));
+        vecC = _mm512_load_ps (&(blockPtrDstLocal[j]));
+        vecBuf = _mm512_fmadd_ps(vecA, vecB, vecC);
+        _mm512_store_ps(&(blockPtrDstLocal[j]), vecBuf);
+        // vecBuf = _mm512_mul_ps(vecA, vecB);
+        // vecBuf = _mm512_add_ps(vecC, vecBuf);
+    }
+
+    if (n16 < blockSizeLocal)
+    {
+        vecA = _mm512_mask_load_ps(tmpzero, mask, &(blockPtrALocal[n16]));
+        vecB = _mm512_mask_load_ps(tmpzero, mask, &(blockPtrBLocal[n16]));
+        vecC = _mm512_mask_load_ps(tmpzero, mask, &(blockPtrDstLocal[n16]));
+        vecBuf = _mm512_fmadd_ps(vecA, vecB, vecC);
+        _mm512_mask_store_ps(&(blockPtrDstLocal[n16]), mask, vecBuf);
+    }
+
+#else
+
+#pragma omp simd aligned(dst, a, b: 64)
+        for(int j=0; j<blockSizeLocal;j++)
+            blockPtrDstLocal[j] = blockPtrDstLocal[j] + blockPtrALocal[j]*blockPtrBLocal[j];       
+#endif
+
     }
 
 }
@@ -270,14 +340,45 @@ void DataTableColMajor::arrayWiseFMANaive(float* dst, float* a, float* b)
 
 }
 
-void DataTableColMajor::arrayWiseFMANaive(float* dst, float* a, float* b, int thdNum)
+void DataTableColMajor::arrayWiseFMANaiveAVX(float* dst, float* a, float* b)
 {
+#ifdef __INTEL_COMPILER
+    // unrolled by 16 float
+    int n16 = _vertsNum & ~(16-1); 
+    __m512 tmpzero = _mm512_set1_ps (0);
+    __mmask16 mask = (1 << (_vertsNum - n16)) - 1;
 
-#pragma omp parallel for simd schedule(static) num_threads(thdNum) aligned(dst, a, b: 64)
+    __m512 vecA;
+    __m512 vecB;
+    __m512 vecC;
+    __m512 vecBuf;
+
+    for (int j = 0; j < n16; j+=16)
+    {
+        vecA = _mm512_load_ps (&(a[j]));
+        vecB = _mm512_load_ps (&(b[j]));
+        vecC = _mm512_load_ps (&(dst[j]));
+        vecBuf = _mm512_fmadd_ps(vecA, vecB, vecC);
+        _mm512_store_ps(&(dst[j]), vecBuf);
+        // vecBuf = _mm512_mul_ps(vecA, vecB);
+        // vecBuf = _mm512_add_ps(vecC, vecBuf);
+    }
+
+    if (n16 < _vertsNum)
+    {
+        vecA = _mm512_mask_load_ps(tmpzero, mask, &(a[n16]));
+        vecB = _mm512_mask_load_ps(tmpzero, mask, &(b[n16]));
+        vecC = _mm512_mask_load_ps(tmpzero, mask, &(dst[n16]));
+        vecBuf = _mm512_fmadd_ps(vecA, vecB, vecC);
+        _mm512_mask_store_ps(&(dst[n16]), mask, vecBuf);
+    }
+
+#else
+#pragma omp parallel for simd schedule(static) aligned(dst, a, b: 64)
     for (int i = 0; i < _vertsNum; ++i) {
         dst[i] = dst[i] + a[i]*b[i]; 
     }
-
+#endif
 }
 
 void DataTableColMajor::countCurBottom(int*& idxCToC, int*& colorVals)
