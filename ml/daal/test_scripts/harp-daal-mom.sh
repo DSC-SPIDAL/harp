@@ -40,11 +40,16 @@ mkdir -p ${HADOOP_HOME}/Harp-DAAL-MOM
 logDir=${HADOOP_HOME}/Harp-DAAL-MOM
 
 Mem=110000
+# iteration
+nIterations=1
 # num of mappers (nodes)
 Node=2
 # num of threads on each mapper(node)
 Thd=16
+fileDim=10
+nFeatures=10
 
+logName=Test-daal-mom-$Dataset-N$Node-T$Thd.log
 echo "Test-daal-mom-$Dataset-N$Node-T$Thd Start" 
-hadoop jar harp-daal-0.1.0.jar edu.iu.daal_mom.MOMDaalLauncher -libjars ${LIBJARS}  /Hadoop/mom-input/$Dataset /mom/work $Mem $Node $Thd 2>$logDir/Test-daal-mom-$Dataset-N$Node-T$Thd.log
+hadoop jar harp-daal-0.1.0.jar edu.iu.daal_mom.densedistri.MOMDaalLauncher -libjars ${LIBJARS} $Node $Thd $Mem $nIterations /Hadoop/mom-input/$Dataset /mom/work $fileDim $nFeatures 2>$logDir/${logName} 
 echo "Test-daal-mom-$Dataset-N$Node-T$Thd End" 

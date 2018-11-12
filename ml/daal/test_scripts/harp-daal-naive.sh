@@ -39,18 +39,18 @@ mkdir -p ${HADOOP_HOME}/Harp-DAAL-NB
 logDir=${HADOOP_HOME}/Harp-DAAL-NB
 
 ## parameters
+Node=2
+Thd=24
 Mem=110000
+nIterations=1
 Dim=20
 NClass=20
-NTest=2000
-genData=false
-numTrain=0 ## used when genData == true
-numfiles=0 ## used when genData == true
-# # num of mappers (nodes)
-Node=2
-# # num of threads on each mapper(node)
-Thd=24
+genData=true
+numTrain=10000 ## used when genData == true
+numfiles=10 ## used when genData == true
+NTest=200
 
+logName=Test-daal-naive-N$Node-T$Thd.log
 echo "Test-daal-naive-$Dataset-N$Node-T$Thd Start" 
-hadoop jar harp-daal-0.1.0.jar edu.iu.daal_naive.NaiveDaalLauncher -libjars ${LIBJARS}  /Hadoop/naive-input/train /Hadoop/naive-input/test /Hadoop/naive-input/groundTruth /naive/work $Mem $Dim $NClass $NTest $Node $Thd $genData $numTrain $numfiles 2>$logDir/Test-daal-naive-N$Node-T$Thd.log
+hadoop jar harp-daal-0.1.0.jar edu.iu.daal_naive.densedistri.NaiveDaalLauncher -libjars ${LIBJARS} $Node $Thd $Mem $nIterations /Hadoop/naive-input/train /Hadoop/naive-work $Dim $Dim $NClass /Hadoop/naive-input/test /Hadoop/naive-input/groundTruth $genData $numTrain $numfiles $NTest /tmp/naive 2>$logDir/${logName} 
 echo "Test-daal-naive-$Dataset-N$Node-T$Thd End" 

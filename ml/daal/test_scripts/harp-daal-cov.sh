@@ -46,9 +46,15 @@ Node=2
 Thd=16
 Mem=110000
 
+# iteration
+nIterations=1
+fileDim=10
+nFeatures=10
+
 hdfs dfs -mkdir -p /Hadoop/cov-work
 hdfs dfs -rm -r /Hadoop/cov-work/*
 
+logName=Test-daal-cov-$Dataset-N$Node-T$Thd.log
 echo "Test-daal-cov-$Dataset-N$Node-T$Thd Start" 
-hadoop jar harp-daal-0.1.0.jar edu.iu.daal_cov.COVDaalLauncher -libjars ${LIBJARS}  /Hadoop/cov-input/$Dataset  /Hadoop/cov-work $Mem $Node $Thd 2>$logDir/Test-daal-cov-$Dataset-N$Node-T$Thd.log
+hadoop jar harp-daal-0.1.0.jar edu.iu.daal_cov.densedistri.COVDaalLauncher -libjars ${LIBJARS} $Node $Thd $Mem $nIterations /Hadoop/cov-input/$Dataset /Hadoop/cov-work $fileDim $nFeatures 2>$logDir/${logName} 
 echo "Test-daal-cov-$Dataset-N$Node-T$Thd End" 

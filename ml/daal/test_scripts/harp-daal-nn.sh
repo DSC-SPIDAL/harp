@@ -38,13 +38,18 @@ hdfs dfs -put ${datadir}/* /Hadoop/nn-input/
 mkdir -p ${HADOOP_HOME}/Harp-DAAL-NN
 logDir=${HADOOP_HOME}/Harp-DAAL-NN
 
-Mem=110000
-Batch=50
 # num of mappers (nodes)
 Node=2
 # num of threads on each mapper(node)
 Thd=16
+Mem=110000
+# iteration
+nIterations=1
+fileDim=21
+nFeatures=20
+Batch=50
 
+logName=Test-daal-nn-$Dataset-N$Node-T$Thd-B$Batch.log
 echo "Test-daal-nn-$Dataset-N$Node-T$Thd-B$Batch Start" 
-hadoop jar harp-daal-0.1.0.jar edu.iu.daal_nn.NNDaalLauncher -libjars ${LIBJARS}  /Hadoop/nn-input/train /Hadoop/nn-input/test /Hadoop/nn-input/groundTruth /nn/work $Mem $Batch $Node $Thd 2>$logDir/Test-daal-nn-$Dataset-N$Node-T$Thd-B$Batch.log
+hadoop jar harp-daal-0.1.0.jar edu.iu.daal_nn.NNDaalLauncher -libjars ${LIBJARS} $Node $Thd $Mem $nIterations /Hadoop/nn-input/train /nn/work $fileDim $nFeatures $Batch /Hadoop/nn-input/test /Hadoop/nn-input/groundTruth 2>$logDir/${logName} 
 echo "Test-daal-nn-$Dataset-N$Node-T$Thd-B$Batch End" 

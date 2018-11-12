@@ -35,21 +35,24 @@ hdfs dfs -mkdir -p /Hadoop/pca-input
 mkdir -p ${HADOOP_HOME}/Harp-DAAL-PCA
 logDir=${HADOOP_HOME}/Harp-DAAL-PCA
 
-# num of training data points
-Pts=10000
-# feature vector dimension
-Dim=100
-# file per mapper
-File=5
-# memory allocated to each mapper (MB)
-Mem=110000
-# generate training data or not (once generated, data file /kmeans-P$Pts-C$Ced-D$Dim-N$Node is in hdfs, you could reuse them next time)
-GenData=true
 # num of mappers (nodes)
 Node=2
 # num of threads on each mapper(node)
 Thd=16
+# memory allocated to each mapper (MB)
+Mem=110000
+# iteration
+nIterations=1
+# feature vector dimension
+Dim=10
+GenData=true
+# num of training data points
+Pts=1000
+# file num 
+File=10
+
+logName=Test-daal-pca_svd-P$Pts-D$Dim-F$File-N$Node-T$Thd.log
 
 echo "Test-daal-pca-P$Pts-D$Dim-F$File-N$Node-T$Thd Start" 
-hadoop jar harp-daal-0.1.0.jar edu.iu.daal_pca.PCADaalLauncher -libjars ${LIBJARS} $Pts $Dim $File $Node $Thd $Mem /Hadoop/pca-input/Pca-P$Pts-D$Dim-F$File-N$Node /tmp/PCA $GenData 2>$logDir/Test-daal-pca-P$Pts-D$Dim-F$File-N$Node-T$Thd.log
+hadoop jar harp-daal-0.1.0.jar edu.iu.daal_pca.svddensedistr.PCADaalLauncher -libjars ${LIBJARS} $Node $Thd $Mem $nIterations /Hadoop/pca-input/Pca-P$Pts-D$Dim-F$File-N$Node /Hadoop/pca-work $Dim $Dim $GenData $Pts $File /tmp/PCA 2>$logDir/${logName}
 echo "Test-daal-pca-P$Pts-D$Dim-F$File-N$Node-T$Thd End" 

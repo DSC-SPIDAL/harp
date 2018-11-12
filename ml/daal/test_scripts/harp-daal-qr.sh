@@ -40,13 +40,20 @@ mkdir -p ${HADOOP_HOME}/Harp-DAAL-QR
 logDir=${HADOOP_HOME}/Harp-DAAL-QR
 
 Dataset=daal_qr_dense
-# memory allocated to each mapper (MB)
-Mem=110000
+
 # num of mappers (nodes)
 Node=2
 # num of threads on each mapper(node)
 Thd=16
+# memory allocated to each mapper (MB)
+Mem=110000
+# iteration
+nIterations=1
+fileDim=18
+nFeatures=18
+
+logName=Test-daal-qr-$Dataset-N$Node-T$Thd.log
 
 echo "Test-daal-qr-$Dataset-N$Node-T$Thd Start" 
-hadoop jar harp-daal-0.1.0.jar edu.iu.daal_qr.QRDaalLauncher -libjars ${LIBJARS}  /Hadoop/qr-input/$Dataset /qr/work $Mem $Node $Thd 2>$logDir/Test-daal-qr-$Dataset-N$Node-T$Thd.log
+hadoop jar harp-daal-0.1.0.jar edu.iu.daal_qr.QRDaalLauncher -libjars ${LIBJARS} $Node $Thd $Mem $nIterations /Hadoop/qr-input/$Dataset /qr/work $fileDim $nFeatures 2>$logDir/${logName} 
 echo "Test-daal-qr-$Dataset-N$Node-T$Thd End" 

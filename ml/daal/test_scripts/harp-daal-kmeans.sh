@@ -55,7 +55,8 @@ Node=2
 Thd=16
 Dataset=kmeans-P$Pts-C$Ced-D$Dim-F$File-N$Node
 
+logName=Test-daal-kmeans-P$Pts-C$Ced-D$Dim-F$File-ITR$ITR-N$Node-Thd$Thd.log
 echo "Test-daal-kmeans-P$Pts-C$Ced-D$Dim-F$File-ITR$ITR-N$Node-Thd$Thd Start" 
-hadoop jar harp-daal-0.1.0.jar edu.iu.daal_kmeans.regroupallgather.KMeansDaalLauncher -libjars ${LIBJARS} $Pts $Ced $Dim $File $Node $Thd $ITR $Mem /Hadoop/kmeans-input/$Dataset /tmp/kmeans $GenData 2>$logDir/Test-daal-kmeans-P$Pts-C$Ced-D$Dim-F$File-ITR$ITR-N$Node-Thd$Thd.log
+hadoop jar harp-daal-0.1.0.jar edu.iu.daal_kmeans.regroupallgather.KMeansDaalLauncher -libjars ${LIBJARS} $Node $Thd $Mem $ITR /Hadoop/kmeans-input/$Dataset /Hadoop/kmeans-work $Dim $Dim $Ced $GenData $Pts $File /tmp/kmeans 2>$logDir/${logName}  
 echo "Test-daal-kmeans-P$Pts-C$Ced-D$Dim-F$File-ITR$ITR-N$Node-Thd$Thd End" 
 

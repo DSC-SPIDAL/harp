@@ -42,12 +42,18 @@ logDir=${HADOOP_HOME}/Harp-DAAL-LRG
 
 ## parameters
 Mem=110000
-Batch=50
+# iteration
+nIterations=1
 # num of mappers (nodes)
 Node=2
 # num of threads on each mapper(node)
 Thd=16
+# fileDim
+fileDim=12
+nFeatures=10
+nDependentVars=2
 
+logName=Test-daal-linreg-N$Node-T$Thd.log
 echo "Test-daal-linreg-N$Node-T$Thd-B$Batch Start" 
-hadoop jar harp-daal-0.1.0.jar edu.iu.daal_linreg.LinRegDaalLauncher -libjars ${LIBJARS} /Hadoop/lrg-input/train /Hadoop/lrg-input/test /Hadoop/lrg-input/groundTruth /linreg/work $Mem $Batch $Node $Thd 2>$logDir/Test-daal-linreg-N$Node-T$Thd-B$Batch.log
+hadoop jar harp-daal-0.1.0.jar edu.iu.daal_linreg.qrdense.LinRegDaalLauncher -libjars ${LIBJARS} $Node $Thd $Mem $nIterations /Hadoop/lrg-input/train /linreg/work $fileDim $nFeatures $nDependentVars /Hadoop/lrg-input/test /Hadoop/lrg-input/groundTruth 2>$logDir/${logName} 
 echo "Test-daal-linreg-N$Node-T$Thd-B$Batch End" 

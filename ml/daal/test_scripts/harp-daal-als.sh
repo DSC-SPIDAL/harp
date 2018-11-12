@@ -46,21 +46,20 @@ logDir=${HADOOP_HOME}/Harp-DAAL-ALS
 
 Node=2
 Thd=64
-Tune=false
-
-Dim=100
 Mem=110000
-
+# iteration
 Itr=5
 
-Lambda=0.05
-Epsilon=0.003
+Dim=100
+Alpha=40
+Lambda=0.06
 
 hdfs dfs -mkdir -p /Hadoop/als-work
 hdfs dfs -rm -r /Hadoop/als-work/*
 
+logName=Test-daal-als-$Dataset-D$Dim-N$Node-T$Thd-ITR$Itr-Timer.log
 echo "Test-daal-als-$Dataset-D$Dim-N$Node-T$Thd-ITR$Itr-Timer-$Tune Start" 
-bin/hadoop jar harp-daal-0.1.0.jar edu.iu.daal_als.ALSDaalLauncher -libjars ${LIBJARS} /Hadoop/als-input/$Dataset $Dim $Lambda $Epsilon $Itr $Tune $Node $Thd $Mem /Hadoop/als-work /Hadoop/als-input/$Testset 2>$logDir/Test-daal-als-$Dataset-D$Dim-N$Node-T$Thd-ITR$Itr-Timer-$Tune.log
+bin/hadoop jar harp-daal-0.1.0.jar edu.iu.daal_als.ALSDaalLauncher -libjars ${LIBJARS} $Node $Thd $Mem $Itr /Hadoop/als-input/$Dataset /Hadoop/als-work/Hadoop/als-work $Dim $Alpha $Lambda /Hadoop/als-input/$Testset 2>$logDir/${logName} 
 echo "Test-daal-als-$Dataset-D$Dim-N$Node-T$Thd-ITR$Itr-Timer-$Tune End" 
 
 
