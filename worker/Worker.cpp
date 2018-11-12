@@ -4,7 +4,7 @@
 
 namespace harp {
 
-    void Worker::init() {
+    void Worker::init(int argc, char *argv[]) {
         MPI_Init(NULL, NULL);
 
         MPI_Comm_size(MPI_COMM_WORLD, &this->worldSize);

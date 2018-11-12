@@ -9,7 +9,7 @@ namespace harp {
         int workerId;
         int worldSize;
     public:
-        void init();
+        void init(int argc, char *argv[]);
 
         void start();
 

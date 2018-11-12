@@ -5,18 +5,19 @@
 #include <set>
 #include <vector>
 #include "Partition.h"
+#include "DataTypes.h"
 #include "mpi.h"
 
 namespace harp {
     namespace ds {
-        template<class TYPE>
         class Table {
         private:
-            std::map<int, Partition<TYPE> *> partitionMap;
+            std::map<int, Partition *> partitionMap;
             std::set<int> partitionIds;
             int id;
+            DataType dataType;
         public:
-            Table(int id);//todo add combiner
+            Table(int id, DataType dataType);//todo add combiner
 
             ~Table();
 
@@ -24,15 +25,17 @@ namespace harp {
 
             long getPartitionCount();
 
-            std::map<int, Partition<TYPE> *> getPartitions();
+            std::map<int, Partition *> getPartitions();
 
-            PartitionState addPartition(Partition<TYPE> *partition);
+            PartitionState addPartition(Partition *partition);
 
-            Partition<TYPE> *getPartition(int pid);
+            Partition *getPartition(int pid);
+
+            DataType getDataType();
 
             long removePartition(int pid, bool clearMemory = true);
 
-            void replaceParition(int pid, Partition<TYPE> *partition);
+            void replaceParition(int pid, Partition *partition);
 
             void clear();
         };

@@ -2,30 +2,33 @@
 #define UNTITLED_PARTITION_H
 
 #include <string>
+#include "DataTypes.h"
 
 namespace harp {
     namespace ds {
-        template<class SAMPLE>
         class Partition {
         private:
             int id;
-            SAMPLE* data;
-            long size = 0;
+            void *data;
+            int size = 0;
+            DataType  dataType;
         public:
 
-            Partition(int id, SAMPLE* data, long size);
+            Partition(int id, void *data, int size, DataType dataType);
 
             ~Partition();
 
             int getId();
 
-            SAMPLE *getData();
+            void *getData();
 
-            void setData(SAMPLE * data);
+            void setData(void *data);
 
-            long getSize();
+            int getSize();
 
             void clear();
+
+            DataType  getDataType();
         };
 
         enum PartitionState {
