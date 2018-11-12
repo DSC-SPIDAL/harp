@@ -378,6 +378,12 @@ template <typename ParamT>
     sum_grad = a.sum_grad - b.sum_grad;
     sum_hess = a.sum_hess - b.sum_hess;
   }
+  /*! \brief set current value to a - b */
+  inline void SetSubstract(const GradStats& b) {
+    sum_grad -= b.sum_grad;
+    sum_hess -= b.sum_hess;
+  }
+  
   /*! \return whether the statistics is not used yet */
   inline bool Empty() const { return sum_hess == 0.0; }
   /*! \brief set leaf vector value based on statistics */
