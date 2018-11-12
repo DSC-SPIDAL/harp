@@ -35,3 +35,16 @@ MPI_Datatype getMPIDataType(DataType dataType) {
     }
 }
 
+//template<class TYPE>
+//TYPE *castToArray(void *data, DataType dataType) {
+//    switch (dataType) {
+//        case HP_INT:
+//            return static_cast<int *>(data);
+//        case HP_LONG:
+//            return static_cast<long *>(data);
+//        case HP_FLOAT:
+//            return static_cast<float *>(data);
+//    }
+//}
+
+

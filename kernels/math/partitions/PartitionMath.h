@@ -11,29 +11,16 @@
 //  limitations under the License.
 //
 
-#ifndef HARPC_DATA_TYPES_H
-#define HARPC_DATA_TYPES_H
+#ifndef HARPC_PARTITIONMATH_H
+#define HARPC_PARTITIONMATH_H
 
-#include "mpi.h"
+#include "../../../data_structures/Partition.h"
 
-enum DataType {
-    HP_INT, HP_LONG, HP_FLOAT
-};
-
-void *createArray(DataType dataType, int size);
-
-MPI_Datatype getMPIDataType(DataType dataType);
-
-template<class TYPE>
-TYPE *castToArray(void *data, DataType dataType) {
-    switch (dataType) {
-        case HP_INT:
-            return static_cast<int *>(data);
-        case HP_LONG:
-            return static_cast<long *>(data);
-        case HP_FLOAT:
-            return static_cast<float *>(data);
+namespace harp {
+    namespace math {
+        namespace partition {
+            double distance(harp::ds::Partition *p1, harp::ds::Partition *p2);
+        }
     }
 }
-
-#endif //HARPC_DATA_TYPES_H
+#endif //HARPC_PARTITIONMATH_H
