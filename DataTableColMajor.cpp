@@ -266,6 +266,68 @@ void DataTableColMajor::arrayWiseFMA(float* dst, float* a, float* b)
 
 }
 
+void DataTableColMajor::arrayWiseFMAScale(float* dst, float* a, float* b, float scale)
+{
+    _blockPtrDst[0] = dst; 
+    _blockPtrA[0] = a;
+    _blockPtrB[0] = b;
+    //
+    for (int i = 1; i < _thdNum; ++i) {
+        _blockPtrDst[i] = _blockPtrDst[i-1] + _blockSizeBasic; 
+        _blockPtrA[i] = _blockPtrA[i-1] + _blockSizeBasic;
+        _blockPtrB[i] = _blockPtrB[i-1] + _blockSizeBasic;
+    }
+
+#pragma omp parallel for schedule(static) num_threads(_thdNum)
+    for(int i=0; i<_thdNum; i++)
+    {
+
+        float* blockPtrDstLocal = _blockPtrDst[i]; 
+        float* blockPtrALocal = _blockPtrA[i]; 
+        float* blockPtrBLocal = _blockPtrB[i]; 
+        int blockSizeLocal = _blockSize[i];
+
+#pragma omp simd aligned(dst, a, b: 64)
+        for(int j=0; j<blockSizeLocal;j++)
+            blockPtrDstLocal[j] = blockPtrDstLocal[j] + (blockPtrALocal[j]*(double)blockPtrBLocal[j])*scale;
+    }
+
+}
+
+void DataTableColMajor::arrayWiseFMAScaleLast(double* dst, float* a, float* b, float scale)
+{
+
+#pragma omp parallel for simd schedule(static) aligned(dst, a, b: 64)
+    for (int i = 0; i < _vertsNum; ++i) {
+        dst[i] = dst[i] + (a[i]*(double)b[i])*scale; 
+    }
+
+//     _blockPtrDst[0] = dst; 
+//     _blockPtrA[0] = a;
+//     _blockPtrB[0] = b;
+//     //
+//     for (int i = 1; i < _thdNum; ++i) {
+//         _blockPtrDst[i] = _blockPtrDst[i-1] + _blockSizeBasic; 
+//         _blockPtrA[i] = _blockPtrA[i-1] + _blockSizeBasic;
+//         _blockPtrB[i] = _blockPtrB[i-1] + _blockSizeBasic;
+//     }
+//
+// #pragma omp parallel for schedule(static) num_threads(_thdNum)
+//     for(int i=0; i<_thdNum; i++)
+//     {
+//
+//         float* blockPtrDstLocal = _blockPtrDst[i]; 
+//         float* blockPtrALocal = _blockPtrA[i]; 
+//         float* blockPtrBLocal = _blockPtrB[i]; 
+//         int blockSizeLocal = _blockSize[i];
+//
+// #pragma omp simd aligned(dst, a, b: 64)
+//         for(int j=0; j<blockSizeLocal;j++)
+//             blockPtrDstLocal[j] = blockPtrDstLocal[j] + blockPtrALocal[j]*(blockPtrBLocal[j]*scale);
+//     }
+
+}
+
 void DataTableColMajor::arrayWiseFMAAVX(float* dst, float* a, float* b)
 {
     _blockPtrDst[0] = dst; 

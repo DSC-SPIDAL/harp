@@ -96,6 +96,26 @@ void CSRGraph::SpMVNaive(valType* x, valType* y)
     }
 }
 
+void CSRGraph::SpMVNaiveScale(valType* x, valType* y, float scale)
+{
+
+#pragma omp parallel for
+    for(idxType i = 0; i<_numVertices; i++)
+    {
+        double sum = 0.0;
+
+        idxType rowLen = getRowLen(i);
+        valType* rowElem = getEdgeVals(i); 
+        idxType* rowColIdx = getColIdx(i);
+
+        #pragma omp simd reduction(+:sum) 
+        for(idxType j=0; j<rowLen;j++)
+            sum += rowElem[j]*((double)scale*(x[rowColIdx[j]]));
+
+        y[i] = (float)sum;
+    }
+}
+
 void CSRGraph::SpMVNaive(valType* x, valType* y, int thdNum)
 {
 

@@ -54,6 +54,7 @@ class CSRGraph
         }
 
         void SpMVNaive(valType* x, valType* y);
+        void SpMVNaiveScale(valType* x, valType* y, float scale);
         void SpMVNaive(valType* x, valType* y, int thdNum);
         void SpMVMKL(valType* x, valType* y, int thdNum);
 

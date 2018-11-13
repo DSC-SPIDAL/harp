@@ -21,6 +21,7 @@ void CountMat::initialization(CSRGraph& graph, int thd_num, int itr_num, int isP
     _thd_num = thd_num;
     _itr_num = itr_num;
     _isPruned = isPruned;
+    _isScaled = 0;
     _colors_local = (int*)malloc(_vert_num*sizeof(int));
     std::memset(_colors_local, 0, _vert_num*sizeof(int));
 
@@ -237,27 +238,28 @@ double CountMat::countNonBottomePruned(int subsId)
     int auxTableLen = indexer.getCombTable()[_color_num][auxSize];
 
 #ifdef VERBOSE
-    printf("Finish init sub templte %d, vert: %d, comb: %d, splitNum: %d\n", subsId, subSize, 
-            countCombNum, splitCombNum);
+    printf("Finish init sub templte %d, vert: %d, comb: %d, splitNum: %d, isScaled: %d\n", subsId, subSize, 
+            countCombNum, splitCombNum, _isScaled);
     std::fflush(stdout); 
 #endif
 
     double countSum = 0.0;
+    double subSum = 0.0;
     int** mainSplitLocal = (indexer.getSplitToCountTable())[0][subsId]; 
     int** auxSplitLocal = (indexer.getSplitToCountTable())[1][subsId]; 
     int* combToCountLocal = (indexer.getCombToCountTable())[subsId];
 
-    float* bufLastSub = nullptr;
+    double* bufLastSub = nullptr;
     float* objArray = nullptr;
 
     if (subsId == 0)
     {
 #ifdef __INTEL_COMPILER
-      bufLastSub = (float*) _mm_malloc(_vert_num*sizeof(float), 64); 
+      bufLastSub = (double*) _mm_malloc(_vert_num*sizeof(double), 64); 
 #else
-      bufLastSub = (float*) aligned_alloc(64, _vert_num*sizeof(float)); 
+      bufLastSub = (double*) aligned_alloc(64, _vert_num*sizeof(double)); 
 #endif
-      std::memset(bufLastSub, 0, _vert_num*sizeof(float)); 
+      std::memset(bufLastSub, 0, _vert_num*sizeof(double)); 
 
     }
 
@@ -275,7 +277,13 @@ double CountMat::countNonBottomePruned(int subsId)
    for (int i = 0; i < auxTableLen; ++i) {
        float* auxObjArray = _dTable.getAuxArray(i);
        _graph->SpMVNaive(auxObjArray, _bufVec); 
+       // if (subsId == 2)
+          // _graph->SpMVNaiveScale(auxObjArray, _bufVec, 0.000000001); 
+       // else
+          // _graph->SpMVNaiveScale(auxObjArray, _bufVec, 1.0); 
+
        // copy data back to aux array
+       // subSum += sumVec(_bufVec, _vert_num);
        
        // check the size of auxArray
        if (auxSize > 1)
@@ -300,10 +308,12 @@ double CountMat::countNonBottomePruned(int subsId)
 //         std::fflush(stdout);
 // #endif
 
-        if (subsId == 0)
-            objArray = bufLastSub;
-        else
+        if (subsId > 0)
             objArray = _dTable.getCurTableArray(combIdx);
+        // if (subsId == 0)
+        //     objArray = bufLastSub;
+        // else
+        //     objArray = _dTable.getCurTableArray(combIdx);
 
         for (int j = 0; j < splitCombNum; ++j) {
 
@@ -327,12 +337,36 @@ double CountMat::countNonBottomePruned(int subsId)
             // _dTable.arrayWiseFMANaive(objArray, auxArraySelect, mainArraySelect);
             // _dTable.arrayWiseFMANaiveAVX(objArray, auxArraySelect, mainArraySelect);
             // _dTable.arrayWiseFMA(objArray, auxArraySelect, mainArraySelect);
-            _dTable.arrayWiseFMAAVX(objArray, auxArraySelect, mainArraySelect);
+            // _dTable.arrayWiseFMAAVX(objArray, auxArraySelect, mainArraySelect);
+            if (subsId > 0)
+            {
+                // _dTable.arrayWiseFMAScale(objArray, auxArraySelect, mainArraySelect, 1000000000.0);
+                if (_isScaled == 0)
+                {
+                    // _dTable.arrayWiseFMAScale(objArray, auxArraySelect, mainArraySelect, 0.000000001);
+                    _dTable.arrayWiseFMAScale(objArray, auxArraySelect, mainArraySelect, 1.0e-12);
+                }
+                else
+                    _dTable.arrayWiseFMA(objArray, auxArraySelect, mainArraySelect);
+            }
+            else
+            {
+                _dTable.arrayWiseFMAScaleLast(bufLastSub, auxArraySelect, mainArraySelect, 1.0);
+            }
+
         }
+
+        // if (subsId > 0)
+            // scaleVec(objArray, _vert_num, 1000000000.0);
+        if (subsId > 0)
+            subSum += sumVec(objArray, _vert_num);
+
     }
 #ifdef VERBOSE
    eltMul += (utility::timer() - startTimeComp); 
 #endif
+
+    _isScaled = 1;
 
     if (subsId == 0)
     {
@@ -340,6 +374,10 @@ double CountMat::countNonBottomePruned(int subsId)
         for (int k = 0; k < _vert_num; ++k) {
             countSum += bufLastSub[k];
         }
+
+        // countSum *= 1000000000.0;
+        countSum *= 1.0e+12;
+
 #ifdef __INTEL_COMPILER
         _mm_free(bufLastSub);
 #else
@@ -352,14 +390,14 @@ double CountMat::countNonBottomePruned(int subsId)
     printf("Sub %d, counting time %f, Spmv time %f: ratio: %f\%,  Mul time %f: ratio: %f\% \n", subsId, subsTime, eltSpmv, 100*(eltSpmv/subsTime), eltMul, 100*(eltMul/subsTime));
     _spmvTime += eltSpmv;
     _eMATime += eltMul;
-    // printf("Sub %d, counting time %f\n", subsId, subsTime);
+    printf("Sub %d, counting val %e\n", subsId, subSum);
     std::fflush(stdout); 
 #endif
 
-#ifdef VERBOSE
-    printf("Sub %d, NonBottom raw count %f\n", subsId, countSum);
-    std::fflush(stdout); 
-#endif
+// #ifdef VERBOSE
+//     printf("Sub %d, NonBottom raw count %e\n", subsId, countSum);
+//     std::fflush(stdout); 
+// #endif
 
     return countSum;
 
@@ -506,4 +544,26 @@ int CountMat::factorial(int n)
         return 1;
     else
         return (n*factorial(n-1));
+}
+
+
+double CountMat::sumVec(valType* input, idxType len)
+{
+    double sum = 0.0;
+#pragma omp parallel for reduction(+:sum) 
+    for (idxType i = 0; i < len; ++i) {
+        sum += input[i];
+    }
+
+    return sum;
+}
+
+void CountMat::scaleVec(valType* input, idxType len, double scale)
+{
+#pragma omp parallel for  
+    for (idxType i = 0; i < len; ++i) {
+        double tmp = scale*input[i];
+        input[i] = (float)tmp;
+    }
+
 }
