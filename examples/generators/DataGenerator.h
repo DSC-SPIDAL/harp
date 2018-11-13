@@ -15,13 +15,15 @@
 #define HARPC_DATAGENERATOR_H
 
 #include <string>
+#include "../../data_structures/Table.h"
 
 namespace harp {
     namespace util {
         void
         generateKMeansData(std::string folder, int numberOfRecords, int vectorSize, int splits, int centroidsCount);
 
-        void readKMeansDataFromFile(std::string file);
+        void readKMeansDataFromFile(std::string file, int vectorSize, harp::ds::Table<float> *table,
+                                    int partitionIdPivot = 0);
     }
 }
 #endif //HARPC_DATAGENERATOR_H

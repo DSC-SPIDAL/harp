@@ -13,6 +13,7 @@
 //
 
 #include <fstream>
+#include <iostream>
 #include <vector>
 #include <thread>
 #include <cstdlib>
@@ -63,8 +64,31 @@ namespace harp {
         }
 
 
-        void readKMeansDataFromFile(std::string file) {
-
+        void readKMeansDataFromFile(std::string file, int vectorSize,
+                                    harp::ds::Table<float> *table, int partitionIdPivot) {
+            std::ifstream istream(file);
+            int partitionIndex = 0;
+            while (istream.good()) {
+                auto *vector = new float[vectorSize];
+                bool added = false;
+                for (int i = 0; i < vectorSize; i++) {
+                    std::string str;
+                    if (i < vectorSize - 1) {
+                        getline(istream, str, ',');
+                    } else {
+                        getline(istream, str);
+                    }
+                    if (!str.empty()) {
+                        vector[i] = std::stof(str);
+                        added = true;
+                    }
+                }
+                if (added) {
+                    auto *part = new harp::ds::Partition<float>(partitionIdPivot + partitionIndex++, vector,
+                                                                vectorSize);
+                    table->addPartition(part);
+                }
+            }
         }
     }
 }
