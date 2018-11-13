@@ -92,31 +92,55 @@ int main(int argc, char** argv)
     std::fflush(stdout);           
 
     // // test SpMV naive, mkl, and csr5 using double
-    // // y = CSRGraph*x
-    // printf("Start debug CSR SpMV len %d\n", elist.getNumVertices());
+    // // yMat = CSRGraph*xMat
+    // printf("Start debug CSR SpMM \n");
     // std::fflush(stdout);
-    //
+    // //
     // int csrNNZA = csrInpuG.getNNZ(); 
     // int csrRows = csrInpuG.getNumVertices();
     // int* csrRowIdx = csrInpuG.getIndexRow();
     // int* csrColIdx = csrInpuG.getIndexCol();
     // float* csrVals = csrInpuG.getNNZVal();
-    // double* csrValsDouble = (double*) malloc(csrNNZA*sizeof(double)); 
-    // for (int i = 0; i < csrNNZA; ++i) {
-    //    csrValsDouble[i] = csrVals[i]; 
+    //
+    // int testCols = 100;
+    // int testLen = testCols*csrRows;
+    //
+    // float* xMat = (float*) malloc(testLen*sizeof(float));
+    // float* yMat = (float*) malloc(testLen*sizeof(float));
+    // std::memset(yMat, 0, testLen*sizeof(float));
+    //
+    // for (int i = 0; i < testLen; ++i) {
+    //    xMat[i] = 2.0; 
     // }
     //
-    // // double* xArray = new double[csrRows];
-    // // double* yArray = new double[csrRows];
-    // float* xArray = new float[csrRows];
-    // float* yArray = new float[csrRows];
+    // // invoke mkl scsrmm
+    // char transa = 'n';
+    // MKL_INT m = csrRows;
+    // MKL_INT n = testCols;
+    // MKL_INT k = csrRows;
     //
-    // for(int i=0;i<csrRows; i++)
-    // {
-    //     xArray[i] = 2.0;
-    //     yArray[i] = 0.0;
+    // float alpha = 1.0;
+    // float beta = 0.0;
+    //
+    // char matdescra[5];
+    // matdescra[0] = 'g';
+    // matdescra[3] = 'f'; /*one-based indexing is used*/
+    //
+    // mkl_scsrmm(&transa, &m, &n, &k, &alpha, matdescra, csrVals, csrColIdx, csrRowIdx, &(csrRowIdx[1]), xMat, &k, &beta, yMat, &k);
+    //
+    // // check yMat
+    // for (int i = 0; i < 10; ++i) {
+    //    printf("Elem: %d is: %f\n", i, yMat[i]); 
+    //    std::fflush(stdout);
     // }
     //
+    // // free test mem
+    // free(xMat);
+    // free(yMat);
+    //
+    // printf("Finish debug CSR SpMM\n");
+    // std::fflush(stdout);
+   
     // startTime = utility::timer();
     // const char tran = 'N';
     // // mkl_cspblas_dcsrgemv(&tran, &csrRows, csrValsDouble, csrRowIdx, csrColIdx, xArray, yArray);
@@ -152,12 +176,14 @@ int main(int argc, char** argv)
     // printf("Finish debug CSR SpMV\n");
     // std::fflush(stdout);
     
+    // ---------------- start of computing ----------------
     // load input templates
     input_template.read_enlist(template_name);
 
     // start CSR mat computing
     CountMat executor;
-    executor.initialization(csrInpuG, comp_thds, iterations, isPruned);
+    int useSPMM = 1;
+    executor.initialization(csrInpuG, comp_thds, iterations, isPruned, useSPMM);
     executor.compute(input_template);
 
     return 0;

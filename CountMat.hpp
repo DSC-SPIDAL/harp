@@ -21,9 +21,9 @@ class CountMat {
         typedef float valType;
 
         CountMat(): _graph(nullptr), _templates(nullptr), _subtmp_array(nullptr), _colors_local(nullptr), 
-        _bufVec(nullptr), _bufVecLeaf(nullptr), _bufVecThd(nullptr), _spmvTime(0), _eMATime(0), _isPruned(1), _isScaled(0) {} 
+        _bufVec(nullptr), _bufMatX(nullptr), _bufMatY(nullptr), _bufMatCols(-1), _bufVecLeaf(nullptr), _spmvTime(0), _eMATime(0), _isPruned(1), _isScaled(0), _useSPMM(0) {} 
 
-        void initialization(CSRGraph& graph, int thd_num, int itr_num, int isPruned);
+        void initialization(CSRGraph& graph, int thd_num, int itr_num, int isPruned, int useSPMM);
 
         double compute(Graph& templates);
 
@@ -41,6 +41,24 @@ class CountMat {
 #endif
             }
 
+            if (_bufMatX != nullptr)
+            {
+#ifdef __INTEL_COMPILER
+                _mm_free(_bufMatX); 
+#else
+                free(_bufMatX); 
+#endif
+            }
+
+            if (_bufMatY != nullptr)
+            {
+#ifdef __INTEL_COMPILER
+                _mm_free(_bufMatY); 
+#else
+                free(_bufMatY); 
+#endif
+            }
+
             if (_bufVecLeaf != nullptr) 
             {
                 for (int i = 0; i < _color_num; ++i) 
@@ -55,20 +73,8 @@ class CountMat {
                 free(_bufVecLeaf);
             }
 
-            if (_bufVecThd != nullptr)
-            {
-                for (int i = 0; i < _thd_num; ++i) {
-                    if (_bufVecThd[i] != nullptr) 
-                    {
-#ifdef __INTEL_COMPILER
-                        _mm_free(_bufVecThd[i]);
-#else
-                        free(_bufVecThd[i]); 
-#endif
-                    }
-                }
-                free(_bufVecThd);
-            }
+            
+
         }
 
     private:
@@ -77,6 +83,7 @@ class CountMat {
         double sumVec(valType* input, idxType len);
         void scaleVec(valType* input, idxType len, double scale);
         double countNonBottomePruned(int subsId);
+        double countNonBottomePrunedSPMM(int subsId);
         double countNonBottomeOriginal(int subsId);
         void colorInit();
         int factorial(int n);
@@ -112,12 +119,16 @@ class CountMat {
         IndexSys indexer;
         
         float* _bufVec;
+        float* _bufMatX;
+        float* _bufMatY;
+        int _bufMatCols;
+
         float** _bufVecLeaf;
-        float** _bufVecThd;
         double _spmvTime;
         double _eMATime;
         int _isPruned;
         int _isScaled;
+        int _useSPMM;
 };
 
 #endif

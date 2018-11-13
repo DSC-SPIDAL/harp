@@ -16,7 +16,7 @@ class CSRGraph
         typedef int32_t idxType;
         typedef float valType;
 
-        CSRGraph(): _isDirected(false), _numEdges(-1), _numVertices(-1), 
+        CSRGraph(): _isDirected(false), _isOneBased(false), _numEdges(-1), _numVertices(-1), _nnZ(-1), 
             _edgeVal(nullptr), _indexRow(nullptr), _indexCol(nullptr), 
             _degList(nullptr) {}
 
@@ -60,7 +60,8 @@ class CSRGraph
 
         idxType getNumVertices() {return _numVertices;} 
 
-        idxType getNNZ() {return _indexRow[_numVertices];}
+        // idxType getNNZ() {return _indexRow[_numVertices];}
+        idxType getNNZ() {return _nnZ;}
         idxType* getIndexRow() {return _indexRow;}
         idxType* getIndexCol() {return _indexCol;}
         valType* getNNZVal() {return _edgeVal;} 
@@ -68,14 +69,20 @@ class CSRGraph
         void createFromEdgeListFile(idxType numVerts, idxType numEdges, 
                 idxType* srcList, idxType* dstList);       
 
+        // make the csr format from 0 based index to 1 based index
+        // used by csrmm of MKL
+        void makeOneIndex();
+
         void serialize(ofstream& outputFile);
         void deserialize(ifstream& inputFile);
 
     private:
 
         bool _isDirected;
+        bool _isOneBased;
         idxType _numEdges;
         idxType _numVertices;
+        idxType _nnZ;
         valType* _edgeVal;
         idxType* _indexRow;
         idxType* _indexCol;

@@ -43,6 +43,8 @@ void CSRGraph::createFromEdgeListFile(CSRGraph::idxType numVerts, CSRGraph::idxT
         _indexRow[i] = _indexRow[i-1] + _degList[i-1]; 
 
     // create the col index and val 
+    _nnZ = _indexRow[_numVertices];
+
     _indexCol = (CSRGraph::idxType*)malloc
         (_indexRow[_numVertices]*sizeof(CSRGraph::idxType));
 
@@ -169,7 +171,28 @@ void CSRGraph::deserialize(ifstream& inputFile)
     _edgeVal = (valType*) malloc ((_indexRow[_numVertices])*sizeof(valType)); 
     inputFile.read((char*)_edgeVal, (_indexRow[_numVertices])*sizeof(valType));
 
+    _nnZ = _indexRow[_numVertices];
+
     printf("Total vertices is : %d\n", _numVertices);
     printf("Total Edges is : %d\n", _numEdges);
     std::fflush(stdout); 
+}
+
+void CSRGraph::makeOneIndex()
+{
+    if (!_isOneBased)
+    {
+
+#pragma omp parallel for
+        for (int i = 0; i < _indexRow[_numVertices]; ++i) {
+           _indexCol[i]++; 
+        }
+
+#pragma omp parallel for 
+        for (int i = 0; i < _numVertices+1; ++i) {
+           _indexRow[i]++; 
+        }
+        
+        _isOneBased = true;
+    }
 }

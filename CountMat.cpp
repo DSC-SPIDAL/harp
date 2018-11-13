@@ -8,20 +8,26 @@
 #include <cstring>
 #include <omp.h>
 #include <vector>
+#include "mkl.h"
 
 #include "CountMat.hpp"
 #include "Helper.hpp"
 
 using namespace std;
 
-void CountMat::initialization(CSRGraph& graph, int thd_num, int itr_num, int isPruned)
+void CountMat::initialization(CSRGraph& graph, int thd_num, int itr_num, int isPruned, int useSPMM)
 {
     _graph = &graph;
     _vert_num = _graph->getNumVertices();
     _thd_num = thd_num;
     _itr_num = itr_num;
     _isPruned = isPruned;
+    _useSPMM = useSPMM;
     _isScaled = 0;
+
+    if (_useSPMM == 1)
+        _graph->makeOneIndex();
+
     _colors_local = (int*)malloc(_vert_num*sizeof(int));
     std::memset(_colors_local, 0, _vert_num*sizeof(int));
 
@@ -32,15 +38,18 @@ void CountMat::initialization(CSRGraph& graph, int thd_num, int itr_num, int isP
 #endif
     std::memset(_bufVec, 0, _vert_num*sizeof(float));
 
-    _bufVecThd = (float**) malloc (_thd_num*sizeof(float*));
+    _bufMatCols = 100;
 
-    for (int i = 0; i < _thd_num; ++i) {
-       #ifdef __INTEL_COMPILER
-          _bufVecThd[i] =  (float*) _mm_malloc(_vert_num*sizeof(float), 64); 
-       #else
-          _bufVecThd[i] =  (float*) aligned_alloc(64, _vert_num*sizeof(float)); 
-       #endif 
-    }
+#ifdef __INTEL_COMPILER
+    _bufMatX = (float*) _mm_malloc(_vert_num*_bufMatCols*sizeof(float), 64); 
+    _bufMatY = (float*) _mm_malloc(_vert_num*_bufMatCols*sizeof(float), 64); 
+#else
+    _bufMatX = (float*) aligned_alloc(64, _vert_num*_bufMatCols*sizeof(float)); 
+    _bufMatY = (float*) aligned_alloc(64, _vert_num*_bufMatCols*sizeof(float)); 
+#endif
+    std::memset(_bufMatX, 0, _vert_num*_bufMatCols*sizeof(float));
+    std::memset(_bufMatY, 0, _vert_num*_bufMatCols*sizeof(float));
+
 }
 
 double CountMat::compute(Graph& templates)
@@ -194,7 +203,12 @@ double CountMat::colorCounting()
         {
             //non-bottom case
             if (_isPruned == 1)
-                countTotal = countNonBottomePruned(s);
+            {
+                if (_useSPMM == 1)
+                   countTotal = countNonBottomePrunedSPMM(s);
+                else
+                   countTotal = countNonBottomePruned(s);
+            }
             else
                 countTotal = countNonBottomeOriginal(s);
         }
@@ -292,6 +306,241 @@ double CountMat::countNonBottomePruned(int subsId)
 #ifdef VERBOSE
    startTimeComp = utility::timer(); 
 #endif
+// a second part only involves element-wise multiplication and updating
+    for(int i=0; i<countCombNum; i++)
+    {
+        int combIdx = combToCountLocal[i];
+
+// #ifdef VERBOSE
+//         printf("Sub: %d, comb: %d, combIdx: %d\n", subsId, i, combIdx);
+//         std::fflush(stdout);
+// #endif
+
+        if (subsId > 0)
+            objArray = _dTable.getCurTableArray(combIdx);
+
+        for (int j = 0; j < splitCombNum; ++j) {
+
+            int mainIdx = mainSplitLocal[i][j];
+            int auxIdx = auxSplitLocal[i][j];
+
+// #ifdef VERBOSE
+//         printf("Sub: %d, mainIdx: %d, auxIdx: %d\n", subsId, mainIdx, auxIdx);
+//         std::fflush(stdout);
+// #endif
+
+            // already pre-computed by SpMV
+            float* auxArraySelect = nullptr;
+            if (auxSize > 1)
+                auxArraySelect = _dTable.getAuxArray(auxIdx);
+            else
+                auxArraySelect = _bufVecLeaf[auxIdx];
+
+            // element-wise mul 
+            float* mainArraySelect = _dTable.getMainArray(mainIdx);
+            if (subsId > 0)
+            {
+                if (_isScaled == 0)
+                    _dTable.arrayWiseFMAScale(objArray, auxArraySelect, mainArraySelect, 1.0e-12);
+                else
+                    _dTable.arrayWiseFMAAVX(objArray, auxArraySelect, mainArraySelect);
+            }
+            else
+            {
+                // the last scale use 
+                _dTable.arrayWiseFMALast(bufLastSub, auxArraySelect, mainArraySelect);
+            }
+
+        }
+
+        // if (subsId > 0)
+        //     subSum += sumVec(objArray, _vert_num);
+
+    }
+#ifdef VERBOSE
+   eltMul += (utility::timer() - startTimeComp); 
+#endif
+
+    _isScaled = 1;
+
+    if (subsId == 0)
+    {
+        // sum the vals from bufLastSub  
+        for (int k = 0; k < _vert_num; ++k) {
+            countSum += bufLastSub[k];
+        }
+
+        // to recover the scale down process
+        if (_isScaled == 1)
+            countSum *= 1.0e+12;
+
+#ifdef __INTEL_COMPILER
+        _mm_free(bufLastSub);
+#else
+        free(bufLastSub);
+#endif
+    }
+
+#ifdef VERBOSE
+    double subsTime = (utility::timer() - startTime);
+    printf("Sub %d, counting time %f, Spmv time %f: ratio: %f\%,  Mul time %f: ratio: %f\% \n", subsId, subsTime, eltSpmv, 100*(eltSpmv/subsTime), eltMul, 100*(eltMul/subsTime));
+    _spmvTime += eltSpmv;
+    _eMATime += eltMul;
+    // printf("Sub %d, counting val %e\n", subsId, subSum);
+    // std::fflush(stdout); 
+#endif
+
+// #ifdef VERBOSE
+//     printf("Sub %d, NonBottom raw count %e\n", subsId, countSum);
+//     std::fflush(stdout); 
+// #endif
+
+    return countSum;
+
+}/*}}}*/
+
+double CountMat::countNonBottomePrunedSPMM(int subsId)
+{/*{{{*/
+
+    if (subsId == 3)
+    {
+        // for vtune miami u15-2 subids==3 takes 103 secs
+#ifdef VTUNE
+        ofstream vtune_trigger;
+        vtune_trigger.open("vtune-flag.txt");
+        vtune_trigger << "Start training process and trigger vtune profiling.\n";
+        vtune_trigger.close();
+#endif
+    }
+
+    int subSize = _subtmp_array[subsId].get_vert_num();
+
+    int idxMain = div_tp.get_main_node_idx(subsId);
+    int idxAux = div_tp.get_aux_node_idx(subsId);
+
+    int mainSize = indexer.getSubsSize()[idxMain];
+    int auxSize = indexer.getSubsSize()[idxAux];
+   
+    int countCombNum = indexer.getCombTable()[_color_num][subSize];
+    int splitCombNum = indexer.getCombTable()[subSize][mainSize];
+    int auxTableLen = indexer.getCombTable()[_color_num][auxSize];
+
+#ifdef VERBOSE
+    printf("Finish init sub templte %d, vert: %d, comb: %d, splitNum: %d, isScaled: %d\n", subsId, subSize, 
+            countCombNum, splitCombNum, _isScaled);
+    std::fflush(stdout); 
+#endif
+
+    double countSum = 0.0;
+    double subSum = 0.0;
+    int** mainSplitLocal = (indexer.getSplitToCountTable())[0][subsId]; 
+    int** auxSplitLocal = (indexer.getSplitToCountTable())[1][subsId]; 
+    int* combToCountLocal = (indexer.getCombToCountTable())[subsId];
+
+    double* bufLastSub = nullptr;
+    float* objArray = nullptr;
+
+    if (subsId == 0)
+    {
+#ifdef __INTEL_COMPILER
+      bufLastSub = (double*) _mm_malloc(_vert_num*sizeof(double), 64); 
+#else
+      bufLastSub = (double*) aligned_alloc(64, _vert_num*sizeof(double)); 
+#endif
+      std::memset(bufLastSub, 0, _vert_num*sizeof(double)); 
+
+    }
+
+#ifdef VERBOSE
+    double startTime = utility::timer();
+    double startTimeComp = 0.0;
+    double eltSpmv = 0.0;
+    double eltMul = 0.0;
+#endif
+
+// first the precompute of SPMM results and have a in-place storage
+#ifdef VERBOSE
+   startTimeComp = utility::timer(); 
+#endif
+
+   // ---- start of SpMM impl -------
+   int batchNum = (auxTableLen + _bufMatCols - 1)/(_bufMatCols);
+   int colStart = 0;
+
+   char transa = 'n';
+   MKL_INT m = _vert_num;
+   MKL_INT n = 0;
+   MKL_INT k = _vert_num;
+
+   float alpha = 1.0;
+   float beta = 0.0;
+
+   char matdescra[5];
+   matdescra[0] = 'g';
+   matdescra[3] = 'f'; /*one-based indexing is used*/
+
+   float* csrVals = _graph->getNNZVal();
+   int* csrRowIdx = _graph->getIndexRow();
+   int* csrColIdx = _graph->getIndexCol();
+
+   for (int i = 0; i < batchNum; ++i) {
+
+       int batchSize = (i < batchNum -1) ? (_bufMatCols) : (auxTableLen - _bufMatCols*(batchNum-1));
+       n = batchSize;
+       
+       // copy columns from auxObjArray to _bufMatX
+#pragma omp parallel for
+       for (int j = 0; j < batchSize; ++j) {
+            std::memcpy(_bufMatX+j*_vert_num, _dTable.getAuxArray(colStart+j), _vert_num*sizeof(float));    
+       }
+
+       // invoke the mkl scsrmm kernel
+       mkl_scsrmm(&transa, &m, &n, &k, &alpha, matdescra, csrVals, csrColIdx, csrRowIdx, &(csrRowIdx[1]), _bufMatX, &k, &beta, _bufMatY, &k);
+
+       // copy columns from _bufMatY
+       if (auxSize > 1)
+       {
+
+#pragma omp parallel for
+           for (int j = 0; j < batchSize; ++j) {
+            std::memcpy(_dTable.getAuxArray(colStart+j), _bufMatY+j*_vert_num, _vert_num*sizeof(float));
+           }
+
+       }
+       else
+       {
+
+#pragma omp parallel for
+           for (int j = 0; j < batchSize; ++j) {
+            std::memcpy(_bufVecLeaf[colStart+j], _bufMatY+j*_vert_num, _vert_num*sizeof(float));
+           }
+
+       }
+       // increase colStart;
+       colStart += batchSize;
+   }
+
+   // for (int i = 0; i < auxTableLen; ++i) {
+   //
+   //     float* auxObjArray = _dTable.getAuxArray(i);
+   //     _graph->SpMVNaive(auxObjArray, _bufVec); 
+   //     
+   //     // check the size of auxArray
+   //     if (auxSize > 1)
+   //        std::memcpy(auxObjArray, _bufVec, _vert_num*sizeof(float));
+   //     else
+   //        std::memcpy(_bufVecLeaf[i], _bufVec, _vert_num*sizeof(float));
+   // }
+   // ---- end of SpMM impl -------
+
+#ifdef VERBOSE
+   eltSpmv += (utility::timer() - startTimeComp); 
+#endif   
+
+#ifdef VERBOSE
+   startTimeComp = utility::timer(); 
+#endif
+
 // a second part only involves element-wise multiplication and updating
     for(int i=0; i<countCombNum; i++)
     {

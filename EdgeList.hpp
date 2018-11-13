@@ -22,6 +22,7 @@ class EdgeList
         EdgeList(string fileName) 
         {
             readfromfile(fileName);
+            // readfromfileNoVerticesNum(fileName);
         } 
 
         ~EdgeList() {
