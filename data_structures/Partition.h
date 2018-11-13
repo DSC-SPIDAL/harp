@@ -6,15 +6,15 @@
 
 namespace harp {
     namespace ds {
+        template <class TYPE>
         class Partition {
         private:
             int id;
-            void *data;
+            TYPE *data;
             int size = 0;
-            DataType  dataType;
         public:
 
-            Partition(int id, void *data, int size, DataType dataType);
+            Partition(int id, TYPE *data, int size);
 
             ~Partition();
 
@@ -27,8 +27,6 @@ namespace harp {
             int getSize();
 
             void clear();
-
-            DataType  getDataType();
         };
 
         enum PartitionState {

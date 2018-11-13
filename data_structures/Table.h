@@ -10,14 +10,14 @@
 
 namespace harp {
     namespace ds {
+        template<class TYPE>
         class Table {
         private:
-            std::map<int, Partition *> partitionMap;
+            std::map<int, Partition<TYPE> *> partitionMap;
             std::set<int> partitionIds;
             int id;
-            DataType dataType;
         public:
-            Table(int id, DataType dataType);//todo add combiner
+            Table(int id);//todo add combiner
 
             ~Table();
 
@@ -25,17 +25,15 @@ namespace harp {
 
             long getPartitionCount();
 
-            std::map<int, Partition *> getPartitions();
+            std::map<int, Partition<TYPE> *> getPartitions();
 
-            PartitionState addPartition(Partition *partition);
+            PartitionState addPartition(Partition<TYPE> *partition);
 
-            Partition *getPartition(int pid);
-
-            DataType getDataType();
+            Partition<TYPE> *getPartition(int pid);
 
             long removePartition(int pid, bool clearMemory = true);
 
-            void replaceParition(int pid, Partition *partition);
+            void replaceParition(int pid, Partition<TYPE> *partition);
 
             void clear();
         };

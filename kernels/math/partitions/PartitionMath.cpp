@@ -10,7 +10,6 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 //
-
 #include "PartitionMath.h"
 #include "math.h"
 #include "iostream"
@@ -18,9 +17,13 @@
 namespace harp {
     namespace math {
         namespace partition {
-            double distance(harp::ds::Partition *p1, harp::ds::Partition *p2) {
-                auto *p1Data = static_cast<float *>(p1->getData());
-                auto *p2Data = static_cast<float *>(p2->getData());
+            template<typename TYPE>
+            double distance(harp::ds::Partition<TYPE> *p1, harp::ds::Partition<TYPE> *p2) {
+                if (p1->getSize() != p2->getSize()) {
+                    throw "Can't calculate distance due to partition size mismatch.";
+                }
+                auto *p1Data = static_cast<TYPE *>(p1->getData());
+                auto *p2Data = static_cast<TYPE *>(p2->getData());
                 double sum = 0;
                 for (int i = 0; i < p1->getSize(); i++) {
                     sum += (pow(p1Data[i] - p2Data[i], 2));

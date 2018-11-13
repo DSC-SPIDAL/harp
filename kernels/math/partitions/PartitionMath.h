@@ -19,7 +19,8 @@
 namespace harp {
     namespace math {
         namespace partition {
-            double distance(harp::ds::Partition *p1, harp::ds::Partition *p2);
+            template<class TYPE>
+            double distance(harp::ds::Partition<TYPE> *p1, harp::ds::Partition<TYPE> *p2);
         }
     }
 }

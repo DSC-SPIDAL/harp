@@ -19,21 +19,22 @@
 
 namespace harp {
     namespace kernels {
-        void kmeans(harp::ds::Table *centroids, harp::ds::Table *points, int iterations) {
+        template<class TYPE>
+        void kmeans(harp::ds::Table<TYPE> *centroids, harp::ds::Table<TYPE> *points, int iterations) {
             long numOfCentroids = centroids->getPartitionCount();
-            auto *clusters = new harp::ds::Table *[numOfCentroids];
+            auto *clusters = new harp::ds::Table<TYPE> *[numOfCentroids];
             for (int i = 0; i < centroids->getPartitionCount(); i++) {
-                clusters[i] = new harp::ds::Table(0, HP_FLOAT);
+                clusters[i] = new harp::ds::Table<TYPE>(i);
             }
 
             for (int i = 0; i < iterations; i++) {
                 for (auto p :points->getPartitions()) {
                     int minCentroidIndex = 0;
-                    double minDistance = DBL_MAX;
+                    auto minDistance = DBL_MAX;
                     int currentCentroidIndex = 0;
                     for (auto c :centroids->getPartitions()) {
                         double distance = harp::math::partition::distance(p.second, c.second);
-                        std::cout << "Distance : " << distance << std::endl;
+                        //std::cout << "Distance : " << distance << std::endl;
                         if (distance < minDistance) {
                             minDistance = distance;
                             minCentroidIndex = currentCentroidIndex;

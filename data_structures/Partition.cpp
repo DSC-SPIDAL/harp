@@ -5,40 +5,42 @@
 
 namespace harp {
     namespace ds {
-        Partition::Partition(int id, void *data, int size, DataType dataType) {
+        template<class TYPE>
+        Partition<TYPE>::Partition(int id, TYPE *data, int size) {
             this->id = id;
             this->data = data;
             this->size = size;
-            this->dataType = dataType;
         }
 
-        int Partition::getId() {
+        template<class TYPE>
+        int Partition<TYPE>::getId() {
             return this->id;
         }
 
-        void *Partition::getData() {
+        template<class TYPE>
+        void *Partition<TYPE>::getData() {
             return this->data;
         }
 
-        int Partition::getSize() {
+        template<class TYPE>
+        int Partition<TYPE>::getSize() {
             return this->size;
         }
 
-        void Partition::clear() {
+        template<class TYPE>
+        void Partition<TYPE>::clear() {
             delete[] data;
         }
 
-        Partition::~Partition() {
+        template<class TYPE>
+        Partition<TYPE>::~Partition() {
             this->clear();
         }
 
-        void Partition::setData(void *data) {
+        template<class TYPE>
+        void Partition<TYPE>::setData(void *data) {
             this->clear();
             this->data = data;
-        }
-
-        DataType Partition::getDataType() {
-            return this->dataType;
         }
     }
 }

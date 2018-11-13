@@ -25,7 +25,7 @@ elseif( NOT Log4cxx_FOUND )
     endif()
 endif()
 
-add_executable(harpc data_structures/Partition.cpp data_structures/Partition.h data_structures/Table.h data_structures/Table.cpp worker/Worker.h worker/Worker.cpp data_structures/inculdes.h communication/Communicator.h communication/Communicator.cpp examples/kmeans/kmeans.cpp examples/generators/DataGenerator.cpp examples/generators/DataGenerator.h data_structures/DataTypes.h data_structures/DataTypes.cpp kernels/kmeans/KMeans.h kernels/kmeans/KMeans.cpp kernels/math/partitions/PartitionMath.h kernels/math/partitions/PartitionMath.cpp kernels/math/table/TableMath.h kernels/math/table/TableMath.cpp kernels/math/HarpMath.h)
+add_executable(harpc data_structures/Partition.cpp data_structures/Partition.h data_structures/Table.h data_structures/Table.cpp worker/Worker.h worker/Worker.cpp data_structures/inculdes.h communication/Communicator.h communication/Communicator.cpp examples/kmeans/kmeans.cpp examples/generators/DataGenerator.cpp examples/generators/DataGenerator.h data_structures/DataTypes.h data_structures/DataTypes.cpp kernels/kmeans/KMeans.h kernels/kmeans/KMeans.cpp kernels/math/partitions/PartitionMath.h kernels/math/partitions/PartitionMath.cpp kernels/math/table/TableMath.h kernels/math/table/TableMath.cpp kernels/math/HarpMath.h kernels/HarpKernels.h)
 #add_executable(harpc main.cpp data_structures/Partition.cpp data_structures/Partition.h data_structures/Table.h data_structures/Table.cpp worker/Worker.h worker/Worker.cpp data_structures/inculdes.h communication/Communicator.h communication/Communicator.cpp examples/generators/DataGenerator.cpp examples/generators/DataGenerator.h harp.h data_structures/DataTypes.cpp)
 
 target_link_libraries(harpc mpi log4cxx)

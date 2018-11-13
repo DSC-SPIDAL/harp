@@ -21,7 +21,11 @@
 namespace harp {
     namespace math {
         namespace table {
-            harp::ds::Partition *mean(harp::ds::Table *table, int partitionSize);
+            template<class TYPE>
+            harp::ds::Partition<TYPE> *mean(harp::ds::Table<TYPE> *table, int partitionSize);
+
+            template<class TYPE>
+            harp::ds::Partition<TYPE> *sum(harp::ds::Table<TYPE> *table, int partitionSize);
         }
     }
 }

@@ -18,11 +18,13 @@ namespace harp {
             this->worldSize = worldSize;
         }
 
-        void Communicator::allGather(harp::ds::Table *table) {
+        template<class TYPE>
+        void Communicator::allGather(harp::ds::Table<TYPE> *table) {
 
         }
 
-        void Communicator::allReduce(harp::ds::Table *table, MPI_Op operation) {
+        template<class TYPE>
+        void Communicator::allReduce(harp::ds::Table<TYPE> *table, MPI_Op operation) {
             MPI_Datatype dataType = getMPIDataType(table->getDataType());
             for (auto p : table->getPartitions()) {//keys are ordered
                 auto *data = createArray(table->getDataType(), p.second->getSize());
@@ -38,7 +40,8 @@ namespace harp {
             }
         }
 
-        void Communicator::broadcast(harp::ds::Table *table, int bcastWorkerId) {
+        template<class TYPE>
+        void Communicator::broadcast(harp::ds::Table<TYPE> *table, int bcastWorkerId) {
             //determining number of partitions to bcast
             int partitionCount;
             if (bcastWorkerId == this->workerId) {
@@ -71,16 +74,17 @@ namespace harp {
                     }
                     MPI_Bcast(data, partitionSize, dataType, bcastWorkerId, MPI_COMM_WORLD);
                     if (bcastWorkerId != this->workerId) {
-                        auto *newPartition = new harp::ds::Partition(partitionId, data,
-                                                                     partitionSize,
-                                                                     table->getDataType());
+                        auto *newPartition = new harp::ds::Partition<TYPE>(partitionId, data,
+                                                                           partitionSize,
+                                                                           table->getDataType());
                         table->addPartition(newPartition);
                     }
                 }
             }
         }
 
-        void Communicator::rotate(harp::ds::Table *table) {
+        template<class TYPE>
+        void Communicator::rotate(harp::ds::Table<TYPE> *table) {
             MPI_Datatype dataType = getMPIDataType(table->getDataType());
 
             int sendTo = (this->workerId + 1) % this->worldSize;
@@ -120,7 +124,7 @@ namespace harp {
 
             //table->clear();
 
-            auto *recvTab = new harp::ds::Table(table->getId(), table->getDataType());
+            auto *recvTab = new harp::ds::Table<TYPE>(table->getId(), table->getDataType());
 
             //receiving DATA
             for (long i = 0; i < numOfPartitionsToRecv * 2; i += 2) {
@@ -130,8 +134,8 @@ namespace harp {
                                          partitionSize);
                 MPI_Recv(data, partitionSize, dataType, receiveFrom, partitionId, MPI_COMM_WORLD,
                          MPI_STATUS_IGNORE);
-                auto *newPartition = new harp::ds::Partition(partitionId, data, partitionSize,
-                                                             table->getDataType());
+                auto *newPartition = new harp::ds::Partition<TYPE>(partitionId, data, partitionSize,
+                                                                   table->getDataType());
                 recvTab->addPartition(newPartition);
             }
 

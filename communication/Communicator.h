@@ -19,13 +19,17 @@ namespace harp {
 
             void barrier();
 
-            void allGather(harp::ds::Table *table);
+            template<class TYPE>
+            void allGather(harp::ds::Table<TYPE> *table);
 
-            void allReduce(harp::ds::Table *table, MPI_Op operation);
+            template<class TYPE>
+            void allReduce(harp::ds::Table<TYPE> *table, MPI_Op operation);
 
-            void broadcast(harp::ds::Table *table, int bcastWorkerId);
+            template<class TYPE>
+            void broadcast(harp::ds::Table<TYPE> *table, int bcastWorkerId);
 
-            void rotate(harp::ds::Table *table);
+            template<class TYPE>
+            void rotate(harp::ds::Table<TYPE> *table);
         };
     }
 }

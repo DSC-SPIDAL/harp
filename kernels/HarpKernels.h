@@ -12,13 +12,12 @@
 //
 //
 
-#ifndef HARPC_HARPMATH_H
-#define HARPC_HARPMATH_H
+#ifndef HARPC_HARPKERNELS_H
+#define HARPC_HARPKERNELS_H
 
-#include "partitions/PartitionMath.h"
-#include "partitions/PartitionMath.cpp"
+#include "kmeans/KMeans.h"
+#include "kmeans/KMeans.cpp"
 
-#include "table/TableMath.h"
-#include "table/TableMath.cpp"
+#include "math/HarpMath.h";
 
-#endif //HARPC_HARPMATH_H
+#endif //HARPC_HARPKERNELS_H

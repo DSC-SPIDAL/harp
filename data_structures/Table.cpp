@@ -2,33 +2,39 @@
 
 namespace harp {
     namespace ds {
-        Table::Table(int id, DataType dataType) {
+        template<class TYPE>
+        Table<TYPE>::Table(int id) {
             this->id = id;
-            this->dataType = dataType;
         }
 
-        int Table::getId() {
+        template<class TYPE>
+        int Table<TYPE>::getId() {
             return this->id;
         }
 
-        long Table::getPartitionCount() {
+        template<class TYPE>
+        long Table<TYPE>::getPartitionCount() {
             return this->partitionMap.size();
         }
 
-        std::map<int, Partition *> Table::getPartitions() {
+        template<class TYPE>
+        std::map<int, Partition<TYPE> *> Table<TYPE>::getPartitions() {
             return this->partitionMap;
         }
 
-        PartitionState Table::addPartition(Partition *partition) {
+        template<class TYPE>
+        PartitionState Table<TYPE>::addPartition(Partition<TYPE> *partition) {
             this->partitionMap.insert(std::make_pair(partition->getId(), partition));
             return COMBINED;
         }
 
-        Partition *Table::getPartition(int pid) {
+        template<class TYPE>
+        Partition<TYPE> *Table<TYPE>::getPartition(int pid) {
             return this->partitionMap.at(pid);
         }
 
-        long Table::removePartition(int pid, bool clearMemory) {
+        template<class TYPE>
+        long Table<TYPE>::removePartition(int pid, bool clearMemory) {
             if (this->partitionMap.count(pid) > 0) {
                 if (clearMemory) {
                     delete this->getPartition(pid);
@@ -39,24 +45,23 @@ namespace harp {
             }
         }
 
-        void Table::clear() {
+        template<class TYPE>
+        void Table<TYPE>::clear() {
             for (auto p: this->partitionMap) {
                 delete p.second;
             }
             this->partitionMap.clear();
         }
 
-        Table::~Table() {
+        template<class TYPE>
+        Table<TYPE>::~Table() {
             this->clear();
         }
 
-        void Table::replaceParition(int pid, Partition *partition) {
+        template<class TYPE>
+        void Table<TYPE>::replaceParition(int pid, Partition<TYPE> *partition) {
             this->removePartition(pid);
             this->addPartition(partition);
-        }
-
-        DataType Table::getDataType() {
-            return this->dataType;
         }
     }
 }

@@ -12,28 +12,56 @@
 //
 //
 
-#import "TableMath.h"
+#include "TableMath.h"
 #include "iostream"
 
 namespace harp {
     namespace math {
         namespace table {
-            harp::ds::Partition *mean(harp::ds::Table *table, int partitionSize) {//todo remove partition size
+
+            template<class TYPE>
+            harp::ds::Partition<TYPE> *
+            sumAndDivide(harp::ds::Table<TYPE> *table, int partitionSize, int divisor = 1) {//todo remove partition size
                 auto *mean = new float[partitionSize];
                 for (int i = 0; i < partitionSize; i++) {
                     mean[i] = 0;
                 }
-                long partitionCount = table->getPartitionCount();
-                std::cout << "pcount " << partitionCount << std::endl;
                 for (auto p: table->getPartitions()) {
-                    auto *data = static_cast<float *>(p.second->getData());
+                    auto *data = static_cast<TYPE *>(p.second->getData());
                     for (int i = 0; i < p.second->getSize(); i++) {
-                        mean[i] += (data[i] / partitionCount);
-                        std::cout << "point " << data[i] << " mean : " << mean[i] << " pc " << partitionCount
-                                  << std::endl;
+                        mean[i] += (data[i] /
+                                    divisor); //todo check whether compiler optimize this division when divisor = 1
                     }
                 }
-                return new harp::ds::Partition(-1, mean, partitionSize, HP_FLOAT);
+                return new harp::ds::Partition<TYPE>(table->getId(), mean, partitionSize);
+            }
+
+            /**
+             * Calaculates the sum of all partitions. Output partition id will be the id of the table
+             *
+             * @tparam TYPE
+             * @param table
+             * @param partitionSize
+             * @return
+             */
+            template<class TYPE>
+            harp::ds::Partition<TYPE> *
+            sum(harp::ds::Table<TYPE> *table, int partitionSize) {
+                sumAndDivide(table, partitionSize, 1);
+            }
+
+            /**
+             * Calculates the mean of all partitions. Output partition id will be the id of the table
+             *
+             * @tparam TYPE
+             * @param table
+             * @param partitionSize
+             * @return
+             */
+            template<class TYPE>
+            harp::ds::Partition<TYPE> *
+            mean(harp::ds::Table<TYPE> *table, int partitionSize) {//todo remove partition size
+                return sumAndDivide(table, partitionSize, static_cast<int>(table->getPartitionCount()));
             }
         }
     }
