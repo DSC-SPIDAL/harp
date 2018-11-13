@@ -16,7 +16,7 @@ class DataTableColMajor
         DataTableColMajor(): _subTempsList(nullptr), _dataTable(nullptr), 
         _tableLen(nullptr), _curTable(nullptr), _curMainTable(nullptr), 
         _curAuxTable(nullptr), _indexer(nullptr), _thdNum(1), _blockSizeBasic(1), _blockSize(nullptr),
-        _blockPtrDst(nullptr), _blockPtrA(nullptr), _blockPtrB(nullptr){}
+        _blockPtrDst(nullptr), _blockPtrDstLast(nullptr), _blockPtrA(nullptr), _blockPtrB(nullptr){}
 
         ~DataTableColMajor () {cleanTable();}
 
@@ -48,7 +48,7 @@ class DataTableColMajor
     
         void arrayWiseFMA(float* dst, float* a, float* b);
         void arrayWiseFMAScale(float* dst, float* a, float* b, float scale);
-        void arrayWiseFMAScaleLast(double* dst, float* a, float* b, float scale);
+        void arrayWiseFMALast(double* dst, float* a, float* b);
         void arrayWiseFMAAVX(float* dst, float* a, float* b);
         void arrayWiseFMANaive(float* dst, float* a, float* b);
         void arrayWiseFMANaiveAVX(float* dst, float* a, float* b);
@@ -79,6 +79,7 @@ class DataTableColMajor
         float** _curMainTable;
         float** _curAuxTable;
         float** _blockPtrDst;
+        double** _blockPtrDstLast;
         float** _blockPtrA;
         float** _blockPtrB;
 

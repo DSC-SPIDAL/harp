@@ -275,15 +275,9 @@ double CountMat::countNonBottomePruned(int subsId)
    startTimeComp = utility::timer(); 
 #endif
    for (int i = 0; i < auxTableLen; ++i) {
+
        float* auxObjArray = _dTable.getAuxArray(i);
        _graph->SpMVNaive(auxObjArray, _bufVec); 
-       // if (subsId == 2)
-          // _graph->SpMVNaiveScale(auxObjArray, _bufVec, 0.000000001); 
-       // else
-          // _graph->SpMVNaiveScale(auxObjArray, _bufVec, 1.0); 
-
-       // copy data back to aux array
-       // subSum += sumVec(_bufVec, _vert_num);
        
        // check the size of auxArray
        if (auxSize > 1)
@@ -310,15 +304,12 @@ double CountMat::countNonBottomePruned(int subsId)
 
         if (subsId > 0)
             objArray = _dTable.getCurTableArray(combIdx);
-        // if (subsId == 0)
-        //     objArray = bufLastSub;
-        // else
-        //     objArray = _dTable.getCurTableArray(combIdx);
 
         for (int j = 0; j < splitCombNum; ++j) {
 
             int mainIdx = mainSplitLocal[i][j];
             int auxIdx = auxSplitLocal[i][j];
+
 // #ifdef VERBOSE
 //         printf("Sub: %d, mainIdx: %d, auxIdx: %d\n", subsId, mainIdx, auxIdx);
 //         std::fflush(stdout);
@@ -333,33 +324,23 @@ double CountMat::countNonBottomePruned(int subsId)
 
             // element-wise mul 
             float* mainArraySelect = _dTable.getMainArray(mainIdx);
-
-            // _dTable.arrayWiseFMANaive(objArray, auxArraySelect, mainArraySelect);
-            // _dTable.arrayWiseFMANaiveAVX(objArray, auxArraySelect, mainArraySelect);
-            // _dTable.arrayWiseFMA(objArray, auxArraySelect, mainArraySelect);
-            // _dTable.arrayWiseFMAAVX(objArray, auxArraySelect, mainArraySelect);
             if (subsId > 0)
             {
-                // _dTable.arrayWiseFMAScale(objArray, auxArraySelect, mainArraySelect, 1000000000.0);
                 if (_isScaled == 0)
-                {
-                    // _dTable.arrayWiseFMAScale(objArray, auxArraySelect, mainArraySelect, 0.000000001);
                     _dTable.arrayWiseFMAScale(objArray, auxArraySelect, mainArraySelect, 1.0e-12);
-                }
                 else
-                    _dTable.arrayWiseFMA(objArray, auxArraySelect, mainArraySelect);
+                    _dTable.arrayWiseFMAAVX(objArray, auxArraySelect, mainArraySelect);
             }
             else
             {
-                _dTable.arrayWiseFMAScaleLast(bufLastSub, auxArraySelect, mainArraySelect, 1.0);
+                // the last scale use 
+                _dTable.arrayWiseFMALast(bufLastSub, auxArraySelect, mainArraySelect);
             }
 
         }
 
         // if (subsId > 0)
-            // scaleVec(objArray, _vert_num, 1000000000.0);
-        if (subsId > 0)
-            subSum += sumVec(objArray, _vert_num);
+        //     subSum += sumVec(objArray, _vert_num);
 
     }
 #ifdef VERBOSE
@@ -375,8 +356,9 @@ double CountMat::countNonBottomePruned(int subsId)
             countSum += bufLastSub[k];
         }
 
-        // countSum *= 1000000000.0;
-        countSum *= 1.0e+12;
+        // to recover the scale down process
+        if (_isScaled == 1)
+            countSum *= 1.0e+12;
 
 #ifdef __INTEL_COMPILER
         _mm_free(bufLastSub);
@@ -390,8 +372,8 @@ double CountMat::countNonBottomePruned(int subsId)
     printf("Sub %d, counting time %f, Spmv time %f: ratio: %f\%,  Mul time %f: ratio: %f\% \n", subsId, subsTime, eltSpmv, 100*(eltSpmv/subsTime), eltMul, 100*(eltMul/subsTime));
     _spmvTime += eltSpmv;
     _eMATime += eltMul;
-    printf("Sub %d, counting val %e\n", subsId, subSum);
-    std::fflush(stdout); 
+    // printf("Sub %d, counting val %e\n", subsId, subSum);
+    // std::fflush(stdout); 
 #endif
 
 // #ifdef VERBOSE
@@ -477,7 +459,6 @@ double CountMat::countNonBottomeOriginal(int subsId)
             startTimeComp = utility::timer();
 #endif
             _graph->SpMVNaive(auxArraySelect, _bufVec);
-            // _graph->SpMVMKL(auxArraySelect, _bufVec, _thd_num);
 #ifdef VERBOSE
             eltSpmv += (utility::timer() - startTimeComp);
 #endif

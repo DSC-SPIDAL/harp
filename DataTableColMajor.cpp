@@ -44,10 +44,12 @@ void DataTableColMajor::initDataTable(Graph* subTempsList, IndexSys* indexer, in
     _blockSize[_thdNum-1] = ( (_vertsNum%_thdNum == 0) ) ? _blockSizeBasic : (_blockSizeBasic + (_vertsNum%_thdNum)); 
 
     _blockPtrDst = (float**) malloc(_thdNum*sizeof(float*));
+    _blockPtrDstLast = (double**) malloc(_thdNum*sizeof(double*));
     _blockPtrA = (float**) malloc(_thdNum*sizeof(float*));
     _blockPtrB = (float**) malloc(_thdNum*sizeof(float*));
     for (int i = 0; i < _thdNum; ++i) {
        _blockPtrDst[i] = nullptr; 
+       _blockPtrDstLast[i] = nullptr; 
        _blockPtrA[i] = nullptr; 
        _blockPtrB[i] = nullptr; 
     }
@@ -171,6 +173,7 @@ void DataTableColMajor::cleanTable()
     free(_blockSize);
 
     free(_blockPtrDst);
+    free(_blockPtrDstLast);
     free(_blockPtrA);
     free(_blockPtrB);
 }
@@ -294,37 +297,31 @@ void DataTableColMajor::arrayWiseFMAScale(float* dst, float* a, float* b, float 
 
 }
 
-void DataTableColMajor::arrayWiseFMAScaleLast(double* dst, float* a, float* b, float scale)
+void DataTableColMajor::arrayWiseFMALast(double* dst, float* a, float* b)
 {
-
-#pragma omp parallel for simd schedule(static) aligned(dst, a, b: 64)
-    for (int i = 0; i < _vertsNum; ++i) {
-        dst[i] = dst[i] + (a[i]*(double)b[i])*scale; 
+    _blockPtrDstLast[0] = dst; 
+    _blockPtrA[0] = a;
+    _blockPtrB[0] = b;
+    //
+    for (int i = 1; i < _thdNum; ++i) {
+        _blockPtrDstLast[i] = _blockPtrDstLast[i-1] + _blockSizeBasic; 
+        _blockPtrA[i] = _blockPtrA[i-1] + _blockSizeBasic;
+        _blockPtrB[i] = _blockPtrB[i-1] + _blockSizeBasic;
     }
 
-//     _blockPtrDst[0] = dst; 
-//     _blockPtrA[0] = a;
-//     _blockPtrB[0] = b;
-//     //
-//     for (int i = 1; i < _thdNum; ++i) {
-//         _blockPtrDst[i] = _blockPtrDst[i-1] + _blockSizeBasic; 
-//         _blockPtrA[i] = _blockPtrA[i-1] + _blockSizeBasic;
-//         _blockPtrB[i] = _blockPtrB[i-1] + _blockSizeBasic;
-//     }
-//
-// #pragma omp parallel for schedule(static) num_threads(_thdNum)
-//     for(int i=0; i<_thdNum; i++)
-//     {
-//
-//         float* blockPtrDstLocal = _blockPtrDst[i]; 
-//         float* blockPtrALocal = _blockPtrA[i]; 
-//         float* blockPtrBLocal = _blockPtrB[i]; 
-//         int blockSizeLocal = _blockSize[i];
-//
-// #pragma omp simd aligned(dst, a, b: 64)
-//         for(int j=0; j<blockSizeLocal;j++)
-//             blockPtrDstLocal[j] = blockPtrDstLocal[j] + blockPtrALocal[j]*(blockPtrBLocal[j]*scale);
-//     }
+#pragma omp parallel for schedule(static) num_threads(_thdNum)
+    for(int i=0; i<_thdNum; i++)
+    {
+
+        double* blockPtrDstLocal = _blockPtrDstLast[i]; 
+        float* blockPtrALocal = _blockPtrA[i]; 
+        float* blockPtrBLocal = _blockPtrB[i]; 
+        int blockSizeLocal = _blockSize[i];
+
+#pragma omp simd aligned(dst, a, b: 64)
+        for(int j=0; j<blockSizeLocal;j++)
+            blockPtrDstLocal[j] = blockPtrDstLocal[j] + blockPtrALocal[j]*blockPtrBLocal[j];
+    }
 
 }
 
