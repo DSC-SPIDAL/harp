@@ -87,6 +87,9 @@ class FastHistMaker: public TreeUpdater {
       if (param_.debug_verbose > 0) {
         LOG(INFO) << "Generating gmat: " << dmlc::GetTime() - tstart << " sec";
       }
+
+      startVtune("vtune-flag.txt");
+      LOG(INFO) << "End of initialization, start training";
     }
     printcut(gmat_.cut);
 

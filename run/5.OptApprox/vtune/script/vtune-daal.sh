@@ -121,8 +121,8 @@ max_wait_time=0
 #	memorySaveMode ; 0 by default
 #	categoricalFeatures ; ',' separated feature ids, 'x' by default means non-categoriy features
 #	threadnum   ; set the threadnumber, set to existing physical core number by default
-echo "../bin/daalgbt-icc-vtune higgs_train.csv higgs_test.csv $totaliter 2 28 6 $histogram 0 0.1 x $threadnum "
-../bin/daalgbt-icc-vtune higgs_train.csv higgs_test.csv $totaliter 2 28 6 $histogram 0 0.1 x $threadnum &
+echo "../bin/daalgbt-icc-vtune higgs_train.csv higgs_valid.csv $totaliter 2 28 6 $histogram 0 0.1 x $threadnum "
+../bin/daalgbt-icc-vtune higgs_train.csv higgs_valid.csv $totaliter 2 28 6 $histogram 0 0.1 x $threadnum &
 exec_pid=$!
 
 # sleep 10

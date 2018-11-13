@@ -18,6 +18,7 @@
 #include <algorithm>
 #include <thread>
 #include <mutex>
+#include <chrono>
 #include <fstream>
 
 #include <xgboost/tree_model.h>
@@ -31,6 +32,7 @@ using xgboost::common::GHistIndexMatrix;
 using xgboost::tree::SplitEntry;
 
 
+void startVtune(std::string tagfilename, int waittime=10000);
 void printVec(std::string msg, const std::vector<unsigned int>& vec);
 void printVec(std::string msg, const std::vector<int>& vec);
 void printInt(std::string msg, int val);

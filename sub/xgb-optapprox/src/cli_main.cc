@@ -21,6 +21,7 @@
 #include <vector>
 #include "./common/sync.h"
 #include "./common/config.h"
+#include "./common/debug.h"
 #include <fstream>
 
 namespace xgboost {
@@ -201,15 +202,8 @@ void CLITrain(const CLIParam& param) {
 /* 
  * vtune trigger
  * */
-  if(1){
-      std::ofstream write;
-    write.open("vtune-flag.txt");
-    write << "okay" << std::endl;
-    write.close();
-  }
-
-
-
+  //startVtune("vtune-flag.txt");
+  LOG(INFO) << "Start training loop";
 
   // start training.
   const double start = dmlc::GetTime();

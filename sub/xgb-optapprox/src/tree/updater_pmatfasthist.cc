@@ -1078,8 +1078,16 @@ class GlobalProposalHistMakerCompactFastHist: public CQHistMakerCompactFastHist<
         //DEBUG
         printdmat(*p_fmat->GetSortedColumnBatches().begin());
         printcut(this->cut_);
+
+        startVtune("vtune-flag.txt");
+        LOG(INFO) << "End of initialization, start training";
       }
     }
+
+
+
+
+
   }
  
   void CreateHist(const std::vector<GradientPair> &gpair,

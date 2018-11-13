@@ -406,7 +406,8 @@ void GHistBuilder::BuildHist(const std::vector<GradientPair>& gpair,
   const size_t nrows = row_indices.end - row_indices.begin;
   const size_t rest = nrows % kUnroll;
 
-  #pragma omp parallel for num_threads(nthread) schedule(guided)
+  //#pragma omp parallel for num_threads(nthread) schedule(guided)
+  #pragma omp parallel for num_threads(nthread) schedule(dynamic)
   for (bst_omp_uint i = 0; i < nrows - rest; i += kUnroll) {
     const bst_omp_uint tid = omp_get_thread_num();
     const size_t off = tid * nbins_;

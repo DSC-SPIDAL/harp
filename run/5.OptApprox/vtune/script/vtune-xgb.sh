@@ -86,7 +86,7 @@ mode=native
 dlimit=0 
 path_xgboost=/scratch_hdd/hpda/optgbt/test/vtune/bin/
 path_tbb=/opt/intel/compilers_and_libraries/linux/tbb/lib/intel64_lin/gcc4.4
-src_path_xgboost=/scratch_hdd/hpda/optgbt/xgboost/src/
+src_path_xgboost=/share/jproject/pengb/share/optgbt/gbt-test/sub/xgb-optapprox
 src_path_tbb=/opt/intel/compilers_and_libraries/linux/tbb
 
 ## knob option

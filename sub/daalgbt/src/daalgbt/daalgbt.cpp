@@ -231,12 +231,12 @@ training::ResultPtr trainModel()
 /* 
  * vtune trigger
  * */
-  if(1){
-    ofstream write;
-    write.open("vtune-flag.txt");
-    write << "okay" << std::endl;
-    write.close();
-  }
+  //if(1){
+  //  ofstream write;
+  //  write.open("vtune-flag.txt");
+  //  write << "okay" << std::endl;
+  //  write.close();
+  //}
 
 
 

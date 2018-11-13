@@ -979,6 +979,9 @@ class GlobalProposalHistMakerBinid: public CQHistMakerBinid<TStats> {
 
         //DEBUG
         printdmat(*p_fmat->GetSortedColumnBatches().begin());
+        startVtune("vtune-flag.txt");
+        LOG(INFO) << "End of initialization, start training";
+        
       }
 
       // start accumulating statistics

@@ -1050,6 +1050,9 @@ class GlobalProposalHistMakerFullCompact: public CQHistMakerFullCompact<TStats> 
         //DEBUG
         printdmat(*p_fmat->GetSortedColumnBatches().begin());
         printcut(this->cut_);
+
+        startVtune("vtune-flag.txt");
+        LOG(INFO) << "End of initialization, start training";
       }
     }
   }

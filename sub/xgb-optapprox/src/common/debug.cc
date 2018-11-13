@@ -7,6 +7,22 @@
 
 namespace xgboost {
 
+void startVtune(std::string tagfilename, int waittime=10000){
+    static bool isInit = false;
+
+    if (!isInit){
+        std::ofstream write;
+        write.open(tagfilename);
+        write << "okay" << std::endl;
+        write.close();
+        isInit = true;
+
+        //sleep for 1 sec
+        std::this_thread::sleep_for(std::chrono::milliseconds(waittime));
+    }
+}
+
+
 #ifdef USE_DEBUG
 //void printnodes(std::vector<NodeEntry>& nodes, std::string header=""){
 //
