@@ -179,7 +179,7 @@ double CountMat::compute(Graph& templates)
     double probColorful = factorial(_color_num) / 
                 ( factorial(_color_num - _templates->get_vert_num())*pow(_color_num, _templates->get_vert_num()));
 
-    printf("Final raw count is %f\n", finalCount);
+    printf("Final raw count is %e\n", finalCount);
     std::fflush(stdout);
 
     printf("Prob is %f\n", probColorful);
@@ -201,6 +201,8 @@ double CountMat::colorCounting()
     colorInit();
 
     double countTotal = 0.0;
+    // reset scaling flag
+    _isScaled = 0;
 
     for (int s = _total_sub_num - 1; s >= 0; --s) {
 
