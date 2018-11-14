@@ -442,7 +442,7 @@ class CQHistMakerCompactFastHist: public HistMakerCompactFastHist<TStats> {
                     const std::vector<GradientPair> &gpair,
                     const MetaInfo &info,
                     const bst_uint ridx) {
-      CHECK_NE(binid, hist.size);
+      //CHECK_NE(binid, hist.size);
       hist.data[binid].Add(gpair, info, ridx);
     }
 #endif
@@ -689,7 +689,7 @@ class CQHistMakerCompactFastHist: public HistMakerCompactFastHist<TStats> {
       }
   }
   inline void UpdateHistColWithIndex(const std::vector<GradientPair> &gpair,
-                            const DMatrixCompact::Inst &col,
+                            const DMatrixCompactColDense &col,
                             const MetaInfo &info,
                             const RegTree &tree,
                             const std::vector<bst_uint> &fset,
@@ -707,72 +707,72 @@ class CQHistMakerCompactFastHist: public HistMakerCompactFastHist<TStats> {
       //hbuilder[nid].hist = this->wspace_.hset[0].GetHistUnit(fid_offset, wid);
       hbuilder[nid].hist = this->wspace_.hset[0].GetHistUnit(fid_offset, nid);
     }
+
+#ifdef USE_HALFTRICK
+#define CHECKHALFCOND ((nid&1)==0)
+#else
+#define CHECKHALFCOND (1)
+#endif
+
+
     if (TStats::kSimpleStats != 0 && this->param_.cache_opt != 0) {
+    //if (0){
       constexpr bst_uint kBuffer = 32;
       bst_uint align_length = col.size() / kBuffer * kBuffer;
       int buf_position[kBuffer];
       GradientPair buf_gpair[kBuffer];
       for (bst_uint j = 0; j < align_length; j += kBuffer) {
         for (bst_uint i = 0; i < kBuffer; ++i) {
-          bst_uint ridx = col[j + i]._index();
-          buf_position[i] = this->position_[ridx];
+          //bst_uint ridx = col[j + i]._index();
+          bst_uint ridx = col._index(j+i);
+          //buf_position[i] = this->position_[ridx];
+          buf_position[i]= this->DecodePosition(ridx);
           buf_gpair[i] = gpair[ridx];
         }
         for (bst_uint i = 0; i < kBuffer; ++i) {
           const int nid = buf_position[i];
-            if (nid >= 0 || (nid %2)==1 ) {
+            //if (nid == 0 || (nid %2)==1 ) {
+            if (CHECKHALFCOND) {
             //hbuilder[nid].Add(col[j + i].fvalue, buf_gpair[i]);
-//#ifdef USE_BINID
-            hbuilder[nid].AddWithIndex(col[j + i]._binid(), buf_gpair[i]);
-//#endif
-
-            
-#ifdef USE_BINIDUNION
-            //hbuilder[nid].AddWithIndex(*(reinterpret_cast<bst_uint*>(&col[j + i].fvalue)), buf_gpair[i]);
-            //hbuilder[nid].AddWithIndex(&(col[j + i].fvalue), buf_gpair[i]);
-            //hbuilder[nid].AddWithIndex(col[j + i].fvalue, buf_gpair[i]);
-#endif
+            //hbuilder[nid].AddWithIndex(col[j + i]._binid(), buf_gpair[i]);
+            hbuilder[nid].AddWithIndex(col._binid(j+i), buf_gpair[i]);
           }
         }
       }
       for (bst_uint j = align_length; j < col.size(); ++j) {
-        const bst_uint ridx = col[j]._index();
-        const int nid = this->position_[ridx];
+        //const bst_uint ridx = col[j]._index();
+        const bst_uint ridx = col._index(j);
+        //const int nid = this->position_[ridx];
+        const int nid = this->DecodePosition(ridx);
+
         //if (nid >= 0) {
-        if (nid >= 0 || (nid %2)==1 ) {
+        //if (nid == 0 || (nid %2)==1 ) {
+        //if ((nid & 1) == 0) {
+        if (CHECKHALFCOND) {
           //hbuilder[nid].Add(col[j].fvalue, gpair[ridx]);
- 
-#ifdef USE_BINID
-          hbuilder[nid].AddWithIndex(col[j]._binid(), gpair[ridx]);
-#endif
-          
-#ifdef USE_BINIDUNION
-          //hbuilder[nid].AddWithIndex(*(reinterpret_cast<bst_uint*>(&col[j].fvalue)), gpair[ridx]);
-          //hbuilder[nid].AddWithIndex(&(col[j].fvalue), gpair[ridx]);
-          //hbuilder[nid].AddWithIndex(col[j].fvalue, gpair[ridx]);
-#endif
+          //hbuilder[nid].AddWithIndex(col[j]._binid(), gpair[ridx]);
+          hbuilder[nid].AddWithIndex(col._binid(j), gpair[ridx]);
         }
       }
     } else {
-      for (const auto& c : col) {
-        const bst_uint ridx = c._index();
-        const int nid = this->position_[ridx];
+      //for (const auto& c : col) {
+      for (bst_uint j = 0; j < col.size(); ++j) {
+        //const bst_uint ridx = c._index();
+        const bst_uint ridx = col._index(j);
+        //const int nid = this->position_[ridx];
+        const int nid = this->DecodePosition(ridx);
         //if (nid >= 0) {
-        if (nid >= 0 || (nid %2)==1 ) {
+        //if (nid == 0 || (nid %2)==1 ) {
+        //if ((nid & 1) == 0) {
+        if (CHECKHALFCOND) {
           //hbuilder[nid].Add(c.fvalue, gpair, info, ridx);
-#ifdef USE_BINID
-          hbuilder[nid].AddWithIndex(c._binid(), gpair, info, ridx);
-#endif
-          
-#ifdef USE_BINIDUNION
-          //hbuilder[nid].AddWithIndex(*(reinterpret_cast<bst_uint*>(&c.fvalue)), gpair, info, ridx);
-          //hbuilder[nid].AddWithIndex(&(c.fvalue), gpair, info, ridx);
-          //hbuilder[nid].AddWithIndex(c.fvalue, gpair, info, ridx);
-#endif
+          hbuilder[nid].AddWithIndex(col._binid(j), gpair, info, ridx);
         }
       }
     }
 
+
+#ifdef USE_HARLTRICK
     //get the right node
     const unsigned nid_start = this->qexpand_[0];
     if (nid_start == 0)
@@ -785,10 +785,12 @@ class CQHistMakerCompactFastHist: public HistMakerCompactFastHist<TStats> {
       auto parent_hist = this->wspace_.hset[0].GetHistUnit(fid_offset, nid_parent + i/2);
       //hbuilder[nid+1] = parent_hist - hbuilder[nid]
       for(int j=0; j < hbuilder[nid].hist.size; j++){
-        hbuilder[nid+1].hist.data[j].SetSubstract(parent_hist.data[j],hbuilder[nid].hist.data[j]);
+        //hbuilder[nid+1].hist.data[j].SetSubstract(parent_hist.data[j],hbuilder[nid].hist.data[j]);
+        hbuilder[nid].hist.data[j].SetSubstract(parent_hist.data[j],hbuilder[nid+1].hist.data[j]);
       }
 
     }
+#endif
 
   }
  
@@ -882,7 +884,7 @@ class GlobalProposalHistMakerCompactFastHist: public CQHistMakerCompactFastHist<
   GlobalProposalHistMakerCompactFastHist(){
       this->isInitializedHistIndex = false;
 #ifdef USE_COMPACT
-      p_hmat = new DMatrixCompact();
+      p_hmat = new DMatrixCompactDense();
 #endif
   }
 
@@ -919,7 +921,7 @@ class GlobalProposalHistMakerCompactFastHist: public CQHistMakerCompactFastHist<
 
   //dup func
   inline void CorrectNonDefaultPositionByBatch2(
-      DMatrixCompact &batch, const std::vector<bst_uint> &sorted_split_set,
+      DMatrixCompactDense &batch, const std::vector<bst_uint> &sorted_split_set,
       const RegTree &tree) {
     for (size_t fid = 0; fid < batch.Size(); ++fid) {
       auto col = batch[fid];
@@ -932,8 +934,11 @@ class GlobalProposalHistMakerCompactFastHist: public CQHistMakerCompactFastHist<
 
           //const bst_uint ridx = col[j].index;
           //const bst_float fvalue = col[j].fvalue;
-          const bst_uint ridx = col[j]._index();
-          const bst_uint binid = col[j]._binid();
+          //const bst_uint ridx = col[j]._index();
+          //const bst_uint binid = col[j]._binid();
+          const bst_uint ridx = col._index(j);
+          const bst_uint binid = col._binid(j);
+
 
 
           const int nid = this->DecodePosition(ridx);
@@ -952,36 +957,6 @@ class GlobalProposalHistMakerCompactFastHist: public CQHistMakerCompactFastHist<
       }
     }
   }
-
-  //inline void CorrectNonDefaultPositionByBatchOrig(
-  //    const SparsePage &batch, const std::vector<bst_uint> &sorted_split_set,
-  //    const RegTree &tree) {
-  //  for (size_t fid = 0; fid < batch.Size(); ++fid) {
-  //    auto col = batch[fid];
-  //    auto it = std::lower_bound(sorted_split_set.begin(), sorted_split_set.end(), fid);
-
-  //    if (it != sorted_split_set.end() && *it == fid) {
-  //      const auto ndata = static_cast<bst_omp_uint>(col.size());
-  //      #pragma omp parallel for schedule(static)
-  //      for (bst_omp_uint j = 0; j < ndata; ++j) {
-  //        const bst_uint ridx = col[j].index;
-  //        const bst_float fvalue = col[j].fvalue;
-  //        const int nid = this->DecodePosition(ridx);
-  //        CHECK(tree[nid].IsLeaf());
-  //        int pid = tree[nid].Parent();
-
-  //        // go back to parent, correct those who are not default
-  //        if (!tree[nid].IsRoot() && tree[pid].SplitIndex() == fid) {
-  //          if (fvalue < tree[pid].SplitCond()) {
-  //            this->SetEncodePosition(ridx, tree[pid].LeftChild());
-  //          } else {
-  //            this->SetEncodePosition(ridx, tree[pid].RightChild());
-  //          }
-  //        }
-  //      }
-  //    }
-  //  }
-  //}
 
   bool UpdatePredictionCache(const DMatrix* p_fmat,
                              HostDeviceVector<bst_float>* p_out_preds) override {
@@ -1221,7 +1196,7 @@ class GlobalProposalHistMakerCompactFastHist: public CQHistMakerCompactFastHist<
   std::vector<bst_float> cached_cut_;
  // hist mat compact
 #ifdef USE_COMPACT
-  DMatrixCompact* p_hmat;
+  DMatrixCompactDense* p_hmat;
 #endif
   //for predict cache
   RegTree* p_last_tree_;

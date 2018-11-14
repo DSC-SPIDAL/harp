@@ -172,6 +172,28 @@ void printgmat(GHistIndexMatrix& gmat){
   }
 }
 
+void printdmat(DMatrixCompactDense& dmat){
+  std::cout << "HMAT======================================\n";
+  int nrows = dmat.Size();
+  nrows = std::min(nrows, 50);
+
+  for (size_t fid = 0; fid < nrows; ++fid) {
+    auto col = dmat[fid];
+    auto ndata = static_cast<bst_omp_uint>(col.size());
+
+    ndata = std::min(ndata, 50U);
+
+    std::cout << "F:" << fid << " "; 
+    for (bst_omp_uint j = 0; j < ndata; ++j) {
+        const bst_uint ridx = col._index(j);
+        const bst_uint binid = col._binid(j);
+
+        std::cout << ridx << ":" << binid << " ";
+     }
+    std::cout << "\n";
+  }
+}
+
 
 void printdmat(DMatrixCompact& dmat){
   std::cout << "HMAT======================================\n";
@@ -252,6 +274,7 @@ void printSplit(SplitEntry& split){
 void printmsg(std::string msg){}
 void printtree(RegTree* ptree, std::string header /*""*/){}
 void printdmat(DMatrixCompact& dmat){}
+void printdmat(DMatrixCompactDense& dmat){}
 void printdmat(const SparsePage& dmat){}
 void printgmat(GHistIndexMatrix& gmat){}
 void printcut(HistCutMatrix& gmat){}

@@ -108,7 +108,8 @@ ifeq ($(USE_DEBUG_SAVE), 1)
 	CFLAGS += -DUSE_DEBUG_SAVE=1
 endif
 ifeq ($(USE_VTUNE), 1)
-	CFLAGS += -DUSE_VTUNE=1 -g -no-inline-max-size
+#	CFLAGS += -DUSE_VTUNE=1 -g -no-inline-max-size
+	CFLAGS += -DUSE_VTUNE=1 -g 
 endif
 
 

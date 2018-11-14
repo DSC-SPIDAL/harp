@@ -38,6 +38,7 @@ void printVec(std::string msg, const std::vector<int>& vec);
 void printInt(std::string msg, int val);
 void printmsg(std::string msg);
 void printtree(RegTree* ptree, std::string header="");
+void printdmat(DMatrixCompactDense& dmat);
 void printdmat(DMatrixCompact& dmat);
 void printdmat(const SparsePage& dmat);
 void printgmat(GHistIndexMatrix& gmat);

@@ -83,6 +83,63 @@ class DMatrixCompact : public xgboost::data::SparsePageDMatrix {
       return info_;
   }
 };
+
+/*
+ * Dense matrix stores only binid, which is one byte
+ */
+class DMatrixCompactColDense {
+    public:
+        unsigned char* data_;
+        size_t len_;
+
+    DMatrixCompactColDense(unsigned char* data, size_t len):
+        data_(data), len_(len){}
+
+  inline unsigned int _binid(size_t i) const {
+    return static_cast<unsigned int>(data_[i]);
+  }
+  inline unsigned int _index(size_t i) const {
+    return i;
+  }
+  inline size() const{
+    return len_;
+  }
+
+};
+
+class DMatrixCompactDense : public xgboost::data::SparsePageDMatrix {
+ 
+ private:
+     std::vector<unsigned char> data;
+     std::vector<size_t> offset;
+     MetaInfo info_;
+
+ public:
+  explicit DMatrixCompactDense(){}
+
+  //initialize
+  void Init(const SparsePage& page, MetaInfo& info);
+
+  //using Inst = common::Span<EntryCompact const>;
+
+  inline DMatrixCompactColDense operator[](size_t i) const {
+    return {data.data() + offset[i],
+            offset[i + 1] - offset[i]};
+  }
+
+  inline int Size(){
+    return offset.size() - 1; 
+  }
+
+  MetaInfo& Info() override{
+      return info_;
+  }
+  const MetaInfo& Info() const override{
+      return info_;
+  }
+};
+
+
 //}  // namespace data
 }  // namespace xgboost
 #endif  // XGBOOST_DATA_COMPACT_DMATRIX_H_
