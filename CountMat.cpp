@@ -498,6 +498,7 @@ double CountMat::countNonBottomePrunedSPMM(int subsId)
    int* csrRowIdx = _graph->getIndexRow();
    int* csrColIdx = _graph->getIndexCol();
 
+   mkl_set_num_threads(_thd_num);
    for (int i = 0; i < batchNum; ++i) {
 
        int batchSize = (i < batchNum -1) ? (_bufMatCols) : (auxTableLen - _bufMatCols*(batchNum-1));
