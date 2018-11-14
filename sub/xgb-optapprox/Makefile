@@ -89,13 +89,13 @@ endif
 
 ifeq ($(DEBUG), 1)
 CFLAGS += -fpermissive -fno-strict-aliasing -DUSE_BINID=1 -DUSE_DEBUG=1 -g -O0
-TARGET = xgboost-debug
-WORKDIR = build-debug
+TARGET = xgboost-$(CXX)-debug
+WORKDIR = build-$(CXX)-debug
 else
 CFLAGS += -O3 -funroll-loops
 CFLAGS += -fpermissive -fno-strict-aliasing -DUSE_BINID=1
-TARGET = xgboost
-WORKDIR = build
+TARGET = xgboost-$(CXX)
+WORKDIR = build-$(CXX)
 endif
 
 ifeq ($(USE_COMPACT), 1)
@@ -107,6 +107,10 @@ endif
 ifeq ($(USE_DEBUG_SAVE), 1)
 	CFLAGS += -DUSE_DEBUG_SAVE=1
 endif
+ifeq ($(USE_VTUNE), 1)
+	CFLAGS += -DUSE_VTUNE=1 -g -no-inline-max-size
+endif
+
 
 
 ifndef LINT_LANG
@@ -199,13 +203,13 @@ jvm-packages/lib/libxgboost4j.so: jvm-packages/xgboost4j/src/native/xgboost4j.cp
 
 
 #xgboost: $(CLI_OBJ) $(ALL_DEP)
-$TARGET): $(CLI_OBJ) $(ALL_DEP)
+$(TARGET): $(CLI_OBJ) $(ALL_DEP)
 	$(CXX) $(CFLAGS) -o $@  $(filter %.o %.a, $^)  $(LDFLAGS)
 
-xgboost: $(CLI_OBJ) $(ALL_DEP)
-	$(CXX) $(CFLAGS) -o $@  $(filter %.o %.a, $^)  $(LDFLAGS)
-xgboost-debug: $(CLI_OBJ) $(ALL_DEP)
-	$(CXX) $(CFLAGS) -o $@  $(filter %.o %.a, $^)  $(LDFLAGS)
+#xgboost: $(CLI_OBJ) $(ALL_DEP)
+#	$(CXX) $(CFLAGS) -o $@  $(filter %.o %.a, $^)  $(LDFLAGS)
+#xgboost-debug: $(CLI_OBJ) $(ALL_DEP)
+#	$(CXX) $(CFLAGS) -o $@  $(filter %.o %.a, $^)  $(LDFLAGS)
 
 
 
@@ -244,6 +248,11 @@ clean:
 clean_all: clean
 	cd $(DMLC_CORE); "$(MAKE)" clean; cd $(ROOTDIR)
 	cd $(RABIT); "$(MAKE)" clean; cd $(ROOTDIR)
+
+clean_lib: 
+	cd $(DMLC_CORE); "$(MAKE)" clean; cd $(ROOTDIR)
+	cd $(RABIT); "$(MAKE)" clean; cd $(ROOTDIR)
+
 
 doxygen:
 	doxygen doc/Doxyfile

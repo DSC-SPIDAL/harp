@@ -7,7 +7,7 @@
 
 namespace xgboost {
 
-void startVtune(std::string tagfilename, int waittime=10000){
+void startVtune(std::string tagfilename, int waittime /*10000*/){
     static bool isInit = false;
 
     if (!isInit){
@@ -17,8 +17,11 @@ void startVtune(std::string tagfilename, int waittime=10000){
         write.close();
         isInit = true;
 
+#ifdef USE_VTUNE
         //sleep for 1 sec
         std::this_thread::sleep_for(std::chrono::milliseconds(waittime));
+#endif
+
     }
 }
 
@@ -58,7 +61,7 @@ void startVtune(std::string tagfilename, int waittime=10000){
 //   std::cout << "\n";
 //}
 
-void printtree(RegTree* ptree, std::string header=""){
+void printtree(RegTree* ptree, std::string header /*""*/){
 
    if (header==""){ 
     std::cout << "RegTree===========================\n" ;
@@ -247,7 +250,7 @@ void printSplit(SplitEntry& split){
 
 #else
 void printmsg(std::string msg){}
-void printtree(RegTree* ptree, std::string header=""){}
+void printtree(RegTree* ptree, std::string header /*""*/){}
 void printdmat(DMatrixCompact& dmat){}
 void printdmat(const SparsePage& dmat){}
 void printgmat(GHistIndexMatrix& gmat){}
