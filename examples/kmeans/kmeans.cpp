@@ -39,12 +39,16 @@ class KMeansWorker : public harp::Worker {
             auto *centroids = new harp::ds::Table<float>(1);
             util::readKMeansDataFromFile("/tmp/harp/kmeans/centroids", 4, centroids);
 
-            harp::kernels::kmeans(centroids, points, 1);
+            harp::kernels::kmeans(centroids, points, 4, 1);
             printTable(centroids);
+
+            harp::ds::util::deleteTable(points, true);
+            harp::ds::util::deleteTable(centroids, true);
         }
         comm->barrier();
 
         //running distributed version
+
 
     }
 };

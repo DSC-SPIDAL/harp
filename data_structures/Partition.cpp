@@ -1,6 +1,3 @@
-//
-// Created by chathura on 11/1/18.
-//
 #include "Partition.h"
 
 namespace harp {

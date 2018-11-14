@@ -23,6 +23,7 @@ namespace harp {
     namespace util {
         void generateKMeansData(std::string folder, int numberOfRecords, int vectorSize,
                                 int splits, int centroidsCount) {
+            srand(time(NULL));
             std::vector<std::thread> threads;
             for (int i = 0; i < splits; i++) {
                 std::thread t([folder, numberOfRecords, vectorSize, splits, i]() {
@@ -61,6 +62,7 @@ namespace harp {
             for (auto &t:threads) {
                 t.join();
             }
+            threads.clear();
         }
 
 
@@ -87,8 +89,11 @@ namespace harp {
                     auto *part = new harp::ds::Partition<float>(partitionIdPivot + partitionIndex++, vector,
                                                                 vectorSize);
                     table->addPartition(part);
+                } else {
+                    delete[] vector;
                 }
             }
+            istream.close();
         }
     }
 }

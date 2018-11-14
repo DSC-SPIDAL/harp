@@ -13,14 +13,14 @@
 
 
 #include <iostream>
-#include "../../data_structures/Table.h"
+#include "../../data_structures/inculdes.h"
 #include "../math/HarpMath.h"
 #include "float.h"
 
 namespace harp {
     namespace kernels {
         template<class TYPE>
-        void kmeans(harp::ds::Table<TYPE> *centroids, harp::ds::Table<TYPE> *points, int iterations) {
+        void kmeans(harp::ds::Table<TYPE> *centroids, harp::ds::Table<TYPE> *points, int vectorSize, int iterations) {
             long numOfCentroids = centroids->getPartitionCount();
             auto *clusters = new harp::ds::Table<TYPE> *[numOfCentroids];
             for (int i = 0; i < centroids->getPartitionCount(); i++) {
@@ -46,10 +46,11 @@ namespace harp {
                 centroids->clear();
                 //new centroids
                 for (int c = 0; c < numOfCentroids; c++) {
-                    auto *newC = harp::math::table::mean(clusters[c], 3);
+                    auto *newC = harp::math::table::mean(clusters[c], vectorSize);
                     centroids->addPartition(newC);
                 }
             }
+            harp::ds::util::deleteTables(clusters, false, static_cast<int>(centroids->getPartitionCount()));
         }
     }
 }

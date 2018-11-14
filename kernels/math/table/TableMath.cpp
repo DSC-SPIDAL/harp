@@ -22,13 +22,13 @@ namespace harp {
             template<class TYPE>
             harp::ds::Partition<TYPE> *
             sumAndDivide(harp::ds::Table<TYPE> *table, int partitionSize, int divisor = 1) {//todo remove partition size
-                auto *mean = new float[partitionSize];
+                auto *mean = new TYPE[partitionSize];
                 for (int i = 0; i < partitionSize; i++) {
                     mean[i] = 0;
                 }
                 for (auto p: table->getPartitions()) {
                     auto *data = static_cast<TYPE *>(p.second->getData());
-                    for (int i = 0; i < p.second->getSize(); i++) {
+                    for (int i = 0; i < partitionSize; i++) {
                         mean[i] += (data[i] /
                                     divisor); //todo check whether compiler optimize this division when divisor = 1
                     }

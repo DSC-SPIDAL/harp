@@ -1,4 +1,5 @@
 #include "Table.h"
+#include "iostream"
 
 namespace harp {
     namespace ds {
@@ -46,15 +47,18 @@ namespace harp {
         }
 
         template<class TYPE>
-        void Table<TYPE>::clear() {
-            for (auto p: this->partitionMap) {
-                delete p.second;
+        void Table<TYPE>::clear(bool clearPartitions) {
+            if (clearPartitions) {
+                for (auto p: this->partitionMap) {
+                    delete p.second;
+                }
             }
             this->partitionMap.clear();
         }
 
         template<class TYPE>
         Table<TYPE>::~Table() {
+            std::cout << "Calling destructor of table" << std::endl;
             this->clear();
         }
 

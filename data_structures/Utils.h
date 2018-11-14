@@ -10,16 +10,22 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 //
+//
 
-#ifndef HARPC_KMEANS_H
-#define HARPC_KMEANS_H
+#ifndef HARPC_UTILS_H
+#define HARPC_UTILS_H
 
-#include "../../data_structures/Table.h"
+#include "Table.h"
 
 namespace harp {
-    namespace kernels {
-        template<class TYPE>
-        void kmeans(harp::ds::Table<TYPE> *centroids, harp::ds::Table<TYPE> *points, int vectorSize, int iterations);
+    namespace ds {
+        namespace util {
+            template<class TYPE>
+            void deleteTable(harp::ds::Table<TYPE> *table, bool clearPartitions);
+
+            template<class TYPE>
+            void deleteTables(harp::ds::Table<TYPE> **tables, bool clearPartitions, int arrSize);
+        }
     }
 }
-#endif //HARPC_KMEANS_H
+#endif //HARPC_UTILS_H

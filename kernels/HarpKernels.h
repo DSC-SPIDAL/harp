@@ -18,6 +18,6 @@
 #include "kmeans/KMeans.h"
 #include "kmeans/KMeans.cpp"
 
-#include "math/HarpMath.h";
+#include "math/HarpMath.h"
 
 #endif //HARPC_HARPKERNELS_H

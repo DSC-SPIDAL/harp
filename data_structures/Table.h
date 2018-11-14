@@ -35,7 +35,7 @@ namespace harp {
 
             void replaceParition(int pid, Partition<TYPE> *partition);
 
-            void clear();
+            void clear(bool clearPartitions = false);
         };
     }
 }
