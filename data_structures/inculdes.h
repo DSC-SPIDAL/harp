@@ -8,6 +8,7 @@
 #include "Table.cpp"
 
 #include "DataTypes.h"
+#include "DataTypes.cpp"
 
 #include "Utils.h"
 #include "Utils.cpp"

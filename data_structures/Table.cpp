@@ -58,7 +58,6 @@ namespace harp {
 
         template<class TYPE>
         Table<TYPE>::~Table() {
-            std::cout << "Calling destructor of table" << std::endl;
             this->clear();
         }
 

@@ -22,8 +22,8 @@ namespace harp {
                 if (p1->getSize() != p2->getSize()) {
                     throw "Can't calculate distance due to partition size mismatch.";
                 }
-                auto *p1Data = static_cast<TYPE *>(p1->getData());
-                auto *p2Data = static_cast<TYPE *>(p2->getData());
+                auto *p1Data = p1->getData();
+                auto *p2Data = p2->getData();
                 double sum = 0;
                 for (int i = 0; i < p1->getSize(); i++) {
                     sum += (pow(p1Data[i] - p2Data[i], 2));

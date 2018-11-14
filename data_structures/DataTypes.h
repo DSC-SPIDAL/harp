@@ -22,6 +22,7 @@ enum DataType {
 
 void *createArray(DataType dataType, int size);
 
-MPI_Datatype getMPIDataType(DataType dataType);
+template<class TYPE>
+MPI_Datatype getMPIDataType();
 
 #endif //HARPC_DATA_TYPES_H

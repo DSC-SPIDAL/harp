@@ -9,27 +9,29 @@
 //todo doing implementation in header file due to templates problem
 namespace harp {
     namespace com {
+        template<class TYPE>
         class Communicator {
         private:
-            int workerId;
-            int worldSize;
+            TYPE workerId;
+            TYPE worldSize;
+
+            void sendAndRecv(const void *buffSend, int sendSize, void *buffRecv, int recvSize, int sendTo, int recvFrom,
+                             MPI_Datatype mpiDatatype);
+
         public:
 
-            Communicator(int workerId, int worldSize);
+            Communicator(TYPE workerId, TYPE worldSize);
 
             void barrier();
 
-            template<class TYPE>
             void allGather(harp::ds::Table<TYPE> *table);
 
-            template<class TYPE>
             void allReduce(harp::ds::Table<TYPE> *table, MPI_Op operation);
 
-            template<class TYPE>
             void broadcast(harp::ds::Table<TYPE> *table, int bcastWorkerId);
 
-            template<class TYPE>
-            void rotate(harp::ds::Table<TYPE> *table);
+            template<class TAB_TYPE>
+            void rotate(harp::ds::Table<TAB_TYPE> *table);
         };
     }
 }

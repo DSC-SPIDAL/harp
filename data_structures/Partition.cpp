@@ -15,7 +15,7 @@ namespace harp {
         }
 
         template<class TYPE>
-        void *Partition<TYPE>::getData() {
+        TYPE *Partition<TYPE>::getData() {
             return this->data;
         }
 

@@ -20,7 +20,7 @@ namespace harp {
 
             int getId();
 
-            void *getData();
+            TYPE *getData();
 
             void setData(void *data);
 

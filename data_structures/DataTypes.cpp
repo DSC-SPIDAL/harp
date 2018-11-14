@@ -12,25 +12,37 @@
 //
 
 #include "DataTypes.h"
+#include "typeinfo"
+#include "iostream"
 
-void *createArray(DataType dataType, int size) {
-    switch (dataType) {
-        case HP_INT:
-            return new int[size];
-        case HP_LONG:
-            return new long[size];
-        case HP_FLOAT:
-            return new float[size];
-    }
-}
+#define TYPE_HASH(type)\
+    const size_t _##type##_type = typeid(type).hash_code();
 
-MPI_Datatype getMPIDataType(DataType dataType) {
-    switch (dataType) {
-        case HP_INT:
-            return MPI_INT;
-        case HP_LONG:
-            return MPI_LONG;
-        case HP_FLOAT:
-            return MPI_FLOAT;
+TYPE_HASH(int);
+TYPE_HASH(long);
+TYPE_HASH(float);
+
+//void *createArray(DataType dataType, int size) {
+//    switch (dataType) {
+//        case HP_INT:
+//            return new int[size];
+//        case HP_LONG:
+//            return new long[size];
+//        case HP_FLOAT:
+//            return new float[size];
+//    }
+//}
+
+template<class TYPE>
+MPI_Datatype getMPIDataType() {
+    size_t hash = typeid(TYPE).hash_code();
+    if (hash == _int_type) {
+        return MPI_INT;
+    } else if (hash == _long_type) {
+        return MPI_LONG;
+    } else if (hash == _float_type) {
+        return MPI_FLOAT;
+    } else {
+        return MPI_INT;
     }
 }

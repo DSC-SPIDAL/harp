@@ -2,6 +2,7 @@
 #define HARPC_WORKER_H
 
 #include "../communication/Communicator.h"
+#include "../communication/Communicator.cpp"
 
 namespace harp {
     class Worker {
@@ -13,7 +14,7 @@ namespace harp {
 
         void start();
 
-        virtual void execute(com::Communicator *comm) = 0;
+        virtual void execute(com::Communicator<int> *comm) = 0;
     };
 }
 
