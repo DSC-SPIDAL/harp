@@ -11,7 +11,7 @@
 using namespace std;
 
 void DataTableColMajor::initDataTable(Graph* subTempsList, IndexSys* indexer, int subsNum, int colorNum, idxType vertsNum, 
-        int thdNum)
+        int thdNum, int useSPMM, int bufMatCols)
 {
 
     _subTempsList = subTempsList; 
@@ -20,6 +20,8 @@ void DataTableColMajor::initDataTable(Graph* subTempsList, IndexSys* indexer, in
     _colorNum = colorNum;
     _vertsNum = vertsNum;
     _thdNum = thdNum;
+    _useSPMM = useSPMM;
+    _bufMatCols = bufMatCols;
 
     _dataTable = (float***) malloc (_subsNum*sizeof(float**));
     for(int i=0;i<_subsNum;i++)
@@ -69,18 +71,51 @@ void DataTableColMajor::initSubTempTable(int subsId)
         _curTable = _dataTable[subsId];
         _curSubId = subsId;
 
-        // initialize and allocate the memory
-#pragma omp parallel for
-        for (int i = 0; i < lenCur; ++i) 
+        if (_useSPMM == 0)
         {
+            // initialize and allocate the memory
+#pragma omp parallel for
+            for (int i = 0; i < lenCur; ++i) 
+            {
 
 #ifdef __INTEL_COMPILER
-            _curTable[i] = (float*) _mm_malloc(_vertsNum*sizeof(float), 64); 
+                _curTable[i] = (float*) _mm_malloc(_vertsNum*sizeof(float), 64); 
 #else
-            _curTable[i] = (float*) aligned_alloc(64, _vertsNum*sizeof(float)); 
+                _curTable[i] = (float*) aligned_alloc(64, _vertsNum*sizeof(float)); 
 #endif
 
-            std::memset(_curTable[i], 0, _vertsNum*sizeof(float));
+                std::memset(_curTable[i], 0, _vertsNum*sizeof(float));
+            }
+
+        }
+        else
+        {
+            // allocate adjacent mem
+            int batchNum = (lenCur + _bufMatCols - 1)/(_bufMatCols);
+            int colStart = 0;
+            for (int i = 0; i < batchNum; ++i) 
+            {
+                int batchSize = (i < batchNum -1) ? (_bufMatCols) : (lenCur - _bufMatCols*(batchNum-1));
+
+#ifdef __INTEL_COMPILER
+                _curTable[colStart] = (float*)_mm_malloc(_vertsNum*batchSize*sizeof(float), 64); 
+#else
+                _curTable[colStart] = (float*)aligned_alloc(64, _vertsNum*batchSize*sizeof(float)); 
+#endif
+                std::memset(_curTable[colStart], 0, _vertsNum*batchSize*sizeof(float));
+
+                for (int j = 1; j < batchSize; ++j) {
+                   _curTable[colStart+j] = _curTable[colStart] + j*_vertsNum; 
+                }
+
+                colStart += batchSize;
+            }
+
+            // for (int i = 1; i < lenCur; ++i) {
+            //    // _curTable[i] = _curTable[0] + i*(int64_t)_vertsNum; 
+            //    _curTable[i] = &((_curTable[0])[i*(int64_t)_vertsNum]); 
+            // }
+            
         }
 
         _isSubInited[subsId] = true;
@@ -105,6 +140,7 @@ void DataTableColMajor::initSubTempTable(int subsId)
     // std::fflush(stdout);
 
 }
+
 
 void DataTableColMajor::initSubTempTable(int subsId, int mainId, int auxId)
 {
@@ -134,17 +170,40 @@ void DataTableColMajor::cleanSubTempTable(int subsId, bool isBottom)
     {
         if (_dataTable[subsId] != nullptr)
         {
-#pragma omp parallel for 
-            for (int i = 0; i < _tableLen[subsId]; ++i) 
+            if (_useSPMM == 0)
             {
-                if (_dataTable[subsId][i] != nullptr)
+#pragma omp parallel for 
+                for (int i = 0; i < _tableLen[subsId]; ++i) 
                 {
+                    if (_dataTable[subsId][i] != nullptr)
+                    {
 #ifdef __INTEL_COMPILER
-                    _mm_free(_dataTable[subsId][i]);
+                        _mm_free(_dataTable[subsId][i]);
 #else
-                    free(_dataTable[subsId][i]);
+                        free(_dataTable[subsId][i]);
 #endif
+                    }
                 }
+            }
+            else
+            {
+                int batchNum = (_tableLen[subsId] + _bufMatCols - 1)/(_bufMatCols);
+                int colStart = 0;
+                for (int i = 0; i < batchNum; ++i) 
+                {
+                    int batchSize = (i < batchNum -1) ? (_bufMatCols) : (_tableLen[subsId] - _bufMatCols*(batchNum-1));
+                    if (_dataTable[subsId][colStart] != nullptr) 
+                    {
+#ifdef __INTEL_COMPILER
+                        _mm_free(_dataTable[subsId][colStart]);
+#else
+                        free(_dataTable[subsId][colStart]);
+#endif                       
+                    }
+
+                    colStart += batchSize;
+                }
+
             }
         }
 

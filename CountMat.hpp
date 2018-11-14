@@ -21,7 +21,7 @@ class CountMat {
         typedef float valType;
 
         CountMat(): _graph(nullptr), _templates(nullptr), _subtmp_array(nullptr), _colors_local(nullptr), 
-        _bufVec(nullptr), _bufMatX(nullptr), _bufMatY(nullptr), _bufMatCols(-1), _bufVecLeaf(nullptr), _spmvTime(0), _eMATime(0), _isPruned(1), _isScaled(0), _useSPMM(0) {} 
+        _bufVec(nullptr), _bufMatY(nullptr), _bufMatCols(-1), _bufVecLeaf(nullptr), _spmvTime(0), _eMATime(0), _isPruned(1), _isScaled(0), _useSPMM(0) {} 
 
         void initialization(CSRGraph& graph, int thd_num, int itr_num, int isPruned, int useSPMM);
 
@@ -41,15 +41,6 @@ class CountMat {
 #endif
             }
 
-            if (_bufMatX != nullptr)
-            {
-#ifdef __INTEL_COMPILER
-                _mm_free(_bufMatX); 
-#else
-                free(_bufMatX); 
-#endif
-            }
-
             if (_bufMatY != nullptr)
             {
 #ifdef __INTEL_COMPILER
@@ -61,13 +52,26 @@ class CountMat {
 
             if (_bufVecLeaf != nullptr) 
             {
-                for (int i = 0; i < _color_num; ++i) 
+                if (_useSPMM == 0)
+                {
+                    for (int i = 0; i < _color_num; ++i) 
+                    {
+#ifdef __INTEL_COMPILER
+                        _mm_free(_bufVecLeaf[i]); 
+#else
+                        free(_bufVecLeaf[i]); 
+#endif                   
+                    }
+
+                }
+                else
                 {
 #ifdef __INTEL_COMPILER
-                    _mm_free(_bufVecLeaf[i]); 
+                        _mm_free(_bufVecLeaf[0]); 
 #else
-                    free(_bufVecLeaf[i]); 
+                        free(_bufVecLeaf[0]); 
 #endif                   
+
                 }
 
                 free(_bufVecLeaf);
@@ -119,7 +123,6 @@ class CountMat {
         IndexSys indexer;
         
         float* _bufVec;
-        float* _bufMatX;
         float* _bufMatY;
         int _bufMatCols;
 

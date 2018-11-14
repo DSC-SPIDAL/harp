@@ -41,13 +41,10 @@ void CountMat::initialization(CSRGraph& graph, int thd_num, int itr_num, int isP
     _bufMatCols = 100;
 
 #ifdef __INTEL_COMPILER
-    _bufMatX = (float*) _mm_malloc(_vert_num*_bufMatCols*sizeof(float), 64); 
     _bufMatY = (float*) _mm_malloc(_vert_num*_bufMatCols*sizeof(float), 64); 
 #else
-    _bufMatX = (float*) aligned_alloc(64, _vert_num*_bufMatCols*sizeof(float)); 
     _bufMatY = (float*) aligned_alloc(64, _vert_num*_bufMatCols*sizeof(float)); 
 #endif
-    std::memset(_bufMatX, 0, _vert_num*_bufMatCols*sizeof(float));
     std::memset(_bufMatY, 0, _vert_num*_bufMatCols*sizeof(float));
 
 }
@@ -113,7 +110,7 @@ double CountMat::compute(Graph& templates)
     std::fflush(stdout); 
 #endif
 
-    _dTable.initDataTable(_subtmp_array, &indexer, _total_sub_num, _color_num, _vert_num, _thd_num);
+    _dTable.initDataTable(_subtmp_array, &indexer, _total_sub_num, _color_num, _vert_num, _thd_num, _useSPMM, _bufMatCols);
 
 #ifdef VERBOSE
     printf("Finish initializaing datatable\n");
@@ -127,12 +124,28 @@ double CountMat::compute(Graph& templates)
 
     // allocating the bufVecLeaf buffer
     _bufVecLeaf = (float**) malloc (_color_num*sizeof(float*));
-    for (int i = 0; i < _color_num; ++i) {
-       #ifdef __INTEL_COMPILER
-          _bufVecLeaf[i] =  (float*) _mm_malloc(_vert_num*sizeof(float), 64); 
-       #else
-          _bufVecLeaf[i] =  (float*) aligned_alloc(64, _vert_num*sizeof(float)); 
-       #endif 
+    if (_useSPMM == 0)
+    {
+        for (int i = 0; i < _color_num; ++i) {
+#ifdef __INTEL_COMPILER
+            _bufVecLeaf[i] =  (float*) _mm_malloc(_vert_num*sizeof(float), 64); 
+#else
+            _bufVecLeaf[i] =  (float*) aligned_alloc(64, _vert_num*sizeof(float)); 
+#endif 
+        }
+
+    }
+    else
+    {
+#ifdef __INTEL_COMPILER
+        _bufVecLeaf[0] =  (float*) _mm_malloc((int64_t)(_vert_num)*_color_num*sizeof(float), 64); 
+#else
+        _bufVecLeaf[0] =  (float*) aligned_alloc(64, (int64_t)(_vert_num)*_color_num*sizeof(float)); 
+#endif 
+
+        for (int i = 1; i < _color_num; ++i) {
+           _bufVecLeaf[i] = _bufVecLeaf[0] + i*_vert_num; 
+        }
     }
 
     // start counting
@@ -205,7 +218,9 @@ double CountMat::colorCounting()
             if (_isPruned == 1)
             {
                 if (_useSPMM == 1)
-                   countTotal = countNonBottomePrunedSPMM(s);
+                {
+                    countTotal = countNonBottomePrunedSPMM(s);
+                }
                 else
                    countTotal = countNonBottomePruned(s);
             }
@@ -487,51 +502,23 @@ double CountMat::countNonBottomePrunedSPMM(int subsId)
 
        int batchSize = (i < batchNum -1) ? (_bufMatCols) : (auxTableLen - _bufMatCols*(batchNum-1));
        n = batchSize;
-       
-       // copy columns from auxObjArray to _bufMatX
-#pragma omp parallel for
-       for (int j = 0; j < batchSize; ++j) {
-            std::memcpy(_bufMatX+j*_vert_num, _dTable.getAuxArray(colStart+j), _vert_num*sizeof(float));    
-       }
 
        // invoke the mkl scsrmm kernel
-       mkl_scsrmm(&transa, &m, &n, &k, &alpha, matdescra, csrVals, csrColIdx, csrRowIdx, &(csrRowIdx[1]), _bufMatX, &k, &beta, _bufMatY, &k);
+       mkl_scsrmm(&transa, &m, &n, &k, &alpha, matdescra, csrVals, csrColIdx, csrRowIdx, &(csrRowIdx[1]), _dTable.getAuxArray(colStart), &k, &beta, _bufMatY, &k);
 
        // copy columns from _bufMatY
        if (auxSize > 1)
        {
-
-#pragma omp parallel for
-           for (int j = 0; j < batchSize; ++j) {
-            std::memcpy(_dTable.getAuxArray(colStart+j), _bufMatY+j*_vert_num, _vert_num*sizeof(float));
-           }
-
+            std::memcpy(_dTable.getAuxArray(colStart), _bufMatY, _vert_num*batchSize*sizeof(float));
        }
        else
        {
-
-#pragma omp parallel for
-           for (int j = 0; j < batchSize; ++j) {
-            std::memcpy(_bufVecLeaf[colStart+j], _bufMatY+j*_vert_num, _vert_num*sizeof(float));
-           }
-
+            std::memcpy(_bufVecLeaf[colStart], _bufMatY, _vert_num*batchSize*sizeof(float));
        }
+
        // increase colStart;
        colStart += batchSize;
    }
-
-   // for (int i = 0; i < auxTableLen; ++i) {
-   //
-   //     float* auxObjArray = _dTable.getAuxArray(i);
-   //     _graph->SpMVNaive(auxObjArray, _bufVec); 
-   //     
-   //     // check the size of auxArray
-   //     if (auxSize > 1)
-   //        std::memcpy(auxObjArray, _bufVec, _vert_num*sizeof(float));
-   //     else
-   //        std::memcpy(_bufVecLeaf[i], _bufVec, _vert_num*sizeof(float));
-   // }
-   // ---- end of SpMM impl -------
 
 #ifdef VERBOSE
    eltSpmv += (utility::timer() - startTimeComp); 

@@ -182,7 +182,7 @@ int main(int argc, char** argv)
 
     // start CSR mat computing
     CountMat executor;
-    int useSPMM = 1;
+    int useSPMM = 0;
     executor.initialization(csrInpuG, comp_thds, iterations, isPruned, useSPMM);
     executor.compute(input_template);
 
