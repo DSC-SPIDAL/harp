@@ -170,6 +170,8 @@ double CountMat::compute(Graph& templates)
     std::fflush(stdout);
     printf("eMA ratio %f\% \n", 100*(_eMATime/totalCountTime));
     std::fflush(stdout);
+    printf("Peak Mem Usage is : %9.6lf GB\n", _peakMemUsage);
+    std::fflush(stdout);
 #endif
 
     // finish counting
@@ -227,6 +229,14 @@ double CountMat::colorCounting()
             else
                 countTotal = countNonBottomeOriginal(s);
         }
+
+        // trace the peak mem usage
+        double compute_mem = 0.0;
+        process_mem_usage(compute_mem);
+        compute_mem = compute_mem /(1024*1024);
+        std::printf("Mem utilization compute step sub %d: %9.6lf GB\n", s, compute_mem);
+        std::fflush(stdout);
+        _peakMemUsage = (compute_mem > _peakMemUsage) ? compute_mem : _peakMemUsage;
 
         if (mainIdx != DUMMY_VAL)
             _dTable.cleanSubTempTable(mainIdx, false);
@@ -358,7 +368,10 @@ double CountMat::countNonBottomePruned(int subsId)
                 if (_isScaled == 0)
                     _dTable.arrayWiseFMAScale(objArray, auxArraySelect, mainArraySelect, 1.0e-12);
                 else
-                    _dTable.arrayWiseFMAAVX(objArray, auxArraySelect, mainArraySelect);
+                {
+                    // _dTable.arrayWiseFMAAVX(objArray, auxArraySelect, mainArraySelect);
+                    _dTable.arrayWiseFMA(objArray, auxArraySelect, mainArraySelect);
+                }
             }
             else
             {
@@ -566,7 +579,11 @@ double CountMat::countNonBottomePrunedSPMM(int subsId)
                 if (_isScaled == 0)
                     _dTable.arrayWiseFMAScale(objArray, auxArraySelect, mainArraySelect, 1.0e-12);
                 else
-                    _dTable.arrayWiseFMAAVX(objArray, auxArraySelect, mainArraySelect);
+                {
+                    // _dTable.arrayWiseFMAAVX(objArray, auxArraySelect, mainArraySelect);
+                    _dTable.arrayWiseFMA(objArray, auxArraySelect, mainArraySelect);
+
+                }
             }
             else
             {
@@ -784,4 +801,30 @@ void CountMat::scaleVec(valType* input, idxType len, double scale)
         input[i] = (float)tmp;
     }
 
+}
+
+void CountMat::process_mem_usage(double& resident_set)
+{
+    resident_set = 0.0;
+
+    FILE *fp;
+    long vmrss;
+    int BUFFERSIZE=80;
+    char *buf= new char[85];
+    if((fp = fopen("/proc/self/status","r")))
+    {
+        while(fgets(buf, BUFFERSIZE, fp) != NULL)
+        {
+            if(strstr(buf, "VmRSS") != NULL)
+            {
+                if (sscanf(buf, "%*s %ld", &vmrss) == 1){
+                    // printf("VmSize is %dKB\n", vmrss);
+                    resident_set = (double)vmrss;
+                }
+            }
+        }
+    }
+
+    fclose(fp);
+    delete[] buf;
 }

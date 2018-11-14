@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <cstring>
+// #include <string.h>
 
 #include "Graph.hpp"
 #include "CSRGraph.hpp"
@@ -21,7 +22,7 @@ class CountMat {
         typedef float valType;
 
         CountMat(): _graph(nullptr), _templates(nullptr), _subtmp_array(nullptr), _colors_local(nullptr), 
-        _bufVec(nullptr), _bufMatY(nullptr), _bufMatCols(-1), _bufVecLeaf(nullptr), _spmvTime(0), _eMATime(0), _isPruned(1), _isScaled(0), _useSPMM(0) {} 
+        _bufVec(nullptr), _bufMatY(nullptr), _bufMatCols(-1), _bufVecLeaf(nullptr), _spmvTime(0), _eMATime(0), _isPruned(1), _isScaled(0), _useSPMM(0), _peakMemUsage(0) {} 
 
         void initialization(CSRGraph& graph, int thd_num, int itr_num, int isPruned, int useSPMM);
 
@@ -90,6 +91,9 @@ class CountMat {
         double countNonBottomePrunedSPMM(int subsId);
         double countNonBottomeOriginal(int subsId);
         void colorInit();
+        // trace the process mem usage
+        void process_mem_usage(double& resident_set);
+
         int factorial(int n);
 
         // local graph data
@@ -132,6 +136,7 @@ class CountMat {
         int _isPruned;
         int _isScaled;
         int _useSPMM;
+        double _peakMemUsage;
 };
 
 #endif
