@@ -33,6 +33,7 @@ int main(int argc, char** argv)
     int iterations;
     int comp_thds;
     int isPruned = 1;
+    int useSPMM = 0;
 
     graph_name = argv[1];
     template_name = argv[2];
@@ -43,6 +44,21 @@ int main(int argc, char** argv)
 
     if (argc > 7)
         isPruned = atoi(argv[7]); 
+
+    if (argc > 8)
+        useSPMM = atoi(argv[8]);
+
+#ifdef VERBOSE 
+    if (isPruned) {
+        printf("Use Pruned Mat Algorithm Impl\n");
+        std::fflush(stdout);   
+    }
+
+    if (useSPMM) {
+        printf("Use SPMM Impl\n");
+        std::fflush(stdout);          
+    }
+#endif
 
     CSRGraph csrInpuG;
     Graph input_template;
@@ -182,7 +198,6 @@ int main(int argc, char** argv)
 
     // start CSR mat computing
     CountMat executor;
-    int useSPMM = 0;
     executor.initialization(csrInpuG, comp_thds, iterations, isPruned, useSPMM);
     executor.compute(input_template);
 

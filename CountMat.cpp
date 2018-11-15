@@ -25,6 +25,10 @@ void CountMat::initialization(CSRGraph& graph, int thd_num, int itr_num, int isP
     _useSPMM = useSPMM;
     _isScaled = 0;
 
+    // add this to estimate mem without acutal 
+    // computation
+    // _noCompute = true;
+
     if (_useSPMM == 1)
         _graph->makeOneIndex();
 
@@ -62,22 +66,7 @@ double CountMat::compute(Graph& templates)
     _total_sub_num = div_tp.get_subtps_num();
 
 #ifdef VERBOSE
-    //check the sub vert num
-    // debug
-    for(int s=0;s<_total_sub_num;s++)
-    {
-        int vert_self = _subtmp_array[s].get_vert_num();
-        if (vert_self > 1)
-        {
-            int main_leaf = div_tp.get_main_node_vert_num(s);
-            int aux_leaf = div_tp.get_aux_node_vert_num(s);
-            printf("Vert: %d, main: %d, aux: %d\n", vert_self, main_leaf, aux_leaf);
-            std::fflush(stdout);
-            assert((main_leaf + aux_leaf == vert_self));
-
-        }
-    } 
-
+    printSubTemps(); 
 #endif
    
     // create the index tables
@@ -105,6 +94,8 @@ double CountMat::compute(Graph& templates)
     //     }
     // }
     
+
+
 #ifdef VERBOSE
     printf("Start initializaing datatable\n");
     std::fflush(stdout); 
@@ -116,6 +107,13 @@ double CountMat::compute(Graph& templates)
     printf("Finish initializaing datatable\n");
     std::fflush(stdout); 
 #endif
+
+#ifdef VERBOSE
+    estimatePeakMemUsage();
+#endif 
+
+    if (_noCompute)
+        return 0.0;
 
 #ifdef VERBOSE
     printf("Start counting\n");
@@ -318,7 +316,7 @@ double CountMat::countNonBottomePruned(int subsId)
    for (int i = 0; i < auxTableLen; ++i) {
 
        float* auxObjArray = _dTable.getAuxArray(i);
-       _graph->SpMVNaive(auxObjArray, _bufVec); 
+       _graph->SpMVNaive(auxObjArray, _bufVec, _thd_num); 
        
        // check the size of auxArray
        if (auxSize > 1)
@@ -714,7 +712,7 @@ double CountMat::countNonBottomeOriginal(int subsId)
 #ifdef VERBOSE
             startTimeComp = utility::timer();
 #endif
-            _graph->SpMVNaive(auxArraySelect, _bufVec);
+            _graph->SpMVNaive(auxArraySelect, _bufVec, _thd_num);
 #ifdef VERBOSE
             eltSpmv += (utility::timer() - startTimeComp);
 #endif
@@ -829,4 +827,58 @@ void CountMat::process_mem_usage(double& resident_set)
 
     fclose(fp);
     delete[] buf;
+}
+
+void CountMat::printSubTemps()
+{
+    //check the sub vert num
+    // debug
+    for(int s=0;s<_total_sub_num;s++)
+    {
+        int vert_self = _subtmp_array[s].get_vert_num();
+        if (vert_self > 1)
+        {
+            int main_leaf = div_tp.get_main_node_vert_num(s);
+            int aux_leaf = div_tp.get_aux_node_vert_num(s);
+            printf("Temp Sizes: Self %d, main: %d, aux: %d\n", vert_self, main_leaf, aux_leaf);
+            std::fflush(stdout);
+            assert((main_leaf + aux_leaf == vert_self));
+        }
+    }
+}
+
+void CountMat::estimatePeakMemUsage()
+{
+    double peakMem = 0.0;
+    double memSub = 0.0;
+    // memery (GB) usaed by each idx (column)
+    double memPerIndx = ((double)_vert_num*4.0)/1024/1024/1024;
+
+    // bufvec, color_inital, bufVecY, Bufleaf 
+    memSub += (2 + _bufMatCols + _color_num)*memPerIndx;
+
+    // for(int s=0;s<_total_sub_num;s++)
+    for(int s=_total_sub_num-1;s>0;s--)
+    {
+        int vert_self = _subtmp_array[s].get_vert_num();
+        if (vert_self > 1)
+        {
+            memSub += (_dTable.getTableLen(s)*memPerIndx);
+            peakMem = (memSub > peakMem) ? memSub : peakMem;
+
+            int idxMain = div_tp.get_main_node_idx(s);
+            int idxAux = div_tp.get_aux_node_idx(s);
+            if (_subtmp_array[idxMain].get_vert_num() > 1)
+                memSub -= (_dTable.getTableLen(idxMain)*memPerIndx);
+
+            if (_subtmp_array[idxAux].get_vert_num() > 1)
+                memSub -= (_dTable.getTableLen(idxAux)*memPerIndx);
+        }
+    }
+
+    // add the input graph mem usage
+    peakMem += ((double)(_graph->getNumVertices() + _graph->getNNZ()*2)*4.0/1024/1024/1024); 
+
+    printf("Peak memory usage estimated : %f GB \n", peakMem);
+    std::fflush(stdout);
 }
