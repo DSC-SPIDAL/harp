@@ -22,7 +22,7 @@ namespace harp {
 
             TYPE *getData();
 
-            void setData(void *data);
+            void setData(TYPE *data, int size);
 
             int getSize();
 

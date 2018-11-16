@@ -35,9 +35,10 @@ namespace harp {
         }
 
         template<class TYPE>
-        void Partition<TYPE>::setData(void *data) {
+        void Partition<TYPE>::setData(TYPE *data, int size) {
             this->clear();
             this->data = data;
+            this->size = size;
         }
     }
 }

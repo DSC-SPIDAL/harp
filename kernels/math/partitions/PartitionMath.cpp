@@ -20,7 +20,7 @@ namespace harp {
             template<typename TYPE>
             double distance(harp::ds::Partition<TYPE> *p1, harp::ds::Partition<TYPE> *p2) {
                 if (p1->getSize() != p2->getSize()) {
-                    throw "Can't calculate distance due to partition size mismatch.";
+                    //throw "Can't calculate distance due to partition size mismatch.";
                 }
                 auto *p1Data = p1->getData();
                 auto *p2Data = p2->getData();

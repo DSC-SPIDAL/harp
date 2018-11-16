@@ -32,6 +32,12 @@ namespace harp {
                 }
                 delete[] tables;
             }
+
+            template<class TYPE>
+            void resetPartition(harp::ds::Partition<TYPE> *partition, TYPE value);
+
+            template<class TYPE>
+            void resetTable(harp::ds::Table<TYPE> *table, TYPE value);
         }
     }
 }

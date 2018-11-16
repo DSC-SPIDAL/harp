@@ -22,7 +22,7 @@ namespace harp {
         void
         generateKMeansData(std::string folder, int numberOfRecords, int vectorSize, int splits, int centroidsCount);
 
-        void readKMeansDataFromFile(std::string file, int vectorSize, harp::ds::Table<float> *table,
+        void readKMeansDataFromFile(std::string file, int vectorSize, harp::ds::Table<double> *table,
                                     int partitionIdPivot = 0);
     }
 }

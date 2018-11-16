@@ -18,24 +18,6 @@
 namespace harp {
     namespace math {
         namespace table {
-
-            template<class TYPE>
-            harp::ds::Partition<TYPE> *
-            sumAndDivide(harp::ds::Table<TYPE> *table, int partitionSize, int divisor = 1) {//todo remove partition size
-                auto *mean = new TYPE[partitionSize];
-                for (int i = 0; i < partitionSize; i++) {
-                    mean[i] = 0;
-                }
-                for (auto p: table->getPartitions()) {
-                    auto *data = static_cast<TYPE *>(p.second->getData());
-                    for (int i = 0; i < partitionSize; i++) {
-                        mean[i] += (data[i] /
-                                    divisor); //todo check whether compiler optimize this division when divisor = 1
-                    }
-                }
-                return new harp::ds::Partition<TYPE>(table->getId(), mean, partitionSize);
-            }
-
             /**
              * Calaculates the sum of all partitions. Output partition id will be the id of the table
              *
@@ -47,7 +29,17 @@ namespace harp {
             template<class TYPE>
             harp::ds::Partition<TYPE> *
             sum(harp::ds::Table<TYPE> *table, int partitionSize) {
-                sumAndDivide(table, partitionSize, 1);
+                auto *sum = new TYPE[partitionSize];
+                for (int i = 0; i < partitionSize; i++) {
+                    sum[i] = 0;
+                }
+                for (auto p: table->getPartitions()) {
+                    auto *data = p.second->getData();
+                    for (int i = 0; i < partitionSize; i++) {
+                        sum[i] += data[i];
+                    }
+                }
+                return new harp::ds::Partition<TYPE>(table->getId(), sum, partitionSize);
             }
 
             /**
@@ -61,7 +53,11 @@ namespace harp {
             template<class TYPE>
             harp::ds::Partition<TYPE> *
             mean(harp::ds::Table<TYPE> *table, int partitionSize) {//todo remove partition size
-                return sumAndDivide(table, partitionSize, static_cast<int>(table->getPartitionCount()));
+                auto *p = sum(table, partitionSize);
+                for (int i = 0; i < p->getSize(); i++) {
+                    p->getData()[i] /= table->getPartitionCount();
+                }
+                return p;
             }
         }
     }

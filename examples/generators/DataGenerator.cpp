@@ -67,11 +67,11 @@ namespace harp {
 
 
         void readKMeansDataFromFile(std::string file, int vectorSize,
-                                    harp::ds::Table<float> *table, int partitionIdPivot) {
+                                    harp::ds::Table<double> *table, int partitionIdPivot) {
             std::ifstream istream(file);
             int partitionIndex = 0;
             while (istream.good()) {
-                auto *vector = new float[vectorSize];
+                auto *vector = new double[vectorSize];
                 bool added = false;
                 for (int i = 0; i < vectorSize; i++) {
                     std::string str;
@@ -81,13 +81,13 @@ namespace harp {
                         getline(istream, str);
                     }
                     if (!str.empty()) {
-                        vector[i] = std::stof(str);
+                        vector[i] = std::stod(str);
                         added = true;
                     }
                 }
                 if (added) {
-                    auto *part = new harp::ds::Partition<float>(partitionIdPivot + partitionIndex++, vector,
-                                                                vectorSize);
+                    auto *part = new harp::ds::Partition<double>(partitionIdPivot + partitionIndex++, vector,
+                                                                 vectorSize);
                     table->addPartition(part);
                 } else {
                     delete[] vector;

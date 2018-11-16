@@ -25,6 +25,21 @@ namespace harp {
 
             template<class TYPE>
             void deleteTables(harp::ds::Table<TYPE> **tables, bool clearPartitions, int arrSize);
+
+            template<class TYPE>
+            void resetPartition(harp::ds::Partition<TYPE> *partition, TYPE value) {
+                auto *data = partition->getData();
+                for (int i = 0; i < partition->getSize(); i++) {
+                    data[i] = value;
+                }
+            }
+
+            template<class TYPE>
+            void resetTable(harp::ds::Table<TYPE> *table, TYPE value) {
+                for (auto p:table->getPartitions()) {
+                    resetPartition<TYPE>(p.second, value);
+                }
+            }
         }
     }
 }

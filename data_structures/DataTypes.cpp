@@ -21,6 +21,7 @@
 TYPE_HASH(int);
 TYPE_HASH(long);
 TYPE_HASH(float);
+TYPE_HASH(double);
 
 //void *createArray(DataType dataType, int size) {
 //    switch (dataType) {
@@ -42,6 +43,8 @@ MPI_Datatype getMPIDataType() {
         return MPI_LONG;
     } else if (hash == _float_type) {
         return MPI_FLOAT;
+    } else if (hash == _double_type) {
+        return MPI_DOUBLE;
     } else {
         return MPI_INT;
     }
