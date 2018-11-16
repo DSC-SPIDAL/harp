@@ -27,7 +27,7 @@ void printTable(harp::ds::Table<double> *table) {
 class KMeansWorker : public harp::Worker {
 
     void execute(com::Communicator<int> *comm) {
-        int iterations = 2;
+        int iterations = 20;
         int numOfCentroids = 10;
         int vectorSize = 4;
         int numOfVectors = 10000;
@@ -65,6 +65,7 @@ class KMeansWorker : public harp::Worker {
             deleteTable(centroids, true);
 
         }
+
         cout << endl;
         comm->barrier();
 
@@ -95,14 +96,15 @@ class KMeansWorker : public harp::Worker {
         auto *points = new harp::ds::Table<double>(0);
         util::readKMeansDataFromFile("/tmp/harp/kmeans/" + std::to_string(workerId), vectorSize, points);
 
-        auto *minDistances = new double[points->getPartitionCount()];
-        auto *closestCentroid = new int[points->getPartitionCount()];
-
-        bool firstRound = true;// to prevent minDistance array initialization requirement
 
         high_resolution_clock::time_point t1 = high_resolution_clock::now();
 
         for (int it = 0; it < iterations; it++) {
+            auto *minDistances = new double[points->getPartitionCount()];
+            auto *closestCentroid = new int[points->getPartitionCount()];
+
+            bool firstRound = true;// to prevent minDistance array initialization requirement
+
             //determining closest
             for (int cen = 0; cen < numOfCentroids;) {
                 for (auto c:myCentroids->getPartitions()) {
@@ -150,6 +152,9 @@ class KMeansWorker : public harp::Worker {
                     c.second->getData()[j] /= count[0];
                 }
             }
+
+            delete[] minDistances;
+            delete[] closestCentroid;
         }
         high_resolution_clock::time_point t2 = high_resolution_clock::now();
         auto duration = duration_cast<microseconds>(t2 - t1).count();
@@ -160,8 +165,6 @@ class KMeansWorker : public harp::Worker {
         comm->barrier();
         printTable(myCentroids);
 
-        delete[] minDistances;
-        delete[] closestCentroid;
         deleteTable(myCentroids, true);
         deleteTable(points, true);
     }

@@ -17,15 +17,18 @@
 #include "../math/HarpMath.h"
 #include "float.h"
 
+using namespace std;
+
 namespace harp {
     namespace kernels {
         template<class TYPE>
         void kmeans(harp::ds::Table<TYPE> *centroids, harp::ds::Table<TYPE> *points, int vectorSize, int iterations) {
-            long numOfCentroids = centroids->getPartitionCount();
+            int numOfCentroids = static_cast<int>(centroids->getPartitionCount());
             auto *clusters = new harp::ds::Table<TYPE> *[numOfCentroids];
             for (int i = 0; i < numOfCentroids; i++) {
                 clusters[i] = new harp::ds::Table<TYPE>(i);
             }
+
 
             for (int i = 0; i < iterations; i++) {
                 for (auto p :points->getPartitions()) {
@@ -34,7 +37,6 @@ namespace harp {
                     int currentCentroidIndex = 0;
                     for (auto c :centroids->getPartitions()) {
                         double distance = harp::math::partition::distance(p.second, c.second);
-                        //std::cout << "Distance : " << distance << std::endl;
                         if (distance < minDistance) {
                             minDistance = distance;
                             minCentroidIndex = currentCentroidIndex;
@@ -44,6 +46,7 @@ namespace harp {
                     clusters[minCentroidIndex]->addPartition(p.second);
                 }
                 centroids->clear();
+
                 //new centroids
                 for (int c = 0; c < numOfCentroids; c++) {
                     auto *newC = harp::math::table::mean(clusters[c], vectorSize);
@@ -51,7 +54,7 @@ namespace harp {
                 }
 
                 for (int j = 0; j < numOfCentroids; j++) {
-                   clusters[i]->clear();
+                   clusters[j]->clear();
                 }
             }
             harp::ds::util::deleteTables(clusters, false, static_cast<int>(centroids->getPartitionCount()));
