@@ -23,7 +23,7 @@ namespace harp {
         void kmeans(harp::ds::Table<TYPE> *centroids, harp::ds::Table<TYPE> *points, int vectorSize, int iterations) {
             long numOfCentroids = centroids->getPartitionCount();
             auto *clusters = new harp::ds::Table<TYPE> *[numOfCentroids];
-            for (int i = 0; i < centroids->getPartitionCount(); i++) {
+            for (int i = 0; i < numOfCentroids; i++) {
                 clusters[i] = new harp::ds::Table<TYPE>(i);
             }
 
@@ -48,6 +48,10 @@ namespace harp {
                 for (int c = 0; c < numOfCentroids; c++) {
                     auto *newC = harp::math::table::mean(clusters[c], vectorSize);
                     centroids->addPartition(newC);
+                }
+
+                for (int j = 0; j < numOfCentroids; j++) {
+                   clusters[i]->clear();
                 }
             }
             harp::ds::util::deleteTables(clusters, false, static_cast<int>(centroids->getPartitionCount()));

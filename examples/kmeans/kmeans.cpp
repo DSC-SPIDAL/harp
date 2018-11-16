@@ -6,6 +6,7 @@
 #include "../../kernels/HarpKernels.h"
 #include <fstream>
 #include <chrono>
+#include <iomanip>
 
 
 using namespace harp;
@@ -17,7 +18,7 @@ void printTable(harp::ds::Table<double> *table) {
     for (auto p : table->getPartitions()) {
         std::cout << p.first << " : ";
         for (int j = 0; j < p.second->getSize(); j++) {
-            std::cout << p.second->getData()[j] << ",";
+            std::cout << std::setprecision(10) << p.second->getData()[j] << ",";
         }
         std::cout << std::endl;
     }
@@ -26,7 +27,7 @@ void printTable(harp::ds::Table<double> *table) {
 class KMeansWorker : public harp::Worker {
 
     void execute(com::Communicator<int> *comm) {
-        int iterations = 10;
+        int iterations = 2;
         int numOfCentroids = 10;
         int vectorSize = 4;
         int numOfVectors = 10000;
