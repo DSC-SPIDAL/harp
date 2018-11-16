@@ -405,7 +405,7 @@ void DataTableColMajor::arrayWiseFMAAVX(float* dst, float* a, float* b)
         float* blockPtrBLocal = _blockPtrB[i]; 
         int blockSizeLocal = _blockSize[i];
 
-#ifdef __INTEL_COMPILER
+#ifdef __AVX512F__ 
 
     // unrolled by 16 float
     int n16 = blockSizeLocal & ~(16-1); 
@@ -424,8 +424,6 @@ void DataTableColMajor::arrayWiseFMAAVX(float* dst, float* a, float* b)
         vecC = _mm512_load_ps (&(blockPtrDstLocal[j]));
         vecBuf = _mm512_fmadd_ps(vecA, vecB, vecC);
         _mm512_store_ps(&(blockPtrDstLocal[j]), vecBuf);
-        // vecBuf = _mm512_mul_ps(vecA, vecB);
-        // vecBuf = _mm512_add_ps(vecC, vecBuf);
     }
 
     if (n16 < blockSizeLocal)
@@ -436,12 +434,50 @@ void DataTableColMajor::arrayWiseFMAAVX(float* dst, float* a, float* b)
         vecBuf = _mm512_fmadd_ps(vecA, vecB, vecC);
         _mm512_mask_store_ps(&(blockPtrDstLocal[n16]), mask, vecBuf);
     }
-
 #else
 
-#pragma omp simd aligned(dst, a, b: 64)
+#ifdef __AVX2__ 
+    // use avx256
+    // unrolled by 8 float
+    int n8 = blockSizeLocal & ~(8-1); 
+
+    int mask_integer[8]={0,0,0,0,0,0,0,0};
+    for (int i=0;i<(blockSizeLocal - n8); i++)
+        mask_integer[i] = -1;
+
+    __m256i mask = _mm256_setr_epi32(mask_integer[0],mask_integer[1],mask_integer[2],mask_integer[3],mask_integer[4],
+                mask_integer[5],mask_integer[6],mask_integer[7]);
+
+    __m256 vecA;
+    __m256 vecB;
+    __m256 vecC;
+    __m256 vecBuf;
+
+    for (int j = 0; j < n8; j+=8)
+    {
+        vecA = _mm256_load_ps (&(blockPtrALocal[j]));
+        vecB = _mm256_load_ps (&(blockPtrBLocal[j]));
+        vecC = _mm256_load_ps (&(blockPtrDstLocal[j]));
+        vecBuf = _mm256_fmadd_ps(vecA, vecB, vecC);
+        _mm256_store_ps(&(blockPtrDstLocal[j]), vecBuf);
+    }
+
+    if (n8 < blockSizeLocal)
+    {
+        vecA = _mm256_maskload_ps(&(blockPtrALocal[n8]), mask);
+        vecB = _mm256_maskload_ps(&(blockPtrBLocal[n8]), mask);
+        vecC = _mm256_maskload_ps(&(blockPtrDstLocal[n8]), mask);
+        vecBuf = _mm256_fmadd_ps(vecA, vecB, vecC);
+        _mm256_maskstore_ps(&(blockPtrDstLocal[n8]), mask, vecBuf);
+    }   
+
+#else
+   // no avx detected 
+ #pragma omp simd aligned(dst, a, b: 64)
         for(int j=0; j<blockSizeLocal;j++)
-            blockPtrDstLocal[j] = blockPtrDstLocal[j] + blockPtrALocal[j]*blockPtrBLocal[j];       
+            blockPtrDstLocal[j] = blockPtrDstLocal[j] + blockPtrALocal[j]*blockPtrBLocal[j];          
+#endif
+
 #endif
 
     }

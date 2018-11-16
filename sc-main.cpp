@@ -53,11 +53,22 @@ int main(int argc, char** argv)
         printf("Use Pruned Mat Algorithm Impl\n");
         std::fflush(stdout);   
     }
-
     if (useSPMM) {
         printf("Use SPMM Impl\n");
         std::fflush(stdout);          
     }
+#ifdef __AVX512F__
+    printf("AVX512 available\n");
+    std::fflush(stdout);          
+#else
+#ifdef __AVX2__
+    printf("AVX2 available\n");
+    std::fflush(stdout);                 
+#else
+    printf("No avx available\n");
+    std::fflush(stdout);                 
+#endif
+#endif
 #endif
 
     CSRGraph csrInpuG;

@@ -369,8 +369,8 @@ double CountMat::countNonBottomePruned(int subsId)
                     _dTable.arrayWiseFMAScale(objArray, auxArraySelect, mainArraySelect, 1.0e-12);
                 else
                 {
-                    // _dTable.arrayWiseFMAAVX(objArray, auxArraySelect, mainArraySelect);
-                    _dTable.arrayWiseFMA(objArray, auxArraySelect, mainArraySelect);
+                    _dTable.arrayWiseFMAAVX(objArray, auxArraySelect, mainArraySelect);
+                    // _dTable.arrayWiseFMA(objArray, auxArraySelect, mainArraySelect);
                 }
             }
             else
@@ -580,8 +580,8 @@ double CountMat::countNonBottomePrunedSPMM(int subsId)
                     _dTable.arrayWiseFMAScale(objArray, auxArraySelect, mainArraySelect, 1.0e-12);
                 else
                 {
-                    // _dTable.arrayWiseFMAAVX(objArray, auxArraySelect, mainArraySelect);
-                    _dTable.arrayWiseFMA(objArray, auxArraySelect, mainArraySelect);
+                    _dTable.arrayWiseFMAAVX(objArray, auxArraySelect, mainArraySelect);
+                    // _dTable.arrayWiseFMA(objArray, auxArraySelect, mainArraySelect);
 
                 }
             }
