@@ -772,7 +772,7 @@ class CQHistMakerCompactFastHist: public HistMakerCompactFastHist<TStats> {
     }
 
 
-#ifdef USE_HARLTRICK
+#ifdef USE_HALFTRICK
     //get the right node
     const unsigned nid_start = this->qexpand_[0];
     if (nid_start == 0)
