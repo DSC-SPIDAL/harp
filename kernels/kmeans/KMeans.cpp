@@ -31,19 +31,21 @@ namespace harp {
 
 
             for (int i = 0; i < iterations; i++) {
-                for (auto p :points->getPartitions()) {
+                for (auto p :*points->getPartitionKeySet()) {
+                    auto *point = points->getPartition(p);
                     int minCentroidIndex = 0;
                     auto minDistance = DBL_MAX;
                     int currentCentroidIndex = 0;
-                    for (auto c :centroids->getPartitions()) {
-                        double distance = harp::math::partition::distance(p.second, c.second);
+                    for (auto c :*centroids->getPartitionKeySet()) {
+                        auto *centroid = centroids->getPartition(c);
+                        double distance = harp::math::partition::distance(point, centroid);
                         if (distance < minDistance) {
                             minDistance = distance;
                             minCentroidIndex = currentCentroidIndex;
                         }
                         currentCentroidIndex++;
                     }
-                    clusters[minCentroidIndex]->addPartition(p.second);
+                    clusters[minCentroidIndex]->addPartition(point);
                 }
                 centroids->clear();
 
@@ -54,7 +56,7 @@ namespace harp {
                 }
 
                 for (int j = 0; j < numOfCentroids; j++) {
-                   clusters[j]->clear();
+                    clusters[j]->clear();
                 }
             }
             harp::ds::util::deleteTables(clusters, false, static_cast<int>(centroids->getPartitionCount()));

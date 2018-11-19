@@ -36,8 +36,8 @@ namespace harp {
 
             template<class TYPE>
             void resetTable(harp::ds::Table<TYPE> *table, TYPE value) {
-                for (auto p:table->getPartitions()) {
-                    resetPartition<TYPE>(p.second, value);
+                for (auto p:*table->getPartitionKeySet()) {
+                    resetPartition<TYPE>(table->getPartition(p), value);
                 }
             }
         }

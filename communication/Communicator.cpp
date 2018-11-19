@@ -29,7 +29,7 @@ namespace harp {
         template<class TYPE>
         void Communicator<TYPE>::allReduce(harp::ds::Table<TYPE> *table, MPI_Op operation) {
             MPI_Datatype dataType = getMPIDataType(table->getDataType());
-            for (auto p : table->getPartitions()) {//keys are ordered
+            for (auto p : table->getPartitions()) {//keys are ordered todo not anymore ordered
                 auto *data = createArray(table->getDataType(), p.second->getSize());
                 MPI_Allreduce(
                         p.second->getData(),
@@ -106,9 +106,9 @@ namespace harp {
             int partitionIdsToSend[numOfPartitionsToSend * 2];// [id, size]
             int partitionIdsToRecv[numOfPartitionsToRecv * 2];// [id, size]
             int index = 0;
-            for (const auto p : table->getPartitions()) {
-                partitionIdsToSend[index++] = p.first;
-                partitionIdsToSend[index++] = p.second->getSize();
+            for (const auto p : *table->getPartitionKeySet()) {
+                partitionIdsToSend[index++] = p;
+                partitionIdsToSend[index++] = table->getPartition(p)->getSize();
             }
             sendAndRecv(&partitionIdsToSend, numOfPartitionsToSend * 2,
                         &partitionIdsToRecv, numOfPartitionsToRecv * 2,
@@ -144,7 +144,9 @@ namespace harp {
             MPI_Waitall(numOfPartitionsToSend, dataSendRequests, MPI_STATUS_IGNORE);
             //todo clear memory of old table???
             //delete table;
-            *table = *recvTab;
+            table->swap(recvTab);
+
+            harp::ds::util::deleteTable(recvTab, false);
         }
 
         template<class TYPE>
