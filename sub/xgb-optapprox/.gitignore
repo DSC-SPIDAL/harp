@@ -66,6 +66,10 @@ nb-configuration*
 .settings/
 build
 /xgboost
+/xgboost-g++
+/xgboost-icc
+/xgboost-g++-debug
+/xgboost-icc-debug
 *.data
 build_plugin
 .idea

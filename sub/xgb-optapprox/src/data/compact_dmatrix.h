@@ -89,10 +89,10 @@ class DMatrixCompact : public xgboost::data::SparsePageDMatrix {
  */
 class DMatrixCompactColDense {
     public:
-        unsigned char* data_;
+        const unsigned char* data_;
         size_t len_;
 
-    DMatrixCompactColDense(unsigned char* data, size_t len):
+    DMatrixCompactColDense(const unsigned char* data, size_t len):
         data_(data), len_(len){}
 
   inline unsigned int _binid(size_t i) const {
@@ -101,7 +101,7 @@ class DMatrixCompactColDense {
   inline unsigned int _index(size_t i) const {
     return i;
   }
-  inline size() const{
+  inline size_t size() const{
     return len_;
   }
 
@@ -124,7 +124,7 @@ class DMatrixCompactDense : public xgboost::data::SparsePageDMatrix {
 
   inline DMatrixCompactColDense operator[](size_t i) const {
     return {data.data() + offset[i],
-            offset[i + 1] - offset[i]};
+            static_cast<size_t>(offset[i + 1] - offset[i])};
   }
 
   inline int Size(){

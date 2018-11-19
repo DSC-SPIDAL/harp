@@ -92,10 +92,33 @@ CFLAGS += -fpermissive -fno-strict-aliasing -DUSE_BINID=1 -DUSE_DEBUG=1 -g -O0
 TARGET = xgboost-$(CXX)-debug
 WORKDIR = build-$(CXX)-debug
 else
-CFLAGS += -O3 -funroll-loops
+#CFLAGS += -O3 -funroll-loops -xcore-avx2
+CFLAGS += -O3 -funroll-loops 
 CFLAGS += -fpermissive -fno-strict-aliasing -DUSE_BINID=1
+#CFLAGS += -DUSE_BINID=1
 TARGET = xgboost-$(CXX)
 WORKDIR = build-$(CXX)
+endif
+
+
+ifeq ($(CXX), icc)
+#
+# icc
+#
+CFLAGS += -xcore-avx2
+ifeq ($(USE_REPORT), 1)
+#CFLAGS += -qopt-report=5 -qopt-report-phase=vec
+CFLAGS += -qopt-report=5
+endif
+
+else
+#  g++
+CFLAGS += -mavx2
+
+ifeq ($(USE_REPORT), 1)
+CFLAGS += -fopt-info-vec
+endif
+
 endif
 
 ifeq ($(USE_COMPACT), 1)
@@ -114,7 +137,6 @@ ifeq ($(USE_VTUNE), 1)
 #	CFLAGS += -DUSE_VTUNE=1 -g -no-inline-max-size
 	CFLAGS += -DUSE_VTUNE=1 -g 
 endif
-
 
 
 ifndef LINT_LANG
