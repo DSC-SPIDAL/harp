@@ -81,6 +81,10 @@ struct TrainParam : public dmlc::Parameter<TrainParam> {
   int gpu_batch_nrows;
   // the criteria to use for ranking splits
   std::string split_evaluator;
+  
+  /* blockSize */
+  int block_size;
+
   // declare the parameters
   DMLC_DECLARE_PARAMETER(TrainParam) {
     DMLC_DECLARE_FIELD(learning_rate)
@@ -196,6 +200,12 @@ struct TrainParam : public dmlc::Parameter<TrainParam> {
     DMLC_DECLARE_FIELD(split_evaluator)
         .set_default("elastic_net,monotonic,interaction")
         .describe("The criteria to use for ranking splits");
+
+    DMLC_DECLARE_FIELD(block_size)
+        .set_default(0)
+        .set_lower_bound(0)
+        .describe("Block size(KB) used for task scheduling, 0 means use one block.");
+
     // add alias of parameters
     DMLC_DECLARE_ALIAS(reg_lambda, lambda);
     DMLC_DECLARE_ALIAS(reg_alpha, alpha);

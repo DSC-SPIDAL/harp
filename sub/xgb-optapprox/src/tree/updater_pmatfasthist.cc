@@ -42,6 +42,7 @@ class HistMakerCompactFastHist: public BaseMaker {
  public:
 
  HistMakerCompactFastHist(){
+
       this->isInitializedHistIndex = false;
 #ifdef USE_COMPACT
       p_hmat = new DMatrixCompactBlockDense();
@@ -61,13 +62,19 @@ class HistMakerCompactFastHist: public BaseMaker {
     // rescale learning rate according to size of trees
     float lr = param_.learning_rate;
     param_.learning_rate = lr / trees.size();
+
+    #ifndef USE_OMP_BUILDHIST
+    // init param for scheduling
+    this->gpair_ = gpair;
+    #endif
+    blockSize_ = param_.block_size * 1024;
+
     // build tree
     for (auto tree : trees) {
       this->Update(gpair->ConstHostVector(), p_fmat, tree);
     }
     param_.learning_rate = lr;
 
-    this->gpair_ = gpair;
 
   }
 
@@ -112,9 +119,8 @@ class HistMakerCompactFastHist: public BaseMaker {
     
         static void printTree(TreeNode* root, int level){
             //print self
-            std::cout << "level[" << level << "] n:" << 
-                root->n_ << ",m:" << root->m_ << ",b:" << root->base_ 
-                << ", off=" << root->off_ << "\n";
+            std::cout << "level[" << level << "] fid:" << 
+                root->fid_ << ",blk:" << root->blk_.base_rowid_ << ",len:" << root->blk_.len_ << "\n";
     
             //print children
             int childNum = root->getChildNum();
@@ -123,6 +129,20 @@ class HistMakerCompactFastHist: public BaseMaker {
                 TreeNode* p = root->getChild(i);
                 printTree(p, level);
             }
+        }
+
+        static int getTreeDepth(TreeNode* root){
+            int childNum = root->getChildNum();
+            int depth = 0;
+
+            for(int i=0; i < childNum; i++){
+                TreeNode* p = root->getChild(i);
+                int childdepth = getTreeDepth(p);
+                if (childdepth > depth)
+                    depth = childdepth;
+            }
+
+            return depth + 1;
         }
     
     };
@@ -530,7 +550,9 @@ class HistMakerCompactFastHist: public BaseMaker {
   // flag of initialization
   bool isInitializedHistIndex;
  
-  size_t blockSize_{256*1024};
+  //size_t blockSize_{256*1024};
+  //size_t blockSize_{0};
+  int blockSize_;
 
   #ifndef USE_OMP_BUILDHIST
   //task graph
@@ -1106,19 +1128,27 @@ class HistMakerCompactFastHist: public BaseMaker {
       /* OptApprox:: init bindid in pmat */
       if (!this->isInitializedHistIndex){
         InitHistIndex(p_fmat, fset, tree);
+        this->isInitializedHistIndex = true;
+
+        #ifdef   USE_COMPACT
+        p_hmat->Init(*p_fmat->GetSortedColumnBatches().begin(), p_fmat->Info());
+        //printdmat(*p_hmat);
+        #endif  
 
         #ifndef USE_OMP_BUILDHIST
         //init the task graph
         tbb::task_scheduler_init init;
         tg_root = TreeMaker::create(*p_hmat, blockSize_ );
+
+        std::cout << "TaskTree Depth:" << TreeNode::getTreeDepth(tg_root) << ", blockSize:" << blockSize_ << ", param.block_size:" 
+            << param_.block_size << "\n";
+        #ifdef USE_DEBUG
+        TreeNode::printTree(tg_root, 0);
         #endif
 
-        this->isInitializedHistIndex = true;
+        #endif
 
-#ifdef   USE_COMPACT
-        p_hmat->Init(*p_fmat->GetSortedColumnBatches().begin(), p_fmat->Info());
-        //printdmat(*p_hmat);
-#endif  
+
         //DEBUG
         printdmat(*p_fmat->GetSortedColumnBatches().begin());
         printcut(this->cut_);

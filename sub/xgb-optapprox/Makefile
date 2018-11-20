@@ -140,6 +140,8 @@ endif
 ifeq ($(USE_OMP_BUILDHIST), 1)
 	CFLAGS += -DUSE_OMP_BUILDHIST=1
 else
+#	LDFLAGS += -ltbbmalloc -ltbb
+	LDFLAGS += -L/opt/intel/compilers_and_libraries_2019.0.117/linux/tbb/lib/intel64/gcc4.7
 	LDFLAGS += -ltbbmalloc -ltbb
 endif
 

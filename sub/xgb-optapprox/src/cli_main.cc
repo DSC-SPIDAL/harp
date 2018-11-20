@@ -76,6 +76,7 @@ struct CLIParam : public dmlc::Parameter<CLIParam> {
   /*! \brief all the configurations */
   std::vector<std::pair<std::string, std::string> > cfg;
 
+
   // declare parameters
   DMLC_DECLARE_PARAMETER(CLIParam) {
     // NOTE: declare everything except eval_data_paths.
@@ -125,6 +126,8 @@ struct CLIParam : public dmlc::Parameter<CLIParam> {
     DMLC_DECLARE_ALIAS(train_path, data);
     DMLC_DECLARE_ALIAS(test_path, test:data);
     DMLC_DECLARE_ALIAS(name_fmap, fmap);
+
+   
   }
   // customized configure function of CLIParam
   inline void Configure(const std::vector<std::pair<std::string, std::string> >& cfg) {

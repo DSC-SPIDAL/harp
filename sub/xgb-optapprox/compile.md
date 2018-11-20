@@ -33,4 +33,11 @@ debug and save intermediate data
 make -j 24 USE_COMPACT=1 USE_COMPACT_BINID=1 DEBUG=1 USE_DEBUG_SAVE=1
 ```
 
+block scheduler .vs. omp
 
+```
+make -j 24 USE_COMPACT=1 USE_COMPACT_BINID=1 USE_HALFTRICK=1 USE_OMP_BUILDHIST=1
+
+make -j 24 USE_COMPACT=1 USE_COMPACT_BINID=1 USE_HALFTRICK=1 
+
+```

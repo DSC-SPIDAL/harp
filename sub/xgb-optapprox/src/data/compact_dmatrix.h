@@ -154,11 +154,14 @@ class DMatrixCompactColBlockDense {
 
   //block interface
   inline size_t getBlockNum(size_t blockSize) const{
-    return len_ / blockSize + ((len_%blockSize)?1:0);
+    return (blockSize<=0)? 1: len_ / blockSize + ((len_%blockSize)?1:0);
   }
 
   inline DMatrixCompactColBlockDense getBlock(size_t blockid, size_t blockSize) const {
-    return {data_ + static_cast<size_t>(blockid * blockSize),
+    if ( blockSize <= 0 )
+        return {data_, len_, 0};
+    else
+        return {data_ + static_cast<size_t>(blockid * blockSize),
             static_cast<size_t>( ((blockid+1)*blockSize > len_)? len_ - blockid*blockSize: blockSize),
             blockid*blockSize};
   }
