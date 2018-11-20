@@ -83,12 +83,14 @@ ifeq ($(USE_SSE), 1)
 endif
 endif
 
+#in program debug info enable
 ifeq ($(USE_DEBUG), 1)
-	CFLAGS += -g
+	CFLAGS += -DUSE_DEBUG=1
 endif
 
 ifeq ($(DEBUG), 1)
-CFLAGS += -fpermissive -fno-strict-aliasing -DUSE_BINID=1 -DUSE_DEBUG=1 -g -O0
+#CFLAGS += -fpermissive -fno-strict-aliasing -DUSE_BINID=1 -g -O0
+CFLAGS += -fpermissive -fno-strict-aliasing -DUSE_BINID=1 -g -O2
 TARGET = xgboost-$(CXX)-debug
 WORKDIR = build-$(CXX)-debug
 else
@@ -96,7 +98,12 @@ else
 CFLAGS += -O3 -funroll-loops 
 CFLAGS += -fpermissive -fno-strict-aliasing -DUSE_BINID=1
 #CFLAGS += -DUSE_BINID=1
-TARGET = xgboost-$(CXX)
+ifeq ($(USE_OMP_BUILDHIST), 1)
+TARGET = xgboost-$(CXX)-omp
+else
+TARGET = xgboost-$(CXX)-tbb
+endif
+
 WORKDIR = build-$(CXX)
 endif
 

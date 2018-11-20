@@ -319,7 +319,7 @@ class HistMakerCompactFastHist: public BaseMaker {
       return start;
     }
 
-#ifdef USE_BINID
+    #ifdef USE_BINID
     inline void AddWithIndex(unsigned binid,
                     GradientPair gstats) {
         //hist.data[binid].Add(gstats);
@@ -332,7 +332,7 @@ class HistMakerCompactFastHist: public BaseMaker {
       //CHECK_NE(binid, hist.size);
       hist.data[binid].Add(gpair, info, ridx);
     }
-#endif
+    #endif
 
 
     /*!
@@ -386,53 +386,58 @@ class HistMakerCompactFastHist: public BaseMaker {
       hbuilder[nid].hist = this->wspace_.hset[0].GetHistUnit(fid, nid);
     }
 
-#ifdef USE_HALFTRICK
-#define CHECKHALFCOND ((nid&1)==0)
-#else
-#define CHECKHALFCOND (1)
-#endif
 
-        //one block
-        if (TStats::kSimpleStats != 0 && this->param_.cache_opt != 0) {
-          constexpr bst_uint kBuffer = 32;
-          bst_uint align_length = block.size() / kBuffer * kBuffer;
-          int buf_position[kBuffer];
-          GradientPair buf_gpair[kBuffer];
-          for (bst_uint j = 0; j < align_length; j += kBuffer) {
-            #pragma ivdep  
-            for (bst_uint i = 0; i < kBuffer; ++i) {
-              bst_uint ridx = block._index(j+i);
-              buf_position[i]= this->DecodePosition(ridx);
-              buf_gpair[i] = gpair[ridx];
-            }
-            for (bst_uint i = 0; i < kBuffer; ++i) {
-              const int nid = buf_position[i];
-                if (CHECKHALFCOND) {
-                hbuilder[nid].AddWithIndex(block._binid(j+i), buf_gpair[i]);
-              }
-            }
-          }
-          for (bst_uint j = align_length; j < block.size(); ++j) {
-            const bst_uint ridx = block._index(j);
-            const int nid = this->DecodePosition(ridx);
 
-            if (CHECKHALFCOND) {
-              hbuilder[nid].AddWithIndex(block._binid(j), gpair[ridx]);
-            }
-          }
-        } else {
-          //#pragma ivdep
-          //#pragma omp simd
-          for (bst_uint j = 0; j < block.size(); ++j) {
-            const bst_uint ridx = block._index(j);
-            const int nid = this->DecodePosition(ridx);
-            if (CHECKHALFCOND) {
-              hbuilder[nid].AddWithIndex(block._binid(j), gpair[ridx]);
-            }
+    #ifdef USE_HALFTRICK
+    #define CHECKHALFCOND (nid>=0 && (nid&1)==0)
+    #else
+    #define CHECKHALFCOND (nid>=0)
+    #endif
+
+    //one block
+    if (TStats::kSimpleStats != 0 && this->param_.cache_opt != 0) {
+      constexpr bst_uint kBuffer = 32;
+      bst_uint align_length = block.size() / kBuffer * kBuffer;
+      int buf_position[kBuffer];
+      GradientPair buf_gpair[kBuffer];
+      for (bst_uint j = 0; j < align_length; j += kBuffer) {
+        #pragma ivdep  
+        for (bst_uint i = 0; i < kBuffer; ++i) {
+          bst_uint ridx = block._index(j+i);
+          //buf_position[i]= this->DecodePosition(ridx);
+          buf_position[i]= this->position_[ridx];
+          buf_gpair[i] = gpair[ridx];
+        }
+        for (bst_uint i = 0; i < kBuffer; ++i) {
+          const int nid = buf_position[i];
+          if (CHECKHALFCOND) {
+            hbuilder[nid].AddWithIndex(block._binid(j+i), buf_gpair[i]);
           }
         }
+      }
+      for (bst_uint j = align_length; j < block.size(); ++j) {
+        const bst_uint ridx = block._index(j);
+        //const int nid = this->DecodePosition(ridx);
+        const int nid = this->position_[ridx];
 
-#ifdef USE_HALFTRICK
+        if (CHECKHALFCOND) {
+          hbuilder[nid].AddWithIndex(block._binid(j), gpair[ridx]);
+        }
+      }
+    } else {
+      //#pragma ivdep
+      //#pragma omp simd
+      for (bst_uint j = 0; j < block.size(); ++j) {
+        const bst_uint ridx = block._index(j);
+        //const int nid = this->DecodePosition(ridx);
+        const int nid = this->position_[ridx];
+        if (CHECKHALFCOND) {
+          hbuilder[nid].AddWithIndex(block._binid(j), gpair[ridx]);
+        }
+      }
+    }
+
+    #ifdef USE_HALFTRICK
     //get the right node
     const unsigned nid_start = this->qexpand_[0];
     if (nid_start == 0)
@@ -446,11 +451,13 @@ class HistMakerCompactFastHist: public BaseMaker {
       #pragma ivdep
       #pragma omp simd
       for(int j=0; j < hbuilder[nid].hist.size; j++){
-        hbuilder[nid].hist.data[j].SetSubstract(parent_hist.data[j],hbuilder[nid+1].hist.data[j]);
+        hbuilder[nid].hist.data[j].SetSubstract(
+                parent_hist.data[j],
+                hbuilder[nid+1].hist.data[j]);
       }
 
     }
-#endif
+    #endif
 
   }
 
@@ -473,24 +480,21 @@ class HistMakerCompactFastHist: public BaseMaker {
             if( !is_continuation ) {
                 if (root->blk_.size() <= 0){
                     //root
-    
                     int childNum = root->getChildNum();
-                    std::vector<double> lsum;
-                    lsum.resize(childNum);
-                    int count = 1; 
-                    tbb::task_list list;
+                    if (childNum > 0){
+                        int count = 1; 
+                        tbb::task_list list;
      
-                    for(int i=0; i < childNum; i++){
-                        TreeNode* p = root->getChild(i);
-                        ++count;
-                        list.push_back( *new( allocate_child() ) BuildHistTask(p, ctx) );
+                        for(int i=0; i < childNum; i++){
+                            TreeNode* p = root->getChild(i);
+                            ++count;
+                            list.push_back( *new( allocate_child() ) BuildHistTask(p, ctx) );
+                        }
+                        set_ref_count(count);
+                        //std::cout << "Start spawn_all :" << childNum << "\n";
+                        spawn_and_wait_for_all(list);
+                        //std::cout << "End spawn_all :" << childNum << "\n";
                     }
-    
-                    set_ref_count(count);
-                    //std::cout << "Start spawn_all :" << childNum << "\n";
-                    spawn_and_wait_for_all(list);
-    
-                    //std::cout << "End spawn_all :" << childNum << "\n";
                 }
                 else{
                     //std::cout << "StartNode off:" << root->off_ << "\n";
@@ -591,30 +595,33 @@ class HistMakerCompactFastHist: public BaseMaker {
     /*
      * Initialize the histogram and DMatrixCompact
      */
-    printVec("ResetPos::fwork_set=", fwork_set_);
+    //printVec("ResetPos::fwork_set=", fwork_set_);
     // reset and propose candidate split
     this->ResetPosAndPropose(gpair, p_fmat, fwork_set_, *p_tree);
-    printtree(p_tree, "ResetPosAndPropose");
+    //printtree(p_tree, "ResetPosAndPropose");
     
     // initialize the histogram only
     this->InitializeHist(gpair, p_fmat, fwork_set_, *p_tree);
 
     for (int depth = 0; depth < param_.max_depth; ++depth) {
 
+
+      printVec("qexpand:", this->qexpand_);
       // create histogram
       this->CreateHist(gpair, fwork_set_, *p_tree);
 
-      printVec("position:", this->position_);
+      //printVec("position:", this->position_);
       //printtree(p_tree, "After CreateHist");
 
 #ifdef USE_DEBUG_SAVE
       this->wspace_.saveGHSum(treeid_, depth, this->qexpand_.size());
 #endif
 
+
       // find split based on histogram statistics
       this->FindSplit(depth, gpair, fwork_set_, p_tree);
 
-      printtree(p_tree, "FindSplit");
+      //printtree(p_tree, "FindSplit");
 
       // reset position after split
       this->ResetPositionAfterSplit(NULL, *p_tree);
@@ -630,9 +637,9 @@ class HistMakerCompactFastHist: public BaseMaker {
 
     if(this->fsplit_set_.size() > 0){
         //update the position for update cache
-        printVec("before updatepos:", this->position_);
+        //printVec("before updatepos:", this->position_);
         this->CreateHist(gpair, fwork_set_, *p_tree);
-        printVec("after updatepos:", this->position_);
+        //printVec("after updatepos:", this->position_);
     }
 
     for (size_t i = 0; i < qexpand_.size(); ++i) {
@@ -683,7 +690,7 @@ class HistMakerCompactFastHist: public BaseMaker {
     }
 
     //debug
-    printSplit(*best);
+    //printSplit(*best);
 
    
   }
@@ -694,7 +701,7 @@ class HistMakerCompactFastHist: public BaseMaker {
     
     const size_t num_feature = fset.size();
     //printInt("FindSplit::num_feature = ", num_feature);
-    printVec("FindSplit::fset=", fset);
+    //printVec("FindSplit::fset=", fset);
     // get the best split condition for each node
     std::vector<SplitEntry> sol(qexpand_.size());
     std::vector<TStats> left_sum(qexpand_.size());
@@ -730,8 +737,13 @@ class HistMakerCompactFastHist: public BaseMaker {
       // set up the values
       p_tree->Stat(nid).loss_chg = best.loss_chg;
       // now we know the solution in snode[nid], set split
+      
+      
+     
       if (best.loss_chg > kRtEps) {
+
         p_tree->AddChilds(nid);
+
         (*p_tree)[nid].SetSplit(best.SplitIndex(),
                                  best.split_value, best.DefaultLeft());
         // mark right child as 0, to indicate fresh leaf
@@ -744,6 +756,14 @@ class HistMakerCompactFastHist: public BaseMaker {
         this->SetStats(p_tree, (*p_tree)[nid].RightChild(), right_sum);
       } else {
         (*p_tree)[nid].SetLeaf(p_tree->Stat(nid).base_weight * param_.learning_rate);
+        #ifdef USE_HALFTRICK
+        //add empty childs anyway to keep the node id as the same as the fll
+        //binary tree
+        p_tree->AddChilds(nid);
+        (*p_tree)[(*p_tree)[nid].LeftChild()].SetLeaf(0.0f, 0);
+        (*p_tree)[(*p_tree)[nid].RightChild()].SetLeaf(0.0f, 0);
+        #endif
+ 
       }
     }
   }
@@ -929,12 +949,11 @@ class HistMakerCompactFastHist: public BaseMaker {
       hbuilder[nid].hist = this->wspace_.hset[0].GetHistUnit(fid_offset, nid);
     }
 
-#ifdef USE_HALFTRICK
-#define CHECKHALFCOND ((nid&1)==0)
-#else
-#define CHECKHALFCOND (1)
-#endif
-
+    #ifdef USE_HALFTRICK
+    #define CHECKHALFCOND (nid>=0 && (nid&1)==0)
+    #else
+    #define CHECKHALFCOND (nid>=0)
+    #endif
 
     int blockNum = col.getBlockNum(blockSize_);
     for(int blkid = 0; blkid < blockNum; blkid++){
@@ -950,7 +969,8 @@ class HistMakerCompactFastHist: public BaseMaker {
             #pragma ivdep  
             for (bst_uint i = 0; i < kBuffer; ++i) {
               bst_uint ridx = block._index(j+i);
-              buf_position[i]= this->DecodePosition(ridx);
+              //buf_position[i]= this->DecodePosition(ridx);
+              buf_position[i]= this->position_[ridx];
               buf_gpair[i] = gpair[ridx];
             }
             for (bst_uint i = 0; i < kBuffer; ++i) {
@@ -962,7 +982,8 @@ class HistMakerCompactFastHist: public BaseMaker {
           }
           for (bst_uint j = align_length; j < block.size(); ++j) {
             const bst_uint ridx = block._index(j);
-            const int nid = this->DecodePosition(ridx);
+            //const int nid = this->DecodePosition(ridx);
+            const int nid = this->position_[ridx];
 
             if (CHECKHALFCOND) {
               hbuilder[nid].AddWithIndex(block._binid(j), gpair[ridx]);
@@ -973,7 +994,8 @@ class HistMakerCompactFastHist: public BaseMaker {
           //#pragma omp simd
           for (bst_uint j = 0; j < block.size(); ++j) {
             const bst_uint ridx = block._index(j);
-            const int nid = this->DecodePosition(ridx);
+            //const int nid = this->DecodePosition(ridx);
+            const int nid = this->position_[ridx];
             if (CHECKHALFCOND) {
               hbuilder[nid].AddWithIndex(block._binid(j), gpair, info, ridx);
             }
@@ -1089,7 +1111,7 @@ class HistMakerCompactFastHist: public BaseMaker {
           nodes.size() << ",rowscnt=" << nrows;
     
 
-      printVec("updatech:", this->position_);
+      //printVec("updatech:", this->position_);
       return true;
     }
   }
@@ -1150,8 +1172,8 @@ class HistMakerCompactFastHist: public BaseMaker {
 
 
         //DEBUG
-        printdmat(*p_fmat->GetSortedColumnBatches().begin());
-        printcut(this->cut_);
+        //printdmat(*p_fmat->GetSortedColumnBatches().begin());
+        //printcut(this->cut_);
 
         startVtune("vtune-flag.txt");
         LOG(INFO) << "End of initialization, start training";
@@ -1269,7 +1291,7 @@ class HistMakerCompactFastHist: public BaseMaker {
 
     const auto nodes = tree.GetNodes();
     for(int i=0; i < nodes.size(); i++){
-        if (tree[i].IsLeaf()){
+        if (tree[i].IsLeaf() || tree[i].IsDeleted()){
             continue;
         }
 

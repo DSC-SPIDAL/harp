@@ -163,7 +163,8 @@ class BaseMaker: public TreeUpdater {
   inline void UpdateQueueExpand(const RegTree &tree) {
     std::vector<int> newnodes;
     for (int nid : qexpand_) {
-      if (!tree[nid].IsLeaf()) {
+      //if (!tree[nid].IsLeaf()) {
+      if (!tree[nid].IsLeaf() && !tree[nid].IsDeleted()) {
         newnodes.push_back(tree[nid].LeftChild());
         newnodes.push_back(tree[nid].RightChild());
       }

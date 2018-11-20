@@ -224,17 +224,17 @@ void CLITrain(const CLIParam& param) {
       }
       version += 1;
     }
-    CHECK_EQ(version, rabit::VersionNumber());
-    std::string res = learner->EvalOneIter(i, eval_datasets, eval_data_names);
-    if (rabit::IsDistributed()) {
-      if (rabit::GetRank() == 0) {
-        LOG(TRACKER) << res;
-      }
-    } else {
-      if (param.silent < 2) {
-        LOG(CONSOLE) << res;
-      }
-    }
+    //CHECK_EQ(version, rabit::VersionNumber());
+    //std::string res = learner->EvalOneIter(i, eval_datasets, eval_data_names);
+    //if (rabit::IsDistributed()) {
+    //  if (rabit::GetRank() == 0) {
+    //    LOG(TRACKER) << res;
+    //  }
+    //} else {
+    //  if (param.silent < 2) {
+    //    LOG(CONSOLE) << res;
+    //  }
+    //}
     if (param.save_period != 0 &&
         (i + 1) % param.save_period == 0 &&
         rabit::GetRank() == 0) {

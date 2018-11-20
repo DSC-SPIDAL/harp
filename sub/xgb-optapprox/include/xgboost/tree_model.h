@@ -203,12 +203,17 @@ class TreeModel {
   // allocate a new node,
   // !!!!!! NOTE: may cause BUG here, nodes.resize
   inline int AllocNode() {
+
+    // halftrick need full binary tree
+    #ifndef USE_HALFTRICK
     if (param.num_deleted != 0) {
       int nd = deleted_nodes_.back();
       deleted_nodes_.pop_back();
       --param.num_deleted;
       return nd;
     }
+    #endif
+
     int nd = param.num_nodes++;
     CHECK_LT(param.num_nodes, std::numeric_limits<int>::max())
         << "number of nodes in the tree exceed 2^31";
@@ -232,10 +237,14 @@ class TreeModel {
    * \param value new leaf value
    */
   inline void ChangeToLeaf(int rid, bst_float value) {
+
+    #ifndef USE_HALFTRICK
     CHECK(nodes_[nodes_[rid].LeftChild() ].IsLeaf());
     CHECK(nodes_[nodes_[rid].RightChild()].IsLeaf());
     this->DeleteNode(nodes_[rid].LeftChild());
     this->DeleteNode(nodes_[rid].RightChild());
+    #endif
+
     nodes_[rid].SetLeaf(value);
   }
   /*!
