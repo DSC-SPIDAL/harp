@@ -22,6 +22,12 @@
 #include "../common/sync.h"
 #include "../common/row_set.h"
 
+#ifndef USE_OMP_BUILDHIST
+#include "tbb/tick_count.h"
+#include "tbb/task.h"
+#include "tbb/scalable_allocator.h"
+#include "tbb/task_scheduler_init.h"
+#endif
 
 //#define _INIT_PER_TREE_ 1
 namespace xgboost {
@@ -60,9 +66,100 @@ class HistMakerCompactFastHist: public BaseMaker {
       this->Update(gpair->ConstHostVector(), p_fmat, tree);
     }
     param_.learning_rate = lr;
+
+    this->gpair_ = gpair;
+
   }
 
  protected:
+
+#ifndef USE_OMP_BUILDHIST
+  /*
+   * Task Scheduler
+   */
+    struct TreeNode {
+        //block info
+        DMatrixCompactColBlockDense blk_;
+        //todo move into blk_
+        int fid_;
+    
+        //task graph
+        std::vector<TreeNode*> children_;
+    
+        void init(DMatrixCompactBlockDense& dmat, int fid, int blockid, int blockSize){
+            
+            children_.clear();
+
+            fid_ = fid;
+            if ( blockid >= 0){
+                blk_ = dmat[fid].getBlock(blockid, blockSize);
+            }
+            else{
+                //root only
+                blk_.setEmpty();
+            }
+        }
+    
+        inline void addChild(TreeNode* p){
+            children_.push_back(p);
+        }
+        inline TreeNode* getChild(int id){
+            return children_[id];
+        }
+        inline int getChildNum(){
+            return children_.size();
+        }
+    
+        static void printTree(TreeNode* root, int level){
+            //print self
+            std::cout << "level[" << level << "] n:" << 
+                root->n_ << ",m:" << root->m_ << ",b:" << root->base_ 
+                << ", off=" << root->off_ << "\n";
+    
+            //print children
+            int childNum = root->getChildNum();
+            level++;
+            for(int i=0; i < childNum; i++){
+                TreeNode* p = root->getChild(i);
+                printTree(p, level);
+            }
+        }
+    
+    };
+
+    class TreeMaker {
+    public:
+        static TreeNode* allocate_node() {
+            return tbb::scalable_allocator<TreeNode>().allocate(1);
+            //return true? tbb::scalable_allocator<TreeNode>().allocate(1) : new TreeNode;
+        }
+        static TreeNode* create(DMatrixCompactBlockDense& dmat, int blocksize) {
+            TreeNode* root = allocate_node();
+            root->init(dmat, -1, -1, blocksize);
+    
+            int fsetSize = dmat.Size() ; 
+            for(int fid = 0; fid < fsetSize; fid++){
+                int blocknum = dmat[fid].getBlockNum(blocksize);
+
+                TreeNode* head = allocate_node();
+                head->init(dmat, fid, 0, blocksize);
+                root->addChild(head);
+                for(int blkid = 1 ; blkid < blocknum; blkid++){
+                    TreeNode* n = allocate_node();
+                    n->init(dmat, fid, blkid, blocksize);
+                    head->addChild(n);
+                    //add to the tail
+                    head = n;
+                }
+            }
+            //create the task root node
+            return root;
+        }
+    };
+
+#endif
+
+
     /*! \brief a single histogram */
   struct HistUnit {
     /*! \brief cutting point of histogram, contains maximum point */
@@ -254,11 +351,155 @@ class HistMakerCompactFastHist: public BaseMaker {
   };
  
 
+#ifndef USE_OMP_BUILDHIST
+     void BuildHistWithBlock(DMatrixCompactColBlockDense &block, int fid){
+    if (block.size() == 0) return;
+
+    const std::vector<GradientPair>& gpair = this->gpair_->ConstHostVector();
+
+    // initialize sbuilder for use
+    //std::vector<HistEntry> &hbuilder = this->thread_hist_[fid];
+    std::vector<HistEntry> hbuilder;
+    hbuilder.resize(this->num_nodes_);
+    for (size_t i = 0; i < this->qexpand_.size(); ++i) {
+      const unsigned nid = this->qexpand_[i];
+      hbuilder[nid].hist = this->wspace_.hset[0].GetHistUnit(fid, nid);
+    }
+
+#ifdef USE_HALFTRICK
+#define CHECKHALFCOND ((nid&1)==0)
+#else
+#define CHECKHALFCOND (1)
+#endif
+
+        //one block
+        if (TStats::kSimpleStats != 0 && this->param_.cache_opt != 0) {
+          constexpr bst_uint kBuffer = 32;
+          bst_uint align_length = block.size() / kBuffer * kBuffer;
+          int buf_position[kBuffer];
+          GradientPair buf_gpair[kBuffer];
+          for (bst_uint j = 0; j < align_length; j += kBuffer) {
+            #pragma ivdep  
+            for (bst_uint i = 0; i < kBuffer; ++i) {
+              bst_uint ridx = block._index(j+i);
+              buf_position[i]= this->DecodePosition(ridx);
+              buf_gpair[i] = gpair[ridx];
+            }
+            for (bst_uint i = 0; i < kBuffer; ++i) {
+              const int nid = buf_position[i];
+                if (CHECKHALFCOND) {
+                hbuilder[nid].AddWithIndex(block._binid(j+i), buf_gpair[i]);
+              }
+            }
+          }
+          for (bst_uint j = align_length; j < block.size(); ++j) {
+            const bst_uint ridx = block._index(j);
+            const int nid = this->DecodePosition(ridx);
+
+            if (CHECKHALFCOND) {
+              hbuilder[nid].AddWithIndex(block._binid(j), gpair[ridx]);
+            }
+          }
+        } else {
+          //#pragma ivdep
+          //#pragma omp simd
+          for (bst_uint j = 0; j < block.size(); ++j) {
+            const bst_uint ridx = block._index(j);
+            const int nid = this->DecodePosition(ridx);
+            if (CHECKHALFCOND) {
+              hbuilder[nid].AddWithIndex(block._binid(j), gpair[ridx]);
+            }
+          }
+        }
+
+#ifdef USE_HALFTRICK
+    //get the right node
+    const unsigned nid_start = this->qexpand_[0];
+    if (nid_start == 0)
+        return;
+
+    CHECK_NE(nid_start % 2, 0);
+    unsigned nid_parent = (nid_start+1)/2-1;
+    for (size_t i = 0; i < this->qexpand_.size(); i+=2) {
+      const unsigned nid = this->qexpand_[i];
+      auto parent_hist = this->wspace_.hset[0].GetHistUnit(fid, nid_parent + i/2);
+      #pragma ivdep
+      #pragma omp simd
+      for(int j=0; j < hbuilder[nid].hist.size; j++){
+        hbuilder[nid].hist.data[j].SetSubstract(parent_hist.data[j],hbuilder[nid+1].hist.data[j]);
+      }
+
+    }
+#endif
+
+  }
+
+
+  /*
+   * tbb task
+   */
+    class BuildHistTask: public tbb::task {
+        TreeNode* root;
+        HistMakerCompactFastHist* ctx;
+        bool is_continuation;
+
+    public:
+        BuildHistTask( TreeNode* root_, HistMakerCompactFastHist* ctx_ ) : 
+            root(root_), ctx(ctx_), is_continuation(false){}
+
+        task* execute() /*override*/ {
+    
+            tbb::task* next = NULL;
+            if( !is_continuation ) {
+                if (root->blk_.size() <= 0){
+                    //root
+    
+                    int childNum = root->getChildNum();
+                    std::vector<double> lsum;
+                    lsum.resize(childNum);
+                    int count = 1; 
+                    tbb::task_list list;
+     
+                    for(int i=0; i < childNum; i++){
+                        TreeNode* p = root->getChild(i);
+                        ++count;
+                        list.push_back( *new( allocate_child() ) BuildHistTask(p, ctx) );
+                    }
+    
+                    set_ref_count(count);
+                    //std::cout << "Start spawn_all :" << childNum << "\n";
+                    spawn_and_wait_for_all(list);
+    
+                    //std::cout << "End spawn_all :" << childNum << "\n";
+                }
+                else{
+                    //std::cout << "StartNode off:" << root->off_ << "\n";
+                    //do this block
+                    ctx->BuildHistWithBlock(root->blk_, root->fid_);
+    
+                    //go to next child
+                    if (root->getChildNum() == 1 ){
+                        TreeNode* p = root->getChild(0);
+                        auto* pchild = new( allocate_child() ) BuildHistTask(p,ctx);
+     
+                        recycle_as_continuation();
+                        is_continuation = true;
+                        set_ref_count(1);
+                        //spawn(*pchild);
+                        next = pchild;
+                    }
+                    //std::cout << "EndNode off:" << root->off_ << "\n";
+                }
+            }
+            return next;
+        }
+    };
+
+#endif
 
  /* --------------------------------------------------
   * data members
   */ 
-
 
   // workspace of thread
   ThreadWSpace wspace_;
@@ -290,6 +531,15 @@ class HistMakerCompactFastHist: public BaseMaker {
   bool isInitializedHistIndex;
  
   size_t blockSize_{256*1024};
+
+  #ifndef USE_OMP_BUILDHIST
+  //task graph
+  TreeNode* tg_root;
+  //std::vector<GradientPair>& gpair_;
+  HostDeviceVector<GradientPair> *gpair_{nullptr};
+
+  int num_nodes_;
+  #endif
 
  // hist mat compact
 #ifdef USE_COMPACT
@@ -390,7 +640,6 @@ class HistMakerCompactFastHist: public BaseMaker {
         c.SetSubstract(node_sum, s);
         if (c.sum_hess >= param_.min_child_weight) {
           double loss_chg = s.CalcGain(param_) + c.CalcGain(param_) - root_gain;
-          //if (best->Update(static_cast<bst_float>(loss_chg), fid, hist.cut[i], false)) {
           if (best->Update(static_cast<bst_float>(loss_chg), fid, i, false)) {
             *left_sum = s;
           }
@@ -404,7 +653,6 @@ class HistMakerCompactFastHist: public BaseMaker {
         c.SetSubstract(node_sum, s);
         if (c.sum_hess >= param_.min_child_weight) {
           double loss_chg = s.CalcGain(param_) + c.CalcGain(param_) - root_gain;
-          //if (best->Update(static_cast<bst_float>(loss_chg), fid, hist.cut[i-1], true)) {
           if (best->Update(static_cast<bst_float>(loss_chg), fid, i-1, true)) {
             *left_sum = c;
           }
@@ -672,7 +920,6 @@ class HistMakerCompactFastHist: public BaseMaker {
 
         //one block
         if (TStats::kSimpleStats != 0 && this->param_.cache_opt != 0) {
-        //if (0){
           constexpr bst_uint kBuffer = 32;
           bst_uint align_length = block.size() / kBuffer * kBuffer;
           int buf_position[kBuffer];
@@ -859,6 +1106,13 @@ class HistMakerCompactFastHist: public BaseMaker {
       /* OptApprox:: init bindid in pmat */
       if (!this->isInitializedHistIndex){
         InitHistIndex(p_fmat, fset, tree);
+
+        #ifndef USE_OMP_BUILDHIST
+        //init the task graph
+        tbb::task_scheduler_init init;
+        tg_root = TreeMaker::create(*p_hmat, blockSize_ );
+        #endif
+
         this->isInitializedHistIndex = true;
 
 #ifdef   USE_COMPACT
@@ -902,21 +1156,6 @@ class HistMakerCompactFastHist: public BaseMaker {
       this->work_set_.resize(
           std::unique(this->work_set_.begin(), this->work_set_.end()) - this->work_set_.begin());
 
-//      /* OptApprox:: init bindid in pmat */
-//      if (!this->isInitializedHistIndex){
-//        CQHistMakerCompactFastHist<TStats>::InitHistIndex(p_fmat, fset, tree);
-//        this->isInitializedHistIndex = true;
-//
-//#ifdef   USE_COMPACT
-//        p_hmat->Init(*p_fmat->GetSortedColumnBatches().begin(), p_fmat->Info());
-//        printdmat(*p_hmat);
-//#endif  
-//        //DEBUG
-//        printdmat(*p_fmat->GetSortedColumnBatches().begin());
-//        printcut(this->cut_);
-//      }
-
-      // start accumulating statistics
       //for (const auto &batch : p_fmat->GetSortedColumnBatches()) 
       //only one page
       {
@@ -933,25 +1172,46 @@ class HistMakerCompactFastHist: public BaseMaker {
         //this->CorrectNonDefaultPositionByBatch(batch, this->fsplit_set_, tree);
 
         // start enumeration
+      #ifdef USE_OMP_BUILDHIST
         const auto nsize = static_cast<bst_omp_uint>(this->work_set_.size());
         #pragma omp parallel for schedule(dynamic, 1)
         for (bst_omp_uint i = 0; i < nsize; ++i) {
           int fid = this->work_set_[i];
           int offset = this->feat2workindex_[fid];
           if (offset >= 0) {
-#ifdef USE_COMPACT
+             #ifdef USE_COMPACT
              this->UpdateHistColWithIndex(gpair, (*p_hmat)[fid], info, tree,
                                 fset, offset,
                                 &this->thread_hist_[omp_get_thread_num()]);
-#else
+             #else
 
-            this->UpdateHistCol(gpair, batch[fid], info, tree,
+             this->UpdateHistCol(gpair, batch[fid], info, tree,
                                 fset, offset,
                                 &this->thread_hist_[omp_get_thread_num()]);
-#endif
+             #endif
           }
         }
-      }
+      
+        #else
+        /*
+         * TBB scheduler 
+         */
+        {
+
+          //this->gpair_ = gpair;
+          this->num_nodes_ = tree.param.num_nodes;
+          //this->thread_hist_.resize();
+
+          tbb::task_scheduler_init init;
+          BuildHistTask& a = *new(tbb::task::allocate_root()) BuildHistTask(this->tg_root, this);
+          tbb::task::spawn_root_and_wait(a);
+        }
+
+        #endif
+      } // end of one-page
+
+
+
 
       // update node statistics.
       this->GetNodeStats(gpair, *p_hmat, tree,

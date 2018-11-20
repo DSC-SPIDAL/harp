@@ -137,7 +137,11 @@ ifeq ($(USE_VTUNE), 1)
 #	CFLAGS += -DUSE_VTUNE=1 -g -no-inline-max-size
 	CFLAGS += -DUSE_VTUNE=1 -g 
 endif
-
+ifeq ($(USE_OMP_BUILDHIST), 1)
+	CFLAGS += -DUSE_OMP_BUILDHIST=1
+else
+	LDFLAGS += -ltbbmalloc -ltbb
+endif
 
 ifndef LINT_LANG
 	LINT_LANG= "all"

@@ -147,6 +147,7 @@ class DMatrixCompactColBlockDense {
         const unsigned char* data_;
         size_t len_;
         size_t base_rowid_;
+        //int fid_;
 
     DMatrixCompactColBlockDense(const unsigned char* data, size_t len, size_t base):
         data_(data), len_(len), base_rowid_{base}{}
@@ -162,6 +163,9 @@ class DMatrixCompactColBlockDense {
             blockid*blockSize};
   }
 
+  void setEmpty(){
+      len_ = 0;
+  }
 
   //elem interface
   inline unsigned int _binid(size_t i) const {
