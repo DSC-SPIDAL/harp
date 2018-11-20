@@ -102,7 +102,7 @@ tags
 test/
 _results/
 #intel optimization report
-.optrpt
+*.optrpt
 build-g++/
 build-icc/
 

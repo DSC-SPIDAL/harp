@@ -38,7 +38,7 @@ class HistMakerCompactFastHist: public BaseMaker {
  HistMakerCompactFastHist(){
       this->isInitializedHistIndex = false;
 #ifdef USE_COMPACT
-      p_hmat = new DMatrixCompactDense();
+      p_hmat = new DMatrixCompactBlockDense();
 #endif
   }
 
@@ -289,10 +289,11 @@ class HistMakerCompactFastHist: public BaseMaker {
   // flag of initialization
   bool isInitializedHistIndex;
  
+  size_t blockSize_{256*1024};
 
  // hist mat compact
 #ifdef USE_COMPACT
-  DMatrixCompactDense* p_hmat;
+  DMatrixCompactBlockDense* p_hmat;
 #endif
 
   //for predict cache
@@ -639,7 +640,7 @@ class HistMakerCompactFastHist: public BaseMaker {
       }
   }
   void UpdateHistColWithIndex(const std::vector<GradientPair> &gpair,
-                            const DMatrixCompactColDense &col,
+                            const DMatrixCompactColBlockDense &col,
                             const MetaInfo &info,
                             const RegTree &tree,
                             const std::vector<bst_uint> &fset,
@@ -665,46 +666,51 @@ class HistMakerCompactFastHist: public BaseMaker {
 #endif
 
 
-    if (TStats::kSimpleStats != 0 && this->param_.cache_opt != 0) {
-    //if (0){
-      constexpr bst_uint kBuffer = 32;
-      bst_uint align_length = col.size() / kBuffer * kBuffer;
-      int buf_position[kBuffer];
-      GradientPair buf_gpair[kBuffer];
-      for (bst_uint j = 0; j < align_length; j += kBuffer) {
-        #pragma ivdep  
-        for (bst_uint i = 0; i < kBuffer; ++i) {
-          bst_uint ridx = col._index(j+i);
-          buf_position[i]= this->DecodePosition(ridx);
-          buf_gpair[i] = gpair[ridx];
-        }
-        for (bst_uint i = 0; i < kBuffer; ++i) {
-          const int nid = buf_position[i];
+    int blockNum = col.getBlockNum(blockSize_);
+    for(int blkid = 0; blkid < blockNum; blkid++){
+        const DMatrixCompactColBlockDense block = col.getBlock(blkid, blockSize_);
+
+        //one block
+        if (TStats::kSimpleStats != 0 && this->param_.cache_opt != 0) {
+        //if (0){
+          constexpr bst_uint kBuffer = 32;
+          bst_uint align_length = block.size() / kBuffer * kBuffer;
+          int buf_position[kBuffer];
+          GradientPair buf_gpair[kBuffer];
+          for (bst_uint j = 0; j < align_length; j += kBuffer) {
+            #pragma ivdep  
+            for (bst_uint i = 0; i < kBuffer; ++i) {
+              bst_uint ridx = block._index(j+i);
+              buf_position[i]= this->DecodePosition(ridx);
+              buf_gpair[i] = gpair[ridx];
+            }
+            for (bst_uint i = 0; i < kBuffer; ++i) {
+              const int nid = buf_position[i];
+                if (CHECKHALFCOND) {
+                hbuilder[nid].AddWithIndex(block._binid(j+i), buf_gpair[i]);
+              }
+            }
+          }
+          for (bst_uint j = align_length; j < block.size(); ++j) {
+            const bst_uint ridx = block._index(j);
+            const int nid = this->DecodePosition(ridx);
+
             if (CHECKHALFCOND) {
-            hbuilder[nid].AddWithIndex(col._binid(j+i), buf_gpair[i]);
+              hbuilder[nid].AddWithIndex(block._binid(j), gpair[ridx]);
+            }
+          }
+        } else {
+          //#pragma ivdep
+          //#pragma omp simd
+          for (bst_uint j = 0; j < block.size(); ++j) {
+            const bst_uint ridx = block._index(j);
+            const int nid = this->DecodePosition(ridx);
+            if (CHECKHALFCOND) {
+              hbuilder[nid].AddWithIndex(block._binid(j), gpair, info, ridx);
+            }
           }
         }
-      }
-      for (bst_uint j = align_length; j < col.size(); ++j) {
-        const bst_uint ridx = col._index(j);
-        const int nid = this->DecodePosition(ridx);
-
-        if (CHECKHALFCOND) {
-          hbuilder[nid].AddWithIndex(col._binid(j), gpair[ridx]);
-        }
-      }
-    } else {
-      //#pragma ivdep
-      //#pragma omp simd
-      for (bst_uint j = 0; j < col.size(); ++j) {
-        const bst_uint ridx = col._index(j);
-        const int nid = this->DecodePosition(ridx);
-        if (CHECKHALFCOND) {
-          hbuilder[nid].AddWithIndex(col._binid(j), gpair, info, ridx);
-        }
-      }
-    }
-
+    } /*blk*/
 
 #ifdef USE_HALFTRICK
     //get the right node
@@ -730,7 +736,7 @@ class HistMakerCompactFastHist: public BaseMaker {
 
   //dup func
   void CorrectNonDefaultPositionByBatch2(
-      DMatrixCompactDense &batch, const std::vector<bst_uint> &sorted_split_set,
+      DMatrixCompactBlockDense &batch, const std::vector<bst_uint> &sorted_split_set,
       const RegTree &tree) {
     for (size_t fid = 0; fid < batch.Size(); ++fid) {
       auto col = batch[fid];
@@ -857,7 +863,7 @@ class HistMakerCompactFastHist: public BaseMaker {
 
 #ifdef   USE_COMPACT
         p_hmat->Init(*p_fmat->GetSortedColumnBatches().begin(), p_fmat->Info());
-        printdmat(*p_hmat);
+        //printdmat(*p_hmat);
 #endif  
         //DEBUG
         printdmat(*p_fmat->GetSortedColumnBatches().begin());

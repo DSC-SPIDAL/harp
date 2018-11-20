@@ -139,6 +139,75 @@ class DMatrixCompactDense : public xgboost::data::SparsePageDMatrix {
   }
 };
 
+/*
+ * Block Dense matrix stores only binid, which is one byte
+ */
+class DMatrixCompactColBlockDense {
+    public:
+        const unsigned char* data_;
+        size_t len_;
+        size_t base_rowid_;
+
+    DMatrixCompactColBlockDense(const unsigned char* data, size_t len, size_t base):
+        data_(data), len_(len), base_rowid_{base}{}
+
+  //block interface
+  inline size_t getBlockNum(size_t blockSize) const{
+    return len_ / blockSize + ((len_%blockSize)?1:0);
+  }
+
+  inline DMatrixCompactColBlockDense getBlock(size_t blockid, size_t blockSize) const {
+    return {data_ + static_cast<size_t>(blockid * blockSize),
+            static_cast<size_t>( ((blockid+1)*blockSize > len_)? len_ - blockid*blockSize: blockSize),
+            blockid*blockSize};
+  }
+
+
+  //elem interface
+  inline unsigned int _binid(size_t i) const {
+    return static_cast<unsigned int>(data_[i]);
+  }
+  inline unsigned int _index(size_t i) const {
+    return base_rowid_ + i;
+  }
+  inline size_t size() const{
+    return len_;
+  }
+
+};
+
+class DMatrixCompactBlockDense : public xgboost::data::SparsePageDMatrix {
+ 
+ private:
+     std::vector<unsigned char> data;
+     std::vector<size_t> offset;
+     MetaInfo info_;
+
+ public:
+  explicit DMatrixCompactBlockDense(){}
+
+  //initialize
+  void Init(const SparsePage& page, MetaInfo& info);
+
+  //using Inst = common::Span<EntryCompact const>;
+
+  inline DMatrixCompactColBlockDense operator[](size_t i) const {
+    return {data.data() + offset[i],
+            static_cast<size_t>(offset[i + 1] - offset[i]), 0};
+  }
+
+  inline int Size(){
+    return offset.size() - 1; 
+  }
+
+  MetaInfo& Info() override{
+      return info_;
+  }
+  const MetaInfo& Info() const override{
+      return info_;
+  }
+};
+
 
 //}  // namespace data
 }  // namespace xgboost
