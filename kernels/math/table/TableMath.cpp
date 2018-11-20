@@ -33,8 +33,8 @@ namespace harp {
                 for (int i = 0; i < partitionSize; i++) {
                     sum[i] = 0;
                 }
-                for (auto p: *table->getPartitionKeySet()) {
-                    auto *data = table->getPartition(p)->getData();
+                for (auto p: *table->getPartitions()) {
+                    auto *data = p.second->getData();
                     for (int i = 0; i < partitionSize; i++) {
                         sum[i] += data[i];
                     }

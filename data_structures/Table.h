@@ -16,9 +16,9 @@ namespace harp {
         class Table {
         private:
             std::unordered_map<int, Partition<TYPE> *> partitionMap;
-            std::unordered_set<int> partitionKeys;
 
-            std::queue<int> deletedKeys;//holds deleted keys until next iteration
+            //this holds partitions received from asynchronous communication
+            std::queue<Partition<TYPE> *> pendingPartitions;
 
             std::condition_variable availability;
             std::mutex partitionMapMutex;
@@ -33,9 +33,9 @@ namespace harp {
 
             long getPartitionCount();
 
-            const std::unordered_set<int> *getPartitionKeySet(bool blockForAvailability = false);
+            //const std::unordered_set<int> *getPartitionKeySet(bool blockForAvailability = false);
 
-            //std::unordered_map<int, Partition<TYPE> *> *getPartitions();
+            std::unordered_map<int, Partition<TYPE> *> *getPartitions(bool blockForAvailability = false);
 
             PartitionState addPartition(Partition<TYPE> *partition);
 
@@ -47,7 +47,9 @@ namespace harp {
 
             void clear(bool clearPartitions = false);
 
-            void swap(Table<TYPE>* table);
+            void swap(Table<TYPE> *table);
+
+            void addToPendingPartitions(Partition<TYPE> *partition);
         };
     }
 }

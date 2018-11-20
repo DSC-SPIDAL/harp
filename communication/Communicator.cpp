@@ -1,6 +1,7 @@
 #include "Communicator.h"
 #include "mpi.h"
 #include <map>
+#include "future"
 
 namespace harp {
     namespace com {
@@ -97,7 +98,14 @@ namespace harp {
             //exchange NUMBER OF PARTITIONS
             int numOfPartitionsToSend = static_cast<int>(table->getPartitionCount());
             int numOfPartitionsToRecv = 0;
-            sendAndRecv(&numOfPartitionsToSend, 1, &numOfPartitionsToRecv, 1, sendTo, receiveFrom, MPI_INT);
+
+            MPI_Sendrecv(
+                    &numOfPartitionsToSend, 1, MPI_INT, sendTo, 0,
+                    &numOfPartitionsToRecv, 1, MPI_INT, receiveFrom, 0,
+                    MPI_COMM_WORLD,
+                    MPI_STATUS_IGNORE
+            );
+            //sendAndRecv(&numOfPartitionsToSend, 1, &numOfPartitionsToRecv, 1, sendTo, receiveFrom, MPI_INT);
 
 //            printf("Worker %d will send %d partitions and receive %d partitions\n", workerId, numOfPartitionsToSend,
 //                   numOfPartitionsToRecv);
@@ -106,9 +114,9 @@ namespace harp {
             int partitionIdsToSend[numOfPartitionsToSend * 2];// [id, size]
             int partitionIdsToRecv[numOfPartitionsToRecv * 2];// [id, size]
             int index = 0;
-            for (const auto p : *table->getPartitionKeySet()) {
-                partitionIdsToSend[index++] = p;
-                partitionIdsToSend[index++] = table->getPartition(p)->getSize();
+            for (const auto p : *table->getPartitions()) {
+                partitionIdsToSend[index++] = p.first;
+                partitionIdsToSend[index++] = p.second->getSize();
             }
             sendAndRecv(&partitionIdsToSend, numOfPartitionsToSend * 2,
                         &partitionIdsToRecv, numOfPartitionsToRecv * 2,
@@ -142,10 +150,9 @@ namespace harp {
             }
 
             MPI_Waitall(numOfPartitionsToSend, dataSendRequests, MPI_STATUS_IGNORE);
-            //todo clear memory of old table???
+
             //delete table;
             table->swap(recvTab);
-
             harp::ds::util::deleteTable(recvTab, false);
         }
 
@@ -158,10 +165,31 @@ namespace harp {
         void
         Communicator<TYPE>::sendAndRecv(const void *buffSend, int sendSize, void *buffRecv, int recvSize, int sendTo,
                                         int recvFrom, MPI_Datatype mpiDatatype) {
-            MPI_Request mpi_request;
-            MPI_Isend(buffSend, sendSize, mpiDatatype, sendTo, 0, MPI_COMM_WORLD, &mpi_request);
-            MPI_Recv(buffRecv, recvSize, mpiDatatype, recvFrom, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            MPI_Wait(&mpi_request, MPI_STATUSES_IGNORE);
+            MPI_Request mpi_request[2];
+            MPI_Isend(buffSend, sendSize, mpiDatatype, sendTo, 0, MPI_COMM_WORLD, &mpi_request[0]);
+            MPI_Irecv(buffRecv, recvSize, mpiDatatype, recvFrom, 0, MPI_COMM_WORLD, &mpi_request[1]);
+            MPI_Waitall(2, mpi_request, MPI_STATUSES_IGNORE);
+        }
+
+        template<class TYPE>
+        template<class TAB_TYPE, class ITERATOR>
+        void Communicator<TYPE>::asyncRotate(ds::Table<TAB_TYPE> *table, ITERATOR &iterator) {
+
+            auto partition = iterator->second;//take partition out
+            table->getPartitions()->erase(iterator);//erase partition
+
+            auto *rotatingTable = new harp::ds::Table<TAB_TYPE>(table->getId());//create new table for rotation
+            rotatingTable->addPartition(partition);
+            auto handle = std::async(std::launch::async, [rotatingTable, table, this]() {
+                rotate(rotatingTable);
+                for (auto p:*rotatingTable->getPartitions()) {
+                    table->addToPendingPartitions(p.second);
+                }
+            });
+
+            handle.get();
+            //table->getPartitions()->erase(iterator);
+
         }
     }
 }

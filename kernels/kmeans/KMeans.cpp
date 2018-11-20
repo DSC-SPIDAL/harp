@@ -31,21 +31,19 @@ namespace harp {
 
 
             for (int i = 0; i < iterations; i++) {
-                for (auto p :*points->getPartitionKeySet()) {
-                    auto *point = points->getPartition(p);
+                for (auto p :*points->getPartitions()) {
                     int minCentroidIndex = 0;
                     auto minDistance = DBL_MAX;
                     int currentCentroidIndex = 0;
-                    for (auto c :*centroids->getPartitionKeySet()) {
-                        auto *centroid = centroids->getPartition(c);
-                        double distance = harp::math::partition::distance(point, centroid);
+                    for (auto c :*centroids->getPartitions()) {
+                        double distance = harp::math::partition::distance(p.second, c.second);
                         if (distance < minDistance) {
                             minDistance = distance;
                             minCentroidIndex = currentCentroidIndex;
                         }
                         currentCentroidIndex++;
                     }
-                    clusters[minCentroidIndex]->addPartition(point);
+                    clusters[minCentroidIndex]->addPartition(p.second);
                 }
                 centroids->clear();
 

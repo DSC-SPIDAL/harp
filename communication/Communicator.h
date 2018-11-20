@@ -32,6 +32,9 @@ namespace harp {
 
             template<class TAB_TYPE>
             void rotate(harp::ds::Table<TAB_TYPE> *table);
+
+            template<class TAB_TYPE, class ITERATOR>
+            void asyncRotate(harp::ds::Table<TAB_TYPE> *table, ITERATOR& pid);
         };
     }
 }
