@@ -151,6 +151,11 @@ class GradientBooster {
       const std::string& name,
       const std::vector<std::shared_ptr<DMatrix> >& cache_mats,
       bst_float base_margin);
+
+  virtual TimeInfo getTimeInfo(){
+    return {0.,0.};
+  }
+
 };
 
 // implementing configure.

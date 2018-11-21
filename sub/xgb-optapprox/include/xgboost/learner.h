@@ -178,6 +178,10 @@ class Learner : public rabit::Serializable {
    */
   static Learner* Create(const std::vector<std::shared_ptr<DMatrix> >& cache_data);
 
+  virtual TimeInfo getTimeInfo(){
+    return gbm_->getTimeInfo();
+  }
+
  protected:
   /*! \brief internal base score of the model */
   bst_float base_score_;

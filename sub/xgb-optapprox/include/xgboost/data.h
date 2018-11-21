@@ -33,6 +33,20 @@ enum DataType {
   kUInt64 = 4
 };
 
+/*
+ * time struct
+ */
+struct TimeInfo {
+    double trainstart_time;
+    double buildhist_time;
+    double posset_time;
+    TimeInfo() = default;
+    TimeInfo(double _start, double _buildhist, double postime=0.):
+        trainstart_time(_start), buildhist_time(_buildhist), posset_time(postime){}
+
+};
+
+
 /*!
  * \brief Meta information about dataset, always sit in memory.
  */

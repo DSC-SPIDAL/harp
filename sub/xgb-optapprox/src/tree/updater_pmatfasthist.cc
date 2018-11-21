@@ -22,6 +22,8 @@
 #include "../common/sync.h"
 #include "../common/row_set.h"
 
+#include <dmlc/timer.h>
+
 #ifndef USE_OMP_BUILDHIST
 #include "tbb/tick_count.h"
 #include "tbb/task.h"
@@ -53,6 +55,11 @@ class HistMakerCompactFastHist: public BaseMaker {
 #ifdef USE_COMPACT
     delete p_hmat;
 #endif
+  }
+
+  TimeInfo getTimeInfo() override{
+      tminfo.posset_time -= tminfo.buildhist_time;
+      return tminfo;
   }
 
   void Update(HostDeviceVector<GradientPair> *gpair,
@@ -608,7 +615,9 @@ class HistMakerCompactFastHist: public BaseMaker {
 
       printVec("qexpand:", this->qexpand_);
       // create histogram
+      double _tstart = dmlc::GetTime();
       this->CreateHist(gpair, fwork_set_, *p_tree);
+      this->tminfo.posset_time += dmlc::GetTime() - _tstart;
 
       //printVec("position:", this->position_);
       //printtree(p_tree, "After CreateHist");
@@ -1177,6 +1186,8 @@ class HistMakerCompactFastHist: public BaseMaker {
 
         startVtune("vtune-flag.txt");
         LOG(INFO) << "End of initialization, start training";
+
+        this->tminfo.trainstart_time = dmlc::GetTime();
       }
     }
 
@@ -1223,7 +1234,8 @@ class HistMakerCompactFastHist: public BaseMaker {
         //this->CorrectNonDefaultPositionByBatchOrig(batch, this->fsplit_set_, tree);
         //this->CorrectNonDefaultPositionByBatch(batch, this->fsplit_set_, tree);
 
-        // start enumeration
+      // start enumeration
+      double _tstart = dmlc::GetTime();
       #ifdef USE_OMP_BUILDHIST
         const auto nsize = static_cast<bst_omp_uint>(this->work_set_.size());
         #pragma omp parallel for schedule(dynamic, 1)
@@ -1260,6 +1272,7 @@ class HistMakerCompactFastHist: public BaseMaker {
         }
 
         #endif
+        this->tminfo.buildhist_time += dmlc::GetTime() - _tstart;
       } // end of one-page
 
 

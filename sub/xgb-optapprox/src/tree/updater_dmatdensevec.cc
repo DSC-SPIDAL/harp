@@ -22,6 +22,7 @@
 #include "../common/sync.h"
 #include "../common/row_set.h"
 
+#include <dmlc/timer.h>
 
 //#define _INIT_PER_TREE_ 1
 namespace xgboost {
@@ -47,6 +48,12 @@ class HistMakerCompactFastHistDenseVec: public BaseMaker {
     delete p_hmat;
 #endif
   }
+
+  TimeInfo getTimeInfo() override{
+      tminfo.posset_time -= tminfo.buildhist_time;
+      return tminfo;
+  }
+
 
   void Update(HostDeviceVector<GradientPair> *gpair,
               DMatrix *p_fmat,
@@ -329,7 +336,9 @@ class HistMakerCompactFastHistDenseVec: public BaseMaker {
     for (int depth = 0; depth < param_.max_depth; ++depth) {
 
       // create histogram
+      double _tstart = dmlc::GetTime();
       this->CreateHist(gpair, fwork_set_, *p_tree);
+      this->tminfo.posset_time += dmlc::GetTime() - _tstart;
 
       printVec("position:", this->position_);
       //printtree(p_tree, "After CreateHist");
@@ -865,6 +874,8 @@ class HistMakerCompactFastHistDenseVec: public BaseMaker {
 
         startVtune("vtune-flag.txt");
         LOG(INFO) << "End of initialization, start training";
+
+        this->tminfo.trainstart_time = dmlc::GetTime();
       }
     }
 
@@ -927,6 +938,7 @@ class HistMakerCompactFastHistDenseVec: public BaseMaker {
         //this->CorrectNonDefaultPositionByBatch(batch, this->fsplit_set_, tree);
 
         // start enumeration
+        double _tstart = dmlc::GetTime();
         const auto nsize = static_cast<bst_omp_uint>(this->work_set_.size());
         #pragma omp parallel for schedule(dynamic, 1)
         for (bst_omp_uint i = 0; i < nsize; ++i) {
@@ -945,6 +957,8 @@ class HistMakerCompactFastHistDenseVec: public BaseMaker {
 #endif
           }
         }
+
+        this->tminfo.buildhist_time += dmlc::GetTime() - _tstart;
       }
 
       // update node statistics.

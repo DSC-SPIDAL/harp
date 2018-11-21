@@ -275,6 +275,11 @@ void CLITrain(const CLIParam& param) {
   if (param.silent == 0) {
     double elapsed = dmlc::GetTime() - start;
     LOG(CONSOLE) << "update end, " << elapsed << " sec in all";
+
+    TimeInfo tminfo = learner->getTimeInfo();
+    LOG(CONSOLE) << "BuildPosSet Time: " << tminfo.posset_time;
+    LOG(CONSOLE) << "BuildHist Time: " << tminfo.buildhist_time;
+    LOG(CONSOLE) << "Training Time: " << dmlc::GetTime() -tminfo.trainstart_time;
   }
 }
 

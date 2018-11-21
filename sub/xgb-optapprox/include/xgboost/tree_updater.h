@@ -59,6 +59,9 @@ class TreeUpdater {
     return false;
   }
 
+  virtual TimeInfo getTimeInfo(){
+      return {0.,0.};
+  }
   /*!
    * \brief Create a tree updater given name
    * \param name Name of the tree updater.

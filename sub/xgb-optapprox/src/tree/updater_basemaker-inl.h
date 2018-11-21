@@ -32,6 +32,10 @@ class BaseMaker: public TreeUpdater {
     param_.InitAllowUnknown(args);
   }
 
+  TimeInfo getTimeInfo() override{
+      return tminfo;
+  }
+
  protected:
   // helper to collect and query feature meta information
   struct FMetaHelper {
@@ -460,6 +464,8 @@ class BaseMaker: public TreeUpdater {
    *   see also Decode/EncodePosition
    */
   std::vector<int> position_;
+
+  TimeInfo tminfo;
 
  private:
   inline void UpdateNode2WorkIndex(const RegTree &tree) {
