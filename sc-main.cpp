@@ -14,18 +14,28 @@
 #include <unistd.h>
 #include <climits>
 #include <stdint.h>
+#include <omp.h>
 
 #include "mkl.h"
+
 #include "Graph.hpp"
 #include "CSRGraph.hpp"
 #include "CountMat.hpp"
 #include "Helper.hpp"
 #include "EdgeList.hpp"
 
+// for testing radix
+#include "radix/commons/builder.h"
+#include "radix/commons/command_line.h"
+#include "radix/pr.h"
+
 using namespace std;
+
 
 int main(int argc, char** argv)
 {
+
+   
     int load_binary = 0;
     int write_binary = 0;
     string graph_name;
@@ -34,6 +44,7 @@ int main(int argc, char** argv)
     int comp_thds;
     int isPruned = 1;
     int useSPMM = 0;
+    int binSize = 19;
 
     graph_name = argv[1];
     template_name = argv[2];
@@ -47,6 +58,9 @@ int main(int argc, char** argv)
 
     if (argc > 8)
         useSPMM = atoi(argv[8]);
+
+    if (argc > 9)
+        binSize = atoi(argv[9]);
 
 #ifdef VERBOSE 
     if (isPruned) {
@@ -115,8 +129,91 @@ int main(int argc, char** argv)
 
     printf("Finish CSR format\n");
     std::fflush(stdout);
-    printf("Loading CSR data using %f secs\n", (utility::timer() - startTime));
+    printf("Loading CSR data using %f secs, vert: %d\n", (utility::timer() - startTime), csrInpuG.getNumVertices());
     std::fflush(stdout);           
+
+    // -------------------- start debug the Radix SpMV ------------------------------
+    printf("start radix spmv\n");
+    std::fflush(stdout);
+
+     // for radix
+    typedef BuilderBase<int32_t, int32_t, int32_t> Builder;
+    typedef RCSRGraph<int32_t> RGraph;
+    EdgeList elist2(graph_name);
+
+    pvector<EdgePair<int32_t, int32_t> > radixList(elist2.getNumEdges()); 
+    elist2.convertToRadixList(radixList);
+
+    // check radixList
+    for (int i = 0; i < 10; ++i) {
+       printf("src: %d, dst: %d\n", radixList[i].u, radixList[i].v); 
+       std::fflush(stdout);
+    }
+    printf("Elist vert: %d, edge: %d, pvec length: %d\n", elist2.getNumVertices(), elist2.getNumEdges(), radixList.size());
+    std::fflush(stdout);
+
+    CLBase cli(argc, argv);
+    Builder b(cli);
+    RGraph radixG = b.MakeGraphFromEL(radixList);
+
+    printf("Finish build radix graph, vert: %d\n", radixG.num_nodes());
+    std::fflush(stdout);
+
+//     pvector<ParPartitioner<int32_t, float>*> par_parts(omp_get_max_threads());
+// #pragma omp parallel
+// {
+//     par_parts[omp_get_thread_num()] = new ParPartitioner<int32_t, float>(19,
+//             omp_get_thread_num(), omp_get_max_threads(), radixG);
+// }
+    pvector<ParGuider<int32_t, float>*> par_guides(omp_get_max_threads());
+#pragma omp parallel
+    // par_guides[omp_get_thread_num()] = new ParGuider<int32_t, float>(19,omp_get_thread_num(), omp_get_max_threads(), radixG);
+    par_guides[omp_get_thread_num()] = new ParGuider<int32_t, float>(binSize,omp_get_thread_num(), omp_get_max_threads(), radixG);
+
+    printf("Finish build par_parts\n");
+    std::fflush(stdout);
+
+    float* xMat = (float*) malloc(radixG.num_nodes()*sizeof(float));
+    for (int i = 0; i < radixG.num_nodes(); ++i) {
+       xMat[i] = 2.0; 
+    }
+    float* yMat = (float*) malloc(radixG.num_nodes()*sizeof(float));
+    std::memset(yMat, 0, radixG.num_nodes()*sizeof(float));
+    //
+    startTime = utility::timer();
+
+    // check pagerank scores
+    // for (int j = 0; j < 100; ++j) {
+        // SpMVRadixPar(xMat, yMat, radixG, 1, kGoalEpsilon, par_parts);
+        SpMVGuidesPar(xMat, yMat, radixG, 1000, kGoalEpsilon, par_guides);
+    // }
+    //
+    printf("Radix SpMV using %f secs\n", (utility::timer() - startTime));
+    std::fflush(stdout);           
+    //
+    // check yMat
+    for (int i = 0; i < 10; ++i) {
+       printf("Elem: %d is: %f\n", i, yMat[i]); 
+       std::fflush(stdout);
+    }
+    //
+    // test SpMV naive
+    startTime = utility::timer();
+    for (int j = 0; j < 1000; ++j) {
+        csrInpuG.SpMVNaive(xMat, yMat, comp_thds);
+    }
+
+    printf("Naive SpMV using %f secs\n", (utility::timer() - startTime));
+    std::fflush(stdout);           
+
+    // check yMat
+    for (int i = 0; i < 10; ++i) {
+       printf("Elem: %d is: %f\n", i, yMat[i]); 
+       std::fflush(stdout);
+    }
+    free(xMat);
+    free(yMat);
+    // -------------------- end debug the Radix SpMV ------------------------------
 
     // // test SpMV naive, mkl, and csr5 using double
     // // yMat = CSRGraph*xMat
@@ -205,12 +302,12 @@ int main(int argc, char** argv)
     
     // ---------------- start of computing ----------------
     // load input templates
-    input_template.read_enlist(template_name);
+    // input_template.read_enlist(template_name);
 
     // start CSR mat computing
-    CountMat executor;
-    executor.initialization(csrInpuG, comp_thds, iterations, isPruned, useSPMM);
-    executor.compute(input_template);
+    // CountMat executor;
+    // executor.initialization(csrInpuG, comp_thds, iterations, isPruned, useSPMM);
+    // executor.compute(input_template);
 
     return 0;
 

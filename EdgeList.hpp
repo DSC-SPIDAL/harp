@@ -8,6 +8,9 @@
 #include <fstream>
 #include <cstring>
 
+#include "radix/pvector.h"
+#include "radix/commons/graph.h"
+
 using namespace std;
 
 class EdgeList
@@ -17,7 +20,7 @@ class EdgeList
         typedef int32_t idxType;
 
         EdgeList(): _numEdges(-1), _numVertices(-1), 
-        _srcList(nullptr), _dstList(nullptr) {}
+        _srcList(nullptr), _dstList(nullptr){}
 
         EdgeList(string fileName) 
         {
@@ -38,6 +41,9 @@ class EdgeList
         idxType* getSrcList() {return _srcList;}
         idxType* getDstList() {return _dstList;}
 
+        // for radix
+        void convertToRadixList(pvector<EdgePair<int32_t, int32_t> >& List);
+        
     private:
 
         void readfromfile(string fileName);

@@ -145,3 +145,12 @@ void EdgeList::readfromfileNoVerticesNum(string fileName)
     delete[] v_id;
 
 }
+
+void EdgeList::convertToRadixList(pvector<EdgePair<int32_t, int32_t> > &List)
+{
+    for (int i = 0; i < _numEdges; ++i) {
+        List[i].u = _srcList[i];
+        List[i].v = _dstList[i];
+    }
+}
+
