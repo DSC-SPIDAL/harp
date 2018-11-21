@@ -2,6 +2,18 @@
 #include "mpi.h"
 #include <map>
 #include "future"
+#include "iomanip"
+
+template<class TYPE>
+void printTable(harp::ds::Table<TYPE> *table) {
+    for (auto p : *table->getPartitions()) {
+        std::cout << p.first << " : ";
+        for (int j = 0; j < p.second->getSize(); j++) {
+            std::cout << std::setprecision(10) << p.second->getData()[j] << ",";
+        }
+        std::cout << std::endl;
+    }
+}
 
 namespace harp {
     namespace com {
@@ -99,9 +111,10 @@ namespace harp {
             int numOfPartitionsToSend = static_cast<int>(table->getPartitionCount());
             int numOfPartitionsToRecv = 0;
 
+
             MPI_Sendrecv(
-                    &numOfPartitionsToSend, 1, MPI_INT, sendTo, 0,
-                    &numOfPartitionsToRecv, 1, MPI_INT, receiveFrom, 0,
+                    &numOfPartitionsToSend, 1, MPI_INT, sendTo, table->getId(),
+                    &numOfPartitionsToRecv, 1, MPI_INT, receiveFrom, table->getId(),
                     MPI_COMM_WORLD,
                     MPI_STATUS_IGNORE
             );
@@ -130,7 +143,7 @@ namespace harp {
                 int partitionId = partitionIdsToSend[i];
                 int partitionSize = partitionIdsToSend[i + 1];
                 auto *data = table->getPartition(partitionId)->getData();
-                MPI_Isend(data, partitionSize, dataType, sendTo, partitionId, MPI_COMM_WORLD,
+                MPI_Isend(data, partitionSize, dataType, sendTo, table->getId(), MPI_COMM_WORLD,
                           &dataSendRequests[i / 2]);
             }
 
@@ -143,11 +156,13 @@ namespace harp {
                 int partitionId = partitionIdsToRecv[i];
                 int partitionSize = partitionIdsToRecv[i + 1];
                 auto *data = new TYPE[partitionSize];
-                MPI_Recv(data, partitionSize, dataType, receiveFrom, partitionId, MPI_COMM_WORLD,
+                MPI_Recv(data, partitionSize, dataType, receiveFrom, table->getId(),
+                         MPI_COMM_WORLD,
                          MPI_STATUS_IGNORE);
                 auto *newPartition = new harp::ds::Partition<TYPE>(partitionId, data, partitionSize);
                 recvTab->addPartition(newPartition);
             }
+
 
             MPI_Waitall(numOfPartitionsToSend, dataSendRequests, MPI_STATUS_IGNORE);
 
@@ -172,23 +187,29 @@ namespace harp {
         }
 
         template<class TYPE>
-        template<class TAB_TYPE, class ITERATOR>
-        void Communicator<TYPE>::asyncRotate(ds::Table<TAB_TYPE> *table, ITERATOR &iterator) {
-
-            auto partition = iterator->second;//take partition out
-            table->getPartitions()->erase(iterator);//erase partition
-
+        template<class TAB_TYPE>
+        void Communicator<TYPE>::asyncRotate(ds::Table<TAB_TYPE> *table, int pid) {
+            auto partition = table->getPartition(pid);//take partition out
+            table->removePartition(pid, false);
+            //table->getPartitions()->erase(iterator->first);//erase partition
             auto *rotatingTable = new harp::ds::Table<TAB_TYPE>(table->getId());//create new table for rotation
             rotatingTable->addPartition(partition);
-            auto handle = std::async(std::launch::async, [rotatingTable, table, this]() {
-                rotate(rotatingTable);
-                for (auto p:*rotatingTable->getPartitions()) {
-                    table->addToPendingPartitions(p.second);
-                }
-            });
 
-            handle.get();
-            //table->getPartitions()->erase(iterator);
+//            auto handle = std::async(std::launch::async, [rotatingTable, table, this]() {
+//                rotate(rotatingTable);
+//                for (auto p:*rotatingTable->getPartitions()) {
+//                    table->addToPendingPartitions(p.second);
+//                }
+//            });
+//
+//            handle.get();
+
+            rotate(rotatingTable);
+            for (auto p:*rotatingTable->getPartitions()) {
+                table->addToPendingPartitions(p.second);
+            }
+
+            //          handle.get();
 
         }
     }

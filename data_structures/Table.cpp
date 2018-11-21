@@ -19,11 +19,14 @@ namespace harp {
         }
 
         template<class TYPE>
-        std::unordered_map<int, Partition<TYPE> *> *Table<TYPE>::getPartitions(bool blockForAvailability) {
-            while (this->partitionMap.empty()) {
-                while (!this->pendingPartitions.empty()) {
-                    this->addPartition(this->pendingPartitions.front());
-                    this->pendingPartitions.pop();
+        std::map<int, Partition<TYPE> *> *Table<TYPE>::getPartitions(bool blockForAvailability) {
+            this->pushPendingPartitions();
+            if (blockForAvailability) {
+                while (this->partitionMap.empty()) {
+                    while (!this->pendingPartitions.empty()) {
+                        this->addPartition(this->pendingPartitions.front());
+                        this->pendingPartitions.pop();
+                    }
                 }
             }
             return &this->partitionMap;
@@ -32,6 +35,7 @@ namespace harp {
         template<class TYPE>
         PartitionState Table<TYPE>::addPartition(Partition<TYPE> *partition) {
             this->partitionMap.insert(std::make_pair(partition->getId(), partition));
+            this->orderedPartitions.push_back(partition->getId());
             this->availability.notify_one();
             return COMBINED;
         }
@@ -94,11 +98,64 @@ namespace harp {
         template<class TYPE>
         void Table<TYPE>::swap(Table<TYPE> *table) {
             this->partitionMap = table->partitionMap;
+            this->orderedPartitions = table->orderedPartitions;
+            this->iteratingIndex = 0;
         }
 
         template<class TYPE>
         void Table<TYPE>::addToPendingPartitions(Partition<TYPE> *partition) {
             this->pendingPartitions.push(partition);
+        }
+
+        template<class TYPE>
+        Partition<TYPE> *Table<TYPE>::nextPartition(bool blockForAvailability) {
+            this->pushPendingPartitions();
+            if (blockForAvailability) {
+                while (this->partitionMap.empty()) {
+                    this->pushPendingPartitions();
+                }
+            }
+            if (this->iteratingIndex < this->orderedPartitions.size()) {
+                int index = this->orderedPartitions[this->iteratingIndex++];
+                return this->partitionMap.at(index);
+            }
+            return nullptr;
+        }
+
+        template<class TYPE>
+        bool Table<TYPE>::hasNext() {
+            this->pushPendingPartitions();
+            while (this->partitionMap.empty()) {
+                while (!this->pendingPartitions.empty()) {
+                    this->addPartition(this->pendingPartitions.front());
+                    this->pendingPartitions.pop();
+                }
+            }
+            return this->iteratingIndex < this->orderedPartitions.size();
+        }
+
+        template<class TYPE>
+        void Table<TYPE>::resetIterator() {
+            for (auto i = this->orderedPartitions.cbegin(); i != this->orderedPartitions.cend();) {
+                if (this->partitionMap.count(*i) == 0) {
+                    this->orderedPartitions.erase(i);
+                } else {
+                    i++;
+                }
+            }
+            this->iteratingIndex = 0;
+
+            this->pushPendingPartitions();
+        }
+
+        template<class TYPE>
+        void Table<TYPE>::pushPendingPartitions() {
+            while (this->partitionMap.empty()) {
+                while (!this->pendingPartitions.empty()) {
+                    this->addPartition(this->pendingPartitions.front());
+                    this->pendingPartitions.pop();
+                }
+            }
         }
     }
 }

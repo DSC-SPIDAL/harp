@@ -24,7 +24,7 @@ namespace harp {
             this->comm = comm;
 
             //clear the table and copy values to read queue
-            std::unordered_map<int, harp::ds::Partition<TYPE> *> *map = table->getPartitions();
+            std::map<int, harp::ds::Partition<TYPE> *> *map = table->getPartitions();
             for (auto it = map->cbegin(); it != map->cend(); it++) {
                 harp::ds::Partition<TYPE> *part = it->second;
                 this->readQueue.push(part);
@@ -83,7 +83,7 @@ namespace harp {
                 std::cout << "Doing rotation : " << toSend->getPartitionCount() << std::endl;
                 comm->rotate(toSend);
                 std::cout << "Done rotation" << toSend->getPartitionCount() << std::endl;
-                std::unordered_map<int, harp::ds::Partition<TYPE> *> *map = toSend->getPartitions();
+                std::map<int, harp::ds::Partition<TYPE> *> *map = toSend->getPartitions();
                 this->transferQueueMutex.lock();
                 for (auto it = map->cbegin(); it != map->cend(); it++) {
                     harp::ds::Partition<TYPE> *part = it->second;

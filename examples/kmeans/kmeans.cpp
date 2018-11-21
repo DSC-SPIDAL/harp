@@ -17,17 +17,17 @@ using namespace harp;
 using namespace harp::ds::util;
 using namespace std::chrono;
 using namespace std;
-
-template<class TYPE>
-void printTable(harp::ds::Table<TYPE> *table) {
-    for (auto p : *table->getPartitions()) {
-        std::cout << p.first << " : ";
-        for (int j = 0; j < p.second->getSize(); j++) {
-            std::cout << std::setprecision(10) << p.second->getData()[j] << ",";
-        }
-        std::cout << std::endl;
-    }
-}
+//
+//template<class TYPE>
+//void printTable(harp::ds::Table<TYPE> *table) {
+//    for (auto p : *table->getPartitions()) {
+//        std::cout << p.first << " : ";
+//        for (int j = 0; j < p.second->getSize(); j++) {
+//            std::cout << std::setprecision(10) << p.second->getData()[j] << ",";
+//        }
+//        std::cout << std::endl;
+//    }
+//}
 
 class KMeansWorker : public harp::Worker {
 
@@ -77,8 +77,6 @@ class KMeansWorker : public harp::Worker {
             auto *centroids = new harp::ds::Table<double>(1);
             util::readKMeansDataFromFile("/tmp/harp/kmeans/centroids", vectorSize, centroids);
 
-            printTable(centroids);
-
             high_resolution_clock::time_point t1 = high_resolution_clock::now();
             harp::kernels::kmeans(centroids, points, vectorSize, iterations);
             high_resolution_clock::time_point t2 = high_resolution_clock::now();
@@ -110,18 +108,21 @@ class KMeansWorker : public harp::Worker {
         auto *myCentroids = new harp::ds::Table<double>(1);
         for (auto c : *centroids->getPartitions()) {
             if (c.first % worldSize == workerId) {
-                myCentroids->addPartition(c.second);
+                //modifying centroids to hold count
+                auto *data = c.second->getData();
+                auto *newDataWithCount = new double[c.second->getSize() + 1];
+
+                for (int x = 0; x < c.second->getSize(); x++) {
+                    newDataWithCount[x] = data[x];
+                }
+                newDataWithCount[c.second->getSize()] = 0;
+
+                myCentroids->addPartition(
+                        new harp::ds::Partition<double>(c.first, newDataWithCount, c.second->getSize() + 1));
             } else {
                 delete c.second;
             }
         }
-
-        auto *myCentroidPointCount = new harp::ds::Table<int>(0);
-        for (auto p:*myCentroids->getPartitions()) {
-            auto *count = new int[1];
-            myCentroidPointCount->addPartition(new harp::ds::Partition<int>(p.first, count, 1));
-        }
-
 
         //load points
         auto *points = new harp::ds::Table<double>(0);
@@ -136,39 +137,59 @@ class KMeansWorker : public harp::Worker {
 
             bool firstRound = true;// to prevent minDistance array initialization requirement
 
-
-
             //determining closest
             for (int cen = 0; cen < numOfCentroids;) {
-                for (auto c = myCentroids->getPartitions(true)->begin(); c != myCentroids->getPartitions()->end();) {
+                if (workerId == 0)
+                    std::cout << "Outer:" << ":" << cen
+                              << std::endl;
+//                for (auto c = myCentroids->getPartitions(true)->cbegin();
+//                     c != myCentroids->getPartitions(false)->cend();) {
+                while (myCentroids->hasNext() && cen < numOfCentroids) {
+                    auto *nextCent = myCentroids->nextPartition(true);
                     for (auto p:*points->getPartitions()) {
-                        double distance = harp::math::partition::distance(p.second, c->second);
+                        double distance = harp::math::partition::distance(p.second, 0, p.second->getSize(),
+                                                                          nextCent, 0, nextCent->getSize() - 1);
                         if (firstRound || distance < minDistances[p.first]) {
                             minDistances[p.first] = distance;
-                            closestCentroid[p.first] = c->first;
+                            closestCentroid[p.first] = nextCent->getId();
                         }
                     }
                     firstRound = false;
                     cen++;
-                    //comm->asyncRotate(myCentroids, c);
-                    c++;
+
+                    comm->asyncRotate(myCentroids, nextCent->getId());
+//                    if (workerId == 0) {
+//                        std::cout << "has next" << myCentroids->hasNext()
+//                                  << std::endl;
+//                    }
+
+//                    if (cen <= numOfCentroids) {
+//                        if (workerId == 0) {
+//                            std::cout << "Rotating:" << c->first << ":" << cen << ":"
+//                                      << myCentroids->getPartitionCount()
+//                                      << std::endl;
+//                        }
+//                        comm->asyncRotate(myCentroids, c);
+//                        myCentroids->getPartitions(false)->erase(c);
+//                    }
+                    //c++;
+
                 }
-                comm->rotate(myCentroids);
-                comm->rotate(myCentroidPointCount);
+                //comm->rotate(myCentroids);
+                myCentroids->resetIterator();
             }
 
+
             harp::ds::util::resetTable<double>(myCentroids, 0);
-            harp::ds::util::resetTable<int>(myCentroidPointCount, 0);
 
             //building new centroids
 
             for (int cen = 0; cen < numOfCentroids;) {
-                for (auto c:*myCentroids->getPartitions()) {
+                for (auto c:*myCentroids->getPartitions(true)) {
                     auto *cdata = c.second->getData();
-                    auto *count = myCentroidPointCount->getPartition(c.first)->getData();
                     for (auto p:*points->getPartitions()) {
                         if (closestCentroid[p.first] == c.first) {
-                            count[0]++;
+                            cdata[c.second->getSize() - 1]++;
                             auto *pdata = p.second->getData();
                             for (int i = 0; i < p.second->getSize(); i++) {
                                 cdata[i] += pdata[i];
@@ -178,14 +199,13 @@ class KMeansWorker : public harp::Worker {
                     cen++;
                 }
                 comm->rotate(myCentroids);
-                comm->rotate(myCentroidPointCount);
             }
 
             //calculating average
             for (auto c:*myCentroids->getPartitions()) {
-                auto *count = myCentroidPointCount->getPartition(c.first)->getData();
+                auto *data = c.second->getData();
                 for (int j = 0; j < vectorSize; j++) {
-                    c.second->getData()[j] /= count[0];
+                    data[j] /= data[vectorSize];
                 }
             }
 

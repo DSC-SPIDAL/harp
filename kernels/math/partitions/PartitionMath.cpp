@@ -19,14 +19,21 @@ namespace harp {
         namespace partition {
             template<typename TYPE>
             double distance(harp::ds::Partition<TYPE> *p1, harp::ds::Partition<TYPE> *p2) {
-                if (p1->getSize() != p2->getSize()) {
-                    //throw "Can't calculate distance due to partition size mismatch.";
+                return distance(p1, 0, p1->getSize(), p2, 0, p2->getSize());
+            }
+
+
+            template<class TYPE>
+            double distance(harp::ds::Partition<TYPE> *p1, int i1Start, int i1End,
+                            harp::ds::Partition<TYPE> *p2, int i2Start, int i2End) {
+                if (i1End - i1Start != i2End - i2Start) {
+                    throw "Can't calculate distance due to partition size mismatch.";
                 }
                 auto *p1Data = p1->getData();
                 auto *p2Data = p2->getData();
                 double sum = 0;
-                for (int i = 0; i < p1->getSize(); i++) {
-                    sum += (pow(p1Data[i] - p2Data[i], 2));
+                for (int i = 0; i < i1End - i1Start; i++) {
+                    sum += (pow(p1Data[i1Start + i] - p2Data[i2Start + i], 2));
                 }
                 return sqrt(sum);
             }

@@ -1,7 +1,8 @@
 #ifndef HARPC_TABLE_H
 #define HARPC_TABLE_H
 
-#include <unordered_map>
+#include <map>
+#include "vector"
 #include <unordered_set>
 #include <queue>
 #include "Partition.h"
@@ -15,7 +16,10 @@ namespace harp {
         template<class TYPE>
         class Table {
         private:
-            std::unordered_map<int, Partition<TYPE> *> partitionMap;
+            std::map<int, Partition<TYPE> *> partitionMap;
+
+
+            unsigned long iteratingIndex = 0;
 
             //this holds partitions received from asynchronous communication
             std::queue<Partition<TYPE> *> pendingPartitions;
@@ -23,8 +27,12 @@ namespace harp {
             std::condition_variable availability;
             std::mutex partitionMapMutex;
 
+            void pushPendingPartitions();
+
             int id;
         public:
+            std::vector<int> orderedPartitions;
+
             Table(int id);//todo add combiner
 
             ~Table();
@@ -35,7 +43,13 @@ namespace harp {
 
             //const std::unordered_set<int> *getPartitionKeySet(bool blockForAvailability = false);
 
-            std::unordered_map<int, Partition<TYPE> *> *getPartitions(bool blockForAvailability = false);
+            std::map<int, Partition<TYPE> *> *getPartitions(bool blockForAvailability = false);
+
+            Partition<TYPE> *nextPartition(bool blockForAvailability = false);
+
+            bool hasNext();
+
+            void resetIterator();
 
             PartitionState addPartition(Partition<TYPE> *partition);
 

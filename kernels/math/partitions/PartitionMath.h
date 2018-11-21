@@ -21,6 +21,10 @@ namespace harp {
         namespace partition {
             template<class TYPE>
             double distance(harp::ds::Partition<TYPE> *p1, harp::ds::Partition<TYPE> *p2);
+
+            template<class TYPE>
+            double distance(harp::ds::Partition<TYPE> *p1, int i1Start, int i1End,
+                            harp::ds::Partition<TYPE> *p2, int i2Start, int i2End);
         }
     }
 }
