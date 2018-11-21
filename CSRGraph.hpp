@@ -5,6 +5,8 @@
 #include <cstdlib>
 #include <fstream>
 
+#include "SpDM3/include/spmat.h"
+
 using namespace std;
 
 // store the edgelist graph data into a CSR format (non-symmetric)
@@ -19,13 +21,6 @@ class CSRGraph
         CSRGraph(): _isDirected(false), _isOneBased(false), _numEdges(-1), _numVertices(-1), _nnZ(-1), 
             _edgeVal(nullptr), _indexRow(nullptr), _indexCol(nullptr), 
             _degList(nullptr) {}
-
-        // construct CSRGraph from edgelist file
-        // CSRGraph(idxType numEdges, idxType numVerts, 
-        //         idxType* srcList, idxType* dstList): _isDirected(false)
-        // {
-        //     createFromEdgeListFile(numEdges, numVerts, srcList, dstList);
-        // }
 
         ~CSRGraph(){
             if (_edgeVal != nullptr)
@@ -75,6 +70,8 @@ class CSRGraph
 
         void serialize(ofstream& outputFile);
         void deserialize(ifstream& inputFile);
+
+        void fillSpMat(spdm3::SpMat<int, float> &smat);
 
     private:
 

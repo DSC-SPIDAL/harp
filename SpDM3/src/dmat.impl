@@ -1,0 +1,1055 @@
+// This file is included by dmat.h.
+#include <algorithm>  // std::max
+#include <cassert>    // assert
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>    // memset
+#include <omp.h>
+#include <random>
+
+#include "../include/matmul.h"
+#include "../include/utility.h"
+
+// For MKL's random number generator.
+#define BRNG    VSL_BRNG_MCG31
+#define METHOD  VSL_RNG_METHOD_GAUSSIAN_BOXMULLER
+
+namespace spdm3 {
+
+//
+// Constructors & Destructor.
+//
+template <class IT, class VT>
+DMat<IT, VT>::DMat(spdm3_format format)
+  : rows_(0),
+    cols_(0),
+    lda_(0),
+    format_(format) {
+  InitDefault();
+}
+
+template <class IT, class VT>
+DMat<IT, VT>::DMat(IT rows, IT cols, spdm3_format format)
+  : rows_(rows),
+    cols_(cols),
+    format_(format) {
+  lda_ = dim2();  // lda_(dim2()) in the initialization list didn't always work.
+  InitDefault();
+  Allocate();
+}
+
+template <class IT, class VT>
+DMat<IT, VT>::DMat(IT rows, IT cols, IT lda, spdm3_format format)
+  : rows_(rows),
+    cols_(cols),
+    lda_(lda),
+    format_(format) {
+  InitDefault();
+  Allocate();
+}
+
+template <class IT, class VT>
+DMat<IT, VT>::DMat(IT rows, IT cols,
+                   spdm3_format format, VT *values)
+  : rows_(rows),
+    cols_(cols),
+    format_(format) {
+  lda_ = dim2();  // lda_(dim2()) in initialization list didn't always work.
+  InitDefault();
+  values_ = values;
+  buffer_size_ = dim1() * lda_;
+}
+
+template <class IT, class VT>
+DMat<IT, VT>::DMat(IT rows, IT cols, IT lda,
+                   spdm3_format format, VT *values)
+  : rows_(rows),
+    cols_(cols),
+    lda_(lda),
+    format_(format) {
+  InitDefault();
+  values_ = values;
+  buffer_size_ = dim1() * lda_;
+}
+
+template <class IT, class VT>
+DMat<IT, VT>::DMat(const SpMat<IT, VT> &X)
+  : rows_(X.rows_),
+    cols_(X.cols_) {
+  lda_ = dim2();  // lda_(dim2()) in initialization list didn't always work.
+  InitDefault();
+
+  // Sets format.
+  switch(X.format_) {
+    case SPARSE_CSR: format_ = DENSE_ROWMAJOR; break;
+    case SPARSE_CSC: format_ = DENSE_COLMAJOR; break;
+    default:
+      printf("Error! Format unsupported.\n");
+      exit(1);
+  }
+  Allocate();
+
+  // Goes row-by-row.
+  for (int i1 = 0; i1 < dim1(); ++i1) {
+    for (int i2 = 0, k = X.headptrs_[i1]; i2 < dim2(); ++i2) {
+      if (i2 == X.indices_[k] && k < X.headptrs_[i1+1])
+        values_[i1 * lda_ + i2] = X.values_[k++];
+      else
+        values_[i1 * lda_ + i2] = 0.0;
+    }
+  }
+}
+
+template <class IT, class VT>
+DMat<IT, VT>::DMat(DMat<IT, VT> *M,
+                   IT blk_rows, IT blk_cols, spdm3_layout layout)
+  : DMat() {
+  Concatenate(M, blk_rows, blk_cols, layout);
+}
+
+template <class IT, class VT>
+DMat<IT, VT>::~DMat() {
+//  if (name_ != NULL)
+//    printf("%s is being deleted.\n", name_);
+  Deallocate();
+}
+
+template <class IT, class VT>
+void DMat<IT, VT>::InitDefault() {
+  values_      = NULL;
+  buffer_size_ = 0;
+  free_buffer_ = false;
+
+  lib_     = LIB_DEFAULT;
+  name_    = NULL;
+  epsilon_ = EPSILON;
+}
+
+//
+// Allocation
+//
+// Assumes rows_, cols_, and lda_ are set.
+template <class IT, class VT>
+void DMat<IT, VT>::Allocate() {
+  Allocate(-1);
+}
+
+template <class IT, class VT>
+void DMat<IT, VT>::Allocate(IT rows, IT cols) {
+  rows_ = rows;
+  cols_ = cols;
+//  lda_  = std::max(lda_, dim2());
+  lda_ = dim2();
+  Allocate();
+}
+
+template <class IT, class VT>
+void DMat<IT, VT>::Allocate(LT buffer_size) {
+  LT min_buffer_size = (LT) dim1() * (LT) lda_;
+  buffer_size = std::max(buffer_size, min_buffer_size);
+  if ((buffer_size_ >= buffer_size) && free_buffer_)
+    return;
+
+  // Allocates buffer.
+  Deallocate();
+  buffer_size_ = buffer_size;
+  values_ = new VT[buffer_size_];
+
+  // Owns the pointer (and is responsible for deallocation)
+  // by default.
+  free_buffer_ = true;
+}
+
+template <class IT, class VT>
+void DMat<IT, VT>::Allocate(IT rows, IT cols, LT buffer_size) {
+  rows_ = rows;
+  cols_ = cols;
+//  lda_  = std::max(lda_, dim2());
+  lda_ = dim2();
+  Allocate(buffer_size);
+}
+
+template <class IT, class VT>
+void DMat<IT, VT>::Deallocate() {
+  if (free_buffer_) {
+    FREE_IF_NOT_NULL(values_);
+  }
+  free_buffer_ = false;
+}
+
+template <class IT, class VT>
+void DMat<IT, VT>::ExpandBuffer(LT new_size, bool preserve_contents) {
+  if (new_size <= buffer_size_)
+    return;
+
+  // Allocates larger buffer and copies old content if necessary.
+  VT *new_values = new VT[new_size];
+  if (preserve_contents && values_ != NULL)
+    memcpy(new_values, values_, buffer_size_ * sizeof(VT));
+  buffer_size_ = new_size;
+
+  // Frees old buffer and stores the new address.
+  FREE_IF_NOT_NULL(values_);
+  values_ = new_values;
+}
+
+//
+// I/O
+//
+template <class IT, class VT>
+void DMat<IT, VT>::Generate(IT seed) {
+  int RANGE = 100;
+  int maxval = RANGE/2;
+  srand(seed);
+  for (int i1 = 0; i1 < dim1(); ++i1) {
+    for (int i2 = 0; i2 < dim2(); ++i2) {
+      int idx = i1 * lda_ + i2;
+      values_[idx] = maxval - (rand() % RANGE);
+
+      // Make sure it is 100% dense (no zeroes at all)
+      if (values_[idx] <= 0)
+        --values_[idx];
+    }
+  }
+}
+
+template <class IT, class VT>
+void DMat<IT, VT>::GenerateNormal(VT mean, VT sigma, IT seed) {
+#ifdef USE_MKL
+  // Unfortunately std::normal_distribution compiled with
+  // Intel compilers wouldn't work and just blocks.
+  // So we have to use MKL's distribution generator instead.
+  VSLStreamStatePtr stream;
+  int offset = 0;
+  int errcode = vslNewStream(&stream, BRNG, seed);
+  time_t start_time = time(NULL);
+  for (IT i = 0; i < dim1(); ++i) {
+    // TODO(penpornk): Use vsRngGaussian if VT is float.
+    errcode = vdRngGaussian(METHOD, stream, dim2(),
+                            values_ + offset, mean, sigma);
+    offset += lda_;
+  }
+#else
+  #pragma omp parallel
+  {
+    IT tid = omp_get_thread_num();
+    std::mt19937 generator(seed+tid);
+    std::normal_distribution<VT> distribution(mean, sigma);
+    #pragma omp for
+    for (IT i = 0; i < dim1(); ++i) {
+      for (IT k = 0; k < dim2(); ++k) {
+        values_[i * lda_ + k] = distribution(generator);
+      }
+    }
+  }
+#endif /* USE_MKL_ */
+}
+
+template <class IT, class VT>
+void DMat<IT, VT>::Fill(VT val) {
+  if (!IsAllocated()) {
+    if (rows_ == 0 || cols_ == 0) {
+      printf("Fill: ERROR! rows (%d) or cols (%d) is zero.\n", rows_, cols_);
+      exit(1);
+    }
+    Allocate(rows_, cols_);
+  }
+
+  #pragma omp parallel for
+  for (int i1 = 0; i1 < dim1(); ++i1) {
+    for (int i2 = 0; i2 < dim2(); ++i2)
+      values_[i1 * lda_ + i2] = val;
+  }
+}
+
+template <class IT, class VT>
+void DMat<IT, VT>::FillSeries(VT start) {
+  for (IT i = 0; i < dim1(); ++i) {
+    for (IT j = 0; j < dim2(); ++j)
+      values_[i * lda_ + j] = start++;
+  }
+}
+
+template <class IT, class VT>
+void DMat<IT, VT>::Transpose(const DMat<IT, VT> &X, bool allocate) {
+  format_ = X.format_;
+  rows_ = X.cols_;
+  cols_ = X.rows_;
+  if (lda_ < dim2())
+    lda_ = dim2();
+  if (allocate)
+    Allocate();
+
+#ifdef  USE_MKL
+  char ordering = (format_ == DENSE_ROWMAJOR)? 'R' : 'C';
+  if (sizeof(VT) == 8) {
+    mkl_domatcopy(ordering, 'T', X.rows_, X.cols_, (double) 1.0,
+                  (double *) X.values_, X.lda_, (double *) values_, lda_);
+  } else {
+    mkl_somatcopy(ordering, 'T', X.rows_, X.cols_, (float) 1.0,
+                  (float *) X.values_, X.lda_, (float *) values_, lda_);
+  }
+#else
+  for (int i1 = 0; i1 < dim1(); ++i1) {
+    for (int i2 = 0; i2 < dim2(); ++i2) {
+      values_[i1 * lda_ + i2] = X.values_[i1 + X.lda_ * i2];
+    }
+  }
+#endif
+}
+
+template <class IT, class VT>
+void DMat<IT, VT>::TransposeBySwitchingMajor() {
+  std::swap(rows_, cols_);
+  format_ = (format_ == DENSE_ROWMAJOR)
+              ? DENSE_COLMAJOR
+              : DENSE_ROWMAJOR;
+}
+
+template <class IT, class VT>
+void DMat<IT, VT>::Load(const char *filename, int id) {
+  FILE *fin;
+  if (id == -1) {
+    fin = fopen(filename, "r");
+  } else {
+    char name[1000];
+    sprintf(name, "%s-%05d", filename, id);
+    fin = fopen(name, "r");
+  }
+  fscanf(fin, "%d %d %d", &rows_, &cols_, &format_);
+
+  // TODO(penpornk): Set lda_ to be multiple of 4?.
+  lda_ = dim2();
+  Allocate();
+
+  const char *vt_fmt;
+  if (sizeof(VT) == 4)      vt_fmt = "%f";
+  else if (sizeof(VT) == 8) vt_fmt = "%lf";
+
+  switch (format_) {
+    case DENSE_ROWMAJOR:
+      for (int i = 0; i < rows_; ++i) {
+        for (int j = 0; j < cols_; ++j)
+          fscanf(fin, vt_fmt, &values_[i * lda_ + j]);
+      }
+      break;
+    case DENSE_COLMAJOR:
+      for (int i = 0; i < rows_; ++i) {
+        for (int j = 0; j < cols_; ++j)
+          fscanf(fin, vt_fmt, &values_[i + lda_ * j]);
+      }
+      break;
+    default:
+      printf("ERROR! Unknown matrix format %d.\n", format_);
+      exit(1);
+  }
+  fclose(fin);
+}
+
+template <class IT, class VT>
+void DMat<IT, VT>::LoadNumPy(const char *filename,
+                             IT cols_to_skip, IT rows, IT cols) {
+  bool fortran_order = true;
+  unsigned int *shape = NULL;
+  unsigned int word_size = 0, ndims = 0;
+
+  // Reads properties.
+  FILE *fp = fopen(filename, "rb");
+  if (fp == NULL) {
+    printf("DMat::LoadNumPy: ERROR! Can't open %s.\n", filename);
+    exit(1);
+  }
+  parse_npy_header(fp, word_size, shape, ndims, fortran_order);
+
+  // Some sanity checks.
+  assert(ndims == 2);     // For now.
+  assert(word_size == sizeof(VT));
+  assert(fortran_order);  // Only supports column-major ordering for now.
+
+  // Allocation.
+  rows_ = (rows < 0)? shape[0] : rows;
+  cols_ = (cols < 0)? shape[1] : cols;
+  lda_ = dim2();
+  Allocate();
+
+  // If we don't start at the beginning of the file.
+  if (cols_to_skip > 0) {
+    int64_t elmts_to_skip = (int64_t) cols_to_skip * (int64_t) shape[0];
+    fseek(fp, elmts_to_skip * (int64_t) word_size, SEEK_CUR);
+  }
+
+  // Reads values.
+  if (rows_ == shape[0]) {
+    int64_t elmts_to_read = (int64_t) rows_ * (int64_t) cols_;
+    fread(values_, word_size, elmts_to_read, fp);
+  } else {
+    int64_t offset = 0;
+    int64_t elmts_to_read = (int64_t) rows_;
+    int64_t elmts_till_next_col = shape[0] - rows_;
+    int64_t bytes_till_next_col = elmts_till_next_col * (int64_t) word_size;
+    for (int j = 0; j < cols; ++j) {
+      fread(values_ + offset, word_size, elmts_to_read, fp);
+      fseek(fp, bytes_till_next_col, SEEK_CUR);
+      offset += dim2();
+    }
+  }
+
+  // Closes file.
+  fclose(fp);
+}
+
+template <class IT, class VT>
+void DMat<IT, VT>::LoadNumPyOffset(const char *filename,
+                                   IT row_offset, IT col_offset, IT rows, IT cols) {
+  bool fortran_order = true;
+  unsigned int *shape = NULL;
+  unsigned int word_size = 0, ndims = 0;
+
+  // Reads properties.
+  FILE *fp = fopen(filename, "rb");
+  if (fp == NULL) {
+    printf("DMat::LoadNumPy: ERROR! Can't open %s.\n", filename);
+    exit(1);
+  }
+  parse_npy_header(fp, word_size, shape, ndims, fortran_order);
+
+  // Some sanity checks.
+  assert(ndims == 2);     // For now.
+  assert(word_size == sizeof(VT));
+  assert(fortran_order);  // Only supports column-major ordering for now.
+
+  // Allocation.
+  rows_ = (rows < 0)? shape[0] : rows;
+  cols_ = (cols < 0)? shape[1] : cols;
+  lda_ = dim2();
+  Allocate();
+
+  // If we don't start at the beginning of the file.
+  if (col_offset > 0) {
+    int64_t elmts_to_skip = (int64_t) col_offset * (int64_t) shape[0];
+    fseek(fp, elmts_to_skip * (int64_t) word_size, SEEK_CUR);
+  }
+
+  // Reads values.
+  assert(rows_ + row_offset <= shape[0]);
+  if (rows_ == shape[0]) {
+    int64_t elmts_to_read = (int64_t) rows_ * (int64_t) cols_;
+    fread(values_, word_size, elmts_to_read, fp);
+  } else {
+    int64_t buffer_offset = 0;
+    int64_t elmts_to_read = (int64_t) rows_;
+    int64_t bytes_till_start_row = row_offset * (int64_t) word_size;
+    int64_t elmts_till_next_col = shape[0] - rows_ - row_offset;
+    int64_t bytes_till_next_col = elmts_till_next_col * (int64_t) word_size;
+    for (int j = 0; j < cols; ++j) {
+      fseek(fp, bytes_till_start_row, SEEK_CUR);
+      fread(values_ + buffer_offset, word_size, elmts_to_read, fp);
+      fseek(fp, bytes_till_next_col, SEEK_CUR);
+      buffer_offset += dim2();
+    }
+  }
+
+  // Closes file.
+  fclose(fp);
+}
+
+template <class IT, class VT>
+void DMat<IT, VT>::Save(const char *filename, int id) {
+  FILE *fout;
+  if (id == -1) {
+    fout = fopen(filename, "w");
+  } else {
+    char name[1000];
+    sprintf(name, "%s-%05d", filename, id);
+    fout = fopen(name, "w");
+  }
+  Save(fout);
+  fclose(fout);
+}
+
+template <class IT, class VT>
+void DMat<IT, VT>::SaveNumPy(const char *filename) {
+  FILE *fp = fopen(filename, "wb");
+  unsigned int shapes[2] = {(unsigned int) rows_, (unsigned int) cols_};
+  write_npy_header(fp, values_, shapes, 2, format_ == DENSE_COLMAJOR);
+  for (int i1 = 0; i1 < dim1(); ++i1) {
+    fwrite(values_ + i1 * lda_, sizeof(VT), dim2(), fp);
+  }
+  fclose(fp);
+}
+
+#define FLOAT_FMT   "%10.4f "
+#define DOUBLE_FMT  "%10.4lf "
+//#define FLOAT_FMT   "%6.0f "
+//#define DOUBLE_FMT  "%6.0lf "
+//#define FLOAT_FMT   "%f "
+//#define DOUBLE_FMT  "%lf "
+
+template <class IT, class VT>
+void DMat<IT, VT>::Save(FILE *fout, bool skip_header) {
+  if (!skip_header) {
+    fprintf(fout, "%d %d %d\n", rows_, cols_, format_);
+  }
+
+  const char *vt_fmt;
+  if (sizeof(VT) == 4)      vt_fmt = FLOAT_FMT;
+  else if (sizeof(VT) == 8) vt_fmt = DOUBLE_FMT;
+
+  switch (format_) {
+    case DENSE_ROWMAJOR:
+      for (int i = 0; i < rows_; ++i) {
+        for (int j = 0; j < cols_; ++j)
+          fprintf(fout, vt_fmt, values_[i * lda_ + j]);
+        fprintf(fout, "\n");
+      }
+      break;
+    case DENSE_COLMAJOR:
+      for (int i = 0; i < rows_; ++i) {
+        for (int j = 0; j < cols_; ++j)
+          fprintf(fout, vt_fmt, values_[i + lda_ * j]);
+        fprintf(fout, "\n");
+      }
+      break;
+    default:
+      printf("ERROR! Unknown matrix format %d.\n", format_);
+      exit(1);
+  }
+}
+
+template <class IT, class VT>
+void DMat<IT, VT>::Print(bool skip_header) {
+  Save(stdout, skip_header);
+}
+
+template <class IT, class VT>
+void DMat<IT, VT>::PointerToDMat(IT rows, IT cols, IT lda,
+                                 spdm3_format format, VT *values,
+                                 bool free_buffer) {
+  rows_ = rows;
+  cols_ = cols;
+  lda_  = lda;
+  format_ = format;
+  values_ = values;
+  free_buffer_ = free_buffer;
+  buffer_size_ = dim1() * lda_;
+}
+
+template <class IT, class VT>
+void DMat<IT, VT>::StoreElmtWise(std::function<VT(VT, VT)> fn,
+                                 const DMat<IT, VT> &D,
+                                 const SpMat<IT, VT> &S) {
+  assert(D.rows_ == S.rows_ && D.cols_ == S.cols_);
+
+  StructuralCopy(D);
+  if ((format_ == DENSE_ROWMAJOR && S.format_ == SPARSE_CSR) ||
+      (format_ == DENSE_COLMAJOR && S.format_ == SPARSE_CSC)) {
+    #pragma omp parallel for schedule(guided)
+    for (LT i = 0; i < S.dim1(); ++i) {
+      LT k = S.headptrs_[i];
+      for (LT j = 0; j < S.dim2(); ++j) {
+        if (k < S.headptrs_[i+1] && j == S.indices_[k])
+          values_[i * lda_ + j] = fn(D.values_[i * lda_ + j], S.values_[k++]);
+        else
+          values_[i * lda_ + j] = fn(D.values_[i * lda_ + j], 0.0);
+      }
+    }
+  } else if ((format_ == DENSE_ROWMAJOR && S.format_ == SPARSE_CSC) ||
+             (format_ == DENSE_COLMAJOR && S.format_ == SPARSE_CSR)) {
+    #pragma omp parallel for schedule(guided)
+    for (LT i = 0; i < S.dim1(); ++i) {
+      LT k = S.headptrs_[i];
+      for (LT j = 0; j < S.dim2(); ++j) {
+        if (k < S.headptrs_[i+1] && j == S.indices_[k])
+          values_[j * lda_ + i] = fn(D.values_[j * lda_ + i], S.values_[k++]);
+        else
+          values_[j * lda_ + i] = fn(D.values_[j * lda_ + i], 0.0);
+      }
+    }
+  } else {
+    printf("ElmtWiseOp: ERROR! Format unsupported.\n");
+    exit(1);
+  }
+}
+
+template <class IT, class VT>
+void DMat<IT, VT>::Concatenate(DMat<IT, VT> *M, IT blk_rows, IT blk_cols,
+                               spdm3_layout layout) {
+  LT *row_displs = new LT[blk_rows + 1];
+  LT *col_displs = new LT[blk_cols + 1];
+
+  // Calculates row and column displacements.
+  if (layout != TWOD_COLMAJOR) {
+    row_displs[0] = 0;
+    for (int i = 0; i < blk_rows; ++i)
+      row_displs[i+1] = row_displs[i] + M[i*blk_cols].rows_;
+    col_displs[0] = 0;
+    for (int j = 0; j < blk_cols; ++j)
+      col_displs[j+1] = col_displs[j] + M[j].cols_;
+  } else {
+    row_displs[0] = 0;
+    for (int i = 0; i < blk_rows; ++i)
+      row_displs[i+1] = row_displs[i] + M[i].rows_;
+    col_displs[0] = 0;
+    for (int j = 0; j < blk_cols; ++j)
+      col_displs[j+1] = col_displs[j] + M[j*blk_rows].cols_;
+  }
+
+  format_ = M[0].format_;
+  Allocate(row_displs[blk_rows], col_displs[blk_cols]);
+  Fill(0.0);
+
+  // Fills each submatrix.
+  if (layout != TWOD_COLMAJOR) {
+    for (int i=0, idx=0; i < blk_rows; ++i) {
+      for (int j=0; j < blk_cols; ++j, ++idx) {
+        SetSubDMat(M[idx], row_displs[i], col_displs[j]);
+      }
+    }
+  } else {
+    for (int j=0, idx=0; j < blk_cols; ++j) {
+      for (int i=0; i < blk_rows; ++i, ++idx) {
+        SetSubDMat(M[idx], row_displs[i], col_displs[j]);
+      }
+    }
+  }
+
+  // Deallocation.
+  delete [] row_displs;
+  delete [] col_displs;
+}
+
+template <class IT, class VT>
+void DMat<IT, VT>::SubDMat(const DMat<IT, VT> &X,
+                           IT row_offset, IT col_offset, IT rows, IT cols) {
+  format_ = X.format_;
+  Allocate(rows, cols);
+  int dim1_offset, dim2_offset;
+  if (format_ == DENSE_ROWMAJOR) {
+    dim1_offset = row_offset;
+    dim2_offset = col_offset;
+  } else {
+    dim1_offset = col_offset;
+    dim2_offset = row_offset;
+  }
+  for (int i1 = 0; i1 < dim1(); ++i1) {
+    memcpy(values_ + i1 * lda_,
+           X.values_ + (i1 + dim1_offset) * X.lda_ + dim2_offset,
+           dim2() * sizeof(VT));
+  }
+}
+
+template <class IT, class VT>
+void DMat<IT, VT>::ShallowSubDMat(const DMat<IT, VT> &X,
+                                  IT row_offset, IT col_offset, IT rows, IT cols) {
+  // TODO(penpornk): Call ShallowCopy instead when done refactoring.
+  Deallocate();
+  rows_ = X.rows_;
+  cols_ = X.cols_;
+  lda_  = X.lda_;
+
+  buffer_size_ = X.buffer_size_;
+
+  format_  = X.format_;
+  lib_     = X.lib_;
+  name_    = X.name_;
+  epsilon_ = X.epsilon_;
+
+  free_buffer_ = false;
+
+  if (format_ == DENSE_ROWMAJOR) {
+    values_ = X.values_ + row_offset * X.lda_ + col_offset;
+  } else {
+    values_ = X.values_ + col_offset * X.lda_ + row_offset;
+  }
+
+  rows_ = rows;
+  cols_ = cols;
+}
+
+//
+// Operators
+//
+template <class IT, class VT>
+bool DMat<IT, VT>::IsEquivalent(const DMat<IT, VT>& X) {
+  if (rows_ != X.rows_ || cols_ != X.cols_) return false;
+  if (format_ == X.format_) {
+    for (int i1 = 0; i1 < dim1(); ++i1) {
+      for (int i2 = 0; i2 < dim2(); ++i2) {
+        if (!TEQ(values_[i1 * lda_ + i2], X.values_[i1 * X.lda_ + i2], epsilon_))
+          return false;
+      }
+    }
+  } else {
+    for (int i1 = 0; i1 < dim1(); ++i1) {
+      for (int i2 = 0; i2 < dim2(); ++i2) {
+        if (!TEQ(values_[i1 * lda_ + i2], X.values_[i1 + X.lda_ * i2], epsilon_))
+          return false;
+      }
+    }
+  }
+  return true;
+}
+
+template <class IT, class VT>
+bool DMat<IT, VT>::IsEqual(const DMat<IT, VT>& X) {
+  if (rows_ != X.rows_ || cols_ != X.cols_ ||
+      lda_ != X.lda_ || format_ != X.format_)
+    return false;
+  for (int i1 = 0; i1 < dim1(); ++i1) {
+    for (int i2 = 0; i2 < dim2(); ++i2) {
+      if (!TEQ(values_[i1 * lda_ + i2], X.values_[i1 * X.lda_ + i2], epsilon_))
+        return false;
+    }
+  }
+  return true;
+}
+
+template <class IT, class VT>
+bool DMat<IT, VT>::IsAllocated() {
+  if (rows_ == 0 || cols_ == 0) return false;
+  if (values_ == NULL || buffer_size_ <= 0) return false;
+  return true;
+}
+
+template <class IT, class VT>
+bool DMat<IT, VT>::IsSymmetric() {
+  if (rows_ != cols_)
+    return false;
+  for (int i = 0; i < dim1(); ++i) {
+    for (int j = i; j < dim2(); ++j) {
+      if (values_[i * lda_ + j] != values_[j * lda_ + i]) {
+        printf("IsSymmetric: [%d][%d] = %lf != %lf = [%d][%d]\n",
+            i, j, values_[i * lda_ + j], values_[j * lda_ + i], j, i);
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+template <class IT, class VT>
+void DMat<IT, VT>::MakeSymmetric() {
+  assert(rows_ == cols_);
+  VT avg = 0.0, min = 1e9, max = 0.0;
+  LT count = 0;
+  for (int i = 0; i < dim1(); ++i) {
+    for (int j = i; j < dim2(); ++j) {
+      VT diff = fabs(values_[i * lda_ +j]-values_[j * lda_ +i]);
+      if (diff > 0) {
+        if (diff > 1e-5) {
+          printf("MakeSymmetric: [%d][%d] = %lf != %lf = [%d][%d]\n",
+              i, j, values_[i * lda_ + j], values_[j * lda_ + i], j, i);
+        }
+        avg += diff;
+        min = std::min(min, diff);
+        max = std::max(max, diff);
+        ++count;
+        values_[j * lda_ +i] = values_[i * lda_ +j];
+      }
+    }
+  }
+  printf("Number of differences: %lld\n", count);
+  printf("Average, min, max differences: %g %g %g\n", avg / (VT) count, min, max);
+}
+
+template <class IT, class VT>
+void DMat<IT, VT>::ElmtWiseOp(std::function<VT(VT, VT)> fn, VT op) {
+  for (int i1 = 0; i1 < dim1(); ++i1) {
+    for (int i2 = 0; i2 < dim2(); ++i2) {
+      int idx = i1 * lda_ + i2;
+      values_[idx] = fn(values_[idx], op);
+    }
+  }
+}
+
+template <class IT, class VT>
+void DMat<IT, VT>::ElmtWiseOp(std::function<VT(VT, VT)> fn, const DMat<IT, VT> &Op) {
+  if (rows_ != Op.rows_ || cols_ != Op.cols_) {
+    printf("ElmtWiseOp: ERROR! Matrix dimensions don't match.\n");
+    exit(1);
+  }
+  if (format_ == Op.format_) {
+    #pragma omp parallel for schedule(guided)
+    for (int i1 = 0; i1 < dim1(); ++i1) {
+      for (int i2 = 0; i2 < dim2(); ++i2) {
+        int idx = i1 * lda_ + i2;
+        int Oidx = i1 * Op.lda_ + i2;
+        values_[idx] = fn(values_[idx], Op.values_[Oidx]);
+      }
+    }
+  } else {
+    #pragma omp parallel for schedule(guided)
+    for (int i1 = 0; i1 < dim1(); ++i1) {
+      for (int i2 = 0; i2 < dim2(); ++i2) {
+        int idx = i1 * lda_ + i2;
+        int Oidx = i1 + Op.lda_ * i2;
+        values_[idx] = fn(values_[idx], Op.values_[Oidx]);
+      }
+    }
+  }
+}
+
+template <class IT, class VT>
+void DMat<IT, VT>::ElmtWiseOp(std::function<VT(VT, VT)> fn, const SpMat<IT, VT> &Op) {
+  if ((format_ == DENSE_ROWMAJOR && Op.format_ == SPARSE_CSR) ||
+      (format_ == DENSE_COLMAJOR && Op.format_ == SPARSE_CSC)) {
+    #pragma omp parallel for schedule(guided)
+    for (LT i = 0; i < Op.dim1(); ++i) {
+      LT k = Op.headptrs_[i];
+      for (LT j = 0; j < Op.dim2(); ++j) {
+        if (k < Op.headptrs_[i+1] && j == Op.indices_[k])
+          values_[i * lda_ + j] = fn(values_[i * lda_ + j], Op.values_[k++]);
+        else
+          values_[i * lda_ + j] = fn(values_[i * lda_ + j], 0.0);
+      }
+    }
+  } else if ((format_ == DENSE_ROWMAJOR && Op.format_ == SPARSE_CSC) ||
+             (format_ == DENSE_COLMAJOR && Op.format_ == SPARSE_CSR)) {
+    #pragma omp parallel for schedule(guided)
+    for (LT i = 0; i < Op.dim1(); ++i) {
+      LT k = Op.headptrs_[i];
+      for (LT j = 0; j < Op.dim2(); ++j) {
+        if (k < Op.headptrs_[i+1] && j == Op.indices_[k])
+          values_[j * lda_ + i] = fn(values_[j * lda_ + i], Op.values_[k++]);
+        else
+          values_[j * lda_ + i] = fn(values_[j * lda_ + i], 0.0);
+      }
+    }
+  } else {
+    printf("ElmtWiseOp: ERROR! Format unsupported.\n");
+    exit(1);
+  }
+}
+
+template <class IT, class VT>
+void DMat<IT, VT>::ElmtWiseOpNzOnly(std::function<VT(VT, VT)> fn, const SpMat<IT, VT> &Op) {
+  if ((format_ == DENSE_ROWMAJOR && Op.format_ == SPARSE_CSR) ||
+      (format_ == DENSE_COLMAJOR && Op.format_ == SPARSE_CSC)) {
+    #pragma omp parallel for schedule(guided)
+    for (LT i = 0; i < Op.dim1(); ++i) {
+      for (LT k = Op.headptrs_[i]; k < Op.headptrs_[i+1]; ++k) {
+        LT j = Op.indices_[k];
+        values_[i * lda_ + j] = fn(values_[i * lda_ + j], Op.values_[k]);
+      }
+    }
+  } else if ((format_ == DENSE_ROWMAJOR && Op.format_ == SPARSE_CSC) ||
+             (format_ == DENSE_COLMAJOR && Op.format_ == SPARSE_CSR)) {
+    #pragma omp parallel for schedule(guided)
+    for (LT i = 0; i < Op.dim1(); ++i) {
+      for (LT k = Op.headptrs_[i]; k < Op.headptrs_[i+1]; ++k) {
+        LT j = Op.indices_[k];
+        values_[j * lda_ + i] = fn(values_[j * lda_ + i], Op.values_[k]);
+      }
+    }
+  } else {
+    printf("ElmtWiseOpNzOnly: ERROR! Format unsupported.\n");
+    exit(1);
+  }
+}
+
+// The last parameter of fn is the accumulator.
+template <class IT, class VT>
+VT DMat<IT, VT>::ReduceElmtWiseOpNzOnly(std::function<VT(VT, VT, VT)> fn,
+                                        const SpMat<IT, VT> &Op, VT initial_value) {
+  VT accu = initial_value;
+  if ((format_ == DENSE_ROWMAJOR && Op.format_ == SPARSE_CSR) ||
+      (format_ == DENSE_COLMAJOR && Op.format_ == SPARSE_CSC)) {
+    #pragma omp parallel for schedule(guided)
+    for (LT i = 0; i < Op.dim1(); ++i) {
+      for (LT k = Op.headptrs_[i]; k < Op.headptrs_[i+1]; ++k) {
+        LT j = Op.indices_[k];
+        accu = fn(values_[i * lda_ + j], Op.values_[k], accu);
+      }
+    }
+  } else if ((format_ == DENSE_ROWMAJOR && Op.format_ == SPARSE_CSC) ||
+             (format_ == DENSE_COLMAJOR && Op.format_ == SPARSE_CSR)) {
+    #pragma omp parallel for schedule(guided)
+    for (LT i = 0; i < Op.dim1(); ++i) {
+      for (LT k = Op.headptrs_[i]; k < Op.headptrs_[i+1]; ++k) {
+        LT j = Op.indices_[k];
+        accu = fn(values_[j * lda_ + i], Op.values_[k], accu);
+      }
+    }
+  } else {
+    printf("ElmtWiseOpNzOnly: ERROR! Format unsupported.\n");
+    exit(1);
+  }
+  return accu;
+}
+
+template <class IT, class VT>
+void DMat<IT, VT>::SetSubDMat(const DMat<IT, VT> &X,
+                              IT row_offset, IT col_offset) {
+  // Supports only the same formats for now.
+  // TODO(penpornk): support different formats.
+  assert(format_ == X.format_);
+  assert(row_offset + X.rows_ <= rows_ && col_offset + X.cols_ <= cols_);
+
+  if (format_ == DENSE_ROWMAJOR) {
+    for (int i = 0; i < X.rows_; ++i)
+      memcpy(values_ + (row_offset + i) * lda_ + col_offset,
+             X.values_ + i * X.lda_, X.cols_ * sizeof(VT));
+  } else if (format_ == DENSE_COLMAJOR) {
+    for (int j = 0; j < X.cols_; ++j)
+      memcpy(values_ + row_offset + lda_ * (col_offset + j),
+             X.values_ + j * X.lda_, X.rows_ * sizeof(VT));
+  }
+}
+
+template <class IT, class VT>
+void DMat<IT, VT>::MultiplyAdd(const DMat<IT, VT> &B, DMat<IT, VT> &C) {
+  switch(lib_) {
+    case LIB_BLAS:  matmul_blas(*this, B, C);  break;
+    case LIB_MKL:   matmul_mkl(*this, B, C);   break;
+    case LIB_NAIVE: matmul_naive(*this, B, C); break;
+  }
+}
+
+template <class IT, class VT>
+void DMat<IT, VT>::ShallowCopy(const DMat<IT, VT> &X) {
+  Deallocate();
+  rows_ = X.rows_;
+  cols_ = X.cols_;
+  lda_  = X.lda_;
+
+  values_ = X.values_;
+  buffer_size_ = X.buffer_size_;
+
+  format_  = X.format_;
+  lib_     = X.lib_;
+  name_    = X.name_;
+  epsilon_ = X.epsilon_;
+
+  free_buffer_ = false;
+}
+
+template <class IT, class VT>
+void DMat<IT, VT>::TakeOwnership(DMat<IT, VT> &X) {
+  assert(X.free_buffer_);
+  free_buffer_ = true;
+  X.free_buffer_ = false;
+}
+
+template <class IT, class VT>
+void DMat<IT, VT>::DeepCopy(const DMat<IT, VT> &X) {
+  StructuralCopy(X);
+  memcpy(values_, X.values_, X.dim1() * X.lda_ * sizeof(VT));
+}
+
+template <class IT, class VT>
+void DMat<IT, VT>::StructuralCopy(const DMat<IT, VT> &X) {
+  rows_ = X.rows_;
+  cols_ = X.cols_;
+  lda_  = X.lda_;
+  Allocate(X.buffer_size_);
+
+  format_  = X.format_;
+  lib_     = X.lib_;
+  name_    = X.name_;
+  epsilon_ = X.epsilon_;
+}
+
+template <class IT, class VT>
+VT DMat<IT, VT>::Reduce(spdm3_op op) {
+  VT res;
+  switch (op) {
+    case SPDM3_SUM:
+      res = 0.0;
+      for (int i = 0; i < dim1(); ++i) {
+        for (int j = 0; j < dim2(); ++j)
+          res += values_[i * lda_ + j];
+      }
+      break;
+    case SPDM3_PROD:
+      res = 1.0;
+      for (int i = 0; i < dim1(); ++i) {
+        for (int j = 0; j < dim2(); ++j)
+          res *= values_[i * lda_ + j];
+      }
+      break;
+    case SPDM3_MAX:
+      res = values_[0];
+      for (int i = 0; i < dim1(); ++i) {
+        for (int j = 0; j < dim2(); ++j) {
+          if (res < values_[i * lda_ + j])
+            res = values_[i * lda_ +j];
+        }
+      }
+      break;
+    case SPDM3_MAX_ABS:
+      res = 0.0;
+      for (int i = 0; i < dim1(); ++i) {
+        for (int j = 0; j < dim2(); ++j) {
+          VT absolute = fabs(values_[i * lda_ + j]);
+          if (res < absolute)
+            res = absolute;
+        }
+      }
+      break;
+    case SPDM3_MIN:
+      res = values_[0];
+      for (int i = 0; i < dim1(); ++i) {
+        for (int j = 0; j < dim2(); ++j) {
+          if (res > values_[i * lda_ + j])
+            res = values_[i * lda_ +j];
+        }
+      }
+      break;
+  }
+  return res;
+}
+
+//
+// Setters
+//
+template <class IT, class VT>
+void DMat<IT, VT>::SetName(const char *name) {
+  name_ = name;
+}
+
+template <class IT, class VT>
+void DMat<IT, VT>::SetEpsilon(VT epsilon) {
+  epsilon_ = epsilon;
+}
+
+template <class IT, class VT>
+void DMat<IT, VT>::SetFreeBuffer(bool free_buffer) {
+  free_buffer_ = free_buffer;
+}
+
+//
+// Getters
+//
+template <class IT, class VT>
+IT DMat<IT, VT>::dim1() const {
+  switch (format_) {
+    case DENSE_ROWMAJOR: return rows_;
+    case DENSE_COLMAJOR: return cols_;
+    default:             return rows_;
+  }
+}
+
+template <class IT, class VT>
+IT DMat<IT, VT>::dim2() const {
+  switch (format_) {
+    case DENSE_ROWMAJOR: return cols_;
+    case DENSE_COLMAJOR: return rows_;
+    default:             return cols_;
+  }
+}
+
+template <class IT, class VT>
+LT DMat<IT, VT>::nnz() const {
+  LT nnz = 0;
+  for (int i = 0; i < dim1(); ++i) {
+    for (int j = 0; j < dim2(); ++j) {
+      if (!FEQ(values_[i * lda_ + j], 0.0))
+        ++nnz;
+    }
+  }
+  return nnz;
+}
+
+
+
+}  // namespace spdm3

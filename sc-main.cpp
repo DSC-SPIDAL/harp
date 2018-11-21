@@ -24,16 +24,22 @@
 #include "Helper.hpp"
 #include "EdgeList.hpp"
 
-// for testing radix
+// for testing pb radix
 #include "radix/commons/builder.h"
 #include "radix/commons/command_line.h"
 #include "radix/pr.h"
+
+// for testing spmd3
+#include "SpDM3/include/dmat.h"
+#include "SpDM3/include/spmat.h"
+#include "SpDM3/include/matmul.h"
 
 using namespace std;
 
 void benchmarkSpMVPBRadix(int argc, char** argv, EdgeList& elist)
 {
     double startTime;
+    int len = 100;
     int binSize = 15;
     if (argc > 9)
         binSize = atoi(argv[9]);
@@ -76,7 +82,7 @@ void benchmarkSpMVPBRadix(int argc, char** argv, EdgeList& elist)
     // check pagerank scores
     // for (int j = 0; j < 100; ++j) {
     // SpMVRadixPar(xMat, yMat, radixG, 1, kGoalEpsilon, par_parts);
-    SpMVGuidesPar(xMat, yMat, radixG, 1000, kGoalEpsilon, par_guides);
+    SpMVGuidesPar(xMat, yMat, radixG, len, kGoalEpsilon, par_guides);
     // }
     //
     printf("Radix SpMV using %f secs\n", (utility::timer() - startTime));
@@ -99,6 +105,7 @@ void benchmarkSpMVNaive(int argc, char** argv, EdgeList& elist, int comp_thds)
 {
 
     double startTime;
+    int len = 100;
     CSRGraph csrnaiveG;
     csrnaiveG.createFromEdgeListFile(elist.getNumVertices(), elist.getNumEdges(), elist.getSrcList(), elist.getDstList());
 
@@ -112,7 +119,7 @@ void benchmarkSpMVNaive(int argc, char** argv, EdgeList& elist, int comp_thds)
 
     // test SpMV naive
     startTime = utility::timer();
-    for (int j = 0; j < 1000; ++j) {
+    for (int j = 0; j < len; ++j) {
         csrnaiveG.SpMVNaive(xMat, yMat, comp_thds);
     }
 
@@ -186,6 +193,58 @@ void benchmarkSpMMMKL(int argc, char** argv, EdgeList& elist, int comp_thds)
 
 }
 
+void benchmarkSpDM3(int argc, char** argv, EdgeList& elist, int comp_thds)
+{    
+    double startTime;
+    printf("Start debug Spdm3 SpMM\n");
+    std::fflush(stdout);
+
+    CSRGraph csrnaiveG;
+    csrnaiveG.createFromEdgeListFile(elist.getNumVertices(), elist.getNumEdges(), elist.getSrcList(), elist.getDstList());
+
+    spdm3::SpMat<int, float> smat(spdm3::SPARSE_CSR, 0);
+    csrnaiveG.fillSpMat(smat);
+
+    // use smat
+    int rowNum = smat.dim1();
+    int colNum = 100;
+    int testLen = rowNum*colNum;
+    float* xArray = (float*) malloc (testLen*sizeof(float));
+    for (int i = 0; i < testLen; ++i) {
+       xArray[i] = 2.0; 
+    }   
+
+    float* yArray = (float*) malloc (testLen*sizeof(float));
+    std::memset(yArray, 0, testLen*sizeof(float));
+
+    // data copy from xArray to xMat
+    // TODO replace data copy by pointer assignment
+    spdm3::DMat<int, float> xMat(rowNum, colNum, rowNum, spdm3::DENSE_COLMAJOR, xArray);
+    spdm3::DMat<int, float> yMat(rowNum, colNum, rowNum, spdm3::DENSE_COLMAJOR, yArray);
+
+    printf("Dmat: row: %d, cols: %d\n", xMat.rows_, xMat.cols_);
+    std::fflush(stdout);
+
+    startTime = utility::timer();
+    // start the SpMM 
+    spdm3::matmul_blas_colmajor<int>(smat, xMat, yMat);
+
+    printf("SpDM3 SpMM using %f secs\n", (utility::timer() - startTime));
+    std::fflush(stdout);           
+
+    // check yMat
+    for (int i = 0; i < 10; ++i) {
+       printf("Elem: %d is: %f\n", i, yMat.values_[i]); 
+       std::fflush(stdout);
+    }
+
+    printf("Finish debug Spdm3 SpMM\n");
+    std::fflush(stdout);
+
+    free(xArray);
+    free(yArray);
+}
+
 int main(int argc, char** argv)
 {
    
@@ -199,6 +258,7 @@ int main(int argc, char** argv)
     int useSPMM = 0;
 
     bool isBenchmark = true;
+    // bool isBenchmark = false;
 
     graph_name = argv[1];
     template_name = argv[2];
@@ -276,13 +336,16 @@ int main(int argc, char** argv)
 #endif
 
             // benchmarking PB SpMV 
-            benchmarkSpMVPBRadix(argc, argv, elist);
+            // benchmarkSpMVPBRadix(argc, argv, elist);
 
             // benchmarking Naive SpMV
             benchmarkSpMVNaive(argc, argv, elist, comp_thds);
 
             // benchmarking mkl SpMM
             // benchmarkSpMMMKL(argc, argv, elist, comp_thds);
+            
+            // benchmarking SpDM3 SpMM
+            benchmarkSpDM3(argc, argv, elist, comp_thds);
 
 #ifdef VERBOSE
             printf("Finish benchmarking SpMV or SpMM\n");

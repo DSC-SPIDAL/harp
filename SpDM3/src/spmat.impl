@@ -1,0 +1,1710 @@
+// Included by spmat.h
+
+#include <algorithm>
+#include <cassert>
+#include <cmath>
+#include <cstring>
+#include <iomanip>
+#include <list>
+#include <omp.h>
+#include <vector>
+#include <utility>
+
+#include "../include/mmio.h"
+#include "../include/utility.h"
+
+#ifdef USE_PNG
+#include <png.h>
+#endif  /* USE_PNG */
+
+#ifndef GRAPH_GENERATOR_SEQ
+#define GRAPH_GENERATOR_SEQ
+#endif
+
+#include "../../graph500-1.2/generator/graph_generator.h"
+#include "../../graph500-1.2/generator/utils.h"
+
+namespace spdm3 {
+
+//
+// Constructors & Destructor.
+//
+template <class IT, class VT>
+SpMat<IT, VT>::SpMat(spdm3_format format, IT idx_base)
+  : nnz_(0),
+    rows_(0),
+    cols_(0),
+    idx_base_(idx_base),
+    head_size_(0),
+    buffer_size_(0),
+    min_head_size_(0),
+    min_buffer_size_(0),
+    headptrs_(NULL),
+    indices_(NULL),
+    values_(NULL),
+    free_buffers_(false),
+    name_(NULL),
+    format_(format),
+    lib_(LIB_DEFAULT),
+    epsilon_(EPSILON),
+    verbosity_(0) {}
+  
+template <class IT, class VT>
+SpMat<IT, VT>::SpMat(SpMat<IT, VT> *M, IT blk_rows, IT blk_cols,
+                     spdm3_layout layout)
+    : SpMat() {
+  Concatenate(M, blk_rows, blk_cols, layout);
+}
+
+template <class IT, class VT>
+SpMat<IT, VT>::~SpMat() {
+  Deallocate();
+}
+
+//
+// Allocation.
+//
+template <class IT, class VT>
+void SpMat<IT, VT>::Allocate(IT rows, IT cols, IT head_size, LT buffer_size) {
+  IT old_head_size = head_size_;
+  LT old_buffer_size = buffer_size_;
+  Deallocate();
+  
+  rows_ = rows;
+  cols_ = cols;
+  head_size_   = std::max(head_size + 1, min_head_size_);
+  buffer_size_ = std::max(buffer_size, min_buffer_size_);
+  
+  head_size_   = std::max(old_head_size, head_size_);
+  buffer_size_ = std::max(old_buffer_size, buffer_size_);
+  
+  headptrs_ = new LT[head_size_];
+  indices_  = new LT[buffer_size_];
+  values_   = new VT[buffer_size_];
+  
+  free_buffers_ = true;
+}
+
+template <class IT, class VT>
+void SpMat<IT, VT>::Allocate(IT rows, IT cols, LT buffer_size) {
+  if (format_ == SPARSE_CSR)
+    Allocate(rows, cols, rows+1, buffer_size);
+  else if (format_ == SPARSE_CSC);
+    Allocate(rows, cols, cols+1, buffer_size);
+}
+
+template <class IT, class VT>
+void SpMat<IT, VT>::AllocateHeads(IT rows, IT cols) {
+  Deallocate();
+  
+  rows_ = rows;
+  cols_ = cols;
+  headptrs_ = new LT[dim1() + 1];
+  
+  free_buffers_ = true;
+}
+
+template <class IT, class VT>
+void SpMat<IT, VT>::AllocateBuffers(LT buffer_size) {
+  if (buffer_size_ > buffer_size)
+    return;
+  
+  FREE_IF_NOT_NULL(indices_);
+  FREE_IF_NOT_NULL(values_);
+  buffer_size_ = buffer_size;
+  indices_ = new LT[buffer_size_];
+  values_  = new VT[buffer_size_];
+  
+  free_buffers_ = true;
+}
+
+template <class IT, class VT>
+void SpMat<IT, VT>::Deallocate() {
+  if (!free_buffers_) return;
+  if (head_size_ > 0)
+    FREE_IF_NOT_NULL(headptrs_);
+  if (buffer_size_ > 0) {
+    FREE_IF_NOT_NULL(indices_);
+    FREE_IF_NOT_NULL(values_);
+  }
+}
+
+template <class IT, class VT>
+void SpMat<IT, VT>::ExpandHeads(IT new_size, bool preserve_contents) {
+  if (new_size <= head_size_)
+    return;
+  
+  LT *new_heads = new LT[new_size];
+  head_size_ = new_size;
+  
+  if (preserve_contents && headptrs_ != NULL)
+    memcpy(new_heads, headptrs_, (dim1() + 1) * sizeof(LT));
+  
+  FREE_IF_NOT_NULL(headptrs_);
+  headptrs_ = new_heads;
+}
+
+template <class IT, class VT>
+void SpMat<IT, VT>::ExpandBuffers(IT new_size, bool preserve_contents) {
+  if (new_size <= buffer_size_)
+    return;
+  
+  // Allocates larger buffers.
+  LT *new_indices = new LT[new_size];
+  VT *new_values = new VT[new_size];
+  buffer_size_ = new_size;
+  
+  // Copies old contents.
+  if (preserve_contents) {
+    if (indices_ != NULL)
+      memcpy(new_indices, indices_, nnz_ * sizeof(LT));
+    if (values_ != NULL)
+      memcpy(new_values, values_, nnz_ * sizeof(VT));
+  }
+  
+  // Frees old buffers.
+  FREE_IF_NOT_NULL(indices_);
+  FREE_IF_NOT_NULL(values_);
+  
+  // Stores new buffers.
+  indices_ = new_indices;
+  values_ = new_values;
+}
+
+template <class IT, class VT>
+void SpMat<IT, VT>::Set(IT rows, IT cols, IT nnz,
+                        IT head_size, LT *headptrs,
+                        LT buffer_size, LT *indices, VT *values,
+                        bool free_buffers) {
+  rows_ = rows;
+  cols_ = cols;
+  nnz_  = nnz;
+  
+  head_size_   = head_size;
+  buffer_size_ = buffer_size;
+  
+  headptrs_ = headptrs;
+  indices_  = indices;
+  values_   = values;
+  
+  free_buffers_ = free_buffers;
+}
+
+//
+// I/O.
+//
+template <class IT, class VT>
+void SpMat<IT, VT>::Generate(IT rows, IT cols,
+                             double nnz_ratio, IT seed) {
+  IT RANGE = 100;
+  IT maxval = RANGE / 2;
+  LT expected_buffer_size = (VT) rows * (VT) cols * nnz_ratio * 1.5;
+  Allocate(rows, cols, expected_buffer_size);
+  
+  nnz_ = 0;
+  srand(seed);
+  for (int i1 = 0; i1 < dim1(); ++i1) {
+    headptrs_[i1] = nnz_;
+    for (int i2 = 0; i2 < dim2(); ++i2) {
+      // Non-zero with probability percent_nnz.
+      if ((rand() % 100000) < nnz_ratio * 100000) {
+        if (nnz_ + 1 > buffer_size_)
+          ExpandBuffers((VT) nnz_ * 1.5);
+        indices_[nnz_] = i2;
+        values_[nnz_] = maxval - (rand() % RANGE);
+        
+        // Avoid having zero 'nonzero'.
+        if (values_[nnz_] <= 0)
+          --values_[nnz_];
+        ++nnz_;
+      }
+    }
+  }
+  headptrs_[dim1()] = nnz_;
+}
+
+/**
+ * Note that GenGraph500Data will return global vertex numbers (from 1... N). The ith edge can be
+ * accessed with edges[2*i] and edges[2*i+1]. There will be duplicates and the data won't be sorted.
+ * Generates an edge list consisting of an RMAT matrix suitable for the Graph500 benchmark.
+*/
+template <class IT, class VT>
+void SpMat<IT,VT>::GenerateWithG500(double initiator[4], int log_numverts, double nnz_ratio)
+{
+	int64_t globalV = ((int64_t) 1) << log_numverts;
+	int64_t globaledges = globalV * static_cast<int64_t>(globalV * nnz_ratio);
+  
+  // Allocation.
+  rows_ = globalV;
+  cols_ = globalV;
+  Allocate(rows_, cols_, globaledges);
+	
+  // The generations use different seeds on different processors, generating independent
+  // local RMAT matrices all having vertex ranges [0,...,globalmax-1]
+  // Spread the two 64-bit numbers into five nonzero values in the correct range
+  uint_fast32_t g500_seed[5];
+  uint64_t seed1 = 1024;  // Custom seed. Put rank here.
+  uint64_t seed2 = 2;     // For deterministic runs.
+  
+  make_mrg_seed(seed1, seed2, g500_seed);
+  int64_t nedges = globaledges;
+  int64_t *edges = new int64_t[nedges * 2];
+    
+  // clear the source vertex by setting it to -1
+  for (IT i = 0; i < nedges; ++i)
+    edges[2*i+0] = -1;
+	
+  generate_kronecker(0, 1, g500_seed, log_numverts, nedges, initiator, edges);
+  
+  // Transfers edges to spdm3's existing Triplet structure.
+  Triplet *triplets =  new Triplet[nedges];
+  for (IT i = 0; i < nedges; ++i) {
+    triplets[i].row = edges[2 * i];
+    triplets[i].col = edges[2 * i + 1];
+    triplets[i].weight = 1.0;
+  }
+  delete [] edges;
+  
+  // Fills the triplets into CSR/CSC format.
+  Fill(triplets, nedges);
+  delete [] triplets;
+}
+
+template <class IT, class VT>
+void SpMat<IT, VT>::Fill(Triplet *triplets, IT len) {
+  IT idx = 0;
+  if (format_ == SPARSE_CSR) {
+    // If triplets aren't sorted, sorts them.
+    bool sorted = true;
+    for (IT i = 1; i < len && sorted; ++i) {
+      if (triplets[i].row < triplets[i-1].row)
+        sorted = false;
+      else if (triplets[i].row == triplets[i-1].row &&
+               triplets[i].col < triplets[i-1].col)
+        sorted = false;
+    }
+    if (!sorted) {
+      qsort(triplets, len, sizeof(Triplet),
+            [] (const void *a, const void *b) -> int {
+              Triplet *ta = (Triplet *) a;
+              Triplet *tb = (Triplet *) b;
+              if (ta->row != tb->row)
+                return (ta->row - tb->row);
+              return (ta->col - tb->col);
+            });
+    }
+    
+    // Fills triplets. Goes row-by-row.
+    headptrs_[0] = idx;
+    LT k = 0;
+    for (IT i = 0; i < rows_; ++i) {
+      while (k < len && (IT) triplets[k].row == i) {
+        assert(idx < len);
+        indices_[idx] = (IT) triplets[k].col;
+        values_[idx] = (VT) triplets[k].weight;
+        
+        // Merges duplicates.
+        for (++k; k < len &&
+                  (IT) triplets[k].row == i &&
+                  (IT) triplets[k].col == indices_[idx]; ++k) {
+          values_[idx] += (VT) triplets[k].weight;
+        }
+        ++idx;
+      }
+      headptrs_[i+1] = idx;
+    }
+  } else if (format_ == SPARSE_CSC) {
+    // Sorts triplets.
+    qsort(triplets, len, sizeof(Triplet),
+          [] (const void *a, const void *b) -> int {
+            Triplet *ta = (Triplet *) a;
+            Triplet *tb = (Triplet *) b;
+            if (ta->col != tb->col)
+              return ta->col - tb->col;
+            return ta->row - tb->row;
+          });
+    
+    // Fills triplets. Goes column-by-column.
+    headptrs_[idx] = 0;
+    for (int j = 0, k = 0; j < cols_; ++j) {
+      while (k < len && triplets[k].col == j) {
+        indices_[idx] = (IT) triplets[k].row;
+        values_[idx] = (VT) triplets[k].weight;
+        for (++k; k < len &&
+                  triplets[k].col == j &&
+                  triplets[k].row == indices_[idx]; ++k) {
+          values_[idx] += (VT) triplets[k].weight;
+        }
+        ++idx;
+      }
+      headptrs_[j+1] = idx;
+    }
+  }
+  nnz_ = idx;
+}
+
+template <class IT, class VT>
+void SpMat<IT, VT>::SetIdentity(IT rows) {
+  Allocate(rows, rows, rows);
+  fill_series(headptrs_, rows+1, 0);
+  fill_series(indices_, rows, 0);
+  fill_vec(values_, rows, 1.0);
+}
+
+template <class IT, class VT>
+void SpMat<IT, VT>::Load(const char *filename, IT id) {
+  FILE *fin;
+  int res;
+  if (id == -1) {
+    fin = fopen(filename, "r");
+  } else {
+    char fullfilename[200];
+    sprintf(fullfilename, "%s-%05d", filename, id);
+    fin = fopen(fullfilename, "r");
+  }
+  res = fscanf(fin, "%d %d %d %d %d\n", &rows_, &cols_, &nnz_, &format_, &idx_base_);
+  Allocate(rows_, cols_, nnz_);
+  
+  // Reads head pointers and indices.
+  const char *lt_fmt, *vt_fmt;
+  if (sizeof(LT) == 4)      lt_fmt = "%d";
+  else if (sizeof(LT) == 8) lt_fmt = "%lld";
+  for (int i = 0; i <= dim1(); ++i)
+    res = fscanf(fin, lt_fmt, &headptrs_[i]);
+  for (int i = 0; i < nnz_; ++i)
+    res = fscanf(fin, lt_fmt, &indices_[i]);
+  
+  // Reads values.
+  if (sizeof(VT) == 4)      vt_fmt = "%f";
+  else if (sizeof(VT) == 8) vt_fmt = "%lf";
+  for (int i = 0; i < nnz_; ++i)
+    res = fscanf(fin, vt_fmt, &values_[i]);
+  fclose(fin);
+}
+
+template <class IT, class VT>
+void SpMat<IT, VT>::LoadMatrixMarket(const char *filename, bool transpose) {
+  int32_t type = -1;
+  int32_t symmetric = 0;
+  int64_t nrows, ncols, nonzeroes;
+  int64_t linesread = 0;
+
+  FILE *f = parse_matrix_market_header(filename, nrows, ncols,
+                                       nonzeroes, linesread,
+                                       type, symmetric);
+  this->nnz_ = (symmetric)? nonzeroes * 2 : nonzeroes;
+  Allocate(nrows, ncols, this->nnz_);
+  printf("allocated %d %d %d\n", rows_, cols_, nnz_);
+  
+  const char *format_it = (sizeof(IT) == 4)? "%d" : "%lld";
+  const char *format_vt = (sizeof(VT) == 4)? "%f" : "%lf";
+  char format_str[30];
+  sprintf(format_str, "%s %s %s\n", format_it, format_it, format_vt);
+  Triplet *triplets = new Triplet[this->nnz_];
+  int64_t len = 0;
+  for (int64_t i = 0; i < nonzeroes; ++i) {
+    VT weight;
+    fscanf(f, format_str, &triplets[i].row, &triplets[i].col, &weight);
+    triplets[i].weight = weight; // Triplet.weight is double. Won't work with %f in fscanf.
+    --triplets[i].row;  // Changes from 1-based to 0-based.
+    --triplets[i].col;  // Changes from 1-based to 0-based.
+    if (transpose) 
+      std::swap(triplets[i].row, triplets[i].col);
+    if (symmetric && triplets[i].row != triplets[i].col) {
+      triplets[nonzeroes + len].row = triplets[i].col;
+      triplets[nonzeroes + len].col = triplets[i].row;
+      triplets[nonzeroes + len].weight = triplets[i].weight;
+      ++len;
+    }
+  }
+  this->Fill(triplets, nonzeroes + len);
+  delete [] triplets;
+  
+  printf("Number of nonzeroes: %lld\n", this->nnz_);
+  printf("Dimensions: %d x %d\n", this->rows_, this->cols_);
+  printf("Symmetric: %d\n", symmetric);
+}
+
+template <class IT, class VT>
+void SpMat<IT, VT>::Save(const char *filename, IT id) {
+  char fullfilename[200];
+  if (id == -1)
+    sprintf(fullfilename, "%s", filename);
+  else
+    sprintf(fullfilename, "%s-%05d", filename, id);
+  FILE *fout = fopen(fullfilename, "w");
+  Save(fout);
+  fclose(fout);
+}
+
+template <class IT, class VT>
+void SpMat<IT, VT>::Save(FILE *fout) {
+  fprintf(fout, "%d %d %d %d %d\n", rows_, cols_, nnz_, format_, idx_base_);
+  
+  const char *lt_fmt, *vt_fmt;
+  if (sizeof(LT) == 4)      lt_fmt = "%d ";
+  else if (sizeof(LT) == 8) lt_fmt = "%lld ";
+  if (sizeof(VT) == 4)      vt_fmt = "%f ";
+  else if (sizeof(VT) == 8) vt_fmt = "%lf ";
+  
+  for (int i = 0; i <= dim1(); ++i)
+    fprintf(fout, lt_fmt, headptrs_[i]);
+  fprintf(fout, "\n");
+  for (int i = 0; i < nnz_; ++i)
+    fprintf(fout, lt_fmt, indices_[i]);
+  fprintf(fout, "\n");
+  for (int i = 0; i < nnz_; ++i)
+    fprintf(fout, vt_fmt, values_[i]);
+  fprintf(fout, "\n");
+}
+
+template <class IT, class VT>
+void SpMat<IT, VT>::SaveMatrixMarket(const char *filename) {
+  FILE *f_out = fopen(filename, "w");
+  
+  // Writes the header.
+  fprintf(f_out, "%%%%MatrixMarket matrix coordinate real general\n");
+  fprintf(f_out, "%d %d %lld\n", rows_, cols_, nnz_);
+  
+  // Writes the triplets. (1-based indexing.)
+  if (format_ == SPARSE_CSR) {
+    for (IT i = 0; i < rows_; ++i) {
+      for (LT k = headptrs_[i]; k < headptrs_[i+1]; ++k)
+        fprintf(f_out, "%10d %10d %15.6g\n", i+1, indices_[k]+1, values_[k]);
+    }
+  } else {
+    for (IT j = 0; j < cols_; ++j) {
+      for (LT k = headptrs_[j]; k < headptrs_[j+1]; ++k)
+        fprintf(f_out, "%10d %10d %15.6g\n", indices_[k]+1, j+1, values_[k]);
+    }
+  }
+  
+  fclose(f_out);
+}
+
+template <class IT, class VT>
+void SpMat<IT, VT>::Print() {
+  Save(stdout);
+}
+
+template <class IT, class VT>
+void SpMat<IT, VT>::SaveDense(const char *filename, IT id) {
+  char fullfilename[200];
+  if (id == -1)
+    sprintf(fullfilename, "%s", filename);
+  else
+    sprintf(fullfilename, "%s-%05d", filename, id);
+  FILE *fout = fopen(fullfilename, "w");
+  SaveDense(fout);
+  fclose(fout);
+}
+
+template <class IT, class VT>
+void SpMat<IT, VT>::SaveDense(FILE *fout) {
+  const char *vt_fmt;
+  if (sizeof(VT) == 4)      vt_fmt = "%10.4f "; //"%6.0f "; 
+  else if (sizeof(VT) == 8) vt_fmt = "%10.4f "; //"%6.0lf ";
+  
+  if (format_ == SPARSE_CSR) {
+    fprintf(fout, "%d %d %d\n", rows_, cols_, DENSE_ROWMAJOR);
+    
+    // Writes row-by-row.
+    for (int i = 0; i < rows_; ++i) {
+      for (int j = 0, k = headptrs_[i]; j < cols_; ++j) {
+        if (j == indices_[k] && k < headptrs_[i+1]) {
+          fprintf(fout, vt_fmt, values_[k]);
+          ++k;
+        } else {
+          fprintf(fout, vt_fmt, 0.0f);
+          
+        }
+      }
+      fprintf(fout, "\n");
+    }
+    fprintf(fout, "\n");
+  } else if (format_ == SPARSE_CSC) {
+    // Converts to dense and saves.
+    DMat<IT, VT> temp(*this);
+    temp.Save(fout);
+  }
+}
+
+template <class IT, class VT>
+void SpMat<IT, VT>::PrintDense() {
+  SaveDense(stdout);
+}
+
+template <class IT, class VT>
+void SpMat<IT, VT>::SavePPM(const char *filename) {
+  FILE *f = fopen(filename, "wb");
+  
+  // Only supoorts CSR for now.
+  assert(format_ == SPARSE_CSR);
+  fprintf(f, "P6\n%d %d 255\n", rows_, cols_);
+  VT max_val = Reduce(SPDM3_MAX_ABS);
+  
+  // Writes row-by-row.
+  for (int i = 0; i < rows_; ++i) {
+    for (int j = 0, k = headptrs_[i]; j < cols_; ++j) {
+      if (j == indices_[k] && k < headptrs_[i+1]) {
+        VT scaled_val = 1.0 - (fabs(values_[k]) / max_val);
+        char val = scaled_val * 200.0;  // So the min value doesn't look too close to 0.
+        fprintf(f, "%c%c%c", val, val, val);
+        ++k;
+      } else {
+        fprintf(f, "%c%c%c", 255, 255, 255);
+      }
+    }
+  }
+  fclose(f);
+}
+
+
+// Adapted from http://www.labbookpages.co.uk/software/imgProc/libPNG.html
+template <class IT, class VT>
+void SpMat<IT, VT>::SavePNG(const char *filename) {
+#ifdef USE_PNG
+  FILE *f = NULL;
+  png_bytep   row = NULL;
+  png_infop   info_ptr = NULL;
+  png_structp png_ptr = NULL;
+  
+  // Only supoorts CSR for now.
+  assert(format_ == SPARSE_CSR);
+  
+  // Opens file to write.
+  f = fopen(filename, "wb");
+  if (f == NULL) {
+    fprintf(stderr, "Could not open file %s for writing.\n", filename);
+    exit(1);
+  }
+  
+  // Initializes write structure.
+  png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+  if (png_ptr == NULL) {
+    fprintf(stderr, "Could not allocate write struct.\n");
+    exit(1);
+  }
+  
+  // Initializes info structure.
+  info_ptr = png_create_info_struct(png_ptr);
+  if (info_ptr == NULL) {
+    fprintf(stderr, "Could not allocate info struct.\n");
+    exit(1);
+  }
+  
+  // Sets up exception handling.
+  if (setjmp(png_jmpbuf(png_ptr))) {
+    fprintf(stderr, "Error during png creation.\n");
+    exit(1);
+  }
+  
+  png_init_io(png_ptr, f);
+  
+  // Writes header (8-big color depth).
+  png_set_IHDR(png_ptr, info_ptr, cols_, rows_, 8,
+               PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE,
+               PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
+  
+  png_write_info(png_ptr, info_ptr);
+  
+  // Allocate memory for one row (3 bytes per pixel - RGB).
+  row = (png_bytep) malloc(3 * cols_ * sizeof(png_byte));
+  
+  // Writes image data.
+  VT max_val = Reduce(SPDM3_MAX_ABS);
+  for (int i = 0; i < rows_; ++i) {
+    for (int j = 0, k = headptrs_[i]; j < cols_; ++j) {
+      char val;
+      if (j == indices_[k] && k < headptrs_[i+1]) {
+        VT scaled_val = 1.0 - (fabs(values_[k]) / max_val);
+        val = scaled_val * 200.0;  // So the min value doesn't look too close to 0.
+        ++k;
+      } else {
+        val = 255;
+      }
+      png_bytep px = &(row[j * 3]);
+      px[0] = val;
+      px[1] = val;
+      px[2] = val;
+    }
+    png_write_row(png_ptr, row);
+  }
+  png_write_end(png_ptr, NULL);
+  
+  // Cleans up.
+  fclose(f);
+  png_free_data(png_ptr, info_ptr, PNG_FREE_ALL, -1);
+  png_destroy_write_struct(&png_ptr, (png_infopp) NULL);
+  free(row);
+#endif  /* USE_PNG */
+}
+
+template <class IT, class VT>
+void SpMat<IT, VT>::PointersToSpMat(IT rows, IT cols, IT nnz,
+                                    spdm3_format format, IT idx_base,
+                                    LT *headptrs, LT *indices, VT *values,
+                                    bool free_buffers) {
+ rows_     = rows;
+ cols_     = cols;
+ nnz_      = nnz;
+ format_   = format;
+ idx_base_ = idx_base;
+ 
+ headptrs_ = headptrs;
+ indices_  = indices;
+ values_   = values;
+ 
+ head_size_    = dim1() + 1;
+ buffer_size_  = nnz;
+ free_buffers_ = free_buffers;
+}
+
+template <class IT, class VT>
+void SpMat<IT, VT>::Submatrix(const SpMat<IT, VT> &X,
+                              IT row_offset, IT col_offset, IT rows, IT cols) {
+  // Only supports CSR for now.
+  assert(X.format_ == SPARSE_CSR);
+  
+  // Copies properties.
+  CommonCopy(X);
+  
+  // Counts elements in range.
+  nnz_ = 0;
+  for (int i = row_offset; i < row_offset + rows; ++i) {
+    for (int k = X.headptrs_[i]; k < X.headptrs_[i+1]; ++k) {
+      if (col_offset <= X.indices_[k] && X.indices_[k] < col_offset + cols)
+        ++nnz_;
+    }
+  }
+
+  // Allocates matrix.
+  Allocate(rows, cols, nnz_);
+  LT idx = 0;
+  headptrs_[0] = 0;
+  for (int i =  0; i < rows; ++i) {
+    for (int k = X.headptrs_[i+row_offset];
+         k < X.headptrs_[i+row_offset+1]; ++k) {
+      if (col_offset <= X.indices_[k] && X.indices_[k] < col_offset + cols) {
+        indices_[idx] = X.indices_[k] - col_offset;
+        values_[idx] = X.values_[k];
+        ++idx;
+      }
+    }
+    headptrs_[i+1] = idx;
+  }
+  
+  // Sanity check.
+  assert(idx == nnz_);
+}
+
+template <class IT, class VT>
+void SpMat<IT, VT>::Diagonal(const SpMat<IT, VT> &X) {
+  // Must be square matrix.
+  assert(X.rows_ == X.cols_);
+  
+  CommonCopy(X);
+  Allocate(X.rows_, X.cols_, std::min(X.rows_, X.cols_));
+  nnz_ = 0;
+  headptrs_[0] = 0;
+  for (LT i = 0; i < X.dim1(); ++i) {
+    for (LT k = X.headptrs_[i]; k < X.headptrs_[i+1]; ++k) {
+      LT j = X.indices_[k];
+      if (i == j) {
+        values_[nnz_] = X.values_[k];
+        indices_[nnz_] = j;
+        ++nnz_;
+      } else if (i < j) {
+        continue;
+      }
+    }
+    headptrs_[i+1] = nnz_;
+  }
+}
+
+// TODO(penpornk): OpenMPize this.
+template <class IT, class VT>
+void SpMat<IT, VT>::Add(const VT alpha, const SpMat<IT, VT> &A,
+                        const VT beta, const SpMat<IT, VT> &B) {
+  assert(A.rows_ == B.rows_ && A.cols_ == B.cols_);
+  assert(A.format_ == B.format_);
+  assert(A.format_ == SPARSE_CSR);  // For now.
+  
+  CommonCopy(A);
+  Allocate(A.rows_, A.cols_, A.nnz_ + B.nnz_);
+  nnz_ = 0;
+  headptrs_[0] = 0;
+  for (LT i = 0; i < A.dim1(); ++i) {
+    LT k1 = A.headptrs_[i];
+    LT k2 = B.headptrs_[i];
+    while (k1 < A.headptrs_[i+1] && k2 < B.headptrs_[i+1]) {
+      LT j1 = A.indices_[k1];
+      LT j2 = B.indices_[k2];
+      if (j1 < j2) {
+        values_[nnz_] = alpha * A.values_[k1++];
+        indices_[nnz_] = j1;
+      } else if (j2 < j1) {
+        values_[nnz_] = beta * B.values_[k2++];
+        indices_[nnz_] = j2;
+      } else {
+        values_[nnz_] = (alpha * A.values_[k1]) + (beta * B.values_[k2]);
+        indices_[nnz_] = j1;
+        ++k1; ++k2;
+      }
+      ++nnz_;
+    }
+    while (k1 < A.headptrs_[i+1]) {
+      values_[nnz_] = alpha * A.values_[k1];
+      indices_[nnz_] = A.indices_[k1++];
+      ++nnz_;
+    }
+    while (k2 < B.headptrs_[i+1]) {
+      values_[nnz_] = beta * B.values_[k2];
+      indices_[nnz_] = B.indices_[k2++];
+      ++nnz_;
+    }
+    headptrs_[i+1] = nnz_;
+  }
+}
+
+template <class IT, class VT>
+void SpMat<IT, VT>::Convert(const DMat<IT, VT> &D, bool allocate) {
+  CommonCopy(D);
+  
+  // TODO(penpornk): change this if we want to run with more than 100 threads.
+  // Right now we don't really need dynamic allocation. (Only expect 12 threads.)
+  int threads;
+  LT thread_counts[100];
+  LT thread_offsets[101];
+  
+  #pragma omp parallel 
+  {
+    #pragma omp single
+    threads = omp_get_num_threads();
+    
+    // Counts the number of nonzeroes.
+    int rank = omp_get_thread_num();
+    LT start_i = find_offset_frontloaded(dim1(), threads, rank);
+    LT end_i = find_offset_frontloaded(dim1(), threads, rank + 1);
+    LT nnz = 0;
+    for (LT i = start_i; i < end_i; ++i) {
+      for (LT j = 0; j < dim2(); ++j) {
+        if (!FEQ(D.values_[i * D.lda_ + j], 0.0))
+          ++nnz;
+      }
+    }
+    thread_counts[rank] = nnz;
+    #pragma omp barrier
+    
+    // Finds offset in the indices_ and values_ arrays.
+    #pragma omp single
+    {
+      gen_displs_from_counts(threads, thread_counts, thread_offsets);
+      nnz_ = thread_offsets[threads];
+      if (allocate)
+        Allocate(D.rows_, D.cols_, nnz_);
+      headptrs_[dim1()] = nnz_;
+    }
+    
+    // Now puts the values into the arrays.
+    nnz = thread_offsets[rank];
+    for (LT i = start_i; i < end_i; ++i) {
+      headptrs_[i] = nnz;
+      for (LT j = 0; j < dim2(); ++j) {
+        if (!FEQ(D.values_[i * D.lda_ + j], 0.0)) {
+          values_[nnz] = D.values_[i * D.lda_ + j];
+          indices_[nnz] = j;
+          ++nnz;
+        }
+      }
+    }
+  }
+}
+
+template <class IT, class VT>
+void SpMat<IT, VT>::ThresholdThenConvert(const DMat<IT, VT> &G,
+                                         const SpMat<IT, VT> &O,
+                                         const DMat<IT, VT> &Lambda1,
+                                         const VT tau) {
+  DMat<IT, VT> temp;
+  temp.StructuralCopy(G);
+  CommonCopy(G);
+  
+  // TODO(penpornk): change this if we want to run with more than 100 threads.
+  // Right now we don't really need dynamic allocation. (Only expect 12 threads.)
+  int threads;
+  LT thread_counts[100];
+  LT thread_offsets[101];
+  
+  // Only supports CSR and Rowmajor for now.
+  assert(G.format_ == DENSE_ROWMAJOR &&
+         Lambda1.format_ == DENSE_ROWMAJOR &&
+         O.format_ == SPARSE_CSR);
+  
+  #pragma omp parallel 
+  {
+    #pragma omp single
+    threads = omp_get_num_threads();
+    
+    // Counts the number of nonzeroes.
+    int rank = omp_get_thread_num();
+    LT start_i = find_offset_frontloaded(dim1(), threads, rank);
+    LT end_i = find_offset_frontloaded(dim1(), threads, rank + 1);
+    LT nnz = 0;
+    for (LT i = start_i; i < end_i; ++i) {
+      LT k = O.headptrs_[i];
+      for (LT j = 0; j < dim2(); ++j) {
+        VT val = -tau * G.values_[i * G.lda_ + j];
+        if (k < O.headptrs_[i+1] && j == O.indices_[k])
+          val += O.values_[k++];
+        VT sign = (val > 0) - (val < 0);
+        val = sign * std::max(fabs(val) - (tau * Lambda1.values_[i * Lambda1.lda_ + j]), 0.0);
+        temp.values_[i * temp.lda_ +j] = val;
+        if (!FEQ(val, 0.0))
+          ++nnz;
+      }
+    }
+    thread_counts[rank] = nnz;
+    #pragma omp barrier
+    
+    // Finds offset in the indices_ and values_ arrays.
+    #pragma omp single
+    {
+      gen_displs_from_counts(threads, thread_counts, thread_offsets);
+      nnz_ = thread_offsets[threads];
+      Allocate(temp.rows_, temp.cols_, nnz_);
+      headptrs_[dim1()] = nnz_;
+    }
+    
+    // Now puts the values into the arrays.
+    nnz = thread_offsets[rank];
+    for (LT i = start_i; i < end_i; ++i) {
+      headptrs_[i] = nnz;
+      for (LT j = 0; j < dim2(); ++j) {
+        if (!FEQ(temp.values_[i * temp.lda_ + j], 0.0)) {
+          values_[nnz] = temp.values_[i * temp.lda_ + j];
+          indices_[nnz] = j;
+          ++nnz;
+        }
+      }
+    }
+  }
+}
+
+template <class IT, class VT>
+void SpMat<IT, VT>::ThresholdAndMaskThenConvert(const DMat<IT, VT> &G,
+                                                const SpMat<IT, VT> &O,
+                                                const DMat<IT, VT> &Lambda1,
+                                                const VT tau, const SpMat<IT, VT> &M) {
+  DMat<IT, VT> temp;
+  temp.StructuralCopy(G);
+  CommonCopy(G);
+  
+  // TODO(penpornk): change this if we want to run with more than 100 threads.
+  // Right now we don't really need dynamic allocation. (Only expect 12 threads.)
+  int threads;
+  LT thread_counts[100];
+  LT thread_offsets[101];
+  
+  // Only supports CSR and Rowmajor for now.
+  assert(G.format_ == DENSE_ROWMAJOR &&
+         Lambda1.format_ == DENSE_ROWMAJOR &&
+         O.format_ == SPARSE_CSR);
+  
+  #pragma omp parallel 
+  {
+    #pragma omp single
+    threads = omp_get_num_threads();
+    
+    // Counts the number of nonzeroes.
+    int rank = omp_get_thread_num();
+    LT start_i = find_offset_frontloaded(dim1(), threads, rank);
+    LT end_i = find_offset_frontloaded(dim1(), threads, rank + 1);
+    LT nnz = 0;
+    for (LT i = start_i; i < end_i; ++i) {
+      LT k = O.headptrs_[i];
+      LT k_m = M.headptrs_[i];
+      for (LT j = 0; j < dim2(); ++j) {
+        VT val = -tau * G.values_[i * G.lda_ + j];
+        if (k < O.headptrs_[i+1] && j == O.indices_[k])
+          val += O.values_[k++];
+        VT sign = (val > 0) - (val < 0);
+        val = sign * std::max(fabs(val) - (tau * Lambda1.values_[i * Lambda1.lda_ + j]), 0.0);
+        if (k_m < M.headptrs_[i+1] && j == M.indices_[k_m]) 
+          ++k_m;
+        else                                                
+          val = 0.0;
+        temp.values_[i * temp.lda_ +j] = val;
+        if (!FEQ(val, 0.0))
+          ++nnz;
+      }
+    }
+    thread_counts[rank] = nnz;
+    #pragma omp barrier
+    
+    // Finds offset in the indices_ and values_ arrays.
+    #pragma omp single
+    {
+      gen_displs_from_counts(threads, thread_counts, thread_offsets);
+      nnz_ = thread_offsets[threads];
+      Allocate(temp.rows_, temp.cols_, nnz_);
+      headptrs_[dim1()] = nnz_;
+    }
+    
+    // Now puts the values into the arrays.
+    nnz = thread_offsets[rank];
+    for (LT i = start_i; i < end_i; ++i) {
+      headptrs_[i] = nnz;
+      for (LT j = 0; j < dim2(); ++j) {
+        if (!FEQ(temp.values_[i * temp.lda_ + j], 0.0)) {
+          values_[nnz] = temp.values_[i * temp.lda_ + j];
+          indices_[nnz] = j;
+          ++nnz;
+        }
+      }
+    }
+  }
+}
+
+template <class IT, class VT>
+void SpMat<IT, VT>::Concatenate(SpMat<IT, VT> *M, IT blk_rows, IT blk_cols,
+                                spdm3_layout layout) {
+  LT *row_displs = new LT[blk_rows + 1];
+  LT *col_displs = new LT[blk_cols + 1];
+  
+  // Calculates row and column displacements.
+  if (layout != TWOD_COLMAJOR) {
+    row_displs[0] = 0;
+    for (int i = 0; i < blk_rows; ++i)
+      row_displs[i+1] = row_displs[i] + M[i*blk_cols].rows_;
+    col_displs[0] = 0;
+    for (int j = 0; j < blk_cols; ++j)
+      col_displs[j+1] = col_displs[j] + M[j].cols_;
+  } else {
+    row_displs[0] = 0;
+    for (int i = 0; i < blk_rows; ++i)
+      row_displs[i+1] = row_displs[i] + M[i].rows_;
+    col_displs[0] = 0;
+    for (int j = 0; j < blk_cols; ++j)
+      col_displs[j+1] = col_displs[j] + M[j*blk_rows].cols_;
+  }
+
+  format_ = M[0].format_;
+  nnz_ = 0;
+  for (int i = 0; i < blk_rows * blk_cols; ++i)
+    nnz_ += M[i].nnz_;
+  
+  Allocate(row_displs[blk_rows], col_displs[blk_cols], nnz_);
+  
+  LT idx = 0;
+  IT midx = 0;
+  headptrs_[0] = 0;
+
+  if (format_ == SPARSE_CSR) {
+    for (int bi = 0; bi < blk_rows; ++bi) {
+      int rows = row_displs[bi+1] - row_displs[bi];
+      for (int i = 0; i < rows; ++i) {
+        for (int bj = 0; bj < blk_cols; ++bj) {
+          if (layout != TWOD_COLMAJOR)
+            midx = bi * blk_cols + bj;
+          else
+            midx = bj * blk_rows + bi;
+          int size = M[midx].headptrs_[i+1] - M[midx].headptrs_[i];
+          memcpy(values_ + idx, M[midx].values_ + M[midx].headptrs_[i],
+                 size * sizeof(VT));
+          for (int j = 0; j < size; ++j)
+            indices_[idx + j] = col_displs[bj] +
+                                M[midx].indices_[M[midx].headptrs_[i]+j];
+          idx += size;
+        }
+        headptrs_[row_displs[bi]+i+1] = idx;
+      }
+    }
+  } else if (format_ == SPARSE_CSC) {
+    for (int bj = 0; bj < blk_cols; ++bj) {
+      int cols = col_displs[bj+1] - col_displs[bj];
+      for (int j = 0; j < cols; ++j) {
+        for (int bi = 0; bi < blk_rows; ++bi) {
+          if (layout != TWOD_COLMAJOR)
+            midx = bi * blk_cols + bj;
+          else
+            midx = bj * blk_rows + bi;
+          int size = M[midx].headptrs_[j+1] - M[midx].headptrs_[j];
+          memcpy(values_ + idx, M[midx].values_ + M[midx].headptrs_[j],
+                 size * sizeof(VT));
+          for (int i = 0; i < size; ++i)
+            indices_[idx + i] = row_displs[bi] +
+                                M[midx].indices_[M[midx].headptrs_[j]+i];
+          idx += size;
+        }
+        headptrs_[col_displs[bj]+j+1] = idx;
+      }
+    }
+  }
+  delete [] row_displs;
+  delete [] col_displs;
+}
+
+
+template <class IT, class VT>
+void SpMat<IT, VT>::MakeBlockDiagonal(SpMat<IT, VT> *M, IT n) {
+  int count = 0;
+  
+  // Counts the total number of nonzeroes.
+  rows_ = cols_ = nnz_ = 0;
+  for (int m = 0; m < n; ++m) {
+    rows_ += M[m].rows_;
+    cols_ += M[m].cols_;
+    nnz_  += M[m].nnz_;
+  }
+  
+  // Allocates matrix.
+  Allocate(rows_, cols_, nnz_);
+  
+  // Pasting matrices on one-by-one.
+  int gk = 0, gi = 0, gj = 0;
+  headptrs_[0] = 0;
+  for (int m = 0; m < n; ++m) {
+    for (int i = 1; i <= M[m].dim1(); ++i)
+      headptrs_[gi + i] = M[m].headptrs_[i] + gk;
+    for (int k = 0; k < M[m].nnz_; ++k)
+      indices_[gk + k] = M[m].indices_[k] + gj;
+    memcpy(values_ + gk, M[m].values_, M[m].nnz_ * sizeof(VT));
+    gi += M[m].dim1();
+    gj += M[m].dim2();
+    gk += M[m].nnz_;
+  }
+}
+
+template <class IT, class VT>
+SpMat<IT, VT> *SpMat<IT, VT>::PartitionToSubmatrices(IT blk_rows, IT *row_counts, IT *row_displs,
+                                                     IT blk_cols, IT *col_counts, IT *col_displs) {
+  IT nblks = blk_rows * blk_cols;
+  IT *nnz_counts = new IT[nblks];
+  fill_vec(nnz_counts, nblks, 0);
+  std::vector<Triplet> *triplets = new std::vector<Triplet>[nblks];
+  
+  // First pass: Counts nnz in each submatrices.
+  for (IT bi = 0; bi < blk_rows; ++bi) {
+    IT base_idx = bi * blk_cols;
+    for (IT i = row_displs[bi]; i < row_displs[bi+1]; ++i) {
+      IT bj = 0;
+      for (IT k = headptrs_[i]; k < headptrs_[i+1]; ++k) {
+        IT j = indices_[k];
+        
+        // Finds appropriate bj.
+        while (bj < blk_cols && col_displs[bj+1] <= j)
+          ++bj;
+        assert(col_displs[bj+1] > j);
+        
+        // Increments counter.
+        ++nnz_counts[base_idx + bj];
+      }
+    }
+  }
+  
+  // Allocates submatrices.
+  SpMat<IT, VT> *submats = new SpMat<IT, VT>[nblks];
+  for (IT bi = 0; bi < blk_rows; ++bi) {
+    IT base_idx = bi * blk_cols;
+    for (IT bj = 0; bj < blk_cols; ++bj) {
+      IT idx = base_idx + bj;
+      submats[idx].Allocate(row_counts[bi], col_counts[bj], nnz_counts[idx]);
+      submats[idx].headptrs_[0] = 0;
+    }
+  }
+  
+  // Second pass: Fills submatrices.
+  IT *nnz_idx = new IT[nblks];
+  fill_vec(nnz_idx, nblks, 0);
+  for (IT bi = 0; bi < blk_rows; ++bi) {
+    IT base_idx = bi * blk_cols;
+    for (IT i = row_displs[bi]; i < row_displs[bi+1]; ++i) {
+      IT bj = 0;
+      for (IT k = headptrs_[i]; k < headptrs_[i+1]; ++k) {
+        IT j = indices_[k];
+        
+        // Finds appropriate bj.
+        while (bj < blk_cols && col_displs[bj+1] <= j)
+          ++bj;
+        assert(col_displs[bj+1] > j);
+        
+        // Inserts.
+        IT idx = base_idx + bj;
+        submats[idx].indices_[nnz_idx[idx]] = j - col_displs[bj];
+        submats[idx].values_[nnz_idx[idx]] = values_[k];
+        ++nnz_idx[idx];
+      }
+      
+      // Updates head pointers.
+      IT next_sub_i = i - row_displs[bi] + 1;
+      for (IT idx = base_idx; idx < base_idx + blk_cols; ++idx)
+        submats[idx].headptrs_[next_sub_i] = nnz_idx[idx];
+    }
+  }
+  
+  // Sanity-checks and sets nnz.
+  for (IT idx = 0; idx < nblks; ++idx) {
+    assert(nnz_counts[idx] == submats[idx].headptrs_[submats[idx].rows_]);
+    submats[idx].nnz_ = nnz_counts[idx];
+  }
+  
+  delete [] nnz_idx;
+  delete [] nnz_counts;
+  return submats;
+}
+
+//
+// Operations.
+//
+template <class IT, class VT>
+bool SpMat<IT, VT>::IsEquivalent(const SpMat<IT, VT> &X) {
+  // TODO(penpornk): Implement IsEquivalent.
+  return IsEqual(X);
+}
+
+template <class IT, class VT>
+bool SpMat<IT, VT>::IsEqual(const SpMat<IT, VT> &X) {
+  if (rows_ != X.rows_ || cols_ != X.cols_ || nnz_ != X.nnz_) {
+    printf("Dimension mismatch. (%d vs %d, %d vs %d, %d vs %d)\n",
+        rows_, X.rows_, cols_, X.cols_, nnz_, X.nnz_);
+    return false;
+  }
+  
+  if (format_ != X.format_ || idx_base_ != X.idx_base_) {
+    printf("Format mismatch.\n");
+    return false;
+  }
+  
+  for (int i = 0; i <= dim1(); ++i)
+    if (headptrs_[i] != X.headptrs_[i])
+      return false;
+  for (int i = 0; i < nnz_; ++i) {
+    if (indices_[i] != X.indices_[i]) {
+      printf("indices_[%d]: %d != %d\n", i, indices_[i], X.indices_[i]);
+      return false;
+    }
+    if (!TEQ(values_[i], X.values_[i], epsilon_)) {
+      printf("[%d][%d]: %lf != %lf\n", i, indices_[i],
+          (double) values_[i], (double) X.values_[i]);
+      return false;
+    }
+  }
+  return true;
+}
+
+template <class IT, class VT>
+bool SpMat<IT, VT>::IsSymmetric() {
+  if (rows_ != cols_)
+    return false;
+  if (format_ == SPARSE_CSR) {
+    for (int i1 = 0; i1 < dim1(); ++i1) {
+      for (int k = headptrs_[i1]; k < headptrs_[i1+1]; ++k) {
+        int i2 = indices_[k];
+        if (!TEQ(values_[k], GetElmt(i2, i1), epsilon_))
+          return false;
+      }
+    }
+  } else if (format_ == SPARSE_CSC) {
+    for (int i1 = 0; i1 < dim1(); ++i1) {
+      for (int k = headptrs_[i1]; k < headptrs_[i1+1]; ++k) {
+        int i2 = indices_[k];
+        if (!TEQ(values_[k], GetElmt(i1, i2), epsilon_))
+          return false;
+      }
+    }
+  } else {
+    printf("IsSymmetric: ERROR! Unsupported format.\n");
+    exit(1);
+  }
+  return true;
+}
+
+template <class IT, class VT>
+VT SpMat<IT, VT>::FrobeniusNorm() {
+  return sqrt(FrobeniusNormSquare());
+}
+
+template <class IT, class VT>
+VT SpMat<IT, VT>::FrobeniusNormSquare() {
+  VT norm = 0.0;
+  #pragma omp parallel for schedule(static) reduction(+ : norm)
+  for (int i = 0; i < nnz_; ++i)
+    norm += values_[i] * values_[i];
+  return norm;
+}
+
+template <class IT, class VT>
+void SpMat<IT, VT>::ElmtWiseOp(std::function<VT(VT)> fn) {
+  for (int i = 0; i < nnz_; ++i)
+    values_[i] = fn(values_[i]);
+}
+
+template <class IT, class VT>
+void SpMat<IT, VT>::ElmtWiseOp(std::function<VT(VT, VT)> fn, const VT &op) {
+  for (int i = 0; i < nnz_; ++i)
+    values_[i] = fn(values_[i], op);
+}
+
+template <class IT, class VT>
+SpMat<IT, VT> SpMat<IT, VT>
+    ::GetShallowCopy(bool transfer_buffer_ownership) {
+
+  SpMat<IT, VT> mat;
+  mat.nnz_ = nnz_;
+  mat.rows_ = rows_;
+  mat.cols_ = cols_;
+  
+  mat.idx_base_ = idx_base_;
+  mat.head_size_ = head_size_;
+  mat.buffer_size_ = buffer_size_;
+  mat.min_head_size_ = min_head_size_;
+  mat.min_buffer_size_ = min_buffer_size_;
+  
+  mat.headptrs_ = headptrs_;
+  mat.indices_ = indices_;
+  mat.values_ = values_;
+  
+  mat.name_ = name_;
+  mat.format_ = format_;
+  mat.lib_ = lib_;
+  mat.epsilon_ = epsilon_;
+  
+  mat.free_buffers_ = false;
+  if (transfer_buffer_ownership) {
+    assert(free_buffers_);
+    mat.free_buffers_ = true;
+    free_buffers_ = false;
+  }
+  
+  return mat;
+}
+
+template <class IT, class VT>
+SpMat<IT, VT> SpMat<IT, VT>::GetDeepCopy() {
+  SpMat<IT, VT> mat = GetStructure();
+  memcpy(mat.headptrs_, headptrs_, (dim1() + 1) * sizeof(LT));
+  memcpy(mat.indices_, indices_, nnz_ * sizeof(LT));
+  memcpy(mat.values_, values_, nnz_ * sizeof(VT));
+  return mat;
+}
+
+template <class IT, class VT>
+SpMat<IT, VT> SpMat<IT, VT>::GetStructure() {
+  SpMat<IT, VT> mat;
+  mat.nnz_ = nnz_;
+  mat.rows_ = rows_;
+  mat.cols_ = cols_;
+  
+  mat.idx_base_ = idx_base_;
+  mat.head_size_ = head_size_;
+  mat.buffer_size_ = buffer_size_;
+  mat.min_head_size_ = min_head_size_;
+  mat.min_buffer_size_ = min_buffer_size_;
+  
+  mat.name_ = name_;
+  mat.format_ = format_;
+  mat.lib_ = lib_;
+  mat.epsilon_ = epsilon_;
+  
+  mat.Allocate(mat.rows_, mat.cols_, mat.buffer_size_);
+  
+  return mat;
+}
+
+template <class IT, class VT>
+void SpMat<IT, VT>::ShallowCopy(const SpMat<IT, VT> &X) {
+  Deallocate();
+  CommonCopy(X);
+  
+  headptrs_ = X.headptrs_;
+  indices_  = X.indices_;
+  values_   = X.values_;
+  
+  head_size_ = X.head_size_;
+  buffer_size_ = X.buffer_size_;
+  
+  free_buffers_ = false;
+}
+
+template <class IT, class VT>
+void SpMat<IT, VT>::TakeOwnership(SpMat<IT, VT> &X) {
+  assert(X.free_buffers_);
+  free_buffers_ = true;
+  X.free_buffers_ = false;
+}
+
+template <class IT, class VT>
+void SpMat<IT, VT>::CommonCopy(const DMat<IT, VT> &D) {
+  rows_ = D.rows_;
+  cols_ = D.cols_;
+  
+  min_head_size_   = D.dim1() + 1;
+  min_buffer_size_ = -1;
+  
+  name_    = D.name_;
+  lib_     = D.lib_;
+  epsilon_ = D.epsilon_;
+  
+  if (D.format_ == DENSE_ROWMAJOR)
+    format_ = SPARSE_CSR;
+  else if (D.format_ == DENSE_COLMAJOR)
+    format_ = SPARSE_CSC;
+  else {
+    printf("SpMat::CommonCopy: ERROR! Unsupported format.\n");
+    exit(1);
+  }
+}
+
+template <class IT, class VT>
+void SpMat<IT, VT>::CommonCopy(const SpMat<IT ,VT> &X) {
+  nnz_ = X.nnz_;
+  rows_ = X.rows_;
+  cols_ = X.cols_;
+  
+  idx_base_ = X.idx_base_;
+  min_head_size_ = X.min_head_size_;
+  min_buffer_size_ = X.min_buffer_size_;
+  
+  name_    = X.name_;
+  format_  = X.format_;
+  lib_     = X.lib_;
+  epsilon_ = X.epsilon_;
+}
+
+template <class IT, class VT>
+void SpMat<IT, VT>::StructuralCopy(const SpMat<IT, VT> &X) {
+  CommonCopy(X);
+  Allocate(rows_, cols_, X.head_size_, X.buffer_size_);
+}
+
+template <class IT, class VT>
+void SpMat<IT, VT>::DeepCopy(const SpMat<IT, VT> &X) {
+  StructuralCopy(X);
+  memcpy(headptrs_, X.headptrs_, (dim1() + 1) * sizeof(LT));
+  memcpy(indices_, X.indices_, nnz_ * sizeof(LT));
+  memcpy(values_, X.values_, nnz_ * sizeof(VT));
+}
+
+template <class IT, class VT>
+void SpMat<IT, VT>::Swap(SpMat<IT, VT> &X) {
+  std::swap(nnz_, X.nnz_);
+  std::swap(rows_, X.rows_);
+  std::swap(cols_, X.cols_);
+  
+  std::swap(idx_base_, X.idx_base_);
+  std::swap(head_size_, X.head_size_);
+  std::swap(buffer_size_, X.buffer_size_);
+  std::swap(min_head_size_, X.min_head_size_);
+  std::swap(min_buffer_size_, X.min_buffer_size_);
+  
+  std::swap(headptrs_, X.headptrs_);
+  std::swap(indices_, X.indices_);
+  std::swap(values_, X.values_);
+  std::swap(free_buffers_, X.free_buffers_);
+  
+  std::swap(name_, X.name_);
+  std::swap(format_, X.format_);
+  std::swap(lib_, X.lib_);
+  std::swap(epsilon_, X.epsilon_);
+}
+
+template <class IT, class VT>
+void SpMat<IT, VT>::MultiplyAdd(const DMat<IT, VT> &B, DMat<IT, VT> &C) {
+  switch (lib_) {
+    case LIB_BLAS:  matmul_blas(*this, B, C);  break;
+    case LIB_MKL:   matmul_mkl(*this, B, C);   break;
+    case LIB_NAIVE: matmul_naive(*this, B, C); break;
+  }
+}
+
+template <class IT, class VT>
+void SpMat<IT, VT>::Multiply(const SpMat<IT, VT> &B, SpMat<IT, VT> &C) {
+  switch (lib_) {
+    case LIB_MKL:   matmul_mkl(*this, B, C); break;
+    case LIB_BLAS:
+    case LIB_NAIVE: matmul_naive(*this, B, C); break;
+    default:
+      printf("Library not supported yet.\n");
+      exit(1);
+  }
+}
+
+template <class IT, class VT>
+void SpMat<IT, VT>::DotMultiplyI(const DMat<IT, VT> &X) {
+  assert(rows_ == X.rows_ && cols_ == X.cols_);
+  if ((format_ == SPARSE_CSR && X.format_ == DENSE_ROWMAJOR) ||
+      (format_ == SPARSE_CSC && X.format_ == DENSE_COLMAJOR)) {
+    #pragma omp parallel for schedule(guided)
+    for (int i1 = 0; i1 < dim1(); ++i1) {
+      for (int k = headptrs_[i1]; k < headptrs_[i1+1]; ++k) {
+        int i2 = indices_[k];
+        values_[k] *= X.values_[i1 * X.lda_ + i2];
+      }
+    }
+  } else {
+    #pragma omp parallel for schedule(guided)
+    for (int i1 = 0; i1 < dim1(); ++i1) {
+      for (int k = headptrs_[i1]; k < headptrs_[i1+1]; ++k) {
+        int i2 = indices_[k];
+        values_[k] *= X.values_[i2 * X.lda_ + i1];
+      }
+    }
+  }
+}
+
+template <class IT, class VT>
+void SpMat<IT, VT>::DotMultiplyTransposeI(const DMat<IT, VT> &X) {
+  assert(rows_ == X.cols_ && cols_ == X.rows_);
+    if ((format_ == SPARSE_CSR && X.format_ == DENSE_ROWMAJOR) ||
+      (format_ == SPARSE_CSC && X.format_ == DENSE_COLMAJOR)) {
+    for (int i1 = 0; i1 < dim1(); ++i1) {
+      for (int k = headptrs_[i1]; k < headptrs_[i1+1]; ++k) {
+        int i2 = indices_[k];
+        values_[k] *= X.values_[i2 * X.lda_ + i1];
+      }
+    }
+  } else {
+    for (int i1 = 0; i1 < dim1(); ++i1) {
+      for (int k = headptrs_[i1]; k < headptrs_[i1+1]; ++k) {
+        int i2 = indices_[k];
+        values_[k] *= X.values_[i1 * X.lda_ + i2];
+      }
+    }
+  }
+}
+
+template <class IT, class VT>
+VT SpMat<IT, VT>::Reduce(spdm3_op op) {
+  VT res = 0.0;
+  switch (op) {
+    case SPDM3_SUM:
+      res = 0.0;
+      #pragma omp parallel for reduction(+ : res)
+      for (int i = 0; i < nnz_; ++i)
+        res += values_[i];
+      break;
+    case SPDM3_PROD:
+      res = 1.0;
+      #pragma omp parallel for reduction(* : res)
+      for (int i = 0; i < nnz_; ++i) 
+        res *= values_[i];
+      break;
+    case SPDM3_MAX:
+      res = values_[0];
+      #pragma omp parallel for reduction(max : res)
+      for (int i = 1; i < nnz_; ++i) {
+        if (res < values_[i])
+          res = values_[i];
+      }
+      break;
+    case SPDM3_MAX_ABS:
+      res = 0.0;
+      #pragma omp parallel for reduction(max : res)
+      for (int i = 0; i < nnz_; ++i) {
+        VT absolute = fabs(values_[i]);
+        if (res < absolute)
+          res = absolute;
+      }
+      break;
+    case SPDM3_MIN:
+      res = values_[0];
+      #pragma omp parallel for reduction(min : res)
+      for (int i = 0; i < nnz_; ++i) {
+        if (res > values_[i])
+          res = values_[i];
+      }
+      break;
+  }
+  return res;
+}
+
+template <class IT, class VT>
+void SpMat<IT, VT>::ChangeBase(IT base) {
+  if (idx_base_ == base) {
+    return;
+  } else if (base == 0) {
+    for (IT i = 0; i <= dim1(); ++i)
+      --headptrs_[i];
+    for (IT i = 0; i < nnz_; ++i)
+      --indices_[i];
+  } else if (base == 1) {
+    for (IT i = 0; i <= dim1(); ++i)
+      ++headptrs_[i];
+    for (IT i = 0; i < nnz_; ++i)
+      ++indices_[i];
+  }
+  idx_base_ = base;
+}
+
+template <class IT, class VT>
+void SpMat<IT, VT>::Create1BasedArrays(IT* &heads, IT* &indices) const {
+  heads = new IT[dim1() + 1];
+  indices = new IT[nnz_];
+  for (IT i = 0; i <= dim1(); ++i)
+    heads[i] = headptrs_[i] + 1;
+  for (LT i = 0; i < nnz_; ++i)
+    indices[i] = indices_[i] + 1;
+}
+
+template <class IT, class VT>
+void SpMat<IT, VT>::RemoveZeroes() {
+  bool move = false;
+  IT copy_to = -1;
+  for (int i = 0; i < dim1(); ++i) {
+    IT k = headptrs_[i];
+    if (copy_to >= 0) {
+      headptrs_[i] = copy_to;
+    }
+    for (; k < headptrs_[i+1]; ++k) {
+      if (copy_to == -1) {
+        if (values_[k] == 0)
+          copy_to = k;
+      } else {
+        if (values_[k] != 0) {
+          indices_[copy_to] = indices_[k];
+          values_[copy_to] = values_[k];
+          ++copy_to;
+        }
+      }
+    }
+  }
+  if (copy_to >= 0) {
+    headptrs_[dim1()] = copy_to;
+    nnz_ = copy_to;
+  }
+}
+
+//
+// Setters.
+//
+template <class IT, class VT>
+void SpMat<IT, VT>::SetName(const char *name) {
+  name_ = name;
+}
+
+template <class IT, class VT>
+void SpMat<IT, VT>::SetMathLib(spdm3_math_library lib) {
+  lib_ = lib;
+}
+
+template <class IT, class VT>
+void SpMat<IT, VT>::SetMinHeadSize(LT min_head_size) {
+  min_head_size_ = min_head_size;
+}
+
+template <class IT, class VT>
+void SpMat<IT, VT>::SetMinBufferSize(LT min_buffer_size) {
+  min_buffer_size_ = min_buffer_size;
+}
+
+template <class IT, class VT>
+void SpMat<IT, VT>::SetEpsilon(VT epsilon) {
+  epsilon_ = epsilon;
+}
+
+template <class IT, class VT>
+void SpMat<IT, VT>::SetVerbosity(IT verbosity) {
+  verbosity_ = verbosity;
+}
+
+// added for convert Subgraph::CSRGraph
+template <class IT, class VT>
+void SpMat<IT, VT>::SetNNZ(const LT nnz) {
+  nnz_ = nnz;
+}
+
+template <class IT, class VT>
+void SpMat<IT, VT>::SetRows(const IT rows) {
+  rows_ = rows;
+}
+
+template <class IT, class VT>
+void SpMat<IT, VT>::SetCols(const IT cols) {
+  cols_ = cols;
+}
+
+template <class IT, class VT>
+void SpMat<IT, VT>::SetHeadptrs(const LT* ptr)
+{
+   if (headptrs_ == NULL)
+     headptrs_ = new LT[rows_];
+
+   memcpy(headptrs_, ptr, rows_*sizeof(LT));
+}
+
+template <class IT, class VT>
+void SpMat<IT, VT>::SetIndices(const LT* ptr) {
+
+    if (indices_ == NULL)
+      indices_ = new LT[nnz_];
+
+    memcpy(indices_, ptr, nnz_*sizeof(LT));
+}
+
+template <class IT, class VT>
+void SpMat<IT, VT>::SetValues(const VT* ptr) {
+
+    if (values_ == NULL)
+        values_ = new VT[nnz_];
+
+    memcpy(values_, ptr, nnz_*sizeof(VT));
+}
+
+//
+// Getters.
+//
+template <class IT, class VT>
+IT SpMat<IT, VT>::dim1() const {
+  switch(format_) {
+    case SPARSE_CSR: return rows_;
+    case SPARSE_CSC: return cols_;
+    default:         return rows_;
+  }
+}
+
+template <class IT, class VT>
+IT SpMat<IT, VT>::dim2() const {
+  switch(format_) {
+    case SPARSE_CSR: return cols_;
+    case SPARSE_CSC: return rows_;
+    default:         return cols_;
+  }
+}
+
+// Assumes indices_ is sorted in between each row/col.
+template <class IT, class VT>
+VT SpMat<IT, VT>::GetElmt(IT row_id, IT col_id) const {
+  // Basic linear search for now.
+  // TODO(penpornk): Maybe do a binary search.
+  for (int k = headptrs_[row_id]; k < headptrs_[row_id+1]; ++k) {
+    if (indices_[k] == col_id)
+      return values_[k];
+    if (indices_[k] > col_id)
+      break;
+  }
+  return 0.0;
+}
+
+template <class IT, class VT>
+VT SpMat<IT, VT>::nnz_ratio() const {
+  return (VT) nnz_ / (VT) rows_ / (VT) cols_;
+}
+
+// for conversion between Subgraph::CSRGraph 
+template <class IT, class VT>
+LT* SpMat<IT, VT>::GetHeadptrs() {
+  return headptrs_;
+}
+
+template <class IT, class VT>
+LT* SpMat<IT, VT>::GetIndices() {
+  return indices_;
+}
+
+template <class IT, class VT>
+VT* SpMat<IT, VT>::GetValues() {
+  return values_;
+}
+
+}  // namespace spdm3
