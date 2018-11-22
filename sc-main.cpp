@@ -139,6 +139,74 @@ void benchmarkSpMVNaive(int argc, char** argv, EdgeList& elist, int comp_thds)
     free(yMat);
 }
 
+// Inspector-Executor interface in MKL 11.3+
+// NOTICE: the way to invoke the mkl 11.3 inspector-executor
+void benchmarkSpMVMKL(int argc, char** argv, EdgeList& elist, int comp_thds)
+{
+  
+    double startTime;
+    const int len = 100;
+    CSRGraph csrGMKL;
+    csrGMKL.createFromEdgeListFile(elist.getNumVertices(), elist.getNumEdges(), elist.getSrcList(), elist.getDstList());
+
+    sparse_matrix_t mklA;
+    sparse_status_t stat = mkl_sparse_s_create_csr(
+    &mklA,
+    SPARSE_INDEX_BASE_ZERO, csrGMKL.getNumVertices(), csrGMKL.getNumVertices(),
+    csrGMKL.getIndexRow(), csrGMKL.getIndexRow() + 1,
+    csrGMKL.getIndexCol(), csrGMKL.getNNZVal());
+
+    if (SPARSE_STATUS_SUCCESS != stat) {
+        fprintf(stderr, "Failed to create mkl csr\n");
+        return;
+    }
+
+    matrix_descr descA;
+    descA.type = SPARSE_MATRIX_TYPE_GENERAL;
+    descA.diag = SPARSE_DIAG_NON_UNIT;
+
+    stat = mkl_sparse_set_mv_hint(
+    mklA, SPARSE_OPERATION_NON_TRANSPOSE, descA, len);
+
+    if (SPARSE_STATUS_SUCCESS != stat) {
+        fprintf(stderr, "Failed to set mv hint\n");
+        return;
+    }
+
+    stat = mkl_sparse_optimize(mklA);
+
+    if (SPARSE_STATUS_SUCCESS != stat) {
+        fprintf(stderr, "Failed to sparse optimize\n");
+        return;
+    }
+
+    float* xArray = (float*) malloc(csrGMKL.getNumVertices()*sizeof(float));
+    for (int i = 0; i < csrGMKL.getNumVertices(); ++i) {
+        xArray[i] = 2.0; 
+    }
+
+    float* yArray = (float*) malloc(csrGMKL.getNumVertices()*sizeof(float));
+    std::memset(yArray, 0, csrGMKL.getNumVertices()*sizeof(float));
+
+    startTime = utility::timer();
+
+    for (int j = 0; j < len; ++j) {
+        mkl_sparse_s_mv(SPARSE_OPERATION_NON_TRANSPOSE, 1, mklA, descA, xArray, 0, yArray);
+    }
+
+    printf("MKL SpMV using %f secs\n", (utility::timer() - startTime));
+    std::fflush(stdout);           
+
+    // check yMat
+    for (int i = 0; i < 10; ++i) {
+        printf("Elem: %d is: %f\n", i, yArray[i]); 
+        std::fflush(stdout);
+    }
+
+    free(xArray);
+    free(yArray);
+}
+
 void benchmarkSpMMMKL(int argc, char** argv, EdgeList& elist, int comp_thds)
 {
     double startTime;
@@ -479,7 +547,10 @@ int main(int argc, char** argv)
 #endif
 
             // benchmarking SpMP RCM reordering
-            benchmarkSpMP(argc, argv, elist, comp_thds );
+            // benchmarkSpMP(argc, argv, elist, comp_thds );
+            
+            // benchmarking mkl SpMV
+            benchmarkSpMVMKL(argc, argv, elist, comp_thds);
 
             // benchmarking PB SpMV 
             // benchmarkSpMVPBRadix(argc, argv, elist);
