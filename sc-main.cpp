@@ -39,10 +39,9 @@
 
 using namespace std;
 
-void benchmarkSpMVPBRadix(int argc, char** argv, EdgeList& elist)
+void benchmarkSpMVPBRadix(int argc, char** argv, EdgeList& elist, int numCols)
 {
     double startTime;
-    int len = 100;
     int binSize = 15;
     if (argc > 9)
         binSize = atoi(argv[9]);
@@ -85,7 +84,7 @@ void benchmarkSpMVPBRadix(int argc, char** argv, EdgeList& elist)
     // check pagerank scores
     // for (int j = 0; j < 100; ++j) {
     // SpMVRadixPar(xMat, yMat, radixG, 1, kGoalEpsilon, par_parts);
-    SpMVGuidesPar(xMat, yMat, radixG, len, kGoalEpsilon, par_guides);
+    SpMVGuidesPar(xMat, yMat, radixG, numCols, kGoalEpsilon, par_guides);
     // }
     //
     printf("Radix SpMV using %f secs\n", (utility::timer() - startTime));
@@ -104,11 +103,10 @@ void benchmarkSpMVPBRadix(int argc, char** argv, EdgeList& elist)
     // -------------------- end debug the Radix SpMV ------------------------------
 }
 
-void benchmarkSpMVNaive(int argc, char** argv, EdgeList& elist, int comp_thds)
+void benchmarkSpMVNaive(int argc, char** argv, EdgeList& elist, int numCols, int comp_thds)
 {
 
     double startTime;
-    int len = 100;
     CSRGraph csrnaiveG;
     csrnaiveG.createFromEdgeListFile(elist.getNumVertices(), elist.getNumEdges(), elist.getSrcList(), elist.getDstList());
 
@@ -122,7 +120,7 @@ void benchmarkSpMVNaive(int argc, char** argv, EdgeList& elist, int comp_thds)
 
     // test SpMV naive
     startTime = utility::timer();
-    for (int j = 0; j < len; ++j) {
+    for (int j = 0; j < numCols; ++j) {
         csrnaiveG.SpMVNaive(xMat, yMat, comp_thds);
     }
 
@@ -141,11 +139,10 @@ void benchmarkSpMVNaive(int argc, char** argv, EdgeList& elist, int comp_thds)
 
 // Inspector-Executor interface in MKL 11.3+
 // NOTICE: the way to invoke the mkl 11.3 inspector-executor
-void benchmarkSpMVMKL(int argc, char** argv, EdgeList& elist, int comp_thds)
+void benchmarkSpMVMKL(int argc, char** argv, EdgeList& elist, int numCols, int comp_thds)
 {
   
     double startTime;
-    const int len = 100;
     CSRGraph csrGMKL;
     csrGMKL.createFromEdgeListFile(elist.getNumVertices(), elist.getNumEdges(), elist.getSrcList(), elist.getDstList());
 
@@ -166,7 +163,7 @@ void benchmarkSpMVMKL(int argc, char** argv, EdgeList& elist, int comp_thds)
     descA.diag = SPARSE_DIAG_NON_UNIT;
 
     stat = mkl_sparse_set_mv_hint(
-    mklA, SPARSE_OPERATION_NON_TRANSPOSE, descA, len);
+    mklA, SPARSE_OPERATION_NON_TRANSPOSE, descA, numCols);
 
     if (SPARSE_STATUS_SUCCESS != stat) {
         fprintf(stderr, "Failed to set mv hint\n");
@@ -190,7 +187,7 @@ void benchmarkSpMVMKL(int argc, char** argv, EdgeList& elist, int comp_thds)
 
     startTime = utility::timer();
 
-    for (int j = 0; j < len; ++j) {
+    for (int j = 0; j < numCols; ++j) {
         mkl_sparse_s_mv(SPARSE_OPERATION_NON_TRANSPOSE, 1, mklA, descA, xArray, 0, yArray);
     }
 
@@ -207,7 +204,73 @@ void benchmarkSpMVMKL(int argc, char** argv, EdgeList& elist, int comp_thds)
     free(yArray);
 }
 
-void benchmarkSpMMMKL(int argc, char** argv, EdgeList& elist, int comp_thds)
+void benchmarkMMMKL(int argc, char** argv, EdgeList& elist, int numCols, int comp_thds)
+{
+  
+    double startTime;
+    const int calls = 100;
+    CSRGraph csrGMKL;
+    csrGMKL.createFromEdgeListFile(elist.getNumVertices(), elist.getNumEdges(), elist.getSrcList(), elist.getDstList());
+
+    sparse_matrix_t mklA;
+    sparse_status_t stat = mkl_sparse_s_create_csr(
+    &mklA,
+    SPARSE_INDEX_BASE_ZERO, csrGMKL.getNumVertices(), csrGMKL.getNumVertices(),
+    csrGMKL.getIndexRow(), csrGMKL.getIndexRow() + 1,
+    csrGMKL.getIndexCol(), csrGMKL.getNNZVal());
+
+    if (SPARSE_STATUS_SUCCESS != stat) {
+        fprintf(stderr, "Failed to create mkl csr\n");
+        return;
+    }
+
+    matrix_descr descA;
+    descA.type = SPARSE_MATRIX_TYPE_GENERAL;
+    descA.diag = SPARSE_DIAG_NON_UNIT;
+
+    stat = mkl_sparse_set_mm_hint(mklA, SPARSE_OPERATION_NON_TRANSPOSE, descA, SPARSE_LAYOUT_COLUMN_MAJOR, numCols, calls);
+
+    if (SPARSE_STATUS_SUCCESS != stat) {
+        fprintf(stderr, "Failed to set mm hint\n");
+        return;
+    }
+
+    stat = mkl_sparse_optimize(mklA);
+
+    if (SPARSE_STATUS_SUCCESS != stat) {
+        fprintf(stderr, "Failed to sparse optimize\n");
+        return;
+    }
+
+    int testLen = numCols*csrGMKL.getNumVertices();
+
+    float* xMat = (float*) malloc(testLen*sizeof(float));
+    for (int i = 0; i < testLen; ++i) {
+       xMat[i] = 2.0; 
+    }
+
+    float* yMat = (float*) malloc(testLen*sizeof(float));
+    std::memset(yMat, 0, testLen*sizeof(float));
+
+    startTime = utility::timer();
+
+    mkl_sparse_s_mm(SPARSE_OPERATION_NON_TRANSPOSE, 1, mklA, descA, SPARSE_LAYOUT_COLUMN_MAJOR, 
+            xMat, numCols, csrGMKL.getNumVertices(), 0, yMat, csrGMKL.getNumVertices());
+
+    printf("MKL MM using %f secs\n", (utility::timer() - startTime));
+    std::fflush(stdout);           
+
+    // check yMat
+    for (int i = 0; i < 10; ++i) {
+        printf("Elem: %d is: %f\n", i, yMat[i]); 
+        std::fflush(stdout);
+    }
+
+    free(xMat);
+    free(yMat);
+}
+
+void benchmarkSpMMMKL(int argc, char** argv, EdgeList& elist, int numCols, int comp_thds)
 {
     double startTime;
     printf("Start debug CSR SpMM \n");
@@ -223,8 +286,7 @@ void benchmarkSpMMMKL(int argc, char** argv, EdgeList& elist, int comp_thds)
     int* csrColIdx = csrnaiveG.getIndexCol();
     float* csrVals = csrnaiveG.getNNZVal();
 
-    int testCols = 100;
-    int testLen = testCols*csrRows;
+    int testLen = numCols*csrRows;
 
     float* xMat = (float*) malloc(testLen*sizeof(float));
     float* yMat = (float*) malloc(testLen*sizeof(float));
@@ -237,7 +299,7 @@ void benchmarkSpMMMKL(int argc, char** argv, EdgeList& elist, int comp_thds)
     // invoke mkl scsrmm
     char transa = 'n';
     MKL_INT m = csrRows;
-    MKL_INT n = testCols;
+    MKL_INT n = numCols;
     MKL_INT k = csrRows;
 
     float alpha = 1.0;
@@ -264,7 +326,7 @@ void benchmarkSpMMMKL(int argc, char** argv, EdgeList& elist, int comp_thds)
 
 }
 
-void benchmarkSpDM3(int argc, char** argv, EdgeList& elist, int comp_thds)
+void benchmarkSpDM3(int argc, char** argv, EdgeList& elist, int numCols, int comp_thds)
 {    
     double startTime;
     printf("Start debug Spdm3 SpMM\n");
@@ -278,8 +340,7 @@ void benchmarkSpDM3(int argc, char** argv, EdgeList& elist, int comp_thds)
 
     // use smat
     int rowNum = smat.dim1();
-    int colNum = 100;
-    int testLen = rowNum*colNum;
+    int testLen = rowNum*numCols;
     float* xArray = (float*) malloc (testLen*sizeof(float));
     for (int i = 0; i < testLen; ++i) {
        xArray[i] = 2.0; 
@@ -290,8 +351,8 @@ void benchmarkSpDM3(int argc, char** argv, EdgeList& elist, int comp_thds)
 
     // data copy from xArray to xMat
     // TODO replace data copy by pointer assignment
-    spdm3::DMat<int, float> xMat(rowNum, colNum, rowNum, spdm3::DENSE_COLMAJOR, xArray);
-    spdm3::DMat<int, float> yMat(rowNum, colNum, rowNum, spdm3::DENSE_COLMAJOR, yArray);
+    spdm3::DMat<int, float> xMat(rowNum, numCols, rowNum, spdm3::DENSE_COLMAJOR, xArray);
+    spdm3::DMat<int, float> yMat(rowNum, numCols, rowNum, spdm3::DENSE_COLMAJOR, yArray);
 
     printf("Dmat: row: %d, cols: %d\n", xMat.rows_, xMat.cols_);
     std::fflush(stdout);
@@ -364,7 +425,7 @@ void SpMVSpMP(int m, int* rowPtr, int* colPtr, float* vals, float* x, float* y, 
     }
 }
 
-void benchmarkSpMP(int argc, char** argv, EdgeList& elist, int comp_thds)
+void benchmarkSpMP(int argc, char** argv, EdgeList& elist, int numCols, int comp_thds)
 {
     double startTime;
     printf("Start debug Spdm3 SpMM\n");
@@ -397,20 +458,20 @@ void benchmarkSpMP(int argc, char** argv, EdgeList& elist, int comp_thds)
     {
         printf("Reordering coloum sccuess\n");
         std::fflush(stdout);
-        for (int i = 0; i < 10; ++i) {
-            printf("permcol: %d is %d\n", i, perm[i]);
-            std::fflush(stdout);
-        }
+        // for (int i = 0; i < 10; ++i) {
+        //     printf("permcol: %d is %d\n", i, perm[i]);
+        //     std::fflush(stdout);
+        // }
     }
 
     if (checkPerm(inversePerm,  spmpcsr.m));
     {
         printf("Reordering row sccuess\n");
         std::fflush(stdout);
-        for (int i = 0; i < 10; ++i) {
-            printf("permrow: %d is %d\n", i, inversePerm[i]);
-            std::fflush(stdout);
-        }
+        // for (int i = 0; i < 10; ++i) {
+        //     printf("permrow: %d is %d\n", i, inversePerm[i]);
+        //     std::fflush(stdout);
+        // }
     }
 
     // data allocated at APerm
@@ -425,9 +486,8 @@ void benchmarkSpMP(int argc, char** argv, EdgeList& elist, int comp_thds)
     float* yArray = (float*) malloc(APerm->m*sizeof(float));
     std::memset(yArray, 0, APerm->m*sizeof(float));
 
-    int len = 100;
     startTime = utility::timer();
-    for (int j = 0; j < len; ++j) {
+    for (int j = 0; j < numCols; ++j) {
         SpMVSpMP(APerm->m, APerm->rowptr, APerm->colidx, APerm->svalues, xArray, yArray, comp_thds);
     }
     printf("SpMP RCM SpMV using %f secs\n", (utility::timer() - startTime));
@@ -454,7 +514,6 @@ void benchmarkSpMP(int argc, char** argv, EdgeList& elist, int comp_thds)
     std::fflush(stdout);
 
 }
-
 
 int main(int argc, char** argv)
 {
@@ -546,24 +605,27 @@ int main(int argc, char** argv)
             std::fflush(stdout);           
 #endif
 
+            const int numCols = 100;
             // benchmarking SpMP RCM reordering
-            // benchmarkSpMP(argc, argv, elist, comp_thds );
+            // benchmarkSpMP(argc, argv, elist,  numCols, comp_thds );
             
-            // benchmarking mkl SpMV
-            benchmarkSpMVMKL(argc, argv, elist, comp_thds);
+            // benchmarking mkl SpMV (inspector executor)
+            // benchmarkSpMVMKL(argc, argv, elist, numCols, comp_thds);
 
             // benchmarking PB SpMV 
-            // benchmarkSpMVPBRadix(argc, argv, elist);
+            // benchmarkSpMVPBRadix(argc, argv, elist, numCols);
 
-            // benchmarking Naive SpMV
-            benchmarkSpMVNaive(argc, argv, elist, comp_thds);
+            // benchmarking mkl MM (inspector executor)
+            benchmarkMMMKL(argc, argv, elist, numCols, comp_thds);
 
             // benchmarking mkl SpMM
-            // benchmarkSpMMMKL(argc, argv, elist, comp_thds);
+            // benchmarkSpMMMKL(argc, argv, elist, numCols, comp_thds);
             
             // benchmarking SpDM3 SpMM
-            // benchmarkSpDM3(argc, argv, elist, comp_thds);
+            // benchmarkSpDM3(argc, argv, elist, numCols, comp_thds);
 
+            // benchmarking Naive SpMV
+            benchmarkSpMVNaive(argc, argv, elist, numCols, comp_thds);
             
 #ifdef VERBOSE
             printf("Finish benchmarking SpMV or SpMM\n");
