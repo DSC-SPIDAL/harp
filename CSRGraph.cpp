@@ -208,20 +208,5 @@ void CSRGraph::fillSpMat(spdm3::SpMat<int, float> &smat)
     smat.SetIndices(_indexCol);
     smat.SetValues(_edgeVal);
 
-    // int* smatRowHeadptr = smat.GetHeadptrs();
-    // int* smatColIdx = smat.GetIndices();
-    // float* smatVals = smat.GetValues();
-
-    // if (smatRowHeadptr == NULL)
-    //     smatRowHeadptr = new int[_numVertices];
-    //
-    // if (smatColIdx == NULL)
-    //     smatColIdx = new int[_nnZ];
-    //
-    // if (smatVals == NULL)
-    //     smatVals = new float[_nnZ];
-    // std::memcpy(smatRowHeadptr, _indexRow, _numVertices*sizeof(int));
-    // std::memcpy(smatColIdx, _indexCol, _nnZ*sizeof(int));
-    // std::memcpy(smatVals, _edgeVal, _nnZ*sizeof(float));
-
 }
+

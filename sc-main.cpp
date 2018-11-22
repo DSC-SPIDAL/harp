@@ -34,6 +34,9 @@
 #include "SpDM3/include/spmat.h"
 #include "SpDM3/include/matmul.h"
 
+// for RCM reordering
+#include "SpMP/CSR.hpp"
+
 using namespace std;
 
 void benchmarkSpMVPBRadix(int argc, char** argv, EdgeList& elist)
@@ -142,15 +145,15 @@ void benchmarkSpMMMKL(int argc, char** argv, EdgeList& elist, int comp_thds)
     printf("Start debug CSR SpMM \n");
     std::fflush(stdout);
 
-    CSRGraph csrInpuG;
-    csrInpuG.createFromEdgeListFile(elist.getNumVertices(), elist.getNumEdges(), elist.getSrcList(), elist.getDstList());
+    CSRGraph csrnaiveG;
+    csrnaiveG.createFromEdgeListFile(elist.getNumVertices(), elist.getNumEdges(), elist.getSrcList(), elist.getDstList());
 
     //
-    int csrNNZA = csrInpuG.getNNZ(); 
-    int csrRows = csrInpuG.getNumVertices();
-    int* csrRowIdx = csrInpuG.getIndexRow();
-    int* csrColIdx = csrInpuG.getIndexCol();
-    float* csrVals = csrInpuG.getNNZVal();
+    int csrNNZA = csrnaiveG.getNNZ(); 
+    int csrRows = csrnaiveG.getNumVertices();
+    int* csrRowIdx = csrnaiveG.getIndexRow();
+    int* csrColIdx = csrnaiveG.getIndexCol();
+    float* csrVals = csrnaiveG.getNNZVal();
 
     int testCols = 100;
     int testLen = testCols*csrRows;
@@ -245,6 +248,146 @@ void benchmarkSpDM3(int argc, char** argv, EdgeList& elist, int comp_thds)
     free(yArray);
 }
 
+// for check reordering
+bool checkPerm(const int *perm, int n)
+{
+  int *temp = new int[n];
+  std::memcpy(temp, perm, sizeof(int)*n);
+  sort(temp, temp + n);
+  int *last = unique(temp, temp + n);
+  if (last != temp + n) {
+    memcpy(temp, perm, sizeof(int)*n);
+    sort(temp, temp + n);
+
+    for (int i = 0; i < n; ++i) {
+      if (temp[i] == i - 1) {
+        printf("%d duplicated\n", i - 1);
+        assert(false);
+        return false;
+      }
+      else if (temp[i] != i) {
+        printf("%d missed\n", i);
+        assert(false);
+        return false;
+      }
+    }
+  }
+  delete[] temp;
+  return true;
+}
+
+void SpMVSpMP(int m, int* rowPtr, int* colPtr, float* vals, float* x, float* y, int comp_thds)
+{
+
+#pragma omp parallel for num_threads(comp_thds)
+    for(int i = 0; i<m; i++)
+    {
+        float sum = 0.0;
+
+        int rowLen = (rowPtr[i+1] - rowPtr[i]); 
+        int* rowColIdx = colPtr + rowPtr[i];
+        float* rowElem = vals + rowPtr[i]; 
+
+        #pragma omp simd reduction(+:sum) 
+        for(int j=0; j<rowLen;j++)
+            sum += rowElem[j] * (x[rowColIdx[j]]);
+
+        y[i] = sum;
+    }
+}
+
+void benchmarkSpMP(int argc, char** argv, EdgeList& elist, int comp_thds)
+{
+    double startTime;
+    printf("Start debug Spdm3 SpMM\n");
+    std::fflush(stdout);
+
+    CSRGraph csrg;
+    csrg.createFromEdgeListFile(elist.getNumVertices(), elist.getNumEdges(), elist.getSrcList(), elist.getDstList());
+
+    // create SpMP::CSR
+    int csrRows = csrg.getNumVertices();
+    // length csrRows+1
+    int* csrRowIdx = csrg.getIndexRow(); 
+    int* csrColIdx = csrg.getIndexCol();
+    float* csrVals = csrg.getNNZVal();
+
+    // create CSR (not own data)
+    SpMP::CSR spmpcsr(csrRows, csrRows, csrRowIdx, csrColIdx, csrVals);
+
+    // RCM reordering
+    printf("Start Spdm3 RCM reordering\n");
+    std::fflush(stdout);
+
+    int *perm = (int*)_mm_malloc(spmpcsr.m*sizeof(int), 64);
+    int *inversePerm = (int*)_mm_malloc(spmpcsr.m*sizeof(int), 64);
+
+    spmpcsr.getRCMPermutation(perm, inversePerm);
+
+    // check the permutation
+    if (checkPerm(perm, spmpcsr.m ));
+    {
+        printf("Reordering coloum sccuess\n");
+        std::fflush(stdout);
+        for (int i = 0; i < 10; ++i) {
+            printf("permcol: %d is %d\n", i, perm[i]);
+            std::fflush(stdout);
+        }
+    }
+
+    if (checkPerm(inversePerm,  spmpcsr.m));
+    {
+        printf("Reordering row sccuess\n");
+        std::fflush(stdout);
+        for (int i = 0; i < 10; ++i) {
+            printf("permrow: %d is %d\n", i, inversePerm[i]);
+            std::fflush(stdout);
+        }
+    }
+
+    // data allocated at APerm
+    SpMP::CSR *APerm = spmpcsr.permute(perm, inversePerm, false, true);
+
+    // do a new SpMV 
+    float* xArray = (float*) malloc(APerm->m*sizeof(float));
+    for (int i = 0; i < APerm->m; ++i) {
+        xArray[i] = 2.0; 
+    }
+
+    float* yArray = (float*) malloc(APerm->m*sizeof(float));
+    std::memset(yArray, 0, APerm->m*sizeof(float));
+
+    int len = 100;
+    startTime = utility::timer();
+    for (int j = 0; j < len; ++j) {
+        SpMVSpMP(APerm->m, APerm->rowptr, APerm->colidx, APerm->svalues, xArray, yArray, comp_thds);
+    }
+    printf("SpMP RCM SpMV using %f secs\n", (utility::timer() - startTime));
+    std::fflush(stdout);           
+
+    // check yMat
+    for (int i = 0; i < APerm->m; ++i) {
+
+        if (inversePerm[i] >= 0 && inversePerm[i] < 10)
+        {
+            printf("Elem: %d is: %f\n", inversePerm[i], yArray[i]); 
+            std::fflush(stdout);
+        }
+            
+    }
+
+    delete APerm;
+    free(xArray); 
+    free(yArray);
+    _mm_free(perm);
+    _mm_free(inversePerm);
+
+    printf("Finish Spdm3 RCM reordering\n");
+    std::fflush(stdout);
+
+}
+
+
 int main(int argc, char** argv)
 {
    
@@ -335,6 +478,9 @@ int main(int argc, char** argv)
             std::fflush(stdout);           
 #endif
 
+            // benchmarking SpMP RCM reordering
+            benchmarkSpMP(argc, argv, elist, comp_thds );
+
             // benchmarking PB SpMV 
             // benchmarkSpMVPBRadix(argc, argv, elist);
 
@@ -345,8 +491,9 @@ int main(int argc, char** argv)
             // benchmarkSpMMMKL(argc, argv, elist, comp_thds);
             
             // benchmarking SpDM3 SpMM
-            benchmarkSpDM3(argc, argv, elist, comp_thds);
+            // benchmarkSpDM3(argc, argv, elist, comp_thds);
 
+            
 #ifdef VERBOSE
             printf("Finish benchmarking SpMV or SpMM\n");
             std::fflush(stdout);           
