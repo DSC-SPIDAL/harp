@@ -22,10 +22,12 @@ class EdgeList
         EdgeList(): _numEdges(-1), _numVertices(-1), 
         _srcList(nullptr), _dstList(nullptr){}
 
-        EdgeList(string fileName) 
+        EdgeList(string fileName, int noVerticesNum = 0) 
         {
-            readfromfile(fileName);
-            // readfromfileNoVerticesNum(fileName);
+            if (noVerticesNum)
+                readfromfileNoVerticesNum(fileName);
+            else
+                readfromfile(fileName);
         } 
 
         ~EdgeList() {

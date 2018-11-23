@@ -142,6 +142,7 @@ void benchmarkSpMVNaive(int argc, char** argv, EdgeList& elist, int numCols, int
 void benchmarkSpMVMKL(int argc, char** argv, EdgeList& elist, int numCols, int comp_thds)
 {
   
+    int numCalls = numCols;
     double startTime;
     CSRGraph csrGMKL;
     csrGMKL.createFromEdgeListFile(elist.getNumVertices(), elist.getNumEdges(), elist.getSrcList(), elist.getDstList());
@@ -162,8 +163,7 @@ void benchmarkSpMVMKL(int argc, char** argv, EdgeList& elist, int numCols, int c
     descA.type = SPARSE_MATRIX_TYPE_GENERAL;
     descA.diag = SPARSE_DIAG_NON_UNIT;
 
-    stat = mkl_sparse_set_mv_hint(
-    mklA, SPARSE_OPERATION_NON_TRANSPOSE, descA, numCols);
+    stat = mkl_sparse_set_mv_hint(mklA, SPARSE_OPERATION_NON_TRANSPOSE, descA, numCalls);
 
     if (SPARSE_STATUS_SUCCESS != stat) {
         fprintf(stderr, "Failed to set mv hint\n");
@@ -527,8 +527,12 @@ int main(int argc, char** argv)
     int isPruned = 1;
     int useSPMM = 0;
 
-    bool isBenchmark = true;
-    // bool isBenchmark = false;
+    // bool isBenchmark = true;
+    bool isBenchmark = false;
+    // turn on this to estimate flops and memory bytes 
+    // without running the codes
+    bool isEstimate = false;
+    // bool isEstimate = true;
 
     graph_name = argv[1];
     template_name = argv[2];
@@ -596,7 +600,7 @@ int main(int argc, char** argv)
         std::fflush(stdout);           
 #endif
 
-        EdgeList elist(graph_name); 
+        EdgeList elist(graph_name, write_binary); 
         if (isBenchmark)
         {
 
@@ -610,13 +614,13 @@ int main(int argc, char** argv)
             // benchmarkSpMP(argc, argv, elist,  numCols, comp_thds );
             
             // benchmarking mkl SpMV (inspector executor)
-            // benchmarkSpMVMKL(argc, argv, elist, numCols, comp_thds);
+            benchmarkSpMVMKL(argc, argv, elist, numCols, comp_thds);
 
             // benchmarking PB SpMV 
             // benchmarkSpMVPBRadix(argc, argv, elist, numCols);
 
             // benchmarking mkl MM (inspector executor)
-            benchmarkMMMKL(argc, argv, elist, numCols, comp_thds);
+            // benchmarkMMMKL(argc, argv, elist, numCols, comp_thds);
 
             // benchmarking mkl SpMM
             // benchmarkSpMMMKL(argc, argv, elist, numCols, comp_thds);
@@ -658,7 +662,8 @@ int main(int argc, char** argv)
     // start CSR mat computing
     CountMat executor;
     executor.initialization(csrInpuG, comp_thds, iterations, isPruned, useSPMM);
-    executor.compute(input_template);
+
+    executor.compute(input_template, isEstimate);
 
     return 0;
 

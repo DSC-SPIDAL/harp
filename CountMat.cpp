@@ -25,9 +25,6 @@ void CountMat::initialization(CSRGraph& graph, int thd_num, int itr_num, int isP
     _useSPMM = useSPMM;
     _isScaled = 0;
 
-    // add this to estimate mem without acutal 
-    // computation
-    // _noCompute = true;
 
     if (_useSPMM == 1)
         _graph->makeOneIndex();
@@ -53,7 +50,7 @@ void CountMat::initialization(CSRGraph& graph, int thd_num, int itr_num, int isP
 
 }
 
-double CountMat::compute(Graph& templates)
+double CountMat::compute(Graph& templates, bool isEstimate)
 {/*{{{*/
 
     _templates = &templates; 
@@ -110,9 +107,12 @@ double CountMat::compute(Graph& templates)
 
 #ifdef VERBOSE
     estimatePeakMemUsage();
+    double totalFlops = estimateFlops();
+    double totalMemBand = estimateMemComm();
 #endif 
 
-    if (_noCompute)
+    // exit without counting
+    if (isEstimate)
         return 0.0;
 
 #ifdef VERBOSE
@@ -169,6 +169,10 @@ double CountMat::compute(Graph& templates)
     printf("eMA ratio %f\% \n", 100*(_eMATime/totalCountTime));
     std::fflush(stdout);
     printf("Peak Mem Usage is : %9.6lf GB\n", _peakMemUsage);
+    std::fflush(stdout);
+    printf("Memory bandwidth is : %f GBytes per second\n", (totalMemBand*_itr_num)/(_spmvElapsedTime + _fmaElapsedTime));
+    std::fflush(stdout);
+    printf("Throughput is : %f flops per second\n", (totalFlops*_itr_num)/(_spmvElapsedTime + _fmaElapsedTime));
     std::fflush(stdout);
 #endif
 
@@ -309,6 +313,8 @@ double CountMat::countNonBottomePruned(int subsId)
     double eltMul = 0.0;
 #endif
 
+    double spmvStart = 0.0;
+    double fmaStart = 0.0;
 // first the precompute of SpMV results and have a in-place storage
 #ifdef VERBOSE
    startTimeComp = utility::timer(); 
@@ -316,8 +322,17 @@ double CountMat::countNonBottomePruned(int subsId)
    for (int i = 0; i < auxTableLen; ++i) {
 
        float* auxObjArray = _dTable.getAuxArray(i);
+
+#ifdef VERBOSE
+       spmvStart = utility::timer();
+#endif
+
        _graph->SpMVNaive(auxObjArray, _bufVec, _thd_num); 
-       
+
+#ifdef VERBOSE
+       _spmvElapsedTime += (utility::timer() - spmvStart);
+#endif
+
        // check the size of auxArray
        if (auxSize > 1)
           std::memcpy(auxObjArray, _bufVec, _vert_num*sizeof(float));
@@ -363,6 +378,11 @@ double CountMat::countNonBottomePruned(int subsId)
 
             // element-wise mul 
             float* mainArraySelect = _dTable.getMainArray(mainIdx);
+
+            #ifdef VERBOSE
+                fmaStart = utility::timer();
+            #endif
+
             if (subsId > 0)
             {
                 if (_isScaled == 0)
@@ -378,6 +398,10 @@ double CountMat::countNonBottomePruned(int subsId)
                 // the last scale use 
                 _dTable.arrayWiseFMALast(bufLastSub, auxArraySelect, mainArraySelect);
             }
+
+            #ifdef VERBOSE
+               _fmaElapsedTime += (utility::timer() - fmaStart); 
+            #endif
 
         }
 
@@ -857,7 +881,6 @@ void CountMat::estimatePeakMemUsage()
     // bufvec, color_inital, bufVecY, Bufleaf 
     memSub += (2 + _bufMatCols + _color_num)*memPerIndx;
 
-    // for(int s=0;s<_total_sub_num;s++)
     for(int s=_total_sub_num-1;s>0;s--)
     {
         int vert_self = _subtmp_array[s].get_vert_num();
@@ -881,4 +904,76 @@ void CountMat::estimatePeakMemUsage()
 
     printf("Peak memory usage estimated : %f GB \n", peakMem);
     std::fflush(stdout);
+}
+
+double CountMat::estimateMemComm()
+{
+    double commBytesTotal = 0.0;
+    // Ax = y
+    // access A + access x + write to y + rowidx + colidx
+    double bytesSpmvPer = sizeof(float)*(2*_graph->getNNZ() + _graph->getNumVertices()) + sizeof(int)*(_graph->getNNZ()
+            + _graph->getNumVertices());
+
+    // z += x*y
+    // read x, y, z and write to z
+    double bytesFMAPer = sizeof(float)*(_graph->getNumVertices()*4);
+
+    for(int s=_total_sub_num-1;s>=0;s--)
+    {
+        int vert_self = _subtmp_array[s].get_vert_num();
+        if (vert_self > 1) {
+            
+            // spmv part
+            int idxMain = div_tp.get_main_node_idx(s);
+            int idxAux = div_tp.get_aux_node_idx(s);       
+            if (_subtmp_array[idxAux].get_vert_num() > 1)
+            {
+                commBytesTotal += (bytesSpmvPer*_dTable.getTableLen(idxAux));
+            }
+
+            // FMA part
+            commBytesTotal += (_dTable.getTableLen(s)*indexer.comb_calc(vert_self, _subtmp_array[idxAux].get_vert_num())*
+                    bytesFMAPer);
+        }
+    }
+
+    commBytesTotal /= (1024*1024*1024);
+
+    printf("Comm Bytes estimated : %f GBytes \n", commBytesTotal);
+    std::fflush(stdout);
+
+    return commBytesTotal;
+}
+
+double CountMat::estimateFlops()
+{
+    double flopsTotal = 0.0;
+    double flopsSpmvPer = 2*_graph->getNNZ(); 
+    double flopsFMAPer = 3*_graph->getNumVertices();
+
+    for(int s=_total_sub_num-1;s>=0;s--)
+    {
+        int vert_self = _subtmp_array[s].get_vert_num();
+        if (vert_self > 1) {
+            
+            // spmv part
+            int idxMain = div_tp.get_main_node_idx(s);
+            int idxAux = div_tp.get_aux_node_idx(s);       
+            if (_subtmp_array[idxAux].get_vert_num() > 1)
+            {
+                flopsTotal += (flopsSpmvPer*_dTable.getTableLen(idxAux));
+            }
+
+            // FMA part
+            flopsTotal += (_dTable.getTableLen(s)*indexer.comb_calc(vert_self, _subtmp_array[idxAux].get_vert_num())*
+                    flopsFMAPer);
+        }
+    }
+
+    flopsTotal /= (1024*1024*1024);
+
+    printf("Flops estimated : %f Gflop \n", flopsTotal);
+    std::fflush(stdout);
+
+    return flopsTotal;
 }
