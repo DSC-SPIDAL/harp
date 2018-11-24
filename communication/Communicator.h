@@ -4,6 +4,7 @@
 #include <iostream>
 #include "mpi.h"
 #include "../data_structures/inculdes.h"
+#include "ThreadPool.h"
 
 
 //todo doing implementation in header file due to templates problem
@@ -14,6 +15,8 @@ namespace harp {
         private:
             TYPE workerId;
             TYPE worldSize;
+
+            ThreadPool *threadPool;
 
             void sendAndRecv(const void *buffSend, int sendSize, void *buffRecv, int recvSize, int sendTo, int recvFrom,
                              MPI_Datatype mpiDatatype);

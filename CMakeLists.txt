@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.12)
 project(harpc)
 
 SET(CMAKE_C_COMPILER mpicc)
-SET(CMAKE_CXX_COMPILER /opt/openmpi-3.0.0/build/bin/mpicxx)
+SET(CMAKE_CXX_COMPILER /opt/openmpi-4.0.0/build/bin/mpicxx)
 
 set(CMAKE_CXX_STANDARD 14)
 

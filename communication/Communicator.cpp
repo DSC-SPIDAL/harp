@@ -32,6 +32,8 @@ namespace harp {
         Communicator<TYPE>::Communicator(TYPE workerId, TYPE worldSize) {
             this->workerId = workerId;
             this->worldSize = worldSize;
+            this->threadPool = new ThreadPool(8);
+
         }
 
         template<class TYPE>
@@ -118,53 +120,89 @@ namespace harp {
                     MPI_COMM_WORLD,
                     MPI_STATUS_IGNORE
             );
-            //sendAndRecv(&numOfPartitionsToSend, 1, &numOfPartitionsToRecv, 1, sendTo, receiveFrom, MPI_INT);
 
 //            printf("Worker %d will send %d partitions and receive %d partitions\n", workerId, numOfPartitionsToSend,
 //                   numOfPartitionsToRecv);
 
-            //exchange PARTITION SIZES
-            int partitionIdsToSend[numOfPartitionsToSend * 2];// [id, size]
-            int partitionIdsToRecv[numOfPartitionsToRecv * 2];// [id, size]
-            int index = 0;
+            //exchange PARTITION METADATA
+            int sendingMetaSize = 1 + (numOfPartitionsToSend * 2);// totalDataSize(1) + [{id, size}]
+            int receivingMetaSize = 1 + (numOfPartitionsToRecv * 2);// totalDataSize(1) + [{id, size}]
+
+            int partitionMetaToSend[sendingMetaSize];
+            int partitionMetaToRecv[receivingMetaSize];
+
+            int index = 1;
+            int totalDataSize = 0;
+            std::vector<TYPE> dataBuffer;//todo possible error: data buffer gets cleared immediately after returning this function
+
             for (const auto p : *table->getPartitions()) {
-                partitionIdsToSend[index++] = p.first;
-                partitionIdsToSend[index++] = p.second->getSize();
+                partitionMetaToSend[index++] = p.first;
+                partitionMetaToSend[index++] = p.second->getSize();
+                totalDataSize += p.second->getSize();
+                //todo prevent memory copying if possible
+                std::copy(p.second->getData(), p.second->getData() + p.second->getSize(),
+                          std::back_inserter(dataBuffer));
             }
-            sendAndRecv(&partitionIdsToSend, numOfPartitionsToSend * 2,
-                        &partitionIdsToRecv, numOfPartitionsToRecv * 2,
-                        sendTo,
-                        receiveFrom,
-                        MPI_INT);
+            partitionMetaToSend[0] = totalDataSize;
+
+            MPI_Sendrecv(
+                    &partitionMetaToSend, sendingMetaSize, MPI_INT, sendTo, table->getId(),
+                    &partitionMetaToRecv, receivingMetaSize, MPI_INT, receiveFrom, table->getId(),
+                    MPI_COMM_WORLD,
+                    MPI_STATUS_IGNORE
+            );
 
             //sending DATA
-            MPI_Request dataSendRequests[numOfPartitionsToSend];
-            for (long i = 0; i < numOfPartitionsToSend * 2; i += 2) {
-                int partitionId = partitionIdsToSend[i];
-                int partitionSize = partitionIdsToSend[i + 1];
-                auto *data = table->getPartition(partitionId)->getData();
-                MPI_Isend(data, partitionSize, dataType, sendTo, table->getId(), MPI_COMM_WORLD,
-                          &dataSendRequests[i / 2]);
-            }
+            //todo implement support for data arrays larger than INT_MAX
+            MPI_Request dataSendRequest;
+            MPI_Isend(&dataBuffer[0], totalDataSize, dataType, sendTo, table->getId(), MPI_COMM_WORLD,
+                      &dataSendRequest);
+
+//            MPI_Request dataSendRequests[numOfPartitionsToSend];
+//            for (long i = 0; i < numOfPartitionsToSend * 2; i += 2) {
+//                int partitionId = partitionMetaToSend[i];
+//                int partitionSize = partitionMetaToSend[i + 1];
+//                auto *data = table->getPartition(partitionId)->getData();
+//                MPI_Isend(data, partitionSize, dataType, sendTo, table->getId(), MPI_COMM_WORLD,
+//                          &dataSendRequests[i / 2]);
+//            }
 
             //table->clear();
 
             auto *recvTab = new harp::ds::Table<TYPE>(table->getId());
+            auto *recvBuffer = new TYPE[partitionMetaToRecv[0]];
 
-            //receiving DATA
-            for (long i = 0; i < numOfPartitionsToRecv * 2; i += 2) {
-                int partitionId = partitionIdsToRecv[i];
-                int partitionSize = partitionIdsToRecv[i + 1];
+            MPI_Recv(recvBuffer, partitionMetaToRecv[0], dataType, receiveFrom, table->getId(),
+                     MPI_COMM_WORLD,
+                     MPI_STATUS_IGNORE);
+
+            int copiedCount = 0;
+            for (long i = 1; i < receivingMetaSize; i += 2) {
+                int partitionId = partitionMetaToRecv[i];
+                int partitionSize = partitionMetaToRecv[i + 1];
+
                 auto *data = new TYPE[partitionSize];
-                MPI_Recv(data, partitionSize, dataType, receiveFrom, table->getId(),
-                         MPI_COMM_WORLD,
-                         MPI_STATUS_IGNORE);
+                std::copy(recvBuffer + copiedCount, recvBuffer + copiedCount + partitionSize, data);
+                copiedCount += partitionSize;
+
                 auto *newPartition = new harp::ds::Partition<TYPE>(partitionId, data, partitionSize);
                 recvTab->addPartition(newPartition);
             }
 
+            //receiving DATA
+//            for (long i = 0; i < numOfPartitionsToRecv * 2; i += 2) {
+//                int partitionId = partitionMetaToRecv[i];
+//                int partitionSize = partitionMetaToRecv[i + 1];
+//                auto *data = new TYPE[partitionSize];
+//                MPI_Recv(data, partitionSize, dataType, receiveFrom, table->getId(),
+//                         MPI_COMM_WORLD,
+//                         MPI_STATUS_IGNORE);
+//                auto *newPartition = new harp::ds::Partition<TYPE>(partitionId, data, partitionSize);
+//                recvTab->addPartition(newPartition);
+//            }
 
-            MPI_Waitall(numOfPartitionsToSend, dataSendRequests, MPI_STATUS_IGNORE);
+            MPI_Wait(&dataSendRequest, MPI_STATUS_IGNORE);
+//            MPI_Waitall(numOfPartitionsToSend, dataSendRequests, MPI_STATUS_IGNORE);
 
             //delete table;
             table->swap(recvTab);
@@ -195,21 +233,21 @@ namespace harp {
             auto *rotatingTable = new harp::ds::Table<TAB_TYPE>(table->getId());//create new table for rotation
             rotatingTable->addPartition(partition);
 
-//            auto handle = std::async(std::launch::async, [rotatingTable, table, this]() {
-//                rotate(rotatingTable);
-//                for (auto p:*rotatingTable->getPartitions()) {
-//                    table->addToPendingPartitions(p.second);
+
+            auto handle = std::async(std::launch::async, [rotatingTable, table, this]() {
+//                if (workerId == 0) {
+//                    std::cout << "Sending : " << std::endl;
+//                    printTable(rotatingTable);
 //                }
-//            });
-//
-//            handle.get();
-
-            rotate(rotatingTable);
-            for (auto p:*rotatingTable->getPartitions()) {
-                table->addToPendingPartitions(p.second);
-            }
-
-            //          handle.get();
+                rotate(rotatingTable);
+//                if (workerId == 0) {
+//                    std::cout << "Received : " << std::endl;
+//                    printTable(rotatingTable);
+//                }
+                for (auto p:*rotatingTable->getPartitions()) {
+                    table->addToPendingPartitions(p.second);
+                }
+            });
 
         }
     }

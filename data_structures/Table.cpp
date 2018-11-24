@@ -150,11 +150,9 @@ namespace harp {
 
         template<class TYPE>
         void Table<TYPE>::pushPendingPartitions() {
-            while (this->partitionMap.empty()) {
-                while (!this->pendingPartitions.empty()) {
-                    this->addPartition(this->pendingPartitions.front());
-                    this->pendingPartitions.pop();
-                }
+            while (!this->pendingPartitions.empty()) {
+                this->addPartition(this->pendingPartitions.front());
+                this->pendingPartitions.pop();
             }
         }
     }

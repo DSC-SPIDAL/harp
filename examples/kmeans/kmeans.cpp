@@ -29,25 +29,19 @@ using namespace std;
 //    }
 //}
 
+bool debugCondition(int workerId) {
+    return workerId == 1;
+}
+
 class KMeansWorker : public harp::Worker {
 
     void execute(com::Communicator<int> *comm) {
-//        auto *points = new harp::ds::Table<double>(0);
-//        for (int j = 0; j < 3; j++) {
-//            auto *data = new double[5];
-//            for (int i = 0; i < 5; i++) {
-//                data[i] = workerId;
-//            }
-//            points->addPartition(new harp::ds::Partition<double>(j, data, 5));
-//        }
-//
-//        printTable(points);
-
-
         int iterations = 1;
-        int numOfCentroids = 10;
-        int vectorSize = 4;
+        int numOfCentroids = 13;
+        int vectorSize = 400;
         int numOfVectors = 10000;
+
+        double serialDuration = 0;
 
         if (workerId == 0) {
             //generate only if doesn't exist
@@ -82,6 +76,8 @@ class KMeansWorker : public harp::Worker {
             high_resolution_clock::time_point t2 = high_resolution_clock::now();
 
             auto duration = duration_cast<microseconds>(t2 - t1).count();
+
+            serialDuration = duration;
             std::cout << "Serial : " << duration << std::endl;
 
             printTable(centroids);
@@ -91,8 +87,6 @@ class KMeansWorker : public harp::Worker {
 
         }
 
-
-        cout << endl;
         comm->barrier();
 
         //running distributed version
@@ -139,11 +133,6 @@ class KMeansWorker : public harp::Worker {
 
             //determining closest
             for (int cen = 0; cen < numOfCentroids;) {
-                if (workerId == 0)
-                    std::cout << "Outer:" << ":" << cen
-                              << std::endl;
-//                for (auto c = myCentroids->getPartitions(true)->cbegin();
-//                     c != myCentroids->getPartitions(false)->cend();) {
                 while (myCentroids->hasNext() && cen < numOfCentroids) {
                     auto *nextCent = myCentroids->nextPartition(true);
                     for (auto p:*points->getPartitions()) {
@@ -156,28 +145,13 @@ class KMeansWorker : public harp::Worker {
                     }
                     firstRound = false;
                     cen++;
-
                     comm->asyncRotate(myCentroids, nextCent->getId());
-//                    if (workerId == 0) {
-//                        std::cout << "has next" << myCentroids->hasNext()
-//                                  << std::endl;
-//                    }
-
-//                    if (cen <= numOfCentroids) {
-//                        if (workerId == 0) {
-//                            std::cout << "Rotating:" << c->first << ":" << cen << ":"
-//                                      << myCentroids->getPartitionCount()
-//                                      << std::endl;
-//                        }
-//                        comm->asyncRotate(myCentroids, c);
-//                        myCentroids->getPartitions(false)->erase(c);
-//                    }
-                    //c++;
-
                 }
                 //comm->rotate(myCentroids);
                 myCentroids->resetIterator();
             }
+
+            //myCentroids->resetIterator();
 
 
             harp::ds::util::resetTable<double>(myCentroids, 0);
@@ -216,6 +190,7 @@ class KMeansWorker : public harp::Worker {
         auto duration = duration_cast<microseconds>(t2 - t1).count();
         if (workerId == 0) {
             std::cout << "Parallel : " << duration << std::endl;
+            std::cout << "Speedup : " << serialDuration / duration << std::endl;
         }
 
         comm->barrier();
