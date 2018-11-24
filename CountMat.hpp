@@ -19,6 +19,7 @@ class CountMat {
     public:
 
         typedef int32_t idxType;
+        // typedef int idxType;
         typedef float valType;
 
         CountMat(): _graph(nullptr), _templates(nullptr), _subtmp_array(nullptr), _colors_local(nullptr), 

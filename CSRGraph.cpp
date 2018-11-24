@@ -75,6 +75,9 @@ void CSRGraph::createFromEdgeListFile(CSRGraph::idxType numVerts, CSRGraph::idxT
     for(CSRGraph::idxType i=0; i<_numVertices;i++)
         _indexRow[i] -= _degList[i];
 
+    // re-ordering the input graph by using RCM
+    // comment out this to disbale re-ordering
+    rcmReordering();
     // initialize the mkl mat data structure
     // comment out this to disable using MKL spmv kernel
     createMKLMat();
@@ -231,11 +234,19 @@ void CSRGraph::fillSpMat(spdm3::SpMat<int, float> &smat)
 
 void CSRGraph::createMKLMat()
 {
-    sparse_status_t stat = mkl_sparse_s_create_csr(
-            &_mklA, SPARSE_INDEX_BASE_ZERO, _numVertices, _numVertices,
-            _indexRow, _indexRow + 1,
-            _indexCol, _edgeVal);
-
+    sparse_status_t stat;  
+    
+    if (_rcmMatR != nullptr)
+    {
+        stat = mkl_sparse_s_create_csr(&_mklA, SPARSE_INDEX_BASE_ZERO, _rcmMatR->m, _rcmMatR->m,
+            _rcmMatR->rowptr, _rcmMatR->rowptr + 1, _rcmMatR->colidx, _rcmMatR->svalues);
+    }
+    else
+    {
+        stat = mkl_sparse_s_create_csr(&_mklA, SPARSE_INDEX_BASE_ZERO, _numVertices, _numVertices,
+            _indexRow, _indexRow + 1, _indexCol, _edgeVal);
+    }
+    
     if (SPARSE_STATUS_SUCCESS != stat) {
         fprintf(stderr, "Failed to create mkl csr\n");
         return;
@@ -245,5 +256,17 @@ void CSRGraph::createMKLMat()
     _descA.diag = SPARSE_DIAG_NON_UNIT;
 
     _useMKL = true;
+}
+
+void CSRGraph::rcmReordering()
+{
+    _rcmMat = new SpMP::CSR(_numVertices, _numVertices, _indexRow, _indexCol, _edgeVal);
+    int* perm = (int*)_mm_malloc(_rcmMat->m*sizeof(int), 64);
+    int* inversePerm = (int*) _mm_malloc(_rcmMat->m*sizeof(int), 64);
+    _rcmMat->getRCMPermutation(perm, inversePerm);
+    _rcmMatR = _rcmMat->permute(perm, inversePerm, false, true);
+
+    _mm_free(perm);
+    _mm_free(inversePerm);
 }
 

@@ -7,7 +7,8 @@
 
 #include "SpDM3/include/spmat.h"
 #include "mkl.h"
-// #include "SpMP/CSR.hpp"
+// for RCM reordering
+#include "SpMP/CSR.hpp"
 
 using namespace std;
 
@@ -18,11 +19,12 @@ class CSRGraph
     public:
 
         typedef int32_t idxType;
+        // typedef int idxType;
         typedef float valType;
 
         CSRGraph(): _isDirected(false), _isOneBased(false), _numEdges(-1), _numVertices(-1), _nnZ(-1), 
             _edgeVal(nullptr), _indexRow(nullptr), _indexCol(nullptr), 
-            _degList(nullptr), _useMKL(false) {}
+            _degList(nullptr), _useMKL(false), _rcmMat(nullptr), _rcmMatR(nullptr) {}
 
         ~CSRGraph(){
             if (_edgeVal != nullptr)
@@ -33,21 +35,24 @@ class CSRGraph
 
             if (_indexCol != nullptr)
                 free(_indexCol);
+
+            if (_rcmMatR != nullptr)
+                delete _rcmMatR;
         }
 
         valType* getEdgeVals(idxType rowId)
         {
-            return (_edgeVal + _indexRow[rowId]); 
+            return (_rcmMatR != nullptr) ? (_rcmMatR->svalues + _rcmMatR->rowptr[rowId]) : (_edgeVal + _indexRow[rowId]); 
         }
 
         idxType* getColIdx(idxType rowId)
         {
-            return (_indexCol + _indexRow[rowId]);
+            return (_rcmMatR != nullptr ) ? (_rcmMatR->colidx + _rcmMatR->rowptr[rowId]) : (_indexCol + _indexRow[rowId]);
         }
 
         idxType getRowLen(idxType rowId)
         {
-            return (_indexRow[rowId+1] - _indexRow[rowId]);
+            return (_rcmMatR != nullptr ) ? (_rcmMatR->rowptr[rowId + 1] - _rcmMatR->rowptr[rowId]) : (_indexRow[rowId+1] - _indexRow[rowId]);
         }
 
         void SpMVNaive(valType* x, valType* y);
@@ -56,13 +61,13 @@ class CSRGraph
         void SpMVMKL(valType* x, valType* y, int thdNum);
         void SpMVMKLHint(int callNum);
 
-        idxType getNumVertices() {return _numVertices;} 
+        idxType getNumVertices() {return (_rcmMatR != nullptr) ? _rcmMatR->m : _numVertices;} 
 
         // idxType getNNZ() {return _indexRow[_numVertices];}
-        idxType getNNZ() {return _nnZ;}
-        idxType* getIndexRow() {return _indexRow;}
-        idxType* getIndexCol() {return _indexCol;}
-        valType* getNNZVal() {return _edgeVal;} 
+        idxType getNNZ() {return (_rcmMatR != nullptr) ? _rcmMatR->rowptr[_rcmMatR->m] : _indexRow[_numVertices]; }
+        idxType* getIndexRow() {return (_rcmMatR != nullptr) ? _rcmMatR->rowptr : _indexRow;}
+        idxType* getIndexCol() {return (_rcmMatR != nullptr) ? _rcmMatR->colidx : _indexCol;}
+        valType* getNNZVal() {return (_rcmMatR != nullptr) ? _rcmMatR->svalues : _edgeVal;} 
          
         void createFromEdgeListFile(idxType numVerts, idxType numEdges, 
                 idxType* srcList, idxType* dstList);       
@@ -75,6 +80,7 @@ class CSRGraph
         void deserialize(ifstream& inputFile);
 
         void fillSpMat(spdm3::SpMat<int, float> &smat);
+        void rcmReordering();
         void createMKLMat();
 
         bool useMKL() { return _useMKL; }
@@ -93,6 +99,8 @@ class CSRGraph
         sparse_matrix_t _mklA;
         matrix_descr _descA;
         bool _useMKL;
+        SpMP::CSR* _rcmMat;
+        SpMP::CSR* _rcmMatR;
 };
 
 #endif
