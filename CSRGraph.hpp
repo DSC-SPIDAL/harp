@@ -6,6 +6,7 @@
 #include <fstream>
 
 #include "SpDM3/include/spmat.h"
+#include "mkl.h"
 // #include "SpMP/CSR.hpp"
 
 using namespace std;
@@ -21,7 +22,7 @@ class CSRGraph
 
         CSRGraph(): _isDirected(false), _isOneBased(false), _numEdges(-1), _numVertices(-1), _nnZ(-1), 
             _edgeVal(nullptr), _indexRow(nullptr), _indexCol(nullptr), 
-            _degList(nullptr) {}
+            _degList(nullptr), _useMKL(false) {}
 
         ~CSRGraph(){
             if (_edgeVal != nullptr)
@@ -53,6 +54,7 @@ class CSRGraph
         void SpMVNaiveScale(valType* x, valType* y, float scale);
         void SpMVNaive(valType* x, valType* y, int thdNum);
         void SpMVMKL(valType* x, valType* y, int thdNum);
+        void SpMVMKLHint(int callNum);
 
         idxType getNumVertices() {return _numVertices;} 
 
@@ -73,6 +75,9 @@ class CSRGraph
         void deserialize(ifstream& inputFile);
 
         void fillSpMat(spdm3::SpMat<int, float> &smat);
+        void createMKLMat();
+
+        bool useMKL() { return _useMKL; }
 
     private:
 
@@ -85,6 +90,9 @@ class CSRGraph
         idxType* _indexRow;
         idxType* _indexCol;
         idxType* _degList;
+        sparse_matrix_t _mklA;
+        matrix_descr _descA;
+        bool _useMKL;
 };
 
 #endif

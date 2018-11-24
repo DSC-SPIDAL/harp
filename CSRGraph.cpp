@@ -75,6 +75,10 @@ void CSRGraph::createFromEdgeListFile(CSRGraph::idxType numVerts, CSRGraph::idxT
     for(CSRGraph::idxType i=0; i<_numVertices;i++)
         _indexRow[i] -= _degList[i];
 
+    // initialize the mkl mat data structure
+    // comment out this to disable using MKL spmv kernel
+    createMKLMat();
+
 }/*}}}*/
 
 
@@ -139,9 +143,24 @@ void CSRGraph::SpMVNaive(valType* x, valType* y, int thdNum)
 }
 void CSRGraph::SpMVMKL(valType* x, valType* y, int thdNum)
 {
-    mkl_set_num_threads(thdNum);
-    const char tran = 'N';
-    mkl_cspblas_scsrgemv(&tran, &_numVertices, _edgeVal, _indexRow, _indexCol, x, y);
+    if (_useMKL)
+    {
+        mkl_sparse_s_mv(SPARSE_OPERATION_NON_TRANSPOSE, 1, _mklA, _descA, x, 0, y);
+    }
+    else
+    {
+        SpMVNaive(x,y,thdNum);
+    }
+
+    // mkl_set_num_threads(thdNum);
+    // const char tran = 'N';
+    // mkl_cspblas_scsrgemv(&tran, &_numVertices, _edgeVal, _indexRow, _indexCol, x, y);
+}
+
+void CSRGraph::SpMVMKLHint(int callNum)
+{
+    mkl_sparse_set_mv_hint(_mklA, SPARSE_OPERATION_NON_TRANSPOSE, _descA, callNum);
+    mkl_sparse_optimize(_mklA);
 }
 
 void CSRGraph::serialize(ofstream& outputFile)
@@ -208,5 +227,23 @@ void CSRGraph::fillSpMat(spdm3::SpMat<int, float> &smat)
     smat.SetIndices(_indexCol);
     smat.SetValues(_edgeVal);
 
+}
+
+void CSRGraph::createMKLMat()
+{
+    sparse_status_t stat = mkl_sparse_s_create_csr(
+            &_mklA, SPARSE_INDEX_BASE_ZERO, _numVertices, _numVertices,
+            _indexRow, _indexRow + 1,
+            _indexCol, _edgeVal);
+
+    if (SPARSE_STATUS_SUCCESS != stat) {
+        fprintf(stderr, "Failed to create mkl csr\n");
+        return;
+    }
+
+    _descA.type = SPARSE_MATRIX_TYPE_GENERAL;
+    _descA.diag = SPARSE_DIAG_NON_UNIT;
+
+    _useMKL = true;
 }
 
