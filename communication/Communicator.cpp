@@ -18,21 +18,12 @@ void printTable(harp::ds::Table<TYPE> *table) {
 namespace harp {
     namespace com {
 
-//        template<class TYPE>
-//        void Communicator::sendAndRecv(const void *buffSend, int sendSize, void *buffRecv, int recvSize, int sendTo,
-//                                       int recvFrom,
-//                                       MPI_Datatype mpiDatatype) {
-//            MPI_Request mpi_request;
-//            MPI_Isend(buffSend, sendSize, mpiDatatype, sendTo, 0, MPI_COMM_WORLD, &mpi_request);
-//            MPI_Recv(buffRecv, recvSize, mpiDatatype, recvFrom, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-//            MPI_Wait(&mpi_request, MPI_STATUSES_IGNORE);
-//        }
-
         template<class TYPE>
         Communicator<TYPE>::Communicator(TYPE workerId, TYPE worldSize) {
             this->workerId = workerId;
             this->worldSize = worldSize;
-            this->threadPool = new ThreadPool(8);
+            this->threadPool = new ctpl::thread_pool(
+                    1);//todo create only one thread until MPI concurrency issue is resolved
 
         }
 
@@ -114,12 +105,18 @@ namespace harp {
             int numOfPartitionsToRecv = 0;
 
 
+            std::cout << "Will send " << numOfPartitionsToSend <<
+                      " partitions to " << sendTo << std::endl;
+
             MPI_Sendrecv(
                     &numOfPartitionsToSend, 1, MPI_INT, sendTo, table->getId(),
                     &numOfPartitionsToRecv, 1, MPI_INT, receiveFrom, table->getId(),
                     MPI_COMM_WORLD,
                     MPI_STATUS_IGNORE
             );
+
+            std::cout << "Will recv " << numOfPartitionsToRecv << " from "
+                      << receiveFrom << std::endl;
 
 //            printf("Worker %d will send %d partitions and receive %d partitions\n", workerId, numOfPartitionsToSend,
 //                   numOfPartitionsToRecv);
@@ -145,29 +142,22 @@ namespace harp {
             }
             partitionMetaToSend[0] = totalDataSize;
 
+            std::cout << "Will send " << partitionMetaToSend[0] << " elements to " << sendTo << std::endl;
+
             MPI_Sendrecv(
-                    &partitionMetaToSend, sendingMetaSize, MPI_INT, sendTo, table->getId(),
-                    &partitionMetaToRecv, receivingMetaSize, MPI_INT, receiveFrom, table->getId(),
+                    &partitionMetaToSend, sendingMetaSize, MPI_INT, sendTo, table->getId() + 1,
+                    &partitionMetaToRecv, receivingMetaSize, MPI_INT, receiveFrom, table->getId() + 1,
                     MPI_COMM_WORLD,
                     MPI_STATUS_IGNORE
             );
+
+            std::cout << "Will recv " << partitionMetaToRecv[0] << " from " << receiveFrom << std::endl;
 
             //sending DATA
             //todo implement support for data arrays larger than INT_MAX
             MPI_Request dataSendRequest;
             MPI_Isend(&dataBuffer[0], totalDataSize, dataType, sendTo, table->getId(), MPI_COMM_WORLD,
                       &dataSendRequest);
-
-//            MPI_Request dataSendRequests[numOfPartitionsToSend];
-//            for (long i = 0; i < numOfPartitionsToSend * 2; i += 2) {
-//                int partitionId = partitionMetaToSend[i];
-//                int partitionSize = partitionMetaToSend[i + 1];
-//                auto *data = table->getPartition(partitionId)->getData();
-//                MPI_Isend(data, partitionSize, dataType, sendTo, table->getId(), MPI_COMM_WORLD,
-//                          &dataSendRequests[i / 2]);
-//            }
-
-            //table->clear();
 
             auto *recvTab = new harp::ds::Table<TYPE>(table->getId());
             auto *recvBuffer = new TYPE[partitionMetaToRecv[0]];
@@ -189,20 +179,7 @@ namespace harp {
                 recvTab->addPartition(newPartition);
             }
 
-            //receiving DATA
-//            for (long i = 0; i < numOfPartitionsToRecv * 2; i += 2) {
-//                int partitionId = partitionMetaToRecv[i];
-//                int partitionSize = partitionMetaToRecv[i + 1];
-//                auto *data = new TYPE[partitionSize];
-//                MPI_Recv(data, partitionSize, dataType, receiveFrom, table->getId(),
-//                         MPI_COMM_WORLD,
-//                         MPI_STATUS_IGNORE);
-//                auto *newPartition = new harp::ds::Partition<TYPE>(partitionId, data, partitionSize);
-//                recvTab->addPartition(newPartition);
-//            }
-
             MPI_Wait(&dataSendRequest, MPI_STATUS_IGNORE);
-//            MPI_Waitall(numOfPartitionsToSend, dataSendRequests, MPI_STATUS_IGNORE);
 
             //delete table;
             table->swap(recvTab);
@@ -215,40 +192,33 @@ namespace harp {
         }
 
         template<class TYPE>
-        void
-        Communicator<TYPE>::sendAndRecv(const void *buffSend, int sendSize, void *buffRecv, int recvSize, int sendTo,
-                                        int recvFrom, MPI_Datatype mpiDatatype) {
-            MPI_Request mpi_request[2];
-            MPI_Isend(buffSend, sendSize, mpiDatatype, sendTo, 0, MPI_COMM_WORLD, &mpi_request[0]);
-            MPI_Irecv(buffRecv, recvSize, mpiDatatype, recvFrom, 0, MPI_COMM_WORLD, &mpi_request[1]);
-            MPI_Waitall(2, mpi_request, MPI_STATUSES_IGNORE);
-        }
-
-        template<class TYPE>
         template<class TAB_TYPE>
         void Communicator<TYPE>::asyncRotate(ds::Table<TAB_TYPE> *table, int pid) {
             auto partition = table->getPartition(pid);//take partition out
             table->removePartition(pid, false);
-            //table->getPartitions()->erase(iterator->first);//erase partition
+
             auto *rotatingTable = new harp::ds::Table<TAB_TYPE>(table->getId());//create new table for rotation
             rotatingTable->addPartition(partition);
 
+            auto rotateTaskFuture = this->threadPool->push([rotatingTable, table, this](int id) {
 
-            auto handle = std::async(std::launch::async, [rotatingTable, table, this]() {
-//                if (workerId == 0) {
-//                    std::cout << "Sending : " << std::endl;
-//                    printTable(rotatingTable);
-//                }
+                std::cout << "Executing rotate in thread : " << id << std::endl;
+
                 rotate(rotatingTable);
-//                if (workerId == 0) {
-//                    std::cout << "Received : " << std::endl;
-//                    printTable(rotatingTable);
-//                }
+
                 for (auto p:*rotatingTable->getPartitions()) {
                     table->addToPendingPartitions(p.second);
                 }
             });
+            this->asyncTasks.push(std::move(rotateTaskFuture));
+        }
 
+        template<class TYPE>
+        void Communicator<TYPE>::wait() {
+            while (!this->asyncTasks.empty()) {
+                this->asyncTasks.front().get();
+                this->asyncTasks.pop();
+            }
         }
     }
 }

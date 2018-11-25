@@ -23,10 +23,7 @@ namespace harp {
             this->pushPendingPartitions();
             if (blockForAvailability) {
                 while (this->partitionMap.empty()) {
-                    while (!this->pendingPartitions.empty()) {
-                        this->addPartition(this->pendingPartitions.front());
-                        this->pendingPartitions.pop();
-                    }
+                    this->pushPendingPartitions();
                 }
             }
             return &this->partitionMap;
@@ -125,12 +122,12 @@ namespace harp {
         template<class TYPE>
         bool Table<TYPE>::hasNext() {
             this->pushPendingPartitions();
-            while (this->partitionMap.empty()) {
-                while (!this->pendingPartitions.empty()) {
-                    this->addPartition(this->pendingPartitions.front());
-                    this->pendingPartitions.pop();
-                }
-            }
+//            while (this->partitionMap.empty()) {
+//                while (!this->pendingPartitions.empty()) {
+//                    this->addPartition(this->pendingPartitions.front());
+//                    this->pendingPartitions.pop();
+//                }
+//            }
             return this->iteratingIndex < this->orderedPartitions.size();
         }
 

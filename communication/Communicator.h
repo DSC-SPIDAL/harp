@@ -4,8 +4,8 @@
 #include <iostream>
 #include "mpi.h"
 #include "../data_structures/inculdes.h"
-#include "ThreadPool.h"
-
+#include "../util/ThreadPool.h"
+#include "future"
 
 //todo doing implementation in header file due to templates problem
 namespace harp {
@@ -16,10 +16,10 @@ namespace harp {
             TYPE workerId;
             TYPE worldSize;
 
-            ThreadPool *threadPool;
+            ctpl::thread_pool *threadPool;
 
-            void sendAndRecv(const void *buffSend, int sendSize, void *buffRecv, int recvSize, int sendTo, int recvFrom,
-                             MPI_Datatype mpiDatatype);
+            //todo group async tasks with a tag and allow to wait on all or on tag
+            std::queue<std::future<void>> asyncTasks;
 
         public:
 
@@ -38,6 +38,8 @@ namespace harp {
 
             template<class TAB_TYPE>
             void asyncRotate(harp::ds::Table<TAB_TYPE> *table, int pid);
+
+            void wait();
         };
     }
 }

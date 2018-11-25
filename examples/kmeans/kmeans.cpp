@@ -8,6 +8,7 @@
 #include <chrono>
 #include <iomanip>
 #include <thread>
+#include "future"
 
 #include "../../communication/Rotator.h"
 #include "../../communication/Rotator.cpp"
@@ -42,6 +43,11 @@ class KMeansWorker : public harp::Worker {
         int numOfVectors = 10000;
 
         double serialDuration = 0;
+
+        string logName = to_string(workerId) + ".txt";
+        freopen(&logName[0], "w", stdout);
+
+        std::cout << "Starting.." << std::endl;
 
         if (workerId == 0) {
             //generate only if doesn't exist
@@ -145,6 +151,7 @@ class KMeansWorker : public harp::Worker {
                     }
                     firstRound = false;
                     cen++;
+                    std::cout << "Calling rotate on " << nextCent->getId() << std::endl;
                     comm->asyncRotate(myCentroids, nextCent->getId());
                 }
                 //comm->rotate(myCentroids);
@@ -153,11 +160,12 @@ class KMeansWorker : public harp::Worker {
 
             //myCentroids->resetIterator();
 
+            //wait for async rotations to complete
+            comm->wait();
 
             harp::ds::util::resetTable<double>(myCentroids, 0);
 
             //building new centroids
-
             for (int cen = 0; cen < numOfCentroids;) {
                 for (auto c:*myCentroids->getPartitions(true)) {
                     auto *cdata = c.second->getData();
