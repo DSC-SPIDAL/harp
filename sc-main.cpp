@@ -108,7 +108,7 @@ void benchmarkSpMVNaive(int argc, char** argv, EdgeList& elist, int numCols, int
 
     double startTime;
     CSRGraph csrnaiveG;
-    csrnaiveG.createFromEdgeListFile(elist.getNumVertices(), elist.getNumEdges(), elist.getSrcList(), elist.getDstList());
+    csrnaiveG.createFromEdgeListFile(elist.getNumVertices(), elist.getNumEdges(), elist.getSrcList(), elist.getDstList(), false, false, true);
 
     float* xMat = (float*) malloc(csrnaiveG.getNumVertices()*sizeof(float));
     for (int i = 0; i < csrnaiveG.getNumVertices(); ++i) {
@@ -145,7 +145,7 @@ void benchmarkSpMVMKL(int argc, char** argv, EdgeList& elist, int numCols, int c
     int numCalls = numCols;
     double startTime;
     CSRGraph csrGMKL;
-    csrGMKL.createFromEdgeListFile(elist.getNumVertices(), elist.getNumEdges(), elist.getSrcList(), elist.getDstList());
+    csrGMKL.createFromEdgeListFile(elist.getNumVertices(), elist.getNumEdges(), elist.getSrcList(), elist.getDstList(), true, false, true);
 
     sparse_matrix_t mklA;
     sparse_status_t stat = mkl_sparse_s_create_csr(
@@ -210,7 +210,7 @@ void benchmarkMMMKL(int argc, char** argv, EdgeList& elist, int numCols, int com
     double startTime;
     const int calls = 100;
     CSRGraph csrGMKL;
-    csrGMKL.createFromEdgeListFile(elist.getNumVertices(), elist.getNumEdges(), elist.getSrcList(), elist.getDstList());
+    csrGMKL.createFromEdgeListFile(elist.getNumVertices(), elist.getNumEdges(), elist.getSrcList(), elist.getDstList(), true, false, true);
 
     sparse_matrix_t mklA;
     sparse_status_t stat = mkl_sparse_s_create_csr(
@@ -277,7 +277,7 @@ void benchmarkSpMMMKL(int argc, char** argv, EdgeList& elist, int numCols, int c
     std::fflush(stdout);
 
     CSRGraph csrnaiveG;
-    csrnaiveG.createFromEdgeListFile(elist.getNumVertices(), elist.getNumEdges(), elist.getSrcList(), elist.getDstList());
+    csrnaiveG.createFromEdgeListFile(elist.getNumVertices(), elist.getNumEdges(), elist.getSrcList(), elist.getDstList(), true, false, true);
 
     //
     int csrNNZA = csrnaiveG.getNNZ(); 
@@ -333,7 +333,7 @@ void benchmarkSpDM3(int argc, char** argv, EdgeList& elist, int numCols, int com
     std::fflush(stdout);
 
     CSRGraph csrnaiveG;
-    csrnaiveG.createFromEdgeListFile(elist.getNumVertices(), elist.getNumEdges(), elist.getSrcList(), elist.getDstList());
+    csrnaiveG.createFromEdgeListFile(elist.getNumVertices(), elist.getNumEdges(), elist.getSrcList(), elist.getDstList(), false, false, true);
 
     spdm3::SpMat<int, float> smat(spdm3::SPARSE_CSR, 0);
     csrnaiveG.fillSpMat(smat);
@@ -428,11 +428,11 @@ void SpMVSpMP(int m, int* rowPtr, int* colPtr, float* vals, float* x, float* y, 
 void benchmarkSpMP(int argc, char** argv, EdgeList& elist, int numCols, int comp_thds)
 {
     double startTime;
-    printf("Start debug Spdm3 SpMM\n");
+    printf("Start debug SpMP RCM SpMV\n");
     std::fflush(stdout);
 
     CSRGraph csrg;
-    csrg.createFromEdgeListFile(elist.getNumVertices(), elist.getNumEdges(), elist.getSrcList(), elist.getDstList());
+    csrg.createFromEdgeListFile(elist.getNumVertices(), elist.getNumEdges(), elist.getSrcList(), elist.getDstList(), false, true, true);
 
     // create SpMP::CSR
     int csrRows = csrg.getNumVertices();
@@ -445,7 +445,7 @@ void benchmarkSpMP(int argc, char** argv, EdgeList& elist, int numCols, int comp
     SpMP::CSR spmpcsr(csrRows, csrRows, csrRowIdx, csrColIdx, csrVals);
 
     // RCM reordering
-    printf("Start Spdm3 RCM reordering\n");
+    printf("Start SpMP RCM reordering\n");
     std::fflush(stdout);
 
     int *perm = (int*)_mm_malloc(spmpcsr.m*sizeof(int), 64);
@@ -510,7 +510,7 @@ void benchmarkSpMP(int argc, char** argv, EdgeList& elist, int numCols, int comp
     _mm_free(perm);
     _mm_free(inversePerm);
 
-    printf("Finish Spdm3 RCM reordering\n");
+    printf("Finish SpMP RCM reordering\n");
     std::fflush(stdout);
 
 }
@@ -526,6 +526,11 @@ int main(int argc, char** argv)
     int comp_thds;
     int isPruned = 1;
     int useSPMM = 0;
+
+    bool useMKL = true;
+    // bool useMKL = false;
+    bool useRcm = true;
+    // bool useRcm = false;
 
     // bool isBenchmark = true;
     bool isBenchmark = false;
@@ -590,7 +595,7 @@ int main(int argc, char** argv)
 #endif
 
         ifstream input_file(graph_name.c_str(), ios::binary);
-        csrInpuG.deserialize(input_file);
+        csrInpuG.deserialize(input_file, useMKL, useRcm);
         input_file.close();
     }
     else
@@ -611,10 +616,10 @@ int main(int argc, char** argv)
 
             const int numCols = 100;
             // benchmarking SpMP RCM reordering
-            // benchmarkSpMP(argc, argv, elist,  numCols, comp_thds );
+            benchmarkSpMP(argc, argv, elist,  numCols, comp_thds );
             
             // benchmarking mkl SpMV (inspector executor)
-            benchmarkSpMVMKL(argc, argv, elist, numCols, comp_thds);
+            // benchmarkSpMVMKL(argc, argv, elist, numCols, comp_thds);
 
             // benchmarking PB SpMV 
             // benchmarkSpMVPBRadix(argc, argv, elist, numCols);
@@ -639,7 +644,7 @@ int main(int argc, char** argv)
             return 0;
         }
         else
-            csrInpuG.createFromEdgeListFile(elist.getNumVertices(), elist.getNumEdges(), elist.getSrcList(), elist.getDstList());
+            csrInpuG.createFromEdgeListFile(elist.getNumVertices(), elist.getNumEdges(), elist.getSrcList(), elist.getDstList(), useMKL, useRcm, false);
     }
 
     if (write_binary)

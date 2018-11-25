@@ -24,7 +24,7 @@ class CSRGraph
 
         CSRGraph(): _isDirected(false), _isOneBased(false), _numEdges(-1), _numVertices(-1), _nnZ(-1), 
             _edgeVal(nullptr), _indexRow(nullptr), _indexCol(nullptr), 
-            _degList(nullptr), _useMKL(false), _rcmMat(nullptr), _rcmMatR(nullptr) {}
+            _degList(nullptr), _useMKL(false), _useRcm(false), _rcmMat(nullptr), _rcmMatR(nullptr) {}
 
         ~CSRGraph(){
             if (_edgeVal != nullptr)
@@ -70,14 +70,14 @@ class CSRGraph
         valType* getNNZVal() {return (_rcmMatR != nullptr) ? _rcmMatR->svalues : _edgeVal;} 
          
         void createFromEdgeListFile(idxType numVerts, idxType numEdges, 
-                idxType* srcList, idxType* dstList);       
+                idxType* srcList, idxType* dstList, bool useMKL = false, bool useRcm = false, bool isBenchmark = false);       
 
         // make the csr format from 0 based index to 1 based index
         // used by csrmm of MKL
         void makeOneIndex();
 
         void serialize(ofstream& outputFile);
-        void deserialize(ifstream& inputFile);
+        void deserialize(ifstream& inputFile, bool useMKL = false, bool useRcm = false);
 
         void fillSpMat(spdm3::SpMat<int, float> &smat);
         void rcmReordering();
@@ -101,6 +101,7 @@ class CSRGraph
         bool _useMKL;
         SpMP::CSR* _rcmMat;
         SpMP::CSR* _rcmMatR;
+        bool _useRcm;
 };
 
 #endif

@@ -8,7 +8,7 @@ using namespace std;
 
 // create a CSR graph from edge list 
 void CSRGraph::createFromEdgeListFile(CSRGraph::idxType numVerts, CSRGraph::idxType numEdges, 
-                CSRGraph::idxType* srcList, CSRGraph::idxType* dstList)
+                CSRGraph::idxType* srcList, CSRGraph::idxType* dstList, bool useMKL, bool useRcm, bool isBenchmark)
 {/*{{{*/
 
     _numEdges = numEdges;
@@ -75,12 +75,21 @@ void CSRGraph::createFromEdgeListFile(CSRGraph::idxType numVerts, CSRGraph::idxT
     for(CSRGraph::idxType i=0; i<_numVertices;i++)
         _indexRow[i] -= _degList[i];
 
-    // re-ordering the input graph by using RCM
-    // comment out this to disbale re-ordering
-    rcmReordering();
-    // initialize the mkl mat data structure
-    // comment out this to disable using MKL spmv kernel
-    createMKLMat();
+    _useMKL = useMKL;
+    _useRcm = useRcm;
+
+    if (!isBenchmark)
+    {
+        // re-ordering the input graph by using RCM
+        // comment out this to disbale re-ordering
+        if (_useRcm)
+           rcmReordering();
+        // initialize the mkl mat data structure
+        // comment out this to disable using MKL spmv kernel
+        if (_useMKL)
+           createMKLMat();
+    }
+
 
 }/*}}}*/
 
@@ -176,7 +185,7 @@ void CSRGraph::serialize(ofstream& outputFile)
     outputFile.write((char*)_edgeVal, (_indexRow[_numVertices])*sizeof(valType));
 }
 
-void CSRGraph::deserialize(ifstream& inputFile)
+void CSRGraph::deserialize(ifstream& inputFile, bool useMKL, bool useRcm)
 {
     inputFile.read((char*)&_numEdges, sizeof(idxType));
     inputFile.read((char*)&_numVertices, sizeof(idxType));
@@ -195,8 +204,19 @@ void CSRGraph::deserialize(ifstream& inputFile)
 
     _nnZ = _indexRow[_numVertices];
 
+    _useMKL = useMKL;
+    _useRcm = useRcm;
+
     printf("Total vertices is : %d\n", _numVertices);
     printf("Total Edges is : %d\n", _numEdges);
+
+    // comment out this to disable the re-ordering
+    if (_useRcm)
+        rcmReordering();
+    // comment out this to disable the mkl spmv kernel
+    if (_useMKL)
+        createMKLMat();
+
     std::fflush(stdout); 
 }
 
@@ -234,6 +254,9 @@ void CSRGraph::fillSpMat(spdm3::SpMat<int, float> &smat)
 
 void CSRGraph::createMKLMat()
 {
+    printf("Create MKL format for input graph\n");
+    std::fflush(stdout);
+
     sparse_status_t stat;  
     
     if (_rcmMatR != nullptr)
@@ -255,7 +278,6 @@ void CSRGraph::createMKLMat()
     _descA.type = SPARSE_MATRIX_TYPE_GENERAL;
     _descA.diag = SPARSE_DIAG_NON_UNIT;
 
-    _useMKL = true;
 }
 
 void CSRGraph::rcmReordering()
@@ -265,6 +287,11 @@ void CSRGraph::rcmReordering()
     int* inversePerm = (int*) _mm_malloc(_rcmMat->m*sizeof(int), 64);
     _rcmMat->getRCMPermutation(perm, inversePerm);
     _rcmMatR = _rcmMat->permute(perm, inversePerm, false, true);
+    if (_rcmMatR != nullptr)
+    {
+        printf("Reordering sccussful\n");
+        std::fflush(stdout);
+    }
 
     _mm_free(perm);
     _mm_free(inversePerm);
