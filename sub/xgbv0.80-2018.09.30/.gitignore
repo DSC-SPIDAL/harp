@@ -65,7 +65,7 @@ nb-configuration*
 .pydevproject
 .settings/
 build
-config.mk
+#config.mk
 /xgboost
 *.data
 build_plugin
@@ -82,7 +82,7 @@ target
 *.gcda
 *.gcno
 build_tests
-/tests/cpp/xgboost_test
+#/tests/cpp/xgboost_test
 
 .DS_Store
 lib/

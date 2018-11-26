@@ -27,7 +27,7 @@
 *.out
 *.app
 *~
-config.mk
+#config.mk
 *.pyc
 
 # Vim
