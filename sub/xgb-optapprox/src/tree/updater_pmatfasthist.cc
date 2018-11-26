@@ -647,7 +647,9 @@ class HistMakerCompactFastHist: public BaseMaker {
     if(this->fsplit_set_.size() > 0){
         //update the position for update cache
         //printVec("before updatepos:", this->position_);
+        double _tstart = dmlc::GetTime();
         this->CreateHist(gpair, fwork_set_, *p_tree);
+        this->tminfo.posset_time += dmlc::GetTime() - _tstart;
         //printVec("after updatepos:", this->position_);
     }
 
@@ -1168,7 +1170,7 @@ class HistMakerCompactFastHist: public BaseMaker {
 
         #ifndef USE_OMP_BUILDHIST
         //init the task graph
-        tbb::task_scheduler_init init;
+        //tbb::task_scheduler_init init;
         tg_root = TreeMaker::create(*p_hmat, blockSize_ );
 
         std::cout << "TaskTree Depth:" << TreeNode::getTreeDepth(tg_root) << ", blockSize:" << blockSize_ << ", param.block_size:" 
@@ -1177,6 +1179,7 @@ class HistMakerCompactFastHist: public BaseMaker {
         TreeNode::printTree(tg_root, 0);
         #endif
 
+        //tbb::task_scheduler_init init(omp_get_max_threads());
         #endif
 
 
@@ -1266,7 +1269,7 @@ class HistMakerCompactFastHist: public BaseMaker {
           this->num_nodes_ = tree.param.num_nodes;
           //this->thread_hist_.resize();
 
-          tbb::task_scheduler_init init;
+          //tbb::task_scheduler_init init(omp_get_max_threads());
           BuildHistTask& a = *new(tbb::task::allocate_root()) BuildHistTask(this->tg_root, this);
           tbb::task::spawn_root_and_wait(a);
         }

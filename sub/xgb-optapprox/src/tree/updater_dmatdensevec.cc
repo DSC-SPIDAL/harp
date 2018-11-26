@@ -367,7 +367,9 @@ class HistMakerCompactFastHistDenseVec: public BaseMaker {
     if(this->fsplit_set_.size() > 0){
         //update the position for update cache
         printVec("before updatepos:", this->position_);
+        double _tstart = dmlc::GetTime();
         this->CreateHist(gpair, fwork_set_, *p_tree);
+        this->tminfo.posset_time += dmlc::GetTime() - _tstart;
         printVec("after updatepos:", this->position_);
     }
 

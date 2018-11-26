@@ -24,6 +24,12 @@
 #include "./common/debug.h"
 #include <fstream>
 
+#ifndef USE_OMP_BUILDHIST
+#include "tbb/task.h"
+#include "tbb/task_scheduler_init.h"
+#endif
+
+
 namespace xgboost {
 
 enum CLITask {
@@ -207,6 +213,13 @@ void CLITrain(const CLIParam& param) {
  * */
   //startVtune("vtune-flag.txt");
   LOG(INFO) << "Start training loop";
+
+  #ifndef USE_OMP_BUILDHIST
+  //init tbb scheduler
+  int _cur_maxthreads = omp_get_max_threads();
+  LOG(CONSOLE) << "initialize tbb scheduler, threads: " << _cur_maxthreads;
+  tbb::task_scheduler_init init(_cur_maxthreads);
+  #endif
 
   // start training.
   const double start = dmlc::GetTime();
