@@ -37,6 +37,24 @@ bool debugCondition(int workerId) {
 class KMeansWorker : public harp::Worker {
 
     void execute(com::Communicator<int> *comm) {
+
+
+        auto *tab = new harp::ds::Table<int>(0);
+        for (int x = 0; x < workerId + 1; x++) {
+            auto *arr = new int[worldSize + workerId + x];
+            for (int l = 0; l < worldSize + workerId + x; l++) {
+                arr[l] = workerId;
+            }
+            auto *part = new harp::ds::Partition<int>(x, arr, worldSize + workerId + x);
+            tab->addPartition(part);
+        }
+
+        comm->allGather(tab);
+        if (workerId == 1) {
+            printTable(tab);
+        }
+
+        return;
         int iterations = 1;
         int numOfCentroids = 13;
         int vectorSize = 400;
@@ -139,7 +157,7 @@ class KMeansWorker : public harp::Worker {
 
             //determining closest
             for (int cen = 0; cen < numOfCentroids;) {
-                while (myCentroids->hasNext() && cen < numOfCentroids) {
+                while (cen < numOfCentroids && myCentroids->hasNext()) {
                     auto *nextCent = myCentroids->nextPartition(true);
                     for (auto p:*points->getPartitions()) {
                         double distance = harp::math::partition::distance(p.second, 0, p.second->getSize(),
@@ -155,7 +173,7 @@ class KMeansWorker : public harp::Worker {
                     comm->asyncRotate(myCentroids, nextCent->getId());
                 }
                 //comm->rotate(myCentroids);
-                myCentroids->resetIterator();
+                //myCentroids->resetIterator();
             }
 
             //myCentroids->resetIterator();

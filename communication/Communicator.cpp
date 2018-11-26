@@ -29,14 +29,103 @@ namespace harp {
 
         template<class TYPE>
         void Communicator<TYPE>::allGather(harp::ds::Table<TYPE> *table) {
+            auto *partitionCounts = new int[worldSize];//no of partitions in each node
+            int partitionCount = static_cast<int>(table->getPartitionCount());
+            MPI_Allgather(
+                    &partitionCount,
+                    1,
+                    MPI_INT,
+                    partitionCounts,
+                    1,
+                    MPI_INT,
+                    MPI_COMM_WORLD
+            );
 
+            int totalPartitionsInWorld = 0;
+            auto recvCounts = new int[worldSize];
+            auto displacements = new int[worldSize];
+            for (int i = 0; i < worldSize; i++) {
+                displacements[i] = totalPartitionsInWorld;
+                totalPartitionsInWorld += partitionCounts[i];
+                recvCounts[i] = 1 + (partitionCounts[i] * 2);
+            }
+
+            auto *worldPartitionMetaData = new int[worldSize +
+                                                   (totalPartitionsInWorld * 2)];//1*worldSize(for sizes) + [{id,size}]
+
+            long totalSize = 0;//total size of data
+
+            auto *thisNodePartitionMetaData = new int[1 + (table->getPartitionCount() * 2)]; //totalSize + [{id,size}]
+            int pIdIndex = 1;
+
+            std::vector<TYPE> dataBuffer;
+            for (const auto p : *table->getPartitions()) {
+                std::copy(p.second->getData(), p.second->getData() + p.second->getSize(),
+                          std::back_inserter(dataBuffer));
+                totalSize += p.second->getSize();
+                thisNodePartitionMetaData[pIdIndex++] = p.first;
+                thisNodePartitionMetaData[pIdIndex++] = p.second->getSize();
+            }
+
+            MPI_Allgatherv(
+                    thisNodePartitionMetaData,
+                    static_cast<int>(1 + (table->getPartitionCount() * 2)),
+                    MPI_INT,
+                    worldPartitionMetaData,
+                    recvCounts,
+                    displacements,
+                    MPI_INT,
+                    MPI_COMM_WORLD
+            );
+
+            if (workerId == 0) {
+                for (int i = 0; i < worldSize +
+                                    (totalPartitionsInWorld * 2); i++) {
+                    std::cout << worldPartitionMetaData[i] << ",";
+                }
+
+                std::cout << std::endl;
+            }
+
+
+            /*
+
+
+            MPI_Datatype dataType = getMPIDataType<TYPE>();
+
+
+            auto *data = new TYPE[totalSize * worldSize];
+            MPI_Allgather(
+                    &dataBuffer[0],
+                    totalSize,
+                    dataType,
+                    data,
+                    totalSize,
+                    dataType,
+                    MPI_COMM_WORLD
+            );
+            table->clear(true);
+
+            for (auto p : *table->getPartitions()) {//keys are ordered in ascending order
+                auto *data = new TYPE[p.second->getSize() * worldSize];
+                MPI_Allgather(
+                        p.second->getData(),
+                        p.second->getSize(),
+                        dataType,
+                        data,
+                        p.second->getSize(),
+                        dataType,
+                        MPI_COMM_WORLD
+                );
+                p.second->setData(data, p.second->getSize() * worldSize);
+            }*/
         }
 
         template<class TYPE>
         void Communicator<TYPE>::allReduce(harp::ds::Table<TYPE> *table, MPI_Op operation) {
-            MPI_Datatype dataType = getMPIDataType(table->getDataType());
-            for (auto p : table->getPartitions()) {//keys are ordered todo not anymore ordered
-                auto *data = createArray(table->getDataType(), p.second->getSize());
+            MPI_Datatype dataType = getMPIDataType<TYPE>();
+            for (auto p : *table->getPartitions()) {//keys are ordered in ascending order
+                auto *data = new TYPE[p.second->getSize()];
                 MPI_Allreduce(
                         p.second->getData(),
                         data,
@@ -45,7 +134,7 @@ namespace harp {
                         operation,
                         MPI_COMM_WORLD
                 );
-                p.second->setData(data);
+                p.second->setData(data, p.second->getSize());
             }
         }
 
