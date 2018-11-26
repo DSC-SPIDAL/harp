@@ -96,7 +96,8 @@ WORKDIR = build-$(CXX)-debug
 else
 #CFLAGS += -O3 -funroll-loops -xcore-avx2
 CFLAGS += -O3 -funroll-loops 
-CFLAGS += -fpermissive -fno-strict-aliasing -DUSE_BINID=1
+#CFLAGS += -fpermissive -fno-strict-aliasing -DUSE_BINID=1
+#CFLAGS += -fpermissive -fno-strict-aliasing
 #CFLAGS += -DUSE_BINID=1
 ifeq ($(USE_OMP_BUILDHIST), 1)
 TARGET = xgboost-$(CXX)-omp
@@ -132,8 +133,12 @@ ifeq ($(USE_COMPACT), 1)
 	CFLAGS += -DUSE_COMPACT=1
 endif
 ifeq ($(USE_COMPACT_BINID), 1)
-	CFLAGS += -DUSE_COMPACT_BINID=1
+	CFLAGS += -DUSE_COMPACT_BINID=1 
 endif
+ifeq ($(USE_BINID), 1)
+	CFLAGS += -DUSE_BINID=1
+endif
+
 ifeq ($(USE_DEBUG_SAVE), 1)
 	CFLAGS += -DUSE_DEBUG_SAVE=1
 endif

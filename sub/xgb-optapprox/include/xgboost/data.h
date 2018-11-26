@@ -150,14 +150,18 @@ struct Entry {
   /*! \brief binid value */
 #ifdef USE_BINID
   bst_uint binid;
+#endif
   inline unsigned int _index() const{
       return index;
   }
 
   inline unsigned int _binid() const{
+#ifdef USE_BINID
       return binid;
-  }
+#else
+      return 0;
 #endif
+  }
 
   /*! \brief default constructor */
   Entry() = default;

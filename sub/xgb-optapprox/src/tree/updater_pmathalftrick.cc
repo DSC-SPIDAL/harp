@@ -432,20 +432,23 @@ class CQHistMakerCompactHalfTrick: public HistMakerCompactHalfTrick<TStats> {
       return start;
     }
 
-#ifdef USE_BINID
     inline void AddWithIndex(unsigned binid,
                     GradientPair gstats) {
+#ifdef USE_BINID
         //hist.data[binid].Add(gstats);
         hist.data[binid].Add(gstats);
+#endif
     }
     inline void AddWithIndex(unsigned binid,
                     const std::vector<GradientPair> &gpair,
                     const MetaInfo &info,
                     const bst_uint ridx) {
+#ifdef USE_BINID
       CHECK_NE(binid, hist.size);
       hist.data[binid].Add(gpair, info, ridx);
-    }
 #endif
+    }
+
 
 
     //inline void AddWithIndex(const float* binidptr,
@@ -1224,7 +1227,7 @@ class GlobalProposalHistMakerCompactHalfTrick: public CQHistMakerCompactHalfTric
   DMatrixCompact* p_hmat;
 #endif
   //for predict cache
-  RegTree* p_last_tree_;
+  const RegTree* p_last_tree_;
 
 
 };

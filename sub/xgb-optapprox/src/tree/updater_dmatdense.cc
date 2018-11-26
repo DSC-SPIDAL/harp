@@ -209,21 +209,23 @@ class HistMakerCompactFastHistDense: public BaseMaker {
       return start;
     }
 
-#ifdef USE_BINID
     inline void AddWithIndex(unsigned binid,
                     GradientPair gstats) {
+
+#ifdef USE_BINID
         //hist.data[binid].Add(gstats);
         hist.data[binid].Add(gstats);
+#endif
     }
     inline void AddWithIndex(unsigned binid,
                     const std::vector<GradientPair> &gpair,
                     const MetaInfo &info,
                     const bst_uint ridx) {
-      //CHECK_NE(binid, hist.size);
+#ifdef USE_BINID
+      CHECK_NE(binid, hist.size);
       hist.data[binid].Add(gpair, info, ridx);
-    }
 #endif
-
+    }
 
     /*!
      * \brief add a histogram to data,

@@ -326,20 +326,22 @@ class HistMakerCompactFastHist: public BaseMaker {
       return start;
     }
 
-    #ifdef USE_BINID
     inline void AddWithIndex(unsigned binid,
                     GradientPair gstats) {
         //hist.data[binid].Add(gstats);
+    #ifdef USE_BINID
         hist.data[binid].Add(gstats);
+    #endif
     }
     inline void AddWithIndex(unsigned binid,
                     const std::vector<GradientPair> &gpair,
                     const MetaInfo &info,
                     const bst_uint ridx) {
+    #ifdef USE_BINID
       //CHECK_NE(binid, hist.size);
       hist.data[binid].Add(gpair, info, ridx);
-    }
     #endif
+    }
 
 
     /*!

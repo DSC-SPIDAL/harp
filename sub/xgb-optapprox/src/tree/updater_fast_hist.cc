@@ -559,9 +559,9 @@ class FastHistMaker: public TreeUpdater {
       for (bst_omp_uint i = 0; i < nfeature; ++i) {
         const bst_uint fid = feature_set[i];
         const unsigned tid = omp_get_thread_num();
-       this->EnumerateSplit(+1, gmat, hist[nid], snode_[nid], info,
-          &best_split_tloc_[tid], fid, nid);
        this->EnumerateSplit(-1, gmat, hist[nid], snode_[nid], info,
+          &best_split_tloc_[tid], fid, nid);
+       this->EnumerateSplit(+1, gmat, hist[nid], snode_[nid], info,
           &best_split_tloc_[tid], fid, nid);
        
         printSplit(best_split_tloc_[tid]);

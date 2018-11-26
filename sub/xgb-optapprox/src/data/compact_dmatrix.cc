@@ -29,7 +29,11 @@ void DMatrixCompact::Init(const SparsePage& page, MetaInfo& info){
         //SparsePage::Inst col = page[i];
         this->offset.push_back(this->data.size());
         for (auto& c : page[i]){
+            #ifdef USE_BINID
             this->data.push_back(EntryCompact(c.index, c.binid));
+            #else
+            this->data.push_back(EntryCompact(c.index, c.fvalue));
+            #endif
         }
     }
     //end 
@@ -64,7 +68,12 @@ void DMatrixCompactDense::Init(const SparsePage& page, MetaInfo& info){
             this->data.push_back(0);
         }
         for (int j=0; j < col.size(); j++){
+            #ifdef USE_BINID
             this->data[startpos + col[j].index] = static_cast<unsigned char>(col[j].binid);
+            #else
+            this->data[startpos + col[j].index] = static_cast<unsigned char>(col[j].fvalue);
+            #endif
+ 
         }
     }
     //end 
@@ -98,7 +107,11 @@ void DMatrixCompactBlockDense::Init(const SparsePage& page, MetaInfo& info){
             this->data.push_back(0);
         }
         for (int j=0; j < col.size(); j++){
+            #ifdef USE_BINID
             this->data[startpos + col[j].index] = static_cast<unsigned char>(col[j].binid);
+            #else
+            this->data[startpos + col[j].index] = static_cast<unsigned char>(col[j].fvalue);
+            #endif
         }
     }
     //end 
