@@ -194,8 +194,7 @@ namespace harp {
             int numOfPartitionsToRecv = 0;
 
 
-            std::cout << "Will send " << numOfPartitionsToSend <<
-                      " partitions to " << sendTo << std::endl;
+            //std::cout << "Will send " << numOfPartitionsToSend << " partitions to " << sendTo << std::endl;
 
             MPI_Sendrecv(
                     &numOfPartitionsToSend, 1, MPI_INT, sendTo, table->getId(),
@@ -204,11 +203,7 @@ namespace harp {
                     MPI_STATUS_IGNORE
             );
 
-            std::cout << "Will recv " << numOfPartitionsToRecv << " from "
-                      << receiveFrom << std::endl;
-
-//            printf("Worker %d will send %d partitions and receive %d partitions\n", workerId, numOfPartitionsToSend,
-//                   numOfPartitionsToRecv);
+            //std::cout << "Will recv " << numOfPartitionsToRecv << " from " << receiveFrom << std::endl;
 
             //exchange PARTITION METADATA
             int sendingMetaSize = 1 + (numOfPartitionsToSend * 2);// totalDataSize(1) + [{id, size}]
@@ -231,7 +226,7 @@ namespace harp {
             }
             partitionMetaToSend[0] = totalDataSize;
 
-            std::cout << "Will send " << partitionMetaToSend[0] << " elements to " << sendTo << std::endl;
+            //std::cout << "Will send " << partitionMetaToSend[0] << " elements to " << sendTo << std::endl;
 
             MPI_Sendrecv(
                     &partitionMetaToSend, sendingMetaSize, MPI_INT, sendTo, table->getId() + 1,
@@ -240,7 +235,7 @@ namespace harp {
                     MPI_STATUS_IGNORE
             );
 
-            std::cout << "Will recv " << partitionMetaToRecv[0] << " from " << receiveFrom << std::endl;
+            //std::cout << "Will recv " << partitionMetaToRecv[0] << " from " << receiveFrom << std::endl;
 
             //sending DATA
             //todo implement support for data arrays larger than INT_MAX
@@ -285,16 +280,12 @@ namespace harp {
         void Communicator<TYPE>::asyncRotate(ds::Table<TAB_TYPE> *table, int pid) {
             auto partition = table->getPartition(pid);//take partition out
             table->removePartition(pid, false);
-
             auto *rotatingTable = new harp::ds::Table<TAB_TYPE>(table->getId());//create new table for rotation
             rotatingTable->addPartition(partition);
 
             auto rotateTaskFuture = this->threadPool->push([rotatingTable, table, this](int id) {
-
-                std::cout << "Executing rotate in thread : " << id << std::endl;
-
+                //std::cout << "Executing rotate in thread : " << id << std::endl;
                 rotate(rotatingTable);
-
                 for (auto p:*rotatingTable->getPartitions()) {
                     table->addToPendingPartitions(p.second);
                 }

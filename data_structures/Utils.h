@@ -39,6 +39,7 @@ namespace harp {
                 for (auto p:*table->getPartitions()) {
                     resetPartition<TYPE>(p.second, value);
                 }
+                table->resetIterator();
             }
         }
     }

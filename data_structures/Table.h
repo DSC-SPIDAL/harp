@@ -35,6 +35,8 @@ namespace harp {
 
             Table(int id);//todo add combiner
 
+            Table(const Table& p);
+
             ~Table();
 
             int getId();
@@ -45,9 +47,9 @@ namespace harp {
 
             std::map<int, Partition<TYPE> *> *getPartitions(bool blockForAvailability = false);
 
-            Partition<TYPE> *nextPartition(bool blockForAvailability = false);
+            Partition<TYPE> *nextPartition();
 
-            bool hasNext();
+            bool hasNext(bool blockForAvailability = false);
 
             void resetIterator();
 

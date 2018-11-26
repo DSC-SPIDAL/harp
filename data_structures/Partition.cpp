@@ -1,4 +1,5 @@
 #include "Partition.h"
+#include "iostream"
 
 namespace harp {
     namespace ds {
@@ -39,6 +40,11 @@ namespace harp {
             this->clear();
             this->data = data;
             this->size = size;
+        }
+
+        template<class TYPE>
+        Partition<TYPE>::Partition(const Partition &p) {
+            std::cout << "Copy partition called" << std::endl;
         }
     }
 }

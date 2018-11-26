@@ -16,6 +16,8 @@ namespace harp {
 
             Partition(int id, TYPE *data, int size);
 
+            Partition(const Partition& p);
+
             ~Partition();
 
             int getId();

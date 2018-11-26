@@ -105,13 +105,8 @@ namespace harp {
         }
 
         template<class TYPE>
-        Partition<TYPE> *Table<TYPE>::nextPartition(bool blockForAvailability) {
+        Partition<TYPE> *Table<TYPE>::nextPartition() {
             this->pushPendingPartitions();
-            if (blockForAvailability) {
-                while (this->partitionMap.empty()) {
-                    this->pushPendingPartitions();
-                }
-            }
             if (this->iteratingIndex < this->orderedPartitions.size()) {
                 int index = this->orderedPartitions[this->iteratingIndex++];
                 return this->partitionMap.at(index);
@@ -120,24 +115,26 @@ namespace harp {
         }
 
         template<class TYPE>
-        bool Table<TYPE>::hasNext() {
+        bool Table<TYPE>::hasNext(bool blockForAvailability) {
             this->pushPendingPartitions();
-//            while (this->partitionMap.empty()) {
-//                while (!this->pendingPartitions.empty()) {
-//                    this->addPartition(this->pendingPartitions.front());
-//                    this->pendingPartitions.pop();
-//                }
-//            }
+            if (blockForAvailability) {
+                while (this->partitionMap.empty()) {
+                    this->pushPendingPartitions();
+                }
+            }
             return this->iteratingIndex < this->orderedPartitions.size();
         }
 
         template<class TYPE>
         void Table<TYPE>::resetIterator() {
-            for (auto i = this->orderedPartitions.cbegin(); i != this->orderedPartitions.cend();) {
-                if (this->partitionMap.count(*i) == 0) {
-                    this->orderedPartitions.erase(i);
+            int markedCount = 0;
+            //iterating in reverse
+            for (auto i = this->orderedPartitions.crbegin(); i != this->orderedPartitions.crend();) {
+                if (this->partitionMap.count(*i) == 0 || markedCount == this->partitionMap.size()) {
+                    i = decltype(i){this->orderedPartitions.erase(std::next(i).base())};
                 } else {
                     i++;
+                    markedCount++;
                 }
             }
             this->iteratingIndex = 0;
@@ -151,6 +148,11 @@ namespace harp {
                 this->addPartition(this->pendingPartitions.front());
                 this->pendingPartitions.pop();
             }
+        }
+
+        template<class TYPE>
+        Table<TYPE>::Table(const Table &p) {
+            std::cout << "Copy table called" << std::endl;
         }
     }
 }
