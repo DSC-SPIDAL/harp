@@ -21,6 +21,8 @@ namespace harp {
             //todo group async tasks with a tag and allow to wait on all or on tag
             std::queue<std::future<void>> asyncTasks;
 
+            int communicationTag = 0;
+
         public:
 
             Communicator(TYPE workerId, TYPE worldSize);
@@ -34,7 +36,7 @@ namespace harp {
             void broadcast(harp::ds::Table<TYPE> *table, int bcastWorkerId);
 
             template<class TAB_TYPE>
-            void rotate(harp::ds::Table<TAB_TYPE> *table);
+            void rotate(harp::ds::Table<TAB_TYPE> *table, int sendTag = -1, int recvTag = -1);
 
             template<class TAB_TYPE>
             void asyncRotate(harp::ds::Table<TAB_TYPE> *table, int pid);

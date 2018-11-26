@@ -35,7 +35,7 @@ namespace harp {
 
             Table(int id);//todo add combiner
 
-            Table(const Table& p);
+            Table(const Table &p);
 
             ~Table();
 

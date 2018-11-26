@@ -25,9 +25,18 @@ bool debugCondition(int workerId) {
     return workerId == 1;
 }
 
-const int TIME_SERIAL = 0;
-const int TIME_PARALLEL = 0;
-const int TIME_PARALLEL_COMPUTE = 0;
+int tagCounter = 0;
+
+const int TIME_BEFORE_SERIAL = tagCounter++;
+const int TIME_AFTER_SERIAL = tagCounter++;
+
+const int TIME_BEFORE_WAIT = tagCounter++;
+const int TIME_AFTER_WAIT = tagCounter++;
+
+const int TIME_PARALLEL_TOTAL_START = tagCounter++;
+const int TIME_PARALLEL_TOTAL_END = tagCounter++;
+
+const int TIME_PARALLEL_COMPUTE = tagCounter++;
 
 class KMeansWorker : public harp::Worker {
 
@@ -51,8 +60,8 @@ class KMeansWorker : public harp::Worker {
 //
 //        return;
         int iterations = 10;
-        int numOfCentroids = 250;
-        int vectorSize = 1000;
+        int numOfCentroids = 25;
+        int vectorSize = 10000;
         int numOfVectors = 10000;
 
         double serialDuration = 0;
@@ -82,14 +91,14 @@ class KMeansWorker : public harp::Worker {
             auto *centroids = new harp::ds::Table<double>(1);
             util::readKMeansDataFromFile("/tmp/harp/kmeans/centroids", vectorSize, centroids);
 
-            record(0);
+            record(TIME_BEFORE_SERIAL);
             harp::kernels::kmeans(centroids, points, vectorSize, iterations);
-            record(0);
+            record(TIME_AFTER_SERIAL);
 
-            std::cout << "Serial : " << diff(0) << std::endl;
+            std::cout << "Serial : " << diff(TIME_BEFORE_SERIAL, TIME_AFTER_SERIAL) << std::endl;
 
 
-            printTable(centroids);
+            //printTable(centroids);
 
             deleteTable(points, true);
             deleteTable(centroids, true);
@@ -128,7 +137,7 @@ class KMeansWorker : public harp::Worker {
         auto *points = new harp::ds::Table<double>(0);
         util::readKMeansDataFromFile("/tmp/harp/kmeans/" + std::to_string(workerId), vectorSize, points);
 
-        record(1);
+        record(TIME_PARALLEL_TOTAL_START);
 
         for (int it = 0; it < iterations; it++) {
             auto *minDistances = new double[points->getPartitionCount()];
@@ -156,12 +165,11 @@ class KMeansWorker : public harp::Worker {
             }
 
             //wait for async communications to complete
-            record(2, true);
+            record(TIME_BEFORE_WAIT);
             comm->wait();
-            record(2);
+            record(TIME_AFTER_WAIT);
 
-            std::cout << "Wait time : " << diff(2) << std::endl;
-            clear(2);
+            std::cout << "Wait time : " << diff(TIME_BEFORE_WAIT, TIME_AFTER_WAIT) << std::endl;
 
             harp::ds::util::resetTable<double>(myCentroids, 0);
 
@@ -183,12 +191,11 @@ class KMeansWorker : public harp::Worker {
                 comm->asyncRotate(myCentroids, nextCent->getId());
             }
 
-            record(3, true);
+            record(TIME_BEFORE_WAIT);
             comm->wait();
-            record(3);
+            record(TIME_AFTER_WAIT);
 
-            std::cout << "Wait time : " << diff(3) << std::endl;
-            clear(2);
+            std::cout << "Wait time : " << diff(TIME_BEFORE_WAIT, TIME_AFTER_WAIT) << std::endl;
 
             //calculating average
             for (auto c:*myCentroids->getPartitions()) {
@@ -201,14 +208,15 @@ class KMeansWorker : public harp::Worker {
             delete[] minDistances;
             delete[] closestCentroid;
         }
-        record(1);
+        record(TIME_PARALLEL_TOTAL_END);
         if (workerId == 0) {
-            std::cout << "Parallel : " << diff(1) << std::endl;
-            std::cout << "Speedup : " << diff(0) / diff(1) << std::endl;
+            std::cout << "Parallel : " << diff(TIME_PARALLEL_TOTAL_START, TIME_PARALLEL_TOTAL_END) << std::endl;
+            std::cout << "Speedup : " << diff(TIME_BEFORE_SERIAL, TIME_AFTER_SERIAL) /
+                                         diff(TIME_PARALLEL_TOTAL_START, TIME_PARALLEL_TOTAL_END) << std::endl;
         }
 
         comm->barrier();
-        printTable(myCentroids);
+        //printTable(myCentroids);
 
         deleteTable(myCentroids, true);
         deleteTable(points, true);

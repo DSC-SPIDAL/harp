@@ -15,38 +15,28 @@
 #ifndef HARPC_TIMING_H
 #define HARPC_TIMING_H
 
-#include <map>
+#include <unordered_map>
 #include <chrono>
 
 namespace harp {
     namespace util {
         namespace timing {
-            std::map<int, std::chrono::high_resolution_clock::time_point> times1;
-            std::map<int, std::chrono::high_resolution_clock::time_point> times2;
+            std::unordered_map<int, std::chrono::high_resolution_clock::time_point> times;
 
-            void record(int tag, bool init = false) {
-                if (!init && times1.count(tag) > 0) {
-                    times2.insert(std::make_pair(tag, std::chrono::high_resolution_clock::now()));
+            void record(int tag) {
+                if (times.count(tag) > 0) {
+                    times[tag] = std::chrono::high_resolution_clock::now();
                 } else {
-                    times1.insert(std::make_pair(tag, std::chrono::high_resolution_clock::now()));
+                    times.insert(std::make_pair(tag, std::chrono::high_resolution_clock::now()));
                 }
             }
 
-            double diff(int tag) {
-                return std::chrono::duration_cast<std::chrono::microseconds>(times2.at(tag) - times1.at(tag)).count();
+            double diff(int from, int to, bool store = true) {
+                return std::chrono::duration_cast<std::chrono::microseconds>(times.at(to) - times.at(from)).count();
             }
 
             void clear() {
-                times1.clear();
-                times2.clear();
-            }
-
-            void clear(int tag) {
-                if (times1.count(tag) > 0)
-                    times1.erase(tag);
-
-                if (times2.count(tag) > 0)
-                    times2.erase(tag);
+                times.clear();
             }
         }
     }

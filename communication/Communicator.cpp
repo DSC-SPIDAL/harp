@@ -23,7 +23,7 @@ namespace harp {
             this->workerId = workerId;
             this->worldSize = worldSize;
             this->threadPool = new ctpl::thread_pool(
-                    1);//todo create only one thread until MPI concurrency issue is resolved
+                    12 * 2);//todo create only one thread until MPI concurrency issue is resolved
 
         }
 
@@ -183,7 +183,7 @@ namespace harp {
 
         template<class CLS_TYPE>
         template<class TYPE>
-        void Communicator<CLS_TYPE>::rotate(harp::ds::Table<TYPE> *table) {
+        void Communicator<CLS_TYPE>::rotate(harp::ds::Table<TYPE> *table, int sendTag, int recvTag) {
             MPI_Datatype dataType = getMPIDataType<TYPE>();
 
             int sendTo = (this->workerId + 1) % this->worldSize;
@@ -197,8 +197,8 @@ namespace harp {
             //std::cout << "Will send " << numOfPartitionsToSend << " partitions to " << sendTo << std::endl;
 
             MPI_Sendrecv(
-                    &numOfPartitionsToSend, 1, MPI_INT, sendTo, table->getId(),
-                    &numOfPartitionsToRecv, 1, MPI_INT, receiveFrom, table->getId(),
+                    &numOfPartitionsToSend, 1, MPI_INT, sendTo, sendTag,
+                    &numOfPartitionsToRecv, 1, MPI_INT, receiveFrom, recvTag,
                     MPI_COMM_WORLD,
                     MPI_STATUS_IGNORE
             );
@@ -229,8 +229,8 @@ namespace harp {
             //std::cout << "Will send " << partitionMetaToSend[0] << " elements to " << sendTo << std::endl;
 
             MPI_Sendrecv(
-                    &partitionMetaToSend, sendingMetaSize, MPI_INT, sendTo, table->getId() + 1,
-                    &partitionMetaToRecv, receivingMetaSize, MPI_INT, receiveFrom, table->getId() + 1,
+                    &partitionMetaToSend, sendingMetaSize, MPI_INT, sendTo, sendTag,
+                    &partitionMetaToRecv, receivingMetaSize, MPI_INT, receiveFrom, recvTag,
                     MPI_COMM_WORLD,
                     MPI_STATUS_IGNORE
             );
@@ -240,13 +240,13 @@ namespace harp {
             //sending DATA
             //todo implement support for data arrays larger than INT_MAX
             MPI_Request dataSendRequest;
-            MPI_Isend(&dataBuffer[0], totalDataSize, dataType, sendTo, table->getId(), MPI_COMM_WORLD,
+            MPI_Isend(&dataBuffer[0], totalDataSize, dataType, sendTo, sendTag, MPI_COMM_WORLD,
                       &dataSendRequest);
 
             auto *recvTab = new harp::ds::Table<TYPE>(table->getId());
             auto *recvBuffer = new TYPE[partitionMetaToRecv[0]];
 
-            MPI_Recv(recvBuffer, partitionMetaToRecv[0], dataType, receiveFrom, table->getId(),
+            MPI_Recv(recvBuffer, partitionMetaToRecv[0], dataType, receiveFrom, recvTag,
                      MPI_COMM_WORLD,
                      MPI_STATUS_IGNORE);
 
@@ -283,13 +283,29 @@ namespace harp {
             auto *rotatingTable = new harp::ds::Table<TAB_TYPE>(table->getId());//create new table for rotation
             rotatingTable->addPartition(partition);
 
-            auto rotateTaskFuture = this->threadPool->push([rotatingTable, table, this](int id) {
-                //std::cout << "Executing rotate in thread : " << id << std::endl;
-                rotate(rotatingTable);
-                for (auto p:*rotatingTable->getPartitions()) {
-                    table->addToPendingPartitions(p.second);
-                }
-            });
+            //todo move to a singleton threadpool : count time for asyncRotate call before doing that
+            int sendTo = (this->workerId + 1) % this->worldSize;
+            int receiveFrom = (this->workerId + this->worldSize - 1) % this->worldSize;
+
+            int myRecieveTag = this->communicationTag++;
+            int mySendTag = -1;
+
+            MPI_Sendrecv(
+                    &myRecieveTag, 1, MPI_INT, receiveFrom, table->getId(),
+                    &mySendTag, 1, MPI_INT, sendTo, table->getId(),
+                    MPI_COMM_WORLD,
+                    MPI_STATUS_IGNORE
+            );
+
+            std::future<void> rotateTaskFuture;
+            rotateTaskFuture = this->threadPool->push(
+                    [rotatingTable, table, mySendTag, myRecieveTag, this](int id) {
+                        //std::cout << "Executing rotate in thread : " << id << std::endl;
+                        rotate(rotatingTable, mySendTag, myRecieveTag);
+                        for (auto p:*rotatingTable->getPartitions()) {
+                            table->addToPendingPartitions(p.second);//todo add locks
+                        }
+                    });
             this->asyncTasks.push(std::move(rotateTaskFuture));
         }
 
