@@ -90,7 +90,8 @@ endif
 
 ifeq ($(DEBUG), 1)
 #CFLAGS += -fpermissive -fno-strict-aliasing -DUSE_BINID=1 -g -O0
-CFLAGS += -fpermissive -fno-strict-aliasing -DUSE_BINID=1 -g -O2
+#CFLAGS += -fpermissive -fno-strict-aliasing -DUSE_BINID=1 -g -O2
+CFLAGS += -g -O0
 TARGET = xgboost-$(CXX)-debug
 WORKDIR = build-$(CXX)-debug
 else

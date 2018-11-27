@@ -250,6 +250,7 @@ class HistMakerCompactFastHist: public BaseMaker {
     std::vector<unsigned> rptr;
     /*! \brief cut field */
     std::vector<bst_float> cut;
+    std::vector<bst_float> min_val;
     // per thread histset
     std::vector<HistSet> hset;
     // initialize the hist set
@@ -676,7 +677,7 @@ class HistMakerCompactFastHist: public BaseMaker {
 
     double root_gain = node_sum.CalcGain(param_);
     TStats s(param_), c(param_);
-    for (bst_uint i = 0; i < hist.size; ++i) {
+    for (int i = 0; i < hist.size; ++i) {
       s.Add(hist.data[i]);
       if (s.sum_hess >= param_.min_child_weight) {
         c.SetSubstract(node_sum, s);
@@ -689,7 +690,7 @@ class HistMakerCompactFastHist: public BaseMaker {
       }
     }
     s.Clear();
-    for (bst_uint i = hist.size - 1; i != 0; --i) {
+    for (int i = hist.size - 1; i >= 0; --i) {
       s.Add(hist.data[i]);
       if (s.sum_hess >= param_.min_child_weight) {
         c.SetSubstract(node_sum, s);
@@ -837,6 +838,23 @@ class HistMakerCompactFastHist: public BaseMaker {
     if (!isInitializedHistIndex && this->qexpand_.size() == 1) {
         cut_.Init(p_fmat,param_.max_bin /*256*/);
 
+        /*
+         * Debug on cut, higgs feature fid=8
+         * 0.0
+         * 1.0865380764007568
+         * 2.1730761528015137
+         *
+         */
+        if(1){
+            auto a = cut_[8];
+            std::cout << "higgs[8] cut size:" << a.size << "=" ;
+            for (size_t i = 0; i < a.size; ++i) {
+                std::cout << a.cut[i] << ",";
+            }
+            std::cout << "min_val=" << cut_.min_val[8] << "\n";
+
+        }
+
         CHECK_EQ(this->qexpand_.size(), 1);
 
         // now we get the final result of sketch, setup the cut
@@ -854,13 +872,17 @@ class HistMakerCompactFastHist: public BaseMaker {
                 this->wspace_.cut.push_back(a.cut[i]);
               }
               // push a value that is greater than anything
-              if (a.size != 0) {
-                bst_float cpt = a.cut[a.size - 1];
-                // this must be bigger than last value in a scale
-                bst_float last = cpt + fabs(cpt) + kRtEps;
-                this->wspace_.cut.push_back(last);
-              }
+              //if (a.size != 0) {
+              //  bst_float cpt = a.cut[a.size - 1];
+              //  // this must be bigger than last value in a scale
+              //  bst_float last = cpt + fabs(cpt) + kRtEps;
+              //  this->wspace_.cut.push_back(last);
+              //}
               this->wspace_.rptr.push_back(static_cast<unsigned>(this->wspace_.cut.size()));
+
+              //add minval
+              this->wspace_.min_val.push_back(cut_.min_val[fid]);
+
             } else {
               CHECK_EQ(offset, -2);
               bst_float cpt = feat_helper_.MaxValue(fid);
@@ -1313,14 +1335,30 @@ class HistMakerCompactFastHist: public BaseMaker {
             continue;
         }
 
-        unsigned sindex = tree[i].SplitIndex();
+        unsigned fid = tree[i].SplitIndex();
         auto splitCond = tree[i].SplitCond();
+        int binid = static_cast<int>(splitCond);
         auto defaultLeft = tree[i].DefaultLeft();
 
         //turn splitCond from binid to fvalue
         //splitCond is binid now
-        float fvalue = this->wspace_.cut[this->wspace_.rptr[sindex] + static_cast<int>(splitCond)];
-        tree[i].SetSplit(sindex, fvalue, defaultLeft);
+        // the leftmost and rightmost bound should adjust
+
+        float fvalue;
+        //int cutSize = this->wspace_.rptr[fid + 1] - this->wspace_.rptr[fid];
+        //if (binid == cutSize){
+        //    //rightmost
+        //    fvalue = this->wspace_.cut[this->wspace_.rptr[fid] + binid - 1];
+        //}
+        //else if (binid == -1 && defaultLeft){
+        if (binid == -1 && defaultLeft){
+            //leftmost
+            fvalue = this->wspace_.min_val[fid];
+        }
+        else{
+            fvalue = this->wspace_.cut[this->wspace_.rptr[fid] + binid];
+        }
+        tree[i].SetSplit(fid, fvalue, defaultLeft);
     }
 
     //update the position for update cache

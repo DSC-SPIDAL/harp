@@ -180,7 +180,8 @@ class LearnerImpl : public Learner {
     } else if (tparam_.tree_method == 7) {
       cfg_["updater"] = "grow_pmatcompact,prune";
     } else if (tparam_.tree_method == 8) {
-      cfg_["updater"] = "grow_pmatfasthist,prune";
+      //cfg_["updater"] = "grow_pmatfasthist,prune";
+      cfg_["updater"] = "grow_pmatfasthist";
     } else if (tparam_.tree_method == 9) {
       cfg_["updater"] = "grow_fullcompact,prune";
     } else if (tparam_.tree_method == 10) {
