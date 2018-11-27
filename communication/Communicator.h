@@ -16,17 +16,20 @@ namespace harp {
             TYPE workerId;
             TYPE worldSize;
 
-            ctpl::thread_pool *threadPool;
-            ctpl::thread_pool *singletonThreadPool;
+            int comThreads;
 
-            //todo group async tasks with a tag and allow to wait on all or on tag
+            //Using separate task queues for each thread pool to prevent unnecessary locking
+            //----------------------------------//
+            ctpl::thread_pool *threadPool;
             std::queue<std::future<void>> asyncTasks;
+            std::mutex asyncTasksMutex;
+            //----------------------------------//
 
             int communicationTag = 0;
 
         public:
 
-            Communicator(TYPE workerId, TYPE worldSize);
+            Communicator(TYPE workerId, TYPE worldSize, int comThreads = 1);
 
             void barrier();
 

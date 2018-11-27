@@ -33,7 +33,6 @@ namespace harp {
         PartitionState Table<TYPE>::addPartition(Partition<TYPE> *partition) {
             this->partitionMap.insert(std::make_pair(partition->getId(), partition));
             this->orderedPartitions.push_back(partition->getId());
-            this->availability.notify_one();
             return COMBINED;
         }
 
@@ -83,7 +82,7 @@ namespace harp {
 //            }
 //
 //            if (blockForAvailability) {
-//                std::unique_lock<std::mutex> lock(this->partitionMapMutex);
+//                std::unique_lock<std::mutex> lock(this->pendingPartitionsMutex);
 //                while (this->partitionMap.empty()) {
 //                    this->availability.wait(lock);
 //                }
@@ -101,7 +100,9 @@ namespace harp {
 
         template<class TYPE>
         void Table<TYPE>::addToPendingPartitions(Partition<TYPE> *partition) {
+            //this->pendingPartitionsMutex.lock();
             this->pendingPartitions.push(partition);
+            //this->pendingPartitionsMutex.unlock();
         }
 
         template<class TYPE>
@@ -118,7 +119,7 @@ namespace harp {
         bool Table<TYPE>::hasNext(bool blockForAvailability) {
             this->pushPendingPartitions();
             if (blockForAvailability) {
-                while (this->partitionMap.empty()) {
+                while (this->partitionMap.empty()) {//todo remove busy waiting
                     this->pushPendingPartitions();
                 }
             }
@@ -144,10 +145,12 @@ namespace harp {
 
         template<class TYPE>
         void Table<TYPE>::pushPendingPartitions() {
+            //this->pendingPartitionsMutex.lock();
             while (!this->pendingPartitions.empty()) {
                 this->addPartition(this->pendingPartitions.front());
                 this->pendingPartitions.pop();
             }
+            //this->pendingPartitionsMutex.unlock();
         }
 
         template<class TYPE>

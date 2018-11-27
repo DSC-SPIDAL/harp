@@ -23,4 +23,8 @@ namespace harp {
         this->execute(&comm);
         MPI_Finalize();
     }
+
+    void Worker::setCommThreads(int comThreads) {
+        this->comThreads = comThreads;
+    }
 }

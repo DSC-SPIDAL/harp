@@ -23,9 +23,7 @@ namespace harp {
 
             //this holds partitions received from asynchronous communication
             std::queue<Partition<TYPE> *> pendingPartitions;
-
-            std::condition_variable availability;
-            std::mutex partitionMapMutex;
+            std::mutex pendingPartitionsMutex;
 
             void pushPendingPartitions();
 

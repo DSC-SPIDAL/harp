@@ -60,9 +60,9 @@ class KMeansWorker : public harp::Worker {
 //        }
 //
 //        return;
-        int iterations = 10;
-        int numOfCentroids = 25;
-        int vectorSize = 100;
+        int iterations = 5;
+        int numOfCentroids = 250;
+        int vectorSize = 1000;
         int numOfVectors = 10000;
 
         double serialDuration = 0;
@@ -162,18 +162,18 @@ class KMeansWorker : public harp::Worker {
                 firstRound = false;
                 cen++;
                 //std::cout << "Calling rotate on " << nextCent->getId() << std::endl;
-                record(TIME_ASYNC_ROTATE_BEGIN);
+                //record(TIME_ASYNC_ROTATE_BEGIN);
                 comm->asyncRotate(myCentroids, nextCent->getId());
-                record(TIME_ASYNC_ROTATE_END);
-                diff(TIME_ASYNC_ROTATE_BEGIN, TIME_ASYNC_ROTATE_END, true);
+                //record(TIME_ASYNC_ROTATE_END);
+                //diff(TIME_ASYNC_ROTATE_BEGIN, TIME_ASYNC_ROTATE_END, true);
             }
 
             //wait for async communications to complete
-            record(TIME_BEFORE_WAIT);
+            //record(TIME_BEFORE_WAIT);
             comm->wait();
-            record(TIME_AFTER_WAIT);
+            //record(TIME_AFTER_WAIT);
 
-            std::cout << "Wait time 1st rot : " << diff(TIME_BEFORE_WAIT, TIME_AFTER_WAIT) << std::endl;
+            //std::cout << "Wait time 1st rot : " << diff(TIME_BEFORE_WAIT, TIME_AFTER_WAIT, true) << std::endl;
 
             harp::ds::util::resetTable<double>(myCentroids, 0);
 
@@ -192,17 +192,17 @@ class KMeansWorker : public harp::Worker {
                     }
                 }
                 cen++;
-                record(TIME_ASYNC_ROTATE_BEGIN);
+                //record(TIME_ASYNC_ROTATE_BEGIN);
                 comm->asyncRotate(myCentroids, nextCent->getId());
-                record(TIME_ASYNC_ROTATE_END);
-                diff(TIME_ASYNC_ROTATE_BEGIN, TIME_ASYNC_ROTATE_END, true);
+                //record(TIME_ASYNC_ROTATE_END);
+                //diff(TIME_ASYNC_ROTATE_BEGIN, TIME_ASYNC_ROTATE_END, true);
             }
 
-            record(TIME_BEFORE_WAIT);
+            //record(TIME_BEFORE_WAIT);
             comm->wait();
-            record(TIME_AFTER_WAIT);
+            //record(TIME_AFTER_WAIT);
 
-            std::cout << "Wait time 2nd rot : " << diff(TIME_BEFORE_WAIT, TIME_AFTER_WAIT) << std::endl;
+            //std::cout << "Wait time 2nd rot : " << diff(TIME_BEFORE_WAIT, TIME_AFTER_WAIT, true) << std::endl;
 
             //calculating average
             for (auto c:*myCentroids->getPartitions()) {
@@ -222,8 +222,13 @@ class KMeansWorker : public harp::Worker {
                                          diff(TIME_PARALLEL_TOTAL_START, TIME_PARALLEL_TOTAL_END) << std::endl;
         }
 
-        std::cout << "Avg async rotation time : " << average(TIME_ASYNC_ROTATE_BEGIN, TIME_ASYNC_ROTATE_END)
-                  << std::endl;
+//        std::cout << "Avg async rotation time : " << average(TIME_ASYNC_ROTATE_BEGIN, TIME_ASYNC_ROTATE_END)
+//                  << std::endl;
+//        std::cout << "Avg Wait time : " << average(TIME_BEFORE_WAIT, TIME_AFTER_WAIT) << std::endl;
+//        std::cout << "Total Communication time : " << total(11, 12) << std::endl;
+//        std::cout << "Total Computation time : " << diff(TIME_PARALLEL_TOTAL_START, TIME_PARALLEL_TOTAL_END) -
+//                                                    total(TIME_ASYNC_ROTATE_BEGIN, TIME_ASYNC_ROTATE_END) -
+//                                                    diff(TIME_BEFORE_WAIT, TIME_AFTER_WAIT) << std::endl;
 
         comm->barrier();
         //printTable(myCentroids);
@@ -237,6 +242,7 @@ class KMeansWorker : public harp::Worker {
 int main(int argc, char *argv[]) {
     KMeansWorker kMeansWorker;
     kMeansWorker.init(argc, argv);
+    kMeansWorker.setCommThreads(1);
     kMeansWorker.start();
     return 0;
 }

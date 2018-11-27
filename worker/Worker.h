@@ -9,12 +9,16 @@ namespace harp {
     protected:
         int workerId;
         int worldSize;
+
+        int comThreads = 1;//no of communication threads
     public:
         void init(int argc, char *argv[]);
 
         void start();
 
         virtual void execute(com::Communicator<int> *comm) = 0;
+
+        void setCommThreads(int comThreads);
     };
 }
 

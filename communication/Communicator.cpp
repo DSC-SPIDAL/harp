@@ -1,8 +1,10 @@
 #include "Communicator.h"
 #include "mpi.h"
 #include <map>
-#include "future"
-#include "iomanip"
+#include <future>
+#include <iomanip>
+#include <algorithm>
+#include "../util/Timing.h"
 
 template<class TYPE>
 void printTable(harp::ds::Table<TYPE> *table) {
@@ -19,11 +21,10 @@ namespace harp {
     namespace com {
 
         template<class TYPE>
-        Communicator<TYPE>::Communicator(TYPE workerId, TYPE worldSize) {
+        Communicator<TYPE>::Communicator(TYPE workerId, TYPE worldSize, int comThreads) {
             this->workerId = workerId;
             this->worldSize = worldSize;
-            this->threadPool = new ctpl::thread_pool(1/*std::thread::hardware_concurrency() * 2*/);
-            this->singletonThreadPool = new ctpl::thread_pool(1);
+            this->threadPool = new ctpl::thread_pool(comThreads);
         }
 
         template<class TYPE>
@@ -277,38 +278,53 @@ namespace harp {
         template<class TYPE>
         template<class TAB_TYPE>
         void Communicator<TYPE>::asyncRotate(ds::Table<TAB_TYPE> *table, int pid) {
+            //util::timing::record(11);
             auto partition = table->getPartition(pid);//take partition out
-            table->removePartition(pid, false);
+            table->removePartition(pid, false);//this happens in the same thread all the time
             auto *rotatingTable = new harp::ds::Table<TAB_TYPE>(table->getId());//create new table for rotation
             rotatingTable->addPartition(partition);
 
-            //todo move to a singleton threadpool : count time for asyncRotate call before doing that
-            int sendTo = (this->workerId + 1) % this->worldSize;
-            int receiveFrom = (this->workerId + this->worldSize - 1) % this->worldSize;
+            int myRecieveTag = table->getId();
+            int mySendTag = table->getId();
 
-            int myRecieveTag = this->communicationTag++;
-            int mySendTag = -1;
+            if (this->threadPool->size() > 1) {// for just one thread, communication happens one after another.
+                int sendTo = (this->workerId + 1) % this->worldSize;
+                int receiveFrom = (this->workerId + this->worldSize - 1) % this->worldSize;
 
-            MPI_Sendrecv(
-                    &myRecieveTag, 1, MPI_INT, receiveFrom, table->getId(),
-                    &mySendTag, 1, MPI_INT, sendTo, table->getId(),
-                    MPI_COMM_WORLD,
-                    MPI_STATUS_IGNORE
-            );
+                myRecieveTag = this->communicationTag++;
+                mySendTag = -1;
+
+                MPI_Sendrecv(
+                        &myRecieveTag, 1, MPI_INT, receiveFrom, table->getId(),
+                        &mySendTag, 1, MPI_INT, sendTo, table->getId(),
+                        MPI_COMM_WORLD,
+                        MPI_STATUS_IGNORE
+                );
+            }
+            //util::timing::record(12);
+            //util::timing::diff(11, 12, true);
 
             std::future<void> rotateTaskFuture = this->threadPool->push(
                     [rotatingTable, table, mySendTag, myRecieveTag, this](int id) {
                         //std::cout << "Executing rotate in thread : " << id << std::endl;
+                        //util::timing::record(11);
                         rotate(rotatingTable, mySendTag, myRecieveTag);
+                        //util::timing::record(12);
+                        //util::timing::diff(11, 12, true);
+
+                        this->asyncTasksMutex.lock();
                         for (auto p:*rotatingTable->getPartitions()) {
                             table->addToPendingPartitions(p.second);//todo add locks
                         }
+                        this->asyncTasksMutex.unlock();
                     });
+
             this->asyncTasks.push(std::move(rotateTaskFuture));
         }
 
         template<class TYPE>
         void Communicator<TYPE>::wait() {
+            //wait for async task thread pool queue
             while (!this->asyncTasks.empty()) {
                 this->asyncTasks.front().get();
                 this->asyncTasks.pop();
