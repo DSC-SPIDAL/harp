@@ -62,7 +62,7 @@ class KMeansWorker : public harp::Worker {
 //        return;
         int iterations = 10;
         int numOfCentroids = 25;
-        int vectorSize = 10000;
+        int vectorSize = 100;
         int numOfVectors = 10000;
 
         double serialDuration = 0;
@@ -165,8 +165,7 @@ class KMeansWorker : public harp::Worker {
                 record(TIME_ASYNC_ROTATE_BEGIN);
                 comm->asyncRotate(myCentroids, nextCent->getId());
                 record(TIME_ASYNC_ROTATE_END);
-                std::cout << "Async Rotate 1st rot : " << diff(TIME_ASYNC_ROTATE_BEGIN, TIME_ASYNC_ROTATE_END)
-                          << std::endl;
+                diff(TIME_ASYNC_ROTATE_BEGIN, TIME_ASYNC_ROTATE_END, true);
             }
 
             //wait for async communications to complete
@@ -196,8 +195,7 @@ class KMeansWorker : public harp::Worker {
                 record(TIME_ASYNC_ROTATE_BEGIN);
                 comm->asyncRotate(myCentroids, nextCent->getId());
                 record(TIME_ASYNC_ROTATE_END);
-                std::cout << "Async Rotate 2nd rot : " << diff(TIME_ASYNC_ROTATE_BEGIN, TIME_ASYNC_ROTATE_END)
-                          << std::endl;
+                diff(TIME_ASYNC_ROTATE_BEGIN, TIME_ASYNC_ROTATE_END, true);
             }
 
             record(TIME_BEFORE_WAIT);
@@ -223,6 +221,9 @@ class KMeansWorker : public harp::Worker {
             std::cout << "Speedup : " << diff(TIME_BEFORE_SERIAL, TIME_AFTER_SERIAL) /
                                          diff(TIME_PARALLEL_TOTAL_START, TIME_PARALLEL_TOTAL_END) << std::endl;
         }
+
+        std::cout << "Avg async rotation time : " << average(TIME_ASYNC_ROTATE_BEGIN, TIME_ASYNC_ROTATE_END)
+                  << std::endl;
 
         comm->barrier();
         //printTable(myCentroids);
