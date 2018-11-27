@@ -311,12 +311,17 @@ namespace harp {
                         rotate(rotatingTable, mySendTag, myRecieveTag);
                         //util::timing::record(12);
                         //util::timing::diff(11, 12, true);
-
-                        this->asyncTasksMutex.lock();
-                        for (auto p:*rotatingTable->getPartitions()) {
-                            table->addToPendingPartitions(p.second);//todo add locks
+                        if (this->threadPool->size() > 1) {
+                            this->asyncTasksMutex.lock();
+                            for (auto p:*rotatingTable->getPartitions()) {
+                                table->addToPendingPartitions(p.second);
+                            }
+                            this->asyncTasksMutex.unlock();
+                        } else {
+                            for (auto p:*rotatingTable->getPartitions()) {
+                                table->addToPendingPartitions(p.second);
+                            }
                         }
-                        this->asyncTasksMutex.unlock();
                     });
 
             this->asyncTasks.push(std::move(rotateTaskFuture));
