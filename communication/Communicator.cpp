@@ -22,9 +22,8 @@ namespace harp {
         Communicator<TYPE>::Communicator(TYPE workerId, TYPE worldSize) {
             this->workerId = workerId;
             this->worldSize = worldSize;
-            this->threadPool = new ctpl::thread_pool(
-                    12 * 2);//todo create only one thread until MPI concurrency issue is resolved
-
+            this->threadPool = new ctpl::thread_pool(1/*std::thread::hardware_concurrency() * 2*/);
+            this->singletonThreadPool = new ctpl::thread_pool(1);
         }
 
         template<class TYPE>
@@ -297,8 +296,7 @@ namespace harp {
                     MPI_STATUS_IGNORE
             );
 
-            std::future<void> rotateTaskFuture;
-            rotateTaskFuture = this->threadPool->push(
+            std::future<void> rotateTaskFuture = this->threadPool->push(
                     [rotatingTable, table, mySendTag, myRecieveTag, this](int id) {
                         //std::cout << "Executing rotate in thread : " << id << std::endl;
                         rotate(rotatingTable, mySendTag, myRecieveTag);

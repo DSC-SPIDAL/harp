@@ -17,6 +17,7 @@ namespace harp {
             TYPE worldSize;
 
             ctpl::thread_pool *threadPool;
+            ctpl::thread_pool *singletonThreadPool;
 
             //todo group async tasks with a tag and allow to wait on all or on tag
             std::queue<std::future<void>> asyncTasks;

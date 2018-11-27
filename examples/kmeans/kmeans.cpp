@@ -36,7 +36,8 @@ const int TIME_AFTER_WAIT = tagCounter++;
 const int TIME_PARALLEL_TOTAL_START = tagCounter++;
 const int TIME_PARALLEL_TOTAL_END = tagCounter++;
 
-const int TIME_PARALLEL_COMPUTE = tagCounter++;
+const int TIME_ASYNC_ROTATE_BEGIN = tagCounter++;
+const int TIME_ASYNC_ROTATE_END = tagCounter++;
 
 class KMeansWorker : public harp::Worker {
 
@@ -161,7 +162,11 @@ class KMeansWorker : public harp::Worker {
                 firstRound = false;
                 cen++;
                 //std::cout << "Calling rotate on " << nextCent->getId() << std::endl;
+                record(TIME_ASYNC_ROTATE_BEGIN);
                 comm->asyncRotate(myCentroids, nextCent->getId());
+                record(TIME_ASYNC_ROTATE_END);
+                std::cout << "Async Rotate 1st rot : " << diff(TIME_ASYNC_ROTATE_BEGIN, TIME_ASYNC_ROTATE_END)
+                          << std::endl;
             }
 
             //wait for async communications to complete
@@ -169,7 +174,7 @@ class KMeansWorker : public harp::Worker {
             comm->wait();
             record(TIME_AFTER_WAIT);
 
-            std::cout << "Wait time : " << diff(TIME_BEFORE_WAIT, TIME_AFTER_WAIT) << std::endl;
+            std::cout << "Wait time 1st rot : " << diff(TIME_BEFORE_WAIT, TIME_AFTER_WAIT) << std::endl;
 
             harp::ds::util::resetTable<double>(myCentroids, 0);
 
@@ -188,14 +193,18 @@ class KMeansWorker : public harp::Worker {
                     }
                 }
                 cen++;
+                record(TIME_ASYNC_ROTATE_BEGIN);
                 comm->asyncRotate(myCentroids, nextCent->getId());
+                record(TIME_ASYNC_ROTATE_END);
+                std::cout << "Async Rotate 2nd rot : " << diff(TIME_ASYNC_ROTATE_BEGIN, TIME_ASYNC_ROTATE_END)
+                          << std::endl;
             }
 
             record(TIME_BEFORE_WAIT);
             comm->wait();
             record(TIME_AFTER_WAIT);
 
-            std::cout << "Wait time : " << diff(TIME_BEFORE_WAIT, TIME_AFTER_WAIT) << std::endl;
+            std::cout << "Wait time 2nd rot : " << diff(TIME_BEFORE_WAIT, TIME_AFTER_WAIT) << std::endl;
 
             //calculating average
             for (auto c:*myCentroids->getPartitions()) {
