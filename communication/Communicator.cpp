@@ -124,17 +124,28 @@ namespace harp {
         template<class TYPE>
         void Communicator<TYPE>::allReduce(harp::ds::Table<TYPE> *table, MPI_Op operation) {
             MPI_Datatype dataType = getMPIDataType<TYPE>();
+            MPI_Request requests[table->getPartitionCount()];
+            std::vector<TYPE *> dataArrays;
+            int index = 0;
             for (auto p : *table->getPartitions()) {//keys are ordered in ascending order
                 auto *data = new TYPE[p.second->getSize()];
-                MPI_Allreduce(
+                MPI_Iallreduce(
                         p.second->getData(),
                         data,
                         p.second->getSize(),
                         dataType,
                         operation,
-                        MPI_COMM_WORLD
+                        MPI_COMM_WORLD,
+                        &requests[index++]
                 );
-                p.second->setData(data, p.second->getSize());
+                dataArrays.push_back(data);
+            }
+
+            MPI_Waitall(static_cast<int>(table->getPartitionCount()), requests, MPI_STATUS_IGNORE);
+
+            index = 0;
+            for (auto p : *table->getPartitions()) {
+                p.second->setData(dataArrays[index++], p.second->getSize());
             }
         }
 
@@ -307,10 +318,10 @@ namespace harp {
             std::future<void> rotateTaskFuture = this->threadPool->push(
                     [rotatingTable, table, mySendTag, myRecieveTag, this](int id) {
                         //std::cout << "Executing rotate in thread : " << id << std::endl;
-                        //util::timing::record(11);
+                        util::timing::record(11);
                         rotate(rotatingTable, mySendTag, myRecieveTag);
-                        //util::timing::record(12);
-                        //util::timing::diff(11, 12, true);
+                        util::timing::record(12);
+                        util::timing::diff(11, 12, true);
                         if (this->threadPool->size() > 1) {
                             this->asyncTasksMutex.lock();
                             for (auto p:*rotatingTable->getPartitions()) {
