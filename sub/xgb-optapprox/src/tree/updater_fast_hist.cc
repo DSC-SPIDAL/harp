@@ -239,6 +239,7 @@ class FastHistMaker: public TreeUpdater {
           const int cright = (*p_tree)[nid].RightChild();
           hist_.AddHistRow(cleft);
           hist_.AddHistRow(cright);
+          #ifdef USE_HALFTRICK
           if (row_set_collection_[cleft].Size() < row_set_collection_[cright].Size()) {
             BuildHist(gpair_h, row_set_collection_[cleft], gmat, gmatb, hist_[cleft]);
             SubtractionTrick(hist_[cright], hist_[cleft], hist_[nid]);
@@ -246,6 +247,11 @@ class FastHistMaker: public TreeUpdater {
             BuildHist(gpair_h, row_set_collection_[cright], gmat, gmatb, hist_[cright]);
             SubtractionTrick(hist_[cleft], hist_[cright], hist_[nid]);
           }
+          #else
+            BuildHist(gpair_h, row_set_collection_[cleft], gmat, gmatb, hist_[cleft]);
+            BuildHist(gpair_h, row_set_collection_[cright], gmat, gmatb, hist_[cright]);
+          #endif
+
           time_build_hist += dmlc::GetTime() - tstart;
           tminfo.buildhist_time += dmlc::GetTime() - tstart;
 

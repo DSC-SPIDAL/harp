@@ -964,6 +964,113 @@ class HistMakerCompactFastHist: public BaseMaker {
         }
       }
   }
+
+/*
+ * halftrick 
+ *
+ */
+  #ifdef USE_HALFTRICK
+  //#define CHECKHALFCOND (nid>=0 && (nid&1)==0)
+  #define CHECKHALFCOND ((nid & 0x80000001) ==0)
+  #else
+  #define CHECKHALFCOND (nid>=0)
+  #endif
+
+  void UpdateHistColWithIndex_PosOrder(const std::vector<GradientPair> &gpair,
+                            const DMatrixCompactColBlockDense &col,
+                            const MetaInfo &info,
+                            const RegTree &tree,
+                            const std::vector<bst_uint> &fset,
+                            bst_uint fid_offset,
+                            std::vector<HistEntry> *p_temp) {
+    if (col.size() == 0) return;
+    // initialize sbuilder for use
+    std::vector<HistEntry> &hbuilder = *p_temp;
+    hbuilder.resize(tree.param.num_nodes);
+    for (size_t i = 0; i < this->qexpand_.size(); ++i) {
+      const unsigned nid = this->qexpand_[i];
+      const unsigned wid = this->node2workindex_[nid];
+      hbuilder[nid].istart = 0;
+      //hbuilder[nid].hist = this->wspace_.hset[0][fid_offset + wid * (fset.size()+1)];
+      //hbuilder[nid].hist = this->wspace_.hset[0].GetHistUnit(fid_offset, wid);
+      hbuilder[nid].hist = this->wspace_.hset[0].GetHistUnit(fid_offset, nid);
+    }
+
+    int blockNum = col.getBlockNum(blockSize_);
+    for(int blkid = 0; blkid < blockNum; blkid++){
+        const DMatrixCompactColBlockDense block = col.getBlock(blkid, blockSize_);
+
+        //one block
+        if (0){
+        //if (TStats::kSimpleStats != 0 && this->param_.cache_opt != 0) {
+          constexpr bst_uint kBuffer = 32;
+          bst_uint align_length = block.size() / kBuffer * kBuffer;
+          int buf_position[kBuffer];
+          GradientPair buf_gpair[kBuffer];
+
+          for (bst_uint j = 0; j < align_length; j += kBuffer) {
+            
+            #pragma ivdep
+            for (bst_uint i = 0; i < kBuffer; ++i) {
+              bst_uint ridx = block._index(j+i);
+              buf_position[i]= this->DecodePosition(ridx);
+              //const int nid = buf_position[i];
+              //if (CHECKHALFCOND) {
+                  buf_gpair[i] = gpair[ridx];
+              //}
+            }
+            for (bst_uint i = 0; i < kBuffer; ++i) {
+              const int nid = buf_position[i];
+                if (CHECKHALFCOND) {
+                  hbuilder[nid].AddWithIndex(block._binid(j+i), buf_gpair[i]);
+                }
+            }
+          }
+          for (bst_uint j = align_length; j < block.size(); ++j) {
+            const bst_uint ridx = block._index(j);
+            //const int nid = this->DecodePosition(ridx);
+            const int nid = this->position_[ridx];
+
+            if (CHECKHALFCOND) {
+              hbuilder[nid].AddWithIndex(block._binid(j), gpair[ridx]);
+            }
+          }
+        } else {
+          //#pragma ivdep
+          //#pragma omp simd
+          const bst_uint start_ridx = block._index(0);
+          for (bst_uint j = 0; j < block.size(); ++j) {
+            const int nid = this->position_[j + start_ridx];
+            if (CHECKHALFCOND) {
+            //  hbuilder[nid].AddWithIndex(block._binid(j), gpair, info, ridx);
+            }
+          }
+        }
+    } /*blk*/
+
+#ifdef USE_HALFTRICK
+    //get the right node
+    const unsigned nid_start = this->qexpand_[0];
+    if (nid_start == 0)
+        return;
+
+    CHECK_NE(nid_start % 2, 0);
+    unsigned nid_parent = (nid_start+1)/2-1;
+    for (size_t i = 0; i < this->qexpand_.size(); i+=2) {
+      const unsigned nid = this->qexpand_[i];
+      auto parent_hist = this->wspace_.hset[0].GetHistUnit(fid_offset, nid_parent + i/2);
+      #pragma ivdep
+      #pragma omp simd
+      for(int j=0; j < hbuilder[nid].hist.size; j++){
+        hbuilder[nid].hist.data[j].SetSubstract(parent_hist.data[j],hbuilder[nid+1].hist.data[j]);
+      }
+
+    }
+#endif
+
+  }
+
+  //void UpdateHistColWithIndex_BlockOrder(const std::vector<GradientPair> &gpair,
   void UpdateHistColWithIndex(const std::vector<GradientPair> &gpair,
                             const DMatrixCompactColBlockDense &col,
                             const MetaInfo &info,
@@ -984,35 +1091,38 @@ class HistMakerCompactFastHist: public BaseMaker {
       hbuilder[nid].hist = this->wspace_.hset[0].GetHistUnit(fid_offset, nid);
     }
 
-    #ifdef USE_HALFTRICK
-    #define CHECKHALFCOND (nid>=0 && (nid&1)==0)
-    #else
-    #define CHECKHALFCOND (nid>=0)
-    #endif
-
     int blockNum = col.getBlockNum(blockSize_);
     for(int blkid = 0; blkid < blockNum; blkid++){
         const DMatrixCompactColBlockDense block = col.getBlock(blkid, blockSize_);
 
         //one block
+        #ifdef USE_UNROLL
         if (TStats::kSimpleStats != 0 && this->param_.cache_opt != 0) {
+        #else
+        if (0){
+        #endif
+
           constexpr bst_uint kBuffer = 32;
           bst_uint align_length = block.size() / kBuffer * kBuffer;
           int buf_position[kBuffer];
           GradientPair buf_gpair[kBuffer];
+
           for (bst_uint j = 0; j < align_length; j += kBuffer) {
-            #pragma ivdep  
+            
+            #pragma ivdep
             for (bst_uint i = 0; i < kBuffer; ++i) {
               bst_uint ridx = block._index(j+i);
-              //buf_position[i]= this->DecodePosition(ridx);
-              buf_position[i]= this->position_[ridx];
-              buf_gpair[i] = gpair[ridx];
+              buf_position[i]= this->DecodePosition(ridx);
+              //const int nid = buf_position[i];
+              //if (CHECKHALFCOND) {
+                  buf_gpair[i] = gpair[ridx];
+              //}
             }
             for (bst_uint i = 0; i < kBuffer; ++i) {
               const int nid = buf_position[i];
                 if (CHECKHALFCOND) {
-                hbuilder[nid].AddWithIndex(block._binid(j+i), buf_gpair[i]);
-              }
+                  hbuilder[nid].AddWithIndex(block._binid(j+i), buf_gpair[i]);
+                }
             }
           }
           for (bst_uint j = align_length; j < block.size(); ++j) {
