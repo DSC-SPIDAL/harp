@@ -973,8 +973,7 @@ double CountMat::estimateFlops()
 {
     double flopsTotal = 0.0;
     double flopsSpmvPer = 2*_graph->getNNZ(); 
-    double flopsFMAPer = 1*_graph->getNumVertices();
-    // double flopsFMAPer = 2*_graph->getNumVertices();
+    double flopsFMAPer = 2*_graph->getNumVertices();
 
     for(int s=_total_sub_num-1;s>=0;s--)
     {
