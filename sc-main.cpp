@@ -527,10 +527,10 @@ int main(int argc, char** argv)
     int isPruned = 1;
     int useSPMM = 0;
 
-    bool useMKL = true;
-    // bool useMKL = false;
-    bool useRcm = true;
-    // bool useRcm = false;
+    // bool useMKL = true;
+    bool useMKL = false;
+    // bool useRcm = true;
+    bool useRcm = false;
 
     // bool isBenchmark = true;
     bool isBenchmark = false;
