@@ -105,8 +105,9 @@ def savedata(outfile, X, Y, fmt='libsvm'):
                 vec = X[i]
                 ss = str(Y[i])   #label
                 for j in range(vec.shape[0]):
-                    if vec[j] != 0.0:
-                        ss += ' %d:%s'%(j, vec[j])
+                    #if vec[j] != 0.0:
+                    #    ss += ' %d:%s'%(j, vec[j])
+                    ss += ' %d:%s'%(j, vec[j])
                 recstr = '%s\n'%ss
                 outf.write(recstr)
 

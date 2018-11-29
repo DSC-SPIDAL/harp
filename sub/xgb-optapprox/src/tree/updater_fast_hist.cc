@@ -211,6 +211,7 @@ class FastHistMaker: public TreeUpdater {
         tstart = dmlc::GetTime();
         this->InitNewNode(nid, gmat, gpair_h, *p_fmat, *p_tree);
         time_init_new_node += dmlc::GetTime() - tstart;
+        tminfo.posset_time += dmlc::GetTime() - tstart;
 
         tstart = dmlc::GetTime();
         this->EvaluateSplit(nid, gmat, hist_, *p_fmat, *p_tree);
@@ -233,6 +234,7 @@ class FastHistMaker: public TreeUpdater {
           tstart = dmlc::GetTime();
           this->ApplySplit(nid, gmat, column_matrix, hist_, *p_fmat, p_tree);
           time_apply_split += dmlc::GetTime() - tstart;
+          tminfo.posset_time += dmlc::GetTime() - tstart;
 
           tstart = dmlc::GetTime();
           const int cleft = (*p_tree)[nid].LeftChild();
