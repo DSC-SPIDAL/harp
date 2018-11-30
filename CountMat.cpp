@@ -287,8 +287,8 @@ double CountMat::countNonBottomePruned(int subsId)
     int auxTableLen = indexer.getCombTable()[_color_num][auxSize];
 
 #ifdef VERBOSE
-    printf("Finish init sub templte %d, vert: %d, comb: %d, splitNum: %d, isScaled: %d\n", subsId, subSize, 
-            countCombNum, splitCombNum, _isScaled);
+    printf("Finish init sub templte %d, vert: %d, comb: %d, splitNum: %d, spmv times: %d, isScaled: %d\n", subsId, subSize, 
+            countCombNum, splitCombNum, auxTableLen, _isScaled);
     std::fflush(stdout); 
 #endif
 
@@ -971,6 +971,10 @@ double CountMat::estimateMemComm()
 
 double CountMat::estimateFlops()
 {
+
+    printf("|V| is: %d, |E| nnz is: %d \n", _graph->getNumVertices(), _graph->getNNZ());
+    std::fflush(stdout);
+
     double flopsTotal = 0.0;
     double flopsSpmvPer = 2*_graph->getNNZ(); 
     double flopsFMAPer = 2*_graph->getNumVertices();
