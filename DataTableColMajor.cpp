@@ -84,7 +84,7 @@ void DataTableColMajor::initSubTempTable(int subsId)
                 _curTable[i] = (float*) aligned_alloc(64, _vertsNum*sizeof(float)); 
 #endif
 
-#pragma omp parallel for
+#pragma omp parallel for num_threads(omp_get_max_threads())
                 for (int k = 0; k < _vertsNum; ++k) {
                     _curTable[i][k] = 0;
                 }
@@ -107,7 +107,7 @@ void DataTableColMajor::initSubTempTable(int subsId)
                 _curTable[colStart] = (float*)aligned_alloc(64, _vertsNum*batchSize*sizeof(float)); 
 #endif
 
-#pragma omp parallel for
+#pragma omp parallel for num_threads(omp_get_max_threads())
                 for (int k = 0; k < _vertsNum*batchSize; ++k) {
                     _curTable[colStart][k] = 0;
                 }
@@ -262,7 +262,7 @@ void DataTableColMajor::setCurTableArray(int colIdx, float*& vals)
 
 void DataTableColMajor::setCurTableArrayZero(int colIdx)
 {
-#pragma omp parallel for
+#pragma omp parallel for num_threads(omp_get_max_threads())
     for (int k = 0; k < _vertsNum; ++k) {
         _curTable[colIdx][k] = 0;
     }

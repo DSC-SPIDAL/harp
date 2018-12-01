@@ -30,7 +30,7 @@ void CountMat::initialization(CSRGraph& graph, int thd_num, int itr_num, int isP
         _graph->makeOneIndex();
 
     _colors_local = (int*)malloc(_vert_num*sizeof(int));
-#pragma omp parallel for
+#pragma omp parallel for num_threads(omp_get_max_threads())
     for (int i = 0; i < _vert_num; ++i) {
         _colors_local[i] = 0;
     }
@@ -41,7 +41,7 @@ void CountMat::initialization(CSRGraph& graph, int thd_num, int itr_num, int isP
 #else
     _bufVec = (float*) aligned_alloc(64, _vert_num*sizeof(float)); 
 #endif
-#pragma omp parallel for
+#pragma omp parallel for num_threads(omp_get_max_threads())
     for (int i = 0; i < _vert_num; ++i) {
         _bufVec[i] = 0;
     }
@@ -55,7 +55,7 @@ void CountMat::initialization(CSRGraph& graph, int thd_num, int itr_num, int isP
     _bufMatY = (float*) aligned_alloc(64, _vert_num*_bufMatCols*sizeof(float)); 
 #endif
 
-#pragma omp parallel for
+#pragma omp parallel for num_threads(omp_get_max_threads())
     for (int i = 0; i < _vert_num*_bufMatCols; ++i) {
         _bufMatY[i] = 0;
     }
@@ -323,7 +323,7 @@ double CountMat::countNonBottomePruned(int subsId)
       bufLastSub = (double*) aligned_alloc(64, _vert_num*sizeof(double)); 
 #endif
 
-#pragma omp parallel for
+#pragma omp parallel for num_threads(omp_get_max_threads())
       for (int i = 0; i < _vert_num; ++i) {
           bufLastSub[i] = 0;
       }
@@ -540,7 +540,7 @@ double CountMat::countNonBottomePrunedSPMM(int subsId)
       bufLastSub = (double*) aligned_alloc(64, _vert_num*sizeof(double)); 
 #endif
 
-#pragma omp parallel for
+#pragma omp parallel for num_threads(omp_get_max_threads())
       for (int i = 0; i < _vert_num; ++i) {
           bufLastSub[i] = 0;
       }
@@ -751,7 +751,7 @@ double CountMat::countNonBottomeOriginal(int subsId)
 #else
       bufLastSub = (float*) aligned_alloc(64, _vert_num*sizeof(float)); 
 #endif
-#pragma omp parallel for
+#pragma omp parallel for num_threads(omp_get_max_threads())
       for (int i = 0; i < _vert_num; ++i) {
           bufLastSub[i] = 0;
       }

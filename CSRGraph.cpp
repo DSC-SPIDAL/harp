@@ -15,7 +15,7 @@ void CSRGraph::createFromEdgeListFile(CSRGraph::idxType numVerts, CSRGraph::idxT
     _numVertices = numVerts;
 
     _degList = (CSRGraph::idxType*) malloc(_numVertices*sizeof(CSRGraph::idxType)); 
-#pragma omp parallel for
+#pragma omp parallel for num_threads(omp_get_max_threads())
     for (int i = 0; i < _numVertices; ++i) {
         _degList[i] = 0;
     }
@@ -55,7 +55,7 @@ void CSRGraph::createFromEdgeListFile(CSRGraph::idxType numVerts, CSRGraph::idxT
     _edgeVal = (CSRGraph::valType*)malloc
         (_indexRow[_numVertices]*sizeof(CSRGraph::valType));
 
-#pragma omp parallel for 
+#pragma omp parallel for num_threads(omp_get_max_threads())
     for (int i = 0; i < _indexRow[_numVertices]; ++i) {
         _edgeVal[i] = 0;
     }

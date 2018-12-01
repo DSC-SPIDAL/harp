@@ -41,7 +41,7 @@ void EdgeList::readfromfile(string fileName)
 #endif
 
         EdgeList::idxType* v_id = new EdgeList::idxType[max_id+1];
-#pragma omp parallel for
+#pragma omp parallel for num_threads(omp_get_max_threads())
         for (int k = 0; k < max_id+1; ++k) {
             v_id[k] = 0;
         }
@@ -107,7 +107,7 @@ void EdgeList::readfromfileNoVerticesNum(string fileName)
     file_strm.close();
 
     EdgeList::idxType* v_id = new EdgeList::idxType[max_id+1];
-#pragma omp parallel for
+#pragma omp parallel for num_threads(omp_get_max_threads())
     for (int k = 0; k < max_id+1; ++k) {
         v_id[k] = 0;
     }

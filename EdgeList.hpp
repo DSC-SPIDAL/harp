@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <fstream>
 #include <cstring>
+#include <omp.h>
 
 #include "radix/pvector.h"
 #include "radix/commons/graph.h"
