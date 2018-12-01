@@ -223,7 +223,16 @@ class HistMakerCompactFastHist: public BaseMaker {
 
     //add fset size
     size_t fsetSize;
+    size_t nodeSize;
     size_t featnum;
+
+
+
+    /*
+     * GHSum is the model, preallocated
+     * Layout <fid, nid, binid>
+     *
+     */
 
     /*! \brief */
     inline HistUnit operator[](size_t fid) {
@@ -238,7 +247,8 @@ class HistMakerCompactFastHist: public BaseMaker {
      */
     inline HistUnit GetHistUnit(size_t fid, size_t nid) {
       return HistUnit(cut + rptr[fid],
-                      &data[0] + rptr[fid] + nid*(fsetSize),
+                      //&data[0] + rptr[fid] + nid*(fsetSize),
+                      &data[0] + rptr[fid]*nodeSize + nid*(rptr[fid+1]-rptr[fid]),
                       rptr[fid+1] - rptr[fid]);
     }
 
@@ -265,6 +275,7 @@ class HistMakerCompactFastHist: public BaseMaker {
         hset[tid].cut = dmlc::BeginPtr(cut);
         hset[tid].fsetSize = rptr.back();
         hset[tid].featnum = rptr.size() - 2;
+        hset[tid].nodeSize = nodesize;
         hset[tid].data.resize(cut.size() * nodesize, TStats(param));
 
         LOG(CONSOLE)<< "Init hset: rptrSize:" << rptr.size() <<
@@ -1149,6 +1160,7 @@ class HistMakerCompactFastHist: public BaseMaker {
     } /*blk*/
 
 #ifdef USE_HALFTRICK
+    double _tstart = dmlc::GetTime();
     //get the right node
     const unsigned nid_start = this->qexpand_[0];
     if (nid_start == 0)
@@ -1166,8 +1178,8 @@ class HistMakerCompactFastHist: public BaseMaker {
       }
 
     }
+    this->tminfo.aux_time[0] += dmlc::GetTime() - _tstart;
 #endif
-
   }
 
   //dup func

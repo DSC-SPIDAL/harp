@@ -293,6 +293,9 @@ void CLITrain(const CLIParam& param) {
     LOG(CONSOLE) << "BuildPosSet Time: " << tminfo.posset_time;
     LOG(CONSOLE) << "BuildHist Time: " << tminfo.buildhist_time;
     LOG(CONSOLE) << "Training Time: " << dmlc::GetTime() -tminfo.trainstart_time;
+    LOG(CONSOLE) << "Aux Time 1: " << tminfo.aux_time[0];
+    LOG(CONSOLE) << "Aux Time 2: " << tminfo.aux_time[1];
+    LOG(CONSOLE) << "Aux Time 3: " << tminfo.aux_time[2];
   }
 }
 

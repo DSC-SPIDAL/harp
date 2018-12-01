@@ -82,6 +82,43 @@ ifeq ($(USE_SSE), 1)
 	CFLAGS += -msse2
 endif
 endif
+ifeq ($(USE_COMPACT), 1)
+	CFLAGS += -DUSE_COMPACT=1
+endif
+ifeq ($(USE_COMPACT_BINID), 1)
+	CFLAGS += -DUSE_COMPACT_BINID=1 
+endif
+ifeq ($(USE_BINID), 1)
+	CFLAGS += -DUSE_BINID=1
+endif
+
+ifeq ($(USE_DEBUG_SAVE), 1)
+	CFLAGS += -DUSE_DEBUG_SAVE=1
+endif
+ifeq ($(USE_HALFTRICK), 1)
+	CFLAGS += -DUSE_HALFTRICK=1
+	export HALFTRICK=halftrick
+else
+	export HALFTRICK=nohalftrick
+endif
+ifeq ($(USE_UNROLL), 1)
+	CFLAGS += -DUSE_UNROLL=1
+	export UNROLL=noprefetch
+else
+	export UNROLL=prefetch
+endif
+ifeq ($(USE_VTUNE), 1)
+#	CFLAGS += -DUSE_VTUNE=1 -g -no-inline-max-size
+	CFLAGS += -DUSE_VTUNE=1 -g 
+endif
+ifeq ($(USE_OMP_BUILDHIST), 1)
+	CFLAGS += -DUSE_OMP_BUILDHIST=1
+else
+#	LDFLAGS += -ltbbmalloc -ltbb
+	LDFLAGS += -L/opt/intel/compilers_and_libraries_2019.0.117/linux/tbb/lib/intel64/gcc4.7
+	LDFLAGS += -ltbbmalloc -ltbb
+endif
+
 
 #in program debug info enable
 ifeq ($(USE_DEBUG), 1)
@@ -101,9 +138,9 @@ CFLAGS += -O3 -funroll-loops
 #CFLAGS += -fpermissive -fno-strict-aliasing
 #CFLAGS += -DUSE_BINID=1
 ifeq ($(USE_OMP_BUILDHIST), 1)
-TARGET = xgboost-$(CXX)-omp
+TARGET = xgboost-$(CXX)-omp-$(HALFTRICK)-$(UNROLL)$(TAGNAME)
 else
-TARGET = xgboost-$(CXX)-tbb
+TARGET = xgboost-$(CXX)-tbb-$(HALFTRICK)-$(UNROLL)$(TAGNAME)
 endif
 
 WORKDIR = build-$(CXX)
@@ -128,37 +165,6 @@ ifeq ($(USE_REPORT), 1)
 CFLAGS += -fopt-info-vec
 endif
 
-endif
-
-ifeq ($(USE_COMPACT), 1)
-	CFLAGS += -DUSE_COMPACT=1
-endif
-ifeq ($(USE_COMPACT_BINID), 1)
-	CFLAGS += -DUSE_COMPACT_BINID=1 
-endif
-ifeq ($(USE_BINID), 1)
-	CFLAGS += -DUSE_BINID=1
-endif
-
-ifeq ($(USE_DEBUG_SAVE), 1)
-	CFLAGS += -DUSE_DEBUG_SAVE=1
-endif
-ifeq ($(USE_HALFTRICK), 1)
-	CFLAGS += -DUSE_HALFTRICK=1
-endif
-ifeq ($(USE_UNROLL), 1)
-	CFLAGS += -DUSE_UNROLL=1
-endif
-ifeq ($(USE_VTUNE), 1)
-#	CFLAGS += -DUSE_VTUNE=1 -g -no-inline-max-size
-	CFLAGS += -DUSE_VTUNE=1 -g 
-endif
-ifeq ($(USE_OMP_BUILDHIST), 1)
-	CFLAGS += -DUSE_OMP_BUILDHIST=1
-else
-#	LDFLAGS += -ltbbmalloc -ltbb
-	LDFLAGS += -L/opt/intel/compilers_and_libraries_2019.0.117/linux/tbb/lib/intel64/gcc4.7
-	LDFLAGS += -ltbbmalloc -ltbb
 endif
 
 ifndef LINT_LANG

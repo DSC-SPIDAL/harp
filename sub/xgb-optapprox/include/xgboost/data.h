@@ -40,6 +40,7 @@ struct TimeInfo {
     double trainstart_time;
     double buildhist_time;
     double posset_time;
+    double aux_time[10]={0};
     TimeInfo() = default;
     TimeInfo(double _start, double _buildhist, double postime=0.):
         trainstart_time(_start), buildhist_time(_buildhist), posset_time(postime){}
