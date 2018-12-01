@@ -41,7 +41,11 @@ void EdgeList::readfromfile(string fileName)
 #endif
 
         EdgeList::idxType* v_id = new EdgeList::idxType[max_id+1];
-        std::memset(v_id, 0, (max_id+1)*sizeof(EdgeList::idxType));
+#pragma omp parallel for
+        for (int k = 0; k < max_id+1; ++k) {
+            v_id[k] = 0;
+        }
+        // std::memset(v_id, 0, (max_id+1)*sizeof(EdgeList::idxType));
 
         for(EdgeList::idxType i=0;i<_numEdges;i++)
         {
@@ -103,7 +107,11 @@ void EdgeList::readfromfileNoVerticesNum(string fileName)
     file_strm.close();
 
     EdgeList::idxType* v_id = new EdgeList::idxType[max_id+1];
-    std::memset(v_id, 0, (max_id+1)*sizeof(EdgeList::idxType));
+#pragma omp parallel for
+    for (int k = 0; k < max_id+1; ++k) {
+        v_id[k] = 0;
+    }
+    // std::memset(v_id, 0, (max_id+1)*sizeof(EdgeList::idxType));
 
     for(EdgeList::idxType i=0;i<_numEdges;i++)
     {

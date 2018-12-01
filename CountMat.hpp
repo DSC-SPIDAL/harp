@@ -87,6 +87,8 @@ class CountMat {
 
         double estimateMemComm();
         double estimateFlops();
+        double estimateTemplate();
+
     private:
 
         double colorCounting();

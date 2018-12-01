@@ -84,7 +84,11 @@ void DataTableColMajor::initSubTempTable(int subsId)
                 _curTable[i] = (float*) aligned_alloc(64, _vertsNum*sizeof(float)); 
 #endif
 
-                std::memset(_curTable[i], 0, _vertsNum*sizeof(float));
+#pragma omp parallel for
+                for (int k = 0; k < _vertsNum; ++k) {
+                    _curTable[i][k] = 0;
+                }
+                // std::memset(_curTable[i], 0, _vertsNum*sizeof(float));
             }
 
         }
@@ -102,7 +106,13 @@ void DataTableColMajor::initSubTempTable(int subsId)
 #else
                 _curTable[colStart] = (float*)aligned_alloc(64, _vertsNum*batchSize*sizeof(float)); 
 #endif
-                std::memset(_curTable[colStart], 0, _vertsNum*batchSize*sizeof(float));
+
+#pragma omp parallel for
+                for (int k = 0; k < _vertsNum*batchSize; ++k) {
+                    _curTable[colStart][k] = 0;
+                }
+
+                // std::memset(_curTable[colStart], 0, _vertsNum*batchSize*sizeof(float));
 
                 for (int j = 1; j < batchSize; ++j) {
                    _curTable[colStart+j] = _curTable[colStart] + j*_vertsNum; 
@@ -252,7 +262,11 @@ void DataTableColMajor::setCurTableArray(int colIdx, float*& vals)
 
 void DataTableColMajor::setCurTableArrayZero(int colIdx)
 {
-    std::memset(_curTable[colIdx], 0, _vertsNum*sizeof(float));
+#pragma omp parallel for
+    for (int k = 0; k < _vertsNum; ++k) {
+        _curTable[colIdx][k] = 0;
+    }
+    // std::memset(_curTable[colIdx], 0, _vertsNum*sizeof(float));
 }
 
 void DataTableColMajor::setMainArray(int colIdx, float*& vals)

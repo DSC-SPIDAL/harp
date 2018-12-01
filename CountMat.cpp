@@ -30,14 +30,22 @@ void CountMat::initialization(CSRGraph& graph, int thd_num, int itr_num, int isP
         _graph->makeOneIndex();
 
     _colors_local = (int*)malloc(_vert_num*sizeof(int));
-    std::memset(_colors_local, 0, _vert_num*sizeof(int));
+#pragma omp parallel for
+    for (int i = 0; i < _vert_num; ++i) {
+        _colors_local[i] = 0;
+    }
+    // std::memset(_colors_local, 0, _vert_num*sizeof(int));
 
 #ifdef __INTEL_COMPILER
     _bufVec = (float*) _mm_malloc(_vert_num*sizeof(float), 64); 
 #else
     _bufVec = (float*) aligned_alloc(64, _vert_num*sizeof(float)); 
 #endif
-    std::memset(_bufVec, 0, _vert_num*sizeof(float));
+#pragma omp parallel for
+    for (int i = 0; i < _vert_num; ++i) {
+        _bufVec[i] = 0;
+    }
+    // std::memset(_bufVec, 0, _vert_num*sizeof(float));
 
     _bufMatCols = 100;
 
@@ -46,8 +54,12 @@ void CountMat::initialization(CSRGraph& graph, int thd_num, int itr_num, int isP
 #else
     _bufMatY = (float*) aligned_alloc(64, _vert_num*_bufMatCols*sizeof(float)); 
 #endif
-    std::memset(_bufMatY, 0, _vert_num*_bufMatCols*sizeof(float));
 
+#pragma omp parallel for
+    for (int i = 0; i < _vert_num*_bufMatCols; ++i) {
+        _bufMatY[i] = 0;
+    }
+    // std::memset(_bufMatY, 0, _vert_num*_bufMatCols*sizeof(float));
 }
 
 double CountMat::compute(Graph& templates, bool isEstimate)
@@ -109,6 +121,8 @@ double CountMat::compute(Graph& templates, bool isEstimate)
     estimatePeakMemUsage();
     double totalFlops = estimateFlops();
     double totalMemBand = estimateMemComm();
+    estimateTemplate();
+
 #endif 
 
     // exit without counting
@@ -308,7 +322,12 @@ double CountMat::countNonBottomePruned(int subsId)
 #else
       bufLastSub = (double*) aligned_alloc(64, _vert_num*sizeof(double)); 
 #endif
-      std::memset(bufLastSub, 0, _vert_num*sizeof(double)); 
+
+#pragma omp parallel for
+      for (int i = 0; i < _vert_num; ++i) {
+          bufLastSub[i] = 0;
+      }
+      // std::memset(bufLastSub, 0, _vert_num*sizeof(double)); 
 
     }
 
@@ -520,7 +539,12 @@ double CountMat::countNonBottomePrunedSPMM(int subsId)
 #else
       bufLastSub = (double*) aligned_alloc(64, _vert_num*sizeof(double)); 
 #endif
-      std::memset(bufLastSub, 0, _vert_num*sizeof(double)); 
+
+#pragma omp parallel for
+      for (int i = 0; i < _vert_num; ++i) {
+          bufLastSub[i] = 0;
+      }
+      // std::memset(bufLastSub, 0, _vert_num*sizeof(double)); 
 
     }
 
@@ -727,7 +751,11 @@ double CountMat::countNonBottomeOriginal(int subsId)
 #else
       bufLastSub = (float*) aligned_alloc(64, _vert_num*sizeof(float)); 
 #endif
-      std::memset(bufLastSub, 0, _vert_num*sizeof(float)); 
+#pragma omp parallel for
+      for (int i = 0; i < _vert_num; ++i) {
+          bufLastSub[i] = 0;
+      }
+      // std::memset(bufLastSub, 0, _vert_num*sizeof(float)); 
 
     }
 
@@ -1008,3 +1036,55 @@ double CountMat::estimateFlops()
 
     return flopsTotal;
 }
+
+double CountMat::estimateTemplate()
+{
+    double workloadNNZ = 0.0; 
+    double workloadN = 0.0;
+
+    // // Ax = y
+    // // access A + access x + write to y + rowidx + colidx
+    // double bytesSpmvPer = sizeof(float)*(2*_graph->getNNZ() + _graph->getNumVertices()) + sizeof(int)*(_graph->getNNZ()
+    //         + _graph->getNumVertices());
+    //
+    // // z += x*y
+    // // read x, y, z and write to z
+    // double bytesFMAPer = sizeof(float)*(_graph->getNumVertices()*4);
+
+    double memloadNNZ = 0.0;
+    double memloadN = 0.0;
+
+    double perSpMV = 2;
+    double pereMA = 2;
+
+    for(int s=_total_sub_num-1;s>=0;s--)
+    {
+        int vert_self = _subtmp_array[s].get_vert_num();
+        if (vert_self > 1) {
+            
+            // spmv part
+            int idxMain = div_tp.get_main_node_idx(s);
+            int idxAux = div_tp.get_aux_node_idx(s);       
+            if (_subtmp_array[idxAux].get_vert_num() > 1)
+            {
+                 workloadNNZ += (perSpMV*_dTable.getTableLen(idxAux));
+                 memloadNNZ += (12*_dTable.getTableLen(idxAux)); 
+                 memloadN += (8*_dTable.getTableLen(idxAux)); 
+            }
+
+            // FMA part
+            workloadN += (_dTable.getTableLen(s)*indexer.comb_calc(vert_self, _subtmp_array[idxAux].get_vert_num())*
+                    pereMA);
+
+            memloadN += (16*_dTable.getTableLen(s)*indexer.comb_calc(vert_self, _subtmp_array[idxAux].get_vert_num())); 
+
+        }
+    }
+
+    printf("Workload N: %f, NNZ: %f \n", workloadN, workloadNNZ);
+    printf("Memload N: %f, NNZ: %f \n", memloadN, memloadNNZ);
+    std::fflush(stdout);
+
+}
+
+

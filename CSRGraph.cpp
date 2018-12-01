@@ -15,7 +15,11 @@ void CSRGraph::createFromEdgeListFile(CSRGraph::idxType numVerts, CSRGraph::idxT
     _numVertices = numVerts;
 
     _degList = (CSRGraph::idxType*) malloc(_numVertices*sizeof(CSRGraph::idxType)); 
-    std::memset(_degList, 0, _numVertices*sizeof(CSRGraph::idxType));
+#pragma omp parallel for
+    for (int i = 0; i < _numVertices; ++i) {
+        _degList[i] = 0;
+    }
+    // std::memset(_degList, 0, _numVertices*sizeof(CSRGraph::idxType));
 
     // build the degree list
 #pragma omp parallel for
@@ -51,7 +55,11 @@ void CSRGraph::createFromEdgeListFile(CSRGraph::idxType numVerts, CSRGraph::idxT
     _edgeVal = (CSRGraph::valType*)malloc
         (_indexRow[_numVertices]*sizeof(CSRGraph::valType));
 
-    std::memset(_edgeVal, 0, _indexRow[_numVertices]*sizeof(CSRGraph::valType));
+#pragma omp parallel for 
+    for (int i = 0; i < _indexRow[_numVertices]; ++i) {
+        _edgeVal[i] = 0;
+    }
+    // std::memset(_edgeVal, 0, _indexRow[_numVertices]*sizeof(CSRGraph::valType));
 
     for(CSRGraph::idxType i = 0; i< _numEdges; i++)
     {
