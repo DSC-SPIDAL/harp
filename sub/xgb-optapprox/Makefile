@@ -103,9 +103,9 @@ else
 endif
 ifeq ($(USE_UNROLL), 1)
 	CFLAGS += -DUSE_UNROLL=1
-	export UNROLL=noprefetch
-else
 	export UNROLL=prefetch
+else
+	export UNROLL=noprefetch
 endif
 ifeq ($(USE_VTUNE), 1)
 #	CFLAGS += -DUSE_VTUNE=1 -g -no-inline-max-size

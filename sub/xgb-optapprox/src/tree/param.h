@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 
+//#include "../data/compact_dmatrix.h"
 
 namespace xgboost {
 namespace tree {
@@ -84,6 +85,11 @@ struct TrainParam : public dmlc::Parameter<TrainParam> {
   
   /* blockSize */
   int block_size;
+
+  int row_block_size;
+  int ft_block_size;
+  int bin_block_size;
+
 
   // declare the parameters
   DMLC_DECLARE_PARAMETER(TrainParam) {
@@ -205,6 +211,21 @@ struct TrainParam : public dmlc::Parameter<TrainParam> {
         .set_default(0)
         .set_lower_bound(0)
         .describe("Block size(KB) used for task scheduling, 0 means use one block.");
+    DMLC_DECLARE_FIELD(row_block_size)
+        .set_default(0)
+        .set_lower_bound(0)
+        .describe("Block size(KB) used for task scheduling, 0 means use one block.");
+    DMLC_DECLARE_FIELD(ft_block_size)
+        .set_default(0)
+        .set_lower_bound(0)
+        .describe("Feature Block size used for task scheduling, 0 means use one block.");
+    DMLC_DECLARE_FIELD(bin_block_size)
+        .set_default(1)
+        .set_lower_bound(0)
+        .describe("Bin Block size used for task scheduling, 0 means use one block.");
+
+
+
 
     // add alias of parameters
     DMLC_DECLARE_ALIAS(reg_lambda, lambda);
@@ -379,6 +400,11 @@ template <typename ParamT>
     sum_grad += b.sum_grad;
     sum_hess += b.sum_hess;
   }
+  inline void Add(GradStats& b) {
+    sum_grad += b.sum_grad;
+    sum_hess += b.sum_hess;
+  }
+  
   /*! \brief same as add, reduce is used in All Reduce */
   inline static void Reduce(GradStats& a, const GradStats& b) { // NOLINT(*)
     a.Add(b);

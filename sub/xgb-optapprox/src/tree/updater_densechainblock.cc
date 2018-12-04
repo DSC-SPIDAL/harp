@@ -241,7 +241,15 @@ class HistMakerDenseCompactChainBlock: public BaseMaker {
 
     //add fset size
     size_t fsetSize;
+    size_t nodeSize;
     size_t featnum;
+
+    /*
+     * GHSum is the model, preallocated
+     * Layout <fid, nid, binid>
+     *
+     */
+
 
     /*! \brief */
     inline HistUnit operator[](size_t fid) {
@@ -256,7 +264,10 @@ class HistMakerDenseCompactChainBlock: public BaseMaker {
      */
     inline HistUnit GetHistUnit(size_t fid, size_t nid) {
       return HistUnit(cut + rptr[fid],
+                      #ifdef MODELLAYOUT_NFB
                       &data[0] + rptr[fid] + nid*(fsetSize),
+                      #endif
+                      &data[0] + rptr[fid]*nodeSize + nid*(rptr[fid+1]-rptr[fid]),
                       rptr[fid+1] - rptr[fid]);
     }
 
@@ -283,6 +294,7 @@ class HistMakerDenseCompactChainBlock: public BaseMaker {
         hset[tid].cut = dmlc::BeginPtr(cut);
         hset[tid].fsetSize = rptr.back();
         hset[tid].featnum = rptr.size() - 2;
+        hset[tid].nodeSize = nodesize;
         hset[tid].data.resize(cut.size() * nodesize, TStats(param));
 
         LOG(CONSOLE)<< "Init hset: rptrSize:" << rptr.size() <<
@@ -466,6 +478,7 @@ class HistMakerDenseCompactChainBlock: public BaseMaker {
     }
 
     #ifdef USE_HALFTRICK
+    double _tstart = dmlc::GetTime();
     //get the right node
     const unsigned nid_start = this->qexpand_[0];
     if (nid_start == 0)
@@ -485,6 +498,7 @@ class HistMakerDenseCompactChainBlock: public BaseMaker {
       }
 
     }
+    this->tminfo.aux_time[0] += dmlc::GetTime() - _tstart;
     #endif
 
   }
@@ -627,7 +641,6 @@ class HistMakerDenseCompactChainBlock: public BaseMaker {
     // reset and propose candidate split
     this->ResetPosAndPropose(gpair, p_fmat, fwork_set_, *p_tree);
     //printtree(p_tree, "ResetPosAndPropose");
-    
     // initialize the histogram only
     this->InitializeHist(gpair, p_fmat, fwork_set_, *p_tree);
 
