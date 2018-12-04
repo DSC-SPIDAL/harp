@@ -221,12 +221,20 @@ public class SVMMapper extends
 
 	  LOG.info("Iteration:" + iter + "supportVector Size:" + svString.length);
 
+    if ((iter == iteration -1) && this.isMaster()) {
+      //outputResults(configuration, context,
+      //  supportVectors);
+	  LOG.info("Save model:");
+	  svm.svm_save_model("/tmp/harpsvm.model", svmModel);
+    }
+ 
     }
 
     // output support vectors
     if (this.isMaster()) {
-      outputResults(configuration, context,
-        supportVectors);
+      //outputResults(configuration, context,
+      //  supportVectors);
+	  //svm.svm_save_model("/tmp/harpsvm.model", svmModel)
     }
   }
 
