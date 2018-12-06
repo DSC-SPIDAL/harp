@@ -147,37 +147,45 @@ void DMatrixCube::Init(const SparsePage& page, MetaInfo& info, int num_maxbins, 
         data_[i].init(i);
     }
 
+    LOG(CONSOLE) << "CubeInit:row_blknum=" << row_blknum <<
+        "fid_blknum=" << fid_blknum << "binid_blknum=" << binid_blknum;
+
     // rowset
     // go through all rows
     int rownum = page.Size();
     for(int rowid = 0; rowid < rownum; rowid++){
 
         auto row = page[rowid];
-
         //split into blks to all DMatrixCubeZCol items
         int rowblkid = rowid / blkInfo.GetRowBlkSize();
 
+        //
+        //one step for all ZCols
+        //add block before row
+        //
+        if ((rowid % blkInfo.GetRowBlkSize()) == 0){
+            addblock();
+        }
+        addrow();
+ 
+        //add data
         for (auto& ins: row){
             //for all <features,binid> items in this row
             int blkid = ins.binid * fid_blknum + ins.index / blkInfo.GetFeatureBlkSize(); 
             BlkAddrType blkaddr = (ins.binid % blkInfo.GetBinBlkSize()) * blkInfo.GetFeatureBlkSize() + ins.index % blkInfo.GetFeatureBlkSize();
-            
+
+            CHECK_LT(blkid, data_.size());
             data_[blkid].append(blkaddr);
 
         }
 
-        //one step for all ZCols
-        addrow();
-        if (rowid > 0 && ((rowid % blkInfo.GetRowBlkSize()) == 0)){
-            addblock();
-        }
-    }
-    //finalize, add sentinel at the end
-    addrow();
-    addblock();
+   }
+   //add sentinel at the end
+   addrow();
+   addblock();
 
 
-    LOG(CONSOLE) << "DMatrixCube::Init" <<
+   LOG(CONSOLE) << "DMatrixCube::Init" <<
         ",BlkInfo=r" << blkInfo.GetRowBlkSize() << ",f" << blkInfo.GetFeatureBlkSize() << ",b" << blkInfo.GetBinBlkSize() <<
         ",memory=" << getMemSize()/(1024*1024) << "MB" <<
         ",rowxcol=" << info_.num_row_ << "x" << info_.num_col_ << "x" << num_maxbins <<

@@ -172,8 +172,63 @@ void printgmat(GHistIndexMatrix& gmat){
   }
 }
 
+void printdmat(DMatrixCube& dmat){
+  std::cout << "HMAT(Cube)======================================\n";
+  int nblks = dmat.Size();
+  nblks = std::min(nblks, 5);
+
+  for (size_t blkid = 0; blkid < nblks; ++blkid) {
+    auto blk = dmat[blkid].GetBlock(0);
+    auto ndata = static_cast<bst_omp_uint>(blk.size());
+    std::cout << "BLK:" << blkid << ", len=" << ndata << "\n";
+
+    //ndata = std::min(ndata, 10U);
+    //ndata = std::min(ndata, 10U);
+
+    int tn = 0;
+    for (size_t j = 0; tn < 10 && j < ndata; ++j) {
+        const bst_uint ridx = blk._index(j);
+        if (blk.rowsize(j) > 0 ){
+            std::cout << "r:" << ridx << "<";
+            for(size_t k = 0; k < std::min(blk.rowsize(j),10); k++){
+                const bst_uint blkaddr = blk._blkaddr(j,k);
+                std::cout << ridx << ":" << blkaddr << " ";
+            }
+            std::cout << "> ";
+
+            tn++;
+        }
+     }
+     std::cout << "\n";
+  }
+}
+
+
+void printdmat(DMatrixCompactBlockDense& dmat){
+  std::cout << "HMAT(CompactBlockDense)======================================\n";
+  int nrows = dmat.Size();
+  nrows = std::min(nrows, 50);
+
+  for (size_t fid = 0; fid < nrows; ++fid) {
+    auto col = dmat[fid];
+    auto ndata = static_cast<bst_omp_uint>(col.size());
+
+    ndata = std::min(ndata, 50U);
+
+    std::cout << "F:" << fid << " "; 
+    for (bst_omp_uint j = 0; j < ndata; ++j) {
+        const bst_uint ridx = col._index(j);
+        const bst_uint binid = col._binid(j);
+
+        std::cout << ridx << ":" << binid << " ";
+     }
+    std::cout << "\n";
+  }
+}
+
+
 void printdmat(DMatrixCompactDense& dmat){
-  std::cout << "HMAT======================================\n";
+  std::cout << "HMAT(CompactDense)======================================\n";
   int nrows = dmat.Size();
   nrows = std::min(nrows, 50);
 
@@ -196,7 +251,7 @@ void printdmat(DMatrixCompactDense& dmat){
 
 
 void printdmat(DMatrixCompact& dmat){
-  std::cout << "HMAT======================================\n";
+  std::cout << "HMAT(Compact)======================================\n";
   int nrows = dmat.Size();
   nrows = std::min(nrows, 50);
 
@@ -273,8 +328,10 @@ void printSplit(SplitEntry& split){
 #else
 void printmsg(std::string msg){}
 void printtree(RegTree* ptree, std::string header /*""*/){}
+void printdmat(DMatrixCube& dmat){}
 void printdmat(DMatrixCompact& dmat){}
 void printdmat(DMatrixCompactDense& dmat){}
+void printdmat(DMatrixCompactBlockDense& dmat){}
 void printdmat(const SparsePage& dmat){}
 void printgmat(GHistIndexMatrix& gmat){}
 void printcut(HistCutMatrix& gmat){}

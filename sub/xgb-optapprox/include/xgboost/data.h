@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <string>
 #include <vector>
+#include <climits>
 #include "./base.h"
 #include "../../src/common/span.h"
 #include "../../src/common/group_data.h"
@@ -181,10 +182,15 @@ struct Entry {
   }
 
   /* OptApprox:: init bindid in pmat */
-  inline void addBinid(unsigned id) const{
+  inline void addBinid(unsigned id, unsigned int newindex = UINT_MAX) const{
       Entry* ptr = const_cast<Entry*> (this);
 #ifdef USE_BINID
       ptr->binid = id;
+
+      if (newindex != UINT_MAX){
+          ptr->index = static_cast<bst_uint>(newindex);
+      }
+
 #endif
 
 #ifdef USE_BINIDUNION

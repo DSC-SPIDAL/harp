@@ -286,6 +286,7 @@ class DMatrixCubeBlock {
     inline int rowsize(size_t i) const{
         return row_offset_[i+1] - row_offset_[i];
     }
+
     inline BlkAddrType _blkaddr(size_t i, size_t j) const {
       return static_cast<unsigned int>(data_[row_offset_[i] + j]);
     }
@@ -315,9 +316,13 @@ class DMatrixCubeZCol{
     inline DMatrixCubeBlock GetBlock(size_t i) const {
         // blk_offset_ : idx in row_offset_
         // row_offset_ : addr in data_
-        
+
         int rowidx = blk_offset_[i];
-        return {data_.data() + row_offset_[rowidx],
+
+        //have to use the ptr from beginning
+        //as row_offset_[] will pointer to this absolute address
+        //return {data_.data() + row_offset_[rowidx],
+        return {data_.data(),
             row_offset_.data() + rowidx,
             static_cast<size_t>(blk_offset_[i + 1] - blk_offset_[i]), 
             rowidx};
@@ -337,8 +342,8 @@ class DMatrixCubeZCol{
         data_.clear();
         row_offset_.clear();
         blk_offset_.clear();
-        row_offset_.push_back(0);
-        blk_offset_.push_back(0);
+        //row_offset_.push_back(0);
+        //blk_offset_.push_back(0);
     }
 
     inline void addrow(){
@@ -372,6 +377,15 @@ class DMatrixCube : public xgboost::data::SparsePageDMatrix {
   inline int GetBlockNum() const{
     return data_.size();
   }
+  //interface for compatible
+  inline int Size() const{
+    return data_.size();
+  }
+  inline const DMatrixCubeZCol& operator[](size_t i) const {
+    return data_[i];
+  }
+
+
 
   //interface for building the matrix
   void Init(const SparsePage& page, MetaInfo& info, int maxbins, BlockInfo& blkInfo);
