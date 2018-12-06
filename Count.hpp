@@ -23,9 +23,10 @@ class Count {
             _subtmp_array=NULL;
             _colors_local=NULL;
             _algoMode = 0;
+            _vtuneStart = -1;
         }
 
-        void initialization(Graph& graph, int thd_num, int itr_num, int algoMode);
+        void initialization(Graph& graph, int thd_num, int itr_num, int algoMode, int vtuneStart = -1);
 
         double compute(Graph& templates);
 
@@ -67,6 +68,7 @@ class Count {
         int _thd_num;
 
         int _algoMode;
+        int _vtuneStart;
 
         // divide the templates into sub-templates
         DivideTemplates div_tp;

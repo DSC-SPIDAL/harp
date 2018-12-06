@@ -29,6 +29,7 @@ int main(int argc, char** argv)
     int iterations;
     int comp_thds;
     int algoMode = 0;
+    int vtuneStart = -1;
 
     graph_name = argv[1];
     template_name = argv[2];
@@ -39,6 +40,9 @@ int main(int argc, char** argv)
 
     if (argc > 7)
         algoMode = atoi(argv[7]);
+
+    if (argc > 8)
+        vtuneStart = atoi(argv[8]);
 
     Graph input_graph;
     Graph input_template;
@@ -83,7 +87,7 @@ int main(int argc, char** argv)
 
     // start computing
     Count executor;
-    executor.initialization(input_graph, comp_thds, iterations, algoMode);
+    executor.initialization(input_graph, comp_thds, iterations, algoMode, vtuneStart);
     executor.compute(input_template);
 
     return 0;

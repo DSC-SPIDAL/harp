@@ -14,7 +14,7 @@
 
 using namespace std;
 
-void Count::initialization(Graph& graph, int thd_num, int itr_num, int algoMode)
+void Count::initialization(Graph& graph, int thd_num, int itr_num, int algoMode, int vtuneStart)
 {
     _graph = &graph;
     _vert_num = _graph->get_vert_num();
@@ -22,6 +22,7 @@ void Count::initialization(Graph& graph, int thd_num, int itr_num, int algoMode)
     _thd_num = thd_num;
     _itr_num = itr_num;
     _algoMode = algoMode;
+    _vtuneStart = vtuneStart;
     _colors_local = (int*)malloc(_vert_num*sizeof(int));
     std::memset(_colors_local, 0, _vert_num*sizeof(int));
 }
@@ -168,7 +169,7 @@ double Count::countNonBottomeFascia(int subsId)
     double startTime = utility::timer();
 #endif
 
-    if (subsId == 1)
+    if (subsId == _vtuneStart)
     {
         // for vtune
 #ifdef VTUNE
@@ -291,7 +292,7 @@ double Count::countNonBottomeFasciaPruned(int subsId)
     double startTime = utility::timer();
 #endif
 
-    if (subsId == 1)
+    if (subsId == _vtuneStart)
     {
         // for vtune
 #ifdef VTUNE
@@ -673,7 +674,7 @@ double Count::countNonBottomePruned(int subsId)
     double startTime = utility::timer();
 #endif
 
-    if (subsId == 1)
+    if (subsId == _vtuneStart)
     {
         // for vtune
 #ifdef VTUNE

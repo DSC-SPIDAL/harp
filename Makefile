@@ -15,7 +15,7 @@ ARCH_is_$(ARCH)         := yes
 ## for openmp
 -omp := $(if $(COMPILER_is_icc), -qopenmp, -fopenmp)
 ## for intel avx
--avx := $(if $(COMPILER_is_icc), $(if $(ARCH_is_knl), -xMIC-AVX512, $(if $(ARCH_is_skl), -xCORE-AVX512, ) ),)
+-avx := $(if $(COMPILER_is_icc), $(if $(ARCH_is_knl), -xMIC-AVX512, $(if $(ARCH_is_skl), -xCORE-AVX512, -xCORE-AVX2) ),)
 -rpt := $(if $(COMPILER_is_icc), -qopt-report=5, )
 ## for nec mpi version
 -nccflag := $(if $(COMPILER_is_ncc), -DNEC -DSXVE,)
