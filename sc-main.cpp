@@ -526,6 +526,7 @@ int main(int argc, char** argv)
     int comp_thds;
     int isPruned = 1;
     int useSPMM = 0;
+    int vtuneStart = -1;
 
     // bool useMKL = true;
     bool useMKL = false;
@@ -551,6 +552,9 @@ int main(int argc, char** argv)
 
     if (argc > 8)
         useSPMM = atoi(argv[8]);
+
+    if (argc > 9)
+        vtuneStart = atoi(argv[9]);
 
 #ifdef VERBOSE 
     if (isPruned) {
@@ -666,7 +670,7 @@ int main(int argc, char** argv)
 
     // start CSR mat computing
     CountMat executor;
-    executor.initialization(csrInpuG, comp_thds, iterations, isPruned, useSPMM);
+    executor.initialization(csrInpuG, comp_thds, iterations, isPruned, useSPMM, vtuneStart);
 
     executor.compute(input_template, isEstimate);
 

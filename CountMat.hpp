@@ -25,9 +25,9 @@ class CountMat {
         CountMat(): _graph(nullptr), _templates(nullptr), _subtmp_array(nullptr), _colors_local(nullptr), 
         _bufVec(nullptr), _bufMatY(nullptr), _bufMatCols(-1), _bufVecLeaf(nullptr), _spmvTime(0), _eMATime(0), 
         _isPruned(1), _isScaled(0), _useSPMM(0), _peakMemUsage(0), _spmvElapsedTime(0), _fmaElapsedTime(0), _spmvFlops(0),
-        _spmvMemBytes(0), _fmaFlops(0), _fmaMemBytes(0) {} 
+        _spmvMemBytes(0), _fmaFlops(0), _fmaMemBytes(0), _vtuneStart(-1) {} 
 
-        void initialization(CSRGraph& graph, int thd_num, int itr_num, int isPruned, int useSPMM);
+        void initialization(CSRGraph& graph, int thd_num, int itr_num, int isPruned, int useSPMM, int vtuneStart=-1);
 
         double compute(Graph& templates, bool isEstimate = false);
 
@@ -86,7 +86,11 @@ class CountMat {
         }
 
         double estimateMemComm();
+        double estimateMemCommNonPruned();
+
         double estimateFlops();
+        double estimateFlopsNonPruned();
+
         double estimateTemplate();
 
     private:
@@ -154,6 +158,8 @@ class CountMat {
         double _fmaMemBytes;
         double _spmvElapsedTime;
         double _fmaElapsedTime;
+
+        int _vtuneStart;
 };
 
 #endif

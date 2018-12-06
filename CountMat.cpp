@@ -15,7 +15,7 @@
 
 using namespace std;
 
-void CountMat::initialization(CSRGraph& graph, int thd_num, int itr_num, int isPruned, int useSPMM)
+void CountMat::initialization(CSRGraph& graph, int thd_num, int itr_num, int isPruned, int useSPMM, int vtuneStart)
 {
     _graph = &graph;
     _vert_num = _graph->getNumVertices();
@@ -24,6 +24,7 @@ void CountMat::initialization(CSRGraph& graph, int thd_num, int itr_num, int isP
     _isPruned = isPruned;
     _useSPMM = useSPMM;
     _isScaled = 0;
+    _vtuneStart = vtuneStart;
 
 
     if (_useSPMM == 1)
@@ -119,6 +120,9 @@ double CountMat::compute(Graph& templates, bool isEstimate)
 
 #ifdef VERBOSE
     estimatePeakMemUsage();
+    estimateMemCommNonPruned();
+    estimateFlopsNonPruned();
+
     double totalFlops = estimateFlops();
     double totalMemBand = estimateMemComm();
     estimateTemplate();
@@ -277,7 +281,7 @@ double CountMat::colorCounting()
 double CountMat::countNonBottomePruned(int subsId)
 {/*{{{*/
 
-    if (subsId == 3)
+    if (subsId == _vtuneStart)
     {
         // for vtune miami u15-2 subids==3 takes 103 secs
 #ifdef VTUNE
@@ -997,6 +1001,46 @@ double CountMat::estimateMemComm()
     return commBytesTotal;
 }
 
+double CountMat::estimateMemCommNonPruned()
+{
+    double commBytesTotal = 0.0;
+    // Ax = y
+    // access A + access x + write to y + rowidx + colidx
+    // double bytesSpmvPer = sizeof(float)*(2*_graph->getNNZ() + _graph->getNumVertices()) + sizeof(int)*(_graph->getNNZ()
+            // + _graph->getNumVertices());
+
+    double bytpesByMain = (sizeof(float) + sizeof(int))*_graph->getNumVertices();
+    double bytpesByAux = (sizeof(float) + sizeof(int))*_graph->getNNZ();
+    // z += x*y
+    // read x, y, z and write to z
+    // double bytesFMAPer = sizeof(float)*(_graph->getNumVertices()*4);
+
+    for(int s=_total_sub_num-1;s>=0;s--)
+    {
+        int vert_self = _subtmp_array[s].get_vert_num();
+        if (vert_self > 1) {
+            
+            int idxMain = div_tp.get_main_node_idx(s);
+            int idxAux = div_tp.get_aux_node_idx(s);       
+            // if (_subtmp_array[idxAux].get_vert_num() > 1)
+            // {
+                 // commBytesTotal += (bytesSpmvPer*_dTable.getTableLen(idxAux));
+            // }
+            
+            commBytesTotal += (_dTable.getTableLen(s)*8*_graph->getNumVertices());
+            commBytesTotal += (_dTable.getTableLen(s)*indexer.comb_calc(vert_self, _subtmp_array[idxAux].get_vert_num())*
+                    (bytpesByMain+bytpesByAux));
+
+        }
+    }
+
+    commBytesTotal /= (1024*1024*1024);
+    printf("Comm Bytes NonPruned estimated:  %f GBytes\n", commBytesTotal);
+    std::fflush(stdout);
+
+    return commBytesTotal;
+}
+
 double CountMat::estimateFlops()
 {
 
@@ -1032,6 +1076,39 @@ double CountMat::estimateFlops()
     flopsTotal = _spmvFlops + _fmaFlops;
 
     printf("Flops estimated : SpMV %f Gflop, FMA %f Gflop \n", _spmvFlops, _fmaFlops);
+    std::fflush(stdout);
+
+    return flopsTotal;
+}
+
+double CountMat::estimateFlopsNonPruned()
+{
+
+    printf("|V| is: %d, |E| nnz is: %d \n", _graph->getNumVertices(), _graph->getNNZ());
+    std::fflush(stdout);
+
+    double flopsTotal = 0.0;
+    // double flopsSpmvPer = 2*_graph->getNNZ(); 
+    // double flopsFMAPer = 2*_graph->getNumVertices();
+    double flopsPer = 2*_graph->getNNZ() + _graph->getNumVertices();
+
+    for(int s=_total_sub_num-1;s>=0;s--)
+    {
+        int vert_self = _subtmp_array[s].get_vert_num();
+        if (vert_self > 1) {
+            
+            // spmv part
+            int idxMain = div_tp.get_main_node_idx(s);
+            int idxAux = div_tp.get_aux_node_idx(s);       
+            
+            flopsTotal += (_dTable.getTableLen(s)*indexer.comb_calc(vert_self, _subtmp_array[idxAux].get_vert_num())*
+                    flopsPer);
+        }
+    }
+
+    flopsTotal /= (1024*1024*1024);
+
+    printf("Flops estimated Non Pruned: %f Gflop\n", flopsTotal);
     std::fflush(stdout);
 
     return flopsTotal;
