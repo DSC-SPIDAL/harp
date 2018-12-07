@@ -120,7 +120,7 @@ void printInt(std::string msg, int val){
 void printVec(std::string msg, const std::vector<unsigned int>& vec){
     std::ostringstream stringStream;
     stringStream << msg ;
-    for(int i=0; i< vec.size(); i++){
+    for(int i=0; i< std::min(int(vec.size()), 50); i++){
     stringStream << vec[i] << ",";
     }
     printmsg(stringStream.str());
@@ -128,11 +128,20 @@ void printVec(std::string msg, const std::vector<unsigned int>& vec){
 void printVec(std::string msg, const std::vector<int>& vec){
     std::ostringstream stringStream;
     stringStream << msg ;
-    for(int i=0; i< vec.size(); i++){
+    for(int i=0; i< std::min(int(vec.size()), 50); i++){
     stringStream << vec[i] << ",";
     }
     printmsg(stringStream.str());
 }
+void printVec(std::string msg, const std::vector<float>& vec){
+    std::ostringstream stringStream;
+    stringStream << msg ;
+    for(int i=0; i< std::min(int(vec.size()), 50); i++){
+    stringStream << vec[i] << ",";
+    }
+    printmsg(stringStream.str());
+}
+
 
 
 
@@ -312,17 +321,27 @@ void printdmat(const SparsePage& dmat){
 }
 
 
-void printSplit(SplitEntry& split){
+void printSplit(SplitEntry& split, int fid, int nid){
     unsigned split_index = split.sindex & ((1U << 31) - 1U);
     bool split_left = ((split.sindex >> 31) != 0);
 
     static std::mutex m;
 
     m.lock();
-    std::cout << "FindSplit best=i" << split_index << ",v" << 
+    std::cout << "FindSplit nid:" << nid << ",fid:" << fid << ",best=i" << split_index << ",v" << 
         split.split_value << ",l" << split.loss_chg 
         << ":" << (split_left?1:0) << "\n";
     m.unlock();
+}
+
+void printgh(const std::vector<GradientPair> &gpair)
+{
+    std::ostringstream stringStream;
+    stringStream << "GHPair:===========================\n";
+    for(int i=0; i< std::min(int(gpair.size()), 50); i++){
+        stringStream << gpair[i].GetGrad() << ":" << gpair[i].GetHess() << ",";
+    }
+    printmsg(stringStream.str());
 }
 
 #else
@@ -335,11 +354,14 @@ void printdmat(DMatrixCompactBlockDense& dmat){}
 void printdmat(const SparsePage& dmat){}
 void printgmat(GHistIndexMatrix& gmat){}
 void printcut(HistCutMatrix& gmat){}
-void printSplit(SplitEntry& split){}
+void printSplit(SplitEntry& split, int fid, int nid){}
 void printInt(std::string msg, int val){}
 //void printnodes(std::vector<NodeEntry>& nodes, std::string header=""){}
 void printVec(std::string msg, const std::vector<unsigned int>& vec){}
 void printVec(std::string msg, const std::vector<int>& vec){}
+void printVec(std::string msg, const std::vector<float>& vec){}
+   
+void printgh(const std::vector<GradientPair> &gpair){}
 
 #endif
 

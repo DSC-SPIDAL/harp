@@ -646,8 +646,10 @@ class HistMakerCompactFastHist: public BaseMaker {
                       DMatrix *p_fmat,
                       RegTree *p_tree) {
       
+    printgh(gpair);
+
     this->InitData(gpair, *p_fmat, *p_tree);
-    this->InitWorkSet(p_fmat, *p_tree, &fwork_set_);
+    //this->InitWorkSet(p_fmat, *p_tree, &fwork_set_);
     // mark root node as fresh.
     for (int i = 0; i < p_tree->param.num_roots; ++i) {
       (*p_tree)[i].SetLeaf(0.0f, 0);
@@ -661,7 +663,7 @@ class HistMakerCompactFastHist: public BaseMaker {
     //this->ResetPosAndPropose(gpair, p_fmat, fwork_set_, *p_tree);
     //printtree(p_tree, "ResetPosAndPropose");
     // initialize the histogram only
-    InitializeHist(gpair, p_fmat, fwork_set_, *p_tree);
+    InitializeHist(gpair, p_fmat, *p_tree);
 
     for (int depth = 0; depth < param_.max_depth; ++depth) {
 
@@ -681,7 +683,7 @@ class HistMakerCompactFastHist: public BaseMaker {
 
 
       // find split based on histogram statistics
-      this->FindSplit(depth, gpair, work_set_, p_tree);
+      this->FindSplit(depth, gpair, p_tree);
 
       //printtree(p_tree, "FindSplit");
 
@@ -754,16 +756,16 @@ class HistMakerCompactFastHist: public BaseMaker {
         }
       }
     }
-
-    //debug
-    printSplit(*best);
-
   }
-   void FindSplit(int depth,
-                        const std::vector<GradientPair> &gpair,
-                        const std::vector <bst_uint> &fset,
-                        RegTree *p_tree) {
-    
+
+
+  void FindSplit(int depth,
+                 const std::vector<GradientPair> &gpair,
+                 RegTree *p_tree) {
+
+    //always work on work_set_ instead of fwork_set_
+    const std::vector <bst_uint> &fset = work_set_;
+
     const size_t num_feature = fset.size();
     //printInt("FindSplit::num_feature = ", num_feature);
     //printVec("FindSplit::fset=", fset);
@@ -782,13 +784,13 @@ class HistMakerCompactFastHist: public BaseMaker {
       for (size_t i = 0; i < fset.size(); ++i) {
         int fid = fset[i];
         int fidoffset = this->feat2workindex_[fid];
-        //EnumerateSplit(this->wspace_.hset[0][i + wid * (num_feature+1)],
-        //EnumerateSplit(this->wspace_.hset[0].GetHistUnit(i, wid),
-        //               node_sum, fset[i], &best, &left_sum[wid]);
+
+        CHECK_GE(fidoffset, 0);
         EnumerateSplit(this->wspace_.hset[0].GetHistUnitByFid(fidoffset, nid),
                        node_sum, fid, &best, &left_sum[wid]);
-        //EnumerateSplit(this->wspace_.hset[0][offset + wid * (num_feature+1)],
-        //               node_sum, fid, &best, &left_sum[wid]);
+
+
+        printSplit(best, fid, nid);
       }
     }
     // get the best result, we can synchronize the solution
@@ -802,9 +804,6 @@ class HistMakerCompactFastHist: public BaseMaker {
       // set up the values
       p_tree->Stat(nid).loss_chg = best.loss_chg;
       // now we know the solution in snode[nid], set split
-      
-      
-     
       if (best.loss_chg > kRtEps) {
 
         p_tree->AddChilds(nid);
@@ -820,7 +819,6 @@ class HistMakerCompactFastHist: public BaseMaker {
         this->SetStats(p_tree, (*p_tree)[nid].LeftChild(), left_sum[wid]);
         this->SetStats(p_tree, (*p_tree)[nid].RightChild(), right_sum);
       } else {
-        (*p_tree)[nid].SetLeaf(p_tree->Stat(nid).base_weight * param_.learning_rate);
         #ifdef USE_HALFTRICK
         //add empty childs anyway to keep the node id as the same as the fll
         //binary tree
@@ -828,6 +826,8 @@ class HistMakerCompactFastHist: public BaseMaker {
         (*p_tree)[(*p_tree)[nid].LeftChild()].SetLeaf(0.0f, 0);
         (*p_tree)[(*p_tree)[nid].RightChild()].SetLeaf(0.0f, 0);
         #endif
+        //bugfix: setleaf should be after addchilds
+        (*p_tree)[nid].SetLeaf(p_tree->Stat(nid).base_weight * param_.learning_rate);
  
       }
     }
@@ -865,6 +865,8 @@ class HistMakerCompactFastHist: public BaseMaker {
     // init for all features
     auto fset = *p_fset;
     work_set_.clear();
+    dwork_set_.clear();
+
     feat2workindex_.resize(tree.param.num_feature);
     std::fill(feat2workindex_.begin(), feat2workindex_.end(), -1);
 
@@ -897,9 +899,13 @@ class HistMakerCompactFastHist: public BaseMaker {
    */
   void InitializeHist(const std::vector<GradientPair> &gpair,
                           DMatrix *p_fmat,
-                          const std::vector<bst_uint> &fset,
                           const RegTree &tree) {
     if (!isInitializedHistIndex && this->qexpand_.size() == 1) {
+        
+        auto& fset = fwork_set_;
+
+        this->InitWorkSet(p_fmat, tree, &fset);
+
         const MetaInfo &info = p_fmat->Info();
 
         /* Initilize the histgram
@@ -1055,6 +1061,19 @@ class HistMakerCompactFastHist: public BaseMaker {
 
 
     }// end if(isInitializedHistIndex)
+    else{
+        //init for each tree
+        unsigned int nthread = omp_get_max_threads();
+        this->thread_hist_.resize(omp_get_max_threads());
+        for (unsigned int i=0; i< nthread; i++){
+          //make memory access separate
+          thread_hist_[i].resize(64);
+        }
+
+        this->wspace_.Init(this->param_, 1, std::pow(2,this->param_.max_depth+1) /*256*/);
+
+
+    }
   }
 
   /*
@@ -1364,17 +1383,21 @@ class HistMakerCompactFastHist: public BaseMaker {
 
       const auto nrows = static_cast<bst_omp_uint>(p_fmat->Info().num_row_);
       for(int ridx=0; ridx < nrows; ridx++){
-        const int nid = this->DecodePosition(ridx);
-
-        //update   
-        out_preds[ridx] += leaf_values[nid];
+        //const int nid = this->DecodePosition(ridx);
+        const int nid = this->position_[ridx];
+        if (nid>=0){
+            //update   
+            out_preds[ridx] += leaf_values[nid];
+        }
       }
 
       LOG(CONSOLE) << "UpdatePredictionCache: nodes size=" << 
           nodes.size() << ",rowscnt=" << nrows;
     
 
-      //printVec("updatech:", this->position_);
+      printVec("updatech pos:", this->position_);
+      printVec("updatech leaf:", leaf_values);
+      printVec("updatech pred:", out_preds);
       return true;
     }
   }
@@ -1447,9 +1470,12 @@ class HistMakerCompactFastHist: public BaseMaker {
     //                        this->wspace_.hset[0].data.size());
 
     //save the last tree point
-    p_last_tree_ = &tree;
+    //p_last_tree_ = &tree;
   }
 
+  /*
+   * Reset the splitcont to fvalue
+   */
   void ResetTree(RegTree& tree){
 
     const auto nodes = tree.GetNodes();
@@ -1475,7 +1501,8 @@ class HistMakerCompactFastHist: public BaseMaker {
         //}
         //else if (binid == -1 && defaultLeft){
 
-        unsigned offset = feat2workindex_[fid];
+        int offset = feat2workindex_[fid];
+        CHECK_GE(offset,0);
         if (binid == -1 && defaultLeft){
             //leftmost
             fvalue = this->wspace_.min_val[offset];
@@ -1489,6 +1516,7 @@ class HistMakerCompactFastHist: public BaseMaker {
     //update the position for update cache
     //this->CorrectNonDefaultPositionByBatch2(*p_hmat, this->fsplit_set_, tree);
 
+    p_last_tree_ = &tree;
   }
 
 

@@ -192,6 +192,10 @@ class FastHistMaker: public TreeUpdater {
 
       const std::vector<GradientPair>& gpair_h = gpair->ConstHostVector();
 
+#ifdef USE_DEBUG
+      printgh(gpair_h);
+#endif
+
       spliteval_->Reset();
 
       tstart = dmlc::GetTime();
@@ -407,6 +411,11 @@ class FastHistMaker: public TreeUpdater {
 
       CHECK_GT(out_preds.size(), 0U);
 
+      #ifdef USE_DEBUG
+      std::vector<float> leafs;
+      #endif
+
+
       for (const RowSetCollection::Elem rowset : row_set_collection_) {
         if (rowset.begin != nullptr && rowset.end != nullptr) {
           int nid = rowset.node_id;
@@ -420,12 +429,22 @@ class FastHistMaker: public TreeUpdater {
             CHECK((*p_last_tree_)[nid].IsLeaf());
           }
           leaf_value = (*p_last_tree_)[nid].LeafValue();
+    
+          #ifdef USE_DEBUG
+          leafs.push_back(leaf_value);
+          #endif
 
           for (const size_t* it = rowset.begin; it < rowset.end; ++it) {
             out_preds[*it] += leaf_value;
           }
         }
       }
+
+      #ifdef USE_DEBUG
+      //printVec("updatech pos:", this->position_);
+      printVec("updatepred leaf:", leafs);
+      printVec("updatepred pred:", out_preds);
+      #endif
 
       return true;
     }

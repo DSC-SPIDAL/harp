@@ -181,8 +181,8 @@ void DMatrixCube::Init(const SparsePage& page, MetaInfo& info, int num_maxbins, 
 
    }
    //add sentinel at the end
-   addrow();
    addblock();
+   addrow();
 
 
    LOG(CONSOLE) << "DMatrixCube::Init" <<
