@@ -30,6 +30,8 @@ int main(int argc, char** argv)
     int comp_thds;
     int algoMode = 0;
     int vtuneStart = -1;
+    // bool calcMorphism = true;
+    bool calcMorphism = false;
 
     graph_name = argv[1];
     template_name = argv[2];
@@ -87,7 +89,7 @@ int main(int argc, char** argv)
 
     // start computing
     Count executor;
-    executor.initialization(input_graph, comp_thds, iterations, algoMode, vtuneStart);
+    executor.initialization(input_graph, comp_thds, iterations, algoMode, vtuneStart, calcMorphism);
     executor.compute(input_template);
 
     return 0;

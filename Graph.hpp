@@ -49,7 +49,7 @@ class Graph {
 
         // release the memory of adj_list and deg_list
         void release();
-
+    
     private:
 
         int vert_num;

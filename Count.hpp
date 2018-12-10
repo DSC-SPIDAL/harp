@@ -24,9 +24,11 @@ class Count {
             _colors_local=NULL;
             _algoMode = 0;
             _vtuneStart = -1;
+            _calculate_automorphisms = false;
         }
 
-        void initialization(Graph& graph, int thd_num, int itr_num, int algoMode, int vtuneStart = -1);
+        void initialization(Graph& graph, int thd_num, int itr_num, int algoMode, int vtuneStart = -1, 
+                bool calculate_automorphisms = false);
 
         double compute(Graph& templates);
 
@@ -35,7 +37,12 @@ class Count {
                 free(_colors_local);
         }
 
+        int automorphismNum();
+
     private:
+
+        int calcAutomorphismRecursive(Graph& t, std::vector<int>& mappingID, std::vector<int>& restID);
+        int calcAutomorphismZero(Graph& t, std::vector<int>& mappingID);
 
         double colorCounting();
         double countNonBottomeFascia(int subsId);
@@ -69,6 +76,7 @@ class Count {
 
         int _algoMode;
         int _vtuneStart;
+        bool _calculate_automorphisms; 
 
         // divide the templates into sub-templates
         DivideTemplates div_tp;

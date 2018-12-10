@@ -14,7 +14,8 @@
 
 using namespace std;
 
-void Count::initialization(Graph& graph, int thd_num, int itr_num, int algoMode, int vtuneStart)
+void Count::initialization(Graph& graph, int thd_num, int itr_num, int algoMode, int vtuneStart, bool 
+        calculate_automorphisms)
 {
     _graph = &graph;
     _vert_num = _graph->get_vert_num();
@@ -23,6 +24,7 @@ void Count::initialization(Graph& graph, int thd_num, int itr_num, int algoMode,
     _itr_num = itr_num;
     _algoMode = algoMode;
     _vtuneStart = vtuneStart;
+    _calculate_automorphisms = calculate_automorphisms;
     _colors_local = (int*)malloc(_vert_num*sizeof(int));
     std::memset(_colors_local, 0, _vert_num*sizeof(int));
 }
@@ -104,7 +106,9 @@ double Count::compute(Graph& templates)
     printf("Prob is %f\n", probColorful);
     std::fflush(stdout);
 
-    int automoNum = 1;
+    // int automoNum = 1;
+    // enable calculate_automorphisms
+    int automoNum = _calculate_automorphisms ? automorphismNum() : 1;  
     finalCount = floor(finalCount/(probColorful*(double)automoNum) + 0.5);
 
     printf("Final count is %e\n", finalCount);
@@ -917,3 +921,81 @@ int Count::factorial(int n)
     else
         return (n*factorial(n-1));
 }
+
+int Count::automorphismNum()
+{
+    std::vector<int> mappingID;
+    std::vector<int> restID;
+
+    for (int i = 0; i < _templates->get_vert_num(); ++i) {
+        restID.push_back(i);
+    }
+
+    return calcAutomorphismRecursive((*_templates), mappingID, restID);
+}
+
+int Count::calcAutomorphismZero(Graph& t, std::vector<int>& mappingID)
+{
+    for (int i = 0; i < mappingID.size(); ++i) {
+       if (t.get_out_deg(i) != t.get_out_deg(mappingID[i])) 
+           return 0;
+       else
+       {
+           int* adjList = t.get_adj_list(i);
+           int* adjListMap = t.get_adj_list(mappingID[i]);
+           int end = t.get_out_deg(i);
+
+           bool* isMatch = new bool[end];
+           for (int j = 0; j < end; ++j) {
+               isMatch[j] = false;
+               int u = adjList[j];
+               for (int k = 0; k < end; ++k) {
+                   int u_map = adjListMap[k];
+                   if (u == mappingID[u_map])
+                       isMatch[j] = true;
+               }
+               
+           }
+
+           for (int k = 0; k < end; ++k) {
+              
+               if (!isMatch[k])
+                   return 0;
+           }
+
+       }
+        
+    }
+    return 1;
+}
+
+int Count::calcAutomorphismRecursive(Graph& t, std::vector<int>& mappingID, std::vector<int>& restID)
+{
+    int count = 0;
+    if (!restID.size())
+    {
+        return calcAutomorphismZero(t, mappingID); 
+    }
+    else
+    {
+        for (int i = 0; i < restID.size(); ++i) {
+            mappingID.push_back(restID[i]);
+            std::vector<int> newRestID;
+            for (int j = 0; j < restID.size(); ++j) {
+                if (i!=j)
+                    newRestID.push_back(restID[j]);
+                
+            }
+
+            count += calcAutomorphismRecursive(t, mappingID, newRestID);
+            newRestID.clear();
+            mappingID.pop_back();
+        }
+
+    }
+
+    return count;
+
+}
+
+
