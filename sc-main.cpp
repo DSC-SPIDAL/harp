@@ -527,6 +527,8 @@ int main(int argc, char** argv)
     int isPruned = 1;
     int useSPMM = 0;
     int vtuneStart = -1;
+    // bool calculate_automorphism = true;
+    bool calculate_automorphism = false;
 
     // bool useMKL = true;
     bool useMKL = false;
@@ -670,7 +672,7 @@ int main(int argc, char** argv)
 
     // start CSR mat computing
     CountMat executor;
-    executor.initialization(csrInpuG, comp_thds, iterations, isPruned, useSPMM, vtuneStart);
+    executor.initialization(csrInpuG, comp_thds, iterations, isPruned, useSPMM, vtuneStart, calculate_automorphism);
 
     executor.compute(input_template, isEstimate);
 
