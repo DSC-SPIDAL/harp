@@ -17,7 +17,6 @@ public class PythonLauncher extends Configured implements Tool {
 
     Job job = Job.getInstance(getConf(),
             "python_job_" + args[0]);
-    job.setMapperClass(PythonCollectiveMapper.class);
     return 0;
   }
 }
