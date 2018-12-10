@@ -30,6 +30,10 @@ public class HarpSession {
         return new HDFSFilePointer(absoluteFilePath);
     }
 
+    public String getSessionRootPath() {
+        return "/harp/" + this.name + "/";
+    }
+
     public void close() {
         //do cleanup
     }

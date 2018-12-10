@@ -1,4 +1,4 @@
-package edu.iu.harp.boot.python.ml;
+package edu.iu.harp.boot.python.ml.cluster;
 
 import edu.iu.fileformat.MultiFileInputFormat;
 import edu.iu.harp.boot.python.HarpSession;
@@ -9,7 +9,6 @@ import edu.iu.harp.boot.python.io.util.FileSynchronizer;
 import edu.iu.kmeans.regroupallgather.Constants;
 import edu.iu.kmeans.regroupallgather.KMeansCollectiveMapper;
 import edu.iu.kmeans.regroupallgather.KMeansLauncher;
-import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
@@ -19,7 +18,6 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
@@ -27,9 +25,9 @@ import java.util.stream.Collectors;
 
 public class KMeans {
 
-    private int clusters;
-    private int mappers;
-    private int iterations;
+    private int clusters = -1;
+    private int mappers = 1;
+    private int iterations = -1;
 
     private HarpSession harpSession;
 
@@ -37,16 +35,23 @@ public class KMeans {
         this.harpSession = harpSession;
     }
 
-    public void setClusters(int clusters) {
+    public KMeans setClusters(int clusters) {
         this.clusters = clusters;
+        return this;
     }
 
-    public void setMappers(int mappers) {
+    public KMeans setMappers(int mappers) {
         this.mappers = mappers;
+        return this;
     }
 
-    public void setIterations(int iterations) {
+    public KMeans setIterations(int iterations) {
         this.iterations = iterations;
+        return this;
+    }
+
+    private void validate() {
+
     }
 
     public String fit(AbstractFilePointer filePointer) throws IOException, ClassNotFoundException, InterruptedException {
@@ -74,12 +79,11 @@ public class KMeans {
                 .filter(AbstractFilePointer::isLocal)
                 .map(fp -> (LocalFilePointer) fp).collect(Collectors.toList());
 
-        List<HDFSFilePointer> hdfsFilePointers = fileSynchronizer.syncToHdfs(localInputFiles);
+        List<HDFSFilePointer> hdfsFilePointers = fileSynchronizer.syncToHDFS(localInputFiles);
 
 
         System.out.println(fileSystem.exists(new HDFSFilePointer("/tmp").getPath()));
         System.out.println(localFileSystem.exists(new LocalFilePointer("/tmp").getPath()));
-
 
         Job job = Job.getInstance(configuration, "kmeans_job");
 
@@ -87,7 +91,7 @@ public class KMeans {
 
         FileInputFormat.setInputPaths(job, hdfsFilePointers.stream().map(HDFSFilePointer::getPath).collect(Collectors.toList()).toArray(inputPaths));
 
-        FileUtils.deleteDirectory(new File("/tmp/kmeans/out/"));
+
         FileOutputFormat.setOutputPath(job, new Path("/tmp/kmeans/out/"));
 
         job.setInputFormatClass(MultiFileInputFormat.class);

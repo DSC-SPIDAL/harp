@@ -4,15 +4,13 @@ import java.io.File;
 
 public abstract class AbstractOperationResult {
 
-  private File outputFile;
+    private File outputFile;
 
-  public AbstractOperationResult(File outputFile) {
-    this.outputFile = outputFile;
-  }
+    public AbstractOperationResult(File outputFile) {
+        this.outputFile = outputFile;
+    }
 
-  public File getOutputFile() {
-    return outputFile;
-  }
-
-
+    public File getOutputFile() {
+        return outputFile;
+    }
 }

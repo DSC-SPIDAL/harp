@@ -1,16 +1,17 @@
 package edu.iu.harp.boot.python.ml;
 
 import edu.iu.harp.boot.python.HarpSession;
+import edu.iu.harp.boot.python.ml.cluster.ClusteringKernels;
 
 public class MLKernels {
 
-    private HarpSession harpSession;
+    private ClusteringKernels clusteringKernels;
 
     public MLKernels(HarpSession harpSession) {
-        this.harpSession = harpSession;
+        this.clusteringKernels = new ClusteringKernels(harpSession);
     }
 
-    public KMeans getkMeans() {
-        return new KMeans(this.harpSession);
+    public ClusteringKernels cluster() {
+        return this.clusteringKernels;
     }
 }
