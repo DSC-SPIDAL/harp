@@ -171,7 +171,7 @@ void DMatrixCube::Init(const SparsePage& page, MetaInfo& info, int num_maxbins, 
         //add data
         for (auto& ins: row){
             //for all <features,binid> items in this row
-            int blkid = ins.binid * fid_blknum + ins.index / blkInfo.GetFeatureBlkSize(); 
+            int blkid = (ins.binid / blkInfo.GetBinBlkSize()) * fid_blknum + ins.index / blkInfo.GetFeatureBlkSize(); 
             BlkAddrType blkaddr = (ins.binid % blkInfo.GetBinBlkSize()) * blkInfo.GetFeatureBlkSize() + ins.index % blkInfo.GetFeatureBlkSize();
 
             CHECK_LT(blkid, data_.size());

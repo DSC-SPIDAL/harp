@@ -234,6 +234,7 @@ class DMatrixCompactBlockDense : public xgboost::data::SparsePageDMatrix {
  */
 
 typedef unsigned short BlkAddrType;
+//typedef unsigned char BlkAddrType;
 
 struct BlockInfo{
     // 3-D cube <rowid, fid, binid>

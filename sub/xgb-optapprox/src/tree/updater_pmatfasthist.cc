@@ -195,13 +195,23 @@ class HistMakerCompactFastHist: public BaseMaker {
     unsigned size;
 
     /* plain size*/
-    unsigned step_size;
+    //unsigned step_size;
+    unsigned block_height;  // boundary of crossing a block
+    unsigned in_block_step;    // in block step = FT_BLOCK_SIZE
+    unsigned cross_block_step;    // cross block step = FT_BLOCK_SIZE*NODESIZE
 
     // default constructor
     HistUnit() = default;
+
     // constructor
-    HistUnit(const bst_float *cut, TStats *data, unsigned size, unsigned stepsize = 1)
-        : cut(cut), data(data), size(size), step_size(stepsize) {}
+    //HistUnit(const bst_float *cut, TStats *data, unsigned size, unsigned stepsize = 1)
+    //    : cut(cut), data(data), size(size), step_size(stepsize) {}
+
+    HistUnit(const bst_float *cut, TStats *data, unsigned size, 
+            unsigned height = 1, unsigned instep = 1, unsigned crossstep = 1)
+        : cut(cut), data(data), size(size), 
+            block_height(height), in_block_step(instep), cross_block_step(crossstep) {}
+
     /*! \brief add a histogram to data */
     inline void Add(bst_float fv,
                     const std::vector<GradientPair> &gpair,
@@ -216,10 +226,15 @@ class HistMakerCompactFastHist: public BaseMaker {
     //
     // get i item from *data when not fid wised layout
     //
+    // fir for (0,0,1)
+    //TStats& Get(int i) const{
+    //    return data[i*step_size];
+    //}
+
     TStats& Get(int i) const{
-        return data[i*step_size];
+        return data[(i/block_height)*cross_block_step + i % block_height * in_block_step];
     }
-    
+
   };
   /*! \brief a set of histograms from different index */
   struct HistSet {
@@ -234,6 +249,7 @@ class HistMakerCompactFastHist: public BaseMaker {
     size_t fsetSize;
     size_t nodeSize;
     size_t featnum;
+    BlockInfo* pblkInfo;
 
     /*
      * GHSum is the model, preallocated
@@ -261,20 +277,50 @@ class HistMakerCompactFastHist: public BaseMaker {
 
     /*
      * get by blkid, layout as <blkid, nid, blockaddr>
-     * simple version as blkinfo=(0,0,1)
-     *
      */
-    inline HistUnit GetHistUnitByBinid(size_t binid, size_t nid) {
+
+    // /* simple version as blkinfo=(0,0,1)
+    // *
+    // */
+    //inline HistUnit GetHistUnitByBinid(size_t binid, size_t nid) {
+    //  return HistUnit(cut, /* not use*/
+    //                  &data[0] + (featnum+1)*(binid * nodeSize + nid),
+    //                  featnum);
+    //}
+
+    //inline HistUnit GetHistUnitByFid(size_t fid, size_t nid) {
+    //  return HistUnit(cut, /* not use*/
+    //                  &data[0] + nid*(featnum+1) + fid,
+    //                  rptr[fid+1] - rptr[fid],
+    //                  (featnum+1)*nodeSize);
+    //}
+
+
+    /*
+     * general version of blkinfo: (row,ft,bin_blk_size)
+     */
+    //inline HistUnit GetHistUnitByBlkid(size_t blkid, size_t nid) {
+    //  return HistUnit(cut, /* not use*/
+    //                  &data[0] + (blkInfo.GetBinBlkSize()*blkInfo.GetFeatureBlkSize())*(blkid * nodeSize + nid),
+    //                  blkInfo.GetBinBlkSize()*blkInfo.GetFeatureBlkSize());
+    //}
+
+
+    // only for (0,0,n)
+    inline HistUnit GetHistUnitByBlkid(size_t blkid, size_t nid) {
       return HistUnit(cut, /* not use*/
-                      &data[0] + (featnum+1)*(binid * nodeSize + nid),
-                      featnum);
+                      &data[0] + (pblkInfo->GetBinBlkSize()*(featnum+1))*(blkid * nodeSize + nid),
+                      pblkInfo->GetBinBlkSize()*(featnum+1));
     }
 
+    
     inline HistUnit GetHistUnitByFid(size_t fid, size_t nid) {
       return HistUnit(cut, /* not use*/
-                      &data[0] + nid*(featnum+1) + fid,
+                      &data[0] + nid*pblkInfo->GetBinBlkSize()*(featnum+1) + fid,
                       rptr[fid+1] - rptr[fid],
-                      (featnum+1)*nodeSize);
+                      pblkInfo->GetBinBlkSize(),
+                      featnum,
+                      pblkInfo->GetBinBlkSize()*(featnum+1)*nodeSize);
     }
 
 
@@ -290,7 +336,7 @@ class HistMakerCompactFastHist: public BaseMaker {
     // per thread histset
     std::vector<HistSet> hset;
     // initialize the hist set
-    void Init(const TrainParam &param, int nthread, int nodesize) {
+    void Init(const TrainParam &param, int nthread, int nodesize, BlockInfo& blkinfo) {
       hset.resize(nthread);
       // cleanup statistics
       for (int tid = 0; tid < nthread; ++tid) {
@@ -302,6 +348,8 @@ class HistMakerCompactFastHist: public BaseMaker {
         hset[tid].fsetSize = rptr.back();
         hset[tid].featnum = rptr.size() - 2;
         hset[tid].nodeSize = nodesize;
+
+        hset[tid].pblkInfo = &blkinfo;
 
         /*
          * <binid, nid, fid> layout means hole in the plain
@@ -987,7 +1035,7 @@ class HistMakerCompactFastHist: public BaseMaker {
         /*
         * OptApprox:: init bindid in p_fmat
         */
-        this->wspace_.Init(this->param_, 1, std::pow(2,this->param_.max_depth+1) /*256*/);
+        this->wspace_.Init(this->param_, 1, std::pow(2,this->param_.max_depth+1) /*256*/, this->blkInfo_);
 
         this->SetDefaultPostion(p_fmat, tree);
 
@@ -1032,9 +1080,10 @@ class HistMakerCompactFastHist: public BaseMaker {
         //fwork_set_ --> features set
         //work_set_ --> blkset, (binset) in (0,0,1)
         bwork_set_.clear();
-        for(int i=0; i<param_.max_bin; i++){
+        for(int i=0; i < p_blkmat->GetBlockNum(); i++){
             bwork_set_.push_back(i);
         }
+        printVec("bwork_set_:", bwork_set_);
 
         #ifndef USE_OMP_BUILDHIST
         //init the task graph
@@ -1070,7 +1119,7 @@ class HistMakerCompactFastHist: public BaseMaker {
           thread_hist_[i].resize(64);
         }
 
-        this->wspace_.Init(this->param_, 1, std::pow(2,this->param_.max_depth+1) /*256*/);
+        this->wspace_.Init(this->param_, 1, std::pow(2,this->param_.max_depth+1) /*256*/, blkInfo_);
 
 
     }
@@ -1221,7 +1270,7 @@ class HistMakerCompactFastHist: public BaseMaker {
     for (size_t i = 0; i < this->qexpand_.size(); ++i) {
       const unsigned nid = this->qexpand_[i];
       //const unsigned wid = this->node2workindex_[nid];
-      hbuilder[nid].hist = this->wspace_.hset[0].GetHistUnitByBinid(blkid_offset, nid);
+      hbuilder[nid].hist = this->wspace_.hset[0].GetHistUnitByBlkid(blkid_offset, nid);
     }
 
     int blockNum = zcol.GetBlockNum();
@@ -1299,7 +1348,7 @@ class HistMakerCompactFastHist: public BaseMaker {
     unsigned nid_parent = (nid_start+1)/2-1;
     for (size_t i = 0; i < this->qexpand_.size(); i+=2) {
       const unsigned nid = this->qexpand_[i];
-      auto parent_hist = this->wspace_.hset[0].GetHistUnitByBinid(blkid_offset, nid_parent + i/2);
+      auto parent_hist = this->wspace_.hset[0].GetHistUnitByBlkid(blkid_offset, nid_parent + i/2);
       #pragma ivdep
       #pragma omp simd
       for(int j=0; j < hbuilder[nid].hist.size; j++){
