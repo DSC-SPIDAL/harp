@@ -11,6 +11,7 @@ import edu.iu.kmeans.regroupallgather.KMeansCollectiveMapper;
 import edu.iu.kmeans.regroupallgather.KMeansLauncher;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
@@ -29,10 +30,13 @@ public class KMeans {
     private int mappers = 1;
     private int iterations = -1;
 
+    private HDFSFilePointer outputDirectory;
+
     private HarpSession harpSession;
 
     public KMeans(HarpSession harpSession) {
         this.harpSession = harpSession;
+        this.outputDirectory = new HDFSFilePointer(this.harpSession.getSessionRootPath() + "kmeans/out");
     }
 
     public KMeans setClusters(int clusters) {
@@ -54,11 +58,15 @@ public class KMeans {
 
     }
 
-    public String fit(AbstractFilePointer filePointer) throws IOException, ClassNotFoundException, InterruptedException {
+    public HDFSFilePointer outputDirectory() {
+        return this.outputDirectory;
+    }
+
+    public HDFSFilePointer fit(AbstractFilePointer filePointer) throws IOException, ClassNotFoundException, InterruptedException {
         return this.fit(Collections.singletonList(filePointer));
     }
 
-    public String fit(List<AbstractFilePointer> inputFiles) throws IOException, ClassNotFoundException, InterruptedException {
+    public HDFSFilePointer fit(List<AbstractFilePointer> inputFiles) throws IOException, ClassNotFoundException, InterruptedException {
         System.out.println("Starting fit");
 
         int numOfDataPoints = 1000;
@@ -89,10 +97,10 @@ public class KMeans {
 
         Path inputPaths[] = new Path[inputFiles.size()];
 
+        //Set Input directories and outputs
         FileInputFormat.setInputPaths(job, hdfsFilePointers.stream().map(HDFSFilePointer::getPath).collect(Collectors.toList()).toArray(inputPaths));
-
-
-        FileOutputFormat.setOutputPath(job, new Path("/tmp/kmeans/out/"));
+        fileSystem.delete(this.outputDirectory.getPath(), true);
+        FileOutputFormat.setOutputPath(job, this.outputDirectory.getPath());
 
         job.setInputFormatClass(MultiFileInputFormat.class);
 
@@ -112,12 +120,12 @@ public class KMeans {
         jobConfig.setInt(Constants.NUM_MAPPERS, this.mappers);
         jobConfig.setInt(Constants.NUM_THREADS, numThreads);
         jobConfig.setInt(Constants.NUM_ITERATIONS, this.iterations);
-        jobConfig.set(Constants.CEN_DIR, "/tmp/kmeans/centroids");
+        //jobConfig.set(Constants.CEN_DIR, "/tmp/kmeans/centroids");
 
         boolean success = job.waitForCompletion(true);
 
         System.out.println(success);
-        return "/tmp/kmeans/out";
+        return new HDFSFilePointer("");
     }
 
     public void predict() {

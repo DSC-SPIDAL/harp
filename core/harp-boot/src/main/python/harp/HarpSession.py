@@ -10,3 +10,6 @@ class HarpSession:
     @property
     def name(self):
         return self.__java_session.getName()
+
+    def byteTest(self, b):
+        self.__java_session.byteTest(b)
