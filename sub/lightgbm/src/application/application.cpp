@@ -25,6 +25,27 @@
 #include <utility>
 #include <vector>
 
+void startVtune(std::string tagfilename, int waittime=10000);
+
+void startVtune(std::string tagfilename, int waittime /*10000*/){
+    static bool isInit = false;
+
+    if (!isInit){
+        std::ofstream write;
+        write.open(tagfilename);
+        write << "okay" << std::endl;
+        write.close();
+        isInit = true;
+
+        //#ifdef USE_VTUNE
+        //sleep for 1 sec
+        std::this_thread::sleep_for(std::chrono::milliseconds(waittime));
+        //#endif
+
+    }
+}
+
+
 namespace LightGBM {
 
 Application::Application(int argc, char** argv) {
@@ -201,7 +222,10 @@ void Application::InitTrain() {
 }
 
 void Application::Train() {
-  Log::Info("Started training...");
+
+  startVtune("vtune-flag.txt");
+
+  Log::Info("Started training (vtune)...");
   boosting_->Train(config_.snapshot_freq, config_.output_model);
   boosting_->SaveModelToFile(0, -1, config_.output_model.c_str());
   // convert model to if-else statement code

@@ -1,4 +1,4 @@
-# Install script for directory: /scratch_hdd/hpda/optgbt/LightGBM
+# Install script for directory: /N/u/pengb/hpda/gbt-test/sub/lightgbm
 
 # Set the install prefix
 IF(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -47,7 +47,7 @@ IF(NOT CMAKE_INSTALL_COMPONENT OR "${CMAKE_INSTALL_COMPONENT}" STREQUAL "Unspeci
   IF (CMAKE_ERROR_ON_ABSOLUTE_INSTALL_DESTINATION)
     message(FATAL_ERROR "ABSOLUTE path INSTALL DESTINATION forbidden (by caller): ${CMAKE_ABSOLUTE_DESTINATION_FILES}")
   ENDIF (CMAKE_ERROR_ON_ABSOLUTE_INSTALL_DESTINATION)
-FILE(INSTALL DESTINATION "/usr/local/bin" TYPE EXECUTABLE FILES "/scratch_hdd/hpda/optgbt/LightGBM/lightgbm")
+FILE(INSTALL DESTINATION "/usr/local/bin" TYPE EXECUTABLE FILES "/N/u/pengb/hpda/gbt-test/sub/lightgbm/lightgbm")
   IF(EXISTS "$ENV{DESTDIR}/usr/local/bin/lightgbm" AND
      NOT IS_SYMLINK "$ENV{DESTDIR}/usr/local/bin/lightgbm")
     IF(CMAKE_INSTALL_DO_STRIP)
@@ -71,7 +71,7 @@ IF(NOT CMAKE_INSTALL_COMPONENT OR "${CMAKE_INSTALL_COMPONENT}" STREQUAL "Unspeci
   IF (CMAKE_ERROR_ON_ABSOLUTE_INSTALL_DESTINATION)
     message(FATAL_ERROR "ABSOLUTE path INSTALL DESTINATION forbidden (by caller): ${CMAKE_ABSOLUTE_DESTINATION_FILES}")
   ENDIF (CMAKE_ERROR_ON_ABSOLUTE_INSTALL_DESTINATION)
-FILE(INSTALL DESTINATION "/usr/local/lib" TYPE SHARED_LIBRARY FILES "/scratch_hdd/hpda/optgbt/LightGBM/lib_lightgbm.so")
+FILE(INSTALL DESTINATION "/usr/local/lib" TYPE SHARED_LIBRARY FILES "/N/u/pengb/hpda/gbt-test/sub/lightgbm/lib_lightgbm.so")
   IF(EXISTS "$ENV{DESTDIR}/usr/local/lib/lib_lightgbm.so" AND
      NOT IS_SYMLINK "$ENV{DESTDIR}/usr/local/lib/lib_lightgbm.so")
     IF(CMAKE_INSTALL_DO_STRIP)
@@ -89,7 +89,7 @@ IF(NOT CMAKE_INSTALL_COMPONENT OR "${CMAKE_INSTALL_COMPONENT}" STREQUAL "Unspeci
   IF (CMAKE_ERROR_ON_ABSOLUTE_INSTALL_DESTINATION)
     message(FATAL_ERROR "ABSOLUTE path INSTALL DESTINATION forbidden (by caller): ${CMAKE_ABSOLUTE_DESTINATION_FILES}")
   ENDIF (CMAKE_ERROR_ON_ABSOLUTE_INSTALL_DESTINATION)
-FILE(INSTALL DESTINATION "/usr/local/include" TYPE DIRECTORY FILES "/scratch_hdd/hpda/optgbt/LightGBM/include/LightGBM")
+FILE(INSTALL DESTINATION "/usr/local/include" TYPE DIRECTORY FILES "/N/u/pengb/hpda/gbt-test/sub/lightgbm/include/LightGBM")
 ENDIF(NOT CMAKE_INSTALL_COMPONENT OR "${CMAKE_INSTALL_COMPONENT}" STREQUAL "Unspecified")
 
 IF(CMAKE_INSTALL_COMPONENT)
@@ -98,7 +98,7 @@ ELSE(CMAKE_INSTALL_COMPONENT)
   SET(CMAKE_INSTALL_MANIFEST "install_manifest.txt")
 ENDIF(CMAKE_INSTALL_COMPONENT)
 
-FILE(WRITE "/scratch_hdd/hpda/optgbt/LightGBM/build/${CMAKE_INSTALL_MANIFEST}" "")
+FILE(WRITE "/N/u/pengb/hpda/gbt-test/sub/lightgbm/build/${CMAKE_INSTALL_MANIFEST}" "")
 FOREACH(file ${CMAKE_INSTALL_MANIFEST_FILES})
-  FILE(APPEND "/scratch_hdd/hpda/optgbt/LightGBM/build/${CMAKE_INSTALL_MANIFEST}" "${file}\n")
+  FILE(APPEND "/N/u/pengb/hpda/gbt-test/sub/lightgbm/build/${CMAKE_INSTALL_MANIFEST}" "${file}\n")
 ENDFOREACH(file)
