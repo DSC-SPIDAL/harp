@@ -1,0 +1,519 @@
+[13:41:16] 10000000x28 matrix with 280000000 entries loaded from higgs_train.libsvm
+[13:41:16] 1x28 matrix with 28 entries loaded from higgs_valid.libsvm
+[13:41:16] Treemethod=8 dsplit=0 updater=grow_pmatfasthist,prune
+
+[13:41:16] failed in fast Init of Predictor cache,rowxcol=10000000x28
+[13:41:16] failed in fast Init of Predictor cache,rowxcol=1x28
+[13:41:16] src/cli_main.cc:208: Loading data: 8.37705 sec
+[13:41:16] src/cli_main.cc:215: Start training loop
+[13:41:16] boosting round 0, 4.76837e-07 sec elapsed
+higgs[8] cut size:3=0.543269,1.62981,4.34616,min_val=-1e-05
+[13:41:22] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+InitHistIndex : fset.size=28
+[13:41:25] DMatrixCompact::Init size=28,memory=267MB,rowxcol=10000000x28,nonzero=280000000
+[13:41:35] src/tree/updater_pmatfasthist.cc:1337: End of initialization, start training
+[13:41:36] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:41:36] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:41:36] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:41:36] boosting round 1, 20.1675 sec elapsed
+[13:41:36] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:41:36] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:41:36] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:41:36] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:41:36] boosting round 2, 20.7282 sec elapsed
+[13:41:36] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:41:37] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:41:37] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:41:37] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:41:37] boosting round 3, 21.2661 sec elapsed
+[13:41:37] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:41:37] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:41:37] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:41:37] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:41:37] boosting round 4, 21.8133 sec elapsed
+[13:41:37] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:41:38] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:41:38] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:41:38] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:41:38] boosting round 5, 22.3578 sec elapsed
+[13:41:38] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:41:38] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:41:38] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:41:39] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:41:39] boosting round 6, 22.8952 sec elapsed
+[13:41:39] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:41:39] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:41:39] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:41:39] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:41:39] boosting round 7, 23.4466 sec elapsed
+[13:41:39] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:41:40] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:41:40] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:41:40] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:41:40] boosting round 8, 23.9913 sec elapsed
+[13:41:40] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:41:40] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:41:40] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:41:40] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:41:40] boosting round 9, 24.5528 sec elapsed
+[13:41:40] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:41:41] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:41:41] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:41:41] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:41:41] boosting round 10, 25.117 sec elapsed
+[13:41:41] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:41:41] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:41:41] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:41:41] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:41:41] boosting round 11, 25.6328 sec elapsed
+[13:41:41] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:41:42] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:41:42] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:41:42] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:41:42] boosting round 12, 26.2024 sec elapsed
+[13:41:42] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:41:42] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:41:42] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:41:42] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:41:42] boosting round 13, 26.7662 sec elapsed
+[13:41:42] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:41:43] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:41:43] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:41:43] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:41:43] boosting round 14, 27.2858 sec elapsed
+[13:41:43] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:41:43] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:41:43] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:41:43] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:41:43] boosting round 15, 27.8273 sec elapsed
+[13:41:43] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:41:44] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:41:44] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:41:44] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:41:44] boosting round 16, 28.4041 sec elapsed
+[13:41:44] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:41:45] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:41:45] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:41:45] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:41:45] boosting round 17, 28.9468 sec elapsed
+[13:41:45] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:41:45] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:41:45] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:41:45] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:41:45] boosting round 18, 29.5352 sec elapsed
+[13:41:45] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:41:46] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:41:46] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:41:46] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:41:46] boosting round 19, 30.0832 sec elapsed
+[13:41:46] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:41:46] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:41:46] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:41:46] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:41:46] boosting round 20, 30.6074 sec elapsed
+[13:41:46] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:41:47] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:41:47] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:41:47] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:41:47] boosting round 21, 31.1641 sec elapsed
+[13:41:47] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:41:47] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:41:47] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:41:47] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:41:47] boosting round 22, 31.7225 sec elapsed
+[13:41:47] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:41:48] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:41:48] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:41:48] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:41:48] boosting round 23, 32.2779 sec elapsed
+[13:41:48] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:41:48] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:41:48] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:41:48] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:41:48] boosting round 24, 32.8232 sec elapsed
+[13:41:48] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:41:49] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:41:49] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:41:49] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:41:49] boosting round 25, 33.3463 sec elapsed
+[13:41:49] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:41:50] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:41:50] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:41:50] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:41:50] boosting round 26, 33.9061 sec elapsed
+[13:41:50] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:41:50] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:41:50] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:41:50] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:41:50] boosting round 27, 34.4572 sec elapsed
+[13:41:50] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:41:51] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:41:51] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:41:51] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:41:51] boosting round 28, 34.9768 sec elapsed
+[13:41:51] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:41:51] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:41:51] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:41:51] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:41:51] boosting round 29, 35.5129 sec elapsed
+[13:41:51] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:41:52] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:41:52] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:41:52] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:41:52] boosting round 30, 36.0725 sec elapsed
+[13:41:52] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:41:52] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:41:52] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:41:52] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:41:52] boosting round 31, 36.6129 sec elapsed
+[13:41:52] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:41:53] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:41:53] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:41:53] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:41:53] boosting round 32, 37.149 sec elapsed
+[13:41:53] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:41:53] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:41:53] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:41:53] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:41:53] boosting round 33, 37.6582 sec elapsed
+[13:41:53] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:41:54] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:41:54] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:41:54] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:41:54] boosting round 34, 38.223 sec elapsed
+[13:41:54] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:41:54] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:41:54] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:41:54] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:41:54] boosting round 35, 38.7616 sec elapsed
+[13:41:54] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:41:55] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:41:55] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:41:55] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:41:55] boosting round 36, 39.2527 sec elapsed
+[13:41:55] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:41:55] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:41:55] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:41:55] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:41:55] boosting round 37, 39.7811 sec elapsed
+[13:41:55] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:41:56] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:41:56] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:41:56] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:41:56] boosting round 38, 40.3041 sec elapsed
+[13:41:56] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:41:56] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:41:56] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:41:56] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:41:56] boosting round 39, 40.8344 sec elapsed
+[13:41:56] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:41:57] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:41:57] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:41:57] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:41:57] boosting round 40, 41.3835 sec elapsed
+[13:41:57] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:41:58] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:41:58] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:41:58] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:41:58] boosting round 41, 41.9255 sec elapsed
+[13:41:58] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:41:58] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:41:58] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:41:58] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:41:58] boosting round 42, 42.4262 sec elapsed
+[13:41:58] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:41:59] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:41:59] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:41:59] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:41:59] boosting round 43, 42.9545 sec elapsed
+[13:41:59] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:41:59] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:41:59] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:41:59] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:41:59] boosting round 44, 43.4297 sec elapsed
+[13:41:59] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:00] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:00] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:00] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:00] boosting round 45, 43.9763 sec elapsed
+[13:42:00] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:00] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:00] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:00] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:00] boosting round 46, 44.4598 sec elapsed
+[13:42:00] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:01] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:01] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:01] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:01] boosting round 47, 44.9352 sec elapsed
+[13:42:01] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:01] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:01] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:01] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:01] boosting round 48, 45.4746 sec elapsed
+[13:42:01] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:02] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:02] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:02] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:02] boosting round 49, 46.0425 sec elapsed
+[13:42:02] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:02] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:02] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:02] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:02] boosting round 50, 46.5677 sec elapsed
+[13:42:02] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:03] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:03] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:03] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:03] boosting round 51, 46.9658 sec elapsed
+[13:42:03] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:03] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:03] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:03] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:03] boosting round 52, 47.5252 sec elapsed
+[13:42:03] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:04] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:04] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:04] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:04] boosting round 53, 48.0295 sec elapsed
+[13:42:04] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:04] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:04] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:04] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:04] boosting round 54, 48.5715 sec elapsed
+[13:42:04] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:05] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:05] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:05] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:05] boosting round 55, 49.133 sec elapsed
+[13:42:05] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:05] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:05] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:05] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:05] boosting round 56, 49.6514 sec elapsed
+[13:42:05] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:06] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:06] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:06] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:06] boosting round 57, 50.0682 sec elapsed
+[13:42:06] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:06] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:06] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:06] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:06] boosting round 58, 50.6118 sec elapsed
+[13:42:06] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:07] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:07] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:07] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:07] boosting round 59, 51.1385 sec elapsed
+[13:42:07] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:07] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:07] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:07] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:07] boosting round 60, 51.5638 sec elapsed
+[13:42:07] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:08] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:08] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:08] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:08] boosting round 61, 52.0448 sec elapsed
+[13:42:08] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:08] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:08] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:08] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:08] boosting round 62, 52.6168 sec elapsed
+[13:42:08] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:09] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:09] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:09] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:09] boosting round 63, 53.1476 sec elapsed
+[13:42:09] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:09] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:09] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:09] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:09] boosting round 64, 53.5453 sec elapsed
+[13:42:09] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:10] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:10] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:10] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:10] boosting round 65, 54.0838 sec elapsed
+[13:42:10] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:10] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:10] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:10] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:10] boosting round 66, 54.6343 sec elapsed
+[13:42:10] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:11] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:11] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:11] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:11] boosting round 67, 55.1563 sec elapsed
+[13:42:11] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:11] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:11] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:11] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:11] boosting round 68, 55.6206 sec elapsed
+[13:42:11] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:12] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:12] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:12] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:12] boosting round 69, 56.1182 sec elapsed
+[13:42:12] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:12] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:12] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:12] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:12] boosting round 70, 56.6638 sec elapsed
+[13:42:12] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:13] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:13] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:13] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:13] boosting round 71, 57.2061 sec elapsed
+[13:42:13] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:13] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 2 pruned nodes, max_depth=6
+[13:42:13] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:13] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:13] boosting round 72, 57.6512 sec elapsed
+[13:42:13] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:14] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:14] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:14] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:14] boosting round 73, 58.2023 sec elapsed
+[13:42:14] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:14] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:14] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:14] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:14] boosting round 74, 58.7065 sec elapsed
+[13:42:14] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:15] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:15] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:15] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:15] boosting round 75, 59.2885 sec elapsed
+[13:42:15] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:15] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:15] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:15] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:15] boosting round 76, 59.8283 sec elapsed
+[13:42:15] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:16] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:16] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:16] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:16] boosting round 77, 60.373 sec elapsed
+[13:42:16] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:16] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 2 pruned nodes, max_depth=6
+[13:42:16] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:16] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:16] boosting round 78, 60.8214 sec elapsed
+[13:42:16] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:17] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:17] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:17] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:17] boosting round 79, 61.4009 sec elapsed
+[13:42:17] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:18] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:18] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:18] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:18] boosting round 80, 61.9014 sec elapsed
+[13:42:18] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:18] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:18] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:18] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:18] boosting round 81, 62.3013 sec elapsed
+[13:42:18] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:18] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:18] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:18] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:18] boosting round 82, 62.8546 sec elapsed
+[13:42:19] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:19] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:19] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:19] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:19] boosting round 83, 63.3515 sec elapsed
+[13:42:19] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:19] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:19] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:20] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:20] boosting round 84, 63.8918 sec elapsed
+[13:42:20] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:20] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:20] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:20] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:20] boosting round 85, 64.4467 sec elapsed
+[13:42:20] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:21] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:21] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:21] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:21] boosting round 86, 65.0147 sec elapsed
+[13:42:21] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:21] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:21] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:21] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:21] boosting round 87, 65.5945 sec elapsed
+[13:42:21] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:22] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:22] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:22] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:22] boosting round 88, 66.0569 sec elapsed
+[13:42:22] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:22] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:22] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:22] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:22] boosting round 89, 66.4526 sec elapsed
+[13:42:22] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:23] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:23] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:23] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:23] boosting round 90, 66.9636 sec elapsed
+[13:42:23] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:23] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:23] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:23] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:23] boosting round 91, 67.5178 sec elapsed
+[13:42:23] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:24] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:24] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:24] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:24] boosting round 92, 68.0923 sec elapsed
+[13:42:24] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:24] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 6 pruned nodes, max_depth=6
+[13:42:24] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:24] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:24] boosting round 93, 68.4657 sec elapsed
+[13:42:24] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:25] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:25] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:25] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:25] boosting round 94, 68.9108 sec elapsed
+[13:42:25] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:25] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:25] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:25] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:25] boosting round 95, 69.4553 sec elapsed
+[13:42:25] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:26] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:26] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:26] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:26] boosting round 96, 69.9545 sec elapsed
+[13:42:26] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:26] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:26] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:26] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:26] boosting round 97, 70.4604 sec elapsed
+[13:42:26] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:27] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:27] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:27] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:27] boosting round 98, 71.034 sec elapsed
+[13:42:27] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:27] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:27] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:27] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:27] boosting round 99, 71.5776 sec elapsed
+[13:42:27] Init hset: rptrSize:30,cutSize:6109,nodesize:128,fsetSize:6109,max_depth:6
+[13:42:28] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 126 extra nodes, 0 pruned nodes, max_depth=6
+[13:42:28] UpdatePredictionCache: nodes size=127,rowscnt=1
+[13:42:28] UpdatePredictionCache: nodes size=127,rowscnt=10000000
+[13:42:28] update end, 72.0551 sec in all
+[13:42:28] BuildPosSet Time: 12.4687
+[13:42:28] BuildHist Time: 34.8536
+[13:42:28] Training Time: 52.3913
+[13:42:28] Aux Time 1: 0.319775
+[13:42:28] Aux Time 2: 0
+[13:42:28] Aux Time 3: 0

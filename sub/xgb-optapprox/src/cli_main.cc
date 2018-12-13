@@ -21,7 +21,14 @@
 #include <vector>
 #include "./common/sync.h"
 #include "./common/config.h"
+#include "./common/debug.h"
 #include <fstream>
+
+#ifndef USE_OMP_BUILDHIST
+#include "tbb/task.h"
+#include "tbb/task_scheduler_init.h"
+#endif
+
 
 namespace xgboost {
 
@@ -75,6 +82,7 @@ struct CLIParam : public dmlc::Parameter<CLIParam> {
   /*! \brief all the configurations */
   std::vector<std::pair<std::string, std::string> > cfg;
 
+
   // declare parameters
   DMLC_DECLARE_PARAMETER(CLIParam) {
     // NOTE: declare everything except eval_data_paths.
@@ -124,6 +132,8 @@ struct CLIParam : public dmlc::Parameter<CLIParam> {
     DMLC_DECLARE_ALIAS(train_path, data);
     DMLC_DECLARE_ALIAS(test_path, test:data);
     DMLC_DECLARE_ALIAS(name_fmap, fmap);
+
+   
   }
   // customized configure function of CLIParam
   inline void Configure(const std::vector<std::pair<std::string, std::string> >& cfg) {
@@ -201,15 +211,15 @@ void CLITrain(const CLIParam& param) {
 /* 
  * vtune trigger
  * */
-  if(1){
-      std::ofstream write;
-    write.open("vtune-flag.txt");
-    write << "okay" << std::endl;
-    write.close();
-  }
+  //startVtune("vtune-flag.txt");
+  LOG(INFO) << "Start training loop";
 
-
-
+  #ifndef USE_OMP_BUILDHIST
+  //init tbb scheduler
+  int _cur_maxthreads = omp_get_max_threads();
+  LOG(CONSOLE) << "initialize tbb scheduler, threads: " << _cur_maxthreads;
+  tbb::task_scheduler_init init(_cur_maxthreads);
+  #endif
 
   // start training.
   const double start = dmlc::GetTime();
@@ -227,17 +237,17 @@ void CLITrain(const CLIParam& param) {
       }
       version += 1;
     }
-    CHECK_EQ(version, rabit::VersionNumber());
-    std::string res = learner->EvalOneIter(i, eval_datasets, eval_data_names);
-    if (rabit::IsDistributed()) {
-      if (rabit::GetRank() == 0) {
-        LOG(TRACKER) << res;
-      }
-    } else {
-      if (param.silent < 2) {
-        LOG(CONSOLE) << res;
-      }
-    }
+    //CHECK_EQ(version, rabit::VersionNumber());
+    //std::string res = learner->EvalOneIter(i, eval_datasets, eval_data_names);
+    //if (rabit::IsDistributed()) {
+    //  if (rabit::GetRank() == 0) {
+    //    LOG(TRACKER) << res;
+    //  }
+    //} else {
+    //  if (param.silent < 2) {
+    //    LOG(CONSOLE) << res;
+    //  }
+    //}
     if (param.save_period != 0 &&
         (i + 1) % param.save_period == 0 &&
         rabit::GetRank() == 0) {
@@ -278,6 +288,14 @@ void CLITrain(const CLIParam& param) {
   if (param.silent == 0) {
     double elapsed = dmlc::GetTime() - start;
     LOG(CONSOLE) << "update end, " << elapsed << " sec in all";
+
+    TimeInfo tminfo = learner->getTimeInfo();
+    LOG(CONSOLE) << "BuildPosSet Time: " << tminfo.posset_time;
+    LOG(CONSOLE) << "BuildHist Time: " << tminfo.buildhist_time;
+    LOG(CONSOLE) << "Training Time: " << dmlc::GetTime() -tminfo.trainstart_time;
+    LOG(CONSOLE) << "Aux Time 1: " << tminfo.aux_time[0];
+    LOG(CONSOLE) << "Aux Time 2: " << tminfo.aux_time[1];
+    LOG(CONSOLE) << "Aux Time 3: " << tminfo.aux_time[2];
   }
 }
 

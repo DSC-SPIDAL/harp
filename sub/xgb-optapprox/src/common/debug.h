@@ -18,10 +18,13 @@
 #include <algorithm>
 #include <thread>
 #include <mutex>
+#include <chrono>
+#include <fstream>
 
 #include <xgboost/tree_model.h>
 #include "../data/compact_dmatrix.h"
 #include "../common/hist_util.h"
+#include "../tree/param.h"
 
 namespace xgboost {
 
@@ -30,17 +33,25 @@ using xgboost::common::GHistIndexMatrix;
 using xgboost::tree::SplitEntry;
 
 
-void printVec(std::string msg, std::vector<unsigned int> vec);
+void startVtune(std::string tagfilename, int waittime=10000);
+void printVec(std::string msg, const std::vector<unsigned int>& vec);
+void printVec(std::string msg, const std::vector<int>& vec);
+void printVec(std::string msg, const std::vector<float>& vec);
 void printInt(std::string msg, int val);
 void printmsg(std::string msg);
 void printtree(RegTree* ptree, std::string header="");
+void printdmat(DMatrixCube& dmat);
+void printdmat(DMatrixCompactDense& dmat);
+void printdmat(DMatrixCompactBlockDense& dmat);
 void printdmat(DMatrixCompact& dmat);
 void printdmat(const SparsePage& dmat);
 void printgmat(GHistIndexMatrix& gmat);
 void printcut(HistCutMatrix& gmat);
 
+void printgh(const std::vector<GradientPair> &gpair);
+
 //void printnodes(std::vector<NodeEntry>& nodes, std::string header="");
-void printSplit(SplitEntry& split);
+void printSplit(SplitEntry& split, int fid=-1, int nid=-1);
 
 void save_preds(int iterid, int tree_method, HostDeviceVector<bst_float>& preds);
 void save_grads(int iterid, int tree_method, HostDeviceVector<GradientPair>& gpair);

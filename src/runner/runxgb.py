@@ -21,6 +21,9 @@ def load_option():
     op.add_option("--eval",
                   action="store", type=str, default="", 
                   help="evaluate on the result predictions.")
+    op.add_option("--bineval",
+                  action="store_true",
+                  help="Use the binary classification result to evaluate.")
     op.add_option("--trainfile",
                   action="store", type=str, default="", 
                   help="define the train dataset file name, train.cut by default.")
@@ -148,20 +151,24 @@ def sStr(vec):
     return ss
 
 
-def runeval(predfile, testfile, label_col):
+def runeval(predfile, testfile, label_col, bineval=False):
     data = read_csv(testfile, header=None)
     dataset = data.values
     y_test = dataset[:,-2]
 
     pred = np.loadtxt(predfile)
-    y_pred = np.array([1 if x>0.5 else 0 for x in pred]).reshape((pred.shape[0],1))
+    if bineval:
+        y_pred = np.array([1 if x>0.5 else 0 for x in pred]).reshape((pred.shape[0],1))
+    else:
+        y_pred = pred
 
     for i in range(5):
         logger.info('ID=%d, Y=%s,X=%s', i, y_test[i],y_pred[i])
 
     # evaluate predictions
-    accuracy = accuracy_score(y_test, y_pred)
-    print("Accuracy: %.2f%%" % (accuracy * 100.0))
+    if bineval:
+        accuracy = accuracy_score(y_test, y_pred)
+        print("Accuracy: %.2f%%" % (accuracy * 100.0))
 
     auc_score = metrics.roc_auc_score(y_test, y_pred)
     logger.info('auc = %f', auc_score)
@@ -256,7 +263,7 @@ if __name__=="__main__":
     opt = load_option()
 
     if opt.eval:
-        runeval(opt.eval, opt.testfile, opt.label_col)
+        runeval(opt.eval, opt.testfile, opt.label_col, opt.bineval)
     else:
         runxgb(opt.trainfile, opt.testfile, opt.label_col)
 

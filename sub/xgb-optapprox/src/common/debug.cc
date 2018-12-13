@@ -7,6 +7,25 @@
 
 namespace xgboost {
 
+void startVtune(std::string tagfilename, int waittime /*10000*/){
+    static bool isInit = false;
+
+    if (!isInit){
+        std::ofstream write;
+        write.open(tagfilename);
+        write << "okay" << std::endl;
+        write.close();
+        isInit = true;
+
+#ifdef USE_VTUNE
+        //sleep for 1 sec
+        std::this_thread::sleep_for(std::chrono::milliseconds(waittime));
+#endif
+
+    }
+}
+
+
 #ifdef USE_DEBUG
 //void printnodes(std::vector<NodeEntry>& nodes, std::string header=""){
 //
@@ -42,7 +61,7 @@ namespace xgboost {
 //   std::cout << "\n";
 //}
 
-void printtree(RegTree* ptree, std::string header=""){
+void printtree(RegTree* ptree, std::string header /*""*/){
 
    if (header==""){ 
     std::cout << "RegTree===========================\n" ;
@@ -98,14 +117,32 @@ void printInt(std::string msg, int val){
     stringStream << msg << ":" << val;
     printmsg(stringStream.str());
 }
-void printVec(std::string msg, std::vector<unsigned int> vec){
+void printVec(std::string msg, const std::vector<unsigned int>& vec){
     std::ostringstream stringStream;
     stringStream << msg ;
-    for(int i=0; i< vec.size(); i++){
+    for(int i=0; i< std::min(int(vec.size()), 50); i++){
     stringStream << vec[i] << ",";
     }
     printmsg(stringStream.str());
 }
+void printVec(std::string msg, const std::vector<int>& vec){
+    std::ostringstream stringStream;
+    stringStream << msg ;
+    for(int i=0; i< std::min(int(vec.size()), 50); i++){
+    stringStream << vec[i] << ",";
+    }
+    printmsg(stringStream.str());
+}
+void printVec(std::string msg, const std::vector<float>& vec){
+    std::ostringstream stringStream;
+    stringStream << msg ;
+    for(int i=0; i< std::min(int(vec.size()), 50); i++){
+    stringStream << vec[i] << ",";
+    }
+    printmsg(stringStream.str());
+}
+
+
 
 
 
@@ -144,9 +181,40 @@ void printgmat(GHistIndexMatrix& gmat){
   }
 }
 
+void printdmat(DMatrixCube& dmat){
+  std::cout << "HMAT(Cube)======================================\n";
+  int nblks = dmat.Size();
+  nblks = std::min(nblks, 5);
 
-void printdmat(DMatrixCompact& dmat){
-  std::cout << "HMAT======================================\n";
+  for (size_t blkid = 0; blkid < nblks; ++blkid) {
+    auto blk = dmat[blkid].GetBlock(0);
+    auto ndata = static_cast<bst_omp_uint>(blk.size());
+    std::cout << "BLK:" << blkid << ", len=" << ndata << "\n";
+
+    //ndata = std::min(ndata, 10U);
+    //ndata = std::min(ndata, 10U);
+
+    int tn = 0;
+    for (size_t j = 0; tn < 10 && j < ndata; ++j) {
+        const bst_uint ridx = blk._index(j);
+        if (blk.rowsize(j) > 0 ){
+            std::cout << "r:" << ridx << "<";
+            for(size_t k = 0; k < std::min(blk.rowsize(j),10); k++){
+                const bst_uint blkaddr = blk._blkaddr(j,k);
+                std::cout << ridx << ":" << blkaddr << " ";
+            }
+            std::cout << "> ";
+
+            tn++;
+        }
+     }
+     std::cout << "\n";
+  }
+}
+
+
+void printdmat(DMatrixCompactBlockDense& dmat){
+  std::cout << "HMAT(CompactBlockDense)======================================\n";
   int nrows = dmat.Size();
   nrows = std::min(nrows, 50);
 
@@ -158,8 +226,54 @@ void printdmat(DMatrixCompact& dmat){
 
     std::cout << "F:" << fid << " "; 
     for (bst_omp_uint j = 0; j < ndata; ++j) {
-        const bst_uint ridx = col[j].index();
-        const bst_uint binid = col[j].binid();
+        const bst_uint ridx = col._index(j);
+        const bst_uint binid = col._binid(j);
+
+        std::cout << ridx << ":" << binid << " ";
+     }
+    std::cout << "\n";
+  }
+}
+
+
+void printdmat(DMatrixCompactDense& dmat){
+  std::cout << "HMAT(CompactDense)======================================\n";
+  int nrows = dmat.Size();
+  nrows = std::min(nrows, 50);
+
+  for (size_t fid = 0; fid < nrows; ++fid) {
+    auto col = dmat[fid];
+    auto ndata = static_cast<bst_omp_uint>(col.size());
+
+    ndata = std::min(ndata, 50U);
+
+    std::cout << "F:" << fid << " "; 
+    for (bst_omp_uint j = 0; j < ndata; ++j) {
+        const bst_uint ridx = col._index(j);
+        const bst_uint binid = col._binid(j);
+
+        std::cout << ridx << ":" << binid << " ";
+     }
+    std::cout << "\n";
+  }
+}
+
+
+void printdmat(DMatrixCompact& dmat){
+  std::cout << "HMAT(Compact)======================================\n";
+  int nrows = dmat.Size();
+  nrows = std::min(nrows, 50);
+
+  for (size_t fid = 0; fid < nrows; ++fid) {
+    auto col = dmat[fid];
+    auto ndata = static_cast<bst_omp_uint>(col.size());
+
+    ndata = std::min(ndata, 50U);
+
+    std::cout << "F:" << fid << " "; 
+    for (bst_omp_uint j = 0; j < ndata; ++j) {
+        const bst_uint ridx = col[j]._index();
+        const bst_uint binid = col[j]._binid();
 
         std::cout << ridx << ":" << binid << " ";
      }
@@ -207,18 +321,51 @@ void printdmat(const SparsePage& dmat){
 }
 
 
-void printSplit(SplitEntry& split){
+void printSplit(SplitEntry& split, int fid, int nid){
     unsigned split_index = split.sindex & ((1U << 31) - 1U);
     bool split_left = ((split.sindex >> 31) != 0);
 
     static std::mutex m;
 
     m.lock();
-    std::cout << "FindSplit best=i" << split_index << ",v" << 
+    std::cout << "FindSplit nid:" << nid << ",fid:" << fid << ",best=i" << split_index << ",v" << 
         split.split_value << ",l" << split.loss_chg 
         << ":" << (split_left?1:0) << "\n";
     m.unlock();
 }
+
+void printgh(const std::vector<GradientPair> &gpair)
+{
+    std::ostringstream stringStream;
+    stringStream << "GHPair:===========================\n";
+    for(int i=0; i< std::min(int(gpair.size()), 50); i++){
+        stringStream << gpair[i].GetGrad() << ":" << gpair[i].GetHess() << ",";
+    }
+    printmsg(stringStream.str());
+}
+
+#else
+void printmsg(std::string msg){}
+void printtree(RegTree* ptree, std::string header /*""*/){}
+void printdmat(DMatrixCube& dmat){}
+void printdmat(DMatrixCompact& dmat){}
+void printdmat(DMatrixCompactDense& dmat){}
+void printdmat(DMatrixCompactBlockDense& dmat){}
+void printdmat(const SparsePage& dmat){}
+void printgmat(GHistIndexMatrix& gmat){}
+void printcut(HistCutMatrix& gmat){}
+void printSplit(SplitEntry& split, int fid, int nid){}
+void printInt(std::string msg, int val){}
+//void printnodes(std::vector<NodeEntry>& nodes, std::string header=""){}
+void printVec(std::string msg, const std::vector<unsigned int>& vec){}
+void printVec(std::string msg, const std::vector<int>& vec){}
+void printVec(std::string msg, const std::vector<float>& vec){}
+   
+void printgh(const std::vector<GradientPair> &gpair){}
+
+#endif
+
+#ifdef USE_DEBUG_SAVE
 
 void save_preds(int iterid, int tree_method, HostDeviceVector<bst_float>& preds){
     std::ostringstream ss;
@@ -250,19 +397,7 @@ void save_grads(int iterid, int tree_method, HostDeviceVector<GradientPair>& gpa
     write.close();
 }
 
-
 #else
-
-void printmsg(std::string msg){}
-void printtree(RegTree* ptree, std::string header=""){}
-void printdmat(DMatrixCompact& dmat){}
-void printdmat(const SparsePage& dmat){}
-void printgmat(GHistIndexMatrix& gmat){}
-void printcut(HistCutMatrix& gmat){}
-void printSplit(SplitEntry& split){}
-void printInt(std::string msg, int val){}
-//void printnodes(std::vector<NodeEntry>& nodes, std::string header=""){}
-void printVec(std::string msg, std::vector<unsigned int> vec){}
 
 void save_preds(int iterid, int tree_method, HostDeviceVector<bst_float>& preds){}
 void save_grads(int iterid, int tree_method, HostDeviceVector<GradientPair>& gpair){}

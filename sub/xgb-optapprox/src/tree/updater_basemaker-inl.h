@@ -32,6 +32,10 @@ class BaseMaker: public TreeUpdater {
     param_.InitAllowUnknown(args);
   }
 
+  TimeInfo getTimeInfo() override{
+      return tminfo;
+  }
+
  protected:
   // helper to collect and query feature meta information
   struct FMetaHelper {
@@ -163,7 +167,8 @@ class BaseMaker: public TreeUpdater {
   inline void UpdateQueueExpand(const RegTree &tree) {
     std::vector<int> newnodes;
     for (int nid : qexpand_) {
-      if (!tree[nid].IsLeaf()) {
+      //if (!tree[nid].IsLeaf()) {
+      if (!tree[nid].IsLeaf() && !tree[nid].IsDeleted()) {
         newnodes.push_back(tree[nid].LeftChild());
         newnodes.push_back(tree[nid].RightChild());
       }
@@ -459,6 +464,8 @@ class BaseMaker: public TreeUpdater {
    *   see also Decode/EncodePosition
    */
   std::vector<int> position_;
+
+  TimeInfo tminfo;
 
  private:
   inline void UpdateNode2WorkIndex(const RegTree &tree) {

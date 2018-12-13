@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <string>
 #include <vector>
+#include <climits>
 #include "./base.h"
 #include "../../src/common/span.h"
 #include "../../src/common/group_data.h"
@@ -32,6 +33,21 @@ enum DataType {
   kUInt32 = 3,
   kUInt64 = 4
 };
+
+/*
+ * time struct
+ */
+struct TimeInfo {
+    double trainstart_time;
+    double buildhist_time;
+    double posset_time;
+    double aux_time[10]={0};
+    TimeInfo() = default;
+    TimeInfo(double _start, double _buildhist, double postime=0.):
+        trainstart_time(_start), buildhist_time(_buildhist), posset_time(postime){}
+
+};
+
 
 /*!
  * \brief Meta information about dataset, always sit in memory.
@@ -136,14 +152,18 @@ struct Entry {
   /*! \brief binid value */
 #ifdef USE_BINID
   bst_uint binid;
+#endif
   inline unsigned int _index() const{
       return index;
   }
 
   inline unsigned int _binid() const{
+#ifdef USE_BINID
       return binid;
-  }
+#else
+      return 0;
 #endif
+  }
 
   /*! \brief default constructor */
   Entry() = default;
@@ -162,10 +182,15 @@ struct Entry {
   }
 
   /* OptApprox:: init bindid in pmat */
-  inline void addBinid(unsigned id) const{
+  inline void addBinid(unsigned id, unsigned int newindex = UINT_MAX) const{
       Entry* ptr = const_cast<Entry*> (this);
 #ifdef USE_BINID
       ptr->binid = id;
+
+      if (newindex != UINT_MAX){
+          ptr->index = static_cast<bst_uint>(newindex);
+      }
+
 #endif
 
 #ifdef USE_BINIDUNION

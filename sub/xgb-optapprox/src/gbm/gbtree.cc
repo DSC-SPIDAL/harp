@@ -311,6 +311,12 @@ class GBTree : public GradientBooster {
     predictor_->UpdatePredictionCache(model_, &updaters_, num_new_trees);
   }
 
+
+  virtual TimeInfo getTimeInfo() override{
+    return updaters_[0]->getTimeInfo();
+  }
+
+
   // --- data structure ---
   GBTreeModel model_;
   // training parameter

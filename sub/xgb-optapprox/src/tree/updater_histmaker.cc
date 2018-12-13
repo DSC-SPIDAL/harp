@@ -8,6 +8,7 @@
 #include <xgboost/tree_updater.h>
 #include <vector>
 #include <algorithm>
+#include "../common/debug.h"
 #include "../common/sync.h"
 #include "../common/quantile.h"
 #include "../common/group_data.h"
@@ -663,6 +664,10 @@ class GlobalProposalHistMaker: public CQHistMaker<TStats> {
       CQHistMaker<TStats>::ResetPosAndPropose(gpair, p_fmat, fset, tree);
       cached_rptr_ = this->wspace_.rptr;
       cached_cut_ = this->wspace_.cut;
+
+      // not the best place to start vtune, 
+      startVtune("vtune-flag.txt");
+      LOG(INFO) << "End of initialization, start training";
     } else {
       this->wspace_.cut.clear();
       this->wspace_.rptr.clear();

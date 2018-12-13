@@ -101,3 +101,8 @@ debug/
 tags
 test/
 _results/
+#intel optimization report
+*.optrpt
+build-g++/
+build-icc/
+

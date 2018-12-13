@@ -69,7 +69,7 @@ size_t splitMethod = 1;
 bool memorySavingMode = false;
 size_t nClasses = 2;  /* Number of classes */
 float shrinkage = 0.1;
-
+size_t threadnum = 0;
 
 training::ResultPtr trainModel();
 void testModel(const training::ResultPtr& res);
@@ -105,7 +105,11 @@ int main(int argc, char *argv[])
     //
 
     if (argc < 6){
-        cout << "Usage: daalgbt <trainfile> <testfile> <epoch> <nClasses> <nFeatures> <treedepth> <splitMethod> <memorySaveModel> <categoricalFeatures>\n";
+        cout << "Usage: daalgbt <trainfile> <testfile> <epoch> <nClasses> <nFeatures> <treedepth> <splitMethod> <memorySaveMode> <shrinkage> <categoricalFeatures> <threadnum> \n";
+        cout << "   splitMethod ;  1 by default inexact mode, set 0 to exact mode\n";
+        cout << "   memorySaveMode ; 0 by default\n";
+        cout << "   categoricalFeatures ; ',' separated feature ids, 'x' by default means non-categoriy features\n";
+        cout << "   threadnum   ; set the threadnumber, set to existing physical core number by default\n";
         return -1;
     }
 
@@ -125,7 +129,7 @@ int main(int argc, char *argv[])
     if (argc > 9)
         shrinkage = stof(argv[9]);
 
-    if (argc == 11){
+    if (argc > 10){
         //get cate features
         string s = argv[10];
         size_t pos = 0;
@@ -140,21 +144,26 @@ int main(int argc, char *argv[])
         std::cout << std::endl;
     }
 
+    if (argc > 11)
+        threadnum = stoi(argv[11]);
 
     /*
      */
     daal::services::interface1::Environment* env = daal::services::interface1::Environment::getInstance();
     int curCpuId = env->getCpuId();
     std::cout << "cpuid:" << curCpuId << "\n";
-
-
     env->setCpuId(4);
+
+    if ( threadnum > 0 ){
+        env->setNumberOfThreads(threadnum);
+    }else{
+        threadnum = env->getNumberOfThreads();
+    }
+    std::cout << "threadnum:" << threadnum << "\n";
 
 
     // run it
-
     auto start = std::chrono::system_clock::now();
-
 
     const double startX = GetTime();
     training::ResultPtr trainingResult = trainModel();
@@ -222,12 +231,12 @@ training::ResultPtr trainModel()
 /* 
  * vtune trigger
  * */
-  if(1){
-    ofstream write;
-    write.open("vtune-flag.txt");
-    write << "okay" << std::endl;
-    write.close();
-  }
+  //if(1){
+  //  ofstream write;
+  //  write.open("vtune-flag.txt");
+  //  write << "okay" << std::endl;
+  //  write.close();
+  //}
 
 
 

@@ -401,11 +401,16 @@ void GHistBuilder::BuildHist(const std::vector<GradientPair>& gpair,
   data_.resize(nbins_ * nthread_, GHistEntry());
   std::fill(data_.begin(), data_.end(), GHistEntry());
 
+#ifdef USE_UNROLL
   constexpr int kUnroll = 8;  // loop unrolling factor
+#else
+  constexpr int kUnroll = 1;  // loop unrolling factor
+#endif
   const auto nthread = static_cast<bst_omp_uint>(this->nthread_);
   const size_t nrows = row_indices.end - row_indices.begin;
   const size_t rest = nrows % kUnroll;
 
+  //#pragma omp parallel for num_threads(nthread) schedule(dynamic)
   #pragma omp parallel for num_threads(nthread) schedule(guided)
   for (bst_omp_uint i = 0; i < nrows - rest; i += kUnroll) {
     const bst_omp_uint tid = omp_get_thread_num();

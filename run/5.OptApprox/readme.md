@@ -28,9 +28,12 @@ binidcache     |    64.7914              | 0.699271       |  1800               
 pmatfasthist-nocompact     |     55.7953     | 0.697216     |  1700-1800      |  6.1g
 pmatfasthist-compact         |     65.6896     | 0.697216     |  1700-1800      |  8.0g 
 pmatfasthist-compactbinid |     64.8387     | 0.697216     |  1800-1900      |  7.1g 
+pmatfasthist-fullcompact  |     61.2991     | 0.697216     |  1700      |  7.2g 
 
-pmatfasthist-nocompact =  make -j 24
+trainers:
 
-pmatfasthist-compact =  make -j 24 USE_COMPACT=1
++ pmatfasthist-nocompact =  make -j 24
++ pmatfasthist-compact =  make -j 24 USE_COMPACT=1
++ pmatfasthist-compactbinid = make -j 24 USE_COMPACT=1 USE_COMPACT_BINID=1
++ pmatfasthist-fullcompact = make -j 24 USE_COMPACT=1 USE_COMPACT_BINID=1   ; full using dmatrixcompact
 
-pmatfasthist-compactbinid = make -j 24 USE_COMPACT=1 USE_COMPACT_BINID=1

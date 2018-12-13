@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 
+//#include "../data/compact_dmatrix.h"
 
 namespace xgboost {
 namespace tree {
@@ -81,6 +82,15 @@ struct TrainParam : public dmlc::Parameter<TrainParam> {
   int gpu_batch_nrows;
   // the criteria to use for ranking splits
   std::string split_evaluator;
+  
+  /* blockSize */
+  int block_size;
+
+  int row_block_size;
+  int ft_block_size;
+  int bin_block_size;
+
+
   // declare the parameters
   DMLC_DECLARE_PARAMETER(TrainParam) {
     DMLC_DECLARE_FIELD(learning_rate)
@@ -196,6 +206,27 @@ struct TrainParam : public dmlc::Parameter<TrainParam> {
     DMLC_DECLARE_FIELD(split_evaluator)
         .set_default("elastic_net,monotonic,interaction")
         .describe("The criteria to use for ranking splits");
+
+    DMLC_DECLARE_FIELD(block_size)
+        .set_default(0)
+        .set_lower_bound(0)
+        .describe("Block size(KB) used for task scheduling, 0 means use one block.");
+    DMLC_DECLARE_FIELD(row_block_size)
+        .set_default(0)
+        .set_lower_bound(0)
+        .describe("Block size(KB) used for task scheduling, 0 means use one block.");
+    DMLC_DECLARE_FIELD(ft_block_size)
+        .set_default(0)
+        .set_lower_bound(0)
+        .describe("Feature Block size used for task scheduling, 0 means use one block.");
+    DMLC_DECLARE_FIELD(bin_block_size)
+        .set_default(1)
+        .set_lower_bound(0)
+        .describe("Bin Block size used for task scheduling, 0 means use one block.");
+
+
+
+
     // add alias of parameters
     DMLC_DECLARE_ALIAS(reg_lambda, lambda);
     DMLC_DECLARE_ALIAS(reg_alpha, alpha);
@@ -369,6 +400,11 @@ template <typename ParamT>
     sum_grad += b.sum_grad;
     sum_hess += b.sum_hess;
   }
+  inline void Add(GradStats& b) {
+    sum_grad += b.sum_grad;
+    sum_hess += b.sum_hess;
+  }
+  
   /*! \brief same as add, reduce is used in All Reduce */
   inline static void Reduce(GradStats& a, const GradStats& b) { // NOLINT(*)
     a.Add(b);
@@ -378,6 +414,12 @@ template <typename ParamT>
     sum_grad = a.sum_grad - b.sum_grad;
     sum_hess = a.sum_hess - b.sum_hess;
   }
+  /*! \brief set current value to a - b */
+  inline void SetSubstract(const GradStats& b) {
+    sum_grad -= b.sum_grad;
+    sum_hess -= b.sum_hess;
+  }
+  
   /*! \return whether the statistics is not used yet */
   inline bool Empty() const { return sum_hess == 0.0; }
   /*! \brief set leaf vector value based on statistics */

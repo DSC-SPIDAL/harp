@@ -44,7 +44,7 @@ cd /scratch_hdd/hpda/optgbt/daal2019-intel
 git clone --recursive -b daal_2019 --single-branch https://github.com/intel/daal.git
 cd daal
 
-source bin/intel.sh
+source $_gbtproject_/run/3.BasicBenchmark/vtune/bin/intel.sh
 
 make daal -j 32 PLAT=lnx32e
 
