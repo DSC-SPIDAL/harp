@@ -13,3 +13,6 @@ class HarpSession:
 
     def byteTest(self, b):
         self.__java_session.byteTest(b)
+
+    def calc(self, b, data):
+        self.__java_session.calc(b, data)

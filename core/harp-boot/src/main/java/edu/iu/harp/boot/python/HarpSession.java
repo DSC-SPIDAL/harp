@@ -1,5 +1,6 @@
 package edu.iu.harp.boot.python;
 
+import edu.iu.harp.boot.processors.PythonLambdaProcessor;
 import edu.iu.harp.boot.python.io.filepointers.HDFSFilePointer;
 import edu.iu.harp.boot.python.io.filepointers.LocalFilePointer;
 import edu.iu.harp.boot.python.ml.MLKernels;
@@ -55,6 +56,11 @@ public class HarpSession {
             jex.printStackTrace();
             System.out.println("Jep exception occurred");
         }
+    }
+
+    public void calc(byte[] func, String str) {
+        PythonLambdaProcessor pythonLambdaProcessor = new PythonLambdaProcessor(func);
+        pythonLambdaProcessor.process(str);
     }
 
     public void close() {
