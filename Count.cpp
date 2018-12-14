@@ -29,7 +29,7 @@ void Count::initialization(Graph& graph, int thd_num, int itr_num, int algoMode,
     std::memset(_colors_local, 0, _vert_num*sizeof(int));
 }
 
-double Count::compute(Graph& templates)
+double Count::compute(Graph& templates, bool isEstimate)
 {/*{{{*/
 
     _templates = &templates; 
@@ -75,6 +75,16 @@ double Count::compute(Graph& templates)
 #endif
 
 #ifdef VERBOSE
+    estimateMemComm();
+    estimateMemCommPruned();
+    estimateFlops();
+    estimateFlopsPruned();
+#endif
+
+    if (isEstimate)
+        return 0.0;
+
+#ifdef VERBOSE
     printf("Start counting\n");
     std::fflush(stdout); 
 #endif
@@ -93,6 +103,8 @@ double Count::compute(Graph& templates)
 #endif
   
     printf("\nTime for count per iter: %9.6lf seconds\n", (utility::timer() - timeStart)/_itr_num);
+    printf("Ratio for neighbour looping: %9.6lf\% \n", (_spmvElapsedTime*100)/(utility::timer() - timeStart));
+    printf("Ratio for multiplication: %9.6lf\% \n", (_fmaElapsedTime*100)/(utility::timer() - timeStart));
     std::fflush(stdout);
 
     // finish counting
@@ -147,7 +159,7 @@ double Count::colorCounting()
             else if (_algoMode == 2)
               countTotal = countNonBottomeFascia(s);
             else
-              countTotal = countNonBottomePruned(s);
+              countTotal = countNonBottomeFascia(s);
         }
 
         if (mainIdx != DUMMY_VAL)
@@ -343,6 +355,17 @@ double Count::countNonBottomeFasciaPruned(int subsId)
     std::fflush(stdout); 
 #endif
 
+#ifdef VERBOSE
+    double eltSpmv = 0.0;
+    double eltMul = 0.0;
+    double spmvStart = 0.0;
+    double fmaStart = 0.0;
+#endif
+
+#ifdef VERBOSE
+    spmvStart = utility::timer();
+#endif
+
     // first loop on auxTableLen
     for (int i = 0; i < auxTableLen; ++i) {
 
@@ -390,10 +413,18 @@ double Count::countNonBottomeFasciaPruned(int subsId)
     }
 
 #ifdef VERBOSE
+       _spmvElapsedTime += (utility::timer() - spmvStart);
+       eltSpmv += (utility::timer() - spmvStart);
+#endif
+
+#ifdef VERBOSE
     printf("Finish pruned aux computing\n");
     std::fflush(stdout); 
 #endif
 
+#ifdef VERBOSE
+    fmaStart = utility::timer();
+#endif
 
     #pragma omp parallel num_threads(_thd_num)
     {
@@ -475,11 +506,18 @@ double Count::countNonBottomeFasciaPruned(int subsId)
     }
 
 #ifdef VERBOSE
+       _fmaElapsedTime += (utility::timer() - fmaStart);
+       eltMul += (utility::timer() - fmaStart);
+#endif
+
+#ifdef VERBOSE
     printf("Sub %d, NonBottom raw count %f\n", subsId, countSum);
     std::fflush(stdout); 
 #endif
 #ifdef VERBOSE
-    printf("Sub %d, counting time %f\n", subsId, (utility::timer() - startTime));
+    double subsTime = (utility::timer() - startTime);
+    printf("Sub %d, counting time %f, loop neighbours time: %f, ratio: %f, Mul time %f, ratio %f\n", subsId, 
+            subsTime, eltSpmv, (eltSpmv*100)/subsTime, eltMul, (eltMul*100)/subsTime);
     std::fflush(stdout); 
 #endif
 
@@ -998,4 +1036,138 @@ int Count::calcAutomorphismRecursive(Graph& t, std::vector<int>& mappingID, std:
 
 }
 
+double Count::estimateMemComm()
+{
+    double commBytesTotal = 0.0;
 
+    // read and write comb value
+    // val: n read n write + index: n 
+    double bytesPerComb = sizeof(float)*(2*_graph->get_vert_num()) + sizeof(int)*(_graph->get_vert_num());
+    // val: n active, nnz passive + index: n active, n passive 
+    double bytesPerSplit = sizeof(float)*(_graph->get_vert_num() + _graph->get_edge_num()) + 
+        sizeof(int)*(2*_graph->get_vert_num());
+
+    for(int s=_total_sub_num-1;s>=0;s--)
+    {
+        int vert_self = _subtmp_array[s].get_vert_num();
+        if (vert_self > 1) {
+            
+            int idxMain = div_tp.get_main_node_idx(s);
+            int idxAux = div_tp.get_aux_node_idx(s);       
+
+            commBytesTotal += (_dTable.getTableLen(s)*bytesPerComb);
+            commBytesTotal += (_dTable.getTableLen(s)*
+                indexer.comb_calc(vert_self, _subtmp_array[idxAux].get_vert_num())*bytesPerSplit);
+            
+        }
+    }
+
+    commBytesTotal /= (1024*1024*1024);
+
+    printf("Comm Bytes Non Pruned estimated : %f GBytes\n", commBytesTotal);
+    std::fflush(stdout);
+
+    return commBytesTotal;
+}
+
+double Count::estimateFlops()
+{
+    double flopsTotal = 0.0;
+
+    // read and write comb value
+    double flopsPerComb = 0.0;
+    double flopsPerSplit = (2*_graph->get_edge_num());
+
+    for(int s=_total_sub_num-1;s>=0;s--)
+    {
+        int vert_self = _subtmp_array[s].get_vert_num();
+        if (vert_self > 1) {
+            
+            int idxMain = div_tp.get_main_node_idx(s);
+            int idxAux = div_tp.get_aux_node_idx(s);       
+
+            flopsTotal += (_dTable.getTableLen(s)*flopsPerComb);
+            flopsTotal += (_dTable.getTableLen(s)*
+                indexer.comb_calc(vert_self, _subtmp_array[idxAux].get_vert_num())*flopsPerSplit);
+            
+        }
+    }
+
+    flopsTotal /= (1024*1024*1024);
+
+    printf("Operations Non Pruned estimated : %f GFLOP\n", flopsTotal);
+    std::fflush(stdout);
+
+    return flopsTotal;
+}
+
+double Count::estimateMemCommPruned()
+{
+    double commBytesTotal = 0.0;
+
+    // read and write comb value
+    // Val: nnz read n write + Index 0
+    double bytesPerNeighbor = sizeof(float)*(_graph->get_vert_num() + _graph->get_edge_num());
+
+    // Val: n read + n write + Index n
+    double bytesPerComb = sizeof(float)*(2*_graph->get_vert_num()) + sizeof(int)*(_graph->get_vert_num());
+    // Val: n active + n passive + Index 2n  
+    double bytesPerSplit = sizeof(float)*(2*_graph->get_vert_num()) + sizeof(int)*(2*_graph->get_vert_num());
+
+    for(int s=_total_sub_num-1;s>=0;s--)
+    {
+        int vert_self = _subtmp_array[s].get_vert_num();
+        if (vert_self > 1) {
+            
+            int idxMain = div_tp.get_main_node_idx(s);
+            int idxAux = div_tp.get_aux_node_idx(s);       
+
+            commBytesTotal += (_dTable.getTableLen(idxAux)*bytesPerNeighbor);
+            commBytesTotal += (_dTable.getTableLen(s)*bytesPerComb);
+            commBytesTotal += (_dTable.getTableLen(s)*
+                indexer.comb_calc(vert_self, _subtmp_array[idxAux].get_vert_num())*bytesPerSplit);
+            
+        }
+    }
+
+    commBytesTotal /= (1024*1024*1024);
+
+    printf("Comm Bytes Pruned estimated : %f GBytes\n", commBytesTotal);
+    std::fflush(stdout);
+
+    return commBytesTotal;
+}
+
+double Count::estimateFlopsPruned()
+{
+    double flopsTotal = 0.0;
+
+    // read and write comb value
+    double flopsPerNeighbor = (_graph->get_edge_num());
+
+    double flopsPerComb = 0.0;
+    double flopsPerSplit = (_graph->get_vert_num()*2) ;
+
+    for(int s=_total_sub_num-1;s>=0;s--)
+    {
+        int vert_self = _subtmp_array[s].get_vert_num();
+        if (vert_self > 1) {
+            
+            int idxMain = div_tp.get_main_node_idx(s);
+            int idxAux = div_tp.get_aux_node_idx(s);       
+
+            flopsTotal += (_dTable.getTableLen(idxAux)*flopsPerNeighbor);
+            flopsTotal += (_dTable.getTableLen(s)*flopsPerComb);
+            flopsTotal += (_dTable.getTableLen(s)*
+                indexer.comb_calc(vert_self, _subtmp_array[idxAux].get_vert_num())*flopsPerSplit);
+            
+        }
+    }
+
+    flopsTotal /= (1024*1024*1024);
+
+    printf("Operations Pruned estimated : %f GFLOP\n", flopsTotal);
+    std::fflush(stdout);
+
+    return flopsTotal;
+}

@@ -33,6 +33,9 @@ int main(int argc, char** argv)
     // bool calcMorphism = true;
     bool calcMorphism = false;
 
+    bool isEstimate = false;
+    // bool isEstimate = true;
+
     graph_name = argv[1];
     template_name = argv[2];
     iterations = atoi(argv[3]);
@@ -90,7 +93,7 @@ int main(int argc, char** argv)
     // start computing
     Count executor;
     executor.initialization(input_graph, comp_thds, iterations, algoMode, vtuneStart, calcMorphism);
-    executor.compute(input_template);
+    executor.compute(input_template, isEstimate);
 
     return 0;
 

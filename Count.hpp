@@ -25,12 +25,14 @@ class Count {
             _algoMode = 0;
             _vtuneStart = -1;
             _calculate_automorphisms = false;
+            _spmvElapsedTime = 0;
+            _fmaElapsedTime = 0;
         }
 
         void initialization(Graph& graph, int thd_num, int itr_num, int algoMode, int vtuneStart = -1, 
                 bool calculate_automorphisms = false);
 
-        double compute(Graph& templates);
+        double compute(Graph& templates, bool isEstimate = false);
 
         ~Count() {
             if (_colors_local != NULL)
@@ -49,6 +51,11 @@ class Count {
         double countNonBottomeFasciaPruned(int subsId);
         double countNonBottomeVec(int subsId);
         double countNonBottomePruned(int subsId);
+        double estimateMemComm();
+        double estimateMemCommPruned();
+        double estimateFlops();
+        double estimateFlopsPruned();
+
         void colorInit();
         int factorial(int n);
 
@@ -77,6 +84,9 @@ class Count {
         int _algoMode;
         int _vtuneStart;
         bool _calculate_automorphisms; 
+
+        double _spmvElapsedTime;
+        double _fmaElapsedTime;
 
         // divide the templates into sub-templates
         DivideTemplates div_tp;
