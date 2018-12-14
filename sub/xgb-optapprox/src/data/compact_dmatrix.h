@@ -233,7 +233,9 @@ class DMatrixCompactBlockDense : public xgboost::data::SparsePageDMatrix {
  *      rowid: <blockadd=binid:fid>
  */
 
+
 typedef unsigned short BlkAddrType;
+typedef unsigned int PtrType;
 //typedef unsigned char BlkAddrType;
 
 struct BlockInfo{
@@ -274,26 +276,26 @@ class DMatrixCubeBlock {
     //
     public:
         const BlkAddrType* data_;
-        const size_t* row_offset_;
-        size_t len_;
+        const PtrType* row_offset_;
+        PtrType len_;
 
-        size_t base_rowid_;
+        PtrType base_rowid_;
 
-    DMatrixCubeBlock(const BlkAddrType* data, const size_t* offset,
-            size_t len, size_t base):
+    DMatrixCubeBlock(const BlkAddrType* data, const PtrType* offset,
+            PtrType len, PtrType base):
         data_(data), row_offset_(offset), len_(len), base_rowid_{base}{}
 
     //elem interface
-    inline int rowsize(size_t i) const{
+    inline int rowsize(int i) const{
         return row_offset_[i+1] - row_offset_[i];
     }
 
-    inline BlkAddrType _blkaddr(size_t i, size_t j) const {
-      return static_cast<unsigned int>(data_[row_offset_[i] + j]);
+    inline BlkAddrType _blkaddr(int i, int j) const {
+      return static_cast<BlkAddrType>(data_[row_offset_[i] + j]);
     }
 
     // get rowid
-    inline unsigned int _index(size_t i) const {
+    inline unsigned int _index(int i) const {
       return base_rowid_ + i;
     }
     inline size_t size() const{
@@ -307,25 +309,25 @@ class DMatrixCubeZCol{
   private:
      int    blkid_;
      std::vector<BlkAddrType> data_;
-     std::vector<size_t> row_offset_;
-     std::vector<size_t> blk_offset_;
+     std::vector<PtrType> row_offset_;
+     std::vector<PtrType> blk_offset_;
 
   public:
 
      DMatrixCubeZCol() = default;
 
-    inline DMatrixCubeBlock GetBlock(size_t i) const {
+    inline DMatrixCubeBlock GetBlock(int i) const {
         // blk_offset_ : idx in row_offset_
         // row_offset_ : addr in data_
 
-        int rowidx = blk_offset_[i];
+        PtrType rowidx = blk_offset_[i];
 
         //have to use the ptr from beginning
         //as row_offset_[] will pointer to this absolute address
         //return {data_.data() + row_offset_[rowidx],
         return {data_.data(),
             row_offset_.data() + rowidx,
-            static_cast<size_t>(blk_offset_[i + 1] - blk_offset_[i]), 
+            static_cast<PtrType>(blk_offset_[i + 1] - blk_offset_[i]), 
             rowidx};
     }
 
@@ -334,8 +336,8 @@ class DMatrixCubeZCol{
     }
 
     inline long getMemSize(){
-        return sizeof(BlkAddrType)*data_.size() + row_offset_.size()*sizeof(size_t) +
-            blk_offset_.size()*sizeof(size_t) + 4;
+        return sizeof(BlkAddrType)*data_.size() + row_offset_.size()*sizeof(PtrType) +
+            blk_offset_.size()*sizeof(PtrType) + 4;
     }
 
     int init(int blkid){
@@ -348,6 +350,12 @@ class DMatrixCubeZCol{
     }
 
     inline void addrow(){
+        //sort blkaddr
+        if (row_offset_.size() > 0){
+            auto start = data_.begin() + row_offset_.back();
+            auto end  = data_.begin() + data_.size();
+            std::sort(start, end);
+        }
         row_offset_.push_back(data_.size());
     }
 
@@ -371,7 +379,7 @@ class DMatrixCube : public xgboost::data::SparsePageDMatrix {
   explicit DMatrixCube(){}
 
   //interface for reading access in bulidhist
-  inline const DMatrixCubeZCol& GetBlockZCol(size_t i) const {
+  inline const DMatrixCubeZCol& GetBlockZCol(unsigned int i) const {
     return data_[i];
   }
 
@@ -382,7 +390,7 @@ class DMatrixCube : public xgboost::data::SparsePageDMatrix {
   inline int Size() const{
     return data_.size();
   }
-  inline const DMatrixCubeZCol& operator[](size_t i) const {
+  inline const DMatrixCubeZCol& operator[](unsigned int i) const {
     return data_[i];
   }
 
