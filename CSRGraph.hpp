@@ -56,8 +56,10 @@ class CSRGraph
         }
 
         void SpMVNaive(valType* x, valType* y);
+        void SpMVNaiveFull(valType* x, valType* y);
         void SpMVNaiveScale(valType* x, valType* y, float scale);
         void SpMVNaive(valType* x, valType* y, int thdNum);
+        void SpMVNaiveFull(valType* x, valType* y, int thdNum);
         void SpMVMKL(valType* x, valType* y, int thdNum);
         void SpMVMKLHint(int callNum);
 
@@ -82,6 +84,7 @@ class CSRGraph
         void fillSpMat(spdm3::SpMat<int, float> &smat);
         void rcmReordering();
         void createMKLMat();
+        void toASCII(string fileName);
 
         bool useMKL() { return _useMKL; }
 

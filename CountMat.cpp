@@ -372,7 +372,7 @@ double CountMat::countNonBottomePruned(int subsId)
        }
        else
        {
-           _graph->SpMVNaive(auxObjArray, _bufVec, _thd_num); 
+           _graph->SpMVNaiveFull(auxObjArray, _bufVec, _thd_num); 
        }
 
 #ifdef VERBOSE
@@ -791,7 +791,7 @@ double CountMat::countNonBottomeOriginal(int subsId)
 #ifdef VERBOSE
             startTimeComp = utility::timer();
 #endif
-            _graph->SpMVNaive(auxArraySelect, _bufVec, _thd_num);
+            _graph->SpMVNaiveFull(auxArraySelect, _bufVec, _thd_num);
 #ifdef VERBOSE
             eltSpmv += (utility::timer() - startTimeComp);
 #endif
@@ -965,9 +965,9 @@ double CountMat::estimateMemComm()
 {
     double commBytesTotal = 0.0;
     // Ax = y
-    // access A + access x + write to y + rowidx + colidx
-    double bytesSpmvPer = sizeof(float)*(2*_graph->getNNZ() + _graph->getNumVertices()) + sizeof(int)*(_graph->getNNZ()
-            + _graph->getNumVertices());
+    // Val: n x + n y write + Index: n rowIdx + nnz colIdx 
+    double bytesSpmvPer = sizeof(float)*(2*_graph->getNumVertices()) + 
+        sizeof(int)*(_graph->getNNZ() + _graph->getNumVertices());
 
     // z += x*y
     // read x, y, z and write to z
@@ -1006,16 +1006,9 @@ double CountMat::estimateMemComm()
 double CountMat::estimateMemCommNonPruned()
 {
     double commBytesTotal = 0.0;
-    // Ax = y
-    // access A + access x + write to y + rowidx + colidx
-    // double bytesSpmvPer = sizeof(float)*(2*_graph->getNNZ() + _graph->getNumVertices()) + sizeof(int)*(_graph->getNNZ()
-            // + _graph->getNumVertices());
-
-    double bytpesByMain = (sizeof(float) + sizeof(int))*_graph->getNumVertices();
-    double bytpesByAux = (sizeof(float) + sizeof(int))*_graph->getNNZ();
-    // z += x*y
-    // read x, y, z and write to z
-    // double bytesFMAPer = sizeof(float)*(_graph->getNumVertices()*4);
+    // val: n passive + n active + n comb read + n comb write, Index: nnz colIdx, n rowIdx 
+    double bytpesByAux = sizeof(float)*(4*_graph->getNumVertices()) 
+        + sizeof(int)*(_graph->getNNZ()+_graph->getNumVertices());
 
     for(int s=_total_sub_num-1;s>=0;s--)
     {
@@ -1024,14 +1017,9 @@ double CountMat::estimateMemCommNonPruned()
             
             int idxMain = div_tp.get_main_node_idx(s);
             int idxAux = div_tp.get_aux_node_idx(s);       
-            // if (_subtmp_array[idxAux].get_vert_num() > 1)
-            // {
-                 // commBytesTotal += (bytesSpmvPer*_dTable.getTableLen(idxAux));
-            // }
             
-            commBytesTotal += (_dTable.getTableLen(s)*8*_graph->getNumVertices());
             commBytesTotal += (_dTable.getTableLen(s)*indexer.comb_calc(vert_self, _subtmp_array[idxAux].get_vert_num())*
-                    (bytpesByMain+bytpesByAux));
+                    (bytpesByAux));
 
         }
     }
@@ -1050,7 +1038,9 @@ double CountMat::estimateFlops()
     std::fflush(stdout);
 
     double flopsTotal = 0.0;
-    double flopsSpmvPer = 2*_graph->getNNZ(); 
+    // nnz summation ( ignore multiplication )
+    double flopsSpmvPer = _graph->getNNZ(); 
+    // n mul + n add
     double flopsFMAPer = 2*_graph->getNumVertices();
 
     for(int s=_total_sub_num-1;s>=0;s--)
@@ -1090,9 +1080,8 @@ double CountMat::estimateFlopsNonPruned()
     std::fflush(stdout);
 
     double flopsTotal = 0.0;
-    // double flopsSpmvPer = 2*_graph->getNNZ(); 
-    // double flopsFMAPer = 2*_graph->getNumVertices();
-    double flopsPer = 2*_graph->getNNZ() + _graph->getNumVertices();
+    // nnz summation + n mul + n addition
+    double flopsPer = _graph->getNNZ() + 2*_graph->getNumVertices();
 
     for(int s=_total_sub_num-1;s>=0;s--)
     {

@@ -37,14 +37,38 @@
 // for RCM reordering
 #include "SpMP/CSR.hpp"
 
+#ifdef __INTEL_COMPILER
+// use avx intrinsics
+#include "immintrin.h"
+#include "zmmintrin.h"
+#endif
+
 using namespace std;
+
+// LLC 33 for Skylake
+static const size_t LLC_CAPACITY = 33*1024*1024;
+
+void flushLlc(float* bufToFlushLlc)
+{
+  double sum = 0;
+#pragma omp parallel for reduction(+:sum)
+  for (size_t i = 0; i < LLC_CAPACITY/sizeof(bufToFlushLlc[0]); ++i) {
+    sum += bufToFlushLlc[i];
+  }
+  FILE *fp = fopen("/dev/null", "w");
+  fprintf(fp, "%f\n", sum);
+  fclose(fp);
+}
 
 void benchmarkSpMVPBRadix(int argc, char** argv, EdgeList& elist, int numCols)
 {
-    double startTime;
+    double startTime = 0.0;
+    double timeElapsed = 0.0;
     int binSize = 15;
     if (argc > 9)
         binSize = atoi(argv[9]);
+
+    
     // -------------------- start debug the Radix SpMV ------------------------------
     printf("start radix spmv\n");
     std::fflush(stdout);
@@ -63,6 +87,11 @@ void benchmarkSpMVPBRadix(int argc, char** argv, EdgeList& elist, int numCols)
     printf("Finish build radix graph, vert: %d\n", radixG.num_nodes());
     std::fflush(stdout);
 
+    double flopsTotal =  2*radixG.num_edges();
+    double bytesTotal = sizeof(float)*(radixG.num_edges() + 2*radixG.num_nodes()) + sizeof(int)*(radixG.num_edges() + radixG.num_nodes()); 
+    flopsTotal /= (1024*1024*1024);
+    bytesTotal /= (1024*1024*1024);
+
     pvector<ParGuider<int32_t, float>*> par_guides(omp_get_max_threads());
 #pragma omp parallel
     // par_guides[omp_get_thread_num()] = new ParGuider<int32_t, float>(19,omp_get_thread_num(), omp_get_max_threads(), radixG);
@@ -71,14 +100,15 @@ void benchmarkSpMVPBRadix(int argc, char** argv, EdgeList& elist, int numCols)
     printf("Finish build par_parts\n");
     std::fflush(stdout);
 
-    float* xMat = (float*) malloc(radixG.num_nodes()*sizeof(float));
+    float* xMat = (float*) _mm_malloc(radixG.num_nodes()*sizeof(float), 64);
+    float* yMat = (float*) _mm_malloc(radixG.num_nodes()*sizeof(float), 64);
+
+#pragma omp parallel for
     for (int i = 0; i < radixG.num_nodes(); ++i) {
         xMat[i] = 2.0; 
+        yMat[i] = 0.0; 
     }
 
-    float* yMat = (float*) malloc(radixG.num_nodes()*sizeof(float));
-    std::memset(yMat, 0, radixG.num_nodes()*sizeof(float));
-    //
     startTime = utility::timer();
 
     // check pagerank scores
@@ -87,54 +117,140 @@ void benchmarkSpMVPBRadix(int argc, char** argv, EdgeList& elist, int numCols)
     SpMVGuidesPar(xMat, yMat, radixG, numCols, kGoalEpsilon, par_guides);
     // }
     //
-    printf("Radix SpMV using %f secs\n", (utility::timer() - startTime));
+    timeElapsed = (utility::timer() - startTime);
+    printf("Radix SpMV using %f secs\n", timeElapsed);
+    printf("Radix SpMV Bd: %f GBytes/sec\n", bytesTotal*numCols/timeElapsed);
+    printf("Radix SpMV Tht: %f GFLOP/sec\n", flopsTotal*numCols/timeElapsed);
+
     std::fflush(stdout);           
     //
     // check yMat
-    for (int i = 0; i < 10; ++i) {
-        printf("Elem: %d is: %f\n", i, yMat[i]); 
-        std::fflush(stdout);
-    }
+    // for (int i = 0; i < 10; ++i) {
+    //     printf("Elem: %d is: %f\n", i, yMat[i]); 
+    //     std::fflush(stdout);
+    // }
 
     // free memory
-    free(xMat);
-    free(yMat);
+    _mm_free(xMat);
+    _mm_free(yMat);
 
     // -------------------- end debug the Radix SpMV ------------------------------
 }
 
+// test bandwidth utilization and throughput
 void benchmarkSpMVNaive(int argc, char** argv, EdgeList& elist, int numCols, int comp_thds)
 {
 
-    double startTime;
+    double startTime = 0.0;
+    double timeElapsed = 0.0;
     CSRGraph csrnaiveG;
     csrnaiveG.createFromEdgeListFile(elist.getNumVertices(), elist.getNumEdges(), elist.getSrcList(), elist.getDstList(), false, false, true);
 
-    float* xMat = (float*) malloc(csrnaiveG.getNumVertices()*sizeof(float));
+    double flopsTotal =  csrnaiveG.getNNZ();
+    double bytesTotal = sizeof(float)*2*csrnaiveG.getNumVertices() + sizeof(int)*(csrnaiveG.getNNZ() + csrnaiveG.getNumVertices()); 
+    flopsTotal /= (1024*1024*1024);
+    bytesTotal /= (1024*1024*1024);
+
+    float* xMat = (float*)_mm_malloc(csrnaiveG.getNumVertices()*sizeof(float), 64);
+    float* yMat = (float*)_mm_malloc(csrnaiveG.getNumVertices()*sizeof(float), 64);
+
+#pragma omp parallel for
     for (int i = 0; i < csrnaiveG.getNumVertices(); ++i) {
         xMat[i] = 2.0; 
+        yMat[i] = 0.0; 
     }
 
-    float* yMat = (float*) malloc(csrnaiveG.getNumVertices()*sizeof(float));
-    std::memset(yMat, 0, csrnaiveG.getNumVertices()*sizeof(float));
+    float* bufToFlushLlc = (float*)_mm_malloc(LLC_CAPACITY, 64);
 
     // test SpMV naive
-    startTime = utility::timer();
+    // startTime = utility::timer();
     for (int j = 0; j < numCols; ++j) {
+
+        // flush out LLC
+        for (int k = 0; k < 16; ++k) {
+            flushLlc(bufToFlushLlc);
+        }
+
+        // startTime = omp_get_wtime();
+        startTime = utility::timer();
         csrnaiveG.SpMVNaive(xMat, yMat, comp_thds);
+        // timeElapsed += (omp_get_wtime() = startTime);
+        timeElapsed += (utility::timer() - startTime);
     }
 
-    printf("Naive SpMV using %f secs\n", (utility::timer() - startTime));
+    printf("Naive SpMV using %f secs\n", timeElapsed);
+    printf("Naive SpMV Bd: %f GBytes/sec\n", bytesTotal*numCols/timeElapsed);
+    printf("Naive SpMV Tht: %f GFLOP/sec\n", flopsTotal*numCols/timeElapsed);
     std::fflush(stdout);           
 
     // check yMat
-    for (int i = 0; i < 10; ++i) {
-        printf("Elem: %d is: %f\n", i, yMat[i]); 
-        std::fflush(stdout);
+    // for (int i = 0; i < 10; ++i) {
+    //     printf("Elem: %d is: %f\n", i, yMat[i]); 
+    //     std::fflush(stdout);
+    // }
+
+    _mm_free(xMat);
+    _mm_free(yMat);
+    _mm_free(bufToFlushLlc);
+}
+
+void benchmarkSpMVNaiveFull(int argc, char** argv, EdgeList& elist, int numCols, int comp_thds)
+{
+
+    double startTime = 0.0;
+    double timeElapsed = 0.0;
+    CSRGraph csrnaiveG;
+    csrnaiveG.createFromEdgeListFile(elist.getNumVertices(), elist.getNumEdges(), elist.getSrcList(), elist.getDstList(), false, false, true);
+
+    double flopsTotal =  2*csrnaiveG.getNNZ();
+    // read n x, nnz val, write n y, Index col idx, row idx
+    double bytesTotal = sizeof(float)*(csrnaiveG.getNNZ() + 2*csrnaiveG.getNumVertices()) 
+        + sizeof(int)*(csrnaiveG.getNNZ() + csrnaiveG.getNumVertices()); 
+
+    flopsTotal /= (1024*1024*1024);
+    bytesTotal /= (1024*1024*1024);
+
+    float* xMat = (float*)_mm_malloc(csrnaiveG.getNumVertices()*sizeof(float), 64);
+    float* yMat = (float*)_mm_malloc(csrnaiveG.getNumVertices()*sizeof(float), 64);
+
+#pragma omp parallel for
+    for (int i = 0; i < csrnaiveG.getNumVertices(); ++i) {
+        xMat[i] = 2.0; 
+        yMat[i] = 0.0; 
     }
 
-    free(xMat);
-    free(yMat);
+    float* bufToFlushLlc = (float*)_mm_malloc(LLC_CAPACITY, 64);
+
+    // test SpMV naive
+    // startTime = utility::timer();
+    for (int j = 0; j < numCols; ++j) {
+
+        // flush out LLC
+        for (int k = 0; k < 16; ++k) {
+            flushLlc(bufToFlushLlc);
+        }
+
+        // startTime = omp_get_wtime();
+        startTime = utility::timer();
+        csrnaiveG.SpMVNaiveFull(xMat, yMat, comp_thds);
+        // timeElapsed += (omp_get_wtime() = startTime);
+        timeElapsed += (utility::timer() - startTime);
+    }
+
+    printf("Naive SpMVFull using %f secs\n", timeElapsed);
+    printf("Naive SpMVFull Bd: %f GBytes/sec\n", bytesTotal*numCols/timeElapsed);
+    printf("Naive SpMVFull Tht: %f GFLOP/sec\n", flopsTotal*numCols/timeElapsed);
+    std::fflush(stdout);           
+
+    // check yMat
+    // for (int i = 0; i < 10; ++i) {
+    //     printf("Elem: %d is: %f\n", i, yMat[i]); 
+    //     std::fflush(stdout);
+    // }
+
+    _mm_free(xMat);
+    _mm_free(yMat);
+    _mm_free(bufToFlushLlc);
 }
 
 // Inspector-Executor interface in MKL 11.3+
@@ -143,9 +259,16 @@ void benchmarkSpMVMKL(int argc, char** argv, EdgeList& elist, int numCols, int c
 {
   
     int numCalls = numCols;
-    double startTime;
+    double startTime = 0.0;
+    double timeElapsed = 0.0;
+
     CSRGraph csrGMKL;
     csrGMKL.createFromEdgeListFile(elist.getNumVertices(), elist.getNumEdges(), elist.getSrcList(), elist.getDstList(), true, false, true);
+
+    double flopsTotal =  2*csrGMKL.getNNZ();
+    double bytesTotal = sizeof(float)*(csrGMKL.getNNZ() + 2*csrGMKL.getNumVertices()) + sizeof(int)*(csrGMKL.getNNZ() + csrGMKL.getNumVertices()); 
+    flopsTotal /= (1024*1024*1024);
+    bytesTotal /= (1024*1024*1024);
 
     sparse_matrix_t mklA;
     sparse_status_t stat = mkl_sparse_s_create_csr(
@@ -177,31 +300,47 @@ void benchmarkSpMVMKL(int argc, char** argv, EdgeList& elist, int numCols, int c
         return;
     }
 
-    float* xArray = (float*) malloc(csrGMKL.getNumVertices()*sizeof(float));
+    float* xArray = (float*) _mm_malloc(csrGMKL.getNumVertices()*sizeof(float), 64);
+    float* yArray = (float*) _mm_malloc(csrGMKL.getNumVertices()*sizeof(float), 64);
+
+#pragma omp parallel for
     for (int i = 0; i < csrGMKL.getNumVertices(); ++i) {
         xArray[i] = 2.0; 
+        yArray[i] = 0.0; 
     }
 
-    float* yArray = (float*) malloc(csrGMKL.getNumVertices()*sizeof(float));
-    std::memset(yArray, 0, csrGMKL.getNumVertices()*sizeof(float));
+    // float* yArray = (float*) malloc(csrGMKL.getNumVertices()*sizeof(float));
+    // std::memset(yArray, 0, csrGMKL.getNumVertices()*sizeof(float));
+    float* bufToFlushLlc = (float*)_mm_malloc(LLC_CAPACITY, 64);
 
-    startTime = utility::timer();
 
     for (int j = 0; j < numCols; ++j) {
+
+        // flush out LLC
+        for (int k = 0; k < 16; ++k) {
+            flushLlc(bufToFlushLlc);
+        }
+
+        startTime = utility::timer();
         mkl_sparse_s_mv(SPARSE_OPERATION_NON_TRANSPOSE, 1, mklA, descA, xArray, 0, yArray);
+        timeElapsed += (utility::timer() - startTime);
     }
 
-    printf("MKL SpMV using %f secs\n", (utility::timer() - startTime));
+    printf("MKL SpMV using %f secs\n", timeElapsed);
+    printf("MKL SpMV Bd: %f GBytes/sec\n", bytesTotal*numCols/timeElapsed);
+    printf("MKL SpMV Tht: %f GFLOP/sec\n", flopsTotal*numCols/timeElapsed);
+
     std::fflush(stdout);           
 
     // check yMat
-    for (int i = 0; i < 10; ++i) {
-        printf("Elem: %d is: %f\n", i, yArray[i]); 
-        std::fflush(stdout);
-    }
+    // for (int i = 0; i < 10; ++i) {
+    //     printf("Elem: %d is: %f\n", i, yArray[i]); 
+    //     std::fflush(stdout);
+    // }
 
-    free(xArray);
-    free(yArray);
+    _mm_free(xArray);
+    _mm_free(yArray);
+    _mm_free(bufToFlushLlc);
 }
 
 void benchmarkMMMKL(int argc, char** argv, EdgeList& elist, int numCols, int comp_thds)
@@ -211,6 +350,11 @@ void benchmarkMMMKL(int argc, char** argv, EdgeList& elist, int numCols, int com
     const int calls = 100;
     CSRGraph csrGMKL;
     csrGMKL.createFromEdgeListFile(elist.getNumVertices(), elist.getNumEdges(), elist.getSrcList(), elist.getDstList(), true, false, true);
+
+    double flopsTotal =  2*csrGMKL.getNNZ();
+    double bytesTotal = sizeof(float)*(csrGMKL.getNNZ() + 2*csrGMKL.getNumVertices()) + sizeof(int)*(csrGMKL.getNNZ() + csrGMKL.getNumVertices()); 
+    flopsTotal /= (1024*1024*1024);
+    bytesTotal /= (1024*1024*1024);
 
     sparse_matrix_t mklA;
     sparse_status_t stat = mkl_sparse_s_create_csr(
@@ -244,40 +388,51 @@ void benchmarkMMMKL(int argc, char** argv, EdgeList& elist, int numCols, int com
 
     int testLen = numCols*csrGMKL.getNumVertices();
 
-    float* xMat = (float*) malloc(testLen*sizeof(float));
+    float* xMat = (float*) _mm_malloc(testLen*sizeof(float), 64);
+    float* yMat = (float*) _mm_malloc(testLen*sizeof(float), 64);
+
+#pragma omp parallel for
     for (int i = 0; i < testLen; ++i) {
        xMat[i] = 2.0; 
+       yMat[i] = 0.0;
     }
-
-    float* yMat = (float*) malloc(testLen*sizeof(float));
-    std::memset(yMat, 0, testLen*sizeof(float));
 
     startTime = utility::timer();
 
     mkl_sparse_s_mm(SPARSE_OPERATION_NON_TRANSPOSE, 1, mklA, descA, SPARSE_LAYOUT_COLUMN_MAJOR, 
             xMat, numCols, csrGMKL.getNumVertices(), 0, yMat, csrGMKL.getNumVertices());
 
-    printf("MKL MM using %f secs\n", (utility::timer() - startTime));
+    double timeElapsed = (utility::timer() - startTime);
+    printf("MKL MM using %f secs\n", timeElapsed);
+    printf("MKL MM Bd: %f GBytes/sec\n", bytesTotal*numCols/timeElapsed);
+    printf("MKL MM Tht: %f GFLOP/sec\n", flopsTotal*numCols/timeElapsed);
+
     std::fflush(stdout);           
 
     // check yMat
-    for (int i = 0; i < 10; ++i) {
-        printf("Elem: %d is: %f\n", i, yMat[i]); 
-        std::fflush(stdout);
-    }
+    // for (int i = 0; i < 10; ++i) {
+    //     printf("Elem: %d is: %f\n", i, yMat[i]); 
+    //     std::fflush(stdout);
+    // }
 
-    free(xMat);
-    free(yMat);
+    _mm_free(xMat);
+    _mm_free(yMat);
 }
 
 void benchmarkSpMMMKL(int argc, char** argv, EdgeList& elist, int numCols, int comp_thds)
 {
-    double startTime;
+    double startTime = 0.0;
+    double timeElapsed = 0.0;
     printf("Start debug CSR SpMM \n");
     std::fflush(stdout);
 
     CSRGraph csrnaiveG;
     csrnaiveG.createFromEdgeListFile(elist.getNumVertices(), elist.getNumEdges(), elist.getSrcList(), elist.getDstList(), true, false, true);
+
+    double flopsTotal =  2*csrnaiveG.getNNZ();
+    double bytesTotal = sizeof(float)*(csrnaiveG.getNNZ() + 2*csrnaiveG.getNumVertices()) + sizeof(int)*(csrnaiveG.getNNZ() + csrnaiveG.getNumVertices()); 
+    flopsTotal /= (1024*1024*1024);
+    bytesTotal /= (1024*1024*1024);
 
     //
     int csrNNZA = csrnaiveG.getNNZ(); 
@@ -288,12 +443,15 @@ void benchmarkSpMMMKL(int argc, char** argv, EdgeList& elist, int numCols, int c
 
     int testLen = numCols*csrRows;
 
-    float* xMat = (float*) malloc(testLen*sizeof(float));
-    float* yMat = (float*) malloc(testLen*sizeof(float));
-    std::memset(yMat, 0, testLen*sizeof(float));
+    float* xMat = (float*) _mm_malloc(testLen*sizeof(float), 64);
+    float* yMat = (float*) _mm_malloc(testLen*sizeof(float), 64);
+    // float* yMat = (float*) malloc(testLen*sizeof(float));
+    // std::memset(yMat, 0, testLen*sizeof(float));
 
+#pragma omp parallel for
     for (int i = 0; i < testLen; ++i) {
        xMat[i] = 2.0; 
+       yMat[i] = 0.0; 
     }
 
     // invoke mkl scsrmm
@@ -309,17 +467,23 @@ void benchmarkSpMMMKL(int argc, char** argv, EdgeList& elist, int numCols, int c
     matdescra[0] = 'g';
     matdescra[3] = 'f'; /*one-based indexing is used*/
 
+    startTime = utility::timer();
     mkl_scsrmm(&transa, &m, &n, &k, &alpha, matdescra, csrVals, csrColIdx, csrRowIdx, &(csrRowIdx[1]), xMat, &k, &beta, yMat, &k);
+    timeElapsed += (utility::timer() - startTime);
+
+    printf("MKL Old CSR SpMM using %f secs\n", timeElapsed);
+    printf("MKL Old CSR SpMM Bd: %f GBytes/sec\n", bytesTotal*numCols/timeElapsed);
+    printf("MKL Old CSR SpMM Tht: %f GFLOP/sec\n", flopsTotal*numCols/timeElapsed);
 
     // check yMat
-    for (int i = 0; i < 10; ++i) {
-       printf("Elem: %d is: %f\n", i, yMat[i]); 
-       std::fflush(stdout);
-    }
+    // for (int i = 0; i < 10; ++i) {
+    //    printf("Elem: %d is: %f\n", i, yMat[i]); 
+    //    std::fflush(stdout);
+    // }
 
     // free test mem
-    free(xMat);
-    free(yMat);
+    _mm_free(xMat);
+    _mm_free(yMat);
 
     printf("Finish debug CSR SpMM\n");
     std::fflush(stdout);
@@ -328,12 +492,20 @@ void benchmarkSpMMMKL(int argc, char** argv, EdgeList& elist, int numCols, int c
 
 void benchmarkSpDM3(int argc, char** argv, EdgeList& elist, int numCols, int comp_thds)
 {    
-    double startTime;
+
+    double startTime = 0.0;
+    double timeElapsed = 0.0;
+
     printf("Start debug Spdm3 SpMM\n");
     std::fflush(stdout);
 
     CSRGraph csrnaiveG;
     csrnaiveG.createFromEdgeListFile(elist.getNumVertices(), elist.getNumEdges(), elist.getSrcList(), elist.getDstList(), false, false, true);
+
+    double flopsTotal =  2*csrnaiveG.getNNZ();
+    double bytesTotal = sizeof(float)*(csrnaiveG.getNNZ() + 2*csrnaiveG.getNumVertices()) + sizeof(int)*(csrnaiveG.getNNZ() + csrnaiveG.getNumVertices()); 
+    flopsTotal /= (1024*1024*1024);
+    bytesTotal /= (1024*1024*1024);
 
     spdm3::SpMat<int, float> smat(spdm3::SPARSE_CSR, 0);
     csrnaiveG.fillSpMat(smat);
@@ -341,13 +513,17 @@ void benchmarkSpDM3(int argc, char** argv, EdgeList& elist, int numCols, int com
     // use smat
     int rowNum = smat.dim1();
     int testLen = rowNum*numCols;
-    float* xArray = (float*) malloc (testLen*sizeof(float));
+    float* xArray = (float*) _mm_malloc (testLen*sizeof(float), 64);
+    float* yArray = (float*) _mm_malloc (testLen*sizeof(float), 64);
+
+#pragma omp parallel for
     for (int i = 0; i < testLen; ++i) {
        xArray[i] = 2.0; 
+       yArray[i] = 0.0; 
     }   
 
-    float* yArray = (float*) malloc (testLen*sizeof(float));
-    std::memset(yArray, 0, testLen*sizeof(float));
+    // float* yArray = (float*) malloc (testLen*sizeof(float));
+    // std::memset(yArray, 0, testLen*sizeof(float));
 
     // data copy from xArray to xMat
     // TODO replace data copy by pointer assignment
@@ -361,20 +537,208 @@ void benchmarkSpDM3(int argc, char** argv, EdgeList& elist, int numCols, int com
     // start the SpMM 
     spdm3::matmul_blas_colmajor<int>(smat, xMat, yMat);
 
-    printf("SpDM3 SpMM using %f secs\n", (utility::timer() - startTime));
+    timeElapsed = (utility::timer() - startTime);
+    printf("SpDM3 SpMM using %f secs\n", timeElapsed);
+    printf("SpDM3 SpMM Bd: %f GBytes/sec\n", bytesTotal*numCols/timeElapsed);
+    printf("SpDM3 SpMM Tht: %f GFLOP/sec\n", flopsTotal*numCols/timeElapsed);
+
     std::fflush(stdout);           
 
     // check yMat
-    for (int i = 0; i < 10; ++i) {
-       printf("Elem: %d is: %f\n", i, yMat.values_[i]); 
-       std::fflush(stdout);
-    }
+    // for (int i = 0; i < 10; ++i) {
+    //    printf("Elem: %d is: %f\n", i, yMat.values_[i]); 
+    //    std::fflush(stdout);
+    // }
 
     printf("Finish debug Spdm3 SpMM\n");
     std::fflush(stdout);
 
-    free(xArray);
-    free(yArray);
+    _mm_free(xArray);
+    _mm_free(yArray);
+}
+
+void arrayWiseFMAAVX(float** blockPtrDst,float** blockPtrA,float** blockPtrB, int* blockSize, 
+        int blockSizeBasic, float* dst, float* a, float* b, int num_threads)
+{
+    blockPtrDst[0] = dst; 
+    blockPtrA[0] = a;
+    blockPtrB[0] = b;
+    //
+    for (int i = 1; i < num_threads; ++i) {
+        blockPtrDst[i] = blockPtrDst[i-1] + blockSizeBasic; 
+        blockPtrA[i] = blockPtrA[i-1] + blockSizeBasic;
+        blockPtrB[i] = blockPtrB[i-1] + blockSizeBasic;
+    }
+
+#pragma omp parallel for schedule(static) num_threads(num_threads)
+    for(int i=0; i<num_threads; i++)
+    {
+        float* blockPtrDstLocal = blockPtrDst[i]; 
+        float* blockPtrALocal = blockPtrA[i]; 
+        float* blockPtrBLocal = blockPtrB[i]; 
+        int blockSizeLocal = blockSize[i];
+
+#ifdef __AVX512F__ 
+
+    // unrolled by 16 float
+    int n16 = blockSizeLocal & ~(16-1); 
+    __m512 tmpzero = _mm512_set1_ps (0);
+    __mmask16 mask = (1 << (blockSizeLocal - n16)) - 1;
+
+    __m512 vecA;
+    __m512 vecB;
+    __m512 vecC;
+    __m512 vecBuf;
+
+    for (int j = 0; j < n16; j+=16)
+    {
+        vecA = _mm512_load_ps (&(blockPtrALocal[j]));
+        vecB = _mm512_load_ps (&(blockPtrBLocal[j]));
+        vecC = _mm512_load_ps (&(blockPtrDstLocal[j]));
+        vecBuf = _mm512_fmadd_ps(vecA, vecB, vecC);
+        _mm512_store_ps(&(blockPtrDstLocal[j]), vecBuf);
+    }
+
+    if (n16 < blockSizeLocal)
+    {
+        vecA = _mm512_mask_load_ps(tmpzero, mask, &(blockPtrALocal[n16]));
+        vecB = _mm512_mask_load_ps(tmpzero, mask, &(blockPtrBLocal[n16]));
+        vecC = _mm512_mask_load_ps(tmpzero, mask, &(blockPtrDstLocal[n16]));
+        vecBuf = _mm512_fmadd_ps(vecA, vecB, vecC);
+        _mm512_mask_store_ps(&(blockPtrDstLocal[n16]), mask, vecBuf);
+    }
+#else
+
+#ifdef __AVX2__ 
+    // use avx256
+    // unrolled by 8 float
+    int n8 = blockSizeLocal & ~(8-1); 
+
+    int mask_integer[8]={0,0,0,0,0,0,0,0};
+    for (int i=0;i<(blockSizeLocal - n8); i++)
+        mask_integer[i] = -1;
+
+    __m256i mask = _mm256_setr_epi32(mask_integer[0],mask_integer[1],mask_integer[2],mask_integer[3],mask_integer[4],
+                mask_integer[5],mask_integer[6],mask_integer[7]);
+
+    __m256 vecA;
+    __m256 vecB;
+    __m256 vecC;
+    __m256 vecBuf;
+
+    for (int j = 0; j < n8; j+=8)
+    {
+        vecA = _mm256_load_ps (&(blockPtrALocal[j]));
+        vecB = _mm256_load_ps (&(blockPtrBLocal[j]));
+        vecC = _mm256_load_ps (&(blockPtrDstLocal[j]));
+        vecBuf = _mm256_fmadd_ps(vecA, vecB, vecC);
+        _mm256_store_ps(&(blockPtrDstLocal[j]), vecBuf);
+    }
+
+    if (n8 < blockSizeLocal)
+    {
+        vecA = _mm256_maskload_ps(&(blockPtrALocal[n8]), mask);
+        vecB = _mm256_maskload_ps(&(blockPtrBLocal[n8]), mask);
+        vecC = _mm256_maskload_ps(&(blockPtrDstLocal[n8]), mask);
+        vecBuf = _mm256_fmadd_ps(vecA, vecB, vecC);
+        _mm256_maskstore_ps(&(blockPtrDstLocal[n8]), mask, vecBuf);
+    }   
+
+#else
+   // no avx detected 
+ #pragma omp simd aligned(dst, a, b: 64)
+        for(int j=0; j<blockSizeLocal;j++)
+            blockPtrDstLocal[j] = blockPtrDstLocal[j] + blockPtrALocal[j]*blockPtrBLocal[j];          
+#endif
+
+#endif
+
+    }
+
+}
+
+// benchmark the EMA codes
+// element-wised vector multiplication and addition
+// with LLC flush
+void benchmarkEMA(int argc, char** argv, EdgeList& elist, int numCols, int comp_thds)
+{
+    printf("Start benchmarking eMA\n");
+    std::fflush(stdout);           
+
+    double startTime = 0.0;
+    double timeElapsed = 0.0;
+
+    CSRGraph csrnaiveG;
+    csrnaiveG.createFromEdgeListFile(elist.getNumVertices(), elist.getNumEdges(), elist.getSrcList(), elist.getDstList(), false, false, true);
+
+    // a mul plus a add
+    double flopsTotal =  2*csrnaiveG.getNumVertices();
+    // z += x*y
+    // 3n read and n write
+    double bytesTotal = sizeof(float)*(4*csrnaiveG.getNumVertices()); 
+    flopsTotal /= (1024*1024*1024);
+    bytesTotal /= (1024*1024*1024);
+
+    float* xMat = (float*)_mm_malloc(csrnaiveG.getNumVertices()*sizeof(float), 64);
+    float* yMat = (float*)_mm_malloc(csrnaiveG.getNumVertices()*sizeof(float), 64);
+    float* zMat = (float*)_mm_malloc(csrnaiveG.getNumVertices()*sizeof(float), 64);
+
+    #pragma omp parallel for
+    for (int i = 0; i < csrnaiveG.getNumVertices(); ++i) {
+        xMat[i] = 2.0;
+        yMat[i] = 2.0;
+        zMat[i] = 0.0;
+    }
+
+    float* bufToFlushLlc = (float*)_mm_malloc(LLC_CAPACITY, 64);
+
+    int blockSizeBasic = csrnaiveG.getNumVertices()/comp_thds;
+    int* blockSize = (int*) malloc(comp_thds*sizeof(int));
+    for (int i = 0; i < comp_thds; ++i) {
+       blockSize[i] = blockSizeBasic; 
+    }
+    blockSize[comp_thds-1] = ((csrnaiveG.getNumVertices()%comp_thds == 0) ) ? blockSizeBasic : 
+        (blockSizeBasic + (csrnaiveG.getNumVertices()%comp_thds)); 
+
+    float** blockPtrDst = (float**) malloc(comp_thds*sizeof(float*));
+    float** blockPtrA = (float**) malloc(comp_thds*sizeof(float*));
+    float** blockPtrB = (float**) malloc(comp_thds*sizeof(float*));
+
+    for (int i = 0; i < comp_thds; ++i) {
+       blockPtrDst[i] = nullptr; 
+       blockPtrA[i] = nullptr; 
+       blockPtrB[i] = nullptr; 
+    }
+
+    for (int j = 0; j < numCols; ++j) {
+
+        // flush out LLC
+        for (int k = 0; k < 16; ++k) {
+            flushLlc(bufToFlushLlc);
+        }
+
+        startTime = utility::timer();
+        arrayWiseFMAAVX(blockPtrDst, blockPtrA, blockPtrB, blockSize, blockSizeBasic, 
+                zMat, xMat, yMat, comp_thds);
+
+        timeElapsed += (utility::timer() - startTime);
+    }
+
+    printf("EMA using %f secs\n", timeElapsed);
+    printf("EMA Bd: %f GBytes/sec\n", bytesTotal*numCols/timeElapsed);
+    printf("EMA Tht: %f GFLOP/sec\n", flopsTotal*numCols/timeElapsed);
+    std::fflush(stdout);           
+
+    _mm_free(xMat);
+    _mm_free(yMat);
+    _mm_free(zMat);
+    _mm_free(bufToFlushLlc);
+
+    free(blockPtrDst);
+    free(blockPtrA);
+    free(blockPtrB);
+    free(blockSize);
+
 }
 
 // for check reordering
@@ -415,6 +779,27 @@ void SpMVSpMP(int m, int* rowPtr, int* colPtr, float* vals, float* x, float* y, 
 
         int rowLen = (rowPtr[i+1] - rowPtr[i]); 
         int* rowColIdx = colPtr + rowPtr[i];
+        // float* rowElem = vals + rowPtr[i]; 
+
+        #pragma omp simd reduction(+:sum) 
+        for(int j=0; j<rowLen;j++)
+            sum += (x[rowColIdx[j]]);
+            // sum += rowElem[j] * (x[rowColIdx[j]]);
+
+        y[i] = sum;
+    }
+}
+
+void SpMVSpMPFull(int m, int* rowPtr, int* colPtr, float* vals, float* x, float* y, int comp_thds)
+{
+
+#pragma omp parallel for num_threads(comp_thds)
+    for(int i = 0; i<m; i++)
+    {
+        float sum = 0.0;
+
+        int rowLen = (rowPtr[i+1] - rowPtr[i]); 
+        int* rowColIdx = colPtr + rowPtr[i];
         float* rowElem = vals + rowPtr[i]; 
 
         #pragma omp simd reduction(+:sum) 
@@ -424,15 +809,20 @@ void SpMVSpMP(int m, int* rowPtr, int* colPtr, float* vals, float* x, float* y, 
         y[i] = sum;
     }
 }
-
 void benchmarkSpMP(int argc, char** argv, EdgeList& elist, int numCols, int comp_thds)
 {
-    double startTime;
+    double startTime = 0.0;
+    double timeElapsed = 0.0;
     printf("Start debug SpMP RCM SpMV\n");
     std::fflush(stdout);
 
     CSRGraph csrg;
     csrg.createFromEdgeListFile(elist.getNumVertices(), elist.getNumEdges(), elist.getSrcList(), elist.getDstList(), false, true, true);
+
+    double flopsTotal =  csrg.getNNZ();
+    double bytesTotal = sizeof(float)*2*csrg.getNumVertices() + sizeof(int)*(csrg.getNNZ() + csrg.getNumVertices()); 
+    flopsTotal /= (1024*1024*1024);
+    bytesTotal /= (1024*1024*1024);
 
     // create SpMP::CSR
     int csrRows = csrg.getNumVertices();
@@ -478,35 +868,165 @@ void benchmarkSpMP(int argc, char** argv, EdgeList& elist, int numCols, int comp
     SpMP::CSR *APerm = spmpcsr.permute(perm, inversePerm, false, true);
 
     // do a new SpMV 
-    float* xArray = (float*) malloc(APerm->m*sizeof(float));
+    float* xArray = (float*) _mm_malloc(APerm->m*sizeof(float), 64);
+    float* yArray = (float*) _mm_malloc(APerm->m*sizeof(float), 64);
+
+#pragma omp parallel for
     for (int i = 0; i < APerm->m; ++i) {
         xArray[i] = 2.0; 
+        yArray[i] = 0.0; 
     }
 
-    float* yArray = (float*) malloc(APerm->m*sizeof(float));
-    std::memset(yArray, 0, APerm->m*sizeof(float));
+    // float* yArray = (float*) malloc(APerm->m*sizeof(float));
+    // std::memset(yArray, 0, APerm->m*sizeof(float));
+    float* bufToFlushLlc = (float*)_mm_malloc(LLC_CAPACITY, 64);
 
-    startTime = utility::timer();
     for (int j = 0; j < numCols; ++j) {
+
+        // flush out LLC
+        for (int k = 0; k < 16; ++k) {
+            flushLlc(bufToFlushLlc);
+        }
+
+        startTime = utility::timer();
         SpMVSpMP(APerm->m, APerm->rowptr, APerm->colidx, APerm->svalues, xArray, yArray, comp_thds);
+        timeElapsed += (utility::timer() - startTime);
     }
-    printf("SpMP RCM SpMV using %f secs\n", (utility::timer() - startTime));
+
+    printf("SpMP RCM SpMV using %f secs\n", timeElapsed);
+    printf("SpMP RCM SpMV Bd: %f GBytes/sec\n", bytesTotal*numCols/timeElapsed);
+    printf("SpMP RCM SpMV Tht: %f GFLOP/sec\n", flopsTotal*numCols/timeElapsed);
+
     std::fflush(stdout);           
 
     // check yMat
-    for (int i = 0; i < APerm->m; ++i) {
-
-        if (inversePerm[i] >= 0 && inversePerm[i] < 10)
-        {
-            printf("Elem: %d is: %f\n", inversePerm[i], yArray[i]); 
-            std::fflush(stdout);
-        }
-            
-    }
+    // for (int i = 0; i < APerm->m; ++i) {
+    //
+    //     if (inversePerm[i] >= 0 && inversePerm[i] < 10)
+    //     {
+    //         printf("Elem: %d is: %f\n", inversePerm[i], yArray[i]); 
+    //         std::fflush(stdout);
+    //     }
+    //         
+    // }
 
     delete APerm;
-    free(xArray); 
-    free(yArray);
+    _mm_free(xArray); 
+    _mm_free(yArray);
+    _mm_free(bufToFlushLlc);
+    _mm_free(perm);
+    _mm_free(inversePerm);
+
+    printf("Finish SpMP RCM reordering\n");
+    std::fflush(stdout);
+
+}
+
+void benchmarkSpMPFull(int argc, char** argv, EdgeList& elist, int numCols, int comp_thds)
+{
+    double startTime = 0.0;
+    double timeElapsed = 0.0;
+    printf("Start debug SpMP RCM SpMV\n");
+    std::fflush(stdout);
+
+    CSRGraph csrg;
+    csrg.createFromEdgeListFile(elist.getNumVertices(), elist.getNumEdges(), elist.getSrcList(), elist.getDstList(), false, true, true);
+
+    double flopsTotal =  2*csrg.getNNZ();
+    double bytesTotal = sizeof(float)*(csrg.getNNZ() + 2*csrg.getNumVertices()) + sizeof(int)*(csrg.getNNZ() + csrg.getNumVertices()); 
+    flopsTotal /= (1024*1024*1024);
+    bytesTotal /= (1024*1024*1024);
+
+    // create SpMP::CSR
+    int csrRows = csrg.getNumVertices();
+    // length csrRows+1
+    int* csrRowIdx = csrg.getIndexRow(); 
+    int* csrColIdx = csrg.getIndexCol();
+    float* csrVals = csrg.getNNZVal();
+
+    // create CSR (not own data)
+    SpMP::CSR spmpcsr(csrRows, csrRows, csrRowIdx, csrColIdx, csrVals);
+
+    // RCM reordering
+    printf("Start SpMP RCM reordering\n");
+    std::fflush(stdout);
+
+    int *perm = (int*)_mm_malloc(spmpcsr.m*sizeof(int), 64);
+    int *inversePerm = (int*)_mm_malloc(spmpcsr.m*sizeof(int), 64);
+
+    spmpcsr.getRCMPermutation(perm, inversePerm);
+
+    // check the permutation
+    if (checkPerm(perm, spmpcsr.m ));
+    {
+        printf("Reordering coloum sccuess\n");
+        std::fflush(stdout);
+        // for (int i = 0; i < 10; ++i) {
+        //     printf("permcol: %d is %d\n", i, perm[i]);
+        //     std::fflush(stdout);
+        // }
+    }
+
+    if (checkPerm(inversePerm,  spmpcsr.m));
+    {
+        printf("Reordering row sccuess\n");
+        std::fflush(stdout);
+        // for (int i = 0; i < 10; ++i) {
+        //     printf("permrow: %d is %d\n", i, inversePerm[i]);
+        //     std::fflush(stdout);
+        // }
+    }
+
+    // data allocated at APerm
+    SpMP::CSR *APerm = spmpcsr.permute(perm, inversePerm, false, true);
+
+    // do a new SpMV 
+    float* xArray = (float*) _mm_malloc(APerm->m*sizeof(float), 64);
+    float* yArray = (float*) _mm_malloc(APerm->m*sizeof(float), 64);
+
+#pragma omp parallel for
+    for (int i = 0; i < APerm->m; ++i) {
+        xArray[i] = 2.0; 
+        yArray[i] = 0.0; 
+    }
+
+    // float* yArray = (float*) malloc(APerm->m*sizeof(float));
+    // std::memset(yArray, 0, APerm->m*sizeof(float));
+    float* bufToFlushLlc = (float*)_mm_malloc(LLC_CAPACITY, 64);
+
+    for (int j = 0; j < numCols; ++j) {
+
+        // flush out LLC
+        for (int k = 0; k < 16; ++k) {
+            flushLlc(bufToFlushLlc);
+        }
+
+        startTime = utility::timer();
+        SpMVSpMPFull(APerm->m, APerm->rowptr, APerm->colidx, APerm->svalues, xArray, yArray, comp_thds);
+        timeElapsed += (utility::timer() - startTime);
+    }
+
+    printf("SpMP RCM SpMVFull using %f secs\n", timeElapsed);
+    printf("SpMP RCM SpMVFull Bd: %f GBytes/sec\n", bytesTotal*numCols/timeElapsed);
+    printf("SpMP RCM SpMVFull Tht: %f GFLOP/sec\n", flopsTotal*numCols/timeElapsed);
+
+    std::fflush(stdout);           
+
+    // check yMat
+    // for (int i = 0; i < APerm->m; ++i) {
+    //
+    //     if (inversePerm[i] >= 0 && inversePerm[i] < 10)
+    //     {
+    //         printf("Elem: %d is: %f\n", inversePerm[i], yArray[i]); 
+    //         std::fflush(stdout);
+    //     }
+    //         
+    // }
+
+    delete APerm;
+    _mm_free(xArray); 
+    _mm_free(yArray);
+    _mm_free(bufToFlushLlc);
     _mm_free(perm);
     _mm_free(inversePerm);
 
@@ -535,8 +1055,8 @@ int main(int argc, char** argv)
     // bool useRcm = true;
     bool useRcm = false;
 
-    // bool isBenchmark = true;
-    bool isBenchmark = false;
+    bool isBenchmark = true;
+    // bool isBenchmark = false;
     // turn on this to estimate flops and memory bytes 
     // without running the codes
     bool isEstimate = false;
@@ -611,7 +1131,7 @@ int main(int argc, char** argv)
         std::fflush(stdout);           
 #endif
 
-        EdgeList elist(graph_name, write_binary); 
+        EdgeList elist(graph_name); 
         if (isBenchmark)
         {
 
@@ -620,10 +1140,13 @@ int main(int argc, char** argv)
             std::fflush(stdout);           
 #endif
 
-            const int numCols = 100;
-            // benchmarking SpMP RCM reordering
-            benchmarkSpMP(argc, argv, elist,  numCols, comp_thds );
+            const int numCols = 1000;
+            // benchmarking SpMP RCM reordering and 0-1 SpMV
+            // benchmarkSpMP(argc, argv, elist,  numCols, comp_thds );
             
+            // benchmarking SpMP RCM reordering standard full SpMV
+            // benchmarkSpMPFull(argc, argv, elist,  numCols, comp_thds );
+           
             // benchmarking mkl SpMV (inspector executor)
             // benchmarkSpMVMKL(argc, argv, elist, numCols, comp_thds);
 
@@ -640,8 +1163,13 @@ int main(int argc, char** argv)
             // benchmarkSpDM3(argc, argv, elist, numCols, comp_thds);
 
             // benchmarking Naive SpMV
-            benchmarkSpMVNaive(argc, argv, elist, numCols, comp_thds);
+            // benchmarkSpMVNaive(argc, argv, elist, numCols, comp_thds);
+            // benchmarking Naive SpMV Full
+            // benchmarkSpMVNaiveFull(argc, argv, elist, numCols, comp_thds);
             
+            // benchmarking eMA 
+            benchmarkEMA(argc, argv, elist, numCols, comp_thds);
+
 #ifdef VERBOSE
             printf("Finish benchmarking SpMV or SpMM\n");
             std::fflush(stdout);           
@@ -656,9 +1184,10 @@ int main(int argc, char** argv)
     if (write_binary)
     {
         // save graph into binary file, graph is a data structure
-        ofstream output_file("graph.data", ios::binary);
-        csrInpuG.serialize(output_file);
-        output_file.close();
+        // ofstream output_file("graph.data", ios::binary);
+        // csrInpuG.serialize(output_file);
+        // output_file.close();
+        csrInpuG.toASCII("ascii_graph.data");
     }
 
     printf("Finish CSR format\n");

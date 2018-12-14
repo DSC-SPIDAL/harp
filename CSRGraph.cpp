@@ -111,6 +111,25 @@ void CSRGraph::SpMVNaive(valType* x, valType* y)
         valType sum = 0.0;
 
         idxType rowLen = getRowLen(i);
+        idxType* rowColIdx = getColIdx(i);
+
+        #pragma omp simd reduction(+:sum) 
+        for(idxType j=0; j<rowLen;j++)
+            sum += (x[rowColIdx[j]]);
+
+        y[i] = sum;
+    }
+}
+
+void CSRGraph::SpMVNaiveFull(valType* x, valType* y)
+{
+
+#pragma omp parallel for
+    for(idxType i = 0; i<_numVertices; i++)
+    {
+        valType sum = 0.0;
+
+        idxType rowLen = getRowLen(i);
         valType* rowElem = getEdgeVals(i); 
         idxType* rowColIdx = getColIdx(i);
 
@@ -142,7 +161,27 @@ void CSRGraph::SpMVNaiveScale(valType* x, valType* y, float scale)
     }
 }
 
+// used in computation
 void CSRGraph::SpMVNaive(valType* x, valType* y, int thdNum)
+{
+
+#pragma omp parallel for num_threads(thdNum)
+    for(idxType i = 0; i<_numVertices; i++)
+    {
+        valType sum = 0.0;
+
+        idxType rowLen = getRowLen(i);
+        idxType* rowColIdx = getColIdx(i);
+
+        #pragma omp simd reduction(+:sum) 
+        for(idxType j=0; j<rowLen;j++)
+            sum += (x[rowColIdx[j]]);
+
+        y[i] = sum;
+    }
+}
+
+void CSRGraph::SpMVNaiveFull(valType* x, valType* y, int thdNum)
 {
 
 #pragma omp parallel for num_threads(thdNum)
@@ -161,6 +200,7 @@ void CSRGraph::SpMVNaive(valType* x, valType* y, int thdNum)
         y[i] = sum;
     }
 }
+
 void CSRGraph::SpMVMKL(valType* x, valType* y, int thdNum)
 {
     if (_useMKL)
@@ -191,6 +231,22 @@ void CSRGraph::serialize(ofstream& outputFile)
     outputFile.write((char*)_indexRow, (_numVertices+1)*sizeof(idxType));
     outputFile.write((char*)_indexCol, (_indexRow[_numVertices])*sizeof(idxType));
     outputFile.write((char*)_edgeVal, (_indexRow[_numVertices])*sizeof(valType));
+}
+
+void CSRGraph::toASCII(string fileName)
+{
+    ofstream outputFile;
+    outputFile.open(fileName);
+    std::cout<<"m: "<<_numVertices<<" n: "<<_numVertices<<" nnz: "<<_indexRow[_numVertices]<<std::endl;
+
+    outputFile<<_numVertices<<" "<<_numVertices<<" "<<_indexRow[_numVertices]<<std::endl;
+    for (int i = 0; i < _numVertices; ++i) {
+
+        for (int j = _indexRow[i]; j < _indexRow[i+1]; ++j) {
+            outputFile<<(i+1)<<" "<<(_indexCol[j]+1)<<" "<<_edgeVal[j]<<std::endl; 
+        }
+    }
+    outputFile.close();
 }
 
 void CSRGraph::deserialize(ifstream& inputFile, bool useMKL, bool useRcm)
