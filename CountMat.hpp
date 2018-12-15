@@ -8,6 +8,7 @@
 
 #include "Graph.hpp"
 #include "CSRGraph.hpp"
+#include "CSCGraph.hpp"
 #include "DivideTemplates.hpp"
 #include "IndexSys.hpp"
 #include "DataTableColMajor.hpp"

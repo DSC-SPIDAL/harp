@@ -20,6 +20,7 @@
 
 #include "Graph.hpp"
 #include "CSRGraph.hpp"
+#include "CSCGraph.hpp"
 #include "CountMat.hpp"
 #include "Helper.hpp"
 #include "EdgeList.hpp"
@@ -119,6 +120,7 @@ void benchmarkSpMVPBRadix(int argc, char** argv, EdgeList& elist, int numCols)
     //
     timeElapsed = (utility::timer() - startTime);
     printf("Radix SpMV using %f secs\n", timeElapsed);
+    printf("Radix SpMV Arith Intensity %f\n", (flopsTotal/bytesTotal));
     printf("Radix SpMV Bd: %f GBytes/sec\n", bytesTotal*numCols/timeElapsed);
     printf("Radix SpMV Tht: %f GFLOP/sec\n", flopsTotal*numCols/timeElapsed);
 
@@ -179,6 +181,7 @@ void benchmarkSpMVNaive(int argc, char** argv, EdgeList& elist, int numCols, int
     }
 
     printf("Naive SpMV using %f secs\n", timeElapsed);
+    printf("Naive SpMV Arith Intensity %f\n", (flopsTotal/bytesTotal));
     printf("Naive SpMV Bd: %f GBytes/sec\n", bytesTotal*numCols/timeElapsed);
     printf("Naive SpMV Tht: %f GFLOP/sec\n", flopsTotal*numCols/timeElapsed);
     std::fflush(stdout);           
@@ -238,11 +241,72 @@ void benchmarkSpMVNaiveFull(int argc, char** argv, EdgeList& elist, int numCols,
     }
 
     printf("Naive SpMVFull using %f secs\n", timeElapsed);
+    printf("Naive SpMVFull Arith Intensity %f\n", (flopsTotal/bytesTotal));
     printf("Naive SpMVFull Bd: %f GBytes/sec\n", bytesTotal*numCols/timeElapsed);
     printf("Naive SpMVFull Tht: %f GFLOP/sec\n", flopsTotal*numCols/timeElapsed);
     std::fflush(stdout);           
 
     // check yMat
+    // for (int i = 0; i < 10; ++i) {
+    //     printf("Elem: %d is: %f\n", i, yMat[i]); 
+    //     std::fflush(stdout);
+    // }
+
+    _mm_free(xMat);
+    _mm_free(yMat);
+    _mm_free(bufToFlushLlc);
+}
+
+void benchmarkSpMVNaiveFullCSC(int argc, char** argv, EdgeList& elist, int numCols, int comp_thds)
+{
+
+    double startTime = 0.0;
+    double timeElapsed = 0.0;
+    CSCGraph<int32_t, float> csrnaiveG;
+    csrnaiveG.createFromEdgeListFile(elist.getNumVertices(), elist.getNumEdges(), elist.getSrcList(), elist.getDstList());
+
+    double flopsTotal =  2*csrnaiveG.getNNZ();
+    // read n x, nnz val, write n y, Index col idx, row idx
+    double bytesTotal = sizeof(float)*(csrnaiveG.getNNZ() + 2*csrnaiveG.getNumVertices()) 
+        + sizeof(int)*(csrnaiveG.getNNZ() + csrnaiveG.getNumVertices()); 
+
+    csrnaiveG.splitCSC(4*comp_thds);
+
+    flopsTotal /= (1024*1024*1024);
+    bytesTotal /= (1024*1024*1024);
+
+    float* xMat = (float*)_mm_malloc(csrnaiveG.getNumVertices()*sizeof(float), 64);
+    float* yMat = (float*)_mm_malloc(csrnaiveG.getNumVertices()*sizeof(float), 64);
+
+#pragma omp parallel for
+    for (int i = 0; i < csrnaiveG.getNumVertices(); ++i) {
+        xMat[i] = 2.0; 
+        yMat[i] = 0.0; 
+    }
+
+    float* bufToFlushLlc = (float*)_mm_malloc(LLC_CAPACITY, 64);
+
+    // test SpMV naive
+    // startTime = utility::timer();
+    for (int j = 0; j < numCols; ++j) {
+
+        // flush out LLC
+        for (int k = 0; k < 16; ++k) {
+            flushLlc(bufToFlushLlc);
+        }
+
+        startTime = utility::timer();
+        csrnaiveG.spmvNaiveSplit(xMat, yMat, comp_thds);
+        timeElapsed += (utility::timer() - startTime);
+    }
+
+    printf("Naive SpMVFull CSC using %f secs\n", timeElapsed);
+    printf("Naive SpMVFull CSC Arith Intensity %f\n", (flopsTotal/bytesTotal));
+    printf("Naive SpMVFull CSC Bd: %f GBytes/sec\n", bytesTotal*numCols/timeElapsed);
+    printf("Naive SpMVFull CSC Tht: %f GFLOP/sec\n", flopsTotal*numCols/timeElapsed);
+    std::fflush(stdout);           
+
+    // //check yMat
     // for (int i = 0; i < 10; ++i) {
     //     printf("Elem: %d is: %f\n", i, yMat[i]); 
     //     std::fflush(stdout);
@@ -327,6 +391,7 @@ void benchmarkSpMVMKL(int argc, char** argv, EdgeList& elist, int numCols, int c
     }
 
     printf("MKL SpMV using %f secs\n", timeElapsed);
+    printf("MKL SpMV Arith Intensity %f\n", (flopsTotal/bytesTotal));
     printf("MKL SpMV Bd: %f GBytes/sec\n", bytesTotal*numCols/timeElapsed);
     printf("MKL SpMV Tht: %f GFLOP/sec\n", flopsTotal*numCols/timeElapsed);
 
@@ -404,6 +469,7 @@ void benchmarkMMMKL(int argc, char** argv, EdgeList& elist, int numCols, int com
 
     double timeElapsed = (utility::timer() - startTime);
     printf("MKL MM using %f secs\n", timeElapsed);
+    printf("MKL MM Arith Intensity %f\n", (flopsTotal/bytesTotal));
     printf("MKL MM Bd: %f GBytes/sec\n", bytesTotal*numCols/timeElapsed);
     printf("MKL MM Tht: %f GFLOP/sec\n", flopsTotal*numCols/timeElapsed);
 
@@ -472,6 +538,7 @@ void benchmarkSpMMMKL(int argc, char** argv, EdgeList& elist, int numCols, int c
     timeElapsed += (utility::timer() - startTime);
 
     printf("MKL Old CSR SpMM using %f secs\n", timeElapsed);
+    printf("MKL Old CSR SpMM Arith Intensity %f\n", (flopsTotal/bytesTotal));
     printf("MKL Old CSR SpMM Bd: %f GBytes/sec\n", bytesTotal*numCols/timeElapsed);
     printf("MKL Old CSR SpMM Tht: %f GFLOP/sec\n", flopsTotal*numCols/timeElapsed);
 
@@ -539,6 +606,7 @@ void benchmarkSpDM3(int argc, char** argv, EdgeList& elist, int numCols, int com
 
     timeElapsed = (utility::timer() - startTime);
     printf("SpDM3 SpMM using %f secs\n", timeElapsed);
+    printf("SpDM3 SpMM Arith Intensity %f\n", (flopsTotal/bytesTotal));
     printf("SpDM3 SpMM Bd: %f GBytes/sec\n", bytesTotal*numCols/timeElapsed);
     printf("SpDM3 SpMM Tht: %f GFLOP/sec\n", flopsTotal*numCols/timeElapsed);
 
@@ -674,8 +742,8 @@ void benchmarkEMA(int argc, char** argv, EdgeList& elist, int numCols, int comp_
     // a mul plus a add
     double flopsTotal =  2*csrnaiveG.getNumVertices();
     // z += x*y
-    // 3n read and n write
-    double bytesTotal = sizeof(float)*(4*csrnaiveG.getNumVertices()); 
+    // 3n read/write
+    double bytesTotal = sizeof(float)*(3*csrnaiveG.getNumVertices()); 
     flopsTotal /= (1024*1024*1024);
     bytesTotal /= (1024*1024*1024);
 
@@ -725,6 +793,7 @@ void benchmarkEMA(int argc, char** argv, EdgeList& elist, int numCols, int comp_
     }
 
     printf("EMA using %f secs\n", timeElapsed);
+    printf("EMA Arith Intensity %f\n", (flopsTotal/bytesTotal));
     printf("EMA Bd: %f GBytes/sec\n", bytesTotal*numCols/timeElapsed);
     printf("EMA Tht: %f GFLOP/sec\n", flopsTotal*numCols/timeElapsed);
     std::fflush(stdout);           
@@ -894,6 +963,7 @@ void benchmarkSpMP(int argc, char** argv, EdgeList& elist, int numCols, int comp
     }
 
     printf("SpMP RCM SpMV using %f secs\n", timeElapsed);
+    printf("SpMP RCM SpMV Arith Intensity %f\n", (flopsTotal/bytesTotal));
     printf("SpMP RCM SpMV Bd: %f GBytes/sec\n", bytesTotal*numCols/timeElapsed);
     printf("SpMP RCM SpMV Tht: %f GFLOP/sec\n", flopsTotal*numCols/timeElapsed);
 
@@ -1007,6 +1077,7 @@ void benchmarkSpMPFull(int argc, char** argv, EdgeList& elist, int numCols, int 
     }
 
     printf("SpMP RCM SpMVFull using %f secs\n", timeElapsed);
+    printf("SpMP RCM SpMVFull Arith Intensity %f\n", (flopsTotal/bytesTotal));
     printf("SpMP RCM SpMVFull Bd: %f GBytes/sec\n", bytesTotal*numCols/timeElapsed);
     printf("SpMP RCM SpMVFull Tht: %f GFLOP/sec\n", flopsTotal*numCols/timeElapsed);
 
@@ -1141,6 +1212,7 @@ int main(int argc, char** argv)
 #endif
 
             const int numCols = 1000;
+            // const int numCols = 1;
             // benchmarking SpMP RCM reordering and 0-1 SpMV
             // benchmarkSpMP(argc, argv, elist,  numCols, comp_thds );
             
@@ -1164,11 +1236,15 @@ int main(int argc, char** argv)
 
             // benchmarking Naive SpMV
             // benchmarkSpMVNaive(argc, argv, elist, numCols, comp_thds);
-            // benchmarking Naive SpMV Full
-            // benchmarkSpMVNaiveFull(argc, argv, elist, numCols, comp_thds);
             
+            // benchmarking Naive SpMV Full
+            benchmarkSpMVNaiveFull(argc, argv, elist, numCols, comp_thds);
+            //
+            // benchmarking Naive SpMV Full
+            benchmarkSpMVNaiveFullCSC(argc, argv, elist, numCols, comp_thds);
+
             // benchmarking eMA 
-            benchmarkEMA(argc, argv, elist, numCols, comp_thds);
+            // benchmarkEMA(argc, argv, elist, numCols, comp_thds);
 
 #ifdef VERBOSE
             printf("Finish benchmarking SpMV or SpMM\n");

@@ -970,8 +970,8 @@ double CountMat::estimateMemComm()
         sizeof(int)*(_graph->getNNZ() + _graph->getNumVertices());
 
     // z += x*y
-    // read x, y, z and write to z
-    double bytesFMAPer = sizeof(float)*(_graph->getNumVertices()*4);
+    // read x, y, z 
+    double bytesFMAPer = sizeof(float)*(_graph->getNumVertices()*3);
 
     for(int s=_total_sub_num-1;s>=0;s--)
     {
@@ -1006,8 +1006,8 @@ double CountMat::estimateMemComm()
 double CountMat::estimateMemCommNonPruned()
 {
     double commBytesTotal = 0.0;
-    // val: n passive + n active + n comb read + n comb write, Index: nnz colIdx, n rowIdx 
-    double bytpesByAux = sizeof(float)*(4*_graph->getNumVertices()) 
+    // val: n passive + n active + n comb read/write + , Index: nnz colIdx, n rowIdx 
+    double bytpesByAux = sizeof(float)*(3*_graph->getNumVertices()) 
         + sizeof(int)*(_graph->getNNZ()+_graph->getNumVertices());
 
     for(int s=_total_sub_num-1;s>=0;s--)
