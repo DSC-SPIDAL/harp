@@ -119,7 +119,7 @@ void benchmarkSpMVPBRadix(int argc, char** argv, EdgeList& elist, int numCols)
     // }
     //
     timeElapsed = (utility::timer() - startTime);
-    printf("Radix SpMV using %f secs\n", timeElapsed);
+    printf("Radix SpMV using %f secs\n", timeElapsed/numCols);
     printf("Radix SpMV Arith Intensity %f\n", (flopsTotal/bytesTotal));
     printf("Radix SpMV Bd: %f GBytes/sec\n", bytesTotal*numCols/timeElapsed);
     printf("Radix SpMV Tht: %f GFLOP/sec\n", flopsTotal*numCols/timeElapsed);
@@ -180,7 +180,7 @@ void benchmarkSpMVNaive(int argc, char** argv, EdgeList& elist, int numCols, int
         timeElapsed += (utility::timer() - startTime);
     }
 
-    printf("Naive SpMV using %f secs\n", timeElapsed);
+    printf("Naive SpMV using %f secs\n", timeElapsed/numCols);
     printf("Naive SpMV Arith Intensity %f\n", (flopsTotal/bytesTotal));
     printf("Naive SpMV Bd: %f GBytes/sec\n", bytesTotal*numCols/timeElapsed);
     printf("Naive SpMV Tht: %f GFLOP/sec\n", flopsTotal*numCols/timeElapsed);
@@ -240,7 +240,7 @@ void benchmarkSpMVNaiveFull(int argc, char** argv, EdgeList& elist, int numCols,
         timeElapsed += (utility::timer() - startTime);
     }
 
-    printf("Naive SpMVFull using %f secs\n", timeElapsed);
+    printf("Naive SpMVFull using %f secs\n", timeElapsed/numCols);
     printf("Naive SpMVFull Arith Intensity %f\n", (flopsTotal/bytesTotal));
     printf("Naive SpMVFull Bd: %f GBytes/sec\n", bytesTotal*numCols/timeElapsed);
     printf("Naive SpMVFull Tht: %f GFLOP/sec\n", flopsTotal*numCols/timeElapsed);
@@ -270,7 +270,8 @@ void benchmarkSpMVNaiveFullCSC(int argc, char** argv, EdgeList& elist, int numCo
     double bytesTotal = sizeof(float)*(csrnaiveG.getNNZ() + 2*csrnaiveG.getNumVertices()) 
         + sizeof(int)*(csrnaiveG.getNNZ() + csrnaiveG.getNumVertices()); 
 
-    csrnaiveG.splitCSC(4*comp_thds);
+    // csrnaiveG.splitCSC(4*comp_thds);
+    csrnaiveG.splitCSC(8*comp_thds);
 
     flopsTotal /= (1024*1024*1024);
     bytesTotal /= (1024*1024*1024);
@@ -300,7 +301,7 @@ void benchmarkSpMVNaiveFullCSC(int argc, char** argv, EdgeList& elist, int numCo
         timeElapsed += (utility::timer() - startTime);
     }
 
-    printf("Naive SpMVFull CSC using %f secs\n", timeElapsed);
+    printf("Naive SpMVFull CSC using %f secs\n", timeElapsed/numCols);
     printf("Naive SpMVFull CSC Arith Intensity %f\n", (flopsTotal/bytesTotal));
     printf("Naive SpMVFull CSC Bd: %f GBytes/sec\n", bytesTotal*numCols/timeElapsed);
     printf("Naive SpMVFull CSC Tht: %f GFLOP/sec\n", flopsTotal*numCols/timeElapsed);
@@ -390,7 +391,7 @@ void benchmarkSpMVMKL(int argc, char** argv, EdgeList& elist, int numCols, int c
         timeElapsed += (utility::timer() - startTime);
     }
 
-    printf("MKL SpMV using %f secs\n", timeElapsed);
+    printf("MKL SpMV using %f secs\n", timeElapsed/numCols);
     printf("MKL SpMV Arith Intensity %f\n", (flopsTotal/bytesTotal));
     printf("MKL SpMV Bd: %f GBytes/sec\n", bytesTotal*numCols/timeElapsed);
     printf("MKL SpMV Tht: %f GFLOP/sec\n", flopsTotal*numCols/timeElapsed);
@@ -469,6 +470,7 @@ void benchmarkMMMKL(int argc, char** argv, EdgeList& elist, int numCols, int com
 
     double timeElapsed = (utility::timer() - startTime);
     printf("MKL MM using %f secs\n", timeElapsed);
+    printf("MKL MM using %f secs per SpMV\n", timeElapsed/numCols);
     printf("MKL MM Arith Intensity %f\n", (flopsTotal/bytesTotal));
     printf("MKL MM Bd: %f GBytes/sec\n", bytesTotal*numCols/timeElapsed);
     printf("MKL MM Tht: %f GFLOP/sec\n", flopsTotal*numCols/timeElapsed);
@@ -538,6 +540,7 @@ void benchmarkSpMMMKL(int argc, char** argv, EdgeList& elist, int numCols, int c
     timeElapsed += (utility::timer() - startTime);
 
     printf("MKL Old CSR SpMM using %f secs\n", timeElapsed);
+    printf("MKL Old CSR SpMM using %f secs per SpMV\n", timeElapsed/numCols);
     printf("MKL Old CSR SpMM Arith Intensity %f\n", (flopsTotal/bytesTotal));
     printf("MKL Old CSR SpMM Bd: %f GBytes/sec\n", bytesTotal*numCols/timeElapsed);
     printf("MKL Old CSR SpMM Tht: %f GFLOP/sec\n", flopsTotal*numCols/timeElapsed);
@@ -606,6 +609,7 @@ void benchmarkSpDM3(int argc, char** argv, EdgeList& elist, int numCols, int com
 
     timeElapsed = (utility::timer() - startTime);
     printf("SpDM3 SpMM using %f secs\n", timeElapsed);
+    printf("SpDM3 SpMM using %f secs per SpMV\n", timeElapsed/numCols);
     printf("SpDM3 SpMM Arith Intensity %f\n", (flopsTotal/bytesTotal));
     printf("SpDM3 SpMM Bd: %f GBytes/sec\n", bytesTotal*numCols/timeElapsed);
     printf("SpDM3 SpMM Tht: %f GFLOP/sec\n", flopsTotal*numCols/timeElapsed);
@@ -792,7 +796,7 @@ void benchmarkEMA(int argc, char** argv, EdgeList& elist, int numCols, int comp_
         timeElapsed += (utility::timer() - startTime);
     }
 
-    printf("EMA using %f secs\n", timeElapsed);
+    printf("EMA using %f secs\n", timeElapsed/numCols);
     printf("EMA Arith Intensity %f\n", (flopsTotal/bytesTotal));
     printf("EMA Bd: %f GBytes/sec\n", bytesTotal*numCols/timeElapsed);
     printf("EMA Tht: %f GFLOP/sec\n", flopsTotal*numCols/timeElapsed);
@@ -962,7 +966,7 @@ void benchmarkSpMP(int argc, char** argv, EdgeList& elist, int numCols, int comp
         timeElapsed += (utility::timer() - startTime);
     }
 
-    printf("SpMP RCM SpMV using %f secs\n", timeElapsed);
+    printf("SpMP RCM SpMV using %f secs\n", timeElapsed/numCols);
     printf("SpMP RCM SpMV Arith Intensity %f\n", (flopsTotal/bytesTotal));
     printf("SpMP RCM SpMV Bd: %f GBytes/sec\n", bytesTotal*numCols/timeElapsed);
     printf("SpMP RCM SpMV Tht: %f GFLOP/sec\n", flopsTotal*numCols/timeElapsed);
@@ -1076,7 +1080,7 @@ void benchmarkSpMPFull(int argc, char** argv, EdgeList& elist, int numCols, int 
         timeElapsed += (utility::timer() - startTime);
     }
 
-    printf("SpMP RCM SpMVFull using %f secs\n", timeElapsed);
+    printf("SpMP RCM SpMVFull using %f secs\n", timeElapsed/numCols);
     printf("SpMP RCM SpMVFull Arith Intensity %f\n", (flopsTotal/bytesTotal));
     printf("SpMP RCM SpMVFull Bd: %f GBytes/sec\n", bytesTotal*numCols/timeElapsed);
     printf("SpMP RCM SpMVFull Tht: %f GFLOP/sec\n", flopsTotal*numCols/timeElapsed);
@@ -1211,8 +1215,10 @@ int main(int argc, char** argv)
             std::fflush(stdout);           
 #endif
 
-            const int numCols = 1000;
-            // const int numCols = 1;
+            // const int numCols = 1000;
+            const int numCols = 100;
+            // const int numCols = 10;
+            
             // benchmarking SpMP RCM reordering and 0-1 SpMV
             // benchmarkSpMP(argc, argv, elist,  numCols, comp_thds );
             
