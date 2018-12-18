@@ -51,6 +51,8 @@ class CSCGraph
         idxType* getIndexCol() {return _indexCol;}
         valType* getNNZVal() {return _edgeVal;} 
 
+        idxType* getDegList() {return _degList;}
+
         void createFromEdgeListFile(idxType numVerts, idxType numEdges, 
                 idxType* srcList, idxType* dstList, bool isBenchmark = false);       
 

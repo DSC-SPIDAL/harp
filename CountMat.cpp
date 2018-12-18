@@ -8,6 +8,7 @@
 #include <cstring>
 #include <omp.h>
 #include <vector>
+#include <map>
 #include "mkl.h"
 
 #include "CountMat.hpp"
@@ -130,6 +131,7 @@ double CountMat::compute(Graph& templates, bool isEstimate)
     estimatePeakMemUsage();
     estimateMemCommNonPruned();
     estimateFlopsNonPruned();
+    degreeDistribution();
 
     double totalFlops = estimateFlops();
     double totalMemBand = estimateMemComm();
@@ -1230,6 +1232,34 @@ double CountMat::estimateFlops()
     std::fflush(stdout);
 
     return flopsTotal;
+}
+
+void CountMat::degreeDistribution()
+{
+    // output the distribution of input graph vertices
+    idxType* degList = (_graph != nullptr) ? _graph->getDegList() : _graphCSC->getDegList();
+    // find the max degree
+    long maxDeg = 0;
+    for (int i = 0; i < _vert_num; ++i) {
+       maxDeg = (degList[i] > maxDeg) ? degList[i] : maxDeg; 
+    }
+
+    std::cout<<"maxDeg: "<<maxDeg<<std::endl;
+    std::vector<idxType> degSort(maxDeg+1, 0);
+    for (int i = 0; i < _vert_num; ++i) {
+       degSort[degList[i]]++;
+    }
+    //
+    // output nonzero value to a file
+    ofstream output_file("degDistri.data");
+
+    for (int i = 1; i < degSort.size(); ++i) {
+        if (degSort[i] > 0) 
+            output_file<<i<<" "<<degSort[i]<<std::endl;
+    }
+
+    output_file.close();
+
 }
 
 double CountMat::estimateFlopsNonPruned()
