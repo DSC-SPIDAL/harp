@@ -28,7 +28,9 @@ class EdgeList
             if (noVerticesNum)
                 readfromfileNoVerticesNum(fileName);
             else
+            {
                 readfromfile(fileName);
+            }
         } 
 
         ~EdgeList() {
@@ -51,6 +53,8 @@ class EdgeList
 
         void readfromfile(string fileName);
         void readfromfileNoVerticesNum(string fileName);
+        void readfromEdgeList(ifstream& input);
+        void readfromMMIO(ifstream& input);
 
         idxType _numEdges;
         idxType _numVertices;

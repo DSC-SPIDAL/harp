@@ -1191,15 +1191,15 @@ int main(int argc, char** argv)
     bool useMKL = false;
     // bool useRcm = true;
     bool useRcm = false;
-    // bool useCSC = true;
-    bool useCSC = false;
+    bool useCSC = true;
+    // bool useCSC = false;
 
     // bool isBenchmark = true;
     bool isBenchmark = false;
     // turn on this to estimate flops and memory bytes 
     // without running the codes
-    // bool isEstimate = false;
-    bool isEstimate = true;
+    bool isEstimate = false;
+    // bool isEstimate = true;
 
     graph_name = argv[1];
     template_name = argv[2];
