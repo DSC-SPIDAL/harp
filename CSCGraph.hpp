@@ -7,6 +7,7 @@
 #include <cstring>
 #include <stdio.h>
 #include <omp.h>
+#include "Helper.hpp"
 
 using namespace std;
 
@@ -15,13 +16,9 @@ class CSCGraph
 {
     public:
 
-        // typedef int32_t idxType;
-        // typedef float valType;
-
         CSCGraph(): _isDirected(false), _isOneBased(false), _numEdges(-1), _numVertices(-1), _nnZ(-1), 
         _edgeVal(nullptr), _indexRow(nullptr), _indexCol(nullptr), 
         _degList(nullptr), _numsplits(0), _splitsRowIds(nullptr), _splitsColIds(nullptr), _splitsVals(nullptr) {}
-
 
         ~CSCGraph () {
 
@@ -58,8 +55,9 @@ class CSCGraph
                 idxType* srcList, idxType* dstList, bool isBenchmark = false);       
 
         void splitCSC(idxType numsplits);
-        void spmvNaiveFull(valType* x, valType* y, idxType numThds);
         void spmvNaiveSplit(valType* x, valType* y, idxType numThds);
+        double spmmSplitExp(valType* x, valType* y, idxType xColNum, idxType numThds);
+        void spmmSplit(valType* x, valType* y, idxType xColNum, idxType numThds);
 
         void serialize(ofstream& outputFile);
         void deserialize(ifstream& inputFile);
@@ -215,7 +213,6 @@ void CSCGraph<idxType, valType>::spmvNaiveSplit(valType* x, valType* y, idxType 
         idxType localSize = localRowIds->size();
 
 // here the usage of simd will cause write conflict on rowid
-// #pragma omp simd
         for (idxType j = 0; j < localSize; ++j) {
             idxType colid = (*localColIds)[j];
             idxType rowid = (*localRowIds)[j];
@@ -225,23 +222,165 @@ void CSCGraph<idxType, valType>::spmvNaiveSplit(valType* x, valType* y, idxType 
     }
 }
 
+// sparse matrix dense matrix (multiple dense vectors) 
 template<class idxType, class valType>
-void CSCGraph<idxType, valType>::spmvNaiveFull(valType* x, valType* y, idxType numThds)
+void CSCGraph<idxType, valType>::spmmSplit(valType* x, valType* y, idxType xColNum, idxType numThds)
 {
-    // split CSC spmv
-// #pragma omp parallel for num_threads(numThds) 
-    for (idxType i = 0; i < _numVertices; ++i) {
+    // data format conversion
+    // creating the first buffer
+    // valType* readBuf = (valType*) _mm_malloc(_numVertices*xColNum*sizeof(valType), 64);
+    // valType* writeBuf = (valType*) _mm_malloc(_numVertices*xColNum*sizeof(valType), 64);
 
-        // for each col
-// #pragma omp simd
-        for (idxType j = _indexCol[i]; j < _indexCol[i+1]; ++j) {
+    // startTime = utility::timer();
+    // convert x from column majored to row majord
+// #pragma omp parallel for
+//     for (int i = 0; i < _numVertices; ++i) {
+//         for (int j = 0; j < xColNum; ++j) {
+//             readBuf[i*xColNum+j] = x[j*_numVertices+i];
+//         }
+//     }
 
-            idxType rowid = _indexRow[j]; 
-            valType val = _edgeVal[j];
-            y[rowid] += (val*x[i]);
+    // conversionTime += (utility::timer() - startTime);
+    // startTime = utility::timer();
+
+    // doing the computation
+#pragma omp parallel for num_threads(numThds) 
+    for (idxType s = 0; s < _numsplits; ++s) {
+
+        std::vector<idxType>* localRowIds = &(_splitsRowIds[s]);
+        std::vector<idxType>* localColIds = &(_splitsColIds[s]);
+        std::vector<valType>* localVals = &(_splitsVals[s]);
+        idxType localSize = localRowIds->size();
+
+        for (idxType j = 0; j < localSize; ++j) 
+        {
+            idxType colid = (*localColIds)[j];
+            idxType rowid = (*localRowIds)[j];
+            valType val = (*localVals)[j];
+
+            valType* readBufPtr = x + colid*xColNum;
+            valType* writeBufPtr = y + rowid*xColNum;
+
+#ifdef __INTEL_COMPILER
+        __assume_aligned(readBufPtr, 64);
+        __assume_aligned(writeBufPtr, 64);
+#else
+        __builtin_assume_aligned(readBufPtr, 64);
+        __builtin_assume_aligned(writeBufPtr, 64);
+#endif
+
+#pragma omp simd 
+            for (int k = 0; k < xColNum; ++k) {
+               writeBufPtr[k] += (val*readBufPtr[k]); 
+            }
         }
     }
+
+    // computeTime += (utility::timer() - startTime);
+    // startTime = utility::timer();
+
+    // convert writeBuf back to y 
+// #pragma omp parallel for
+//     for (int i = 0; i < _numVertices; ++i) {
+//         for (int j = 0; j < xColNum; ++j) {
+//             y[j*_numVertices+i] = writeBuf[i*xColNum+j];
+//         }
+//     }   
+//
+//     conversionTime += (utility::timer() - startTime);
+//
+//     _mm_free(readBuf);
+//     _mm_free(writeBuf);
+
+    // printf("Compute Time: %f sec, Conversion Time: %f sec\n", 
+    //         computeTime, conversionTime);
+    // std::fflush(stdout);           
+    //
+    // return computeTime;
 }
+
+// sparse matrix dense matrix (multiple dense vectors) 
+// used in benchmarking
+template<class idxType, class valType>
+double CSCGraph<idxType, valType>::spmmSplitExp(valType* x, valType* y, idxType xColNum, idxType numThds)
+{
+    double startTime = 0.0;
+    double conversionTime = 0.0;
+    double computeTime = 0.0;
+
+    // data format conversion
+    // creating the first buffer
+    valType* readBuf = (valType*) _mm_malloc(_numVertices*xColNum*sizeof(valType), 64);
+    valType* writeBuf = (valType*) _mm_malloc(_numVertices*xColNum*sizeof(valType), 64);
+
+    startTime = utility::timer();
+    // convert x from column majored to row majord
+#pragma omp parallel for
+    for (int i = 0; i < _numVertices; ++i) {
+        for (int j = 0; j < xColNum; ++j) {
+            readBuf[i*xColNum+j] = x[j*_numVertices+i];
+        }
+    }
+
+    conversionTime += (utility::timer() - startTime);
+    startTime = utility::timer();
+
+    // doing the computation
+#pragma omp parallel for num_threads(numThds) 
+    for (idxType s = 0; s < _numsplits; ++s) {
+
+        std::vector<idxType>* localRowIds = &(_splitsRowIds[s]);
+        std::vector<idxType>* localColIds = &(_splitsColIds[s]);
+        std::vector<valType>* localVals = &(_splitsVals[s]);
+        idxType localSize = localRowIds->size();
+
+        for (idxType j = 0; j < localSize; ++j) 
+        {
+            idxType colid = (*localColIds)[j];
+            idxType rowid = (*localRowIds)[j];
+            valType val = (*localVals)[j];
+
+            valType* readBufPtr = readBuf + colid*xColNum;
+            valType* writeBufPtr = writeBuf + rowid*xColNum;
+
+#ifdef __INTEL_COMPILER
+        __assume_aligned(readBufPtr, 64);
+        __assume_aligned(writeBufPtr, 64);
+#else
+        __builtin_assume_aligned(readBufPtr, 64);
+        __builtin_assume_aligned(writeBufPtr, 64);
+#endif
+
+#pragma omp simd 
+            for (int k = 0; k < xColNum; ++k) {
+               writeBufPtr[k] += (val*readBufPtr[k]); 
+            }
+        }
+    }
+
+    computeTime += (utility::timer() - startTime);
+    startTime = utility::timer();
+
+    // convert writeBuf back to y 
+#pragma omp parallel for
+    for (int i = 0; i < _numVertices; ++i) {
+        for (int j = 0; j < xColNum; ++j) {
+            y[j*_numVertices+i] = writeBuf[i*xColNum+j];
+        }
+    }   
+
+    conversionTime += (utility::timer() - startTime);
+
+    _mm_free(readBuf);
+    _mm_free(writeBuf);
+
+    printf("Compute Time: %f sec, Conversion Time: %f sec\n", 
+            computeTime, conversionTime);
+    std::fflush(stdout);           
+
+    return computeTime;
+}
+
 
 template<class idxType, class valType>
 void CSCGraph<idxType, valType>::serialize(ofstream& outputFile)

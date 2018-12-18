@@ -15,10 +15,17 @@
 
 using namespace std;
 
-void CountMat::initialization(CSRGraph& graph, int thd_num, int itr_num, int isPruned, int useSPMM, int vtuneStart, bool calculate_automorphisms)
+void CountMat::initialization(CSRGraph* graph, CSCGraph<int32_t, float>* graphCSC, int thd_num, int itr_num, int isPruned, int useSPMM, int vtuneStart, bool calculate_automorphisms)
 {
-    _graph = &graph;
-    _vert_num = _graph->getNumVertices();
+    // either use _graph or _graphCSC
+    _graph = graph;
+    _graphCSC = graphCSC;
+
+    if (_graph != nullptr)
+        _vert_num = _graph->getNumVertices();
+    else
+        _vert_num = _graphCSC->getNumVertices();
+
     _thd_num = thd_num;
     _itr_num = itr_num;
     _isPruned = isPruned;
@@ -27,16 +34,16 @@ void CountMat::initialization(CSRGraph& graph, int thd_num, int itr_num, int isP
     _vtuneStart = vtuneStart;
     _calculate_automorphisms = calculate_automorphisms;
 
-
-    if (_useSPMM == 1)
+    // mkl spmm use one-based csr
+    if (_graph != nullptr && _graph->useMKL() && _useSPMM == 1)
         _graph->makeOneIndex();
 
     _colors_local = (int*)malloc(_vert_num*sizeof(int));
+
 #pragma omp parallel for num_threads(omp_get_max_threads())
     for (int i = 0; i < _vert_num; ++i) {
         _colors_local[i] = 0;
     }
-    // std::memset(_colors_local, 0, _vert_num*sizeof(int));
 
 #ifdef __INTEL_COMPILER
     _bufVec = (float*) _mm_malloc(_vert_num*sizeof(float), 64); 
@@ -47,21 +54,23 @@ void CountMat::initialization(CSRGraph& graph, int thd_num, int itr_num, int isP
     for (int i = 0; i < _vert_num; ++i) {
         _bufVec[i] = 0;
     }
-    // std::memset(_bufVec, 0, _vert_num*sizeof(float));
 
-    _bufMatCols = 100;
+    // doing 4 times of 16 SIMD float operations 
+    _bufMatCols = 64;
 
 #ifdef __INTEL_COMPILER
     _bufMatY = (float*) _mm_malloc(_vert_num*_bufMatCols*sizeof(float), 64); 
+    _bufMatX = (float*) _mm_malloc(_vert_num*_bufMatCols*sizeof(float), 64); 
 #else
     _bufMatY = (float*) aligned_alloc(64, _vert_num*_bufMatCols*sizeof(float)); 
+    _bufMatX = (float*) aligned_alloc(64, _vert_num*_bufMatCols*sizeof(float)); 
 #endif
 
 #pragma omp parallel for num_threads(omp_get_max_threads())
     for (int i = 0; i < _vert_num*_bufMatCols; ++i) {
+        _bufMatX[i] = 0;
         _bufMatY[i] = 0;
     }
-    // std::memset(_bufMatY, 0, _vert_num*_bufMatCols*sizeof(float));
 }
 
 double CountMat::compute(Graph& templates, bool isEstimate)
@@ -104,8 +113,6 @@ double CountMat::compute(Graph& templates, bool isEstimate)
     //         std::fflush(stdout);
     //     }
     // }
-    
-
 
 #ifdef VERBOSE
     printf("Start initializaing datatable\n");
@@ -333,7 +340,6 @@ double CountMat::countNonBottomePruned(int subsId)
       for (int i = 0; i < _vert_num; ++i) {
           bufLastSub[i] = 0;
       }
-      // std::memset(bufLastSub, 0, _vert_num*sizeof(double)); 
 
     }
 
@@ -351,9 +357,9 @@ double CountMat::countNonBottomePruned(int subsId)
    startTimeComp = utility::timer(); 
 #endif
 
-   if (_graph->useMKL())
+   if (_graph != nullptr && _graph->useMKL())
    {
-       // setup hint
+       // setup hint for mkl spmv
        _graph->SpMVMKLHint(auxTableLen);
    }
 
@@ -365,16 +371,31 @@ double CountMat::countNonBottomePruned(int subsId)
        spmvStart = utility::timer();
 #endif
 
-       if (_graph->useMKL())
+       if (_graph != nullptr)
        {
-           //set up hint and optimize
-           _graph->SpMVMKL(auxObjArray, _bufVec, _thd_num);
+
+           if (_graph->useMKL())
+           {
+               //set up hint and optimize
+               _graph->SpMVMKL(auxObjArray, _bufVec, _thd_num);
+           }
+           else
+           {
+               _graph->SpMVNaiveFull(auxObjArray, _bufVec, _thd_num); 
+           }
        }
        else
        {
-           _graph->SpMVNaiveFull(auxObjArray, _bufVec, _thd_num); 
-       }
+           // use CSC-Split SpMV
+           // clear _bufVec
+#pragma omp parallel for num_threads(omp_get_max_threads())
+           for (int j = 0; j < _vert_num; ++j) {
+               _bufVec[j] = 0.0;    
+           }
 
+           _graphCSC->spmvNaiveSplit(auxObjArray, _bufVec, _thd_num);
+       }
+           
 #ifdef VERBOSE
        _spmvElapsedTime += (utility::timer() - spmvStart);
 #endif
@@ -500,7 +521,7 @@ double CountMat::countNonBottomePruned(int subsId)
 double CountMat::countNonBottomePrunedSPMM(int subsId)
 {/*{{{*/
 
-    if (subsId == 3)
+    if (subsId == _vtuneStart)
     {
         // for vtune miami u15-2 subids==3 takes 103 secs
 #ifdef VTUNE
@@ -550,7 +571,6 @@ double CountMat::countNonBottomePrunedSPMM(int subsId)
       for (int i = 0; i < _vert_num; ++i) {
           bufLastSub[i] = 0;
       }
-      // std::memset(bufLastSub, 0, _vert_num*sizeof(double)); 
 
     }
 
@@ -560,6 +580,8 @@ double CountMat::countNonBottomePrunedSPMM(int subsId)
     double eltSpmv = 0.0;
     double eltMul = 0.0;
 #endif
+    double spmvStart = 0.0;
+    double fmaStart = 0.0;
 
 // first the precompute of SPMM results and have a in-place storage
 #ifdef VERBOSE
@@ -567,46 +589,112 @@ double CountMat::countNonBottomePrunedSPMM(int subsId)
 #endif
 
    // ---- start of SpMM impl -------
-   int batchNum = (auxTableLen + _bufMatCols - 1)/(_bufMatCols);
-   int colStart = 0;
+   if (_graph != nullptr) 
+   {
 
-   char transa = 'n';
-   MKL_INT m = _vert_num;
-   MKL_INT n = 0;
-   MKL_INT k = _vert_num;
+       // CSR MKL SpMM implementation 
+       int batchNum = (auxTableLen + _bufMatCols - 1)/(_bufMatCols);
+       int colStart = 0;
 
-   float alpha = 1.0;
-   float beta = 0.0;
+       char transa = 'n';
+       MKL_INT m = _vert_num;
+       MKL_INT n = 0;
+       MKL_INT k = _vert_num;
 
-   char matdescra[5];
-   matdescra[0] = 'g';
-   matdescra[3] = 'f'; /*one-based indexing is used*/
+       float alpha = 1.0;
+       float beta = 0.0;
 
-   float* csrVals = _graph->getNNZVal();
-   int* csrRowIdx = _graph->getIndexRow();
-   int* csrColIdx = _graph->getIndexCol();
+       char matdescra[5];
+       matdescra[0] = 'g';
+       matdescra[3] = 'f'; /*one-based indexing is used*/
 
-   mkl_set_num_threads(_thd_num);
-   for (int i = 0; i < batchNum; ++i) {
+       float* csrVals = _graph->getNNZVal();
+       int* csrRowIdx = _graph->getIndexRow();
+       int* csrColIdx = _graph->getIndexCol();
 
-       int batchSize = (i < batchNum -1) ? (_bufMatCols) : (auxTableLen - _bufMatCols*(batchNum-1));
-       n = batchSize;
 
-       // invoke the mkl scsrmm kernel
-       mkl_scsrmm(&transa, &m, &n, &k, &alpha, matdescra, csrVals, csrColIdx, csrRowIdx, &(csrRowIdx[1]), _dTable.getAuxArray(colStart), &k, &beta, _bufMatY, &k);
 
-       // copy columns from _bufMatY
-       if (auxSize > 1)
+       mkl_set_num_threads(_thd_num);
+       for (int i = 0; i < batchNum; ++i) 
        {
-            std::memcpy(_dTable.getAuxArray(colStart), _bufMatY, _vert_num*batchSize*sizeof(float));
-       }
-       else
-       {
-            std::memcpy(_bufVecLeaf[colStart], _bufMatY, _vert_num*batchSize*sizeof(float));
+
+           int batchSize = (i < batchNum -1) ? (_bufMatCols) : (auxTableLen - _bufMatCols*(batchNum-1));
+           n = batchSize;
+
+#ifdef VERBOSE
+       spmvStart = utility::timer();
+#endif
+           // invoke the mkl scsrmm kernel
+           mkl_scsrmm(&transa, &m, &n, &k, &alpha, matdescra, csrVals, csrColIdx, csrRowIdx, &(csrRowIdx[1]), _dTable.getAuxArray(colStart), &k, &beta, _bufMatY, &k);
+
+#ifdef VERBOSE
+       _spmvElapsedTime += (utility::timer() - spmvStart);
+#endif
+
+           // copy columns from _bufMatY
+           if (auxSize > 1)
+           {
+               std::memcpy(_dTable.getAuxArray(colStart), _bufMatY, _vert_num*batchSize*sizeof(float));
+           }
+           else
+           {
+               std::memcpy(_bufVecLeaf[colStart], _bufMatY, _vert_num*batchSize*sizeof(float));
+           }
+
+           // increase colStart;
+           colStart += batchSize;
        }
 
-       // increase colStart;
-       colStart += batchSize;
+   }
+   else
+   {
+       // CSC-Split SpMM impl
+       int batchNum = (auxTableLen + _bufMatCols - 1)/(_bufMatCols);
+       int colStart = 0;
+
+       for (int i = 0; i < batchNum; ++i) 
+       {
+           int batchSize = (i < batchNum -1) ? (_bufMatCols) : (auxTableLen - _bufMatCols*(batchNum-1));
+
+           valType* xInput = _dTable.getAuxArray(colStart);
+
+           // convert data structre from column-majored to row-majored
+#pragma omp parallel for num_threads(omp_get_max_threads())
+    for (int j = 0; j <_vert_num; ++j) 
+    {
+        for (int k = 0; k < batchSize; ++k) {
+            _bufMatX[j*batchSize+k] = xInput[k*_vert_num+j];
+        }
+    }
+           // clean yOuput
+#pragma omp parallel for num_threads(omp_get_max_threads())
+    for (int j = 0; j < _vert_num*batchSize; ++j) {
+        _bufMatY[j] = 0.0; 
+    }
+           
+#ifdef VERBOSE
+       spmvStart = utility::timer();
+#endif
+           // invoke the spmm kernel
+           _graphCSC->spmmSplit(_bufMatX, _bufMatY, batchSize, _thd_num);
+
+#ifdef VERBOSE
+       _spmvElapsedTime += (utility::timer() - spmvStart);
+#endif
+
+           // convert data structure back to column-majored
+           valType* yOutput = (auxSize > 1) ? _dTable.getAuxArray(colStart) : _bufVecLeaf[colStart];
+
+#pragma omp parallel for num_threads(omp_get_max_threads())
+    for (int j = 0; j < _vert_num; ++j) {
+        for (int k = 0; k < batchSize; ++k) {
+            yOutput[k*_vert_num+j] = _bufMatY[j*batchSize+k];
+        }
+    }
+
+           // increase colStart;
+           colStart += batchSize;
+       }
    }
 
 #ifdef VERBOSE
@@ -649,6 +737,11 @@ double CountMat::countNonBottomePrunedSPMM(int subsId)
 
             // element-wise mul 
             float* mainArraySelect = _dTable.getMainArray(mainIdx);
+
+#ifdef VERBOSE
+            fmaStart = utility::timer();
+#endif
+
             if (subsId > 0)
             {
                 if (_isScaled == 0)
@@ -665,6 +758,10 @@ double CountMat::countNonBottomePrunedSPMM(int subsId)
                 // the last scale use 
                 _dTable.arrayWiseFMALast(bufLastSub, auxArraySelect, mainArraySelect);
             }
+
+#ifdef VERBOSE
+            _fmaElapsedTime += (utility::timer() - fmaStart); 
+#endif
 
         }
 
@@ -717,7 +814,7 @@ double CountMat::countNonBottomePrunedSPMM(int subsId)
 double CountMat::countNonBottomeOriginal(int subsId)
 {/*{{{*/
 
-    if (subsId == 1)
+    if (subsId == _vtuneStart)
     {
         // for vtune
 #ifdef VTUNE
@@ -791,7 +888,11 @@ double CountMat::countNonBottomeOriginal(int subsId)
 #ifdef VERBOSE
             startTimeComp = utility::timer();
 #endif
-            _graph->SpMVNaiveFull(auxArraySelect, _bufVec, _thd_num);
+            if (_graph != nullptr)
+                _graph->SpMVNaiveFull(auxArraySelect, _bufVec, _thd_num);
+            else
+                _graphCSC->spmvNaiveSplit(auxArraySelect, _bufVec, _thd_num);
+
 #ifdef VERBOSE
             eltSpmv += (utility::timer() - startTimeComp);
 #endif
@@ -928,6 +1029,21 @@ void CountMat::printSubTemps()
 
 void CountMat::estimatePeakMemUsage()
 {
+
+    idxType n = 0; 
+    idxType nnz = 0; 
+
+    if (_graph != nullptr)
+    {
+        n = _graph->getNumVertices();
+        nnz = _graph->getNNZ();
+    }
+    else
+    {
+        n = _graphCSC->getNumVertices();
+        nnz = _graphCSC->getNNZ();
+    }
+
     double peakMem = 0.0;
     double memSub = 0.0;
     // memery (GB) usaed by each idx (column)
@@ -955,7 +1071,7 @@ void CountMat::estimatePeakMemUsage()
     }
 
     // add the input graph mem usage
-    peakMem += ((double)(_graph->getNumVertices() + _graph->getNNZ()*2)*4.0/1024/1024/1024); 
+    peakMem += ((double)(n + nnz*2)*4.0/1024/1024/1024); 
 
     printf("Peak memory usage estimated : %f GB \n", peakMem);
     std::fflush(stdout);
@@ -963,15 +1079,30 @@ void CountMat::estimatePeakMemUsage()
 
 double CountMat::estimateMemComm()
 {
+
+    idxType n = 0; 
+    idxType nnz = 0; 
+
+    if (_graph != nullptr)
+    {
+        n = _graph->getNumVertices();
+        nnz = _graph->getNNZ();
+    }
+    else
+    {
+        n = _graphCSC->getNumVertices();
+        nnz = _graphCSC->getNNZ();
+    }
+
     double commBytesTotal = 0.0;
     // Ax = y
-    // Val: n x + n y write + Index: n rowIdx + nnz colIdx 
-    double bytesSpmvPer = sizeof(float)*(2*_graph->getNumVertices()) + 
-        sizeof(int)*(_graph->getNNZ() + _graph->getNumVertices());
+    // Val: n x + n y write + nnz val + Index: n rowIdx + nnz colIdx 
+    double bytesSpmvPer = sizeof(float)*(2*n + nnz) + 
+        sizeof(int)*(nnz + n);
 
     // z += x*y
     // read x, y, z 
-    double bytesFMAPer = sizeof(float)*(_graph->getNumVertices()*3);
+    double bytesFMAPer = sizeof(float)*(n*3);
 
     for(int s=_total_sub_num-1;s>=0;s--)
     {
@@ -1005,10 +1136,25 @@ double CountMat::estimateMemComm()
 
 double CountMat::estimateMemCommNonPruned()
 {
+
+    idxType n = 0; 
+    idxType nnz = 0; 
+
+    if (_graph != nullptr)
+    {
+        n = _graph->getNumVertices();
+        nnz = _graph->getNNZ();
+    }
+    else
+    {
+        n = _graphCSC->getNumVertices();
+        nnz = _graphCSC->getNNZ();
+    }
+
     double commBytesTotal = 0.0;
     // val: n passive + n active + n comb read/write + , Index: nnz colIdx, n rowIdx 
-    double bytpesByAux = sizeof(float)*(3*_graph->getNumVertices()) 
-        + sizeof(int)*(_graph->getNNZ()+_graph->getNumVertices());
+    double bytpesByAux = sizeof(float)*(3*n) 
+        + sizeof(int)*(nnz+n);
 
     for(int s=_total_sub_num-1;s>=0;s--)
     {
@@ -1033,15 +1179,28 @@ double CountMat::estimateMemCommNonPruned()
 
 double CountMat::estimateFlops()
 {
+    idxType n = 0; 
+    idxType nnz = 0; 
 
-    printf("|V| is: %d, |E| nnz is: %d \n", _graph->getNumVertices(), _graph->getNNZ());
+    if (_graph != nullptr)
+    {
+        n = _graph->getNumVertices();
+        nnz = _graph->getNNZ();
+    }
+    else
+    {
+        n = _graphCSC->getNumVertices();
+        nnz = _graphCSC->getNNZ();
+    }
+
+
+    printf("|V| is: %d, |E| nnz is: %d \n", n , nnz );
     std::fflush(stdout);
 
     double flopsTotal = 0.0;
-    // nnz summation ( ignore multiplication )
-    double flopsSpmvPer = _graph->getNNZ(); 
+    double flopsSpmvPer = 2*nnz; 
     // n mul + n add
-    double flopsFMAPer = 2*_graph->getNumVertices();
+    double flopsFMAPer = 2*n;
 
     for(int s=_total_sub_num-1;s>=0;s--)
     {
@@ -1076,12 +1235,26 @@ double CountMat::estimateFlops()
 double CountMat::estimateFlopsNonPruned()
 {
 
-    printf("|V| is: %d, |E| nnz is: %d \n", _graph->getNumVertices(), _graph->getNNZ());
+    idxType n = 0; 
+    idxType nnz = 0; 
+
+    if (_graph != nullptr)
+    {
+        n = _graph->getNumVertices();
+        nnz = _graph->getNNZ();
+    }
+    else
+    {
+        n = _graphCSC->getNumVertices();
+        nnz = _graphCSC->getNNZ();
+    }
+
+    printf("|V| is: %d, |E| nnz is: %d \n", n, nnz);
     std::fflush(stdout);
 
     double flopsTotal = 0.0;
     // nnz summation + n mul + n addition
-    double flopsPer = _graph->getNNZ() + 2*_graph->getNumVertices();
+    double flopsPer = nnz + 2*n;
 
     for(int s=_total_sub_num-1;s>=0;s--)
     {

@@ -213,11 +213,13 @@ void benchmarkSpMVNaiveFull(int argc, char** argv, EdgeList& elist, int numCols,
     flopsTotal /= (1024*1024*1024);
     bytesTotal /= (1024*1024*1024);
 
-    float* xMat = (float*)_mm_malloc(csrnaiveG.getNumVertices()*sizeof(float), 64);
-    float* yMat = (float*)_mm_malloc(csrnaiveG.getNumVertices()*sizeof(float), 64);
+    int testLen = csrnaiveG.getNumVertices()*numCols;
+
+    float* xMat = (float*)_mm_malloc(testLen*sizeof(float), 64);
+    float* yMat = (float*)_mm_malloc(testLen*sizeof(float), 64);
 
 #pragma omp parallel for
-    for (int i = 0; i < csrnaiveG.getNumVertices(); ++i) {
+    for (int i = 0; i < testLen; ++i) {
         xMat[i] = 2.0; 
         yMat[i] = 0.0; 
     }
@@ -228,15 +230,17 @@ void benchmarkSpMVNaiveFull(int argc, char** argv, EdgeList& elist, int numCols,
     // startTime = utility::timer();
     for (int j = 0; j < numCols; ++j) {
 
-        // flush out LLC
-        for (int k = 0; k < 16; ++k) {
-            flushLlc(bufToFlushLlc);
-        }
+        // // flush out LLC
+        // for (int k = 0; k < 16; ++k) {
+        //     flushLlc(bufToFlushLlc);
+        // }
+        
 
-        // startTime = omp_get_wtime();
+
         startTime = utility::timer();
-        csrnaiveG.SpMVNaiveFull(xMat, yMat, comp_thds);
-        // timeElapsed += (omp_get_wtime() = startTime);
+        csrnaiveG.SpMVNaiveFull(xMat+j*csrnaiveG.getNumVertices(), 
+                yMat+j*csrnaiveG.getNumVertices(), comp_thds);
+        
         timeElapsed += (utility::timer() - startTime);
     }
 
@@ -247,10 +251,10 @@ void benchmarkSpMVNaiveFull(int argc, char** argv, EdgeList& elist, int numCols,
     std::fflush(stdout);           
 
     // check yMat
-    // for (int i = 0; i < 10; ++i) {
-    //     printf("Elem: %d is: %f\n", i, yMat[i]); 
-    //     std::fflush(stdout);
-    // }
+    for (int i = 0; i < 10; ++i) {
+        printf("Elem: %d is: %f\n", i, yMat[i]); 
+        std::fflush(stdout);
+    }
 
     _mm_free(xMat);
     _mm_free(yMat);
@@ -270,8 +274,7 @@ void benchmarkSpMVNaiveFullCSC(int argc, char** argv, EdgeList& elist, int numCo
     double bytesTotal = sizeof(float)*(csrnaiveG.getNNZ() + 2*csrnaiveG.getNumVertices()) 
         + sizeof(int)*(csrnaiveG.getNNZ() + csrnaiveG.getNumVertices()); 
 
-    // csrnaiveG.splitCSC(4*comp_thds);
-    csrnaiveG.splitCSC(8*comp_thds);
+    csrnaiveG.splitCSC(4*comp_thds);
 
     flopsTotal /= (1024*1024*1024);
     bytesTotal /= (1024*1024*1024);
@@ -292,10 +295,15 @@ void benchmarkSpMVNaiveFullCSC(int argc, char** argv, EdgeList& elist, int numCo
     for (int j = 0; j < numCols; ++j) {
 
         // flush out LLC
-        for (int k = 0; k < 16; ++k) {
-            flushLlc(bufToFlushLlc);
-        }
-
+        // for (int k = 0; k < 16; ++k) {
+        //     flushLlc(bufToFlushLlc);
+        // }
+        
+        // clear the yMat for each iteration
+#pragma omp parallel for
+    for (int i = 0; i < csrnaiveG.getNumVertices(); ++i) {
+        yMat[i] = 0.0; 
+    }
         startTime = utility::timer();
         csrnaiveG.spmvNaiveSplit(xMat, yMat, comp_thds);
         timeElapsed += (utility::timer() - startTime);
@@ -307,15 +315,69 @@ void benchmarkSpMVNaiveFullCSC(int argc, char** argv, EdgeList& elist, int numCo
     printf("Naive SpMVFull CSC Tht: %f GFLOP/sec\n", flopsTotal*numCols/timeElapsed);
     std::fflush(stdout);           
 
-    // //check yMat
-    // for (int i = 0; i < 10; ++i) {
-    //     printf("Elem: %d is: %f\n", i, yMat[i]); 
-    //     std::fflush(stdout);
-    // }
+    //check yMat
+    for (int i = 0; i < 10; ++i) {
+        printf("Elem: %d is: %f\n", i, yMat[i]); 
+        std::fflush(stdout);
+    }
 
     _mm_free(xMat);
     _mm_free(yMat);
     _mm_free(bufToFlushLlc);
+}
+
+void benchmarkCSCSplitMMFull(int argc, char** argv, EdgeList& elist, int numCols, int comp_thds)
+{
+
+    double startTime = 0.0;
+    double timeElapsed = 0.0;
+    CSCGraph<int32_t, float> csrnaiveG;
+    csrnaiveG.createFromEdgeListFile(elist.getNumVertices(), elist.getNumEdges(), elist.getSrcList(), elist.getDstList());
+
+    double flopsTotal =  2*csrnaiveG.getNNZ();
+    // read n x, nnz val, write n y, Index col idx, row idx
+    double bytesTotal = sizeof(float)*(csrnaiveG.getNNZ() + 2*csrnaiveG.getNumVertices()) 
+        + sizeof(int)*(csrnaiveG.getNNZ() + csrnaiveG.getNumVertices()); 
+
+    csrnaiveG.splitCSC(4*comp_thds);
+
+    flopsTotal /= (1024*1024*1024);
+    bytesTotal /= (1024*1024*1024);
+
+    // right-hand multiple vectors
+    int testLen = csrnaiveG.getNumVertices()*numCols;
+
+    float* xMat = (float*)_mm_malloc(testLen*sizeof(float), 64);
+    float* yMat = (float*)_mm_malloc(testLen*sizeof(float), 64);
+
+#pragma omp parallel for
+    for (int i = 0; i < testLen; ++i) {
+        xMat[i] = 2.0; 
+        yMat[i] = 0.0; 
+    }
+
+    // test CSC-Split SpMM
+    double computeElapsedTime = 0.0;
+    startTime = utility::timer();
+    computeElapsedTime = csrnaiveG.spmmSplitExp(xMat, yMat, numCols, comp_thds);
+    timeElapsed = (utility::timer() - startTime);
+
+    printf("CSC-Split SpMM Compute using %f secs\n", computeElapsedTime/numCols);
+    printf("CSC-Split SpMM Total using %f secs\n", timeElapsed/numCols);
+    printf("CSC-Split Arith Intensity %f\n", (flopsTotal/bytesTotal));
+    printf("CSC-Split Bd: %f GBytes/sec\n", bytesTotal*numCols/computeElapsedTime);
+    printf("CSC-Split Tht: %f GFLOP/sec\n", flopsTotal*numCols/computeElapsedTime);
+    std::fflush(stdout);           
+
+    //check yMat
+    for (int i = 0; i < 10; ++i) {
+        printf("Elem: %d is: %f\n", i, yMat[i]); 
+        std::fflush(stdout);
+    }
+
+    _mm_free(xMat);
+    _mm_free(yMat);
+
 }
 
 // Inspector-Executor interface in MKL 11.3+
@@ -1120,18 +1182,20 @@ int main(int argc, char** argv)
     int iterations;
     int comp_thds;
     int isPruned = 1;
-    int useSPMM = 0;
     int vtuneStart = -1;
     // bool calculate_automorphism = true;
     bool calculate_automorphism = false;
 
+    int useSPMM = 0;
     // bool useMKL = true;
     bool useMKL = false;
     // bool useRcm = true;
     bool useRcm = false;
+    bool useCSC = true;
+    // bool useCSC = false;
 
-    bool isBenchmark = true;
-    // bool isBenchmark = false;
+    // bool isBenchmark = true;
+    bool isBenchmark = false;
     // turn on this to estimate flops and memory bytes 
     // without running the codes
     bool isEstimate = false;
@@ -1152,6 +1216,18 @@ int main(int argc, char** argv)
 
     if (argc > 9)
         vtuneStart = atoi(argv[9]);
+
+    // end of arguments
+    
+    // SPMM in CSR uses MKL
+    if (useSPMM && (!useCSC))
+        useMKL = true;
+
+    if (useCSC)
+    {
+        useRcm = false;
+        useMKL = false;
+    }
 
 #ifdef VERBOSE 
     if (isPruned) {
@@ -1176,12 +1252,19 @@ int main(int argc, char** argv)
 #endif
 #endif
 
-    CSRGraph csrInpuG;
+    CSRGraph* csrInputG = nullptr;
+    CSCGraph<int32_t, float>* cscInputG = nullptr;
+
+    if (!useCSC)
+        csrInputG = new CSRGraph();
+    else
+        cscInputG = new CSCGraph<int32_t, float>();
+        
     Graph input_template;
     double startTime = utility::timer();
 
-    // read in graph file and make CSR format
-    printf("Start loading CSR datasets\n");
+    // read in graph file and make 
+    printf("Start loading datasets\n");
     std::fflush(stdout);
 
     startTime = utility::timer();
@@ -1196,7 +1279,14 @@ int main(int argc, char** argv)
 #endif
 
         ifstream input_file(graph_name.c_str(), ios::binary);
-        csrInpuG.deserialize(input_file, useMKL, useRcm);
+        if (csrInputG != nullptr)
+            csrInputG->deserialize(input_file, useMKL, useRcm);
+        else
+        {
+            //TODO
+            cscInputG->deserialize(input_file);
+        }
+
         input_file.close();
     }
     else
@@ -1249,6 +1339,9 @@ int main(int argc, char** argv)
             // benchmarking Naive SpMV Full
             benchmarkSpMVNaiveFullCSC(argc, argv, elist, numCols, comp_thds);
 
+            // benchmarking CSC-Split MM
+            // benchmarkCSCSplitMMFull(argc, argv, elist, numCols, comp_thds);
+
             // benchmarking eMA 
             // benchmarkEMA(argc, argv, elist, numCols, comp_thds);
 
@@ -1260,21 +1353,35 @@ int main(int argc, char** argv)
             return 0;
         }
         else
-            csrInpuG.createFromEdgeListFile(elist.getNumVertices(), elist.getNumEdges(), elist.getSrcList(), elist.getDstList(), useMKL, useRcm, false);
+        {
+
+            if (csrInputG != nullptr)
+                csrInputG->createFromEdgeListFile(elist.getNumVertices(), elist.getNumEdges(), elist.getSrcList(), elist.getDstList(), useMKL, useRcm, false);
+            else
+            {
+                cscInputG->createFromEdgeListFile(elist.getNumVertices(), elist.getNumEdges(), elist.getSrcList(), elist.getDstList(), false);
+                cscInputG->splitCSC(4*comp_thds);
+            }
+        }
     }
 
     if (write_binary)
     {
         // save graph into binary file, graph is a data structure
-        // ofstream output_file("graph.data", ios::binary);
-        // csrInpuG.serialize(output_file);
-        // output_file.close();
-        csrInpuG.toASCII("ascii_graph.data");
+        ofstream output_file("graph.data", ios::binary);
+
+        if (csrInputG != nullptr)
+            csrInputG->serialize(output_file);
+        else
+        {
+            // TODO
+            cscInputG->serialize(output_file);
+        }
+
+        output_file.close();
     }
 
-    printf("Finish CSR format\n");
-    std::fflush(stdout);
-    printf("Loading CSR data using %f secs, vert: %d\n", (utility::timer() - startTime), csrInpuG.getNumVertices());
+    printf("Loading Datasets using %f secs\n", (utility::timer() - startTime));
     std::fflush(stdout);           
     
     // ---------------- start of computing ----------------
@@ -1283,9 +1390,15 @@ int main(int argc, char** argv)
 
     // start CSR mat computing
     CountMat executor;
-    executor.initialization(csrInpuG, comp_thds, iterations, isPruned, useSPMM, vtuneStart, calculate_automorphism);
+    executor.initialization(csrInputG, cscInputG, comp_thds, iterations, isPruned, useSPMM, vtuneStart, calculate_automorphism);
 
     executor.compute(input_template, isEstimate);
+
+    if (csrInputG != nullptr)
+        delete csrInputG;
+
+    if (cscInputG != nullptr)
+        delete cscInputG;
 
     return 0;
 

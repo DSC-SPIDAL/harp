@@ -23,12 +23,13 @@ class CountMat {
         // typedef int idxType;
         typedef float valType;
 
-        CountMat(): _graph(nullptr), _templates(nullptr), _subtmp_array(nullptr), _colors_local(nullptr), 
-        _bufVec(nullptr), _bufMatY(nullptr), _bufMatCols(-1), _bufVecLeaf(nullptr), _spmvTime(0), _eMATime(0), 
+        CountMat(): _graph(nullptr), _graphCSC(nullptr), _templates(nullptr), _subtmp_array(nullptr), _colors_local(nullptr), 
+        _bufVec(nullptr), _bufMatY(nullptr), _bufMatX(nullptr), _bufMatCols(-1), _bufVecLeaf(nullptr), _spmvTime(0), _eMATime(0), 
         _isPruned(1), _isScaled(0), _useSPMM(0), _peakMemUsage(0), _spmvElapsedTime(0), _fmaElapsedTime(0), _spmvFlops(0),
-        _spmvMemBytes(0), _fmaFlops(0), _fmaMemBytes(0), _vtuneStart(-1), _calculate_automorphisms(false){} 
+        _spmvMemBytes(0), _fmaFlops(0), _fmaMemBytes(0), _vtuneStart(-1), _calculate_automorphisms(false), 
+        _useCSC(1) {} 
 
-        void initialization(CSRGraph& graph, int thd_num, int itr_num, int isPruned, int useSPMM, int vtuneStart=-1,
+        void initialization(CSRGraph* graph, CSCGraph<int32_t, float>* graphCSC, int thd_num, int itr_num, int isPruned, int useSPMM, int vtuneStart=-1,
                 bool calculate_automorphisms = false);
 
         double compute(Graph& templates, bool isEstimate = false);
@@ -53,6 +54,15 @@ class CountMat {
                 _mm_free(_bufMatY); 
 #else
                 free(_bufMatY); 
+#endif
+            }
+
+            if (_bufMatX != nullptr)
+            {
+#ifdef __INTEL_COMPILER
+                _mm_free(_bufMatX); 
+#else
+                free(_bufMatX); 
 #endif
             }
 
@@ -119,6 +129,8 @@ class CountMat {
 
         // local graph data
         CSRGraph* _graph;
+        CSCGraph<int32_t, float>* _graphCSC;
+
         idxType _vert_num;
 
         // templates and sub-temps chain
@@ -149,6 +161,7 @@ class CountMat {
         
         float* _bufVec;
         float* _bufMatY;
+        float* _bufMatX;
         int _bufMatCols;
 
         float** _bufVecLeaf;
@@ -168,6 +181,7 @@ class CountMat {
         double _fmaElapsedTime;
 
         int _vtuneStart;
+        int _useCSC;
 };
 
 #endif
