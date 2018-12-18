@@ -27,6 +27,8 @@ class Graph {
 
         // read txt data in enlist format
         void read_enlist(string file_name);
+        void read_enlistMMIO(ifstream& input);
+        void read_enlistEdgeList(ifstream& input);
         void build_graph(int vert, int edge, int* srclist, int* dstlist);
 
         // serialization 

@@ -7,11 +7,36 @@
 using namespace std;
 
 void Graph::read_enlist(string file_name)
-{/*{{{*/
-
+{
     string line;
     ifstream file_strm;
     file_strm.open(file_name.c_str());
+    bool isMMIO = false;
+
+    // check the header
+    char c = file_strm.get();
+    while (c == '%')
+    {
+        isMMIO = true;
+        std::getline(file_strm, line);
+        c = file_strm.get();
+    }
+    file_strm.unget();
+
+    if (isMMIO)
+        read_enlistMMIO(file_strm);
+    else
+        read_enlistEdgeList(file_strm);
+
+    file_strm.close();
+}
+
+void Graph::read_enlistEdgeList(ifstream& file_strm)
+{
+
+    string line;
+    // ifstream file_strm;
+    // file_strm.open(file_name.c_str());
 
     // get the vert num
     std::getline(file_strm, line);
@@ -35,7 +60,7 @@ void Graph::read_enlist(string file_name)
         max_id = (dst_edge[j] > max_id) ? dst_edge[j]: max_id;
     }
 
-    file_strm.close();
+    // file_strm.close();
 
     if (max_id != verts - 1)
     {
@@ -77,7 +102,97 @@ void Graph::read_enlist(string file_name)
     // change it to undirected graph
     build_graph(verts, edge_file, src_edge, dst_edge);
     
-}/*}}}*/
+}
+
+// read Matrix Market format
+// convert one-based adjacency matrix to zero-based adjacency
+void Graph::read_enlistMMIO(ifstream& file_strm)
+{
+
+    string line;
+    // ifstream file_strm;
+    // file_strm.open(file_name.c_str());
+
+    // // jump the header
+    // char c = file_strm.get();
+    // while (c == '%')
+    // {
+    //     std::getline(file_strm, line);
+    //     c = file_strm.get();
+    // }
+    //
+    // file_strm.unget();
+
+    // get the vert num
+    std::getline(file_strm, line, ' ');
+    int verts = atoi(line.c_str());
+    // jump the col num
+    std::getline(file_strm, line, ' ');
+    // get the edge num
+    std::getline(file_strm, line);
+    edge_file = atoi(line.c_str());
+
+    src_edge = new int[edge_file];
+    dst_edge = new int[edge_file];
+
+    int max_id = 0;
+    for(unsigned j=0;j<edge_file;j++)
+    {
+        std::getline(file_strm, line, ' ');
+        src_edge[j] = (atoi(line.c_str())-1);
+        max_id = (src_edge[j] > max_id) ? src_edge[j]: max_id;
+
+        std::getline(file_strm, line, ' ');
+        dst_edge[j] = (atoi(line.c_str())-1);
+        max_id = (dst_edge[j] > max_id) ? dst_edge[j]: max_id;
+
+        // jump the third value
+        std::getline(file_strm, line);
+    }
+
+    // file_strm.close();
+
+    if (max_id != verts - 1)
+    {
+#ifdef VERBOSE
+        // remove "holes"
+        printf("Start remove holes; max_id: %d, n_g: %d\n", max_id, verts); 
+        std::fflush(stdout);
+#endif
+   
+        int* v_id = new int[max_id+1];
+        std::memset(v_id, 0, (max_id+1)*sizeof(int));
+
+        for(int i=0;i<edge_file;i++)
+        {
+            v_id[src_edge[i]] = 1;
+            v_id[dst_edge[i]] = 1;
+        }
+
+        int itr = 0;
+        for(int i=0;i<max_id+1;i++)
+        {
+            if (v_id[i] == 1)
+                v_id[i] = (itr++);
+        }
+
+        for(int i=0;i<edge_file;i++)
+        {
+            src_edge[i] = v_id[src_edge[i]];
+            dst_edge[i] = v_id[dst_edge[i]];
+        }
+#ifdef VERBOSE
+        printf("Finish remove holes\n");
+        std::fflush(stdout);
+#endif
+        delete[] v_id;
+    }
+    
+    // build the internal graph datastructure
+    // change it to undirected graph
+    build_graph(verts, edge_file, src_edge, dst_edge);
+    
+}
 
 void Graph::build_graph(int verts, int edges, int* src_edge, int* dst_edge)
 {

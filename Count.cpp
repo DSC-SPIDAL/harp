@@ -1041,8 +1041,8 @@ double Count::estimateMemComm()
     double commBytesTotal = 0.0;
 
     // read and write comb value
-    // val: n read n write + index: n 
-    double bytesPerComb = sizeof(float)*(2*_graph->get_vert_num()) + sizeof(int)*(_graph->get_vert_num());
+    // val: n read/write + index: n 
+    double bytesPerComb = sizeof(float)*(1*_graph->get_vert_num()) + sizeof(int)*(_graph->get_vert_num());
     // val: n active, nnz passive + index: n active, n passive 
     double bytesPerSplit = sizeof(float)*(_graph->get_vert_num() + _graph->get_edge_num()) + 
         sizeof(int)*(2*_graph->get_vert_num());
@@ -1109,8 +1109,8 @@ double Count::estimateMemCommPruned()
     // Val: nnz read n write + Index 0
     double bytesPerNeighbor = sizeof(float)*(_graph->get_vert_num() + _graph->get_edge_num());
 
-    // Val: n read + n write + Index n
-    double bytesPerComb = sizeof(float)*(2*_graph->get_vert_num()) + sizeof(int)*(_graph->get_vert_num());
+    // Val: n read/write + Index n
+    double bytesPerComb = sizeof(float)*(1*_graph->get_vert_num()) + sizeof(int)*(_graph->get_vert_num());
     // Val: n active + n passive + Index 2n  
     double bytesPerSplit = sizeof(float)*(2*_graph->get_vert_num()) + sizeof(int)*(2*_graph->get_vert_num());
 
