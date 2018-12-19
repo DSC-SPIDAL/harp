@@ -271,8 +271,9 @@ void CSRGraph::deserialize(ifstream& inputFile, bool useMKL, bool useRcm)
     _useMKL = useMKL;
     _useRcm = useRcm;
 
-    printf("Total vertices is : %d\n", _numVertices);
-    printf("Total Edges is : %d\n", _numEdges);
+    printf("CSR Format Total vertices is : %d\n", _numVertices);
+    printf("CSR Format Total Edges is : %d\n", _numEdges);
+    std::fflush(stdout); 
 
     // comment out this to disable the re-ordering
     if (_useRcm)
@@ -281,7 +282,6 @@ void CSRGraph::deserialize(ifstream& inputFile, bool useMKL, bool useRcm)
     if (_useMKL)
         createMKLMat();
 
-    std::fflush(stdout); 
 }
 
 void CSRGraph::makeOneIndex()

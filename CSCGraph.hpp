@@ -9,6 +9,12 @@
 #include <omp.h>
 #include "Helper.hpp"
 
+#ifdef __INTEL_COMPILER
+// use avx intrinsics
+#include "immintrin.h"
+#include "zmmintrin.h"
+#endif
+
 using namespace std;
 
 template<class idxType, class valType>
@@ -228,37 +234,20 @@ void CSCGraph<idxType, valType>::spmvNaiveSplit(valType* x, valType* y, idxType 
 template<class idxType, class valType>
 void CSCGraph<idxType, valType>::spmmSplit(valType* x, valType* y, idxType xColNum, idxType numThds)
 {
-    // data format conversion
-    // creating the first buffer
-    // valType* readBuf = (valType*) _mm_malloc(_numVertices*xColNum*sizeof(valType), 64);
-    // valType* writeBuf = (valType*) _mm_malloc(_numVertices*xColNum*sizeof(valType), 64);
-
-    // startTime = utility::timer();
-    // convert x from column majored to row majord
-// #pragma omp parallel for
-//     for (int i = 0; i < _numVertices; ++i) {
-//         for (int j = 0; j < xColNum; ++j) {
-//             readBuf[i*xColNum+j] = x[j*_numVertices+i];
-//         }
-//     }
-
-    // conversionTime += (utility::timer() - startTime);
-    // startTime = utility::timer();
-
     // doing the computation
 #pragma omp parallel for num_threads(numThds) 
     for (idxType s = 0; s < _numsplits; ++s) {
 
         std::vector<idxType>* localRowIds = &(_splitsRowIds[s]);
         std::vector<idxType>* localColIds = &(_splitsColIds[s]);
-        std::vector<valType>* localVals = &(_splitsVals[s]);
+        // std::vector<valType>* localVals = &(_splitsVals[s]);
         idxType localSize = localRowIds->size();
 
         for (idxType j = 0; j < localSize; ++j) 
         {
             idxType colid = (*localColIds)[j];
             idxType rowid = (*localRowIds)[j];
-            valType val = (*localVals)[j];
+            // valType val = (*localVals)[j];
 
             valType* readBufPtr = x + colid*xColNum;
             valType* writeBufPtr = y + rowid*xColNum;
@@ -271,34 +260,45 @@ void CSCGraph<idxType, valType>::spmmSplit(valType* x, valType* y, idxType xColN
         __builtin_assume_aligned(writeBufPtr, 64);
 #endif
 
-#pragma omp simd 
-            for (int k = 0; k < xColNum; ++k) {
-               writeBufPtr[k] += (val*readBufPtr[k]); 
+#ifdef __AVX512F__ 
+            // unrolled by 16 float
+            int n16 = xColNum & ~(16-1); 
+            __m512 tmpzero = _mm512_set1_ps (0);
+            __mmask16 mask = (1 << (xColNum - n16)) - 1;
+
+            __m512 vecX;
+            __m512 vecY;
+            __m512 vecBuf;
+
+            for (int k = 0; k < n16; k+=16)
+            {
+                vecX = _mm512_load_ps (&(readBufPtr[k]));
+                vecY = _mm512_load_ps (&(writeBufPtr[k]));
+                vecBuf = _mm512_add_ps(vecX, vecY);
+                _mm512_store_ps(&(writeBufPtr[k]), vecBuf);
             }
+
+            if (n16 < xColNum)
+            {
+                vecX = _mm512_mask_load_ps(tmpzero, mask, &(readBufPtr[n16]));
+                vecY = _mm512_mask_load_ps(tmpzero, mask, &(writeBufPtr[n16]));
+                vecBuf = _mm512_add_ps(vecX, vecY);
+                _mm512_mask_store_ps(&(writeBufPtr[n16]), mask, vecBuf);
+            }
+
+#else
+            // compiler auto vectorization
+// #pragma omp simd
+#pragma omp simd aligned(writeBufPtr, readBufPtr: 64)
+            for (int k = 0; k < xColNum; ++k) {
+                writeBufPtr[k] += (readBufPtr[k]); 
+            }
+#endif
+
+
         }
     }
 
-    // computeTime += (utility::timer() - startTime);
-    // startTime = utility::timer();
-
-    // convert writeBuf back to y 
-// #pragma omp parallel for
-//     for (int i = 0; i < _numVertices; ++i) {
-//         for (int j = 0; j < xColNum; ++j) {
-//             y[j*_numVertices+i] = writeBuf[i*xColNum+j];
-//         }
-//     }   
-//
-//     conversionTime += (utility::timer() - startTime);
-//
-//     _mm_free(readBuf);
-//     _mm_free(writeBuf);
-
-    // printf("Compute Time: %f sec, Conversion Time: %f sec\n", 
-    //         computeTime, conversionTime);
-    // std::fflush(stdout);           
-    //
-    // return computeTime;
 }
 
 // sparse matrix dense matrix (multiple dense vectors) 
@@ -329,34 +329,66 @@ double CSCGraph<idxType, valType>::spmmSplitExp(valType* x, valType* y, idxType 
 
     // doing the computation
 #pragma omp parallel for num_threads(numThds) 
-    for (idxType s = 0; s < _numsplits; ++s) {
+    for (idxType s = 0; s < _numsplits; ++s) 
+    {
 
         std::vector<idxType>* localRowIds = &(_splitsRowIds[s]);
         std::vector<idxType>* localColIds = &(_splitsColIds[s]);
-        std::vector<valType>* localVals = &(_splitsVals[s]);
+        // std::vector<valType>* localVals = &(_splitsVals[s]);
         idxType localSize = localRowIds->size();
+
 
         for (idxType j = 0; j < localSize; ++j) 
         {
             idxType colid = (*localColIds)[j];
             idxType rowid = (*localRowIds)[j];
-            valType val = (*localVals)[j];
+            // valType val = (*localVals)[j];
 
             valType* readBufPtr = readBuf + colid*xColNum;
             valType* writeBufPtr = writeBuf + rowid*xColNum;
 
 #ifdef __INTEL_COMPILER
-        __assume_aligned(readBufPtr, 64);
-        __assume_aligned(writeBufPtr, 64);
+            __assume_aligned(readBufPtr, 64);
+            __assume_aligned(writeBufPtr, 64);
 #else
-        __builtin_assume_aligned(readBufPtr, 64);
-        __builtin_assume_aligned(writeBufPtr, 64);
+            __builtin_assume_aligned(readBufPtr, 64);
+            __builtin_assume_aligned(writeBufPtr, 64);
 #endif
 
-#pragma omp simd 
+// #ifdef __AVX512F__ 
+//             // unrolled by 16 float
+//             int n16 = xColNum & ~(16-1); 
+//             __m512 tmpzero = _mm512_set1_ps (0);
+//             __mmask16 mask = (1 << (xColNum - n16)) - 1;
+//
+//             __m512 vecX;
+//             __m512 vecY;
+//             __m512 vecBuf;
+//
+//             for (int k = 0; k < n16; k+=16)
+//             {
+//                 vecX = _mm512_load_ps (&(readBufPtr[k]));
+//                 vecY = _mm512_load_ps (&(writeBufPtr[k]));
+//                 vecBuf = _mm512_add_ps(vecX, vecY);
+//                 _mm512_store_ps(&(writeBufPtr[k]), vecBuf);
+//             }
+//
+//             if (n16 < xColNum)
+//             {
+//                 vecX = _mm512_mask_load_ps(tmpzero, mask, &(readBufPtr[n16]));
+//                 vecY = _mm512_mask_load_ps(tmpzero, mask, &(writeBufPtr[n16]));
+//                 vecBuf = _mm512_add_ps(vecX, vecY);
+//                 _mm512_mask_store_ps(&(writeBufPtr[n16]), mask, vecBuf);
+//             }
+//
+// #else
+            // compiler auto vectorization
+#pragma omp simd aligned(writeBufPtr, readBufPtr: 64)
             for (int k = 0; k < xColNum; ++k) {
-               writeBufPtr[k] += (val*readBufPtr[k]); 
+                writeBufPtr[k] += readBufPtr[k]; 
             }
+// #endif
+
         }
     }
 
@@ -387,12 +419,38 @@ double CSCGraph<idxType, valType>::spmmSplitExp(valType* x, valType* y, idxType 
 template<class idxType, class valType>
 void CSCGraph<idxType, valType>::serialize(ofstream& outputFile)
 {
-
+    outputFile.write((char*)&_numEdges, sizeof(idxType));
+    outputFile.write((char*)&_numVertices, sizeof(idxType));
+    outputFile.write((char*)_degList, _numVertices*sizeof(idxType));
+    outputFile.write((char*)_indexCol, (_numVertices+1)*sizeof(idxType));
+    outputFile.write((char*)_indexRow, (_indexCol[_numVertices])*sizeof(idxType));
+    outputFile.write((char*)_edgeVal, (_indexCol[_numVertices])*sizeof(valType));
 }
         
 template<class idxType, class valType>
 void CSCGraph<idxType, valType>::deserialize(ifstream& inputFile)
 {
+
+    inputFile.read((char*)&_numEdges, sizeof(idxType));
+    inputFile.read((char*)&_numVertices, sizeof(idxType));
+
+    _degList = (idxType*) malloc (_numVertices*sizeof(idxType)); 
+    inputFile.read((char*)_degList, _numVertices*sizeof(idxType));
+
+    _indexCol = (idxType*) malloc ((_numVertices+1)*sizeof(idxType)); 
+    inputFile.read((char*)_indexCol, (_numVertices+1)*sizeof(idxType));
+
+    _indexRow = (idxType*) malloc (_indexCol[_numVertices]*sizeof(idxType)); 
+    inputFile.read((char*)_indexRow, (_indexCol[_numVertices])*sizeof(idxType));
+
+    _edgeVal = (valType*) malloc ((_indexCol[_numVertices])*sizeof(valType)); 
+    inputFile.read((char*)_edgeVal, (_indexCol[_numVertices])*sizeof(valType));
+
+    _nnZ = _indexCol[_numVertices];
+
+    printf("CSC Format Total vertices is : %d\n", _numVertices);
+    printf("CSC Format Total Edges is : %d\n", _numEdges);
+    std::fflush(stdout); 
 
 }
 

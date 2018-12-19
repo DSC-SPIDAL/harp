@@ -187,10 +187,10 @@ void benchmarkSpMVNaive(int argc, char** argv, EdgeList& elist, int numCols, int
     std::fflush(stdout);           
 
     // check yMat
-    // for (int i = 0; i < 10; ++i) {
-    //     printf("Elem: %d is: %f\n", i, yMat[i]); 
-    //     std::fflush(stdout);
-    // }
+    for (int i = 0; i < 10; ++i) {
+        printf("Elem: %d is: %f\n", i, yMat[i]); 
+        std::fflush(stdout);
+    }
 
     _mm_free(xMat);
     _mm_free(yMat);
@@ -326,7 +326,7 @@ void benchmarkSpMVNaiveFullCSC(int argc, char** argv, EdgeList& elist, int numCo
     _mm_free(bufToFlushLlc);
 }
 
-void benchmarkCSCSplitMMFull(int argc, char** argv, EdgeList& elist, int numCols, int comp_thds)
+void benchmarkCSCSplitMM(int argc, char** argv, EdgeList& elist, int numCols, int comp_thds)
 {
 
     double startTime = 0.0;
@@ -334,9 +334,9 @@ void benchmarkCSCSplitMMFull(int argc, char** argv, EdgeList& elist, int numCols
     CSCGraph<int32_t, float> csrnaiveG;
     csrnaiveG.createFromEdgeListFile(elist.getNumVertices(), elist.getNumEdges(), elist.getSrcList(), elist.getDstList());
 
-    double flopsTotal =  2*csrnaiveG.getNNZ();
+    double flopsTotal =  csrnaiveG.getNNZ();
     // read n x, nnz val, write n y, Index col idx, row idx
-    double bytesTotal = sizeof(float)*(csrnaiveG.getNNZ() + 2*csrnaiveG.getNumVertices()) 
+    double bytesTotal = sizeof(float)*(2*csrnaiveG.getNumVertices()) 
         + sizeof(int)*(csrnaiveG.getNNZ() + csrnaiveG.getNumVertices()); 
 
     csrnaiveG.splitCSC(4*comp_thds);
@@ -1194,8 +1194,8 @@ int main(int argc, char** argv)
     bool useCSC = true;
     // bool useCSC = false;
 
-    // bool isBenchmark = true;
-    bool isBenchmark = false;
+    bool isBenchmark = true;
+    // bool isBenchmark = false;
     // turn on this to estimate flops and memory bytes 
     // without running the codes
     bool isEstimate = false;
@@ -1283,8 +1283,8 @@ int main(int argc, char** argv)
             csrInputG->deserialize(input_file, useMKL, useRcm);
         else
         {
-            //TODO
             cscInputG->deserialize(input_file);
+            cscInputG->splitCSC(4*comp_thds);
         }
 
         input_file.close();
@@ -1305,8 +1305,8 @@ int main(int argc, char** argv)
             std::fflush(stdout);           
 #endif
 
-            // const int numCols = 1000;
-            const int numCols = 100;
+            const int numCols = 64;
+            // const int numCols = 100;
             // const int numCols = 10;
             
             // benchmarking SpMP RCM reordering and 0-1 SpMV
@@ -1334,13 +1334,13 @@ int main(int argc, char** argv)
             // benchmarkSpMVNaive(argc, argv, elist, numCols, comp_thds);
             
             // benchmarking Naive SpMV Full
-            benchmarkSpMVNaiveFull(argc, argv, elist, numCols, comp_thds);
+            // benchmarkSpMVNaiveFull(argc, argv, elist, numCols, comp_thds);
             //
             // benchmarking Naive SpMV Full
-            benchmarkSpMVNaiveFullCSC(argc, argv, elist, numCols, comp_thds);
+            // benchmarkSpMVNaiveFullCSC(argc, argv, elist, numCols, comp_thds);
 
             // benchmarking CSC-Split MM
-            // benchmarkCSCSplitMMFull(argc, argv, elist, numCols, comp_thds);
+            benchmarkCSCSplitMM(argc, argv, elist, numCols, comp_thds);
 
             // benchmarking eMA 
             // benchmarkEMA(argc, argv, elist, numCols, comp_thds);

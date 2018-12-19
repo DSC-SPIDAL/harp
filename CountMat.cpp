@@ -56,8 +56,8 @@ void CountMat::initialization(CSRGraph* graph, CSCGraph<int32_t, float>* graphCS
         _bufVec[i] = 0;
     }
 
-    // doing 4 times of 16 SIMD float operations 
-    _bufMatCols = 64;
+    // doing 16 SIMD float operations 
+    _bufMatCols = 16;
 
 #ifdef __INTEL_COMPILER
     _bufMatY = (float*) _mm_malloc(_vert_num*_bufMatCols*sizeof(float), 64); 
@@ -131,7 +131,7 @@ double CountMat::compute(Graph& templates, bool isEstimate)
     estimatePeakMemUsage();
     estimateMemCommNonPruned();
     estimateFlopsNonPruned();
-    degreeDistribution();
+    // degreeDistribution();
 
     double totalFlops = estimateFlops();
     double totalMemBand = estimateMemComm();
@@ -1099,8 +1099,8 @@ double CountMat::estimateMemComm()
     double commBytesTotal = 0.0;
     // Ax = y
     // Val: n x + n y write + nnz val + Index: n rowIdx + nnz colIdx 
-    double bytesSpmvPer = sizeof(float)*(2*n + nnz) + 
-        sizeof(int)*(nnz + n);
+    // double bytesSpmvPer = sizeof(float)*(2*n + nnz) + sizeof(int)*(nnz + n);
+    double bytesSpmvPer = sizeof(float)*(2*n) + sizeof(int)*(nnz + n);
 
     // z += x*y
     // read x, y, z 
@@ -1200,7 +1200,8 @@ double CountMat::estimateFlops()
     std::fflush(stdout);
 
     double flopsTotal = 0.0;
-    double flopsSpmvPer = 2*nnz; 
+    // double flopsSpmvPer = 2*nnz; 
+    double flopsSpmvPer = nnz; 
     // n mul + n add
     double flopsFMAPer = 2*n;
 
