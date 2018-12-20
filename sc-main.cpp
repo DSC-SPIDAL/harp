@@ -326,11 +326,14 @@ void benchmarkSpMVNaiveFullCSC(int argc, char** argv, EdgeList& elist, int numCo
     _mm_free(bufToFlushLlc);
 }
 
-void benchmarkCSCSplitMM(int argc, char** argv, EdgeList& elist, int numCols, int comp_thds)
+void benchmarkCSCSplitMM(int argc, char** argv, EdgeList& elist, int numCols, int comp_thds, int benchItr)
 {
 
     double startTime = 0.0;
     double timeElapsed = 0.0;
+
+    int iteration = benchItr;
+
     CSCGraph<int32_t, float> csrnaiveG;
     csrnaiveG.createFromEdgeListFile(elist.getNumVertices(), elist.getNumEdges(), elist.getSrcList(), elist.getDstList());
 
@@ -350,33 +353,51 @@ void benchmarkCSCSplitMM(int argc, char** argv, EdgeList& elist, int numCols, in
     float* xMat = (float*)_mm_malloc(testLen*sizeof(float), 64);
     float* yMat = (float*)_mm_malloc(testLen*sizeof(float), 64);
 
-#pragma omp parallel for
+#pragma omp parallel for num_threads(omp_get_max_threads())
     for (int i = 0; i < testLen; ++i) {
         xMat[i] = 2.0; 
         yMat[i] = 0.0; 
     }
 
-    // test CSC-Split SpMM
-    double computeElapsedTime = 0.0;
-    startTime = utility::timer();
-    computeElapsedTime = csrnaiveG.spmmSplitExp(xMat, yMat, numCols, comp_thds);
-    timeElapsed = (utility::timer() - startTime);
+    float* bufToFlushLlc = (float*)_mm_malloc(LLC_CAPACITY, 64);
 
-    printf("CSC-Split SpMM Compute using %f secs\n", computeElapsedTime/numCols);
-    printf("CSC-Split SpMM Total using %f secs\n", timeElapsed/numCols);
+#ifdef VTUNE
+        ofstream vtune_trigger;
+        vtune_trigger.open("vtune-flag.txt");
+        vtune_trigger << "Start training process and trigger vtune profiling.\n";
+        vtune_trigger.close();
+#endif
+
+    // test CSC-Split SpMM
+    for (int i = 0; i < iteration; ++i) {
+    
+        // flush out LLC
+        // for (int k = 0; k < 16; ++k) {
+        //     flushLlc(bufToFlushLlc);
+        // }
+
+    startTime = utility::timer();
+    csrnaiveG.spmmSplit(xMat, yMat, numCols, comp_thds);
+    timeElapsed += (utility::timer() - startTime);
+       
+    }
+
+    printf("CSC-Split SpMM total testing %f secs\n", timeElapsed);
+    printf("CSC-Split SpMM Compute using %f secs\n", timeElapsed/(numCols*iteration));
     printf("CSC-Split Arith Intensity %f\n", (flopsTotal/bytesTotal));
-    printf("CSC-Split Bd: %f GBytes/sec\n", bytesTotal*numCols/computeElapsedTime);
-    printf("CSC-Split Tht: %f GFLOP/sec\n", flopsTotal*numCols/computeElapsedTime);
+    printf("CSC-Split Bd: %f GBytes/sec\n", bytesTotal*numCols*iteration/timeElapsed);
+    printf("CSC-Split Tht: %f GFLOP/sec\n", flopsTotal*numCols*iteration/timeElapsed);
     std::fflush(stdout);           
 
     //check yMat
-    for (int i = 0; i < 10; ++i) {
-        printf("Elem: %d is: %f\n", i, yMat[i]); 
-        std::fflush(stdout);
-    }
+    // for (int i = 0; i < 10; ++i) {
+    //     printf("Elem: %d is: %f\n", i, yMat[i]); 
+    //     std::fflush(stdout);
+    // }
 
     _mm_free(xMat);
     _mm_free(yMat);
+    _mm_free(bufToFlushLlc);
 
 }
 
@@ -794,8 +815,10 @@ void arrayWiseFMAAVX(float** blockPtrDst,float** blockPtrA,float** blockPtrB, in
 // benchmark the EMA codes
 // element-wised vector multiplication and addition
 // with LLC flush
-void benchmarkEMA(int argc, char** argv, EdgeList& elist, int numCols, int comp_thds)
+void benchmarkEMA(int argc, char** argv, EdgeList& elist, int numCols, int comp_thds, int benchItr)
 {
+    int iteration = benchItr;
+
     printf("Start benchmarking eMA\n");
     std::fflush(stdout);           
 
@@ -844,12 +867,19 @@ void benchmarkEMA(int argc, char** argv, EdgeList& elist, int numCols, int comp_
        blockPtrB[i] = nullptr; 
     }
 
-    for (int j = 0; j < numCols; ++j) {
+#ifdef VTUNE
+        ofstream vtune_trigger;
+        vtune_trigger.open("vtune-flag.txt");
+        vtune_trigger << "Start training process and trigger vtune profiling.\n";
+        vtune_trigger.close();
+#endif
+
+    for (int j = 0; j < numCols*iteration; ++j) {
 
         // flush out LLC
-        for (int k = 0; k < 16; ++k) {
-            flushLlc(bufToFlushLlc);
-        }
+        // for (int k = 0; k < 16; ++k) {
+        //     flushLlc(bufToFlushLlc);
+        // }
 
         startTime = utility::timer();
         arrayWiseFMAAVX(blockPtrDst, blockPtrA, blockPtrB, blockSize, blockSizeBasic, 
@@ -858,10 +888,11 @@ void benchmarkEMA(int argc, char** argv, EdgeList& elist, int numCols, int comp_
         timeElapsed += (utility::timer() - startTime);
     }
 
-    printf("EMA using %f secs\n", timeElapsed/numCols);
+    printf("EMA using %f secs\n", timeElapsed);
+    printf("EMA using %f secs per col\n", timeElapsed/(numCols*iteration));
     printf("EMA Arith Intensity %f\n", (flopsTotal/bytesTotal));
-    printf("EMA Bd: %f GBytes/sec\n", bytesTotal*numCols/timeElapsed);
-    printf("EMA Tht: %f GFLOP/sec\n", flopsTotal*numCols/timeElapsed);
+    printf("EMA Bd: %f GBytes/sec\n", bytesTotal*numCols*iteration/timeElapsed);
+    printf("EMA Tht: %f GFLOP/sec\n", flopsTotal*numCols*iteration/timeElapsed);
     std::fflush(stdout);           
 
     _mm_free(xMat);
@@ -873,6 +904,121 @@ void benchmarkEMA(int argc, char** argv, EdgeList& elist, int numCols, int comp_
     free(blockPtrA);
     free(blockPtrB);
     free(blockSize);
+
+}
+
+void benchmarkEMAThdScale(int argc, char** argv, EdgeList& elist, int numCols, int comp_thds)
+{
+    int iteration = 50;
+
+    printf("Start benchmarking eMA\n");
+    std::fflush(stdout);           
+
+    double startTime = 0.0;
+    double timeElapsed = 0.0;
+
+    CSRGraph csrnaiveG;
+    csrnaiveG.createFromEdgeListFile(elist.getNumVertices(), elist.getNumEdges(), elist.getSrcList(), elist.getDstList(), false, false, true);
+
+    // a mul plus a add
+    double flopsTotal =  2*csrnaiveG.getNumVertices();
+    // z += x*y
+    // 3n read/write
+    double bytesTotal = sizeof(float)*(3*csrnaiveG.getNumVertices()); 
+    flopsTotal /= (1024*1024*1024);
+    bytesTotal /= (1024*1024*1024);
+
+    float* xMat = (float*)_mm_malloc(csrnaiveG.getNumVertices()*sizeof(float), 64);
+    float* yMat = (float*)_mm_malloc(csrnaiveG.getNumVertices()*sizeof(float), 64);
+    float* zMat = (float*)_mm_malloc(csrnaiveG.getNumVertices()*sizeof(float), 64);
+
+    #pragma omp parallel for
+    for (int i = 0; i < csrnaiveG.getNumVertices(); ++i) {
+        xMat[i] = 2.0;
+        yMat[i] = 2.0;
+        zMat[i] = 0.0;
+    }
+
+    float* bufToFlushLlc = (float*)_mm_malloc(LLC_CAPACITY, 64);
+
+    std::vector<int> thdsSpec;
+    thdsSpec.push_back(64);
+    thdsSpec.push_back(48);
+    thdsSpec.push_back(32);
+    thdsSpec.push_back(24);
+    thdsSpec.push_back(16);
+    thdsSpec.push_back(8);
+    thdsSpec.push_back(4);
+    thdsSpec.push_back(2);
+    thdsSpec.push_back(1);
+
+    for (int k = 0; k < thdsSpec.size(); ++k) 
+    {
+
+        comp_thds = thdsSpec[k];
+
+        int blockSizeBasic = csrnaiveG.getNumVertices()/comp_thds;
+        int* blockSize = (int*) malloc(comp_thds*sizeof(int));
+        for (int i = 0; i < comp_thds; ++i) {
+            blockSize[i] = blockSizeBasic; 
+        }
+        blockSize[comp_thds-1] = ((csrnaiveG.getNumVertices()%comp_thds == 0) ) ? blockSizeBasic : 
+            (blockSizeBasic + (csrnaiveG.getNumVertices()%comp_thds)); 
+
+        float** blockPtrDst = (float**) malloc(comp_thds*sizeof(float*));
+        float** blockPtrA = (float**) malloc(comp_thds*sizeof(float*));
+        float** blockPtrB = (float**) malloc(comp_thds*sizeof(float*));
+
+        for (int i = 0; i < comp_thds; ++i) {
+            blockPtrDst[i] = nullptr; 
+            blockPtrA[i] = nullptr; 
+            blockPtrB[i] = nullptr; 
+        }
+
+        // #ifdef VTUNE
+        //         ofstream vtune_trigger;
+        //         vtune_trigger.open("vtune-flag.txt");
+        //         vtune_trigger << "Start training process and trigger vtune profiling.\n";
+        //         vtune_trigger.close();
+        // #endif
+
+
+        timeElapsed = 0.0;
+
+        for (int j = 0; j < numCols*iteration; ++j) 
+        {
+
+            // flush out LLC
+            // for (int k = 0; k < 16; ++k) {
+            //     flushLlc(bufToFlushLlc);
+            // }
+
+            startTime = utility::timer();
+            arrayWiseFMAAVX(blockPtrDst, blockPtrA, blockPtrB, blockSize, blockSizeBasic, 
+                    zMat, xMat, yMat, comp_thds);
+
+            timeElapsed += (utility::timer() - startTime);
+        }
+
+        printf("EMA using %d Thds\n", comp_thds);
+        printf("EMA using %f secs\n", timeElapsed);
+        printf("EMA using %f secs per col\n", timeElapsed/(numCols*iteration));
+        printf("EMA Arith Intensity %f\n", (flopsTotal/bytesTotal));
+        printf("EMA Bd: %f GBytes/sec\n", bytesTotal*numCols*iteration/timeElapsed);
+        printf("EMA Tht: %f GFLOP/sec\n", flopsTotal*numCols*iteration/timeElapsed);
+        std::fflush(stdout);           
+
+        free(blockPtrDst);
+        free(blockPtrA);
+        free(blockPtrB);
+        free(blockSize);
+
+    }
+
+    _mm_free(xMat);
+    _mm_free(yMat);
+    _mm_free(zMat);
+    _mm_free(bufToFlushLlc);
 
 }
 
@@ -1185,8 +1331,9 @@ int main(int argc, char** argv)
     int vtuneStart = -1;
     // bool calculate_automorphism = true;
     bool calculate_automorphism = false;
+    int benchItr = 50;
 
-    int useSPMM = 0;
+    int useSPMM = 1;
     // bool useMKL = true;
     bool useMKL = false;
     // bool useRcm = true;
@@ -1194,8 +1341,8 @@ int main(int argc, char** argv)
     bool useCSC = true;
     // bool useCSC = false;
 
-    bool isBenchmark = true;
-    // bool isBenchmark = false;
+    // bool isBenchmark = true;
+    bool isBenchmark = false;
     // turn on this to estimate flops and memory bytes 
     // without running the codes
     bool isEstimate = false;
@@ -1216,6 +1363,9 @@ int main(int argc, char** argv)
 
     if (argc > 9)
         vtuneStart = atoi(argv[9]);
+
+    if (argc > 10)
+        benchItr = atoi(argv[10]);
 
     // end of arguments
     
@@ -1305,7 +1455,8 @@ int main(int argc, char** argv)
             std::fflush(stdout);           
 #endif
 
-            const int numCols = 64;
+
+            const int numCols = 16;
             // const int numCols = 100;
             // const int numCols = 10;
             
@@ -1340,10 +1491,13 @@ int main(int argc, char** argv)
             // benchmarkSpMVNaiveFullCSC(argc, argv, elist, numCols, comp_thds);
 
             // benchmarking CSC-Split MM
-            benchmarkCSCSplitMM(argc, argv, elist, numCols, comp_thds);
+            benchmarkCSCSplitMM(argc, argv, elist, numCols, comp_thds, benchItr);
 
             // benchmarking eMA 
-            // benchmarkEMA(argc, argv, elist, numCols, comp_thds);
+            // benchmarkEMA(argc, argv, elist, numCols, comp_thds, benchItr);
+            
+            // benchmark eMA thd scaling
+            // benchmarkEMAThdScale(argc, argv, elist, numCols, comp_thds);
 
 #ifdef VERBOSE
             printf("Finish benchmarking SpMV or SpMM\n");
