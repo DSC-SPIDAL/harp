@@ -1,6 +1,6 @@
 /*
  * Copyright 2013-2017 Indiana University
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -75,7 +75,7 @@ public class BenchmarkMapper extends
     int numWorkers = this.getNumWorkers();
     Random rand = new Random(workerID);
     if (cmd.equals("allreduce")) {
-      long startTime = System.currentTimeMillis();
+      long totalTime = 0;
       for (int i = 0; i < numIterations; i++) {
         Table<DoubleArray> arrTable =
           new Table<>(i, new DoubleArrPlus());
@@ -84,34 +84,24 @@ public class BenchmarkMapper extends
         for (int j = 0; j < numPartitions; j++) {
           DoubleArray array =
             DoubleArray.create(size, false);
-          array.get()[0] = rand.nextInt(1000);
-          array.get()[array.size() - 1] =
-            rand.nextInt(1000);
-          LOG.info("before allreduce: " + j + " "
-            + array.get()[0] + " "
-            + array.get()[array.size() - 1]);
+          for (int k = 0; k < array.size(); k++) {
+            array.get()[k] = rand.nextDouble();
+          }
           arrTable.addPartition(
             new Partition<>(j, array));
         }
+        long startTime = System.nanoTime();
         allreduce("main", "allreduce-" + i,
           arrTable);
-        for (Partition<DoubleArray> partition : arrTable
-          .getPartitions()) {
-          DoubleArray array = partition.get();
-          LOG.info(
-            "after allreduce: " + partition.id()
-              + " " + array.get()[0] + " "
-              + array.get()[array.size() - 1]);
-        }
+        totalTime+=(System.nanoTime() - startTime);
         arrTable.release();
       }
-      long endTime = System.currentTimeMillis();
       LOG.info("Total allreduce time: "
-        + (endTime - startTime)
-        + " number of iterations: "
+        + (totalTime)
+        + "ns number of iterations: "
         + numIterations);
     } else if (cmd.equals("allgather")) {
-      long startTime = System.currentTimeMillis();
+      long totalTime = 0;
       for (int i = 0; i < numIterations; i++) {
         Table<DoubleArray> arrTable =
           new Table<>(i, new DoubleArrPlus());
@@ -122,32 +112,21 @@ public class BenchmarkMapper extends
             workerID + numWorkers * j;
           DoubleArray array =
             DoubleArray.create(size, false);
-          array.get()[0] = rand.nextDouble();
-          array.get()[array.size() - 1] =
-            rand.nextDouble();
-          LOG.info(
-            "before allgather: " + partitionID
-              + " " + array.get()[0] + " "
-              + array.get()[array.size() - 1]);
+          for (int k = 0; k < array.size(); k++) {
+            array.get()[k] = rand.nextDouble();
+          }
           arrTable.addPartition(
             new Partition<DoubleArray>(
               partitionID, array));
         }
+        long startTime = System.nanoTime();
         allgather("main", "allgather-" + i,
           arrTable);
-        for (Partition<DoubleArray> partition : arrTable
-          .getPartitions()) {
-          DoubleArray array = partition.get();
-          LOG.info(
-            "after allgather: " + partition.id()
-              + " " + array.get()[0] + " "
-              + array.get()[array.size() - 1]);
-        }
+        totalTime+=(System.nanoTime() - startTime);
         arrTable.release();
       }
-      long endTime = System.currentTimeMillis();
       LOG.info("Total allgather time: "
-        + (endTime - startTime));
+        + (totalTime) + "ns");
     }
   }
 }
