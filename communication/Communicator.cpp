@@ -6,17 +6,6 @@
 #include <algorithm>
 #include "../util/Timing.h"
 
-template<class TYPE>
-void printTable(harp::ds::Table<TYPE> *table) {
-    for (auto p : *table->getPartitions()) {
-        std::cout << p.first << " : ";
-        for (int j = 0; j < p.second->getSize(); j++) {
-            std::cout << std::setprecision(10) << p.second->getData()[j] << ",";
-        }
-        std::cout << std::endl;
-    }
-}
-
 namespace harp {
     namespace com {
 

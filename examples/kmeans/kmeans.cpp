@@ -15,6 +15,8 @@
 
 #include "../../util/Timing.h"
 
+#include "../../util/Print.h"
+
 using namespace harp;
 using namespace harp::ds::util;
 using namespace harp::util::timing;
@@ -231,7 +233,7 @@ class KMeansWorker : public harp::Worker {
 //                                                    diff(TIME_BEFORE_WAIT, TIME_AFTER_WAIT) << std::endl;
 
         comm->barrier();
-        //printTable(myCentroids);
+        printTable(myCentroids);
 
         deleteTable(myCentroids, true);
         deleteTable(points, true);
