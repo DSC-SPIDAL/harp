@@ -254,6 +254,23 @@ struct BlockInfo{
     inline unsigned int GetFeatureBlkSize(){return ft_blksize;}
     inline unsigned int GetBinBlkSize(){return bin_blksize;}
 
+    // feature blk number per row
+    // ftnum = feature# + 1 (sum)
+    inline unsigned int GetFeatureBlkNum(int ftnum){
+        return ftnum / ft_blksize + ((ftnum % ft_blksize)?1:0);
+    }
+    inline unsigned int GetBinBlkNum(int binnum){
+        return binnum / bin_blksize + ((binnum % bin_blksize)?1:0);
+    }
+
+    // cube size (maximum) 
+    // not compact to make offset calculation easier
+    inline unsigned int GetModelCubeSize(int binnum, int ftnum, int nodenum){
+        return GetBinBlkNum(binnum) * bin_blksize *
+               GetFeatureBlkNum(ftnum) * ft_blksize *
+               nodenum;
+    }
+
     //init
     void init(int rownum, int ftnum, int binnum){
         //reset to maxvalue if size==0

@@ -134,12 +134,12 @@ void DMatrixCube::Init(const SparsePage& page, MetaInfo& info, int num_maxbins, 
     info_.num_col_ = info.num_col_;
     info_.num_nonzero_ = info.num_nonzero_;
 
-    blkInfo.init(info.num_row_, info_.num_col_, num_maxbins);
+    blkInfo.init(info.num_row_, info_.num_col_ + 1, num_maxbins);
 
     //init 
     data_.clear();
-    int row_blknum = (info.num_col_ + blkInfo.GetRowBlkSize() - 1)/ blkInfo.GetRowBlkSize(); 
-    int fid_blknum = (info.num_col_ + blkInfo.GetFeatureBlkSize() - 1)/ blkInfo.GetFeatureBlkSize(); 
+    int row_blknum = (info.num_row_ + blkInfo.GetRowBlkSize() - 1)/ blkInfo.GetRowBlkSize(); 
+    int fid_blknum = (info.num_col_ + 1 + blkInfo.GetFeatureBlkSize() - 1)/ blkInfo.GetFeatureBlkSize(); 
     int binid_blknum = (num_maxbins + blkInfo.GetBinBlkSize() - 1)/ blkInfo.GetBinBlkSize(); 
     data_.resize(fid_blknum * binid_blknum);
     //todo: init blkid if necessary
@@ -147,8 +147,12 @@ void DMatrixCube::Init(const SparsePage& page, MetaInfo& info, int num_maxbins, 
         data_[i].init(i);
     }
 
+    LOG(CONSOLE) << "BlockInfo: row_blksize=" << blkInfo.GetRowBlkSize() <<
+        ",fid_blksize=" << blkInfo.GetFeatureBlkSize() <<
+        ",binid_blksize=" << blkInfo.GetBinBlkSize();
+
     LOG(CONSOLE) << "CubeInit:row_blknum=" << row_blknum <<
-        "fid_blknum=" << fid_blknum << "binid_blknum=" << binid_blknum;
+        ",fid_blknum=" << fid_blknum << ",binid_blknum=" << binid_blknum;
 
     // rowset
     // go through all rows

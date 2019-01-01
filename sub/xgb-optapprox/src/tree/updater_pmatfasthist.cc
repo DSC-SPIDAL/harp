@@ -232,7 +232,7 @@ class HistMakerCompactFastHist: public BaseMaker {
     //}
 
     TStats& Get(int i) const{
-        return data[(i/block_height)*cross_block_step + i % block_height * in_block_step];
+        return data[(i/block_height)*cross_block_step + (i % block_height) * in_block_step];
     }
 
   };
@@ -295,32 +295,45 @@ class HistMakerCompactFastHist: public BaseMaker {
     //                  (featnum+1)*nodeSize);
     //}
 
+    // /* only for (0,0,n)
+    // *
+    // */
+    //inline HistUnit GetHistUnitByBlkid(size_t blkid, size_t nid) {
+    //  return HistUnit(cut, /* not use*/
+    //                  &data[0] + (pblkInfo->GetBinBlkSize()*(featnum+1))*(blkid * nodeSize + nid),
+    //                  pblkInfo->GetBinBlkSize()*(featnum+1));
+    //}
+
+    //
+    //inline HistUnit GetHistUnitByFid(size_t fid, size_t nid) {
+    //  return HistUnit(cut, /* not use*/
+    //                  &data[0] + nid*pblkInfo->GetBinBlkSize()*(featnum+1) + fid,
+    //                  rptr[fid+1] - rptr[fid],
+    //                  pblkInfo->GetBinBlkSize(),
+    //                  featnum,
+    //                  pblkInfo->GetBinBlkSize()*(featnum+1)*nodeSize);
+    //}
+
+
 
     /*
      * general version of blkinfo: (row,ft,bin_blk_size)
      */
-    //inline HistUnit GetHistUnitByBlkid(size_t blkid, size_t nid) {
-    //  return HistUnit(cut, /* not use*/
-    //                  &data[0] + (blkInfo.GetBinBlkSize()*blkInfo.GetFeatureBlkSize())*(blkid * nodeSize + nid),
-    //                  blkInfo.GetBinBlkSize()*blkInfo.GetFeatureBlkSize());
-    //}
-
-
-    // only for (0,0,n)
     inline HistUnit GetHistUnitByBlkid(size_t blkid, size_t nid) {
       return HistUnit(cut, /* not use*/
-                      &data[0] + (pblkInfo->GetBinBlkSize()*(featnum+1))*(blkid * nodeSize + nid),
-                      pblkInfo->GetBinBlkSize()*(featnum+1));
+                      &data[0] + (pblkInfo->GetBinBlkSize()*pblkInfo->GetFeatureBlkSize())*(blkid * nodeSize + nid),
+                      pblkInfo->GetBinBlkSize()*pblkInfo->GetFeatureBlkSize());
     }
 
-    
     inline HistUnit GetHistUnitByFid(size_t fid, size_t nid) {
+      int blkid = fid / pblkInfo->GetFeatureBlkSize();
+      unsigned int blkoff = (pblkInfo->GetBinBlkSize()*pblkInfo->GetFeatureBlkSize())*(blkid * nodeSize + nid);
       return HistUnit(cut, /* not use*/
-                      &data[0] + nid*pblkInfo->GetBinBlkSize()*(featnum+1) + fid,
+                      &data[0] + blkoff + fid % pblkInfo->GetFeatureBlkSize(),
                       rptr[fid+1] - rptr[fid],
                       pblkInfo->GetBinBlkSize(),
-                      featnum,
-                      pblkInfo->GetBinBlkSize()*(featnum+1)*nodeSize);
+                      pblkInfo->GetFeatureBlkSize(),
+                      pblkInfo->GetBinBlkSize()*pblkInfo->GetFeatureBlkSize()*pblkInfo->GetFeatureBlkNum(featnum+1)*nodeSize);
     }
 
 
@@ -357,12 +370,15 @@ class HistMakerCompactFastHist: public BaseMaker {
          * other than resort to remove the holes
          */
         //hset[tid].data.resize(cut.size() * nodesize, TStats(param));
-        hset[tid].data.resize(param.max_bin * (hset[tid].featnum+1) * nodesize, TStats(param));
+        //hset[tid].data.resize(param.max_bin * (hset[tid].featnum+1) * nodesize, TStats(param));
+        unsigned int cubesize = blkinfo.GetModelCubeSize(param.max_bin, hset[tid].featnum+1, nodesize);
+        hset[tid].data.resize(cubesize, TStats(param));
 
         LOG(CONSOLE)<< "Init hset: rptrSize:" << rptr.size() <<
             ",cutSize:" <<  cut.size() <<",nodesize:" << nodesize <<
             ",fsetSize:" << rptr.back() << ",max_depth:" << param.max_depth << 
-            ",featnum:" << hset[tid].featnum;
+            ",featnum:" << hset[tid].featnum <<
+            ",cubesize:" << cubesize ;
       }
     }
 
@@ -1035,6 +1051,8 @@ class HistMakerCompactFastHist: public BaseMaker {
         /*
         * OptApprox:: init bindid in p_fmat
         */
+        auto _info = p_fmat->Info();
+        this->blkInfo_.init(_info.num_row_, _info.num_col_+1, param_.max_bin);
         this->wspace_.Init(this->param_, 1, std::pow(2,this->param_.max_depth+1) /*256*/, this->blkInfo_);
 
         this->SetDefaultPostion(p_fmat, tree);
@@ -1119,6 +1137,8 @@ class HistMakerCompactFastHist: public BaseMaker {
           thread_hist_[i].resize(64);
         }
 
+        auto _info = p_fmat->Info();
+        this->blkInfo_.init(_info.num_row_, _info.num_col_+1, param_.max_bin);
         this->wspace_.Init(this->param_, 1, std::pow(2,this->param_.max_depth+1) /*256*/, blkInfo_);
 
 
