@@ -96,11 +96,16 @@ class CountMat {
 
         }
 
-        double estimateMemComm();
-        double estimateMemCommNonPruned();
 
-        double estimateFlops();
-        double estimateFlopsNonPruned();
+        double estimateFlopsPGBSC();
+        double estimateMemCommPGBSC();
+
+        double estimateFlopsFascia();
+        double estimateMemCommFascia();
+
+        double estimateFlopsPrunedFascia();
+        double estimateMemCommPrunedFascia();
+
 
         void degreeDistribution();
         double estimateTemplate();

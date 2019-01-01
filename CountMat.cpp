@@ -128,13 +128,33 @@ double CountMat::compute(Graph& templates, bool isEstimate)
 #endif
 
 #ifdef VERBOSE
+    // peak memory usage on a single node
     estimatePeakMemUsage();
-    estimateMemCommNonPruned();
-    estimateFlopsNonPruned();
-    // degreeDistribution();
 
-    double totalFlops = estimateFlops();
-    double totalMemBand = estimateMemComm();
+    // for flops of pruned color-coding
+    double totalFlops = estimateFlopsPGBSC();
+    double totalMemBand = estimateMemCommPGBSC();
+
+    printf("PGBSC Arith Intensity: %f\n", (totalFlops/totalMemBand));
+    std::fflush(stdout);
+
+    // for original color-coding algorithm
+    totalFlops = estimateFlopsFascia();
+    totalMemBand = estimateMemCommFascia();
+
+    printf("Fascia Arith Intensity: %f\n", (totalFlops/totalMemBand));
+    std::fflush(stdout);
+
+    // for original color-coding algorithm
+    totalFlops = estimateFlopsPrunedFascia();
+    totalMemBand = estimateMemCommPrunedFascia();
+
+    printf("Pruned Fascia Arith Intensity: %f\n", (totalFlops/totalMemBand));
+    std::fflush(stdout);
+
+    // for sparse input data distribution
+    degreeDistribution();
+
     estimateTemplate();
 
 #endif 
@@ -198,14 +218,25 @@ double CountMat::compute(Graph& templates, bool isEstimate)
     std::fflush(stdout);
     printf("Peak Mem Usage is : %9.6lf GB\n", _peakMemUsage);
     std::fflush(stdout);
-    printf("SpMV Memory bandwidth is : %f GBytes per second\n", (_spmvMemBytes*_itr_num)/_spmvElapsedTime);
+
+    printf("SpMM time is : %f second; EMA time is: %f \n", _spmvElapsedTime/_itr_num, _fmaElapsedTime/_itr_num);
+    std::fflush(stdout);
+
+    printf("SpMM Memory bandwidth is : %f GBytes per second\n", (_spmvMemBytes*_itr_num)/_spmvElapsedTime);
     std::fflush(stdout);
     printf("FMA Memory bandwidth is : %f GBytes per second\n", (_fmaMemBytes*_itr_num)/_fmaElapsedTime);
     std::fflush(stdout);
 
-    printf("SpMV Throughput is : %f Gflops per second\n", (_spmvFlops*_itr_num)/_spmvElapsedTime);
+    printf("Total Memory bandwidth is : %f GBytes per second\n", 
+            ((_spmvMemBytes+_fmaMemBytes)*_itr_num)/(_spmvElapsedTime + _fmaElapsedTime));
+    std::fflush(stdout);
+
+    printf("SpMM Throughput is : %f Gflops per second\n", (_spmvFlops*_itr_num)/_spmvElapsedTime);
     std::fflush(stdout);
     printf("FMA Throughput is : %f Gflops per second\n", (_fmaFlops*_itr_num)/_fmaElapsedTime);
+    std::fflush(stdout);
+    printf("Total Throughput is : %f Gflops per second\n", 
+            ((_spmvFlops+_fmaFlops)*_itr_num)/(_spmvElapsedTime+_fmaElapsedTime));
     std::fflush(stdout);
 
 #endif
@@ -1079,7 +1110,7 @@ void CountMat::estimatePeakMemUsage()
     std::fflush(stdout);
 }
 
-double CountMat::estimateMemComm()
+double CountMat::estimateMemCommPGBSC()
 {
 
     idxType n = 0; 
@@ -1097,11 +1128,9 @@ double CountMat::estimateMemComm()
     }
 
     double commBytesTotal = 0.0;
-    // Ax = y
-    // Val: n x + n y write + nnz val + Index: n rowIdx + nnz colIdx 
-    // double bytesSpmvPer = sizeof(float)*(2*n + nnz) + sizeof(int)*(nnz + n);
-    double bytesSpmvPer = sizeof(float)*(2*n) + sizeof(int)*(nnz + n);
-
+    // AB = C
+    // nnz row id, nnz col id, batch of 16 (nnz 16 + nnz 16 write)
+    double bytesSpmvPer = sizeof(float)*(2*(double)nnz) + sizeof(int)*((double)2*nnz/16);
     // z += x*y
     // read x, y, z 
     double bytesFMAPer = sizeof(float)*(n*3);
@@ -1130,13 +1159,13 @@ double CountMat::estimateMemComm()
 
     commBytesTotal = _spmvMemBytes + _fmaMemBytes;
 
-    printf("Comm Bytes estimated : SpMV %f GBytes, FMA %f GBytes \n", _spmvMemBytes, _fmaMemBytes);
+    printf("Comm Bytes estimated PGBSC : SpMV %f GBytes, FMA %f GBytes \n", _spmvMemBytes, _fmaMemBytes);
     std::fflush(stdout);
 
     return commBytesTotal;
 }
 
-double CountMat::estimateMemCommNonPruned()
+double CountMat::estimateMemCommFascia()
 {
 
     idxType n = 0; 
@@ -1154,9 +1183,12 @@ double CountMat::estimateMemCommNonPruned()
     }
 
     double commBytesTotal = 0.0;
-    // val: n passive + n active + n comb read/write + , Index: nnz colIdx, n rowIdx 
-    double bytpesByAux = sizeof(float)*(3*n) 
-        + sizeof(int)*(nnz+n);
+    double commBytesComb = sizeof(float)*(double)n + sizeof(int)*n;
+    double commBytesSplit = sizeof(float)*(n+(double)nnz) + sizeof(int)*2*(double)n;
+
+    // val: nnz passive + n active + n comb read/write + , Index: nnz colIdx, n rowIdx 
+    // double bytpesByAux = sizeof(float)*(3*n) 
+    //     + sizeof(int)*(nnz+n);
 
     for(int s=_total_sub_num-1;s>=0;s--)
     {
@@ -1166,20 +1198,68 @@ double CountMat::estimateMemCommNonPruned()
             int idxMain = div_tp.get_main_node_idx(s);
             int idxAux = div_tp.get_aux_node_idx(s);       
             
-            commBytesTotal += (_dTable.getTableLen(s)*indexer.comb_calc(vert_self, _subtmp_array[idxAux].get_vert_num())*
-                    (bytpesByAux));
-
+            commBytesTotal += (_dTable.getTableLen(s)*(commBytesComb));
+            commBytesTotal += (_dTable.getTableLen(s)*indexer.comb_calc(vert_self, _subtmp_array[idxAux].get_vert_num())*(commBytesSplit));
         }
     }
 
     commBytesTotal /= (1024*1024*1024);
-    printf("Comm Bytes NonPruned estimated:  %f GBytes\n", commBytesTotal);
+    printf("Comm Bytes Fascia estimated:  %f GBytes\n", commBytesTotal);
     std::fflush(stdout);
 
     return commBytesTotal;
 }
 
-double CountMat::estimateFlops()
+double CountMat::estimateMemCommPrunedFascia()
+{
+
+    idxType n = 0; 
+    idxType nnz = 0; 
+
+    if (_graph != nullptr)
+    {
+        n = _graph->getNumVertices();
+        nnz = _graph->getNNZ();
+    }
+    else
+    {
+        n = _graphCSC->getNumVertices();
+        nnz = _graphCSC->getNNZ();
+    }
+
+    double commBytesTotal = 0.0;
+    double commBytesPrune = sizeof(float)*(double)nnz;
+    double commBytesComb = sizeof(float)*(double)n + sizeof(int)*n;
+    double commBytesSplit = sizeof(float)*(2*(double)n) + sizeof(int)*2*(double)n;
+
+    for(int s=_total_sub_num-1;s>=0;s--)
+    {
+        int vert_self = _subtmp_array[s].get_vert_num();
+        if (vert_self > 1) {
+            
+            int idxMain = div_tp.get_main_node_idx(s);
+            int idxAux = div_tp.get_aux_node_idx(s);       
+     
+            if (_subtmp_array[idxAux].get_vert_num() > 1)
+            {
+                commBytesTotal += (commBytesPrune*_dTable.getTableLen(idxAux));
+            }       
+
+            commBytesTotal += (_dTable.getTableLen(s)*(commBytesComb));
+            commBytesTotal += (_dTable.getTableLen(s)*indexer.comb_calc(vert_self, _subtmp_array[idxAux].get_vert_num())*(commBytesSplit));
+        }
+    }
+
+    commBytesTotal /= (1024*1024*1024);
+    printf("Comm Bytes Pruned Fascia estimated:  %f GBytes\n", commBytesTotal);
+    std::fflush(stdout);
+
+    return commBytesTotal;
+}
+
+// estimate flops for pruned algorithm
+// with non-touching nnz val SpMV
+double CountMat::estimateFlopsPGBSC()
 {
     idxType n = 0; 
     idxType nnz = 0; 
@@ -1200,10 +1280,9 @@ double CountMat::estimateFlops()
     std::fflush(stdout);
 
     double flopsTotal = 0.0;
-    // double flopsSpmvPer = 2*nnz; 
     double flopsSpmvPer = nnz; 
     // n mul + n add
-    double flopsFMAPer = 2*n;
+    double flopsFMAPer = 2*(double)n;
 
     for(int s=_total_sub_num-1;s>=0;s--)
     {
@@ -1229,10 +1308,63 @@ double CountMat::estimateFlops()
 
     flopsTotal = _spmvFlops + _fmaFlops;
 
-    printf("Flops estimated : SpMV %f Gflop, FMA %f Gflop \n", _spmvFlops, _fmaFlops);
+    printf("Flops PGBSC estimated : SpMV %f Gflop, FMA %f Gflop \n", _spmvFlops, _fmaFlops);
     std::fflush(stdout);
 
     return flopsTotal;
+}
+
+// for flops with pruned fascia
+double CountMat::estimateFlopsPrunedFascia()
+{
+    idxType n = 0; 
+    idxType nnz = 0; 
+
+    if (_graph != nullptr)
+    {
+        n = _graph->getNumVertices();
+        nnz = _graph->getNNZ();
+    }
+    else
+    {
+        n = _graphCSC->getNumVertices();
+        nnz = _graphCSC->getNNZ();
+    }
+
+
+    printf("|V| is: %d, |E| nnz is: %d \n", n , nnz );
+    std::fflush(stdout);
+
+    double flopsTotal = 0.0;
+    // nnz summation + n mul + n addition
+    double flopsPrunedPer = nnz;
+    double flopsPer = 2*n;
+
+    for(int s=_total_sub_num-1;s>=0;s--)
+    {
+        int vert_self = _subtmp_array[s].get_vert_num();
+        if (vert_self > 1) {
+            
+            // spmv part
+            int idxMain = div_tp.get_main_node_idx(s);
+            int idxAux = div_tp.get_aux_node_idx(s);       
+            if (_subtmp_array[idxAux].get_vert_num() > 1)
+            {
+                flopsTotal += (flopsPrunedPer*_dTable.getTableLen(idxAux));
+            }           
+
+            flopsTotal += (_dTable.getTableLen(s)*indexer.comb_calc(vert_self, _subtmp_array[idxAux].get_vert_num())*
+                    flopsPer);
+        }
+    }
+
+    flopsTotal /= (1024*1024*1024);
+
+    printf("Flops estimated Pruned Fascia: %f Gflop\n", flopsTotal);
+    std::fflush(stdout);
+
+    return flopsTotal;
+
 }
 
 void CountMat::degreeDistribution()
@@ -1263,7 +1395,7 @@ void CountMat::degreeDistribution()
 
 }
 
-double CountMat::estimateFlopsNonPruned()
+double CountMat::estimateFlopsFascia()
 {
 
     idxType n = 0; 
@@ -1285,7 +1417,7 @@ double CountMat::estimateFlopsNonPruned()
 
     double flopsTotal = 0.0;
     // nnz summation + n mul + n addition
-    double flopsPer = nnz + 2*n;
+    double flopsPer = (double)nnz + 2*(double)n;
 
     for(int s=_total_sub_num-1;s>=0;s--)
     {
@@ -1303,7 +1435,7 @@ double CountMat::estimateFlopsNonPruned()
 
     flopsTotal /= (1024*1024*1024);
 
-    printf("Flops estimated Non Pruned: %f Gflop\n", flopsTotal);
+    printf("Flops estimated fascia: %f Gflop\n", flopsTotal);
     std::fflush(stdout);
 
     return flopsTotal;

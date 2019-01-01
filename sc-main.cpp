@@ -337,15 +337,20 @@ void benchmarkCSCSplitMM(int argc, char** argv, EdgeList& elist, int numCols, in
     CSCGraph<int32_t, float> csrnaiveG;
     csrnaiveG.createFromEdgeListFile(elist.getNumVertices(), elist.getNumEdges(), elist.getSrcList(), elist.getDstList());
 
-    double flopsTotal =  csrnaiveG.getNNZ();
+    double nnz = csrnaiveG.getNNZ();
+    double flopsTotalPerNNZ = numCols;
     // read n x, nnz val, write n y, Index col idx, row idx
-    double bytesTotal = sizeof(float)*(2*csrnaiveG.getNumVertices()) 
-        + sizeof(int)*(csrnaiveG.getNNZ() + csrnaiveG.getNumVertices()); 
+    // double bytesTotal = sizeof(float)*(2*csrnaiveG.getNumVertices()) 
+    //     + sizeof(int)*(csrnaiveG.getNNZ() + csrnaiveG.getNumVertices()); 
+    
+    // here CSC-Split SpMM has different memeory access from CSR-SpMV/SpMM
+    // nnz row id + nnz col id + nnz y val + numCol*nnz x val
+    double bytesTotalPerNNZ = sizeof(int)*2 + sizeof(float)*(1 + numCols); 
 
     csrnaiveG.splitCSC(4*comp_thds);
 
-    flopsTotal /= (1024*1024*1024);
-    bytesTotal /= (1024*1024*1024);
+    // flopsTotal /= (1024*1024*1024);
+    // bytesTotal /= (1024*1024*1024);
 
     // right-hand multiple vectors
     int testLen = csrnaiveG.getNumVertices()*numCols;
@@ -384,9 +389,9 @@ void benchmarkCSCSplitMM(int argc, char** argv, EdgeList& elist, int numCols, in
 
     printf("CSC-Split SpMM total testing %f secs\n", timeElapsed);
     printf("CSC-Split SpMM Compute using %f secs\n", timeElapsed/(numCols*iteration));
-    printf("CSC-Split Arith Intensity %f\n", (flopsTotal/bytesTotal));
-    printf("CSC-Split Bd: %f GBytes/sec\n", bytesTotal*numCols*iteration/timeElapsed);
-    printf("CSC-Split Tht: %f GFLOP/sec\n", flopsTotal*numCols*iteration/timeElapsed);
+    printf("CSC-Split Arith Intensity %f\n", (flopsTotalPerNNZ/bytesTotalPerNNZ));
+    printf("CSC-Split Bd: %f GBytes/sec\n", (bytesTotalPerNNZ*(nnz/(1024*1024*1024)))/(timeElapsed/iteration));
+    printf("CSC-Split Tht: %f GFLOP/sec\n", (flopsTotalPerNNZ*(nnz/(1024*1024*1024)))/(timeElapsed/iteration));
     std::fflush(stdout);           
 
     //check yMat
@@ -907,9 +912,9 @@ void benchmarkEMA(int argc, char** argv, EdgeList& elist, int numCols, int comp_
 
 }
 
-void benchmarkEMAThdScale(int argc, char** argv, EdgeList& elist, int numCols, int comp_thds)
+void benchmarkEMAThdScale(int argc, char** argv, EdgeList& elist, int numCols, int comp_thds, int benchItr)
 {
-    int iteration = 50;
+    int iteration = benchItr;
 
     printf("Start benchmarking eMA\n");
     std::fflush(stdout);           
@@ -1331,7 +1336,7 @@ int main(int argc, char** argv)
     int vtuneStart = -1;
     // bool calculate_automorphism = true;
     bool calculate_automorphism = false;
-    int benchItr = 50;
+    int benchItr = 10;
 
     int useSPMM = 1;
     // bool useMKL = true;
@@ -1491,13 +1496,13 @@ int main(int argc, char** argv)
             // benchmarkSpMVNaiveFullCSC(argc, argv, elist, numCols, comp_thds);
 
             // benchmarking CSC-Split MM
-            benchmarkCSCSplitMM(argc, argv, elist, numCols, comp_thds, benchItr);
+            // benchmarkCSCSplitMM(argc, argv, elist, numCols, comp_thds, benchItr);
 
             // benchmarking eMA 
-            // benchmarkEMA(argc, argv, elist, numCols, comp_thds, benchItr);
+            benchmarkEMA(argc, argv, elist, numCols, comp_thds, benchItr);
             
             // benchmark eMA thd scaling
-            // benchmarkEMAThdScale(argc, argv, elist, numCols, comp_thds);
+            // benchmarkEMAThdScale(argc, argv, elist, numCols, comp_thds, benchItr);
 
 #ifdef VERBOSE
             printf("Finish benchmarking SpMV or SpMM\n");
