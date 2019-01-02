@@ -1,13 +1,12 @@
 /*!
  * Copyright 2014 by Contributors
- * \file updater_HistMakerCompactFastHist.cc
+ * \file updater_HistMakerBNF.cc
  * \brief use histogram counting to construct a tree
  * \author Tianqi Chen
  */
 #include <xgboost/base.h>
 #include <xgboost/tree_updater.h>
 #include <vector>
-#include <atomic>
 #include <algorithm>
 #include "../data/compact_dmatrix.h"
 #include "../common/sync.h"
@@ -38,39 +37,26 @@ namespace tree {
 
 using xgboost::common::HistCutMatrix;
 
-DMLC_REGISTRY_FILE_TAG(updater_pmatfasthist);
-
-class spin_mutex {
-    std::atomic_flag flag = ATOMIC_FLAG_INIT;
-    public:
-    spin_mutex() = default;
-    spin_mutex(const spin_mutex&) = delete;
-    spin_mutex& operator= (const spin_mutex&) = delete;
-    void lock() {
-        while(flag.test_and_set(std::memory_order_acquire))
-            ;
-    }
-    void unlock() {
-        flag.clear(std::memory_order_release);
-    }
-};
-
+/*
+ * General BNF support (0,x,x)
+ *
+ */
+DMLC_REGISTRY_FILE_TAG(updater_bnf);
 
 template<typename TStats>
-class HistMakerCompactFastHist: public BaseMaker {
+class HistMakerBNF: public BaseMaker {
  public:
 
- HistMakerCompactFastHist(){
+ HistMakerBNF(){
 
       this->isInitializedHistIndex = false;
       p_blkmat = new DMatrixCube();
       p_hmat = new DMatrixCompactBlockDense();
   }
 
-  ~HistMakerCompactFastHist(){
+  ~HistMakerBNF(){
     delete p_hmat;
     delete p_blkmat;
-    if(bwork_lock_) delete bwork_lock_;
   }
 
   TimeInfo getTimeInfo() override{
@@ -442,7 +428,7 @@ class HistMakerCompactFastHist: public BaseMaker {
   };
 
   struct HistEntry {
-    typename HistMakerCompactFastHist<TStats>::HistUnit hist;
+    typename HistMakerBNF<TStats>::HistUnit hist;
     //unsigned istart;
 
     /* OptApprox:: init bindid in pmat */
@@ -604,11 +590,11 @@ class HistMakerCompactFastHist: public BaseMaker {
    */
     class BuildHistTask: public tbb::task {
         TreeNode* root;
-        HistMakerCompactFastHist* ctx;
+        HistMakerBNF* ctx;
         bool is_continuation;
 
     public:
-        BuildHistTask( TreeNode* root_, HistMakerCompactFastHist* ctx_ ) : 
+        BuildHistTask( TreeNode* root_, HistMakerBNF* ctx_ ) : 
             root(root_), ctx(ctx_), is_continuation(false){}
 
         task* execute() /*override*/ {
@@ -677,10 +663,6 @@ class HistMakerCompactFastHist: public BaseMaker {
 
   //binid as workset
   std::vector<bst_uint> bwork_set_;
-  unsigned bwork_base_blknum_;
-  //row blk scheduler
-  //std::vector<spin_mutex> bwork_lock_;
-  spin_mutex* bwork_lock_{nullptr};
 
   std::vector<bst_uint> fsplit_set_;
 
@@ -1075,7 +1057,6 @@ class HistMakerCompactFastHist: public BaseMaker {
         */
         auto _info = p_fmat->Info();
         this->blkInfo_.init(_info.num_row_, _info.num_col_+1, param_.max_bin);
-
         this->wspace_.Init(this->param_, 1, std::pow(2,this->param_.max_depth+1) /*256*/, this->blkInfo_);
 
         this->SetDefaultPostion(p_fmat, tree);
@@ -1124,16 +1105,6 @@ class HistMakerCompactFastHist: public BaseMaker {
         for(int i=0; i < p_blkmat->GetBlockNum(); i++){
             bwork_set_.push_back(i);
         }
-        // the map used by scheduler
-        this->bwork_base_blknum_ = this->blkInfo_.GetBaseBlkNum(_info.num_col_+1, param_.max_bin);
-        bwork_lock_ = new spin_mutex[bwork_base_blknum_];
-        //this->bwork_lock_.resize(bwork_base_blknum_);
-        //std::fill(bwork_lock_.begin(), bwork_lock_.end(), ATOMIC_FLAG_INIT);
-        //for(int ii=0;ii<bwork_base_blknum_;ii++){
-        //    bwork_lock_[ii] = ATOMIC_FLAG_INIT;
-        //}
-
-        LOG(CONSOLE) << "Init bwork_set_: base_blknum=" << bwork_base_blknum_;
         printVec("bwork_set_:", bwork_set_);
 
         #ifndef USE_OMP_BUILDHIST
@@ -1310,7 +1281,7 @@ class HistMakerCompactFastHist: public BaseMaker {
   #define CHECKHALFCOND (nid>=0)
   #endif
 
-  void UpdateHistBlockAll(const std::vector<GradientPair> &gpair,
+  void UpdateHistBlock(const std::vector<GradientPair> &gpair,
                             const DMatrixCubeZCol &zcol,
                             const MetaInfo &info,
                             const RegTree &tree,
@@ -1414,124 +1385,6 @@ class HistMakerCompactFastHist: public BaseMaker {
     this->tminfo.aux_time[0] += dmlc::GetTime() - _tstart;
 #endif
   }
-
-  //
-  //single block 
-  //
-  void UpdateHistBlock(const std::vector<GradientPair> &gpair,
-                            const DMatrixCubeBlock &block,
-                            const MetaInfo &info,
-                            const RegTree &tree,
-                            bst_uint blkid_offset,
-                            int zblkid,
-                            std::vector<HistEntry> *p_temp) {
-
-    //get lock
-    bwork_lock_[blkid_offset].lock();
-
-
-    // initialize sbuilder for use
-    std::vector<HistEntry> &hbuilder = *p_temp;
-    hbuilder.resize(tree.param.num_nodes);
-    for (size_t i = 0; i < this->qexpand_.size(); ++i) {
-      const unsigned nid = this->qexpand_[i];
-      //const unsigned wid = this->node2workindex_[nid];
-      hbuilder[nid].hist = this->wspace_.hset[0].GetHistUnitByBlkid(blkid_offset, nid);
-    }
-
-    //int blockNum = zcol.GetBlockNum();
-    //for(int blkid = 0; blkid < blockNum; blkid++){
-    //    const auto block = zcol.GetBlock(blkid);
-    {
-        //one block
-        #ifdef USE_UNROLL
-        if (TStats::kSimpleStats != 0 && this->param_.cache_opt != 0) {
-        #else
-        if (0){
-        #endif
-
-          constexpr bst_uint kBuffer = 32;
-          bst_uint align_length = block.size() / kBuffer * kBuffer;
-          int buf_position[kBuffer];
-          GradientPair buf_gpair[kBuffer];
-
-          for (bst_uint j = 0; j < align_length; j += kBuffer) {
-            
-            #pragma ivdep
-            for (bst_uint i = 0; i < kBuffer; ++i) {
-              bst_uint ridx = block._index(j+i);
-              buf_position[i]= this->DecodePosition(ridx);
-              //const int nid = buf_position[i];
-              //if (CHECKHALFCOND) {
-                  buf_gpair[i] = gpair[ridx];
-              //}
-            }
-            for (bst_uint i = 0; i < kBuffer; ++i) {
-              const int nid = buf_position[i];
-                if (CHECKHALFCOND) {
-                  for (int k = 0; k < block.rowsize(j+i); k++){
-                    hbuilder[nid].AddWithIndex(block._blkaddr(j+i, k), buf_gpair[i]);
-                  }
-
-                }
-            }
-          }
-          for (bst_uint j = align_length; j < block.size(); ++j) {
-            const bst_uint ridx = block._index(j);
-            //const int nid = this->DecodePosition(ridx);
-            const int nid = this->position_[ridx];
-
-            if (CHECKHALFCOND) {
-                  for (int k = 0; k < block.rowsize(j); k++){
-                      hbuilder[nid].AddWithIndex(block._blkaddr(j, k), gpair[ridx]);
-                  }
-            }
-          }
-        } else {
-          //#pragma ivdep
-          //#pragma omp simd
-          for (bst_uint j = 0; j < block.size(); ++j) {
-            const bst_uint ridx = block._index(j);
-            //const int nid = this->DecodePosition(ridx);
-            const int nid = this->position_[ridx];
-            if (CHECKHALFCOND) {
-              for (int k = 0; k < block.rowsize(j); k++){
-                hbuilder[nid].AddWithIndex(block._blkaddr(j, k), gpair[ridx]);
-              }
-            }
-          }
-        }
-    } /*blk*/
-
-#ifdef USE_HALFTRICK
-    double _tstart = dmlc::GetTime();
-    //get the right node
-    const unsigned nid_start = this->qexpand_[0];
-    if (nid_start == 0)
-        return;
-
-    CHECK_NE(nid_start % 2, 0);
-    unsigned nid_parent = (nid_start+1)/2-1;
-    for (size_t i = 0; i < this->qexpand_.size(); i+=2) {
-      const unsigned nid = this->qexpand_[i];
-      auto parent_hist = this->wspace_.hset[0].GetHistUnitByBlkid(blkid_offset, nid_parent + i/2);
-      #pragma ivdep
-      #pragma omp simd
-      for(int j=0; j < hbuilder[nid].hist.size; j++){
-        hbuilder[nid].hist.Get(j).SetSubstract(
-                parent_hist.Get(j),
-                hbuilder[nid+1].hist.Get(j));
-      }
-
-    }
-    this->tminfo.aux_time[0] += dmlc::GetTime() - _tstart;
-#endif
-
-    //quit
-    bwork_lock_[blkid_offset].unlock();
-
-  }
-
 
   //dup func
   void CorrectNonDefaultPositionByBatch2(
@@ -1647,19 +1500,12 @@ class HistMakerCompactFastHist: public BaseMaker {
         double _tstart = dmlc::GetTime();
         #ifdef USE_OMP_BUILDHIST
         const auto nsize = static_cast<bst_omp_uint>(blkset.size());
-        const auto zsize = p_blkmat->GetBlockZCol(0).GetBlockNum();
-
         #pragma omp parallel for schedule(dynamic, 1)
-        for (bst_omp_uint i = 0; i < nsize * zsize; ++i) {
-          //int blkid = blkset[i];
-          //int offset = blkid;
-          int blkid = i;
-          int offset = blkid % nsize;
-          int zblkid = i / nsize;
-          auto block = p_blkmat->GetBlockZCol(offset).GetBlock(zblkid);
-
-          this->UpdateHistBlock(gpair, block, info, tree,
-                offset, zblkid, 
+        for (bst_omp_uint i = 0; i < nsize; ++i) {
+          int blkid = blkset[i];
+          int offset = blkid;
+          this->UpdateHistBlock(gpair, p_blkmat->GetBlockZCol(blkid), info, tree,
+                offset,
                 &this->thread_hist_[omp_get_thread_num()]);
         }
 
@@ -1750,10 +1596,10 @@ class HistMakerCompactFastHist: public BaseMaker {
 };
 
 
-XGBOOST_REGISTER_TREE_UPDATER(HistMakerCompactFastHist, "grow_pmatfasthist")
+XGBOOST_REGISTER_TREE_UPDATER(HistMakerBNF, "grow_bnf")
 .describe("Tree constructor that uses approximate global of histogram construction.")
 .set_body([]() {
-    return new HistMakerCompactFastHist<GradStats>();
+    return new HistMakerBNF<GradStats>();
   });
 }  // namespace tree
 }  // namespace xgboost

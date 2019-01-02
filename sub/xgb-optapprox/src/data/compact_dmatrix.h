@@ -262,6 +262,11 @@ struct BlockInfo{
     inline unsigned int GetBinBlkNum(int binnum){
         return binnum / bin_blksize + ((binnum % bin_blksize)?1:0);
     }
+    // the base plain size, the (bin, ft) plain
+    inline unsigned int GetBaseBlkNum(int ftnum, int binnum){
+        return GetBinBlkNum(binnum) * GetFeatureBlkNum(ftnum);
+    }
+
 
     // cube size (maximum) 
     // not compact to make offset calculation easier
