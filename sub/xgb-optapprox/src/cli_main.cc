@@ -81,7 +81,9 @@ struct CLIParam : public dmlc::Parameter<CLIParam> {
   std::vector<std::string> eval_data_names;
   /*! \brief all the configurations */
   std::vector<std::pair<std::string, std::string> > cfg;
-
+  /*! \brief the period to eval the model, 0 means only eval the final round model */
+  int eval_period;
+ 
 
   // declare parameters
   DMLC_DECLARE_PARAMETER(CLIParam) {
@@ -133,6 +135,9 @@ struct CLIParam : public dmlc::Parameter<CLIParam> {
     DMLC_DECLARE_ALIAS(test_path, test:data);
     DMLC_DECLARE_ALIAS(name_fmap, fmap);
 
+    DMLC_DECLARE_FIELD(eval_period).set_default(0).set_lower_bound(0)
+        .describe("The period to eval the model, 0 means only eval final model.");
+ 
    
   }
   // customized configure function of CLIParam
@@ -237,17 +242,30 @@ void CLITrain(const CLIParam& param) {
       }
       version += 1;
     }
-    //CHECK_EQ(version, rabit::VersionNumber());
-    //std::string res = learner->EvalOneIter(i, eval_datasets, eval_data_names);
-    //if (rabit::IsDistributed()) {
-    //  if (rabit::GetRank() == 0) {
-    //    LOG(TRACKER) << res;
-    //  }
-    //} else {
-    //  if (param.silent < 2) {
-    //    LOG(CONSOLE) << res;
-    //  }
-    //}
+
+    /*
+     * add output evaluation result
+     */
+    if (param.silent < 2 &&
+        param.eval_period != 0 &&
+        (i + 1) % param.eval_period == 0) {
+ 
+        CHECK_EQ(version, rabit::VersionNumber());
+        std::string res = learner->EvalOneIter(i, eval_datasets, eval_data_names);
+        if (rabit::IsDistributed()) {
+          if (rabit::GetRank() == 0) {
+            LOG(TRACKER) << res;
+          }
+        } else {
+          if (param.silent < 2) {
+            LOG(CONSOLE) << res;
+          }
+        }
+    }
+
+    /*
+     * save model
+     */
     if (param.save_period != 0 &&
         (i + 1) % param.save_period == 0 &&
         rabit::GetRank() == 0) {
@@ -268,6 +286,23 @@ void CLITrain(const CLIParam& param) {
     version += 1;
     CHECK_EQ(version, rabit::VersionNumber());
   }
+
+  //eval the final model
+  if (param.silent < 2 && param.eval_period != 0 && 
+          (param.num_round % param.eval_period) != 0){
+      CHECK_EQ(version, rabit::VersionNumber());
+      std::string res = learner->EvalOneIter(param.num_round, eval_datasets, eval_data_names);
+      if (rabit::IsDistributed()) {
+        if (rabit::GetRank() == 0) {
+          LOG(TRACKER) << res;
+        }
+      } else {
+        if (param.silent < 2) {
+          LOG(CONSOLE) << res;
+        }
+      }
+  }
+
   // always save final round
   if ((param.save_period == 0 || param.num_round % param.save_period != 0) &&
       param.model_out != "NONE" &&
