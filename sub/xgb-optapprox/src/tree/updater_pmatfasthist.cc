@@ -64,7 +64,7 @@ class HistMakerCompactFastHist: public BaseMaker {
 
       this->isInitializedHistIndex = false;
       p_blkmat = new DMatrixCube();
-      p_hmat = new DMatrixCompactBlockDense();
+      p_hmat = new DMatrixCompactBlock();
   }
 
   ~HistMakerCompactFastHist(){
@@ -116,7 +116,7 @@ class HistMakerCompactFastHist: public BaseMaker {
         //task graph
         std::vector<TreeNode*> children_;
     
-        void init(DMatrixCompactBlockDense& dmat, int fid, int blockid, int blockSize){
+        void init(DMatrixCompactBlock& dmat, int fid, int blockid, int blockSize){
             
             children_.clear();
 
@@ -176,7 +176,7 @@ class HistMakerCompactFastHist: public BaseMaker {
             return tbb::scalable_allocator<TreeNode>().allocate(1);
             //return true? tbb::scalable_allocator<TreeNode>().allocate(1) : new TreeNode;
         }
-        static TreeNode* create(DMatrixCompactBlockDense& dmat, int blocksize) {
+        static TreeNode* create(DMatrixCompactBlock& dmat, int blocksize) {
             TreeNode* root = allocate_node();
             root->init(dmat, -1, -1, blocksize);
     
@@ -716,7 +716,7 @@ class HistMakerCompactFastHist: public BaseMaker {
 
  // hist mat compact
   DMatrixCube* p_blkmat;
-  DMatrixCompactBlockDense* p_hmat;
+  DMatrixCompactBlock* p_hmat;
 
   //for predict cache
   const RegTree* p_last_tree_;
@@ -957,7 +957,9 @@ class HistMakerCompactFastHist: public BaseMaker {
     std::fill(feat2workindex_.begin(), feat2workindex_.end(), -1);
 
     for (auto fidx : fset) {
-      if (feat_helper_.Type(fidx) == 2) {
+      // Type: 0 empty, 1 binary, 2 real
+      //if (feat_helper_.Type(fidx) == 2) {
+      if (feat_helper_.Type(fidx) > 0) {
         feat2workindex_[fidx] = static_cast<int>(work_set_.size());
         work_set_.push_back(fidx);
       } else {
@@ -1535,7 +1537,7 @@ class HistMakerCompactFastHist: public BaseMaker {
 
   //dup func
   void CorrectNonDefaultPositionByBatch2(
-      DMatrixCompactBlockDense &batch, const std::vector<bst_uint> &sorted_split_set,
+      DMatrixCompactBlock &batch, const std::vector<bst_uint> &sorted_split_set,
       const RegTree &tree) {
     for (size_t fid = 0; fid < batch.Size(); ++fid) {
       auto col = batch[fid];
@@ -1603,12 +1605,12 @@ class HistMakerCompactFastHist: public BaseMaker {
 
       const auto nrows = static_cast<bst_omp_uint>(p_fmat->Info().num_row_);
       for(int ridx=0; ridx < nrows; ridx++){
-        //const int nid = this->DecodePosition(ridx);
-        const int nid = this->position_[ridx];
-        if (nid>=0){
+        const int nid = this->DecodePosition(ridx);
+        //const int nid = this->position_[ridx];
+        //if (nid>=0){
             //update   
             out_preds[ridx] += leaf_values[nid];
-        }
+        //}
       }
 
       LOG(CONSOLE) << "UpdatePredictionCache: nodes size=" << 

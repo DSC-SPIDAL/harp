@@ -43,6 +43,7 @@ void printtree(RegTree* ptree, std::string header="");
 void printdmat(DMatrixCube& dmat);
 void printdmat(DMatrixCompactDense& dmat);
 void printdmat(DMatrixCompactBlockDense& dmat);
+void printdmat(DMatrixCompactBlock& dmat);
 void printdmat(DMatrixCompact& dmat);
 void printdmat(const SparsePage& dmat);
 void printgmat(GHistIndexMatrix& gmat);

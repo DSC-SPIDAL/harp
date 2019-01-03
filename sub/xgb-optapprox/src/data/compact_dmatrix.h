@@ -225,6 +225,101 @@ class DMatrixCompactBlockDense : public xgboost::data::SparsePageDMatrix {
 };
 
 /*
+ * General BinId only Column-wised Matrix
+ *  It's a sparse structure
+ *      rowid: <binid>
+*/
+class DMatrixCompactColBlock {
+  private:
+      const EntryCompact* data_;
+      size_t len_;
+      size_t base_rowid_;
+      //int fid_;
+
+  public:
+
+  DMatrixCompactColBlock(const EntryCompact* data, size_t len, size_t base):
+      data_(data), len_(len), base_rowid_{base}{
+  
+      //todo: EntryCompact format, index has 24 bits address which is 16M
+      //      for larger dataset, split into blocks and set base_rowid correspondingly
+      CHECK_LT(len, 0x1000000);
+      }
+
+  /*
+   * no support for block interface in sparse version, use cube instead
+   */
+  ////block interface
+  inline size_t getBlockNum(size_t blockSize) const{return 0;}
+  inline DMatrixCompactColBlock getBlock(size_t blockid, size_t blockSize) const {
+        return {data_, len_, 0};
+  }
+  //inline size_t getBlockNum(size_t blockSize) const{
+  //  return (blockSize<=0)? 1: len_ / blockSize + ((len_%blockSize)?1:0);
+  //}
+
+  //inline DMatrixCompactColBlock getBlock(size_t blockid, size_t blockSize) const {
+  //  if ( blockSize <= 0 )
+  //      return {data_, len_, 0};
+  //  else
+  //      return {data_ + static_cast<size_t>(blockid * blockSize),
+  //          static_cast<size_t>( ((blockid+1)*blockSize > len_)? len_ - blockid*blockSize: blockSize),
+  //          blockid*blockSize};
+  //}
+
+  void setEmpty(){
+      len_ = 0;
+  }
+
+  //elem interface
+  inline unsigned int _binid(size_t i) const {
+    return static_cast<unsigned int>(data_[i]._binid());
+  }
+  inline unsigned int _index(size_t i) const {
+    return base_rowid_ + data_[i]._index();
+  }
+  inline size_t size() const{
+    return len_;
+  }
+
+};
+
+
+class DMatrixCompactBlock : public xgboost::data::SparsePageDMatrix {
+ 
+ private:
+     std::vector<EntryCompact> data;
+     std::vector<size_t> offset;
+     MetaInfo info_;
+
+ public:
+  explicit DMatrixCompactBlock(){}
+
+  //initialize
+  void Init(const SparsePage& page, MetaInfo& info);
+
+  //using Inst = common::Span<EntryCompact const>;
+
+  inline DMatrixCompactColBlock operator[](size_t i) const {
+    return {data.data() + offset[i],
+            static_cast<size_t>(offset[i + 1] - offset[i]), 0};
+  }
+
+  inline int Size(){
+    return offset.size() - 1; 
+  }
+
+  MetaInfo& Info() override{
+      return info_;
+  }
+  const MetaInfo& Info() const override{
+      return info_;
+  }
+};
+
+
+
+/*
  * General Block-based Matrix
  * 3-d cube with 
  *      base block are <binid, fid> 
