@@ -23,17 +23,6 @@ TYPE_HASH(long);
 TYPE_HASH(float);
 TYPE_HASH(double);
 
-//void *createArray(DataType dataType, int size) {
-//    switch (dataType) {
-//        case HP_INT:
-//            return new int[size];
-//        case HP_LONG:
-//            return new long[size];
-//        case HP_FLOAT:
-//            return new float[size];
-//    }
-//}
-
 template<class TYPE>
 MPI_Datatype getMPIDataType() {
     size_t hash = typeid(TYPE).hash_code();

@@ -13,7 +13,7 @@
 
 
 #include <iostream>
-#include "../../data_structures/inculdes.h"
+#include "../../data_structures/DataStructures.h"
 #include "../math/HarpMath.h"
 #include "float.h"
 

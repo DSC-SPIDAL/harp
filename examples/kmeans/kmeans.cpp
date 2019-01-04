@@ -1,5 +1,5 @@
 #include <iostream>
-#include "../../data_structures/inculdes.h"
+#include "../../data_structures/DataStructures.h"
 #include "../../worker/Worker.h"
 #include <time.h>
 #include "../generators/DataGenerator.h"

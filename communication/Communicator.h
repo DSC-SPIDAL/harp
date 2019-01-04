@@ -3,7 +3,7 @@
 
 #include <iostream>
 #include "mpi.h"
-#include "../data_structures/inculdes.h"
+#include "../data_structures/DataStructures.h"
 #include "../util/ThreadPool.h"
 #include "future"
 

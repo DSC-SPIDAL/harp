@@ -18,6 +18,7 @@
 #include <thread>
 #include <cstdlib>
 #include "DataGenerator.h"
+#include "../../data_structures/DataStructures.h"
 
 namespace harp {
     namespace util {

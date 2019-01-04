@@ -14,7 +14,7 @@
 #ifndef HARPC_HARP_H
 #define HARPC_HARP_H
 
-#include "data_structures/inculdes.h"
+#include "data_structures/DataStructures.h"
 #include "worker/Worker.h"
 
 #endif //HARPC_HARP_H
