@@ -131,6 +131,8 @@ struct LearnerTrainParam : public dmlc::Parameter<LearnerTrainParam> {
         .add_enum("ftprune", 14)
         .add_enum("bnf00x", 15)
         .add_enum("bnf", 16)
+        .add_enum("block", 17)
+        .add_enum("blockdense", 18)
         .describe("Choice of tree construction method.");
     DMLC_DECLARE_FIELD(test_flag).set_default("").describe(
         "Internal test flag");
@@ -202,6 +204,12 @@ class LearnerImpl : public Learner {
       cfg_["updater"] = "grow_bnf00x,prune";
      } else if (tparam_.tree_method == 16) {
       cfg_["updater"] = "grow_bnf,prune";
+     } else if (tparam_.tree_method == 17) {
+      cfg_["updater"] = "grow_block,prune";
+     } else if (tparam_.tree_method == 18) {
+      cfg_["updater"] = "grow_blockdense,prune";
+
+
 
  } else if (tparam_.tree_method == 3) {
 

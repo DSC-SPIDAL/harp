@@ -386,6 +386,214 @@ struct BlockInfo{
     }
 };
 
+/*
+ * dense cube : 
+ *      when bin_block_num is smaller than 8, special case as 1
+ *      no row_offset stored as in dense cube, rowsize is regular
+ *      so as to blk_offset_
+ */
+
+class DMatrixDenseCubeBlock {
+    //
+    // Access by iterating on the blk row index
+    // binid is now a general concept of 'blkaddr' inside one block on the binid-fid plain
+    //
+    public:
+        const BlkAddrType* data_;
+        //const PtrType* row_offset_;
+        const PtrType rowsize_;
+
+        PtrType len_;
+
+        PtrType base_rowid_;
+
+    DMatrixDenseCubeBlock(const BlkAddrType* data, PtrType rowsize,
+            PtrType len, PtrType base):
+        data_(data), rowsize_(rowsize), len_(len), base_rowid_{base}{}
+
+    //elem interface
+    inline int rowsize(int i) const{
+        //return row_offset_[i+1] - row_offset_[i];
+        return rowsize_;
+    }
+
+    inline BlkAddrType _blkaddr(int i, int j) const {
+      //return static_cast<BlkAddrType>(data_[row_offset_[i] + j]);
+      return static_cast<BlkAddrType>(data_[rowsize_*i + j]);
+    }
+
+    // get rowid
+    inline unsigned int _index(int i) const {
+      return base_rowid_ + i;
+    }
+    inline size_t size() const{
+      return len_;
+    }
+
+};
+
+
+class DMatrixDenseCubeZCol{
+  private:
+     int    blkid_;
+     std::vector<BlkAddrType> data_;
+     //std::vector<PtrType> row_offset_;
+     std::vector<PtrType> blk_offset_;
+     PtrType rowsize_;
+     PtrType rowcnt_;
+     //PtrType blksize_;
+
+  public:
+
+     DMatrixDenseCubeZCol() = default;
+
+    inline DMatrixDenseCubeBlock GetBlock(int i) const {
+        // blk_offset_ : idx in row_offset_
+        // row_offset_ : addr in data_
+        //if (blk_offset_.size() > i){
+        if (data_.size() > 0){
+
+            PtrType rowidx = blk_offset_[i];
+
+            //have to use the ptr from beginning
+            //as row_offset_[] will pointer to this absolute address
+            //return {data_.data() + row_offset_[rowidx],
+            return {data_.data(),
+                //row_offset_.data() + rowidx,
+                rowsize_,
+                static_cast<PtrType>(blk_offset_[i + 1] - blk_offset_[i]), 
+                rowidx};
+        }
+        else{
+            //return empty block
+            return {nullptr,0,0,0};
+        }
+    }
+
+    inline int GetBlockNum() const{
+        return blk_offset_.size() - 1;
+    }
+
+    inline long getMemSize(){
+        return sizeof(BlkAddrType)*data_.size() + 
+            //row_offset_.size()*sizeof(PtrType) +
+            2*sizeof(PtrType) +
+            blk_offset_.size()*sizeof(PtrType) + 4;
+    }
+
+    inline int getRowSize(){return rowsize_;}
+    inline int getDataSize(){return data_.size();}
+
+    int init(int blkid){
+        blkid_ = blkid;
+        data_.clear();
+        //row_offset_.clear();
+        blk_offset_.clear();
+        //row_offset_.push_back(0);
+        //blk_offset_.push_back(0);
+        
+        rowsize_ = 0;
+        rowcnt_ = 0;
+    }
+
+    inline void addrow(){
+        if (rowsize_ == 0){
+            rowsize_ = data_.size();
+        }
+
+        //assert
+        CHECK_EQ(rowcnt_ * rowsize_, data_.size());
+        rowcnt_ ++;
+
+        ////sort blkaddr
+        //if (lastrow_offset_ > 0){
+        //    auto start = data_.begin() + lastrow_offset_;
+        //    auto end  = data_.begin() + data_.size();
+        //    std::sort(start, end);
+        //}
+        //lastrow_offset_ = data_.size();
+    }
+
+    inline void addblock(){
+        //blk_offset_.push_back(row_offset_.size());
+        blk_offset_.push_back(rowcnt_);
+    }
+
+    inline void append(BlkAddrType blkaddr){
+        data_.push_back(blkaddr);
+    }
+
+};
+
+class DMatrixDenseCube : public xgboost::data::SparsePageDMatrix {
+ 
+ private:
+     std::vector<DMatrixDenseCubeZCol> data_;
+     MetaInfo info_;
+
+ public:
+  explicit DMatrixDenseCube(){}
+
+  //interface for reading access in bulidhist
+  inline const DMatrixDenseCubeZCol& GetBlockZCol(unsigned int i) const {
+    return data_[i];
+  }
+
+  inline int GetBaseBlockNum() const{
+    return data_.size();
+  }
+  inline int GetBlockNum() const{
+    return data_.size() * data_[0].GetBlockNum();
+  }
+  //interface for compatible
+  inline int Size() const{
+    return data_.size();
+  }
+  inline const DMatrixDenseCubeZCol& operator[](unsigned int i) const {
+    return data_[i];
+  }
+
+
+
+  //interface for building the matrix
+  void Init(const SparsePage& page, MetaInfo& info, int maxbins, BlockInfo& blkInfo);
+  inline void addrow(){
+      for(unsigned int i=0; i< data_.size(); i++){
+          data_[i].addrow();
+      }
+  }
+
+  inline void addblock(){
+      for(unsigned int i=0; i< data_.size(); i++){
+          data_[i].addblock();
+      }
+  }
+
+  long getMemSize(){
+      long memsize = 0; 
+      for(unsigned int i=0; i< data_.size(); i++){
+          memsize += data_[i].getMemSize();
+      }
+      return memsize;
+  }
+
+  //Info interface for compatibility
+  MetaInfo& Info() override{
+      return info_;
+  }
+  const MetaInfo& Info() const override{
+      return info_;
+  }
+};
+
+
+/*
+ * general cube supporint sparse dataset
+ * todo:
+ *      runlenght encoding of rowid
+ *
+ */
+
 class DMatrixCubeBlock {
     //
     // Access by iterating on the blk row index
