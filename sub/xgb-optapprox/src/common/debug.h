@@ -41,6 +41,7 @@ void printInt(std::string msg, int val);
 void printmsg(std::string msg);
 void printtree(RegTree* ptree, std::string header="");
 void printdmat(DMatrixCube& dmat);
+void printdmat(DMatrixDenseCube& dmat);
 void printdmat(DMatrixCompactDense& dmat);
 void printdmat(DMatrixCompactBlockDense& dmat);
 void printdmat(DMatrixCompactBlock& dmat);

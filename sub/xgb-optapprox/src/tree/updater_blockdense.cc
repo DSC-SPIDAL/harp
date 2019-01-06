@@ -690,6 +690,7 @@ class HistMakerBlockDense: public BaseMaker {
   //row blk scheduler
   //std::vector<spin_mutex> bwork_lock_;
   spin_mutex* bwork_lock_{nullptr};
+  double datasum_;
 
   std::vector<bst_uint> fsplit_set_;
 
@@ -1137,8 +1138,7 @@ class HistMakerBlockDense: public BaseMaker {
 
         #ifdef USE_DEBUG
         printdmat(*p_hmat);
-        //printdmat(*p_blkmat);
-        #endif
+        printdmat(*p_blkmat);
 
         /*
          * Cube Info
@@ -1155,9 +1155,11 @@ class HistMakerBlockDense: public BaseMaker {
             }
             std::cout <<" total=" << len << "\n";
         }
+        #endif
 
         // the map used by scheduler
-        this->bwork_base_blknum_ = this->blkInfo_.GetBaseBlkNum(_info.num_col_+1, param_.max_bin);
+        //this->bwork_base_blknum_ = this->blkInfo_.GetBaseBlkNum(_info.num_col_+1, param_.max_bin);
+        this->bwork_base_blknum_ = p_blkmat->GetBaseBlockNum();
         bwork_lock_ = new spin_mutex[bwork_base_blknum_];
         for(int i=0; i < p_blkmat->GetBaseBlockNum(); i++){
             bwork_lock_[i].unlock();
@@ -1471,6 +1473,13 @@ class HistMakerBlockDense: public BaseMaker {
     //check size
     if (block.size() == 0) return;
 
+    #ifdef DEBUG
+    std::cout << "updateHistBlock: blkoffset=" << blkid_offset <<
+        ", zblkid=" << zblkid << ",baserowid=" << block.base_rowid_ <<
+        ", len=" << block.size() 
+        << "\n";
+    #endif
+
     //get lock
     bwork_lock_[blkid_offset].lock();
 
@@ -1541,6 +1550,11 @@ class HistMakerBlockDense: public BaseMaker {
             if (CHECKHALFCOND) {
               for (int k = 0; k < block.rowsize(j); k++){
                 hbuilder[nid].AddWithIndex(block._blkaddr(j, k), gpair[ridx]);
+
+                //debug only
+                #ifdef DEBUG
+                this->datasum_ += block._blkaddr(j,k);
+                #endif
               }
             }
           }
@@ -1694,6 +1708,8 @@ class HistMakerBlockDense: public BaseMaker {
         const auto nsize = p_blkmat->GetBaseBlockNum();
         const auto zsize = p_blkmat->GetBlockZCol(0).GetBlockNum();
 
+
+        //this->datasum_ = 0.;
         #pragma omp parallel for schedule(dynamic, 1)
         for (bst_omp_uint i = 0; i < nsize * zsize; ++i) {
           //int blkid = blkset[i];
@@ -1706,7 +1722,12 @@ class HistMakerBlockDense: public BaseMaker {
           this->UpdateHistBlock(gpair, block, info, tree,
                 offset, zblkid, 
                 &this->thread_hist_[omp_get_thread_num()]);
+                //&this->thread_hist_[0]);
         }
+
+        #ifdef DEBUG
+        std::cout << "BuildHist:: datasum_=" << this->datasum_;
+        #endif
 
         #else
         /*

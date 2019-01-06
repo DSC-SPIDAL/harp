@@ -458,7 +458,7 @@ class DMatrixDenseCubeZCol{
             //have to use the ptr from beginning
             //as row_offset_[] will pointer to this absolute address
             //return {data_.data() + row_offset_[rowidx],
-            return {data_.data(),
+            return {data_.data() + rowsize_ * rowidx,
                 //row_offset_.data() + rowidx,
                 rowsize_,
                 static_cast<PtrType>(blk_offset_[i + 1] - blk_offset_[i]), 
