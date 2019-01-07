@@ -817,12 +817,14 @@ class HistMakerBlockDense: public BaseMaker {
     /*
      * debug info
      */
+    #ifdef USE_DEBUG
     std::cout << "SpinLock dirtyCnt:";
     for(int i=0; i< bwork_base_blknum_; i++){
         std::cout << bwork_lock_[i].getCnt() << ",";
         bwork_lock_[i].clear();
     }
     std::cout << "\n";
+    #endif
 
   }
 
@@ -1161,9 +1163,9 @@ class HistMakerBlockDense: public BaseMaker {
         //this->bwork_base_blknum_ = this->blkInfo_.GetBaseBlkNum(_info.num_col_+1, param_.max_bin);
         this->bwork_base_blknum_ = p_blkmat->GetBaseBlockNum();
         bwork_lock_ = new spin_mutex[bwork_base_blknum_];
-        for(int i=0; i < p_blkmat->GetBaseBlockNum(); i++){
-            bwork_lock_[i].unlock();
-        }
+        //for(int i=0; i < p_blkmat->GetBaseBlockNum(); i++){
+        //    bwork_lock_[i].unlock();
+        //}
  
         //fwork_set_ --> features set
         //work_set_ --> blkset, (binset) in (0,0,1)
@@ -1460,6 +1462,39 @@ class HistMakerBlockDense: public BaseMaker {
 #endif
   }
 
+
+  //half trick
+  void UpdateHalfTrick(bst_uint blkid_offset,
+                       const RegTree &tree,
+                       std::vector<HistEntry> *p_temp) {
+
+    // initialize sbuilder for use
+    std::vector<HistEntry> &hbuilder = *p_temp;
+    hbuilder.resize(tree.param.num_nodes);
+    for (size_t i = 0; i < this->qexpand_.size(); ++i) {
+      const unsigned nid = this->qexpand_[i];
+      hbuilder[nid].hist = this->wspace_.hset[0].GetHistUnitByBlkid(blkid_offset, nid);
+    }
+
+    //get the right node
+    const unsigned nid_start = this->qexpand_[0];
+
+    CHECK_NE(nid_start % 2, 0);
+    unsigned nid_parent = (nid_start+1)/2-1;
+    for (size_t i = 0; i < this->qexpand_.size(); i+=2) {
+      const unsigned nid = this->qexpand_[i];
+      auto parent_hist = this->wspace_.hset[0].GetHistUnitByBlkid(blkid_offset, nid_parent + i/2);
+      #pragma ivdep
+      #pragma omp simd
+      for(int j=0; j < hbuilder[nid].hist.size; j++){
+        hbuilder[nid].hist.Get(j).SetSubstract(
+                parent_hist.Get(j),
+                hbuilder[nid+1].hist.Get(j));
+      }
+
+    }
+  }
+
   //
   //single block 
   //
@@ -1473,7 +1508,7 @@ class HistMakerBlockDense: public BaseMaker {
     //check size
     if (block.size() == 0) return;
 
-    #ifdef DEBUG
+    #ifdef USE_DEBUG
     std::cout << "updateHistBlock: blkoffset=" << blkid_offset <<
         ", zblkid=" << zblkid << ",baserowid=" << block.base_rowid_ <<
         ", len=" << block.size() 
@@ -1561,29 +1596,29 @@ class HistMakerBlockDense: public BaseMaker {
         }
     } /*blk*/
 
-#ifdef USE_HALFTRICK
-    double _tstart = dmlc::GetTime();
-    //get the right node
-    const unsigned nid_start = this->qexpand_[0];
-    if (nid_start == 0)
-        return;
-
-    CHECK_NE(nid_start % 2, 0);
-    unsigned nid_parent = (nid_start+1)/2-1;
-    for (size_t i = 0; i < this->qexpand_.size(); i+=2) {
-      const unsigned nid = this->qexpand_[i];
-      auto parent_hist = this->wspace_.hset[0].GetHistUnitByBlkid(blkid_offset, nid_parent + i/2);
-      #pragma ivdep
-      #pragma omp simd
-      for(int j=0; j < hbuilder[nid].hist.size; j++){
-        hbuilder[nid].hist.Get(j).SetSubstract(
-                parent_hist.Get(j),
-                hbuilder[nid+1].hist.Get(j));
-      }
-
-    }
-    this->tminfo.aux_time[0] += dmlc::GetTime() - _tstart;
-#endif
+//#ifdef USE_HALFTRICK
+//    double _tstart = dmlc::GetTime();
+//    //get the right node
+//    const unsigned nid_start = this->qexpand_[0];
+//    if (nid_start == 0)
+//        return;
+//
+//    CHECK_NE(nid_start % 2, 0);
+//    unsigned nid_parent = (nid_start+1)/2-1;
+//    for (size_t i = 0; i < this->qexpand_.size(); i+=2) {
+//      const unsigned nid = this->qexpand_[i];
+//      auto parent_hist = this->wspace_.hset[0].GetHistUnitByBlkid(blkid_offset, nid_parent + i/2);
+//      #pragma ivdep
+//      #pragma omp simd
+//      for(int j=0; j < hbuilder[nid].hist.size; j++){
+//        hbuilder[nid].hist.Get(j).SetSubstract(
+//                parent_hist.Get(j),
+//                hbuilder[nid+1].hist.Get(j));
+//      }
+//
+//    }
+//    this->tminfo.aux_time[0] += dmlc::GetTime() - _tstart;
+//#endif
 
     //quit
     bwork_lock_[blkid_offset].unlock();
@@ -1709,7 +1744,10 @@ class HistMakerBlockDense: public BaseMaker {
         const auto zsize = p_blkmat->GetBlockZCol(0).GetBlockNum();
 
 
-        //this->datasum_ = 0.;
+        #ifdef USE_DEBUG
+        this->datasum_ = 0.;
+        #endif
+
         #pragma omp parallel for schedule(dynamic, 1)
         for (bst_omp_uint i = 0; i < nsize * zsize; ++i) {
           //int blkid = blkset[i];
@@ -1725,7 +1763,24 @@ class HistMakerBlockDense: public BaseMaker {
                 //&this->thread_hist_[0]);
         }
 
-        #ifdef DEBUG
+        //build the other half
+        #ifdef USE_HALFTRICK
+        if (this->qexpand_[0] != 0){
+
+            double _tstart = dmlc::GetTime();
+            //#pragma omp parallel for schedule(dynamic, 1)
+            #pragma omp parallel for schedule(static)
+            for (bst_omp_uint i = 0; i < nsize; ++i) {
+              int offset = i;
+              this->UpdateHalfTrick(offset, tree,
+                    &this->thread_hist_[omp_get_thread_num()]);
+                    //&this->thread_hist_[0]);
+            }
+            this->tminfo.aux_time[0] += dmlc::GetTime() - _tstart;
+        }
+        #endif
+
+        #ifdef USE_DEBUG
         std::cout << "BuildHist:: datasum_=" << this->datasum_;
         #endif
 
