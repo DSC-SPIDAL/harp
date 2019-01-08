@@ -218,7 +218,9 @@ void DMatrixDenseCube::Init(const SparsePage& page, MetaInfo& info, int num_maxb
 
             CHECK_LT(blkid, data_.size());
             data_[blkid].append(blkaddr);
-
+            
+            // for densecube, save only binid is okay, fid is the index
+            //data_[blkid].append(ins.binid);
         }
 
    }

@@ -66,7 +66,12 @@ class TreePruner: public TreeUpdater {
       tree.Stat(nid).leaf_child_cnt = 0;
     }
     for (int nid = 0; nid < tree.param.num_nodes; ++nid) {
+      #ifdef USE_HALFTRICK
+      //for the dummy leaf nodes, parent==-1
+      if (tree[nid].IsLeaf() && !tree[nid].IsDummy()) {
+      #else
       if (tree[nid].IsLeaf()) {
+      #endif
         npruned = this->TryPruneLeaf(tree, nid, tree.GetDepth(nid), npruned);
       }
     }

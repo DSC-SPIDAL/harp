@@ -398,14 +398,14 @@ class HistMakerBlockDense: public BaseMaker {
          */
         //hset[tid].data.resize(cut.size() * nodesize, TStats(param));
         //hset[tid].data.resize(param.max_bin * (hset[tid].featnum+1) * nodesize, TStats(param));
-        unsigned int cubesize = blkinfo.GetModelCubeSize(param.max_bin, hset[tid].featnum+1, nodesize);
+        unsigned long cubesize = blkinfo.GetModelCubeSize(param.max_bin, hset[tid].featnum+1, nodesize);
         hset[tid].data.resize(cubesize, TStats(param));
 
         LOG(CONSOLE)<< "Init hset: rptrSize:" << rptr.size() <<
             ",cutSize:" <<  cut.size() <<",nodesize:" << nodesize <<
             ",fsetSize:" << rptr.back() << ",max_depth:" << param.max_depth << 
             ",featnum:" << hset[tid].featnum <<
-            ",cubesize:" << cubesize ;
+            ",cubesize:" << cubesize << ":" << 8*cubesize/(1024*1024*1024) << "GB";
       }
     }
 
@@ -773,9 +773,9 @@ class HistMakerBlockDense: public BaseMaker {
       printVec("position:", this->position_);
       printtree(p_tree, "After CreateHist");
 
-#ifdef USE_DEBUG_SAVE
+      #ifdef USE_DEBUG_SAVE
       this->wspace_.saveGHSum(treeid_, depth, this->qexpand_.size());
-#endif
+      #endif
 
 
       // find split based on histogram statistics
@@ -845,6 +845,7 @@ class HistMakerBlockDense: public BaseMaker {
         c.SetSubstract(node_sum, s);
         if (c.sum_hess >= param_.min_child_weight) {
           double loss_chg = s.CalcGain(param_) + c.CalcGain(param_) - root_gain;
+          //default goes to right
           if (best->Update(static_cast<bst_float>(loss_chg), fid, i, false)) {
             *left_sum = s;
           }
@@ -859,6 +860,7 @@ class HistMakerBlockDense: public BaseMaker {
         c.SetSubstract(node_sum, s);
         if (c.sum_hess >= param_.min_child_weight) {
           double loss_chg = s.CalcGain(param_) + c.CalcGain(param_) - root_gain;
+          //default goes to left
           if (best->Update(static_cast<bst_float>(loss_chg), fid, i-1, true)) {
             *left_sum = c;
           }
@@ -929,11 +931,15 @@ class HistMakerBlockDense: public BaseMaker {
         this->SetStats(p_tree, (*p_tree)[nid].RightChild(), right_sum);
       } else {
         #ifdef USE_HALFTRICK
-        //add empty childs anyway to keep the node id as the same as the fll
+        //add empty childs anyway to keep the node id as the same as the full
         //binary tree
-        p_tree->AddChilds(nid);
-        (*p_tree)[(*p_tree)[nid].LeftChild()].SetLeaf(0.0f, 0);
-        (*p_tree)[(*p_tree)[nid].RightChild()].SetLeaf(0.0f, 0);
+        //they are not fresh leaf, set parent = -1 to indicate in the prune process
+        p_tree->AddDummyChilds(nid);
+        //p_tree->AddChilds(nid);
+        //(*p_tree)[(*p_tree)[nid].LeftChild()].SetLeaf(0.0f);
+        //(*p_tree)[(*p_tree)[nid].RightChild()].SetLeaf(0.0f);
+        //(*p_tree)[(*p_tree)[nid].LeftChild()].SetParent(-1);
+        //(*p_tree)[(*p_tree)[nid].RightChild()].SetParent(-1);
         #endif
         //bugfix: setleaf should be after addchilds
         (*p_tree)[nid].SetLeaf(p_tree->Stat(nid).base_weight * param_.learning_rate);
@@ -997,7 +1003,27 @@ class HistMakerBlockDense: public BaseMaker {
     printVec("work_set_:", work_set_);
     printVec("feat2workindex_:", feat2workindex_);
   }
-
+  /*!
+   * \brief this is helper function uses column based data structure,
+   * \param nodes the set of nodes that contains the split to be used
+   * \param tree the regression tree structure
+   * \param out_split_set The split index set
+   */
+  inline void GetSplitSet(const std::vector<int> &nodes,
+                          const RegTree &tree,
+                          std::vector<unsigned>* out_split_set) {
+    std::vector<unsigned>& fsplits = *out_split_set;
+    fsplits.clear();
+    // step 1, classify the non-default data into right places
+    for (int nid : nodes) {
+      if (!tree[nid].IsLeaf()) {
+        fsplits.push_back(tree[nid].SplitIndex());
+      }
+    }
+    std::sort(fsplits.begin(), fsplits.end());
+    fsplits.resize(std::unique(fsplits.begin(), fsplits.end()) - fsplits.begin());
+  }
+ 
   void ResetPositionAfterSplit(DMatrix *p_fmat,
                                const RegTree &tree){
     this->GetSplitSet(this->qexpand_, tree, &this->fsplit_set_);
@@ -1509,10 +1535,10 @@ class HistMakerBlockDense: public BaseMaker {
     if (block.size() == 0) return;
 
     #ifdef USE_DEBUG
-    std::cout << "updateHistBlock: blkoffset=" << blkid_offset <<
-        ", zblkid=" << zblkid << ",baserowid=" << block.base_rowid_ <<
-        ", len=" << block.size() 
-        << "\n";
+    //std::cout << "updateHistBlock: blkoffset=" << blkid_offset <<
+    //    ", zblkid=" << zblkid << ",baserowid=" << block.base_rowid_ <<
+    //    ", len=" << block.size() 
+    //    << "\n";
     #endif
 
     //get lock
@@ -1584,7 +1610,15 @@ class HistMakerBlockDense: public BaseMaker {
             const int nid = this->position_[ridx];
             if (CHECKHALFCOND) {
               for (int k = 0; k < block.rowsize(j); k++){
+
                 hbuilder[nid].AddWithIndex(block._blkaddr(j, k), gpair[ridx]);
+
+                /*
+                 * not much benefits from short->byte
+                 */
+                //unsigned short blkaddr = this->blkInfo_.GetBlkAddr(block._blkaddr(j, k), k);
+                //unsigned short blkaddr = block._blkaddr(j, k)*2 + k;
+                //hbuilder[nid].AddWithIndex(blkaddr, gpair[ridx]);
 
                 //debug only
                 #ifdef DEBUG
@@ -1644,6 +1678,14 @@ class HistMakerBlockDense: public BaseMaker {
 
           const int nid = this->DecodePosition(ridx);
           CHECK(tree[nid].IsLeaf());
+
+          #ifdef USE_HALFTRICK
+          //// if parent is leaf and not fresh, then this node is a dummy node, skip it
+          if (tree[nid].IsDummy()){
+            continue;
+          }
+          #endif
+
           int pid = tree[nid].Parent();
 
           // go back to parent, correct those who are not default
@@ -1682,6 +1724,12 @@ class HistMakerBlockDense: public BaseMaker {
       for (int nid = 0; nid < nodes.size(); nid ++){
           bst_float leaf_value;
           int tnid = nid;
+
+          //skip dummy nodes first
+          if ((*p_last_tree_)[tnid].IsDummy()) {
+              continue;
+          }
+
           // if a node is marked as deleted by the pruner, traverse upward to locate
           // a non-deleted leaf.
           if ((*p_last_tree_)[tnid].IsDeleted()) {
@@ -1704,9 +1752,8 @@ class HistMakerBlockDense: public BaseMaker {
         //}
       }
 
-      LOG(CONSOLE) << "UpdatePredictionCache: nodes size=" << 
-          nodes.size() << ",rowscnt=" << nrows;
-    
+      //LOG(CONSOLE) << "UpdatePredictionCache: nodes size=" << 
+      //    nodes.size() << ",rowscnt=" << nrows;
 
       printVec("updatech pos:", this->position_);
       printVec("updatech leaf:", leaf_values);
@@ -1767,7 +1814,7 @@ class HistMakerBlockDense: public BaseMaker {
         #ifdef USE_HALFTRICK
         if (this->qexpand_[0] != 0){
 
-            double _tstart = dmlc::GetTime();
+            double _tstart2 = dmlc::GetTime();
             //#pragma omp parallel for schedule(dynamic, 1)
             #pragma omp parallel for schedule(static)
             for (bst_omp_uint i = 0; i < nsize; ++i) {
@@ -1776,7 +1823,7 @@ class HistMakerBlockDense: public BaseMaker {
                     &this->thread_hist_[omp_get_thread_num()]);
                     //&this->thread_hist_[0]);
             }
-            this->tminfo.aux_time[0] += dmlc::GetTime() - _tstart;
+            this->tminfo.aux_time[0] += dmlc::GetTime() - _tstart2;
         }
         #endif
 
@@ -1828,7 +1875,7 @@ class HistMakerBlockDense: public BaseMaker {
 
     const auto nodes = tree.GetNodes();
     for(int i=0; i < nodes.size(); i++){
-        if (tree[i].IsLeaf() || tree[i].IsDeleted()){
+        if (tree[i].IsLeaf() || tree[i].IsDeleted() || tree[i].IsDummy()){
             continue;
         }
 

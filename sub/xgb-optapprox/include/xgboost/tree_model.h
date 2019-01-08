@@ -130,6 +130,10 @@ class TreeModel {
     inline bool IsRoot() const {
       return parent_ == -1;
     }
+    inline bool IsDummy() const {
+      return parent_ == -2;
+    }
+ 
     /*!
      * \brief set the right child
      * \param nid node id to right child
@@ -238,12 +242,12 @@ class TreeModel {
    */
   inline void ChangeToLeaf(int rid, bst_float value) {
 
-    #ifndef USE_HALFTRICK
+    //#ifndef USE_HALFTRICK
     CHECK(nodes_[nodes_[rid].LeftChild() ].IsLeaf());
     CHECK(nodes_[nodes_[rid].RightChild()].IsLeaf());
     this->DeleteNode(nodes_[rid].LeftChild());
     this->DeleteNode(nodes_[rid].RightChild());
-    #endif
+    //#endif
 
     nodes_[rid].SetLeaf(value);
   }
@@ -335,7 +339,10 @@ class TreeModel {
     for (int i = param.num_roots; i < param.num_nodes; ++i) {
       if (nodes_[i].IsDeleted()) deleted_nodes_.push_back(i);
     }
+    #ifndef USE_HALFTRICK
+    //dummy nodes use delete tag,
     CHECK_EQ(static_cast<int>(deleted_nodes_.size()), param.num_deleted);
+    #endif
   }
   /*!
    * \brief save model to stream
@@ -362,6 +369,25 @@ class TreeModel {
     nodes_[nodes_[nid].LeftChild() ].SetParent(nid, true);
     nodes_[nodes_[nid].RightChild()].SetParent(nid, false);
   }
+  // for HALFTRICK
+  inline void AddDummyChilds(int nid) {
+    int pleft  = this->AllocNode();
+    int pright = this->AllocNode();
+
+    //dummy must be leaf node
+    nodes_[pleft].SetLeaf(0.0f);
+    nodes_[pright].SetLeaf(0.0f);
+
+    //Set dummy tag
+    nodes_[pleft].SetParent(-2);
+    nodes_[pright].SetParent(-2);
+
+    //set delete tag
+    //correctNonDe... check this
+    nodes_[pleft].MarkDelete();
+    nodes_[pright].MarkDelete();
+  }
+
   /*!
    * \brief only add a right child to a leaf node
    * \param nid node id to add right child

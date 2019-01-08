@@ -329,9 +329,9 @@ class DMatrixCompactBlock : public xgboost::data::SparsePageDMatrix {
  */
 
 
-typedef unsigned short BlkAddrType;
+//typedef unsigned short BlkAddrType;
 typedef unsigned int PtrType;
-//typedef unsigned char BlkAddrType;
+typedef unsigned char BlkAddrType;
 
 struct BlockInfo{
     // 3-D cube <rowid, fid, binid>
@@ -365,10 +365,14 @@ struct BlockInfo{
 
     // cube size (maximum) 
     // not compact to make offset calculation easier
-    inline unsigned int GetModelCubeSize(int binnum, int ftnum, int nodenum){
-        return GetBinBlkNum(binnum) * bin_blksize *
-               GetFeatureBlkNum(ftnum) * ft_blksize *
-               nodenum;
+    inline unsigned long GetModelCubeSize(int binnum, int ftnum, int nodenum){
+        return ((unsigned long)(nodenum)) * GetBinBlkNum(binnum) * bin_blksize *
+               GetFeatureBlkNum(ftnum) * ft_blksize;
+    }
+
+    //calc blkadd
+    inline unsigned short GetBlkAddr(int binid, int fid){
+        return (binid % GetBinBlkSize()) * GetFeatureBlkSize() + fid % GetFeatureBlkSize();
     }
 
     //init
