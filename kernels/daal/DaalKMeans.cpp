@@ -15,7 +15,6 @@ int main(int argc, char **argv) {
     auto t = new Table<double>(1);
     cout << t->getId() << endl;
 
-
     FileDataSource<CSVFeatureManager> dataSource(
             "",
             DataSource::doAllocateNumericTable,
@@ -23,6 +22,7 @@ int main(int argc, char **argv) {
     );
     dataSource.loadDataBlock();
     NumericTablePtr numericTablePtr = dataSource.getNumericTable();
+
 
     return 0;
 }

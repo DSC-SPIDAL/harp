@@ -34,7 +34,7 @@ add_subdirectory(data_structures)
 add_subdirectory(util)
 add_subdirectory(worker)
 
-add_executable(harpc kernels/daal/DaalKMeans.cpp communication/Communicator.h communication/Communicator.cpp examples/generators/DataGenerator.cpp examples/generators/DataGenerator.h kernels/kmeans/KMeans.h kernels/kmeans/KMeans.cpp kernels/math/partitions/PartitionMath.h kernels/math/partitions/PartitionMath.cpp kernels/math/table/TableMath.h kernels/math/table/TableMath.cpp kernels/math/HarpMath.h kernels/HarpKernels.h data_structures/Utils.h data_structures/Utils.cpp communication/Rotator.h communication/Rotator.cpp data_structures/PartitionAccessor.h data_structures/PartitionAccessor.cpp)
+add_executable(harpc communication/Communicator.h communication/Communicator.cpp examples/generators/DataGenerator.cpp examples/generators/DataGenerator.h kernels/kmeans/KMeans.h kernels/kmeans/KMeans.cpp kernels/math/partitions/PartitionMath.h kernels/math/partitions/PartitionMath.cpp kernels/math/table/TableMath.h kernels/math/table/TableMath.cpp kernels/math/HarpMath.h kernels/HarpKernels.h data_structures/Utils.h data_structures/Utils.cpp communication/Rotator.h communication/Rotator.cpp data_structures/PartitionAccessor.h data_structures/PartitionAccessor.cpp communication/tcp/Server.cpp communication/tcp/MessageAcceptor.cpp)
 #kernels/daal/DaalKMeans.cpp
 #examples/kmeans/kmeans.cpp
 

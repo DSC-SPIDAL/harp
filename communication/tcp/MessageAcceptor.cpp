@@ -1,0 +1,7 @@
+
+class MessageAcceptor {
+
+    void onMessage() {
+
+    }
+};
