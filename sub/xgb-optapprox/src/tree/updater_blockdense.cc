@@ -1502,23 +1502,55 @@ class HistMakerBlockDense: public BaseMaker {
       hbuilder[nid].hist = this->wspace_.hset[0].GetHistUnitByBlkid(blkid_offset, nid);
     }
 
-    //get the right node
-    const unsigned nid_start = this->qexpand_[0];
 
-    CHECK_NE(nid_start % 2, 0);
-    unsigned nid_parent = (nid_start+1)/2-1;
-    for (size_t i = 0; i < this->qexpand_.size(); i+=2) {
-      const unsigned nid = this->qexpand_[i];
-      auto parent_hist = this->wspace_.hset[0].GetHistUnitByBlkid(blkid_offset, nid_parent + i/2);
-      #pragma ivdep
-      #pragma omp simd
-      for(int j=0; j < hbuilder[nid].hist.size; j++){
-        hbuilder[nid].hist.Get(j).SetSubstract(
-                parent_hist.Get(j),
-                hbuilder[nid+1].hist.Get(j));
-      }
+    if(0){
+        /*
+         * this code depend on the full entries in 
+         * qexpand, which fails when there are deleted 
+         * nodes in deep tree
+         */
+        //get the right node
+        const unsigned nid_start = this->qexpand_[0];
 
+        CHECK_NE(nid_start % 2, 0);
+        unsigned nid_parent = (nid_start+1)/2-1;
+        for (size_t i = 0; i < this->qexpand_.size(); i+=2) {
+          const unsigned nid = this->qexpand_[i];
+          auto parent_hist = this->wspace_.hset[0].GetHistUnitByBlkid(blkid_offset, nid_parent + i/2);
+          #pragma ivdep
+          #pragma omp simd
+          for(int j=0; j < hbuilder[nid].hist.size; j++){
+            hbuilder[nid].hist.Get(j).SetSubstract(
+                    parent_hist.Get(j),
+                    hbuilder[nid+1].hist.Get(j));
+          }
+
+        }
     }
+
+    /*
+     * more general version
+     *
+     */
+    {
+       for (size_t i = 0; i < this->qexpand_.size(); i++) {
+         const unsigned nid = this->qexpand_[i];
+         //skip right nodes
+         if(CHECKHALFCOND) continue;
+
+         //left child not calculated yet
+         auto parent_hist = this->wspace_.hset[0].GetHistUnitByBlkid(blkid_offset, nid/2);
+          #pragma ivdep
+          #pragma omp simd
+          for(int j=0; j < hbuilder[nid].hist.size; j++){
+            hbuilder[nid].hist.Get(j).SetSubstract(
+                    parent_hist.Get(j),
+                    hbuilder[nid+1].hist.Get(j));
+          }
+
+        }
+    }
+    //end 
   }
 
   //
@@ -1676,15 +1708,22 @@ class HistMakerBlockDense: public BaseMaker {
           const bst_uint ridx = col._index(j);
           const bst_uint binid = col._binid(j);
 
-          const int nid = this->DecodePosition(ridx);
+          //const int nid = this->DecodePosition(ridx);
+          
+          //check if it's a non-fresh leaf node
+          const int nid = position_[ridx];
+          if (nid < 0){
+              continue;
+          }
+
           CHECK(tree[nid].IsLeaf());
 
-          #ifdef USE_HALFTRICK
-          //// if parent is leaf and not fresh, then this node is a dummy node, skip it
-          if (tree[nid].IsDummy()){
-            continue;
-          }
-          #endif
+          //#ifdef USE_HALFTRICK
+          ////// if parent is leaf and not fresh, then this node is a dummy node, skip it
+          //if (tree[nid].IsDummy()){
+          //  continue;
+          //}
+          //#endif
 
           int pid = tree[nid].Parent();
 

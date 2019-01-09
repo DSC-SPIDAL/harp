@@ -206,17 +206,48 @@ class TreeModel {
   std::vector<bst_float> leaf_vector_;
   // allocate a new node,
   // !!!!!! NOTE: may cause BUG here, nodes.resize
+ 
+  // halftrick need full binary tree
+  #ifdef USE_HALFTRICK
+  inline int AllocNode(int nid, bool left) {
+    int leftChild = nid * 2 + 1;
+    int rightChild = nid * 2 + 2;
+    int curNodeNum = param.num_nodes;
+
+    if (curNodeNum <= rightChild){
+        param.num_nodes = rightChild + 1;
+
+        nodes_.resize(param.num_nodes);
+        stats_.resize(param.num_nodes);
+        leaf_vector_.resize(param.num_nodes * param.size_leaf_vector);
+    
+        //set the dummy nodes in between
+        //[curNodeNum, leftChild)
+        for(int i = curNodeNum; i < leftChild; i++){
+            //set to dummy
+            nodes_[i].SetLeaf(0.0f);
+            //Set dummy tag
+            nodes_[i].SetParent(-2);
+            //set delete tag
+            nodes_[i].MarkDelete();
+        }
+
+    }
+
+    if (left) return leftChild;
+    return rightChild;
+
+  }
+
+  #else  
   inline int AllocNode() {
 
-    // halftrick need full binary tree
-    #ifndef USE_HALFTRICK
     if (param.num_deleted != 0) {
       int nd = deleted_nodes_.back();
       deleted_nodes_.pop_back();
       --param.num_deleted;
       return nd;
     }
-    #endif
 
     int nd = param.num_nodes++;
     CHECK_LT(param.num_nodes, std::numeric_limits<int>::max())
@@ -225,7 +256,11 @@ class TreeModel {
     stats_.resize(param.num_nodes);
     leaf_vector_.resize(param.num_nodes * param.size_leaf_vector);
     return nd;
+
   }
+  #endif
+
+
   // delete a tree node, keep the parent field to allow trace back
   inline void DeleteNode(int nid) {
     CHECK_GE(nid, param.num_roots);
@@ -362,8 +397,14 @@ class TreeModel {
    * \param nid node id to add children to
    */
   inline void AddChilds(int nid) {
+    #ifndef USE_HALFTRICK
     int pleft  = this->AllocNode();
     int pright = this->AllocNode();
+    #else
+    int pleft  = this->AllocNode(nid, true);
+    int pright = this->AllocNode(nid, false);
+    #endif
+
     nodes_[nid].cleft_  = pleft;
     nodes_[nid].cright_ = pright;
     nodes_[nodes_[nid].LeftChild() ].SetParent(nid, true);
@@ -371,8 +412,14 @@ class TreeModel {
   }
   // for HALFTRICK
   inline void AddDummyChilds(int nid) {
+    #ifndef USE_HALFTRICK
     int pleft  = this->AllocNode();
     int pright = this->AllocNode();
+    #else
+    int pleft  = this->AllocNode(nid, true);
+    int pright = this->AllocNode(nid, false);
+    #endif
+
 
     //dummy must be leaf node
     nodes_[pleft].SetLeaf(0.0f);
@@ -393,7 +440,13 @@ class TreeModel {
    * \param nid node id to add right child
    */
   inline void AddRightChild(int nid) {
+    #ifndef USE_HALFTRICK
     int pright = this->AllocNode();
+    #else
+    int pright = this->AllocNode(nid, false);
+    #endif
+
+   
     nodes_[nid].right  = pright;
     nodes_[nodes_[nid].right].SetParent(nid, false);
   }
