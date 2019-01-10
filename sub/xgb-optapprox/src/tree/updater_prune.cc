@@ -11,6 +11,8 @@
 #include "./param.h"
 #include "../common/sync.h"
 #include "../common/io.h"
+#include <dmlc/timer.h>
+
 
 namespace xgboost {
 namespace tree {
@@ -19,7 +21,12 @@ DMLC_REGISTRY_FILE_TAG(updater_prune);
 
 /*! \brief pruner that prunes a tree after growing finishes */
 class TreePruner: public TreeUpdater {
+  TimeInfo tminfo;
  public:
+  TimeInfo getTimeInfo() override{
+      return tminfo;
+  }
+
   TreePruner() {
     syncher_.reset(TreeUpdater::Create("sync"));
   }
@@ -60,11 +67,17 @@ class TreePruner: public TreeUpdater {
   }
   /*! \brief do pruning of a tree */
   inline void DoPrune(RegTree &tree) { // NOLINT(*)
+
+    double _tstart = dmlc::GetTime();
+
     int npruned = 0;
     // initialize auxiliary statistics
+    //#pragma omp parallel for schedule(static)
     for (int nid = 0; nid < tree.param.num_nodes; ++nid) {
       tree.Stat(nid).leaf_child_cnt = 0;
     }
+
+    //#pragma omp parallel for schedule(static)
     for (int nid = 0; nid < tree.param.num_nodes; ++nid) {
       #ifdef USE_HALFTRICK
       //for the dummy leaf nodes, parent==-1
@@ -80,6 +93,8 @@ class TreePruner: public TreeUpdater {
                 << tree.NumExtraNodes() << " extra nodes, " << npruned
                 << " pruned nodes, max_depth=" << tree.MaxDepth();
     }
+
+    this->tminfo.aux_time[0] += dmlc::GetTime() - _tstart;
   }
 
  private:

@@ -287,6 +287,23 @@ void CLITrain(const CLIParam& param) {
     CHECK_EQ(version, rabit::VersionNumber());
   }
 
+  //
+  //bugfix: calculate training time here rather than at the end
+  //otherwise including the model saving time 
+  //
+  if (param.silent == 0) {
+    double elapsed = dmlc::GetTime() - start;
+    LOG(CONSOLE) << "update end, " << elapsed << " sec in all";
+
+    TimeInfo tminfo = learner->getTimeInfo();
+    LOG(CONSOLE) << "BuildPosSet Time: " << tminfo.posset_time;
+    LOG(CONSOLE) << "BuildHist Time: " << tminfo.buildhist_time;
+    LOG(CONSOLE) << "Training Time: " << dmlc::GetTime() -tminfo.trainstart_time;
+    for(int i = 0; i< 10; i++){
+        LOG(CONSOLE) << "Aux Time " << i << ": " << tminfo.aux_time[i];
+    }
+  }
+
   //eval the final model
   if (param.silent < 2 && param.eval_period != 0 && 
           (param.num_round % param.eval_period) != 0){
@@ -320,18 +337,6 @@ void CLITrain(const CLIParam& param) {
     learner->Save(fo.get());
   }
 
-  if (param.silent == 0) {
-    double elapsed = dmlc::GetTime() - start;
-    LOG(CONSOLE) << "update end, " << elapsed << " sec in all";
-
-    TimeInfo tminfo = learner->getTimeInfo();
-    LOG(CONSOLE) << "BuildPosSet Time: " << tminfo.posset_time;
-    LOG(CONSOLE) << "BuildHist Time: " << tminfo.buildhist_time;
-    LOG(CONSOLE) << "Training Time: " << dmlc::GetTime() -tminfo.trainstart_time;
-    LOG(CONSOLE) << "Aux Time 1: " << tminfo.aux_time[0];
-    LOG(CONSOLE) << "Aux Time 2: " << tminfo.aux_time[1];
-    LOG(CONSOLE) << "Aux Time 3: " << tminfo.aux_time[2];
-  }
 }
 
 void CLIDumpModel(const CLIParam& param) {

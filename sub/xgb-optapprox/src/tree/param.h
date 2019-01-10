@@ -361,6 +361,7 @@ struct XGBOOST_ALIGNAS(16) GradStats {
   static const int kSimpleStats = 1;
   /*! \brief constructor, the object must be cleared during construction */
   explicit GradStats(const TrainParam& param) { this->Clear(); }
+  explicit GradStats(double grad, double hess) { sum_grad = grad; sum_hess=grad; }
 
   template <typename GpairT>
   XGBOOST_DEVICE explicit GradStats(const GpairT &sum)

@@ -313,7 +313,14 @@ class GBTree : public GradientBooster {
 
 
   virtual TimeInfo getTimeInfo() override{
-    return updaters_[0]->getTimeInfo();
+    TimeInfo tminfo = updaters_[0]->getTimeInfo();
+
+    if (updaters_.size() > 1){
+        TimeInfo tminfo_pruner = updaters_[1]->getTimeInfo();
+        tminfo.aux_time[9] += tminfo_pruner.aux_time[0];
+    }
+    return  tminfo;
+
   }
 
 
