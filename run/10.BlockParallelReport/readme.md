@@ -5,10 +5,7 @@ Block Based Parallelism Report
 
 slides and experiments results in "doc/meeting/0107-BlockParallelism"
 
-online doc: 
-
-    [slides](https://docs.google.com/presentation/d/1iI4aKmvN92L_Y5Tlm_7ElB_InYVWTf8ECB4Z9t8b8ms/edit?usp=sharing)
-    [excel](https://docs.google.com/spreadsheets/d/1VTqkyGIVRo1wxgf-K7tbkKPywSulBRonfY0n72L_mm0/edit?usp=sharing)
+online doc: [slides](https://docs.google.com/presentation/d/1iI4aKmvN92L_Y5Tlm_7ElB_InYVWTf8ECB4Z9t8b8ms/edit?usp=sharing),[excel](https://docs.google.com/spreadsheets/d/1VTqkyGIVRo1wxgf-K7tbkKPywSulBRonfY0n72L_mm0/edit?usp=sharing)
 
 
 ## Experiments
