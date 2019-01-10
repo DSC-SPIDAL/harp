@@ -10,9 +10,19 @@ SOURCE="$(readlink "$SOURCE")"
 done
 DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 
-export _gbtproject_=$DIR/../
+# add to python path
 export PYTHONPATH=$DIR/../src/:$PYTHONPATH
 export PATH=$DIR:$PATH
+
+#
+# project level global ENV variables
+#
+# sharedir is used to exchange files between different accounts on juliet cluster
+#export _sharedir_ = /N/u/pengb/tmp/optgbt/
+export _sharedir_=/share/jproject/fg474/share/optgbt/
+
+# home dir of the repo
+export _gbtproject_=$DIR/../
 
 # add useful functions
 #alias draw_likelihood='python -m evaluation.test_likelihood -draw'

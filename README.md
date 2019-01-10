@@ -12,6 +12,7 @@ Testbed of gbt optimization project
 + 10252018    GBT Benchmark update in [google doc](https://docs.google.com/presentation/d/1HS5T9d1aqjoNVTJ1E_2UtntWQNqrvHXi3Vof7c-_eK0/edit?usp=sharing)
 + 11212018    Proposal of block-based parallelism, priliminary results of a simple version (single feature column as a block) [link](https://github.iu.edu/pengb/gbt-test/tree/master/doc/meeting/1121-GBTReport)
 + 11302018    C++ Collective Communication operator, allreduce, rotate, ready, by Chathura. [link](https://github.com/DSC-SPIDAL/harpc)
++ 01072019    Block-based parallelism full version ready and Report at[10.BlockParallelReport](run/10.BlockParallelReport) at tag [block_parallelism_gbt]((https://github.iu.edu/pengb/gbt-test/tree/block_parallelism_gbt)
 
 ### Tasks To-do list
 
