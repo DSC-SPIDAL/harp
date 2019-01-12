@@ -296,11 +296,11 @@ void CLITrain(const CLIParam& param) {
     LOG(CONSOLE) << "update end, " << elapsed << " sec in all";
 
     TimeInfo tminfo = learner->getTimeInfo();
-    LOG(CONSOLE) << "BuildPosSet Time: " << tminfo.posset_time;
-    LOG(CONSOLE) << "BuildHist Time: " << tminfo.buildhist_time;
-    LOG(CONSOLE) << "Training Time: " << dmlc::GetTime() -tminfo.trainstart_time;
+    LOG(CONSOLE) << "BuildPosSet Time: " << std::setprecision(2) << tminfo.posset_time;
+    LOG(CONSOLE) << "BuildHist Time: " << std::setprecision(2) << tminfo.buildhist_time;
+    LOG(CONSOLE) << "Training Time: " << std::setprecision(2) << dmlc::GetTime() -tminfo.trainstart_time;
     for(int i = 0; i< 10; i++){
-        LOG(CONSOLE) << "Aux Time " << i << ": " << tminfo.aux_time[i];
+        LOG(CONSOLE) << "Aux Time " << i << ": " << std::setprecision(2) << tminfo.aux_time[i];
     }
   }
 

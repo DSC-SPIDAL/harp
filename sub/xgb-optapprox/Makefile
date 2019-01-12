@@ -82,16 +82,57 @@ ifeq ($(USE_SSE), 1)
 	CFLAGS += -msse2
 endif
 endif
-ifeq ($(USE_COMPACT), 1)
+
+#
+# ==================================================================
+#
+
+#
+# User Defined Features
+# For proven features, set them open by default
+#
+#ifeq ($(USE_COMPACT), 1)
+#	CFLAGS += -DUSE_COMPACT=1
+#endif
+#ifeq ($(USE_COMPACT_BINID), 1)
+#	CFLAGS += -DUSE_COMPACT_BINID=1 
+#endif
+#ifeq ($(USE_BINID), 1)
+#	CFLAGS += -DUSE_BINID=1
+#endif
+#ifeq ($(USE_OMP_BUILDHIST), 1)
+#	CFLAGS += -DUSE_OMP_BUILDHIST=1
+#	export THREADIMP=omp
+#else
+##	LDFLAGS += -ltbbmalloc -ltbb
+#	LDFLAGS += -L/opt/intel/compilers_and_libraries_2019.0.117/linux/tbb/lib/intel64/gcc4.7
+#	LDFLAGS += -ltbbmalloc -ltbb
+#
+#	export THREADIMP=tbb
+#endif
+ifndef NOUSE_COMPACT
 	CFLAGS += -DUSE_COMPACT=1
 endif
-ifeq ($(USE_COMPACT_BINID), 1)
+ifndef NOUSE_COMPACT_BINID
 	CFLAGS += -DUSE_COMPACT_BINID=1 
 endif
-ifeq ($(USE_BINID), 1)
+ifndef NOUSE_BINID
 	CFLAGS += -DUSE_BINID=1
 endif
 
+ifndef USE_TBB
+	CFLAGS += -DUSE_OMP_BUILDHIST=1
+	export THREADIMP=omp
+else
+#	LDFLAGS += -ltbbmalloc -ltbb
+	LDFLAGS += -L/opt/intel/compilers_and_libraries_2019.0.117/linux/tbb/lib/intel64/gcc4.7
+	LDFLAGS += -ltbbmalloc -ltbb
+	export THREADIMP=tbb
+endif
+
+#
+# Other festures
+#
 ifeq ($(USE_DEBUG_SAVE), 1)
 	CFLAGS += -DUSE_DEBUG_SAVE=1
 endif
@@ -107,19 +148,15 @@ ifeq ($(USE_UNROLL), 1)
 else
 	export UNROLL=noprefetch
 endif
+
+#
+# Debug features
+#
 ifeq ($(USE_VTUNE), 1)
 #	CFLAGS += -DUSE_VTUNE=1 -g -no-inline-max-size
 	CFLAGS += -DUSE_VTUNE=1 -g 
+	export VTUNE=vtune-
 endif
-ifeq ($(USE_OMP_BUILDHIST), 1)
-	CFLAGS += -DUSE_OMP_BUILDHIST=1
-else
-#	LDFLAGS += -ltbbmalloc -ltbb
-	LDFLAGS += -L/opt/intel/compilers_and_libraries_2019.0.117/linux/tbb/lib/intel64/gcc4.7
-	LDFLAGS += -ltbbmalloc -ltbb
-endif
-
-
 #in program debug info enable
 ifeq ($(USE_DEBUG), 1)
 	CFLAGS += -DUSE_DEBUG=1
@@ -130,24 +167,35 @@ ifeq ($(DEBUG), 1)
 #CFLAGS += -fpermissive -fno-strict-aliasing -DUSE_BINID=1 -g -O2
 #CFLAGS += -g -O0
 CFLAGS += -g 
-TARGET = xgboost-$(CXX)-debug
-WORKDIR = build-$(CXX)-debug
+export OUTPUTTYPE=debug
+
+#TARGET = xgboost-$(CXX)-debug
+#WORKDIR = build-$(CXX)-debug
 else
 #CFLAGS += -O3 -funroll-loops -xcore-avx2
 CFLAGS += -O3 -funroll-loops 
 #CFLAGS += -fpermissive -fno-strict-aliasing -DUSE_BINID=1
 #CFLAGS += -fpermissive -fno-strict-aliasing
 #CFLAGS += -DUSE_BINID=1
-ifeq ($(USE_OMP_BUILDHIST), 1)
-TARGET = xgboost-$(CXX)-omp-$(HALFTRICK)-$(UNROLL)$(TAGNAME)
+export OUTPUTTYPE=release
+
+#TARGET = xgboost-$(CXX)-$(THREADIMP)-$(HALFTRICK)-$(UNROLL)$(TAGNAME)
+#WORKDIR = build-$(CXX)
+endif
+
+#
+# set target and build dir by features
+#
+ifdef TAGNAME
+TARGET = xgboost-$(CXX)-$(THREADIMP)-$(HALFTRICK)-$(UNROLL)-$(TAGNAME)-$(VTUNE)$(OUTPUTTYPE)
 else
-TARGET = xgboost-$(CXX)-tbb-$(HALFTRICK)-$(UNROLL)$(TAGNAME)
+TARGET = xgboost-$(CXX)-$(THREADIMP)-$(HALFTRICK)-$(UNROLL)-noname-$(VTUNE)$(OUTPUTTYPE)
 endif
+WORKDIR = build-$(CXX)-$(THREADIMP)-$(HALFTRICK)-$(UNROLL)-$(VTUNE)$(OUTPUTTYPE)
 
-WORKDIR = build-$(CXX)
-endif
-
-
+#
+# Compiler and vec report
+#
 ifeq ($(CXX), icc)
 #
 # icc
@@ -168,6 +216,9 @@ endif
 
 endif
 
+#
+# ==================================================================
+#
 ifndef LINT_LANG
 	LINT_LANG= "all"
 endif
@@ -301,6 +352,7 @@ clean:
 	fi
 
 clean_all: clean
+	$(RM) -rf build*/
 	cd $(DMLC_CORE); "$(MAKE)" clean; cd $(ROOTDIR)
 	cd $(RABIT); "$(MAKE)" clean; cd $(ROOTDIR)
 

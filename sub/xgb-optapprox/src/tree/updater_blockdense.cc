@@ -1222,18 +1222,40 @@ class HistMakerBlockDense: public BaseMaker {
     {
        for (size_t i = 0; i < this->qexpand_.size(); i++) {
          const unsigned nid = this->qexpand_[i];
-         //skip right nodes
-         if(CHECKHALFCOND) continue;
+         
+         // skip right nodes which are already updated in UpdateHistBlock
+         //if(CHECKHALFCOND) continue;
+         // as nodes in qexpand should always > 0
+         // we can simply check even and odd
+         if ((nid & 1)==0) continue;
 
          //left child not calculated yet
          auto parent_hist = this->wspace_.hset[0].GetHistUnitByBlkid(blkid_offset, nid/2);
+         #ifndef USE_UPDATEHALFTRICK_BYPTR
+         #pragma ivdep
+         #pragma omp simd
+         for(int j=0; j < hbuilder[nid].hist.size; j++){
+           hbuilder[nid].hist.Get(j).SetSubstract(
+                   parent_hist.Get(j),
+                   hbuilder[nid+1].hist.Get(j));
+         }
+
+         #else
+         /*
+          * two plain substraction
+          * start : hist.data
+          * size  : GradStat * hist.size
+          */
+          double* p_parent = reinterpret_cast<double*>(parent_hist.data);
+          double* p_left = reinterpret_cast<double*>(hbuilder[nid].hist.data);
+          double* p_right = reinterpret_cast<double*>(hbuilder[nid+1].hist.data);
           #pragma ivdep
           #pragma omp simd
-          for(int j=0; j < hbuilder[nid].hist.size; j++){
-            hbuilder[nid].hist.Get(j).SetSubstract(
-                    parent_hist.Get(j),
-                    hbuilder[nid+1].hist.Get(j));
+          for(int j=0; j < 2 * hbuilder[nid].hist.size; j++){
+              p_left[j] = p_parent[j] - p_right[j];
           }
+
+          #endif
 
         }
     }

@@ -23,7 +23,7 @@ source WHEREYOURREPOROOT/gbt-test/bin/init_env.sh
 # with the tag name "-byte-blockdense-longcube-threadinit"
 
 cd $_gbtproject_/sub/xgb-optapprox
-./makeall.sh -byte-blockdense-longcube-threadinit
+./makeall.sh byte-blockdense-longcube-threadinit
 
 ```
 
@@ -68,7 +68,7 @@ Use higgs dataset, test with different tree depth is necessary. Some errors only
 # validate all release versions, run cmd like this
 #../bin/xgb-validation.sh ../bin/xgboost-g++-omp-nohalftrick-noprefetch-byte-blockdense-longcube-threadinit-release blockdense 12
 
-./run-validate-block.sh
+./run-validate.sh
 
 ```
 
@@ -79,11 +79,18 @@ Make sure they passed the test. You should see messages like "pass!".
 Fixed with 32 threads, show the 'best' performance of each trainer.
 
 ```
-
+./run-speedup.sh
 
 ```
 
+### 4. strong scaling test 
 
+Run strong scaling test on higgs with max_depth=8
+
+```
+./run-scaling.sh
+
+```
 
 
 
