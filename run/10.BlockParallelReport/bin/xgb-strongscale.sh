@@ -19,12 +19,14 @@ check_init()
 
 
 if [ $# -eq "0" ] ; then
-	echo "Usage: xgb-strongscale.sh <bin> <dataset> <iter> <maxdepth> <tree_method> <row_blksize> <ft_blksize> <bin_blksize>"
+	echo "Usage: xgb-strongscale.sh <bin> <dataset> <iter> <maxdepth> <tree_method> <row_blksize> <ft_blksize> <bin_blksize> <runid>"
     exit -1
 fi
 
 
 check_init
+
+appname=StrongScale
 
 bin=$1
 num_round=10
@@ -80,19 +82,19 @@ echo "start test: $prefix"
 for thread in ${threads[*]}; do
 
 	#training
-	logfile=${prefix}-t${thread},${runid}
+	logfile=${prefix}-t${thread},${thread},${runid}
 	echo "$bin $conf num_round=${num_round} nthread=${thread} tree_method=${tree_method} max_depth=${max_depth} bin_block_size=${bin_blksize} ft_block_size=${ft_blksize} row_block_size=${row_blksize}" | tee ${logfile}.log
 	$bin $conf num_round=${num_round} nthread=${thread} tree_method=${tree_method} max_depth=${max_depth} bin_block_size=${bin_blksize} ft_block_size=${ft_blksize} row_block_size=${row_blksize} 2>&1 | tee -a ${logfile}.log
 
 	# save timing results
-	output=StrongScale-time-${prefix}-${runid}.csv
+	output=${appname}-time-${prefix}-${runid}.csv
 	save $logfile
 
 done
 
-mkdir -p StrongScale-${prefix}
-mv ${prefix}* StrongScale-${prefix}
-mv StrongScale-*${prefix}*.csv StrongScale-${prefix}
+mkdir -p ${appname}-${prefix}
+mv ${prefix}* ${appname}-${prefix}
+mv ${appname}-*${prefix}*.csv ${appname}-${prefix}
 
 
 echo "result dir: StrongScale-${prefix}"

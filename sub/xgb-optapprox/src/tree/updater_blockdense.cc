@@ -181,7 +181,12 @@ class HistMakerBlockDense: public BaseMaker {
     /*! \brief cutting points in each histunit */
     const bst_float *cut;
     /*! \brief data in different hist unit */
-    std::vector<TStats> data;
+#ifdef USE_VECTOR4MODEL
+    std::vector<TStats> data{nullptr};
+#else
+    TStats  *data;
+    unsigned long size{0};
+#endif
 
     //add fset size
     size_t fsetSize;
@@ -295,9 +300,11 @@ class HistMakerBlockDense: public BaseMaker {
       hset.resize(nthread);
       // cleanup statistics
       for (int tid = 0; tid < nthread; ++tid) {
+#ifdef USE_VECTOR4MODEL
         for (size_t i = 0; i < hset[tid].data.size(); ++i) {
           hset[tid].data[i].Clear();
         }
+#endif
         hset[tid].rptr = dmlc::BeginPtr(rptr);
         hset[tid].cut = dmlc::BeginPtr(cut);
         hset[tid].fsetSize = rptr.back();
@@ -314,21 +321,45 @@ class HistMakerBlockDense: public BaseMaker {
         //hset[tid].data.resize(cut.size() * nodesize, TStats(param));
         //hset[tid].data.resize(param.max_bin * (hset[tid].featnum+1) * nodesize, TStats(param));
         unsigned long cubesize = blkinfo.GetModelCubeSize(param.max_bin, hset[tid].featnum+1, nodesize);
-        hset[tid].data.resize(cubesize, TStats(param));
 
         LOG(CONSOLE)<< "Init hset(memset): rptrSize:" << rptr.size() <<
             ",cutSize:" <<  cut.size() <<",nodesize:" << nodesize <<
             ",fsetSize:" << rptr.back() << ",max_depth:" << param.max_depth << 
             ",featnum:" << hset[tid].featnum <<
             ",cubesize:" << cubesize << ":" << 8*cubesize/(1024*1024*1024) << "GB";
+#ifdef USE_VECTOR4MODEL
+        hset[tid].data.resize(cubesize, TStats(param));
+#else
+        //malloc instead of new to avoid object construction call
+        //CHECK_EQ(hset[tid].data, nullptr);
+
+        if (hset[tid].data != nullptr){
+            //second time call init will prepare the memory for UpdateHistBlock
+            std::free(hset[tid].data);
+        }
+        hset[tid].data = static_cast<TStats*>(malloc(sizeof(TStats)*cubesize));
+        hset[tid].size = cubesize;
+        //CHECK_NE(hset[tid].data, nullptr);
+        if (hset[tid].data == nullptr){
+            LOG(CONSOLE) << "FATAL ERROR, quit";
+            std::exit(-1);
+        }
+#endif
+
       }
-    }
+
+   }
 
     void ClearData(){
         //just clear the data
         //when GHSum=16GB, initialize take a long time in seconds
+
+#ifdef USE_VECTOR4MODEL
         //std::fill(hset[0].data.begin(), hset[0].data.end(), GradStats(0.,0.));
         std::memset(hset[0].data.data(), 0., sizeof(GradStats) * hset[0].data.size());
+#else
+        std::memset(hset[0].data, 0., sizeof(GradStats) * hset[0].size);
+#endif
     }
 
     void saveGHSum(int treeid, int depth, int nodecnt){
@@ -1007,7 +1038,9 @@ class HistMakerBlockDense: public BaseMaker {
 
         ////tbb::task_scheduler_init init(omp_get_max_threads());
         #endif
-
+        
+        //re-init the model memory space, first touch
+        this->wspace_.Init(this->param_, 1, std::pow(2,this->param_.max_depth+1) /*256*/, blkInfo_);
 
         this->tminfo.aux_time[0] += dmlc::GetTime() - _tstartInit;
         /*
@@ -1021,6 +1054,7 @@ class HistMakerBlockDense: public BaseMaker {
 
     }// end if(isInitializedHistIndex)
     else{
+        double _tstartInit = dmlc::GetTime();
 
         //double _tstartInit = dmlc::GetTime();
         //init for each tree
@@ -1033,7 +1067,6 @@ class HistMakerBlockDense: public BaseMaker {
 
         auto _info = p_fmat->Info();
         this->blkInfo_.init(_info.num_row_, _info.num_col_+1, param_.max_bin);
-        double _tstartInit = dmlc::GetTime();
         //this->wspace_.Init(this->param_, 1, std::pow(2,this->param_.max_depth+1) /*256*/, blkInfo_);
         //
         //this->wspace_.ClearData();
@@ -1231,7 +1264,7 @@ class HistMakerBlockDense: public BaseMaker {
 
          //left child not calculated yet
          auto parent_hist = this->wspace_.hset[0].GetHistUnitByBlkid(blkid_offset, nid/2);
-         #ifndef USE_UPDATEHALFTRICK_BYPTR
+         #ifdef NOUSE_DIRECTPTR
          #pragma ivdep
          #pragma omp simd
          for(int j=0; j < hbuilder[nid].hist.size; j++){
