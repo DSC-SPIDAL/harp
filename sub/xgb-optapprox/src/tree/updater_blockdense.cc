@@ -3,6 +3,10 @@
  * \file updater_HistMakerBlockDense.cc
  * \brief use histogram counting to construct a tree
  * \author Tianqi Chen
+ *
+ * 2018,2019
+ * HARPDAAL-GBT optimize based on the approx and fast_hist codebase
+ *
  */
 #include <xgboost/base.h>
 #include <xgboost/tree_updater.h>
@@ -77,9 +81,18 @@ class HistMakerBlockDense: public BaseMaker {
   }
 
   ~HistMakerBlockDense(){
+    /*
+     * free memory
+     */
     delete p_hmat;
     delete p_blkmat;
     if(bwork_lock_) delete bwork_lock_;
+
+    /*
+     * model memory
+     */
+    wspace_.release();
+
   }
 
   TimeInfo getTimeInfo() override{
@@ -174,20 +187,35 @@ class HistMakerBlockDense: public BaseMaker {
     }
 
   };
-  /*! \brief a set of histograms from different index */
+
+  /*
+   * Core Data Structure for Model GHSum
+   *
+   */
   struct HistSet {
     /*! \brief the index pointer of each histunit */
     const unsigned *rptr;
     /*! \brief cutting points in each histunit */
     const bst_float *cut;
-    /*! \brief data in different hist unit */
-#ifdef USE_VECTOR4MODEL
-    std::vector<TStats> data{nullptr};
-#else
-    TStats  *data;
-    unsigned long size{0};
-#endif
 
+    /*
+     * GHSum is the model, preallocated
+     *
+     */
+#ifdef USE_VECTOR4MODEL
+    // store sum for each node as the last feature vector, 
+    // and only use the first element
+    std::vector<TStats> data;
+#else
+    // avoid object initialization and first touch in main thread
+    // layout of model
+    //      <nodeid, binid , fid>
+    // store separate sum at the end
+    TStats  *data{nullptr};
+    unsigned long size{0};
+    TStats  *nodesum{nullptr};
+
+#endif
     //add fset size
     size_t fsetSize;
     size_t nodeSize;
@@ -197,7 +225,6 @@ class HistMakerBlockDense: public BaseMaker {
     /*
      * GHSum is the model, preallocated
      * Layout <fid, nid, binid>
-     *
      */
 
     /*! \brief */
@@ -262,12 +289,26 @@ class HistMakerBlockDense: public BaseMaker {
     /*
      * general version of blkinfo: (row,ft,bin_blk_size)
      */
+    //
+    // model organized by block, memory are continuous for each block
+    // used in BuildHist
+    //
     inline HistUnit GetHistUnitByBlkid(size_t blkid, size_t nid) {
       return HistUnit(cut, /* not use*/
                       &data[0] + (pblkInfo->GetBinBlkSize()*pblkInfo->GetFeatureBlkSize())*(blkid * nodeSize + nid),
                       pblkInfo->GetBinBlkSize()*pblkInfo->GetFeatureBlkSize());
     }
 
+    //
+    // node summation store at the end
+    //
+    inline TStats& GetNodeSum(int nid){
+        return nodesum[nid];
+    }
+
+    //
+    // FindSplit will go through model by a feature column, not continuous
+    //
     inline HistUnit GetHistUnitByFid(size_t fid, size_t nid) {
       int blkid = fid / pblkInfo->GetFeatureBlkSize();
       unsigned int blkoff = (pblkInfo->GetBinBlkSize()*pblkInfo->GetFeatureBlkSize())*(blkid * nodeSize + nid);
@@ -289,58 +330,60 @@ class HistMakerBlockDense: public BaseMaker {
     /*! \brief cut field */
     std::vector<bst_float> cut;
     std::vector<bst_float> min_val;
-    // per thread histset
-    std::vector<HistSet> hset;
+    // the model
+    HistSet hset;
+
     // initialize the hist set
-    void Init(const TrainParam &param, int nthread, int nodesize, BlockInfo& blkinfo) {
+    void Init(const TrainParam &param, int nodesize, BlockInfo& blkinfo) {
 
-      //optimize
-      CHECK_EQ(nthread, 1);
-
-      hset.resize(nthread);
       // cleanup statistics
-      for (int tid = 0; tid < nthread; ++tid) {
+      //for (int tid = 0; tid < nthread; ++tid) {
+      {
 #ifdef USE_VECTOR4MODEL
-        for (size_t i = 0; i < hset[tid].data.size(); ++i) {
-          hset[tid].data[i].Clear();
+        for (size_t i = 0; i < hset.data.size(); ++i) {
+          hset.data[i].Clear();
         }
 #endif
-        hset[tid].rptr = dmlc::BeginPtr(rptr);
-        hset[tid].cut = dmlc::BeginPtr(cut);
-        hset[tid].fsetSize = rptr.back();
-        hset[tid].featnum = rptr.size() - 2;
-        hset[tid].nodeSize = nodesize;
+        hset.rptr = dmlc::BeginPtr(rptr);
+        hset.cut = dmlc::BeginPtr(cut);
+        hset.fsetSize = rptr.back();
+        hset.featnum = rptr.size() - 2;
+        hset.nodeSize = nodesize;
 
-        hset[tid].pblkInfo = &blkinfo;
+        hset.pblkInfo = &blkinfo;
 
         /*
          * <binid, nid, fid> layout means hole in the plain
          * simple solution to allocate full space
          * other than resort to remove the holes
          */
-        //hset[tid].data.resize(cut.size() * nodesize, TStats(param));
-        //hset[tid].data.resize(param.max_bin * (hset[tid].featnum+1) * nodesize, TStats(param));
-        unsigned long cubesize = blkinfo.GetModelCubeSize(param.max_bin, hset[tid].featnum+1, nodesize);
+#ifdef USE_VECTOR4MODEL
+        unsigned long cubesize = blkinfo.GetModelCubeSize(param.max_bin, hset.featnum+1, nodesize);
+#else
+        unsigned long cubesize = blkinfo.GetModelCubeSize(param.max_bin, hset.featnum, nodesize);
+#endif
 
         LOG(CONSOLE)<< "Init hset(memset): rptrSize:" << rptr.size() <<
             ",cutSize:" <<  cut.size() <<",nodesize:" << nodesize <<
             ",fsetSize:" << rptr.back() << ",max_depth:" << param.max_depth << 
-            ",featnum:" << hset[tid].featnum <<
+            ",featnum:" << hset.featnum <<
             ",cubesize:" << cubesize << ":" << 8*cubesize/(1024*1024*1024) << "GB";
-#ifdef USE_VECTOR4MODEL
-        hset[tid].data.resize(cubesize, TStats(param));
-#else
-        //malloc instead of new to avoid object construction call
-        //CHECK_EQ(hset[tid].data, nullptr);
 
-        if (hset[tid].data != nullptr){
+#ifdef USE_VECTOR4MODEL
+        hset.data.resize(cubesize, TStats(param));
+#else
+        // this function will be called for only two times and in intialization
+        if (hset.data != nullptr){
             //second time call init will prepare the memory for UpdateHistBlock
-            std::free(hset[tid].data);
+            std::free(hset.data);
         }
-        hset[tid].data = static_cast<TStats*>(malloc(sizeof(TStats)*cubesize));
-        hset[tid].size = cubesize;
-        //CHECK_NE(hset[tid].data, nullptr);
-        if (hset[tid].data == nullptr){
+        // add sum at the end
+        hset.data = static_cast<TStats*>(malloc(sizeof(TStats) * cubesize));
+        hset.size = cubesize;
+        if (hset.nodesum == nullptr){
+            hset.nodesum = static_cast<TStats*>(malloc(sizeof(TStats) * nodesize));
+        }
+        if (hset.data == nullptr){
             LOG(CONSOLE) << "FATAL ERROR, quit";
             std::exit(-1);
         }
@@ -350,15 +393,26 @@ class HistMakerBlockDense: public BaseMaker {
 
    }
 
-    void ClearData(){
-        //just clear the data
-        //when GHSum=16GB, initialize take a long time in seconds
+    void release(){
+#ifndef USE_VECTOR4MODEL
+        if (hset.data != nullptr){
+            std::free(hset.data);
+        }
+        if (hset.nodesum != nullptr){
+            std::free(hset.nodesum);
+        }
+#endif
+    }
 
+    void ClearData(){
+        // just clear the data
+        // when GHSum=16GB, initialize take a long time in seconds
+        // this function will not be called, now use thread local HistUnit.ClearData directly
 #ifdef USE_VECTOR4MODEL
-        //std::fill(hset[0].data.begin(), hset[0].data.end(), GradStats(0.,0.));
-        std::memset(hset[0].data.data(), 0., sizeof(GradStats) * hset[0].data.size());
+        //std::fill(hset.data.begin(), hset.data.end(), GradStats(0.,0.));
+        std::memset(hset.data.data(), 0., sizeof(GradStats) * hset.data.size());
 #else
-        std::memset(hset[0].data, 0., sizeof(GradStats) * hset[0].size);
+        std::memset(hset.data, 0., sizeof(GradStats) * hset.size);
 #endif
     }
 
@@ -369,22 +423,22 @@ class HistMakerBlockDense: public BaseMaker {
       std::ofstream write;
       write.open(ss.str());
  
-      int pagesize = hset[0].data.size() / nodecnt;
+      int pagesize = hset.data.size() / nodecnt;
 
       LOG(CONSOLE) << "saveGHSUM(" << treeid << "," << depth << "," 
           << nodecnt << ") pagesize=" << pagesize <<
-          "fset=" << hset[0].featnum;
+          "fset=" << hset.featnum;
 
       for(int i=0; i< nodecnt; i++){
           write << "NODE:" << i << "\n";
 
-          for (int fid = 0; fid < hset[0].featnum; fid++){
+          for (int fid = 0; fid < hset.featnum; fid++){
             write << "\tF:" << fid << "\t";
 
-            int sumlen = hset[0].rptr[fid+1] - hset[0].rptr[fid]; 
+            int sumlen = hset.rptr[fid+1] - hset.rptr[fid]; 
             for (int j=0; j < sumlen; j++){ 
-              auto offset = j + i*pagesize + hset[0].rptr[fid];
-              write << hset[0].data[offset].sum_grad <<"," << hset[0].data[offset].sum_hess << " ";
+              auto offset = j + i*pagesize + hset.rptr[fid];
+              write << hset.data[offset].sum_grad <<"," << hset.data[offset].sum_hess << " ";
             }
             write << "\n";
           }
@@ -701,15 +755,18 @@ class HistMakerBlockDense: public BaseMaker {
       const int nid = qexpand_[wid];
       CHECK_EQ(node2workindex_[nid], static_cast<int>(wid));
       SplitEntry &best = sol[wid];
-      //TStats &node_sum = wspace_.hset[0][num_feature + wid * (num_feature + 1)].data[0];
-      //TStats &node_sum = wspace_.hset[0].GetHistUnit(num_feature, wid).data[0];
-      TStats &node_sum = wspace_.hset[0].GetHistUnitByFid(num_feature, nid).data[0];
+#ifdef USE_VECTOR4MODEL
+      TStats &node_sum = wspace_.hset.GetHistUnitByFid(num_feature, nid).data[0];
+#else
+      TStats &node_sum = wspace_.hset.GetNodeSum(nid);
+#endif
+
       for (size_t i = 0; i < fset.size(); ++i) {
         int fid = fset[i];
         int fidoffset = this->feat2workindex_[fid];
 
         CHECK_GE(fidoffset, 0);
-        EnumerateSplit(this->wspace_.hset[0].GetHistUnitByFid(fidoffset, nid),
+        EnumerateSplit(this->wspace_.hset.GetHistUnitByFid(fidoffset, nid),
                        node_sum, fid, &best, &left_sum[wid]);
 
 
@@ -720,9 +777,14 @@ class HistMakerBlockDense: public BaseMaker {
     for (bst_omp_uint wid = 0; wid < nexpand; ++wid) {
       const int nid = qexpand_[wid];
       const SplitEntry &best = sol[wid];
-      //const TStats &node_sum = wspace_.hset[0][num_feature + wid * (num_feature + 1)].data[0];
-      ///const TStats &node_sum = wspace_.hset[0].GetHistUnit(num_feature, wid).data[0];
-      const TStats &node_sum = wspace_.hset[0].GetHistUnitByFid(num_feature, nid).data[0];
+#ifdef USE_VECTOR4MODEL
+      const TStats &node_sum = wspace_.hset.GetHistUnitByFid(num_feature, nid).data[0];
+#else
+      const TStats &node_sum = wspace_.hset.GetNodeSum(nid);
+#endif
+
+
+
       this->SetStats(p_tree, nid, node_sum);
       // set up the values
       p_tree->Stat(nid).loss_chg = best.loss_chg;
@@ -943,9 +1005,13 @@ class HistMakerBlockDense: public BaseMaker {
         * OptApprox:: init bindid in p_fmat
         */
         auto _info = p_fmat->Info();
+#ifdef USE_VECTOR4MODEL
         this->blkInfo_.init(_info.num_row_, _info.num_col_+1, param_.max_bin);
+#else
+        this->blkInfo_.init(_info.num_row_, _info.num_col_, param_.max_bin);
+#endif
 
-        this->wspace_.Init(this->param_, 1, std::pow(2,this->param_.max_depth+1) /*256*/, this->blkInfo_);
+        this->wspace_.Init(this->param_, std::pow(2,this->param_.max_depth+1), this->blkInfo_);
 
         this->SetDefaultPostion(p_fmat, tree);
 
@@ -975,8 +1041,6 @@ class HistMakerBlockDense: public BaseMaker {
         /*
          * build blkmat(block matrix) and hmat(column matrix)
          */
-        //BlkInfo blkInfo(0,0,1);
-
         p_blkmat->Init(*p_fmat->GetRowBatches().begin(), p_fmat->Info(), param_.max_bin, blkInfo_);
         p_hmat->Init(*p_fmat->GetSortedColumnBatches().begin(), p_fmat->Info());
 
@@ -1015,11 +1079,6 @@ class HistMakerBlockDense: public BaseMaker {
         for(int i=0; i < p_blkmat->GetBlockNum(); i++){
             bwork_set_.push_back(i);
         }
-       //this->bwork_lock_.resize(bwork_base_blknum_);
-        //std::fill(bwork_lock_.begin(), bwork_lock_.end(), ATOMIC_FLAG_INIT);
-        //for(int ii=0;ii<bwork_base_blknum_;ii++){
-        //    bwork_lock_[ii] = ATOMIC_FLAG_INIT;
-        //}
 
         LOG(CONSOLE) << "Init bwork_set_: base_blknum=" << bwork_base_blknum_ <<
             ":" << bwork_set_.size();
@@ -1040,7 +1099,7 @@ class HistMakerBlockDense: public BaseMaker {
         #endif
         
         //re-init the model memory space, first touch
-        this->wspace_.Init(this->param_, 1, std::pow(2,this->param_.max_depth+1) /*256*/, blkInfo_);
+        this->wspace_.Init(this->param_, std::pow(2,this->param_.max_depth+1), blkInfo_);
 
         this->tminfo.aux_time[0] += dmlc::GetTime() - _tstartInit;
         /*
@@ -1066,14 +1125,15 @@ class HistMakerBlockDense: public BaseMaker {
         }
 
         auto _info = p_fmat->Info();
+#ifdef USE_VECTOR4MODEL
         this->blkInfo_.init(_info.num_row_, _info.num_col_+1, param_.max_bin);
+#else
+        this->blkInfo_.init(_info.num_row_, _info.num_col_, param_.max_bin);
+#endif
         //this->wspace_.Init(this->param_, 1, std::pow(2,this->param_.max_depth+1) /*256*/, blkInfo_);
-        //
         //this->wspace_.ClearData();
-    
 
         this->tminfo.aux_time[8] += dmlc::GetTime() - _tstartInit;
-
     }
   }
 
@@ -1096,7 +1156,7 @@ class HistMakerBlockDense: public BaseMaker {
     //for (size_t i = 0; i < this->qexpand_.size(); ++i) {
       //const unsigned nid = this->qexpand_[i];
       const unsigned nid = 0;
-      hbuilder[nid].hist = this->wspace_.hset[0].InitGetHistUnitByFid(fid_offset,nid);
+      hbuilder[nid].hist = this->wspace_.hset.InitGetHistUnitByFid(fid_offset,nid);
     //}
     for (auto& c : col) {
       const bst_uint ridx = c.index;
@@ -1159,7 +1219,7 @@ class HistMakerBlockDense: public BaseMaker {
       const bst_uint fid_offset = feat2workindex_[c.index];
       const bst_uint nid = 0;
 
-      hbuilder[nid].hist = this->wspace_.hset[0].InitGetHistUnitByFid(fid_offset,nid);
+      hbuilder[nid].hist = this->wspace_.hset.InitGetHistUnitByFid(fid_offset,nid);
       unsigned binid = hbuilder[nid].GetBinId(c.fvalue);
       //mapping index(raw fid) to working fid
       c.addBinid(binid, fid_offset);
@@ -1219,7 +1279,7 @@ class HistMakerBlockDense: public BaseMaker {
     hbuilder.resize(tree.param.num_nodes);
     for (size_t i = 0; i < this->qexpand_.size(); ++i) {
       const unsigned nid = this->qexpand_[i];
-      hbuilder[nid].hist = this->wspace_.hset[0].GetHistUnitByBlkid(blkid_offset, nid);
+      hbuilder[nid].hist = this->wspace_.hset.GetHistUnitByBlkid(blkid_offset, nid);
     }
 
 
@@ -1236,7 +1296,7 @@ class HistMakerBlockDense: public BaseMaker {
         unsigned nid_parent = (nid_start+1)/2-1;
         for (size_t i = 0; i < this->qexpand_.size(); i+=2) {
           const unsigned nid = this->qexpand_[i];
-          auto parent_hist = this->wspace_.hset[0].GetHistUnitByBlkid(blkid_offset, nid_parent + i/2);
+          auto parent_hist = this->wspace_.hset.GetHistUnitByBlkid(blkid_offset, nid_parent + i/2);
           #pragma ivdep
           #pragma omp simd
           for(int j=0; j < hbuilder[nid].hist.size; j++){
@@ -1263,7 +1323,7 @@ class HistMakerBlockDense: public BaseMaker {
          if ((nid & 1)==0) continue;
 
          //left child not calculated yet
-         auto parent_hist = this->wspace_.hset[0].GetHistUnitByBlkid(blkid_offset, nid/2);
+         auto parent_hist = this->wspace_.hset.GetHistUnitByBlkid(blkid_offset, nid/2);
          #ifdef NOUSE_DIRECTPTR
          #pragma ivdep
          #pragma omp simd
@@ -1324,7 +1384,7 @@ class HistMakerBlockDense: public BaseMaker {
     for (size_t i = 0; i < this->qexpand_.size(); ++i) {
       const unsigned nid = this->qexpand_[i];
       //const unsigned wid = this->node2workindex_[nid];
-      hbuilder[nid].hist = this->wspace_.hset[0].GetHistUnitByBlkid(blkid_offset, nid);
+      hbuilder[nid].hist = this->wspace_.hset.GetHistUnitByBlkid(blkid_offset, nid);
 
       //init data for the first zblks
       if (zblkid == 0){
@@ -1610,14 +1670,19 @@ class HistMakerBlockDense: public BaseMaker {
       for (size_t i = 0; i < this->qexpand_.size(); ++i) {
         const int nid = this->qexpand_[i];
         const int wid = this->node2workindex_[nid];
-        this->wspace_.hset[0].GetHistUnitByFid(work_set_.size(),nid)
+#ifdef USE_VECTOR4MODEL
+        this->wspace_.hset.GetHistUnitByFid(work_set_.size(),nid)
             .data[0] = this->node_stats_[nid];
+#else
+        this->wspace_.hset.GetNodeSum(nid)
+                     = this->node_stats_[nid];
+#endif
 
       }
       this->tminfo.aux_time[6] += dmlc::GetTime() - _tstartSum;
     }
-    //this->histred_.Allreduce(dmlc::BeginPtr(this->wspace_.hset[0].data),
-    //                        this->wspace_.hset[0].data.size());
+    //this->histred_.Allreduce(dmlc::BeginPtr(this->wspace_.hset.data),
+    //                        this->wspace_.hset.data.size());
 
     //save the last tree point
     //p_last_tree_ = &tree;
