@@ -172,12 +172,20 @@ void DMatrixDenseCube::Init(const SparsePage& page, MetaInfo& info, int num_maxb
     info_.num_col_ = info.num_col_;
     info_.num_nonzero_ = info.num_nonzero_;
 
+#ifdef USE_VECTOR4MODEL
     blkInfo.init(info.num_row_, info_.num_col_ + 1, num_maxbins);
+#else
+    blkInfo.init(info.num_row_, info_.num_col_, num_maxbins);
+#endif
 
     //init 
     data_.clear();
     int row_blknum = (info.num_row_ + blkInfo.GetRowBlkSize() - 1)/ blkInfo.GetRowBlkSize(); 
+#ifdef USE_VECTOR4MODEL
     int fid_blknum = (info.num_col_ + 1 + blkInfo.GetFeatureBlkSize() - 1)/ blkInfo.GetFeatureBlkSize(); 
+#else
+    int fid_blknum = (info.num_col_ + blkInfo.GetFeatureBlkSize() - 1)/ blkInfo.GetFeatureBlkSize(); 
+#endif
     int binid_blknum = (num_maxbins + blkInfo.GetBinBlkSize() - 1)/ blkInfo.GetBinBlkSize(); 
     data_.resize(fid_blknum * binid_blknum);
     //todo: init blkid if necessary
