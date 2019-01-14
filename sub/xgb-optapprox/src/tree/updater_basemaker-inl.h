@@ -168,7 +168,7 @@ class BaseMaker: public TreeUpdater {
     std::vector<int> newnodes;
     for (int nid : qexpand_) {
       //if (!tree[nid].IsLeaf()) {
-      if (!tree[nid].IsLeaf() && !tree[nid].IsDeleted()) {
+      if (!tree[nid].IsLeaf() && !tree[nid].IsDeleted() && !tree[nid].IsDummy()) {
         newnodes.push_back(tree[nid].LeftChild());
         newnodes.push_back(tree[nid].RightChild());
       }
@@ -470,10 +470,42 @@ class BaseMaker: public TreeUpdater {
  private:
   inline void UpdateNode2WorkIndex(const RegTree &tree) {
     // update the node2workindex
-    std::fill(node2workindex_.begin(), node2workindex_.end(), -1);
+    int oldsize = node2workindex_.size();
     node2workindex_.resize(tree.param.num_nodes);
-    for (size_t i = 0; i < qexpand_.size(); ++i) {
+
+    // clean the new indexes
+#ifndef USE_HALFTRICK
+    // clear all
+    std::fill(node2workindex_.begin(), node2workindex_.end(), -1);
+#else
+    if (oldsize < node2workindex_.size()){
+        //clear only the new ones, reserve the old ones
+        std::fill(node2workindex_.begin() + oldsize, node2workindex_.end(), -1);
+    }
+    else{
+        std::fill(node2workindex_.begin(), node2workindex_.end(), -1);
+    }
+#endif
+
+    for (int i = 0; i < qexpand_.size(); ++i) {
+#ifndef USE_HALFTRICK
+      //nohalftrick always use compact storage mode
       node2workindex_[qexpand_[i]] = static_cast<int>(i);
+#else
+      //halftrick will have a full binary tree
+      #ifdef ALLOCATE_ALLNODES
+      node2workindex_[qexpand_[i]] = qexpand_[i];
+      #else
+      int nid = qexpand_[i];
+      if ((nid&1) == 0){
+        //write right nodes only
+        //interleave mode, (3,5 | 4,6) -> (7,9,11,13| 8,10,12,14)
+        int num_leaves = (tree.param.num_nodes +1 ) / 2;
+        node2workindex_[qexpand_[i]] = qexpand_[i]/2 + (qexpand_[i]%2)*num_leaves/2;
+      }
+
+      #endif  
+#endif
     }
   }
 };
