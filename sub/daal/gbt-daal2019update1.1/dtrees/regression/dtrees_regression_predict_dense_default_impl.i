@@ -64,13 +64,16 @@ protected:
         const typename dtrees::internal::DecisionTreeNode* pNode =
             dtrees::prediction::internal::findNode<algorithmFPType, TreeType, cpu>(t, featTypes, x);
         DAAL_ASSERT(pNode);
+
         return pNode ? pNode->featureValueOrResponse : 0.;
     }
 
     algorithmFPType predictByTrees(size_t iFirstTree, size_t nTrees, const algorithmFPType* x)
     {
         algorithmFPType val = 0;
-        for(size_t iTree = iFirstTree, iLastTree = iFirstTree + nTrees; iTree < iLastTree; ++iTree)
+        const size_t iLastTree = iFirstTree + nTrees;
+
+        for(size_t iTree = iFirstTree; iTree < iLastTree; ++iTree)
             val += predict(*_aTree[iTree], _featHelper, x);
         return val;
     }
@@ -109,7 +112,7 @@ services::Status PredictRegressionTaskBase<algorithmFPType, cpu>::run(services::
             ReadRows<algorithmFPType, cpu> xBD(const_cast<NumericTable*>(_data), iStartRow, nRowsToProcess);
             DAAL_CHECK_BLOCK_STATUS_THR(xBD);
             algorithmFPType* res = resBD.get() + iStartRow;
-            if(nRowsToProcess < 2 * nThreads)
+            if(nRowsToProcess < 2 * nThreads || cpu == __avx512_mic__)
             {
                 for(size_t iRow = 0; iRow < nRowsToProcess; ++iRow)
                     res[iRow] += factor*predictByTrees(iTree, nTreesToUse, xBD.get() + iRow*dim.nCols);

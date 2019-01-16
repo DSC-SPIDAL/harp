@@ -89,7 +89,7 @@ struct BinParams
 class IndexedFeatures
 {
 public:
-    typedef unsigned int IndexType;
+    typedef int IndexType;  // should be unsigned int
     struct FeatureEntry
     {
         DAAL_NEW_DELETE();

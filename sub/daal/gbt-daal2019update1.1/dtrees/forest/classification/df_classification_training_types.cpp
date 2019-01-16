@@ -19,7 +19,7 @@
 //--
 */
 
-#include "algorithms/decision_forest/decision_forest_classification_training_types.h"
+#include "df_classification_training_types_result.h"
 #include "serialization_utils.h"
 #include "daal_strings.h"
 
@@ -43,7 +43,18 @@ namespace interface1
 {
 
 __DAAL_REGISTER_SERIALIZATION_CLASS(Result, SERIALIZATION_DECISION_FOREST_CLASSIFICATION_TRAINING_RESULT_ID);
-Result::Result() : classifier::training::Result(lastResultId + 1){}
+
+Result::Result() : classifier::training::Result(lastResultId + 1)
+{
+    _impl = new Result::ResultImpl();
+}
+
+Result::~Result() { delete _impl; }
+
+Result::Result( const Result& other ): classifier::training::Result( other )
+{
+    _impl = new Result::ResultImpl(*other._impl);
+}
 
 daal::algorithms::decision_forest::classification::ModelPtr Result::get(classifier::training::ResultId id) const
 {
@@ -90,6 +101,11 @@ services::Status Result::check(const daal::algorithms::Input *input, const daal:
         DAAL_CHECK_STATUS(s, data_management::checkNumericTable(get(variableImportance).get(), variableImportanceStr(), 0, 0, nFeatures, 1));
     }
     return s;
+}
+
+engines::EnginePtr Result::get(ResultEngineId id) const
+{
+    return _impl->getEngine();
 }
 
 services::Status Parameter::check() const

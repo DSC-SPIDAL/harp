@@ -26,6 +26,9 @@
 #include "dtrees_train_data_helper.i"
 #include "threading.h"
 #include "dtrees_model_impl.h"
+#include "engine_types_internal.h"
+#include "service_defines.h"
+#include "uniform_kernel.h"
 
 using namespace daal::algorithms::dtrees::training::internal;
 
@@ -59,6 +62,7 @@ public:
     NumericTable* oobError = nullptr; //if needed then allocated outside kernel
     NumericTable* oobErrorPerObs = nullptr; //if needed then allocated outside kernel
     NumericTablePtr oobIndices; //if needed then allocated in kernel
+    engines::EnginePtr updatedEngine; // engine updated after simulations
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -215,6 +219,29 @@ Ctx* createTlsContext(const NumericTable *x, const Parameter& par, size_t nClass
     return ctx;
 }
 
+template <CpuType cpu>
+services::Status selectParallelizationTechnique(const Parameter& par, engines::internal::ParallelizationTechnique &technique)
+{
+    auto engineImpl = dynamic_cast<engines::internal::BatchBaseImpl*>(par.engine.get());
+
+    engines::internal::ParallelizationTechnique techniques[] =
+    {
+        engines::internal::family,
+        engines::internal::leapfrog,
+        engines::internal::skipahead
+    };
+
+    for(auto &t : techniques)
+    {
+        if(engineImpl->hasSupport(t))
+        {
+            technique = t;
+            return services::Status();
+        }
+    }
+    return services::Status(ErrorEngineNotSupported);
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////
 // compute() implementation
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -263,6 +290,20 @@ services::Status computeImpl(HostAppIface* pHostApp, const NumericTable *x, cons
         return ctx ? new TaskType(pHostApp, x, y, par, featTypes, par.memorySavingMode ? nullptr : &indexedFeatures, *ctx, nClasses) : nullptr;
     });
 
+    engines::internal::ParallelizationTechnique technique = engines::internal::family;
+    selectParallelizationTechnique<cpu>(par, technique);
+    engines::internal::Params<cpu> params(par.nTrees);
+    for(size_t i = 0; i < par.nTrees; i++)
+    {
+        params.nSkip[i] = i * par.nTrees * x->getNumberOfRows() * (par.featuresPerNode + 1);
+    }
+    TArray<engines::EnginePtr, cpu> engines(par.nTrees);
+    engines::internal::EnginesCollection<cpu> enginesCollection(par.engine, technique, params, engines, &s);
+    if(!s)
+        return s;
+
+    services::internal::TArray<size_t, cpu> numElems(par.nTrees);
+
     daal::SafeStatus safeStat;
     daal::threader_for(par.nTrees, par.nTrees, [&](size_t i)
     {
@@ -271,7 +312,10 @@ services::Status computeImpl(HostAppIface* pHostApp, const NumericTable *x, cons
         TaskType* task = tlsTask.local();
         DAAL_CHECK_MALLOC_THR(task);
         dtrees::internal::Tree* pTree = nullptr;
-        services::Status s = task->run(size_t(par.seed)*(i + 1), pTree);
+        numElems[i] = 0;
+        auto engineImpl = dynamic_cast<engines::internal::BatchBaseImpl*>(engines[i].get());
+        DAAL_CHECK_THR(engineImpl, ErrorEngineNotSupported);
+        services::Status s = task->run(engineImpl, pTree, numElems[i]);
         if(pTree)
             md.add((typename ModelType::TreeType&)*pTree);
         DAAL_CHECK_STATUS_THR(s);
@@ -294,6 +338,8 @@ services::Status computeImpl(HostAppIface* pHostApp, const NumericTable *x, cons
     if(!s)
         return s;
     DAAL_CHECK_MALLOC(md.size() == par.nTrees);
+
+    res.updatedEngine = enginesCollection.getUpdatedEngine(par.engine, engines, numElems);
 
     //finalize results computation
     //variable importance
@@ -324,7 +370,7 @@ class TrainBatchTaskBase
 {
 public:
     typedef TreeThreadCtxBase<algorithmFPType, cpu> ThreadCtxType;
-    services::Status run(size_t seed, dtrees::internal::Tree*& pTree);
+    services::Status run(engines::internal::BatchBaseImpl* engineImpl, dtrees::internal::Tree*& pTree, size_t &numElems);
 
 protected:
     typedef dtrees::internal::TVector<algorithmFPType, cpu> algorithmFPTypeArray;
@@ -334,7 +380,7 @@ protected:
         const dtrees::internal::IndexedFeatures* indexedFeatures,
         ThreadCtxType& threadCtx, size_t nClasses):
         _hostApp(hostApp, 0), //set granularity later
-        _data(x), _resp(y), _par(par), _brng(nullptr), _nClasses(nClasses),
+        _data(x), _resp(y), _par(par), _nClasses(nClasses),
         _nSamples(par.observationsPerTreeFraction*x->getNumberOfRows()),
         _nFeaturesPerNode(par.featuresPerNode),
         _helper(indexedFeatures, nClasses),
@@ -346,10 +392,6 @@ protected:
     {
         if(_impurityThreshold < _accuracy)
             _impurityThreshold = _accuracy;
-    }
-    ~TrainBatchTaskBase()
-    {
-        delete _brng;
     }
 
     size_t nFeatures() const { return _data->getNumberOfColumns(); }
@@ -396,8 +438,9 @@ protected:
         }
         else
         {
+            *_numElems += n;
             RNGs<IndexType, cpu> rng;
-            rng.uniformWithoutReplacement(_nFeaturesPerNode, _aFeatureIdx.get(), _aFeatureIdx.get() + _nFeaturesPerNode, *_brng, 0, n);
+            rng.uniformWithoutReplacement(_nFeaturesPerNode, _aFeatureIdx.get(), _aFeatureIdx.get() + _nFeaturesPerNode, _engineImpl->getState(), 0, n);
         }
     }
 
@@ -423,7 +466,7 @@ protected:
     mutable TVector<IndexType, cpu> _aSample;
     mutable TArray<algorithmFPTypeArray, cpu> _aFeatureBuf;
     mutable TArray<IndexTypeArray, cpu> _aFeatureIndexBuf;
-    BaseRNGs<cpu>* _brng;
+    engines::internal::BatchBaseImpl *_engineImpl;
     const NumericTable *_data;
     const NumericTable *_resp;
     const Parameter& _par;
@@ -436,18 +479,15 @@ protected:
     algorithmFPType _impurityThreshold;
     ThreadCtxType& _threadCtx;
     size_t _nClasses;
+    size_t *_numElems;
 };
 
 template <typename algorithmFPType, typename DataHelper, CpuType cpu>
-services::Status TrainBatchTaskBase<algorithmFPType, DataHelper, cpu>::run(size_t seed, dtrees::internal::Tree*& pTree)
+services::Status TrainBatchTaskBase<algorithmFPType, DataHelper, cpu>::run(engines::internal::BatchBaseImpl *engineImpl, dtrees::internal::Tree*& pTree, size_t &numElems)
 {
-    if(_brng)
-    {
-        delete _brng;
-        _brng = nullptr;
-    }
+    _numElems = &numElems;
+    _engineImpl = engineImpl;
     pTree = nullptr;
-    _brng = new BaseRNGs<cpu>(seed);
     _tree.destroy();
     _aSample.reset(_nSamples);
     _aFeatureBuf.reset(_nFeatureBufs);
@@ -467,8 +507,9 @@ services::Status TrainBatchTaskBase<algorithmFPType, DataHelper, cpu>::run(size_
 
     if(_par.bootstrap)
     {
+        *_numElems += _nSamples;
         RNGs<int, cpu> rng;
-        rng.uniform(_nSamples, _aSample.get(), *_brng, 0, _data->getNumberOfRows());
+        rng.uniform(_nSamples, _aSample.get(), _engineImpl->getState(), 0, _data->getNumberOfRows());
         daal::algorithms::internal::qSort<int, cpu>(_nSamples, _aSample.get());
     }
     else
@@ -575,7 +616,8 @@ bool TrainBatchTaskBase<algorithmFPType, DataHelper, cpu>::simpleSplit(size_t iS
     for(size_t i = 0; i < _nFeaturesPerNode; ++i)
     {
         IndexType iFeature;
-        rng.uniform(1, &iFeature, *_brng, 0, _data->getNumberOfColumns());
+        *_numElems += 1;
+        rng.uniform(1, &iFeature, _engineImpl->getState(), 0, _data->getNumberOfColumns());
         featureValuesToBuf(iFeature, featBuf, aIdx, 2);
         if(featBuf[1] - featBuf[0] <= _accuracy) //all values of the feature are the same
             continue;
@@ -738,7 +780,7 @@ services::Status TrainBatchTaskBase<algorithmFPType, DataHelper, cpu>::computeRe
             const algorithmFPType div1 = algorithmFPType(1) / algorithmFPType(nTrees);
             for(size_t i = 0, n = nFeatures(); i < n; ++i)
             {
-                shuffle<cpu>(_brng->getState(), nOOB, permutation.get());
+                shuffle<cpu>(_engineImpl->getState(), nOOB, permutation.get());
                 const algorithmFPType permOOBError = computeOOBErrorPerm(t, nOOB, oobIndices.get(), permutation.get(), i);
                 const algorithmFPType diff = (permOOBError - oobError);
                 //_threadCtx.varImp[i] is a mean of diff among all the trees

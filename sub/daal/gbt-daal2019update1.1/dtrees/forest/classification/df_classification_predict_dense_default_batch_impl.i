@@ -122,7 +122,8 @@ template <typename algorithmFPType, CpuType cpu>
 void PredictClassificationTask<algorithmFPType, cpu>::predictByTrees(ClassIndexType* res,
     size_t iFirstTree, size_t nTrees, const algorithmFPType* x)
 {
-    for(size_t iTree = iFirstTree, iLastTree = iFirstTree + nTrees; iTree < iLastTree; ++iTree)
+    const size_t iLastTree = iFirstTree + nTrees;
+    for(size_t iTree = iFirstTree; iTree < iLastTree; ++iTree)
     {
         const dtrees::internal::DecisionTreeNode* pNode =
             dtrees::prediction::internal::findNode<algorithmFPType, TreeType, cpu>(*_aTree[iTree], _featHelper, x);
@@ -211,7 +212,8 @@ Status PredictClassificationTask<algorithmFPType, cpu>::predictByBlocksOfTrees(
             DAAL_CHECK_BLOCK_STATUS_THR(xBD);
             algorithmFPType* res = resBD.get() + iStartRow;
             ClassIndexType* counts = aClsCount + iStartRow*_nClasses;
-            if(nRowsToProcess < 2 * nThreads)
+
+            if(nRowsToProcess < 2 * nThreads || cpu == __avx512_mic__)
             {
                 for(size_t iRow = 0; iRow < nRowsToProcess; ++iRow)
                 {

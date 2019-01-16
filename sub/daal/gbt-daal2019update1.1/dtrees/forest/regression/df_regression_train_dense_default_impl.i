@@ -27,6 +27,7 @@
 #include "df_regression_train_kernel.h"
 #include "df_regression_model_impl.h"
 #include "dtrees_predict_dense_default_impl.i"
+#include "df_regression_training_types_result.h"
 
 namespace daal
 {
@@ -607,11 +608,13 @@ services::Status RegressionTrainBatchKernel<algorithmFPType, method, cpu>::compu
     const NumericTable *x, const NumericTable *y, decision_forest::regression::Model& m, Result& res, const Parameter& par)
 {
     ResultData rd(par, res.get(variableImportance).get(), res.get(outOfBagError).get(), res.get(outOfBagErrorPerObservation).get());
-    return computeImpl<algorithmFPType, cpu,
+    services::Status s = computeImpl<algorithmFPType, cpu,
         daal::algorithms::decision_forest::regression::internal::ModelImpl,
         TrainBatchTask<algorithmFPType, method, cpu> >
         (pHostApp, x, y, *static_cast<daal::algorithms::decision_forest::regression::internal::ModelImpl*>(&m),
         rd, par, 0);
+    if(s.ok()) res.impl()->setEngine(rd.updatedEngine);
+    return s;
 }
 
 } /* namespace internal */

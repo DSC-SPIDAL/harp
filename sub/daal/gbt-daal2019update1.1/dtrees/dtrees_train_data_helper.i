@@ -103,7 +103,7 @@ struct SplitData
 {
     TImpurityData left;
     algorithmFPType featureValue;
-    volatile algorithmFPType impurityDecrease;
+    algorithmFPType impurityDecrease;
     size_t nLeft;
     size_t iStart;
     bool featureUnordered;

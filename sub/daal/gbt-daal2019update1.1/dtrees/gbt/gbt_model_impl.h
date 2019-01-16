@@ -105,11 +105,6 @@ public:
         return _maxLvl;
     }
 
-    size_t getSourceNumOfNodes() const
-    {
-        return _sourceNumOfNodes;
-    }
-
     // recursive build of tree (breadth-first)
     template <typename NodeType, typename NodeBase>
     static void internalTreeToGbtDecisionTree(const NodeBase& root, const size_t nNodes, const size_t nLvls, GbtDecisionTree* tree, double* impVals, int* nNodeSamplesVals)
@@ -153,11 +148,10 @@ public:
                     sons[nSons++] = p;
                     featureIndexes[idxInTable] = 0;
                 }
-
                 DAAL_ASSERT(featureIndexes[idxInTable] >= 0);
-                spitPoints[idxInTable] = p->featureValue;
-                impVals[idxInTable] = p->impurity;
                 nNodeSamplesVals[idxInTable] = (int)p->count;
+                impVals[idxInTable] = p->impurity;
+                spitPoints[idxInTable] = p->featureValue;
 
                 idxInTable++;
             }
@@ -208,10 +202,10 @@ public:
         getMaxLvl(*super::top(), nLvls);
         const size_t nNodes = getNumberOfNodesByLvls(nLvls);
 
+        *pTbl = new GbtDecisionTree(nNodes, nLvls, super::top()->numChildren() + 1);
+
         *pTblImp     = new HomogenNumericTable<double>(1, nNodes, NumericTable::doAllocate);
         *pTblSmplCnt = new HomogenNumericTable<int>(1, nNodes, NumericTable::doAllocate);
-
-        *pTbl = new GbtDecisionTree(nNodes, nLvls, super::top()->numChildren() + 1);
         if(super::top())
         {
             GbtDecisionTree::internalTreeToGbtDecisionTree<TNodeType, typename TNodeType::Base>(*super::top(), nNodes, nLvls,
@@ -260,7 +254,6 @@ public:
 
     const GbtDecisionTree* at(const size_t idx) const;
 
-    static SharedPtr<DecisionTreeTable> gbtTreeToDecisionTree(const GbtDecisionTree& gbtTree);
     static void decisionTreeToGbtTree(const DecisionTreeTable& tree, GbtDecisionTree& gbtTree);
 
     // Methods common for regression or classification model, not virtual!!!
@@ -273,7 +266,6 @@ public:
     static void treeToTable(TreeType& t, gbt::internal::GbtDecisionTree** pTbl, HomogenNumericTable<double>** pTblImp, HomogenNumericTable<int>** pTblSmplCnt);
 
 protected:
-    static void convertNode(const GbtDecisionTree& gbtTree, DecisionTreeTable& newTree, const size_t idx, const size_t lvl, size_t& idxInTable);
     static bool nodeIsDummyLeaf(size_t idx, const GbtDecisionTree& gbtTree);
     static bool nodeIsLeaf(size_t idx, const GbtDecisionTree& gbtTree, const size_t lvl);
     static size_t getIdxOfParent(const size_t sonIdx);
@@ -288,6 +280,56 @@ protected:
         const size_t nNodes = getNumberOfNodesByLvls(nLvls);
 
         return new GbtDecisionTree(nNodes, nLvls, tree.getNumberOfRows());
+    }
+
+    template <typename OnSplitFunctor, typename OnLeafFunctor>
+    static void traverseGbtDF(size_t level, size_t iRowInTable, const GbtDecisionTree& gbtTree,
+        OnSplitFunctor &visitSplit, OnLeafFunctor &visitLeaf)
+    {
+
+        if(!nodeIsLeaf(iRowInTable, gbtTree, level))
+        {
+            if(!visitSplit(iRowInTable, level))
+                return; //do not continue traversing
+
+            traverseGbtDF(level + 1, iRowInTable*2+1, gbtTree, visitSplit, visitLeaf);
+            traverseGbtDF(level + 1, iRowInTable*2+2, gbtTree, visitSplit, visitLeaf);
+
+        }
+        else if(!nodeIsDummyLeaf(iRowInTable, gbtTree))
+        {
+            if(!visitLeaf(iRowInTable, level))
+                return; //do not continue traversing
+        }
+    }
+
+    template <typename OnSplitFunctor, typename OnLeafFunctor>
+    static void traverseGbtBF(size_t level, NodeIdxArray& aCur, NodeIdxArray& aNext, const GbtDecisionTree& gbtTree,
+        OnSplitFunctor &visitSplit, OnLeafFunctor &visitLeaf)
+    {
+        for(size_t i = 0; i < aCur.size(); ++i)
+        {
+            for(size_t j = 0; j < (level ? 2 : 1); ++j)
+            {
+                size_t iRowInTable = aCur[i] + j;
+                if(!nodeIsLeaf(iRowInTable, gbtTree, level))
+                {
+                    if(!visitSplit(iRowInTable, level))
+                        return; //do not continue traversing
+
+                    aNext.push_back(iRowInTable*2+1);
+                }
+                else if(!nodeIsDummyLeaf(iRowInTable, gbtTree))
+                {
+                    if(!visitLeaf(iRowInTable, level))
+                        return; //do not continue traversing
+                }
+            }
+        }
+        aCur.clear();
+        if(!aNext.size())
+            return; //done
+        traverseGbtBF(level + 1, aNext, aCur, gbtTree, visitSplit, visitLeaf);
     }
 
     void destroy();

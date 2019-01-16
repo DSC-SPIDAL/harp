@@ -28,6 +28,8 @@
 #include "gbt_internal.h"
 #include "threading.h"
 #include "gbt_model_impl.h"
+#include "daal_atomic_int.h"
+#include "service_service.h"
 
 namespace daal
 {
@@ -82,37 +84,18 @@ public:
     {
         if(this->_dataDirect)
         {
-            if(_aIdxToRow)
-            {
-                for(size_t i = 0; i < n; ++i)
-                    aVal[i] = this->_dataDirect[_aIdxToRow[aIdx[i]] * this->_nCols + iCol];
-            }
-            else
-            {
-                for(size_t i = 0; i < n; ++i)
-                    aVal[i] = this->_dataDirect[aIdx[i] * this->_nCols + iCol];
-            }
+
+            for(size_t i = 0; i < n; ++i)
+                aVal[i] = this->_dataDirect[aIdx[i] * this->_nCols + iCol];
         }
         else
         {
             data_management::BlockDescriptor<algorithmFPType> bd;
-            if(_aIdxToRow)
+            for(size_t i = 0; i < n; ++i)
             {
-                for(size_t i = 0; i < n; ++i)
-                {
-                    this->_data->getBlockOfColumnValues(iCol, _aIdxToRow[aIdx[i]], 1, readOnly, bd);
-                    aVal[i] = *bd.getBlockPtr();
-                    this->_data->releaseBlockOfColumnValues(bd);
-                }
-            }
-            else
-            {
-                for(size_t i = 0; i < n; ++i)
-                {
-                    this->_data->getBlockOfColumnValues(iCol, aIdx[i], 1, readOnly, bd);
-                    aVal[i] = *bd.getBlockPtr();
-                    this->_data->releaseBlockOfColumnValues(bd);
-                }
+                this->_data->getBlockOfColumnValues(iCol, aIdx[i], 1, readOnly, bd);
+                aVal[i] = *bd.getBlockPtr();
+                this->_data->releaseBlockOfColumnValues(bd);
             }
         }
     }
@@ -123,25 +106,13 @@ public:
             return false; //single value only
         const IndexedFeatures::IndexType* indexedFeature = this->indexedFeatures().data(iFeature);
         size_t i = 1;
-        if(_aIdxToRow)
+
+        const IndexedFeatures::IndexType idx0 = indexedFeature[aIdx[0]];
+        for(; i < n; ++i)
         {
-            const IndexedFeatures::IndexType idx0 = indexedFeature[_aIdxToRow[aIdx[0]]];
-            for(; i < n; ++i)
-            {
-                const IndexedFeatures::IndexType idx = indexedFeature[_aIdxToRow[aIdx[i]]];
-                if(idx != idx0)
-                    break;
-            }
-        }
-        else
-        {
-            const IndexedFeatures::IndexType idx0 = indexedFeature[aIdx[0]];
-            for(; i < n; ++i)
-            {
-                const IndexedFeatures::IndexType idx = indexedFeature[aIdx[i]];
-                if(idx != idx0)
-                    break;
-            }
+            const IndexedFeatures::IndexType idx = indexedFeature[aIdx[i]];
+            if(idx != idx0)
+                break;
         }
         return (i != n);
     }
@@ -184,7 +155,7 @@ template <typename algorithmFPType, CpuType cpu>
 class LossFunction : public Base
 {
 public:
-    virtual void getGradients(size_t n,
+    virtual void getGradients(size_t n, size_t nRows,
         const algorithmFPType* y, const algorithmFPType* f,
         const IndexType* sampleInd,
         algorithmFPType* gh) = 0;
@@ -197,7 +168,17 @@ template<typename algorithmFPType, CpuType cpu>
 struct ghSum : public gh<algorithmFPType, cpu>
 {
     ghSum() : gh<algorithmFPType, cpu>(), n(0){}
-    IndexType n;
+
+    inline ghSum<algorithmFPType, cpu>& operator+=(const ghSum<algorithmFPType, cpu>& other) // TODO: remove
+    {
+        this->g += other.g;
+        this->h += other.h;
+        this->n += other.n;
+        return *this;
+    }
+
+    algorithmFPType n;
+    algorithmFPType dummy;
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -419,6 +400,13 @@ public:
     const size_t level;
     const ImpurityType imp;
     NodeType::Base*& res;
+
+    bool doMerged;
+    size_t prevStart;
+    size_t prevN;
+    size_t iFeaturePrev;
+    size_t splitPointPrev;
+    NodeType::Base* prevRes;
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -430,6 +418,364 @@ public:
     virtual services::Status init() = 0;
     virtual services::Status run(gbt::internal::GbtDecisionTree*& pRes, HomogenNumericTable<double>*& pTblImp,
         HomogenNumericTable<int>*& pTblSmplCnt, size_t iTree) = 0;
+};
+
+class GbtTask
+{
+public:
+    virtual GbtTask* execute() = 0;
+    virtual void operator()() { execute(); };
+    virtual void getNextTasks(GbtTask** newTasks, size_t& nTasks) {  };
+    virtual ~GbtTask() { };
+};
+
+template<typename algorithmFPType, CpuType cpu> class TrainBatchTaskBaseXBoost;
+template<typename algorithmFPType, CpuType cpu> class MemHelperBase;
+
+template<CpuType cpu>
+struct EmptyResult
+{
+    template<typename DataType>
+    void release(DataType& data)
+    {
+    }
+};
+
+template<typename PartialResult, CpuType cpu>
+struct MergedResult
+{
+    template<typename DataType>
+    void release(DataType& data)
+    {
+        for(size_t i = 0; i < res.size(); ++i)
+        {
+            res[i].release(data);
+        }
+        res.~TVector<PartialResult, cpu, ScalableAllocator<cpu>>();
+        service_scalable_free<void, cpu>(this);
+    }
+    MergedResult(size_t size): res(size) {}
+    TVector<PartialResult, cpu, ScalableAllocator<cpu>> res;
+};
+
+template<CpuType cpu>
+struct LoopHelper
+{
+    template<typename Func>
+    static void run(bool inParallel, size_t nBlocks, Func func)
+    {
+        if (inParallel)
+        {
+            daal::threader_for(nBlocks, nBlocks, [&](size_t i)
+            {
+                func(i);
+            });
+        }
+        else
+        {
+            for(size_t i = 0; i < nBlocks; ++i) func(i);
+        }
+    }
+};
+
+template<typename T, CpuType cpu>
+class GroupOfStorages
+{
+public:
+
+    GroupOfStorages(size_t nElems): storages(nElems)
+    {
+        for(size_t i = 0; i < nElems; i++)
+            new (&storages[i]) BuffersStorage();
+    }
+
+    ~GroupOfStorages()
+    {
+        for(size_t i = 0; i < storages.size(); i++)
+            storages[i].~BuffersStorage();
+    }
+
+    void add(size_t idx, size_t size, size_t nElem)
+    {
+        if (nElem && size)
+            storages[idx].init(size, nElem);
+    }
+
+    class BuffersStorage
+    {
+    public:
+
+        BuffersStorage()
+        {
+        }
+
+        void init(size_t bufferSize, size_t NElem)
+        {
+            _capacity = NElem;
+            _curIdx = 0;
+            _bufferSize = bufferSize;
+
+            buffers.resize(NElem);
+            T* ptr = allocate(NElem);
+
+            for(size_t i = 0; i < NElem; ++i)
+            {
+                buffers[i] = ptr + i * _bufferSize;
+            }
+        }
+
+        ~BuffersStorage()
+        {
+            destoy();
+        }
+
+        T* getBlockFromStorage()
+        {
+            AUTOLOCK(_mutex);
+
+            if (_curIdx == _capacity)
+            {
+                addBlocks(6);
+            }
+            return buffers[_curIdx++];
+        }
+
+
+        size_t size()
+        {
+            return _curIdx;
+        }
+
+        size_t bufferSize()
+        {
+            return _bufferSize;
+        }
+
+        void returnBlockToStorage(T* ptr)
+        {
+            if(!!ptr)
+            {
+                AUTOLOCK(_mutex);
+                buffers[--_curIdx] = ptr;
+            }
+        }
+
+    protected:
+        void addBlocks(size_t nNewBlocks) // no thread-safe
+        {
+            T* ptr = allocate(nNewBlocks);
+
+            buffers.resize(nNewBlocks + _capacity);
+            for(size_t i = 0; i < nNewBlocks; ++i)
+            {
+                buffers[i + _capacity] = ptr + i * _bufferSize;
+            }
+
+            _capacity = nNewBlocks + _capacity;
+        }
+
+        T* allocate(size_t nBlocks)
+        {
+            alloc.pushBack(service_scalable_malloc<T, cpu>(nBlocks * _bufferSize));
+            return alloc[alloc.size() - 1];
+        }
+
+        void destoy()
+        {
+            for(size_t i = 0; i < alloc.size(); ++i)
+            {
+                service_scalable_free<T, cpu>(alloc[i]);
+                alloc[i] = nullptr;
+            }
+        }
+
+        daal::Mutex _mutex;
+        TVector<T*, cpu, ScalableAllocator<cpu>> buffers;
+        TVector<T*, cpu, ScalableAllocator<cpu>> alloc;
+
+        size_t _capacity;
+        size_t _curIdx;
+        size_t _bufferSize;
+    };
+
+    BuffersStorage& get(size_t idx)
+    {
+        return storages[idx];
+    }
+
+    size_t size()
+    {
+        return storages.size();
+    }
+
+    TVector<BuffersStorage, cpu, ScalableAllocator<cpu>> storages;
+};
+
+template<typename T, CpuType cpu>
+class GHSumsStorage
+{
+public:
+
+    GHSumsStorage(size_t nGH, size_t nInitElems): _nGH(nGH), _capacity(nInitElems), _curIdx(0)
+    {
+        allocate(_capacity);
+    }
+
+    ~GHSumsStorage()
+    {
+        destoy();
+    }
+
+    T* getBlockFromStorage()
+    {
+        AUTOLOCK(_mutex);
+
+        if (_curIdx == _capacity)
+        {
+            addBlocks(2);
+        }
+        return alloc[_curIdx++];
+    }
+
+    void returnBlockToStorage(T* ptr)
+    {
+        if(!!ptr)
+        {
+            AUTOLOCK(_mutex);
+            alloc[--_curIdx] = ptr;
+        }
+    }
+
+protected:
+    void addBlocks(size_t nNewBlocks) // no thread-safe
+    {
+        allocate(nNewBlocks);
+        _capacity = nNewBlocks + _capacity;
+    }
+
+    void allocate(size_t nBlocks)
+    {
+        for(size_t i = 0; i < nBlocks; ++i)
+        {
+            alloc.pushBack( new (service_scalable_malloc<T, cpu>(1)) T(_nGH) );
+        }
+    }
+
+    void destoy()
+    {
+        for(size_t i = 0; i < alloc.size(); ++i)
+        {
+            alloc[i]->~T();
+            service_scalable_free<T, cpu>(alloc[i]);
+            alloc[i] = nullptr;
+        }
+    }
+
+    daal::Mutex _mutex;
+    size_t _nGH;
+    TVector<T*, cpu, ScalableAllocator<cpu>> alloc;
+    size_t _capacity;
+    size_t _curIdx;
+};
+
+template <typename GHSumType, CpuType cpu>
+struct GHSumForTLS
+{
+    GHSumForTLS(GHSumType* p): ghSum(p), isInitilized(false)
+    {
+    }
+
+    GHSumType* ghSum;
+    bool isInitilized;
+};
+
+template <typename T, typename algorithmFPType, CpuType cpu, typename Allocator = services::internal::ScalableMalloc<ghSum<algorithmFPType, cpu>, cpu>>
+class TlsGHSumMerge : public daal::tls<T *>
+{
+public:
+    using super = daal::tls<T *>;
+    using GHSumType = ghSum<algorithmFPType, cpu>;
+
+    TlsGHSumMerge(size_t n) : super([=]()-> T*
+    {
+        return new (service_scalable_malloc<T,cpu>(1)) T(Allocator::allocate(n));
+    })
+    {}
+
+    ~TlsGHSumMerge()
+    {
+        this->reduce([](T* ptr)-> void
+        {
+            Allocator::deallocate(ptr->ghSum);
+            ptr->~T();
+            service_scalable_free<T,cpu>(ptr);
+        });
+    }
+
+    void reduceTo(algorithmFPType** res, size_t& size)
+    {
+        size = 0;
+        this->reduce([&](T* ptr)-> void
+        {
+            if(!ptr->isInitilized)
+            {
+                return;
+            }
+
+            res[size++] = (algorithmFPType*)ptr->ghSum;
+        });
+    }
+
+    void release()
+    {
+        this->reduce([](T* ptr)-> void
+        {
+            ptr->isInitilized = false;
+        });
+    }
+
+};
+
+template<typename algorithmFPType, CpuType cpu>
+struct GlobalStorages
+{
+    using GHSumType = ghSum<algorithmFPType, cpu>;
+    using TlsType   = TlsGHSumMerge<GHSumForTLS<GHSumType, cpu>, algorithmFPType, cpu>;
+
+    GlobalStorages(size_t nFeatures, size_t nStor, size_t nUniq, size_t nGlobal) : singleGHSums(nStor), GHForCols(nUniq, nGlobal), nUniquesArr(nFeatures)
+    {
+    }
+
+    GroupOfStorages<GHSumType, cpu> singleGHSums;
+    GHSumsStorage<TlsType, cpu> GHForCols;
+    TVector<size_t, cpu, ScalableAllocator<cpu>> nUniquesArr;
+    size_t nDiffFeatMax;
+
+    int* newFI;
+};
+
+template<typename algorithmFPType, typename IndexType, CpuType cpu>
+class SharedDataForTree
+{
+public:
+    using MemHelperType = MemHelperBase<algorithmFPType, cpu>;
+    using CtxType       = TrainBatchTaskBaseXBoost<algorithmFPType, cpu>;
+    using TreeType      = gbt::internal::TreeImpRegression<>;
+
+
+    SharedDataForTree(CtxType& _ctx, IndexType* _bestSplitIdxBuf, IndexType* _aIdx, MemHelperType* _memHelper, size_t _iTree, TreeType& _tree, daal::Mutex& _mtAlloc):
+        ctx(_ctx), bestSplitIdxBuf(_bestSplitIdxBuf), aIdx(_aIdx), memHelper(_memHelper), iTree(_iTree), tree(_tree), mtAlloc(_mtAlloc)
+    {
+    }
+
+    GlobalStorages<algorithmFPType, cpu>* GH_SUMS_BUF;
+    CtxType& ctx;
+    IndexType* aIdx;
+    MemHelperType* memHelper;
+    size_t iTree;
+    IndexType* bestSplitIdxBuf;
+    TreeType& tree;
+    daal::Mutex& mtAlloc;
 };
 
 } /* namespace internal */

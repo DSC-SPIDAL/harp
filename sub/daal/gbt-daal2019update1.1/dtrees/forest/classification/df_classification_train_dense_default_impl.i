@@ -27,6 +27,7 @@
 #include "df_classification_train_kernel.h"
 #include "df_classification_model_impl.h"
 #include "dtrees_predict_dense_default_impl.i"
+#include "df_classification_training_types_result.h"
 
 #define OOBClassificationData size_t
 
@@ -821,11 +822,13 @@ services::Status ClassificationTrainBatchKernel<algorithmFPType, method, cpu>::c
     const decision_forest::classification::training::Parameter& par)
 {
     ResultData rd(par, res.get(variableImportance).get(), res.get(outOfBagError).get(), res.get(outOfBagErrorPerObservation).get());
-    return computeImpl<algorithmFPType, cpu,
+    services::Status s = computeImpl<algorithmFPType, cpu,
         daal::algorithms::decision_forest::classification::internal::ModelImpl,
         TrainBatchTask<algorithmFPType, method, cpu> >
         (pHostApp, x, y, *static_cast<daal::algorithms::decision_forest::classification::internal::ModelImpl*>(&m),
         rd, par, par.nClasses);
+    if(s.ok()) res.impl()->setEngine(rd.updatedEngine);
+    return s;
 }
 
 } /* namespace internal */

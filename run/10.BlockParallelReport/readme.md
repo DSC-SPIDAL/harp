@@ -20,10 +20,10 @@ source WHEREYOURREPOROOT/gbt-test/bin/init_env.sh
 
 # got to directory: sub/xgb-optapprox
 # this cmd will generate two release versions, with or w/o halftrick
-# with the tag name "-byte-blockdense-longcube-threadinit"
+# with the tag name "cutmodelhalf"
 
 cd $_gbtproject_/sub/xgb-optapprox
-./makeall.sh byte-blockdense-longcube-threadinit
+./makeall.sh cutmodelhalf
 
 ```
 
@@ -37,9 +37,9 @@ mkdir -p work
 cd work
 mkdir -p bin
 
-cp $_gbtproject_/sub/xgb-optapprox/*longcube-threadinit* bin
-
 cp -r $_gbtproject_/run/10.BlockParallelReport/* .
+cp $_gbtproject_/sub/xgb-optapprox/*cutmodelhalf* bin
+
 
 # test is the working dir
 cd test
@@ -66,9 +66,9 @@ Use higgs dataset, test with different tree depth is necessary. Some errors only
 
 ```
 # validate all release versions, run cmd like this
-#../bin/xgb-validation.sh ../bin/xgboost-g++-omp-nohalftrick-noprefetch-byte-blockdense-longcube-threadinit-release blockdense 12
+#../bin/xgb-validation.sh ../bin/xgboost-g++-omp-nohalftrick-noprefetch-cutmodelhalf-release blockdense 12
 
-./run-validate.sh
+./run-validate.sh cutmodelhalf
 
 ```
 
@@ -79,7 +79,7 @@ Make sure they passed the test. You should see messages like "pass!".
 Fixed with 32 threads, show the 'best' performance of each trainer.
 
 ```
-./run-speedup.sh
+./run-speedup.sh cutmodelhalf
 
 ```
 
@@ -88,7 +88,8 @@ Fixed with 32 threads, show the 'best' performance of each trainer.
 Run strong scaling test on higgs with max_depth=8
 
 ```
-./run-scaling.sh
+./run-scaling.sh cutmodelhalf
+
 
 ```
 

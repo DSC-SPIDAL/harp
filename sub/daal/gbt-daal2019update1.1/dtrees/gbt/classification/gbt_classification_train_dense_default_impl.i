@@ -54,7 +54,7 @@ template <typename algorithmFPType, CpuType cpu>
 class LogisticLoss : public LossFunction<algorithmFPType, cpu>
 {
 public:
-    virtual void getGradients(size_t n, const algorithmFPType* y, const algorithmFPType* f,
+    virtual void getGradients(size_t n, size_t nRows, const algorithmFPType* y, const algorithmFPType* f,
         const IndexType* sampleInd,
         algorithmFPType* gh) DAAL_C11_OVERRIDE
     {
@@ -89,13 +89,27 @@ public:
         }
         daal::internal::Math<algorithmFPType, cpu>::vExp(n, exp, exp);
 
-        PRAGMA_IVDEP
-        PRAGMA_VECTOR_ALWAYS
-        for(size_t i = 0; i < n; ++i)
+        if(sampleInd)
         {
-            const auto sigm = algorithmFPType(1.0) / (algorithmFPType(1.0) + exp[i]);
-            gh[2 * i] = sigm - y[i]; //gradient
-            gh[2 * i + 1] = sigm * (algorithmFPType(1.0) - sigm); //hessian
+            PRAGMA_IVDEP
+            PRAGMA_VECTOR_ALWAYS
+            for(size_t i = 0; i < n; ++i)
+            {
+                const algorithmFPType sigm = algorithmFPType(1.0) / (algorithmFPType(1.0) + exp[i]);
+                gh[2 * sampleInd[i]] = sigm - y[sampleInd[i]]; //gradient
+                gh[2 * sampleInd[i] + 1] = sigm * (algorithmFPType(1.0) - sigm); //hessian
+            }
+        }
+        else
+        {
+            PRAGMA_IVDEP
+            PRAGMA_VECTOR_ALWAYS
+            for(size_t i = 0; i < n; ++i)
+            {
+                const auto sigm = algorithmFPType(1.0) / (algorithmFPType(1.0) + exp[i]);
+                gh[2 * i] = sigm - y[i]; //gradient
+                gh[2 * i + 1] = sigm * (algorithmFPType(1.0) - sigm); //hessian
+            }
         }
     }
 };
@@ -108,7 +122,7 @@ class CrossEntropyLoss : public LossFunction<algorithmFPType, cpu>
 {
 public:
     CrossEntropyLoss(size_t numClasses) : _nClasses(numClasses){}
-    virtual void getGradients(size_t n, const algorithmFPType* y, const algorithmFPType* f,
+    virtual void getGradients(size_t n, size_t nRows, const algorithmFPType* y, const algorithmFPType* f,
         const IndexType* sampleInd,
         algorithmFPType* gh) DAAL_C11_OVERRIDE
     {
@@ -127,9 +141,9 @@ public:
             {
                 const algorithmFPType pk = p[k];
                 const algorithmFPType h = algorithmFPType(2.) * pk * (algorithmFPType(1.) - pk);
-                algorithmFPType* gh_ik = gh + 2*(k*n + i);
+                algorithmFPType* gh_ik = gh + 2*(k*nRows + iSample);
                 gh_ik[1] = h;
-                if(size_t(y[i]) == k)
+                if(size_t(y[iSample]) == k)
                     gh_ik[0] = (pk - algorithmFPType(1.));
                 else
                     gh_ik[0] = pk;
@@ -204,8 +218,7 @@ public:
         {
             _ls->reduce([](TreeBuilderType* ptr)-> void
             {
-                if(ptr)
-                    delete ptr;
+                delete ptr;
             });
             delete _ls;
         }
@@ -244,7 +257,7 @@ protected:
         }
     }
 
-    virtual services::Status buildTrees(gbt::internal::GbtDecisionTree** aTbl, HomogenNumericTable<double>** aTblImp, HomogenNumericTable<int>** aTblSmplCnt) DAAL_C11_OVERRIDE
+    virtual services::Status buildTrees(gbt::internal::GbtDecisionTree** aTbl, HomogenNumericTable<double>** aTblImp, HomogenNumericTable<int>** aTblSmplCnt, GlobalStorages<algorithmFPType, cpu>& GH_SUMS_BUF) DAAL_C11_OVERRIDE
     {
         if(this->isParallelTrees())
         {
@@ -253,11 +266,12 @@ protected:
             daal::threader_for(this->_nTrees, this->_nTrees, [&](size_t i)
             {
                 if(safeStat)
-                    safeStat |= buildTreeThreadLocal(aTbl[i], aTblImp[i], aTblSmplCnt[i], i);
+                    safeStat |= buildTreeThreadLocal(aTbl[i], aTblImp[i], aTblSmplCnt[i], i, GH_SUMS_BUF);
                 else
                     return;
                 this->_nParallelNodes.dec();//allow lower levels of parallelization
             });
+
             return safeStat.detach();
         }
 
@@ -266,7 +280,7 @@ protected:
         {
             DAAL_ASSERT(this->_nParallelNodes.get() == 0);
             this->_nParallelNodes.inc();
-            s |= _builder->run(aTbl[i], aTblImp[i], aTblSmplCnt[i], i);
+            s |= _builder->run(aTbl[i], aTblImp[i], aTblSmplCnt[i], i, GH_SUMS_BUF);
             this->_nParallelNodes.dec();
             DAAL_ASSERT(this->_nParallelNodes.get() == 0);
         }
@@ -274,13 +288,13 @@ protected:
     }
 
     services::Status buildTreeThreadLocal(gbt::internal::GbtDecisionTree*& tbl, HomogenNumericTable<double>*& pTblImp,
-        HomogenNumericTable<int>*& pTblSmplCnt, size_t iTree)
+        HomogenNumericTable<int>*& pTblSmplCnt, size_t iTree, GlobalStorages<algorithmFPType, cpu>& GH_SUMS_BUF)
     {
         auto pBuilder = _ls->local();
         DAAL_CHECK_MALLOC(pBuilder);
         services::Status s;
         if((pBuilder->isInitialized() || (s = pBuilder->init()).ok()) && !algorithms::internal::isCancelled(s, this->_hostApp))
-            s = pBuilder->run(tbl, pTblImp, pTblSmplCnt, iTree);
+            s = pBuilder->run(tbl, pTblImp, pTblSmplCnt, iTree, GH_SUMS_BUF);
         _ls->release(pBuilder);
         if(s)
             algorithms::internal::isCancelled(s, this->_hostApp);

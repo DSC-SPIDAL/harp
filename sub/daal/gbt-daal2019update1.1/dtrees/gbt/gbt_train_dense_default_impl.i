@@ -31,6 +31,7 @@
 #include "debug.h"
 #include <chrono> 
 
+
 namespace daal
 {
 namespace algorithms
@@ -77,7 +78,7 @@ public:
     algorithmFPType accuracy() const { return _accuracy; }
     size_t nTrees() const { return _nTrees; }
 
-    services::Status run(gbt::internal::GbtDecisionTree** aTbl, HomogenNumericTable<double>** aTblImp, HomogenNumericTable<int>** aTblSmplCnt, size_t iIteration);
+    services::Status run(gbt::internal::GbtDecisionTree** aTbl, HomogenNumericTable<double>** aTblImp, HomogenNumericTable<int>** aTblSmplCnt, size_t iIteration, GlobalStorages<algorithmFPType, cpu>& GH_SUMS_BUF);
     virtual services::Status init();
     bool isIndirect() const { return _bIndirect; }
     double computeLeafWeightUpdateF(const IndexType* idx, size_t n, const ImpurityType& imp, size_t iTree);
@@ -148,7 +149,7 @@ protected:
     }
 
     virtual void initLossFunc() = 0;
-    virtual services::Status buildTrees(gbt::internal::GbtDecisionTree** aTbl, HomogenNumericTable<double>** aTblImp, HomogenNumericTable<int>** aTblSmplCnt) = 0;
+    virtual services::Status buildTrees(gbt::internal::GbtDecisionTree** aTbl, HomogenNumericTable<double>** aTblImp, HomogenNumericTable<int>** aTblSmplCnt, GlobalStorages<algorithmFPType, cpu>& GH_SUMS_BUF) = 0;
     virtual void step(const algorithmFPType* y) = 0;
     virtual bool getInitialF(algorithmFPType& val) { return false; }
 
@@ -217,12 +218,7 @@ services::Status TrainBatchTaskBase<algorithmFPType, cpu>::init()
     _aF.reset(nF);
     DAAL_CHECK_MALLOC(_aF.get());
 
-    //initialize _bIndirect flag
-    {
-        const size_t cThresholdFeatures = 130;
-        const size_t cThresholdSamples = 3000000;
-        _bIndirect = (par().memorySavingMode || (nSamples() * nFeaturesPerNode() < cThresholdSamples*cThresholdFeatures));
-    }
+    _bIndirect = true;
 
     return _dataHelper.init(_data, _resp, isIndirect() ? _aSampleToF.get() : (const IndexType*)nullptr);
 }
@@ -237,29 +233,22 @@ double TrainBatchTaskBase<algorithmFPType, cpu>::computeLeafWeightUpdateF(const 
         return res;
 
     algorithmFPType* pf = f();
-    const IndexType* sampleInd = _aSampleToF.get();
     val = -imp.g / val;
     const algorithmFPType inc = val*_par.shrinkage;
-    if(sampleInd && isIndirect())
+
+    PRAGMA_IVDEP
+    PRAGMA_VECTOR_ALWAYS
+    for(size_t i = 0; i < n; ++i)
     {
-        PRAGMA_IVDEP
-        PRAGMA_VECTOR_ALWAYS
-        for(size_t i = 0; i < n; ++i)
-            pf[sampleInd[idx[i]] * this->_nTrees + iTree] += inc;
+        pf[idx[i] * this->_nTrees + iTree] += inc;
     }
-    else
-    {
-        PRAGMA_IVDEP
-        PRAGMA_VECTOR_ALWAYS
-        for(size_t i = 0; i < n; ++i)
-            pf[idx[i] * this->_nTrees + iTree] += inc;
-    }
+
     return res + inc;
 }
 
 template <typename algorithmFPType, CpuType cpu>
 services::Status TrainBatchTaskBase<algorithmFPType, cpu>::run(gbt::internal::GbtDecisionTree** aTbl,
-    HomogenNumericTable<double>** aTblImp, HomogenNumericTable<int>** aTblSmplCnt, size_t iIteration)
+    HomogenNumericTable<double>** aTblImp, HomogenNumericTable<int>** aTblSmplCnt, size_t iIteration, GlobalStorages<algorithmFPType, cpu>& GH_SUMS_BUF)
 {
     for(size_t i = 0; i < _nTrees; ++i)
     {
@@ -292,23 +281,10 @@ services::Status TrainBatchTaskBase<algorithmFPType, cpu>::run(gbt::internal::Gb
             dtrees::training::internal::shuffle<cpu>(_engine.getState(), nRows, aSampleToF, auxBuf.get());
         }
         daal::algorithms::internal::qSort<IndexType, cpu>(nSamples(), aSampleToF);
-        TVector<algorithmFPType, cpu> bagY(_nSamples);
-        auto pBagY = bagY.get();
-        DAAL_CHECK_MALLOC(pBagY);
-        const auto y = this->_dataHelper.y();
-        const auto aInd = aSampleToF;
-        PRAGMA_IVDEP
-        PRAGMA_VECTOR_ALWAYS;
-        for(size_t i = 0; i < _nSamples; ++i)
-            pBagY[i] = y[aInd[i]];
-        step(pBagY);
     }
-    else
-    {
-        step(this->_dataHelper.y());
-    }
+    step(this->_dataHelper.y());
     _nParallelNodes.set(0);
-    return buildTrees(aTbl, aTblImp, aTblSmplCnt);
+    return buildTrees(aTbl, aTblImp, aTblSmplCnt, GH_SUMS_BUF);
 }
 
 template <typename algorithmFPType, CpuType cpu>
@@ -347,11 +323,10 @@ public:
         size_t nClasses) : super(x, y, par, featTypes, indexedFeatures, engine, nClasses), _hostApp(hostApp){}
 
     //loss function gradient and hessian values calculated in f() points
-    ghType* grad(size_t iTree) { return _aGH.get() + iTree*this->_nSamples; }
-    const ghType* grad(size_t iTree) const { return _aGH.get() + iTree*this->_nSamples; }
+    ghType* grad(size_t iTree) { return _aGH.get() + iTree*this->_data->getNumberOfRows(); }
     void step(const algorithmFPType* y) DAAL_C11_OVERRIDE
     {
-        this->lossFunc()->getGradients(this->_nSamples, y, this->f(), this->aSampleToF(),
+        this->lossFunc()->getGradients(this->_nSamples, this->_data->getNumberOfRows(), y, this->f(), this->aSampleToF(),
             (algorithmFPType*)_aGH.get());
     }
     virtual services::Status init() DAAL_C11_OVERRIDE
@@ -359,7 +334,7 @@ public:
         auto s = super::init();
         if(s)
         {
-            _aGH.reset(this->_nSamples*this->_nTrees);
+            _aGH.reset(this->_data->getNumberOfRows()*this->_nTrees);
             DAAL_CHECK_MALLOC(_aGH.get());
         }
         return s;
@@ -382,17 +357,20 @@ services::Status computeImpl(HostAppIface* pHostApp, const NumericTable *x, cons
 
     dtrees::internal::IndexedFeatures indexedFeatures;
     services::Status s;
+
+    IndexType* newFI = nullptr;
+
     if(!par.memorySavingMode)
     {
         BinParams prm(par.maxBins, par.minBinSize);
         DAAL_CHECK_STATUS(s, (indexedFeatures.init<algorithmFPType, cpu>(*x, &featTypes, par.splitMethod == inexact ? &prm : nullptr)));
     }
-
     // place to start training
     startVtune("vtune-flag.txt");
     loginfo("End of initialization, start training\n");
     auto start = std::chrono::system_clock::now();
 
+   
     TaskType task(pHostApp, x, y, par, featTypes, par.memorySavingMode ? nullptr : &indexedFeatures, engine, nClasses);
     DAAL_CHECK_STATUS(s, task.init());
     const size_t nTrees = task.nTrees();
@@ -425,9 +403,75 @@ services::Status computeImpl(HostAppIface* pHostApp, const NumericTable *x, cons
         aTblSmplCnt = nodeSampleCountTables.get();
     }
 
+    TVector<size_t, cpu, ScalableAllocator<cpu>> nUniquesArr(x->getNumberOfColumns());
+    size_t* UniquesArr = nUniquesArr.get();
+    DAAL_CHECK_MALLOC(UniquesArr);
+    size_t nDiffFeatMax;
+    if(!par.memorySavingMode)
+    {
+        nUniquesArr[0] = 0;
+        nDiffFeatMax = indexedFeatures.numIndices(0);
+        for(size_t i = 1; i < x->getNumberOfColumns(); ++i)
+        {
+            nUniquesArr[i] = nUniquesArr[i-1] + indexedFeatures.numIndices(i-1);
+            nDiffFeatMax += indexedFeatures.numIndices(i);
+        }
+    }
+
+    const bool inexactWithHistMethod = !par.memorySavingMode && par.splitMethod == gbt::training::inexact && x->getNumberOfColumns() == task.nFeaturesPerNode();
+    const size_t initValue = (inexactWithHistMethod) ? 2 : 0;
+    const size_t nStor = x->getNumberOfColumns();
+
+    GlobalStorages<algorithmFPType, cpu> storage(x->getNumberOfColumns(), nStor, nDiffFeatMax, initValue);
+    storage.nUniquesArr = nUniquesArr;
+    storage.nDiffFeatMax = nDiffFeatMax;
+
+    if(!par.memorySavingMode)
+    {
+        for(size_t i = 0; i < x->getNumberOfColumns(); ++i)
+        {
+            storage.singleGHSums.add(i, indexedFeatures.numIndices(i), 2);
+        }
+    }
+
+    TVector<IndexType, cpu, ScalableAllocator<cpu>> newFIArr;
+
+    using IndexType = dtrees::internal::IndexedFeatures::IndexType;
+    if(inexactWithHistMethod)
+    {
+        size_t nThreads = threader_get_threads_number();
+        size_t nRows = x->getNumberOfRows();
+        size_t nCols = x->getNumberOfColumns();
+        size_t nBlocks = ((nThreads < nRows) ? nThreads : 1);
+        size_t sizeOfBlock = nRows/nBlocks + !!(nRows%nBlocks);
+
+        newFIArr.resize(nRows * nCols);
+        IndexType* newFI = newFIArr.get();
+        DAAL_CHECK_MALLOC(newFI);
+
+        const IndexType* fi = indexedFeatures.data(0);
+
+        daal::threader_for(nBlocks, nBlocks, [&](size_t iBlock)
+        {
+            const size_t iStart = iBlock*sizeOfBlock;
+            const size_t iEnd = (((iBlock+1) * sizeOfBlock > nRows) ?  nRows : iStart + sizeOfBlock);
+
+            for(size_t i = iStart; i < iEnd; ++i)
+            {
+                PRAGMA_IVDEP
+                PRAGMA_VECTOR_ALWAYS
+                for(size_t j = 0; j < nCols; ++j)
+                {
+                    newFI[nCols*i + j] = 4*(fi[nRows*j + i] + UniquesArr[j]);
+                }
+            }
+        });
+        storage.newFI = newFI;
+    }
+
     for(size_t i = 0; (i < par.maxIterations) && !algorithms::internal::isCancelled(s, pHostApp); ++i)
     {
-        s = task.run(aTbl, aTblImp, aTblSmplCnt, i);
+        s = task.run(aTbl, aTblImp, aTblSmplCnt, i, storage);
         if(!s)
         {
             deleteTables<cpu>(aTbl, aTblImp, aTblSmplCnt, nTrees);
@@ -450,6 +494,7 @@ services::Status computeImpl(HostAppIface* pHostApp, const NumericTable *x, cons
     auto end = std::chrono::system_clock::now();
     std::chrono::duration<double> diff = end-start;
     std::cout << "Kernel execution time : " << diff.count() << "\n";
+
 
     return s;
 }

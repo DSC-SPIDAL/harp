@@ -51,7 +51,7 @@ template <typename algorithmFPType, CpuType cpu>
 class SquaredLoss : public LossFunction<algorithmFPType, cpu>
 {
 public:
-    virtual void getGradients(size_t n, const algorithmFPType* y, const algorithmFPType* f,
+    virtual void getGradients(size_t n, size_t nRows, const algorithmFPType* y, const algorithmFPType* f,
         const IndexType* sampleInd,
         algorithmFPType* gh) DAAL_C11_OVERRIDE
     {
@@ -61,8 +61,8 @@ public:
             PRAGMA_VECTOR_ALWAYS
             for(size_t i = 0; i < n; ++i)
             {
-                gh[2 * i] = f[sampleInd[i]] - y[i]; //gradient
-                gh[2 * i + 1] = 1; //hessian
+                gh[2 * sampleInd[i]] = f[sampleInd[i]] - y[sampleInd[i]]; //gradient
+                gh[2 * sampleInd[i] + 1] = 1; //hessian
             }
         }
         else
@@ -130,10 +130,10 @@ protected:
     }
 
     virtual services::Status buildTrees(gbt::internal::GbtDecisionTree** aTbl,
-        HomogenNumericTable<double>** aTblImp, HomogenNumericTable<int>** aTblSmplCnt) DAAL_C11_OVERRIDE
+        HomogenNumericTable<double>** aTblImp, HomogenNumericTable<int>** aTblSmplCnt, GlobalStorages<algorithmFPType, cpu>& GH_SUMS_BUF) DAAL_C11_OVERRIDE
     {
         this->_nParallelNodes.inc();
-        return _builder->run(aTbl[0], aTblImp[0], aTblSmplCnt[0], 0);
+        return _builder->run(aTbl[0], aTblImp[0], aTblSmplCnt[0], 0, GH_SUMS_BUF);
     }
 
 protected:

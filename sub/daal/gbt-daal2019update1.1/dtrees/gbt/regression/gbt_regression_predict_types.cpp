@@ -96,10 +96,10 @@ services::Status Input::check(const daal::algorithms::Parameter *parameter, int 
     const daal::algorithms::gbt::regression::internal::ModelImpl* pModel =
         static_cast<const daal::algorithms::gbt::regression::internal::ModelImpl*>(m.get());
     DAAL_ASSERT(pModel);
-    DAAL_CHECK(pModel->numberOfTrees(), services::ErrorNullModel);
+    DAAL_CHECK(pModel->getNumberOfTrees(), services::ErrorNullModel);
     const Parameter* pPrm = static_cast<const Parameter*>(parameter);
-    auto maxNIterations = pModel->numberOfTrees();
-    DAAL_CHECK((pPrm->nIterations == 0) || (pPrm->nIterations <= pModel->numberOfTrees()), services::ErrorGbtPredictIncorrectNumberOfIterations);
+    auto maxNIterations = pModel->getNumberOfTrees();
+    DAAL_CHECK((pPrm->nIterations == 0) || (pPrm->nIterations <= pModel->getNumberOfTrees()), services::ErrorGbtPredictIncorrectNumberOfIterations);
     return s;
 }
 

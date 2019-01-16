@@ -64,6 +64,8 @@ public:
     virtual services::Status deserializeImpl(const data_management::OutputDataArchive * arch) DAAL_C11_OVERRIDE;
 
     bool add(const TreeType& tree);
+
+    virtual size_t getNumberOfTrees() const DAAL_C11_OVERRIDE;
 };
 
 } // namespace internal

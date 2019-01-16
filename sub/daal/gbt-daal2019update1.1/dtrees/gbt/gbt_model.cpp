@@ -25,7 +25,6 @@
 
 using namespace daal::data_management;
 using namespace daal::services;
-using namespace daal::algorithms::dtrees::internal;
 
 namespace daal
 {
@@ -35,6 +34,7 @@ namespace gbt
 {
 namespace internal
 {
+
 typedef gbt::internal::ModelImpl::TreeType::NodeType::Leaf TLeaf;
 
 int GbtDecisionTree::serializationTag() { return _desc.tag(); }
@@ -51,22 +51,21 @@ void ModelImpl::traverseDF(size_t iTree, algorithms::regression::TreeNodeVisitor
 {
     if(iTree >= size())
         return;
+
     const GbtDecisionTree& gbtTree = *at(iTree);
-    SharedPtr<DecisionTreeTable> t = gbtTreeToDecisionTree(gbtTree);
 
-    const DecisionTreeNode* aNode = (const DecisionTreeNode*)t->getArray();
-    if(aNode)
-    {
-        auto onSplitNodeFunc = [&aNode, &visitor](size_t iRowInTable, size_t level) -> bool {
-            return visitSplit(iRowInTable, level, aNode, visitor);
-        };
+    const gbt::prediction::internal::ModelFPType* splitPoints = gbtTree.getSplitPoints();
+    const gbt::prediction::internal::FeatureIndexType* splitFeatures = gbtTree.getFeatureIndexesForSplit();
 
-        auto onLeafNodeFunc = [&aNode, &visitor](size_t iRowInTable, size_t level) -> bool {
-            return visitLeaf(iRowInTable, level, aNode, visitor);
-        };
+    auto onSplitNodeFunc = [&splitPoints, &splitFeatures, &visitor](size_t iRowInTable, size_t level) -> bool {
+        return visitor.onSplitNode(level, splitFeatures[iRowInTable], splitPoints[iRowInTable]);
+    };
 
-        traverseNodeDF(0, 0, aNode, onSplitNodeFunc, onLeafNodeFunc);
-    }
+    auto onLeafNodeFunc = [&splitPoints, &visitor](size_t iRowInTable, size_t level) -> bool {
+        return visitor.onLeafNode(level, splitPoints[iRowInTable]);
+    };
+
+    traverseGbtDF(0, 0, gbtTree, onSplitNodeFunc, onLeafNodeFunc);
 }
 
 void ModelImpl::traverseBF(size_t iTree, algorithms::regression::TreeNodeVisitor& visitor) const
@@ -75,53 +74,24 @@ void ModelImpl::traverseBF(size_t iTree, algorithms::regression::TreeNodeVisitor
         return;
 
     const GbtDecisionTree& gbtTree = *at(iTree);
-    SharedPtr<DecisionTreeTable> t = gbtTreeToDecisionTree(gbtTree);
-    const DecisionTreeNode* aNode = (const DecisionTreeNode*)t->getArray();
+
+    const gbt::prediction::internal::ModelFPType* splitPoints = gbtTree.getSplitPoints();
+    const gbt::prediction::internal::FeatureIndexType* splitFeatures = gbtTree.getFeatureIndexesForSplit();
+
+    auto onSplitNodeFunc = [&splitFeatures, &splitPoints, &visitor](size_t iRowInTable, size_t level) -> bool {
+        return visitor.onSplitNode(level, splitFeatures[iRowInTable], splitPoints[iRowInTable]);
+    };
+
+    auto onLeafNodeFunc = [&splitPoints, &visitor](size_t iRowInTable, size_t level) -> bool {
+        return visitor.onLeafNode(level, splitPoints[iRowInTable]);
+    };
 
     NodeIdxArray aCur;//nodes of current layer
     NodeIdxArray aNext;//nodes of next layer
-    if(aNode)
-    {
-        aCur.push_back(0);
 
-        auto onSplitNodeFunc = [&aNode, &visitor](size_t iRowInTable, size_t level) -> bool {
-            return visitSplit(iRowInTable, level, aNode, visitor);
-        };
+    aCur.push_back(0);
 
-        auto onLeafNodeFunc = [&aNode, &visitor](size_t iRowInTable, size_t level) -> bool {
-            return visitLeaf(iRowInTable, level, aNode, visitor);
-        };
-
-        traverseNodesBF(0, aCur, aNext, aNode, onSplitNodeFunc, onLeafNodeFunc);
-    }
-}
-
-void ModelImpl::traverseDFS(size_t iTree, tree_utils::regression::TreeNodeVisitor& visitor) const
-{
-    if(iTree >= size())
-        return;
-
-    const GbtDecisionTree& gbtTree = *at(iTree);
-    SharedPtr<DecisionTreeTable> t = gbtTreeToDecisionTree(gbtTree);
-    const DecisionTreeNode* aNode = (const DecisionTreeNode*)t->getArray();
-
-    const double *imp = getImpVals(iTree);
-    const int *nodeSamplesCount = getNodeSampleCount(iTree);
-    if(aNode)
-    {
-        tree_utils::SplitNodeDescriptor descSplit;
-        tree_utils::regression::LeafNodeDescriptor descLeaf;
-
-        auto onSplitNodeFunc = [&descSplit, &aNode, &imp, &nodeSamplesCount, &visitor](size_t iRowInTable, size_t level) -> bool {
-            return visitSplit(iRowInTable, level, descSplit, aNode, imp, nodeSamplesCount, visitor);
-        };
-
-        auto onLeafNodeFunc = [&descLeaf, &aNode, &imp, &nodeSamplesCount, &visitor](size_t iRowInTable, size_t level) -> bool {
-            return visitLeaf(iRowInTable, level, descLeaf, aNode, imp, nodeSamplesCount, visitor);
-        };
-
-        traverseNodeDF(0, 0, aNode, onSplitNodeFunc, onLeafNodeFunc);
-    }
+    traverseGbtBF(0, aCur, aNext, gbtTree, onSplitNodeFunc, onLeafNodeFunc);
 }
 
 void ModelImpl::traverseBFS(size_t iTree, tree_utils::regression::TreeNodeVisitor& visitor) const
@@ -130,38 +100,78 @@ void ModelImpl::traverseBFS(size_t iTree, tree_utils::regression::TreeNodeVisito
         return;
 
     const GbtDecisionTree& gbtTree = *at(iTree);
-    SharedPtr<DecisionTreeTable> t = gbtTreeToDecisionTree(gbtTree);
-    const DecisionTreeNode* aNode = (const DecisionTreeNode*)t->getArray();
 
-    const double *imp = getImpVals(iTree);
+    const gbt::prediction::internal::ModelFPType* splitPoints = gbtTree.getSplitPoints();
+    const gbt::prediction::internal::FeatureIndexType* splitFeatures = gbtTree.getFeatureIndexesForSplit();
     const int *nodeSamplesCount = getNodeSampleCount(iTree);
-    NodeIdxArray aCur;  //nodes of current layer
-    NodeIdxArray aNext; //nodes of next layer
-    if(aNode)
-    {
+    const double *imp = getImpVals(iTree);
+
+    auto onSplitNodeFunc = [&splitFeatures, &splitPoints, &nodeSamplesCount, &imp, &visitor](size_t iRowInTable, size_t level) -> bool {
         tree_utils::SplitNodeDescriptor descSplit;
+        descSplit.impurity         = imp[iRowInTable];
+        descSplit.nNodeSampleCount = (size_t)(nodeSamplesCount[iRowInTable]);
+        descSplit.featureIndex     = splitFeatures[iRowInTable];
+        descSplit.featureValue     = splitPoints[iRowInTable];
+        descSplit.level            = level;
+        return visitor.onSplitNode(descSplit);
+    };
+
+    auto onLeafNodeFunc = [&splitPoints, &nodeSamplesCount, &imp, &visitor](size_t iRowInTable, size_t level) -> bool {
         tree_utils::regression::LeafNodeDescriptor descLeaf;
 
-        auto onSplitNodeFunc = [&descSplit, &aNode, &imp, &nodeSamplesCount, &visitor](size_t iRowInTable, size_t level) -> bool {
-            return visitSplit(iRowInTable, level, descSplit, aNode, imp, nodeSamplesCount, visitor);
-        };
+        descLeaf.impurity         = imp[iRowInTable];
+        descLeaf.nNodeSampleCount = (size_t)(nodeSamplesCount[iRowInTable]);
+        descLeaf.level            = level;
+        descLeaf.response         = splitPoints[iRowInTable];
+        return visitor.onLeafNode(descLeaf);
+    };
 
-        auto onLeafNodeFunc = [&descLeaf, &aNode, &imp, &nodeSamplesCount, &visitor](size_t iRowInTable, size_t level) -> bool {
-            return visitLeaf(iRowInTable, level, descLeaf, aNode, imp, nodeSamplesCount, visitor);
-        };
+    NodeIdxArray aCur;//nodes of current layer
+    NodeIdxArray aNext;//nodes of next layer
 
-        aCur.push_back(0);
-        traverseNodesBF(0, aCur, aNext, aNode, onSplitNodeFunc, onLeafNodeFunc);
-    }
+    aCur.push_back(0);
+
+    traverseGbtBF(0, aCur, aNext, gbtTree, onSplitNodeFunc, onLeafNodeFunc);
+}
+
+void ModelImpl::traverseDFS(size_t iTree, tree_utils::regression::TreeNodeVisitor& visitor) const
+{
+    if(iTree >= size())
+        return;
+
+    const GbtDecisionTree& gbtTree = *at(iTree);
+
+    const gbt::prediction::internal::ModelFPType* splitPoints = gbtTree.getSplitPoints();
+    const gbt::prediction::internal::FeatureIndexType* splitFeatures = gbtTree.getFeatureIndexesForSplit();
+    const int *nodeSamplesCount = getNodeSampleCount(iTree);
+    const double *imp = getImpVals(iTree);
+
+    auto onSplitNodeFunc = [&splitFeatures, &splitPoints, &nodeSamplesCount, &imp, &visitor](size_t iRowInTable, size_t level) -> bool {
+        tree_utils::SplitNodeDescriptor descSplit;
+        descSplit.impurity         = imp[iRowInTable];
+        descSplit.nNodeSampleCount = (size_t)(nodeSamplesCount[iRowInTable]);
+        descSplit.featureIndex     = splitFeatures[iRowInTable];
+        descSplit.featureValue     = splitPoints[iRowInTable];
+        descSplit.level            = level;
+        return visitor.onSplitNode(descSplit);
+    };
+
+    auto onLeafNodeFunc = [&splitPoints, &nodeSamplesCount, &imp, &visitor](size_t iRowInTable, size_t level) -> bool {
+        tree_utils::regression::LeafNodeDescriptor descLeaf;
+
+        descLeaf.impurity         = imp[iRowInTable];
+        descLeaf.nNodeSampleCount = (size_t)(nodeSamplesCount[iRowInTable]);
+        descLeaf.level            = level;
+        descLeaf.response         = splitPoints[iRowInTable];
+        return visitor.onLeafNode(descLeaf);
+    };
+
+    traverseGbtDF(0, 0, gbtTree, onSplitNodeFunc, onLeafNodeFunc);
 }
 
 void ModelImpl::treeToTable(TreeType& t,
     gbt::internal::GbtDecisionTree** pTbl, HomogenNumericTable<double>** pTblImp, HomogenNumericTable<int>** pTblSmplCnt)
 {
-    const size_t nNode = t.getNumberOfNodes();
-
-
-
     t.convertGbtTreeToTable(pTbl, pTblImp, pTblSmplCnt);
 }
 
@@ -208,47 +218,6 @@ void ModelImpl::destroy()
     super::destroy();
 }
 
-
-SharedPtr<DecisionTreeTable> ModelImpl::gbtTreeToDecisionTree(const GbtDecisionTree& gbtTree)
-{
-    const gbt::prediction::internal::ModelFPType* splitPoints = gbtTree.getSplitPoints();
-    const gbt::prediction::internal::FeatureIndexType* splitFeatures = gbtTree.getFeatureIndexesForSplit();
-
-    SharedPtr<DecisionTreeTable> newTree(new DecisionTreeTable(gbtTree.getSourceNumOfNodes()));
-
-    size_t idxInTable = 0;
-    convertNode(gbtTree, *newTree, 0, 0, idxInTable);
-
-    return newTree;
-}
-
-void ModelImpl::convertNode(const GbtDecisionTree& gbtTree, DecisionTreeTable& newTree, const size_t idx, const size_t lvl, size_t& idxInTable)
-{
-    const gbt::prediction::internal::ModelFPType* splitPoints = gbtTree.getSplitPoints();
-    const gbt::prediction::internal::FeatureIndexType* splitFeatures = gbtTree.getFeatureIndexesForSplit();
-
-    DecisionTreeNode* const arr = (DecisionTreeNode*)newTree.getArray();
-
-    if (nodeIsLeaf(idx, gbtTree, lvl))
-    {
-        arr[idxInTable].featureValueOrResponse = splitPoints[idx];
-        arr[idxInTable].featureIndex = -1;
-        arr[idxInTable].leftIndexOrClass = 0;
-        idxInTable++;
-    }
-    else
-    {
-        arr[idxInTable].featureValueOrResponse = splitPoints[idx];
-        arr[idxInTable].featureIndex = splitFeatures[idx];
-        arr[idxInTable].leftIndexOrClass = idxInTable + 1;
-        idxInTable++;
-
-        convertNode(gbtTree, newTree, idx*2+1, lvl + 1, idxInTable);
-        convertNode(gbtTree, newTree, idx*2+2, lvl + 1, idxInTable);
-    }
-    return;
-}
-
 bool ModelImpl::nodeIsDummyLeaf(size_t idx, const GbtDecisionTree& gbtTree)
 {
     const gbt::prediction::internal::ModelFPType* splitPoints        = gbtTree.getSplitPoints();
@@ -257,12 +226,9 @@ bool ModelImpl::nodeIsDummyLeaf(size_t idx, const GbtDecisionTree& gbtTree)
     if(idx)
     {
         const size_t parent = getIdxOfParent(idx);
-        return (splitPoints[parent] == splitPoints[idx] && splitFeatures[parent] == splitFeatures[idx]);
+        return splitPoints[parent] == splitPoints[idx] && splitFeatures[parent] == splitFeatures[idx];
     }
-    else
-    {
-        return false;
-    }
+    return false;
 }
 
 bool ModelImpl::nodeIsLeaf(size_t idx, const GbtDecisionTree& gbtTree, const size_t lvl)

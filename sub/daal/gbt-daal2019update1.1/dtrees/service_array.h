@@ -108,6 +108,23 @@ public:
             _data[i] = val;
     }
 
+    void pushBack(T val)
+    {
+        resize(_size+1);
+        _data[_size-1] = val;
+    }
+
+    void resize(size_t n)
+    {
+        T* ptr = (T*)Allocator::alloc((n)*sizeof(T));
+        PRAGMA_VECTOR_ALWAYS
+        for(size_t i = 0; i < (_size>n ? n : _size); ++i)
+            ptr[i] = _data[i];
+        Allocator::free(_data);
+        _data = ptr;
+        _size = n;
+    }
+
     void reset(size_t n)
     {
         if(n != _size)

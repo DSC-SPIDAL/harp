@@ -91,10 +91,10 @@ services::Status Input::check(const daal::algorithms::Parameter *parameter, int 
     const daal::algorithms::gbt::classification::internal::ModelImpl* pModel =
         static_cast<const daal::algorithms::gbt::classification::internal::ModelImpl*>(m.get());
     DAAL_ASSERT(pModel);
-    DAAL_CHECK(pModel->numberOfTrees(), services::ErrorNullModel);
+    DAAL_CHECK(pModel->getNumberOfTrees(), services::ErrorNullModel);
     const Parameter* pPrm = static_cast<const Parameter*>(parameter);
-    DAAL_CHECK((pPrm->nClasses < 3) || (pModel->numberOfTrees() % pPrm->nClasses == 0), services::ErrorGbtIncorrectNumberOfTrees);
-    auto maxNIterations = pModel->numberOfTrees();
+    DAAL_CHECK((pPrm->nClasses < 3) || (pModel->getNumberOfTrees() % pPrm->nClasses == 0), services::ErrorGbtIncorrectNumberOfTrees);
+    auto maxNIterations = pModel->getNumberOfTrees();
     if(pPrm->nClasses > 2)
         maxNIterations /= pPrm->nClasses;
     DAAL_CHECK((pPrm->nIterations == 0) || (pPrm->nIterations <= maxNIterations), services::ErrorGbtPredictIncorrectNumberOfIterations);

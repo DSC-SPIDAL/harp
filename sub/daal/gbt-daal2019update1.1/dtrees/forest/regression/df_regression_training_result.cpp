@@ -19,10 +19,10 @@
 //--
 */
 
-#include "algorithms/decision_forest/decision_forest_regression_training_types.h"
+#include "df_regression_training_types_result.h"
 #include "serialization_utils.h"
 #include "daal_strings.h"
-
+#include "daal_strings.h"
 using namespace daal::data_management;
 using namespace daal::services;
 
@@ -38,8 +38,20 @@ namespace training
 {
 namespace interface1
 {
+
 __DAAL_REGISTER_SERIALIZATION_CLASS(Result, SERIALIZATION_DECISION_FOREST_REGRESSION_TRAINING_RESULT_ID);
-Result::Result() : algorithms::regression::training::Result(lastResultNumericTableId + 1) {};
+
+Result::Result() : algorithms::regression::training::Result(lastResultNumericTableId + 1)
+{
+    _impl = new Result::ResultImpl();
+}
+
+Result::~Result() { delete _impl; }
+
+Result::Result( const Result& other ): algorithms::regression::training::Result( other )
+{
+    _impl = new Result::ResultImpl(*other._impl);
+}
 
 decision_forest::regression::ModelPtr Result::get(ResultId id) const
 {
@@ -85,6 +97,11 @@ services::Status Result::check(const daal::algorithms::Input *input, const daal:
         DAAL_CHECK_STATUS(s, data_management::checkNumericTable(get(variableImportance).get(), variableImportanceStr(), 0, 0, nFeatures, 1));
     }
     return s;
+}
+
+engines::EnginePtr Result::get(ResultEngineId id) const
+{
+    return _impl->getEngine();
 }
 
 } // namespace interface1

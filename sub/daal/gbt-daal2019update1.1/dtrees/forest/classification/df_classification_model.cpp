@@ -106,6 +106,11 @@ size_t ModelImpl::numberOfTrees() const
     return ImplType::size();
 }
 
+size_t ModelImpl::getNumberOfTrees() const
+{
+    return ImplType::size();
+}
+
 void ModelImpl::traverseDF(size_t iTree, classifier::TreeNodeVisitor& visitor) const
 {
     if(iTree >= size())

@@ -23,6 +23,7 @@
 #include "service_error_handling.h"
 #include "service_sort.h"
 #include "service_array.h"
+#include "service_memory.h"
 
 namespace daal
 {
@@ -37,7 +38,7 @@ template <typename IndexType, typename algorithmFPType, CpuType cpu>
 struct ColIndexTask
 {
     DAAL_NEW_DELETE();
-    ColIndexTask(size_t nRows) : _index(nRows), maxNumDiffValues(0){}
+    ColIndexTask(size_t nRows) : _index(nRows), maxNumDiffValues(1){}
     bool isValid() const { return _index.get(); }
 
     struct FeatureIdx
@@ -72,7 +73,9 @@ struct ColIndexTask
         if(index[0].key == index[nRows - 1].key)
         {
             entry.numIndices = 1;
-            return s;
+            for(size_t i = 0; i < nRows; ++i)
+                aRes[i] = 0;
+           return s;
         }
         IndexType iUnique = 0;
         aRes[index[0].val] = iUnique;
@@ -109,7 +112,7 @@ protected:
             index[i].key = pBlock[i];
             index[i].val = i;
         }
-        daal::algorithms::internal::qSort<FeatureIdx, cpu>(nRows, index, FeatureIdx::compare);
+        daal::algorithms::internal::qSortByKey<FeatureIdx, cpu>(nRows, index);
         return Status();
     }
 
@@ -128,7 +131,7 @@ struct ColIndexTaskBins : public ColIndexTask<IndexType, algorithmFPType, cpu>
         IndexType* aRes, size_t iCol, size_t nRows, bool bUnorderedFeature) DAAL_C11_OVERRIDE;
 
 private:
-    services::Status assignIndexAccordingToBins(IndexedFeatures::FeatureEntry& entry, IndexType* aRes, size_t nBins);
+    services::Status assignIndexAccordingToBins(IndexedFeatures::FeatureEntry& entry, IndexType* aRes, size_t nBins, size_t nRows);
 
 private:
     const BinParams _prm;
@@ -164,18 +167,27 @@ const T* upper_bound(const T* first, const T* last, const T& value)
 
 template <typename IndexType, typename algorithmFPType, CpuType cpu>
 services::Status ColIndexTaskBins<IndexType, algorithmFPType, cpu>::assignIndexAccordingToBins(
-    IndexedFeatures::FeatureEntry& entry, IndexType* aRes, size_t nBins)
+    IndexedFeatures::FeatureEntry& entry, IndexType* aRes, size_t nBins, size_t nRows)
 {
+    const typename super::FeatureIdx* index = this->_index.get();
+
     if(nBins == 1)
     {
-        entry.numIndices = 0;
+        entry.numIndices = 1;
+        services::Status s = entry.allocBorders();
+        DAAL_CHECK(s, s);
+        services::internal::service_memset_seq<IndexType, cpu>(aRes, 0, nRows);
+
+        entry.binBorders[0] = index[nRows - 1].key;
+        _bins[0] = nRows;
+
         return Status();
     }
     entry.numIndices = nBins;
     services::Status s = entry.allocBorders();
     if(!s)
         return s;
-    const typename super::FeatureIdx* index = this->_index.get();
+
     size_t i = 0;
     for(size_t iBin = 0; iBin < nBins; ++iBin)
     {
@@ -202,7 +214,14 @@ services::Status ColIndexTaskBins<IndexType, algorithmFPType, cpu>::makeIndex(Nu
     const typename super::FeatureIdx* index = this->_index.get();
     if(index[0].key == index[nRows - 1].key)
     {
+        _bins[0] = nRows;
+        services::internal::service_memset_seq<IndexType, cpu>(aRes, 0, nRows);
+
         entry.numIndices = 1;
+        s |= entry.allocBorders();
+        DAAL_CHECK(s, s);
+        entry.binBorders[0] = index[nRows - 1].key;
+
         return s;
     }
 
@@ -280,7 +299,7 @@ services::Status ColIndexTaskBins<IndexType, algorithmFPType, cpu>::makeIndex(Nu
     }
 #endif
 #endif
-    return assignIndexAccordingToBins(entry, aRes, nBins);
+    return assignIndexAccordingToBins(entry, aRes, nBins, nRows);
 }
 
 template <typename algorithmFPType, CpuType cpu>

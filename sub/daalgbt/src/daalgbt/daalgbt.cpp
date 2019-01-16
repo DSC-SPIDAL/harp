@@ -219,6 +219,8 @@ training::ResultPtr trainModel()
     algorithm.input.set(classifier::training::data, trainData);
     algorithm.input.set(classifier::training::labels, trainDependentVariable);
 
+    std::cout << "default max_bin=" << algorithm.parameter().maxBins;
+    algorithm.parameter().maxBins = 256;
     algorithm.parameter().maxIterations = maxIterations;
     algorithm.parameter().featuresPerNode = nFeatures;
     algorithm.parameter().minObservationsInLeafNode = minObservationsInLeafNode;

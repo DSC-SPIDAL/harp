@@ -6,6 +6,10 @@ if [ $# -eq "0"  ] ; then
 fi
 
 bin=$1
+num_round=$2
+if [ -z $2 ]; then
+	num_round=10
+fi
 binname=$(basename $bin)
 if [ ! -f $bin ]; then
 	echo "$bin not exist, quit"
@@ -20,8 +24,12 @@ output=SpeedUp-time-${prefix}.csv
 
 for depth in ${depths[*]}; do
 logfile=${prefix}-d${depth}
-echo "$bin higgs_train.csv higgs_valid.csv 10 2 28 ${depth} 1 0 0.1 x 32" |tee ${logfile}.log
-$bin higgs_train.csv higgs_valid.csv 10 2 28 ${depth} 1 0 0.1 x 32 2>&1 |tee -a ${logfile}.log
+echo "$bin higgs_train.csv higgs_test.csv ${num_round} 2 28 ${depth} 1 0 0.1 x 32" |tee ${logfile}.log
+$bin higgs_train.csv higgs_test.csv ${num_round} 2 28 ${depth} 1 0 0.1 x 32 2>&1 |tee -a ${logfile}.log
+
+cp daal-pred.txt ${logfile}.txt
+python -m runner.runxgb --eval ${logfile}.txt --testfile higgs_test.csv
+
 
 ret=`grep "Kernel execution time" ${logfile}.log |grep -Po "[0-9]*\.[0-9]*" | gawk '{printf("%s,",$1)}'`
 echo ${logfile}, $ret >> $output

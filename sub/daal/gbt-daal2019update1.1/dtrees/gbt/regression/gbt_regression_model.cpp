@@ -60,6 +60,11 @@ size_t ModelImpl::numberOfTrees() const
     return ImplType::numberOfTrees();
 }
 
+size_t ModelImpl::getNumberOfTrees() const
+{
+    return ImplType::numberOfTrees();
+}
+
 void ModelImpl::traverseDF(size_t iTree, algorithms::regression::TreeNodeVisitor& visitor) const
 {
     ImplType::traverseDF(iTree, visitor);
