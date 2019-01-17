@@ -574,6 +574,13 @@ class HistMakerBlockDense: public BaseMaker {
   //size_t blockSize_{256*1024};
   //size_t blockSize_{0};
   BlockInfo blkInfo_;
+  //node block, =d8 by default
+  // !!!
+  // unsigned check_mask_ = 0x80ffff00;
+  // change the mask which is hard coded in CHECKHALFCOND
+  // !!!
+  int node_block_size{256};
+
 
   #ifndef USE_OMP_BUILDHIST
   ////task graph
@@ -1290,8 +1297,11 @@ class HistMakerBlockDense: public BaseMaker {
   #ifdef USE_HALFTRICK
   //#define CHECKHALFCOND (nid>=0 && (nid&1)==0)
   #define CHECKHALFCOND ((nid & 0x80000001) ==0)
+  //#define CHECKHALFCOND ((nid & 0x80ffff01) == nblkid)
   #else
   #define CHECKHALFCOND (nid>=0)
+  // check the node blkid
+  //#define CHECKHALFCOND ((nid & 0x80ffff00) == nblkid)
   #endif
 
   //half trick
@@ -1439,7 +1449,8 @@ class HistMakerBlockDense: public BaseMaker {
                        const MetaInfo &info,
                        const RegTree &tree,
                        bst_uint blkid_offset,
-                       int zblkid,
+                       unsigned int zblkid,
+                       unsigned int nblkid,
                        std::vector<HistEntry> *p_temp) {
     //check size
     if (block.size() == 0) return;
@@ -1710,27 +1721,41 @@ class HistMakerBlockDense: public BaseMaker {
       {
         // start enumeration
         double _tstart = dmlc::GetTime();
+
         #ifdef USE_OMP_BUILDHIST
-        //const auto nsize = static_cast<bst_omp_uint>(blkset.size());
+        // block number on the base plain
         const auto nsize = p_blkmat->GetBaseBlockNum();
+        // block number in the row dimension
         const auto zsize = p_blkmat->GetBlockZCol(0).GetBlockNum();
 
+        // node dimension blocks
+        //const int num_leaves = std::pow(2, depth);
+        //const int dsize = (num_leaves + node_block_size -1)/ node_block_size;
+        const int dsize = 1;
 
         #ifdef USE_DEBUG
         this->datasum_ = 0.;
         #endif
 
         #pragma omp parallel for schedule(dynamic, 1)
-        for (bst_omp_uint i = 0; i < nsize * zsize; ++i) {
-          //int blkid = blkset[i];
-          //int offset = blkid;
-          int blkid = i;
+        for(bst_omp_uint i = 0; i < dsize * nsize * zsize; ++i){
+
+          // node block id
+          unsigned int nblkid = (i / (nsize *zsize)) << 8;
+          // absolute blk id
+          int blkid = i % (nsize * zsize);
+          // blk id on the base plain
           int offset = blkid % nsize;
-          int zblkid = i / nsize;
+          // blk id on the row dimension
+          unsigned int zblkid = blkid / nsize;
+
+
+          // get dataBlock
           auto block = p_blkmat->GetBlockZCol(offset).GetBlock(zblkid);
 
+          // update model by this dataBlock and node_blkid
           this->UpdateHistBlock(depth, gpair, block, info, tree,
-                offset, zblkid, 
+                offset, zblkid, nblkid,
                 &this->thread_hist_[omp_get_thread_num()]);
                 //&this->thread_hist_[0]);
         }
