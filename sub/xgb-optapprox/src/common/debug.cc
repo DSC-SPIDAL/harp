@@ -393,6 +393,30 @@ void printSplit(SplitEntry& split, int fid, int nid){
     m.unlock();
 }
 
+void printPOSSet(POSSet& pos){
+
+    int grpcnt = pos.getGroupCnt();
+    std::cout << "POSSet(grpcnt=" << grpcnt << "):";
+
+    for(int g = 0; g < ((grpcnt > 1)?2:1) ; g++){
+        std::cout << "[" << g << "]:";
+        int cnt = pos[g].size();
+        cnt = (cnt > 100)? 100: cnt;
+        for (int i = 0; i< cnt; i++){
+            bool del = pos[g].isDelete(i);
+            bool left = pos[g].isLeft(i);
+            int nid = pos[g].getEncodePosition(i);
+            int ridx = pos[g].getRowId(i);
+
+            std::cout << (del?"-":"") << ":" << (left?"L":"") << ":" <<
+                nid << ":" << ridx << " ";
+        }
+        std::cout << "\n";
+    }
+    std::cout << "\n";
+
+}
+
 void printgh(const std::vector<GradientPair> &gpair)
 {
     std::ostringstream stringStream;
@@ -422,6 +446,7 @@ void printVec(std::string msg, const std::vector<unsigned int>& vec){}
 void printVec(std::string msg, const std::vector<int>& vec){}
 void printVec(std::string msg, const std::vector<float>& vec){}
    
+void printPOSSet(POSSet& pos){}
 void printgh(const std::vector<GradientPair> &gpair){}
 
 #endif
