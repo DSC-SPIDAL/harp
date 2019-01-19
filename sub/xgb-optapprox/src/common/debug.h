@@ -53,7 +53,7 @@ void printdmat(const SparsePage& dmat);
 void printgmat(GHistIndexMatrix& gmat);
 void printcut(HistCutMatrix& gmat);
 
-void printPOSSet(POSSet& pos);
+void printPOSSet(POSSet& pos, int gid=0);
 
 void printgh(const std::vector<GradientPair> &gpair);
 

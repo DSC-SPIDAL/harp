@@ -167,7 +167,12 @@ ifeq ($(DEBUG), 1)
 #CFLAGS += -fpermissive -fno-strict-aliasing -DUSE_BINID=1 -g -O2
 #CFLAGS += -g -O0
 CFLAGS += -g 
+
+ifeq ($(USE_DEBUG), 1)
+export OUTPUTTYPE=debuginfo
+else
 export OUTPUTTYPE=debug
+endif
 
 #TARGET = xgboost-$(CXX)-debug
 #WORKDIR = build-$(CXX)-debug

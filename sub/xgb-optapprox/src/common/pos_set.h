@@ -47,7 +47,9 @@ class POSSet{
 
         POSEntry(const POSEntry& pos){
             _nodeid = pos._nodeid;
-            _rowid = pos._rowid;
+            // clear the left, right status
+            //_rowid = pos._rowid;
+            _rowid = pos._rowid & 0x7fffffff;
         }
 
         //encoded data access interface
@@ -152,15 +154,26 @@ class POSSet{
             _rightlen ++;
         }
         void EndUpdate(int id){
+#ifdef USE_DEBUG
             LOG(CONSOLE) << "EndUpdate:[" << id << "]" << 
                 ",leftlen=" << _leftlen <<
                 ",rightlen=" << _rightlen <<
                 ",delete=" << _deletecnt <<
                 ",len=" << _len;
+#endif
+            //no update
+            if((_deletecnt == 0) && (_leftlen == 0) && (_rightlen ==0)){
+                return;
+            }
 
             // get the true len
             int remains = _len - _deletecnt;
-            if (_leftlen > remains){
+            if (remains == 0){
+                //all deteled
+                CHECK_EQ(_leftlen, 0);
+                CHECK_EQ(_rightlen, 0);
+            }
+            else if (_leftlen > remains){
                 _leftlen = remains - _rightlen;
             }
             else{
@@ -203,10 +216,10 @@ class POSSet{
         // call after EndUpdate() when _halflen is set correctly
         // all nodeid have been updated to new nids
         // split to two and save at the end of newgrp
-        int ApplySplit(POSEntry* start, std::vector<POSGroup>& newgrp){
+        int ApplySplit(POSEntry* start, std::vector<POSGroup>& newgrp, int curgid){
 
             int dummylen = _len - _leftlen - _rightlen;
-            LOG(CONSOLE) << "ApplySplit:: depth=" << _depth << 
+            LOG(CONSOLE) << "ApplySplit::[" << curgid << "],depth=" << _depth << 
                 ",leftlen=" << _leftlen <<
                 ",rightlen=" << _rightlen << 
                 ",dummylen=" << dummylen;
@@ -287,9 +300,9 @@ class POSSet{
         base_rowid_ = 0;
         split_depth_ = 0;
 
-        entry_[0].clear();
+        //entry_[0].clear();
         grp_[0].clear();
-        entry_[1].clear();
+        //entry_[1].clear();
         grp_[1].clear();
     }
 
@@ -334,10 +347,13 @@ class POSSet{
         newgrp.clear();
 
         for (int i = 0; i < grp_[workid_].size() ; i++){
+            int startpos = grp_[workid_][i]._start - dmlc::BeginPtr(entry_[workid_]);
+            CHECK_LT(startpos, rownum_);
+
             //split and save result to newgrp
             grp_[workid_][i].ApplySplit(
-                    dmlc::BeginPtr(entry_[nextid]) + (grp_[workid_][i]._start - dmlc::BeginPtr(entry_[workid_])),
-                    newgrp);
+                    dmlc::BeginPtr(entry_[nextid]) + startpos,
+                    newgrp, i);
         }
 
         //change to newgrp

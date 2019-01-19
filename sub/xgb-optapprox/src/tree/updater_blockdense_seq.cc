@@ -1642,6 +1642,11 @@ class HistMakerBlockDenseSeq: public BaseMaker {
       double _tstart = dmlc::GetTime();
       CHECK_GT(out_preds.size(), 0U);
 
+      const auto nrows = static_cast<bst_omp_uint>(p_fmat->Info().num_row_);
+      if (out_preds.size() != nrows){
+          return false;
+      }
+
       //get leaf_value for all nodes
       const auto nodes = p_last_tree_->GetNodes();
       std::vector<float> leaf_values;
@@ -1668,7 +1673,8 @@ class HistMakerBlockDenseSeq: public BaseMaker {
           leaf_values[nid] = (*p_last_tree_)[tnid].LeafValue();
       }
 
-      const auto nrows = static_cast<bst_omp_uint>(p_fmat->Info().num_row_);
+     // const auto nrows = static_cast<bst_omp_uint>(p_fmat->Info().num_row_);
+
       for(int ridx=0; ridx < nrows; ridx++){
         const int nid = this->DecodePosition(ridx);
         //const int nid = this->position_[ridx];

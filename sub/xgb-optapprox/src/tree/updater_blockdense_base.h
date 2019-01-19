@@ -243,6 +243,11 @@ class BlockBaseMaker: public TreeUpdater {
     for (int i = 0; i < posset_.getGroupCnt(); i++){
         #pragma omp parallel for schedule(static)
         for (int j = 0; j < posset_[i].size(); j++){
+          //check delete first
+
+          if (posset_[i].isDelete(j)) continue;
+
+
           //const int ridx = posset_[i].getRowId(j);
           const int nid = posset_[i].getEncodePosition(j);
           if (tree[nid].IsLeaf()) {

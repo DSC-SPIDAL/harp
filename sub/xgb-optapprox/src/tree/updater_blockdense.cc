@@ -644,6 +644,7 @@ class HistMakerBlockDense: public BlockBaseMaker {
 
         printSplit(best, fid, nid);
       }
+      //printSplit(best, -1, nid);
     }
     // get the best result, we can synchronize the solution
     for (bst_omp_uint wid = 0; wid < nexpand; ++wid) {
@@ -1243,6 +1244,8 @@ class HistMakerBlockDense: public BlockBaseMaker {
                        std::vector<HistEntry> *p_temp) {
     //check size
     if (block.size() == 0) return;
+    // one group is just one node, 
+    if (posset_[nblkid].isDelete(0)) return ;
 
     #ifdef USE_DEBUG
     //std::cout << "updateHistBlock: blkoffset=" << blkid_offset <<
@@ -1257,10 +1260,33 @@ class HistMakerBlockDense: public BlockBaseMaker {
     // initialize sbuilder for use
     std::vector<HistEntry> &hbuilder = *p_temp;
     hbuilder.resize(tree.param.num_nodes);
-    for (size_t i = 0; i < this->qexpand_.size(); ++i) {
-      unsigned nid = this->qexpand_[i];
-      //const unsigned wid = this->node2workindex_[nid];
+    //for (size_t i = 0; i < this->qexpand_.size(); ++i) {
+    //  unsigned nid = this->qexpand_[i];
+    //  //const unsigned wid = this->node2workindex_[nid];
 
+    //  //adjust the physical location of this plain
+    //  int mid = node2workindex_[nid];
+
+    //  hbuilder[nid].hist = this->wspace_.hset.GetHistUnitByBlkid(blkid_offset, mid);
+
+    //  //init data for the first zblks
+    //  if (zblkid == 0){
+    //    if (CHECKHALFCOND) {
+    //        //only clear the data for 'right' nodes in USE_HALFTRICK mode
+    //        hbuilder[nid].hist.ClearData();
+    //    }
+    //  }
+    //}
+    
+    //
+    // POSSet should be sync with qexpand_
+    // init the nblk
+    //
+    //for (int i = 0; j < posset_[nblkid].getNodeNum(); ++j) {
+    //  unsigned nid = posset_[nblkid].getNodeSet(i);
+
+      // simple test here
+     int nid = posset_[nblkid].getEncodePosition(0);
       //adjust the physical location of this plain
       int mid = node2workindex_[nid];
 
@@ -1273,8 +1299,9 @@ class HistMakerBlockDense: public BlockBaseMaker {
             hbuilder[nid].hist.ClearData();
         }
       }
-    }
+    //}
 
+ 
     {
         //one block
         //#pragma ivdep
@@ -1392,7 +1419,7 @@ class HistMakerBlockDense: public BlockBaseMaker {
 
                 // go back to parent, correct those who are not default
                 if (!tree[nid].IsRoot() && tree[pid].SplitIndex() == fid) {
-                  if (binid < tree[pid].SplitCond()) {
+                  if (binid <= tree[pid].SplitCond()) {
                     //this->SetEncodePosition(ridx, tree[pid].LeftChild());
                     posset_[i].setLeftPosition(j, tree[pid].LeftChild());
                   } else {
@@ -1514,22 +1541,24 @@ class HistMakerBlockDense: public BlockBaseMaker {
     // start to work
     {
       if (depth > 0){
-        printPOSSet(posset_);
+
+        int gid = 0;
+        printPOSSet(posset_, gid);
         
         //init the position_
         posset_.BeginUpdate(depth);
         this->SetDefaultPostion(p_hmat, tree);
 
-        printPOSSet(posset_);
+        printPOSSet(posset_, gid);
 
         this->CorrectNonDefaultPositionByBatch(*p_hmat, this->fsplit_set_, tree);
         posset_.EndUpdate();
 
-        printPOSSet(posset_);
+        printPOSSet(posset_, gid);
         
         posset_.ApplySplit();
 
-        printPOSSet(posset_);
+        printPOSSet(posset_, gid);
       }
 
       if (this->qexpand_.size() == 0){
@@ -1552,9 +1581,9 @@ class HistMakerBlockDense: public BlockBaseMaker {
         //const int dsize = (num_leaves + node_block_size -1)/ node_block_size;
         const int dsize = posset_.getGroupCnt();
 
-        #ifdef USE_DEBUG
+        //#ifdef USE_DEBUG
         this->datasum_ = 0.;
-        #endif
+        //#endif
 
         #pragma omp parallel for schedule(dynamic, 1)
         for(bst_omp_uint i = 0; i < dsize * nsize * zsize; ++i){
@@ -1604,7 +1633,7 @@ class HistMakerBlockDense: public BlockBaseMaker {
         #endif
 
         #ifdef USE_DEBUG
-        std::cout << "BuildHist:: datasum_=" << this->datasum_;
+        LOG(CONSOLE) << "BuildHist:: datasum_=" << this->datasum_;
         #endif
 
         #else
