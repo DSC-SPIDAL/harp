@@ -83,11 +83,17 @@ class POSSet{
     };
     
     /*! \brief POSEntry set with the same node group id
+     *  only for leaves
      */
     struct POSGroup{
         POSEntry* _start;
         int _len;
         int _depth;
+        
+        // todo tree structure info
+        //int left;
+        //int nodeid;
+
         // statistics of the row numbers of the left half nodes
         // use this infomation to apply split in place
         std::atomic_int _leftlen;
@@ -112,6 +118,7 @@ class POSSet{
         //it's bad to expost internal data structures
         inline POSEntry& operator[](int i) {
             //no check the boundary here
+            CHECK_LT(i, _len);
             return _start[i];
         }
 
@@ -198,17 +205,24 @@ class POSSet{
         // split to two and save at the end of newgrp
         int ApplySplit(POSEntry* start, std::vector<POSGroup>& newgrp){
 
-            if ((_leftlen == 0) && (_rightlen == 0)) return 0;
-
+            int dummylen = _len - _leftlen - _rightlen;
             LOG(CONSOLE) << "ApplySplit:: depth=" << _depth << 
                 ",leftlen=" << _leftlen <<
-                ",rightlen=" << _rightlen;
+                ",rightlen=" << _rightlen << 
+                ",dummylen=" << dummylen;
+
+            // deleted group still should copy to new group
+            //if ((_leftlen == 0) && (_rightlen == 0)){
+            //    //todo copy directly
+            //    return 0;
+            //}
 
             //write to new place
             POSGroup left(start, _leftlen);
             POSGroup right(start + _leftlen, _rightlen);
             //write the deleted items for later upatepred
-            POSEntry* dummy = start + _leftlen + _rightlen;
+            //POSEntry* dummy = start + _leftlen + _rightlen;
+            POSGroup dummy(start + _leftlen + _rightlen, dummylen);
 
             //scan and write
             int l = 0, r = 0, d = 0;
@@ -226,8 +240,9 @@ class POSSet{
                 }
             }
 
-            newgrp.push_back(left);
-            newgrp.push_back(right);
+            if (_leftlen > 0) newgrp.push_back(left);
+            if (_rightlen > 0) newgrp.push_back(right);
+            if (dummylen > 0) newgrp.push_back(dummy);
 
             return _leftlen + _rightlen;
         }

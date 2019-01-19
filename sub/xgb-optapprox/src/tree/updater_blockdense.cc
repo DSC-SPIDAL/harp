@@ -1410,9 +1410,16 @@ class HistMakerBlockDense: public BlockBaseMaker {
                              HostDeviceVector<bst_float>* p_out_preds) override {
     if ( this->param_.subsample < 1.0f) {
       return false;
-    } else {
-      std::vector<bst_float>& out_preds = p_out_preds->HostVector();
-
+    } 
+    
+    // check if it's validation
+    //const auto nrows = static_cast<bst_omp_uint>(p_fmat->Info().num_row_);
+    std::vector<bst_float>& out_preds = p_out_preds->HostVector();
+    if(out_preds.size() != posset_.getEntrySize()){
+        return false;
+    }
+    
+    {
       // p_last_fmat_ is a valid pointer as long as UpdatePredictionCache() is called in
       // conjunction with Update().
       if (!p_last_tree_) {

@@ -396,19 +396,18 @@ void printSplit(SplitEntry& split, int fid, int nid){
 void printPOSSet(POSSet& pos){
 
     int grpcnt = pos.getGroupCnt();
-    std::cout << "POSSet(grpcnt=" << grpcnt << "):";
+    std::cout << "POSSet(grpcnt=" << grpcnt << "):\n";
 
-    for(int g = 0; g < ((grpcnt > 1)?2:1) ; g++){
+    for(int g = 0; g < std::min(grpcnt , 8) ; g++){
         std::cout << "[" << g << "]:";
         int cnt = pos[g].size();
-        cnt = (cnt > 100)? 100: cnt;
-        for (int i = 0; i< cnt; i++){
+        for (int i = 0; i< std::min(cnt, 100); i++){
             bool del = pos[g].isDelete(i);
             bool left = pos[g].isLeft(i);
             int nid = pos[g].getEncodePosition(i);
             int ridx = pos[g].getRowId(i);
 
-            std::cout << (del?"-":"") << ":" << (left?"L":"") << ":" <<
+            std::cout << (del?"-":"") << ":" << (left?"l":"r") << ":" <<
                 nid << ":" << ridx << " ";
         }
         std::cout << "\n";
