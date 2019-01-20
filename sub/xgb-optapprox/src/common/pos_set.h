@@ -62,7 +62,7 @@ class POSSet{
         inline bool isLeft(){
             return _rowid < 0;
         }
-        void setEncodePosition(int nid, bool left = false){
+        inline void setEncodePosition(int nid, bool left = false){
             _nodeid = (_nodeid<0)? (~nid) : nid;
             if(left){
                 _rowid |= 0x80000000;
@@ -98,14 +98,20 @@ class POSSet{
 
         // statistics of the row numbers of the left half nodes
         // use this infomation to apply split in place
+#ifdef USE_ATMOIC_HAFLLEN
         std::atomic_int _leftlen;
         std::atomic_int _rightlen;
         std::atomic_int _deletecnt;
+#else
+        int _leftlen;
+        int _rightlen;
+        int _deletecnt;
+#endif
 
         POSGroup(POSEntry* start, int len):
             _start(start),_len(len),_depth(0){
         }
-        
+
         //copy constructor as there are atomics
         POSGroup(const POSGroup& grp){
             _start = grp._start;
@@ -120,7 +126,7 @@ class POSSet{
         //it's bad to expost internal data structures
         inline POSEntry& operator[](int i) {
             //no check the boundary here
-            CHECK_LT(i, _len);
+            //CHECK_LT(i, _len);
             return _start[i];
         }
 
@@ -132,7 +138,7 @@ class POSSet{
         //      ...
         //  EndUpdate()
         //
-        void BeginUpdate(int depth){
+        inline void BeginUpdate(int depth){
             //CHECK_EQ(_depth, depth);
             _depth = depth;
 
@@ -144,23 +150,26 @@ class POSSet{
             _start[i].setDelete();
             _deletecnt ++;
         }
-        void setLeftPosition(int i, int nid){
+        inline void setLeftPosition(int i, int nid){
             _start[i].setEncodePosition(nid, true);
             _leftlen ++;
         }
         //inline void setRightPosition(int i, int nid){
-        void setRightPosition(int i, int nid){
+        inline void setRightPosition(int i, int nid){
             _start[i].setEncodePosition(nid, false);
             _rightlen ++;
         }
-        void EndUpdate(int id){
-#ifdef USE_DEBUG
+
+
+#ifdef USE_ATMOIC_HAFLLEN
+        inline void EndUpdate(int id){
+            #ifdef USE_DEBUG
             LOG(CONSOLE) << "EndUpdate:[" << id << "]" << 
                 ",leftlen=" << _leftlen <<
                 ",rightlen=" << _rightlen <<
                 ",delete=" << _deletecnt <<
                 ",len=" << _len;
-#endif
+            #endif
             //no update
             if((_deletecnt == 0) && (_leftlen == 0) && (_rightlen ==0)){
                 return;
@@ -170,8 +179,8 @@ class POSSet{
             int remains = _len - _deletecnt;
             if (remains == 0){
                 //all deteled
-                CHECK_EQ(_leftlen, 0);
-                CHECK_EQ(_rightlen, 0);
+                //CHECK_EQ(_leftlen, 0);
+                //CHECK_EQ(_rightlen, 0);
             }
             else if (_leftlen > remains){
                 _leftlen = remains - _rightlen;
@@ -180,6 +189,31 @@ class POSSet{
                 _rightlen = remains - _leftlen;
             }
         }
+#else
+        // simple scan to get the halflen
+        inline void EndUpdate(int id){
+
+            for (int i = 0 ; i < _len; i++){
+                if (_start[i].isDelete()){
+                    _deletecnt ++;
+                }
+                else if (_start[i].isLeft()){
+                    _leftlen ++;
+                }
+                else{
+                    _rightlen ++;
+                }
+            }
+ 
+            #ifdef USE_DEBUG
+            LOG(CONSOLE) << "EndUpdate:[" << id << "]" << 
+                ",leftlen=" << _leftlen <<
+                ",rightlen=" << _rightlen <<
+                ",delete=" << _deletecnt <<
+                ",len=" << _len;
+            #endif
+        }
+#endif
 
         // calc _halflen outside
         //inline int Update(int depth, int halflen){
@@ -207,10 +241,6 @@ class POSSet{
             return _start[i].getNodeId();
         }
  
-        //inline setEncodePosition(int i, int nid){
-        //    _start[i].setEncodePosition(nid);
-        //}
-
         //
         // apply split at the group level
         // call after EndUpdate() when _halflen is set correctly
@@ -274,11 +304,18 @@ class POSSet{
     int base_rowid_;
     int split_depth_;
 
+    // thread local 
+    std::vector<std::vector<POSGroup>> local_grp_;
+
+
     POSSet() = default;
 
-    void Init(int rownumber, int start_rowid = 0, int splitdepth = 8){
+    void Init(int rownumber, int threadnum, int start_rowid = 0, int splitdepth = 8){
         //clear first
         Clear();
+
+        // thread init
+        local_grp_.resize(threadnum);
 
         //CHECK_LE(rownumber, ROWID_MASK);
         //CHECK_LE(splitdepth, NODEBLK_SPLITDEPTH);
@@ -324,12 +361,13 @@ class POSSet{
     }
 
 
-    void BeginUpdate(int depth){
+    inline void BeginUpdate(int depth){
         for (int i = 0; i < grp_[workid_].size() ; i++){
             grp_[workid_][i].BeginUpdate(depth);
         }
     }
-    void EndUpdate(){
+    inline void EndUpdate(){
+        #pragma omp parallel for schedule(static)
         for (int i = 0; i < grp_[workid_].size() ; i++){
             grp_[workid_][i].EndUpdate(i);
         }
@@ -344,9 +382,10 @@ class POSSet{
 
         //create a new grp
         int nextid = (workid_ + 1)%2;
-        std::vector<POSGroup>& newgrp = grp_[nextid];
-        newgrp.clear();
+        //std::vector<POSGroup>& newgrp = grp_[nextid];
+        //newgrp.clear();
 
+        #pragma omp parallel for schedule(static)
         for (int i = 0; i < grp_[workid_].size() ; i++){
             int startpos = grp_[workid_][i]._start - dmlc::BeginPtr(entry_[workid_]);
             CHECK_LT(startpos, rownum_);
@@ -354,10 +393,21 @@ class POSSet{
             //split and save result to newgrp
             grp_[workid_][i].ApplySplit(
                     dmlc::BeginPtr(entry_[nextid]) + startpos,
-                    newgrp, i);
+                    local_grp_[omp_get_thread_num()], i);
         }
 
+        //collect from threads
         //change to newgrp
+        std::vector<POSGroup>& newgrp = grp_[nextid];
+        newgrp.clear();
+
+        for(int i = 0; i < local_grp_.size(); i++){
+            if (local_grp_[i].size() > 0){
+                newgrp.insert(newgrp.end(), local_grp_[i].begin(), local_grp_[i].end());
+                local_grp_[i].clear();
+            }
+        }
+
         workid_ = nextid;
 
     }

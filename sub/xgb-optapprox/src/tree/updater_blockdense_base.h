@@ -147,7 +147,7 @@ class BlockBaseMaker: public TreeUpdater {
       //        << "root index exceed setting";
       //  }
       //}
-      posset_.Init(gpair.size());
+      posset_.Init(gpair.size(),omp_get_max_threads());
 
       // mark delete for the deleted datas
       //for (size_t i = 0; i < position_.size(); ++i) {
@@ -240,31 +240,56 @@ class BlockBaseMaker: public TreeUpdater {
     //  }
     //}
     //
-    for (int i = 0; i < posset_.getGroupCnt(); i++){
-        #pragma omp parallel for schedule(static)
-        for (int j = 0; j < posset_[i].size(); j++){
-          //check delete first
+    //for (int i = 0; i < posset_.getGroupCnt(); i++){
+    //    #pragma omp parallel for schedule(static)
+    //    for (int j = 0; j < posset_[i].size(); j++){
+    //      //check delete first
 
-          if (posset_[i].isDelete(j)) continue;
+    //      if (posset_[i].isDelete(j)) continue;
 
 
-          //const int ridx = posset_[i].getRowId(j);
-          const int nid = posset_[i].getEncodePosition(j);
-          if (tree[nid].IsLeaf()) {
-            // mark finish when it is not a fresh leaf
-            if (tree[nid].RightChild() == -1) {
-              //position_[ridx] = ~nid;
-              posset_[i].setDelete(j);
-            }
+    //      //const int ridx = posset_[i].getRowId(j);
+    //      const int nid = posset_[i].getEncodePosition(j);
+    //      if (tree[nid].IsLeaf()) {
+    //        // mark finish when it is not a fresh leaf
+    //        if (tree[nid].RightChild() == -1) {
+    //          //position_[ridx] = ~nid;
+    //          posset_[i].setDelete(j);
+    //        }
+    //      } else {
+    //        // push to default branch
+    //        if (tree[nid].DefaultLeft()) {
+    //          //this->SetEncodePosition(ridx, tree[nid].LeftChild());
+    //          posset_[i].setLeftPosition(j, tree[nid].LeftChild());
+    //        } else {
+    //          //this->SetEncodePosition(ridx, tree[nid].RightChild());
+    //          posset_[i].setRightPosition(j, tree[nid].RightChild());
+    //        }
+    //      }
+    //    }
+    //}
+    #pragma omp parallel for schedule(static)
+    for (size_t i = 0; i < posset_.getEntrySize(); ++i) {
+        auto &entry = posset_.getEntry(i);
+
+        if(entry.isDelete()) continue;
+        const int ridx = entry.getRowId();
+        const int nid = entry.getEncodePosition();
+
+        if (tree[nid].IsLeaf()) {
+          // mark finish when it is not a fresh leaf
+          if (tree[nid].RightChild() == -1) {
+            //position_[ridx] = ~nid;
+            entry.setDelete();
+          }
+        } else {
+          // push to default branch
+          if (tree[nid].DefaultLeft()) {
+            //this->SetEncodePosition(ridx, tree[nid].LeftChild());
+            entry.setEncodePosition(tree[nid].LeftChild(), true);
           } else {
-            // push to default branch
-            if (tree[nid].DefaultLeft()) {
-              //this->SetEncodePosition(ridx, tree[nid].LeftChild());
-              posset_[i].setLeftPosition(j, tree[nid].LeftChild());
-            } else {
-              //this->SetEncodePosition(ridx, tree[nid].RightChild());
-              posset_[i].setRightPosition(j, tree[nid].RightChild());
-            }
+            //this->SetEncodePosition(ridx, tree[nid].RightChild());
+            entry.setEncodePosition(tree[nid].RightChild(), false);
           }
         }
     }
@@ -320,18 +345,26 @@ class BlockBaseMaker: public TreeUpdater {
     //    thread_temp[tid][nid].Add(gpair, info, ridx);
     //  }
     //}
-    for (int i = 0; i < posset_.getGroupCnt(); i++){
-        #pragma omp parallel for schedule(static)
-        for (int j = 0; j < posset_[i].size(); j++){
-          if (posset_[i].isDelete(j)) continue;  
-          const int ridx = posset_[i].getRowId(j);
-          const int nid = posset_[i].getEncodePosition(j);
-          const int tid = omp_get_thread_num();
-          thread_temp[tid][nid].Add(gpair, info, ridx);
-        }
-    }
- 
+    //for (int i = 0; i < posset_.getGroupCnt(); i++){
+    //    #pragma omp parallel for schedule(static)
+    //    for (int j = 0; j < posset_[i].size(); j++){
+    //      if (posset_[i].isDelete(j)) continue;  
+    //      const int ridx = posset_[i].getRowId(j);
+    //      const int nid = posset_[i].getEncodePosition(j);
+    //      const int tid = omp_get_thread_num();
+    //      thread_temp[tid][nid].Add(gpair, info, ridx);
+    //    }
+    //}
 
+    #pragma omp parallel for schedule(static)
+    for (size_t i = 0; i < posset_.getEntrySize(); ++i) {
+        auto &entry = posset_.getEntry(i);
+        if(entry.isDelete()) continue;
+        const int ridx = entry.getRowId();
+        const int nid = entry.getEncodePosition();
+        const int tid = omp_get_thread_num();
+        thread_temp[tid][nid].Add(gpair, info, ridx);
+    }
 
     // sum the per thread statistics together
     for (int nid : qexpand_) {

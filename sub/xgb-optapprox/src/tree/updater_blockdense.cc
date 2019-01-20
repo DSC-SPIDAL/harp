@@ -695,7 +695,7 @@ class HistMakerBlockDense: public BlockBaseMaker {
     }
     
     //end findSplit
-    this->tminfo.aux_time[3] += dmlc::GetTime() - _tstartFindSplit;
+    //this->tminfo.aux_time[3] += dmlc::GetTime() - _tstartFindSplit;
 
   }
 
@@ -1389,10 +1389,10 @@ class HistMakerBlockDense: public BlockBaseMaker {
       DMatrixCompactBlockDense &batch, const std::vector<bst_uint> &sorted_split_set,
       const RegTree &tree) {
     for (size_t fid = 0; fid < batch.Size(); ++fid) {
-      auto col = batch[fid];
       auto it = std::lower_bound(sorted_split_set.begin(), sorted_split_set.end(), fid);
 
       if (it != sorted_split_set.end() && *it == fid) {
+        auto col = batch[fid];
         //const auto ndata = static_cast<bst_omp_uint>(col.size());
         //#pragma omp parallel for schedule(static)
         //for (bst_omp_uint j = 0; j < ndata; ++j) {
@@ -1411,31 +1411,56 @@ class HistMakerBlockDense: public BlockBaseMaker {
         //    }
         //  }
         //}
+        //for (int i = 0; i < posset_.getGroupCnt(); i++){
+        //    #pragma omp parallel for schedule(static)
+        //    for (int j = 0; j < posset_[i].size(); j++){
+        //        if (posset_[i].isDelete(j)) continue;
+        //        const int ridx = posset_[i].getRowId(j);
+        //        const int nid = posset_[i].getEncodePosition(j);
 
-        for (int i = 0; i < posset_.getGroupCnt(); i++){
-            #pragma omp parallel for schedule(static)
-            for (int j = 0; j < posset_[i].size(); j++){
-                if (posset_[i].isDelete(j)) continue;
-                const int ridx = posset_[i].getRowId(j);
-                const int nid = posset_[i].getEncodePosition(j);
+        //        //access the data by ridx
+        //        //const bst_float fvalue = col[ridx].fvalue;
+        //        const bst_uint binid = col._binidByRowId(ridx);
 
-                //access the data by ridx
-                //const bst_float fvalue = col[ridx].fvalue;
-                const bst_uint binid = col._binidByRowId(ridx);
+        //        CHECK(tree[nid].IsLeaf());
+        //        int pid = tree[nid].Parent();
 
-                CHECK(tree[nid].IsLeaf());
-                int pid = tree[nid].Parent();
+        //        // go back to parent, correct those who are not default
+        //        if (!tree[nid].IsRoot() && tree[pid].SplitIndex() == fid) {
+        //          if (binid <= tree[pid].SplitCond()) {
+        //            //this->SetEncodePosition(ridx, tree[pid].LeftChild());
+        //            posset_[i].setLeftPosition(j, tree[pid].LeftChild());
+        //          } else {
+        //            //this->SetEncodePosition(ridx, tree[pid].RightChild());
+        //            posset_[i].setRightPosition(j, tree[pid].RightChild());
+        //          }
+        //        }
+        //    }
+        //} /* end of group */
+        #pragma omp parallel for schedule(static)
+        for (size_t i = 0; i < posset_.getEntrySize(); ++i) {
+            auto &entry = posset_.getEntry(i);
 
-                // go back to parent, correct those who are not default
-                if (!tree[nid].IsRoot() && tree[pid].SplitIndex() == fid) {
-                  if (binid <= tree[pid].SplitCond()) {
-                    //this->SetEncodePosition(ridx, tree[pid].LeftChild());
-                    posset_[i].setLeftPosition(j, tree[pid].LeftChild());
-                  } else {
-                    //this->SetEncodePosition(ridx, tree[pid].RightChild());
-                    posset_[i].setRightPosition(j, tree[pid].RightChild());
-                  }
-                }
+            if(entry.isDelete()) continue;
+            const int nid = entry.getEncodePosition();
+
+            //CHECK(tree[nid].IsLeaf());
+            int pid = tree[nid].Parent();
+
+            // go back to parent, correct those who are not default
+            if (!tree[nid].IsRoot() && tree[pid].SplitIndex() == fid) {
+              const int ridx = entry.getRowId();
+              //access the data by ridx
+              //const bst_float fvalue = col[ridx].fvalue;
+              const bst_uint binid = col._binidByRowId(ridx);
+
+              if (binid <= tree[pid].SplitCond()) {
+                //this->SetEncodePosition(ridx, tree[pid].LeftChild());
+                entry.setEncodePosition(tree[pid].LeftChild(), true);
+              } else {
+                //this->SetEncodePosition(ridx, tree[pid].RightChild());
+                entry.setEncodePosition(tree[pid].RightChild(), false);
+              }
             }
         } /* end of group */
       }
@@ -1532,7 +1557,7 @@ class HistMakerBlockDense: public BlockBaseMaker {
       //LOG(CONSOLE) << "UpdatePredictionCache: nodes size=" << 
       //    nodes.size() << ",rowscnt=" << nrows;
 
-      this->tminfo.aux_time[2] += dmlc::GetTime() - _tstart;
+      //this->tminfo.aux_time[2] += dmlc::GetTime() - _tstart;
       //printVec("updatech pos:", this->position_);
       printVec("updatech leaf:", leaf_values);
       printVec("updatech pred:", out_preds);
@@ -1550,6 +1575,7 @@ class HistMakerBlockDense: public BlockBaseMaker {
     // start to work
     {
       if (depth > 0){
+        double _tstartInit = dmlc::GetTime();
 
         int gid = 0;
         printPOSSet(posset_, gid);
@@ -1557,15 +1583,24 @@ class HistMakerBlockDense: public BlockBaseMaker {
         //init the position_
         posset_.BeginUpdate(depth);
         this->SetDefaultPostion(p_hmat, tree);
+        this->tminfo.aux_time[1] += dmlc::GetTime() - _tstartInit;
 
         printPOSSet(posset_, gid);
 
+        _tstartInit = dmlc::GetTime();
         this->CorrectNonDefaultPositionByBatch(*p_hmat, this->fsplit_set_, tree);
+        this->tminfo.aux_time[2] += dmlc::GetTime() - _tstartInit;
+
+
+        _tstartInit = dmlc::GetTime();
         posset_.EndUpdate();
+        this->tminfo.aux_time[3] += dmlc::GetTime() - _tstartInit;
 
         printPOSSet(posset_, gid);
-        
+
+        _tstartInit = dmlc::GetTime();
         posset_.ApplySplit();
+        this->tminfo.aux_time[4] += dmlc::GetTime() - _tstartInit;
 
         printPOSSet(posset_, gid);
       }
@@ -1727,7 +1762,7 @@ class HistMakerBlockDense: public BlockBaseMaker {
     p_last_tree_ = &tree;
 
     //end ResetTree
-    this->tminfo.aux_time[4] += dmlc::GetTime() - _tstart;
+    //this->tminfo.aux_time[4] += dmlc::GetTime() - _tstart;
 
   }
 
