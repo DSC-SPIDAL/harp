@@ -1399,6 +1399,13 @@ class HistMakerBlockDenseSeq: public BaseMaker {
     // initialize sbuilder for use
     std::vector<HistEntry> &hbuilder = *p_temp;
     hbuilder.resize(tree.param.num_nodes);
+    for (size_t i = 0; i < this->qexpand_.size(); ++i) {
+      const unsigned nid = this->qexpand_[i];
+
+      hbuilder[nid].hist = this->wspace_.hset.GetHistUnitByBlkid(blkid_offset, nid);
+    }
+
+
     for (size_t i = 0; i < this->qexpand_.size(); i++) {
       const unsigned nid = this->qexpand_[i];
       
@@ -1592,8 +1599,6 @@ class HistMakerBlockDenseSeq: public BaseMaker {
         for (bst_omp_uint j = 0; j < ndata; ++j) {
 
           const bst_uint ridx = col._index(j);
-          const bst_uint binid = col._binid(j);
-
           //const int nid = this->DecodePosition(ridx);
           
           //check if it's a non-fresh leaf node
@@ -1615,6 +1620,7 @@ class HistMakerBlockDenseSeq: public BaseMaker {
 
           // go back to parent, correct those who are not default
           if (!tree[nid].IsRoot() && tree[pid].SplitIndex() == fid) {
+            const bst_uint binid = col._binid(j);
             if (binid <= tree[pid].SplitCond()) {
               this->SetEncodePosition(ridx, tree[pid].LeftChild());
             } else {

@@ -1240,6 +1240,12 @@ class HistMakerBlockDense: public BlockBaseMaker {
     // initialize sbuilder for use
     std::vector<HistEntry> &hbuilder = *p_temp;
     hbuilder.resize(tree.param.num_nodes);
+    for (size_t i = 0; i < this->qexpand_.size(); ++i) {
+      const unsigned nid = this->qexpand_[i];
+
+      hbuilder[nid].hist = this->wspace_.hset.GetHistUnitByBlkid(blkid_offset, nid);
+    }
+
     for (size_t i = 0; i < this->qexpand_.size(); i++) {
       const unsigned nid = this->qexpand_[i];
       
