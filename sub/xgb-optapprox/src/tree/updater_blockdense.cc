@@ -177,6 +177,65 @@ class HistMakerBlockDense: public BlockBaseMaker {
 
   };
 
+  struct HistEntry {
+    typename HistMakerBlockDense<TStats>::HistUnit hist;
+    //unsigned istart;
+
+    /* OptApprox:: init bindid in pmat */
+    inline unsigned GetBinId(bst_float fv) {
+      unsigned start = 0;
+      while (start < hist.size && !(fv < hist.cut[start])) ++start;
+      //CHECK_NE(start, hist.size);
+      if(start == hist.size) start--;
+      return start;
+    }
+
+    inline void AddWithIndex(unsigned binid,
+                    GradientPair gstats) {
+        //hist.data[binid].Add(gstats);
+    #ifdef USE_BINID
+        hist.data[binid].Add(gstats);
+    #endif
+    }
+    inline void AddWithIndex(unsigned binid,
+                    const std::vector<GradientPair> &gpair,
+                    const MetaInfo &info,
+                    const bst_uint ridx) {
+    #ifdef USE_BINID
+      //CHECK_NE(binid, hist.size);
+      hist.data[binid].Add(gpair, info, ridx);
+    #endif
+    }
+
+  };
+
+  //
+  // Compact structure for BuildHist
+  //
+  struct HistEntryCompact {
+    TStats *data=nullptr;
+
+    HistEntryCompact() = default;
+    HistEntryCompact(TStats* _data):data(_data){}
+
+    inline void AddWithIndex(unsigned binid,
+                    GradientPair gstats) {
+        #ifdef USE_BINID
+        data[binid].Add(gstats);
+        #endif
+    }
+    inline bool isNull(){
+        return data == nullptr;
+    }
+    inline void setNull(){
+        data = nullptr;
+    }
+    void ClearData(int size){
+        std::memset(data, 0., sizeof(GradStats) * size);
+    }
+  };
+
+
   /*
    * Core Data Structure for Model GHSum
    *
@@ -246,6 +305,14 @@ class HistMakerBlockDense: public BlockBaseMaker {
                       &data[0] + (pblkInfo->GetBinBlkSize()*pblkInfo->GetFeatureBlkSize())*(blkid * nodeSize + nid),
                       pblkInfo->GetBinBlkSize()*pblkInfo->GetFeatureBlkSize());
     }
+
+    inline HistEntryCompact GetHistUnitByBlkidCompact(size_t blkid, size_t nid) {
+      return HistEntryCompact(&data[0] + (pblkInfo->GetBinBlkSize()*pblkInfo->GetFeatureBlkSize())*(blkid * nodeSize + nid));
+    }
+    inline int GetHistUnitByBlkidSize(){
+        return pblkInfo->GetBinBlkSize()*pblkInfo->GetFeatureBlkSize();
+    }
+
 
     //
     // node summation store at the end
@@ -374,37 +441,6 @@ class HistMakerBlockDense: public BlockBaseMaker {
     }
   };
 
-  struct HistEntry {
-    typename HistMakerBlockDense<TStats>::HistUnit hist;
-    //unsigned istart;
-
-    /* OptApprox:: init bindid in pmat */
-    inline unsigned GetBinId(bst_float fv) {
-      unsigned start = 0;
-      while (start < hist.size && !(fv < hist.cut[start])) ++start;
-      //CHECK_NE(start, hist.size);
-      if(start == hist.size) start--;
-      return start;
-    }
-
-    inline void AddWithIndex(unsigned binid,
-                    GradientPair gstats) {
-        //hist.data[binid].Add(gstats);
-    #ifdef USE_BINID
-        hist.data[binid].Add(gstats);
-    #endif
-    }
-    inline void AddWithIndex(unsigned binid,
-                    const std::vector<GradientPair> &gpair,
-                    const MetaInfo &info,
-                    const bst_uint ridx) {
-    #ifdef USE_BINID
-      //CHECK_NE(binid, hist.size);
-      hist.data[binid].Add(gpair, info, ridx);
-    #endif
-    }
-
-  };
 
  /* --------------------------------------------------
   * data members
@@ -443,6 +479,7 @@ class HistMakerBlockDense: public BlockBaseMaker {
   std::vector<std::vector<TStats> > thread_stats_;
   // used to hold start pointer
   std::vector<std::vector<HistEntry> > thread_hist_;
+  std::vector<std::vector<HistEntryCompact>> thread_histcompact_;
   // node statistics
   std::vector<TStats> node_stats_;
   //HistCutMatrix
@@ -905,9 +942,11 @@ class HistMakerBlockDense: public BlockBaseMaker {
 
         unsigned int nthread = omp_get_max_threads();
         this->thread_hist_.resize(omp_get_max_threads());
+        this->thread_histcompact_.resize(omp_get_max_threads());
         for (unsigned int i=0; i< nthread; i++){
           //make memory access separate
           thread_hist_[i].resize(64);
+          thread_histcompact_[i].resize(64);
         }
 
         this->InitHistIndex(p_fmat, fset, tree);
@@ -997,9 +1036,11 @@ class HistMakerBlockDense: public BlockBaseMaker {
         //init for each tree
         unsigned int nthread = omp_get_max_threads();
         this->thread_hist_.resize(omp_get_max_threads());
+        this->thread_histcompact_.resize(omp_get_max_threads());
         for (unsigned int i=0; i< nthread; i++){
           //make memory access separate
           thread_hist_[i].resize(64);
+          thread_histcompact_[i].resize(64);
         }
 
         auto _info = p_fmat->Info();
@@ -1252,7 +1293,7 @@ class HistMakerBlockDense: public BlockBaseMaker {
                        bst_uint blkid_offset,
                        unsigned int zblkid,
                        unsigned int nblkid,
-                       std::vector<HistEntry> *p_temp) {
+                       std::vector<HistEntryCompact> *p_temp) {
     //check size
     if (block.size() == 0) return;
 
@@ -1267,7 +1308,7 @@ class HistMakerBlockDense: public BlockBaseMaker {
     bwork_lock_[blkid_offset].lock();
 
     // initialize sbuilder for use
-    std::vector<HistEntry> &hbuilder = *p_temp;
+    std::vector<HistEntryCompact> &hbuilder = *p_temp;
     hbuilder.resize(tree.param.num_nodes);
     //for (size_t i = 0; i < this->qexpand_.size(); ++i) {
     //  unsigned nid = this->qexpand_[i];
@@ -1335,7 +1376,8 @@ class HistMakerBlockDense: public BlockBaseMaker {
     int endgid = posset_.getGroupCnt();
     //lazy init
     for (int i = 0; i < tree.param.num_nodes; i++){
-        hbuilder[i].hist.setNull();
+        //hbuilder[i].hist.setNull();
+        hbuilder[i].setNull();
     }
 #endif
 
@@ -1379,15 +1421,18 @@ class HistMakerBlockDense: public BlockBaseMaker {
             if (CHECKHALFCOND) {
 
               // todo, remove init outside loop
-              if (hbuilder[nid].hist.isNull()){
+              //if (hbuilder[nid].hist.isNull()){
+              if (hbuilder[nid].isNull()){
                   //lazy initialize
                   int mid = node2workindex_[nid];
-                  hbuilder[nid].hist = this->wspace_.hset.GetHistUnitByBlkid(blkid_offset, mid);
+                  //hbuilder[nid].hist = this->wspace_.hset.GetHistUnitByBlkid(blkid_offset, mid);
+                  hbuilder[nid] = this->wspace_.hset.GetHistUnitByBlkidCompact(blkid_offset, mid);
                   //init data for the first zblks
                   if (zblkid == 0){
                     if (CHECKHALFCOND) {
                         //only clear the data for 'right' nodes in USE_HALFTRICK mode
-                        hbuilder[nid].hist.ClearData();
+                        //hbuilder[nid].hist.ClearData();
+                        hbuilder[nid].ClearData(this->wspace_.hset.GetHistUnitByBlkidSize());
                     }
                   }
               }
@@ -1715,7 +1760,7 @@ class HistMakerBlockDense: public BlockBaseMaker {
           // update model by this dataBlock and node_blkid
           this->UpdateHistBlock(depth, gpair, block, info, tree,
                 offset, zblkid, nblkid,
-                &this->thread_hist_[omp_get_thread_num()]);
+                &this->thread_histcompact_[omp_get_thread_num()]);
                 //&this->thread_hist_[0]);
         }
 
