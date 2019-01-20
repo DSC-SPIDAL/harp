@@ -131,6 +131,14 @@ class HistMakerBlockDense: public BlockBaseMaker {
     // default constructor
     HistUnit() = default;
 
+    //lazy init
+    inline bool isNull(){
+        return data == nullptr;
+    }
+    inline void setNull(){
+        data = nullptr;
+    }
+
     // constructor
     //HistUnit(const bst_float *cut, TStats *data, unsigned size, unsigned stepsize = 1)
     //    : cut(cut), data(data), size(size), step_size(stepsize) {}
@@ -450,7 +458,7 @@ class HistMakerBlockDense: public BlockBaseMaker {
   // unsigned check_mask_ = 0x80ffff00;
   // change the mask which is hard coded in CHECKHALFCOND
   // !!!
-  int node_block_size{256};
+  //int node_block_size{256};
 
  // hist mat compact
   DMatrixDenseCube* p_blkmat;
@@ -1244,8 +1252,6 @@ class HistMakerBlockDense: public BlockBaseMaker {
                        std::vector<HistEntry> *p_temp) {
     //check size
     if (block.size() == 0) return;
-    // one group is just one node, 
-    //if (posset_[nblkid].isDelete(0)) return ;
 
     #ifdef USE_DEBUG
     //std::cout << "updateHistBlock: blkoffset=" << blkid_offset <<
@@ -1282,8 +1288,9 @@ class HistMakerBlockDense: public BlockBaseMaker {
     // POSSet should be sync with qexpand_
     // init the nblk
     //
-    int endgid = std::min(posset_.getGroupCnt(), int(node_block_size *(nblkid+1)));
-    int startgid = node_block_size * nblkid; 
+#ifdef USE_ONENODEEACHGROUP
+    int endgid = std::min(posset_.getGroupCnt(), int(param_.node_block_size *(nblkid+1)));
+    int startgid = param_.node_block_size * nblkid; 
 
     for (int gid = startgid; gid < endgid; ++gid) {
       //unsigned nid = posset_[gid].getEncodePosition(0);
@@ -1307,7 +1314,15 @@ class HistMakerBlockDense: public BlockBaseMaker {
         }
       }
     }
+#else
+    int startgid = nblkid;
+    int endgid = nblkid + 1;
 
+    //lazy init
+    for (int i = 0; i < tree.param.num_nodes; i++){
+        hbuilder[i].hist.setNull();
+    }
+#endif
  
     {
         //one block
@@ -1348,8 +1363,21 @@ class HistMakerBlockDense: public BlockBaseMaker {
             //int nid = this->position_[ridx];
             if (CHECKHALFCOND) {
 
-              for (int k = 0; k < block.rowsize(ridx); k++){
+              // todo, remove init outside loop
+              if (hbuilder[nid].hist.isNull()){
+                  //lazy initialize
+                  int mid = node2workindex_[nid];
+                  hbuilder[nid].hist = this->wspace_.hset.GetHistUnitByBlkid(blkid_offset, mid);
+                  //init data for the first zblks
+                  if (zblkid == 0){
+                    if (CHECKHALFCOND) {
+                        //only clear the data for 'right' nodes in USE_HALFTRICK mode
+                        hbuilder[nid].hist.ClearData();
+                    }
+                  }
+              }
 
+              for (int k = 0; k < block.rowsize(ridx); k++){
                 //hbuilder[nid].AddWithIndex(block._blkaddr(ridx, k), gpair[ridx]);
                 hbuilder[nid].AddWithIndex(block._blkaddrByRowId(ridx, k), gpair[ridx]);
 
@@ -1599,7 +1627,9 @@ class HistMakerBlockDense: public BlockBaseMaker {
         printPOSSet(posset_, gid);
 
         _tstartInit = dmlc::GetTime();
-        posset_.ApplySplit();
+        if (depth > std::log2(param_.node_block_size)){
+            posset_.ApplySplit();
+        }
         this->tminfo.aux_time[4] += dmlc::GetTime() - _tstartInit;
 
         printPOSSet(posset_, gid);
@@ -1621,9 +1651,15 @@ class HistMakerBlockDense: public BlockBaseMaker {
         const auto zsize = p_blkmat->GetBlockZCol(0).GetBlockNum();
 
         // node dimension blocks
-        //const int dsize = posset_.getGroupCnt();
+       
+#ifdef USE_ONENODEEACHGROUP
+        // one node one group version
         const int num_leaves = posset_.getGroupCnt();
-        const int dsize = (num_leaves + node_block_size -1)/ node_block_size;
+        const int dsize = (num_leaves + param_.node_block_size) -1)/ param_.node_block_size;
+#else
+        // multiple nodes in one group version
+        const int dsize = posset_.getGroupCnt();
+#endif
 
         //#ifdef USE_DEBUG
         this->datasum_ = 0.;

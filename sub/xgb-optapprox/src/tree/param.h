@@ -90,6 +90,7 @@ struct TrainParam : public dmlc::Parameter<TrainParam> {
   int ft_block_size;
   int bin_block_size;
 
+  int node_block_size;
 
   // declare the parameters
   DMLC_DECLARE_PARAMETER(TrainParam) {
@@ -216,13 +217,18 @@ struct TrainParam : public dmlc::Parameter<TrainParam> {
         .set_lower_bound(0)
         .describe("Block size(KB) used for task scheduling, 0 means use one block.");
     DMLC_DECLARE_FIELD(ft_block_size)
-        .set_default(0)
+        .set_default(1)
         .set_lower_bound(0)
         .describe("Feature Block size used for task scheduling, 0 means use one block.");
     DMLC_DECLARE_FIELD(bin_block_size)
-        .set_default(1)
+        .set_default(0)
         .set_lower_bound(0)
         .describe("Bin Block size used for task scheduling, 0 means use one block.");
+    DMLC_DECLARE_FIELD(node_block_size)
+        .set_default(2^16)
+        .set_lower_bound(0)
+        .describe("Node Block size used for task scheduling, 0 means use one block.");
+
 
 
 

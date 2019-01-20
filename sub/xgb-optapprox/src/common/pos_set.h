@@ -108,6 +108,15 @@ class POSSet{
         int _deletecnt;
 #endif
 
+#ifndef USE_ONENODEEACHGROUP
+        // node id list for multiple node one group version
+        std::vector<int> nodeids_;
+        // get node id list
+        inline std::vector<int>& getNodeIdList(){
+            return nodeids_;
+        }
+#endif
+
         POSGroup(POSEntry* start, int len):
             _start(start),_len(len),_depth(0){
         }
@@ -129,6 +138,8 @@ class POSSet{
             //CHECK_LT(i, _len);
             return _start[i];
         }
+
+
 
         //
         // update procedure, to collect upate statistics
