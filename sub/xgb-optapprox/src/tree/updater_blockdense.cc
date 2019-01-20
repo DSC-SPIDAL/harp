@@ -88,7 +88,7 @@ class HistMakerBlockDense: public BlockBaseMaker {
   }
 
   TimeInfo getTimeInfo() override{
-      tminfo.posset_time -= tminfo.buildhist_time;
+      //tminfo.posset_time -= tminfo.buildhist_time;
       return tminfo;
   }
 
@@ -506,9 +506,7 @@ class HistMakerBlockDense: public BlockBaseMaker {
       printVec("qexpand:", this->qexpand_);
       printVec("node2workindex:", this->node2workindex_);
       // create histogram
-      double _tstart = dmlc::GetTime();
       this->CreateHist(depth, gpair, bwork_set_, *p_tree);
-      this->tminfo.posset_time += dmlc::GetTime() - _tstart;
 
       //printVec("position:", this->position_);
       printtree(p_tree, "After CreateHist");
@@ -531,18 +529,23 @@ class HistMakerBlockDense: public BlockBaseMaker {
       //this->tminfo.aux_time[6] += dmlc::GetTime() - _tstart;
       printtree(p_tree, "UpdateQueueExpand");
 
+
+      if(this->fsplit_set_.size() > 0){
+        UpdatePosition(depth, *p_tree);
+      }
+
       // if nothing left to be expand, break
       if (qexpand_.size() == 0) break;
     }
 
-    if(this->fsplit_set_.size() > 0){
-        //update the position for update cache
-        //printVec("before updatepos:", this->position_);
-        double _tstart = dmlc::GetTime();
-        this->CreateHist(param_.max_depth, gpair, bwork_set_, *p_tree);
-        this->tminfo.posset_time += dmlc::GetTime() - _tstart;
-        //printVec("after updatepos:", this->position_);
-    }
+    //if(this->fsplit_set_.size() > 0){
+    //    //update the position for update cache
+    //    //printVec("before updatepos:", this->position_);
+    //    double _tstart = dmlc::GetTime();
+    //    this->CreateHist(param_.max_depth, gpair, bwork_set_, *p_tree);
+    //    this->tminfo.posset_time += dmlc::GetTime() - _tstart;
+    //    //printVec("after updatepos:", this->position_);
+    //}
 
     for (size_t i = 0; i < qexpand_.size(); ++i) {
       const int nid = qexpand_[i];
@@ -1288,6 +1291,8 @@ class HistMakerBlockDense: public BlockBaseMaker {
     // POSSet should be sync with qexpand_
     // init the nblk
     //
+
+#ifdef USE_SCHEDULE_NODEBLK
 #ifdef USE_ONENODEEACHGROUP
     int endgid = std::min(posset_.getGroupCnt(), int(param_.node_block_size *(nblkid+1)));
     int startgid = param_.node_block_size * nblkid; 
@@ -1324,6 +1329,16 @@ class HistMakerBlockDense: public BlockBaseMaker {
     }
 #endif
  
+#else
+    // one thread go through all nodeblks
+    int startgid = 0;
+    int endgid = posset_.getGroupCnt();
+    //lazy init
+    for (int i = 0; i < tree.param.num_nodes; i++){
+        hbuilder[i].hist.setNull();
+    }
+#endif
+
     {
         //one block
         //#pragma ivdep
@@ -1593,18 +1608,15 @@ class HistMakerBlockDense: public BlockBaseMaker {
     }
   }
 
+  /*
+   * Update the POSSet, posistion for each row
+   */
+  void UpdatePosition(const int depth, const RegTree &tree){
 
-  void CreateHist(const int depth,
-                  const std::vector<GradientPair> &gpair,
-                  const std::vector<bst_uint> &blkset,
-                  const RegTree &tree) {
-    const MetaInfo &info = p_hmat->Info();
-
-    // start to work
-    {
-      if (depth > 0){
+      double _tstart = dmlc::GetTime();
+      {
         double _tstartInit = dmlc::GetTime();
-
+        //debug 
         int gid = 0;
         printPOSSet(posset_, gid);
         
@@ -1633,7 +1645,16 @@ class HistMakerBlockDense: public BlockBaseMaker {
         this->tminfo.aux_time[4] += dmlc::GetTime() - _tstartInit;
 
         printPOSSet(posset_, gid);
+ 
       }
+      this->tminfo.posset_time += dmlc::GetTime() - _tstart;
+  }
+
+  void CreateHist(const int depth,
+                  const std::vector<GradientPair> &gpair,
+                  const std::vector<bst_uint> &blkset,
+                  const RegTree &tree) {
+    const MetaInfo &info = p_hmat->Info();
 
       if (this->qexpand_.size() == 0){
         //last step to update position 
@@ -1652,14 +1673,24 @@ class HistMakerBlockDense: public BlockBaseMaker {
 
         // node dimension blocks
        
-#ifdef USE_ONENODEEACHGROUP
+        #ifdef USE_SCHEDULE_NODEBLK
+        #ifdef USE_ONENODEEACHGROUP
         // one node one group version
         const int num_leaves = posset_.getGroupCnt();
         const int dsize = (num_leaves + param_.node_block_size) -1)/ param_.node_block_size;
-#else
-        // multiple nodes in one group version
+        #endif
+
+        #ifdef USE_MULTINODEEACHGROUP
+        // multiple nodes in one group version, 
         const int dsize = posset_.getGroupCnt();
-#endif
+        #endif
+
+        #else
+
+        // multiple nodes in one group, but schedule all groups to one task
+        const int dsize = 1;
+
+        #endif
 
         //#ifdef USE_DEBUG
         this->datasum_ = 0.;
@@ -1716,7 +1747,8 @@ class HistMakerBlockDense: public BlockBaseMaker {
         LOG(CONSOLE) << "BuildHist:: datasum_=" << this->datasum_;
         #endif
         LOG(CONSOLE) << "BuildHist:: dsize=" << dsize << 
-            ",nsize=" << nsize << ",zsize=" << zsize;
+            ",nsize=" << nsize << ",zsize=" << zsize << 
+            ",gsize=" << posset_.getGroupCnt();
 
         #else
         /*
@@ -1734,19 +1766,19 @@ class HistMakerBlockDense: public BlockBaseMaker {
         const int nid = this->qexpand_[i];
         //const int wid = this->node2workindex_[nid];
 
-      //adjust the physical location of this plain
-      int mid = node2workindex_[nid];
-#ifdef USE_VECTOR4MODEL
+        //adjust the physical location of this plain
+        int mid = node2workindex_[nid];
+        #ifdef USE_VECTOR4MODEL
         this->wspace_.hset.GetHistUnitByFid(work_set_.size(),mid)
             .data[0] = this->node_stats_[nid];
-#else
+        #else
         this->wspace_.hset.GetNodeSum(mid)
                      = this->node_stats_[nid];
-#endif
+        #endif
 
       }
       this->tminfo.aux_time[6] += dmlc::GetTime() - _tstartSum;
-    }
+      
     //this->histred_.Allreduce(dmlc::BeginPtr(this->wspace_.hset.data),
     //                        this->wspace_.hset.data.size());
 

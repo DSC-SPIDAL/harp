@@ -225,7 +225,7 @@ struct TrainParam : public dmlc::Parameter<TrainParam> {
         .set_lower_bound(0)
         .describe("Bin Block size used for task scheduling, 0 means use one block.");
     DMLC_DECLARE_FIELD(node_block_size)
-        .set_default(2^16)
+        .set_default(65536)
         .set_lower_bound(0)
         .describe("Node Block size used for task scheduling, 0 means use one block.");
 
