@@ -219,11 +219,12 @@ class POSSet{
         int ApplySplit(POSEntry* start, std::vector<POSGroup>& newgrp, int curgid){
 
             int dummylen = _len - _leftlen - _rightlen;
+#ifdef USE_DEBUG
             LOG(CONSOLE) << "ApplySplit::[" << curgid << "],depth=" << _depth << 
                 ",leftlen=" << _leftlen <<
                 ",rightlen=" << _rightlen << 
                 ",dummylen=" << dummylen;
-
+#endif
             // deleted group still should copy to new group
             //if ((_leftlen == 0) && (_rightlen == 0)){
             //    //todo copy directly
@@ -255,7 +256,7 @@ class POSSet{
 
             if (_leftlen > 0) newgrp.push_back(left);
             if (_rightlen > 0) newgrp.push_back(right);
-            if (dummylen > 0) newgrp.push_back(dummy);
+            //if (dummylen > 0) newgrp.push_back(dummy);
 
             return _leftlen + _rightlen;
         }

@@ -1245,7 +1245,7 @@ class HistMakerBlockDense: public BlockBaseMaker {
     //check size
     if (block.size() == 0) return;
     // one group is just one node, 
-    if (posset_[nblkid].isDelete(0)) return ;
+    //if (posset_[nblkid].isDelete(0)) return ;
 
     #ifdef USE_DEBUG
     //std::cout << "updateHistBlock: blkoffset=" << blkid_offset <<
@@ -1282,11 +1282,18 @@ class HistMakerBlockDense: public BlockBaseMaker {
     // POSSet should be sync with qexpand_
     // init the nblk
     //
-    //for (int i = 0; j < posset_[nblkid].getNodeNum(); ++j) {
-    //  unsigned nid = posset_[nblkid].getNodeSet(i);
+    int endgid = std::min(posset_.getGroupCnt(), int(node_block_size *(nblkid+1)));
+    int startgid = node_block_size * nblkid; 
+
+    for (int gid = startgid; gid < endgid; ++gid) {
+      //unsigned nid = posset_[gid].getEncodePosition(0);
+      int  nid = posset_[gid].getNodeId(0);
+      // no need to check delete node, they can not go into the posset_
+      CHECK_GE(nid, 0);
+      //if (posset_[nblkid].isDelete(0)) return ;
 
       // simple test here
-     int nid = posset_[nblkid].getEncodePosition(0);
+      //int nid = posset_[nblkid].getEncodePosition(0);
       //adjust the physical location of this plain
       int mid = node2workindex_[nid];
 
@@ -1299,7 +1306,7 @@ class HistMakerBlockDense: public BlockBaseMaker {
             hbuilder[nid].hist.ClearData();
         }
       }
-    //}
+    }
 
  
     {
@@ -1332,31 +1339,33 @@ class HistMakerBlockDense: public BlockBaseMaker {
         //}
 
         // go throught this node group nblkid
-        for (int j = 0; j < posset_[nblkid].size(); ++j) {
-          const int ridx = posset_[nblkid].getRowId(j);
-          const int nid = posset_[nblkid].getNodeId(j);
-          //const bst_uint ridx = block._index(j);
-          //const int nid = this->DecodePosition(ridx);
-          //int nid = this->position_[ridx];
-          if (CHECKHALFCOND) {
+        for (int gid = startgid; gid < endgid; ++gid) {
+          for (int j = 0; j < posset_[gid].size(); ++j) {
+            const int ridx = posset_[gid].getRowId(j);
+            const int nid = posset_[gid].getNodeId(j);
+            //const bst_uint ridx = block._index(j);
+            //const int nid = this->DecodePosition(ridx);
+            //int nid = this->position_[ridx];
+            if (CHECKHALFCOND) {
 
-            for (int k = 0; k < block.rowsize(ridx); k++){
+              for (int k = 0; k < block.rowsize(ridx); k++){
 
-              //hbuilder[nid].AddWithIndex(block._blkaddr(ridx, k), gpair[ridx]);
-              hbuilder[nid].AddWithIndex(block._blkaddrByRowId(ridx, k), gpair[ridx]);
+                //hbuilder[nid].AddWithIndex(block._blkaddr(ridx, k), gpair[ridx]);
+                hbuilder[nid].AddWithIndex(block._blkaddrByRowId(ridx, k), gpair[ridx]);
 
-              /*
-               * not much benefits from short->byte
-               */
-              //unsigned short blkaddr = this->blkInfo_.GetBlkAddr(block._blkaddr(j, k), k);
-              //unsigned short blkaddr = block._blkaddr(j, k)*2 + k;
-              //hbuilder[nid].AddWithIndex(blkaddr, gpair[ridx]);
+                /*
+                 * not much benefits from short->byte
+                 */
+                //unsigned short blkaddr = this->blkInfo_.GetBlkAddr(block._blkaddr(j, k), k);
+                //unsigned short blkaddr = block._blkaddr(j, k)*2 + k;
+                //hbuilder[nid].AddWithIndex(blkaddr, gpair[ridx]);
 
-              //debug only
-              #ifdef DEBUG
-              //this->datasum_ += block._blkaddr(ridx,k);
-              this->datasum_ += block._blkaddrByRowId(ridx,k);
-              #endif
+                //debug only
+                #ifdef DEBUG
+                //this->datasum_ += block._blkaddr(ridx,k);
+                this->datasum_ += block._blkaddrByRowId(ridx,k);
+                #endif
+              }
             }
           }
         }
@@ -1577,9 +1586,9 @@ class HistMakerBlockDense: public BlockBaseMaker {
         const auto zsize = p_blkmat->GetBlockZCol(0).GetBlockNum();
 
         // node dimension blocks
-        //const int num_leaves = std::pow(2, depth);
-        //const int dsize = (num_leaves + node_block_size -1)/ node_block_size;
-        const int dsize = posset_.getGroupCnt();
+        //const int dsize = posset_.getGroupCnt();
+        const int num_leaves = posset_.getGroupCnt();
+        const int dsize = (num_leaves + node_block_size -1)/ node_block_size;
 
         //#ifdef USE_DEBUG
         this->datasum_ = 0.;
@@ -1635,6 +1644,8 @@ class HistMakerBlockDense: public BlockBaseMaker {
         #ifdef USE_DEBUG
         LOG(CONSOLE) << "BuildHist:: datasum_=" << this->datasum_;
         #endif
+        LOG(CONSOLE) << "BuildHist:: dsize=" << dsize << 
+            ",nsize=" << nsize << ",zsize=" << zsize;
 
         #else
         /*
