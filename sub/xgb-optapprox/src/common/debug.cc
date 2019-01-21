@@ -398,13 +398,13 @@ void printPOSSet(POSSet& pos, int gid){
     int grpcnt = pos.getGroupCnt();
 
     //print 8 near gid
-    if (gid > grpcnt) return; 
+    if (gid < 0 || gid > grpcnt) return; 
     std::cout << "POSSet(grpcnt=" << grpcnt << "):\n";
 
     for(int g = gid; g < std::min(grpcnt , gid + 8) ; g++){
         std::cout << "[" << g << "]:";
-        int cnt = pos[g].size();
-        for (int i = 0; i< std::min(cnt, 100); i++){
+        unsigned int cnt = pos[g].size();
+        for (int i = 0; i< std::min(cnt, 100U); i++){
             bool del = pos[g].isDelete(i);
             bool left = pos[g].isLeft(i);
             int nid = pos[g].getEncodePosition(i);

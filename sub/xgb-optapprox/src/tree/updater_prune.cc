@@ -12,7 +12,7 @@
 #include "../common/sync.h"
 #include "../common/io.h"
 #include <dmlc/timer.h>
-
+#include "../common/debug.h"
 
 namespace xgboost {
 namespace tree {
@@ -22,6 +22,12 @@ DMLC_REGISTRY_FILE_TAG(updater_prune);
 /*! \brief pruner that prunes a tree after growing finishes */
 class TreePruner: public TreeUpdater {
   TimeInfo tminfo;
+
+  #ifdef USE_DEBUG
+  std::vector<int> prune_nodeids_;
+  #endif
+ 
+
  public:
   TimeInfo getTimeInfo() override{
       return tminfo;
@@ -57,6 +63,11 @@ class TreePruner: public TreeUpdater {
     RegTree::NodeStat &s = tree.Stat(pid);
     ++s.leaf_child_cnt;
     if (s.leaf_child_cnt >= 2 && param_.NeedPrune(s.loss_chg, depth - 1)) {
+      #ifdef USE_DEBUG
+      prune_nodeids_.push_back(pid);
+      prune_nodeids_.push_back(tree[pid].LeftChild());
+      prune_nodeids_.push_back(tree[pid].RightChild());
+      #endif
       // need to be pruned
       tree.ChangeToLeaf(pid, param_.learning_rate * s.base_weight);
       // tail recursion
@@ -92,6 +103,10 @@ class TreePruner: public TreeUpdater {
       LOG(INFO) << "tree pruning end, " << tree.param.num_roots << " roots, "
                 << tree.NumExtraNodes() << " extra nodes, " << npruned
                 << " pruned nodes, max_depth=" << tree.MaxDepth();
+
+      #ifdef USE_DEBUG
+      printVec("Pruned nodes:", prune_nodeids_);
+      #endif
     }
 
     this->tminfo.aux_time[0] += dmlc::GetTime() - _tstart;

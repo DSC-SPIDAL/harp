@@ -1680,6 +1680,10 @@ class HistMakerBlockDenseSeq: public BaseMaker {
       }
 
      // const auto nrows = static_cast<bst_omp_uint>(p_fmat->Info().num_row_);
+      #ifdef USE_DEBUG
+      double leaf_val_sum = 0.;
+      long nid_sum = 0L;
+      #endif
 
       for(int ridx=0; ridx < nrows; ridx++){
         const int nid = this->DecodePosition(ridx);
@@ -1688,7 +1692,20 @@ class HistMakerBlockDenseSeq: public BaseMaker {
             //update   
             out_preds[ridx] += leaf_values[nid];
         //}
+        
+        #ifdef USE_DEBUG
+        CHECK((*p_last_tree_)[nid].IsLeaf());
+        //std::cout << nid << ":" << ridx << " ";
+        leaf_val_sum += leaf_values[nid];
+        nid_sum += nid;
+        #endif
       }
+      #ifdef USE_DEBUG
+      LOG(CONSOLE) << "updatech leaf_sum=" << leaf_val_sum <<
+                    ",rowcnt=" << nrows << 
+                    ",nid_sum=" << nid_sum;
+      #endif
+
 
       //LOG(CONSOLE) << "UpdatePredictionCache: nodes size=" << 
       //    nodes.size() << ",rowscnt=" << nrows;

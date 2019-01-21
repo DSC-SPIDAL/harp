@@ -931,6 +931,8 @@ class HistMakerBlockDense: public BlockBaseMaker {
 #else
         this->blkInfo_.init(_info.num_row_, _info.num_col_, param_.max_bin);
 #endif
+        
+        LOG(CONSOLE) << "Init Param: node_block_size=" << param_.node_block_size;
 
 #ifdef ALLOCATE_ALLNODES
         this->wspace_.Init(this->param_, std::pow(2,this->param_.max_depth+1), this->blkInfo_);
@@ -1345,6 +1347,10 @@ class HistMakerBlockDense: public BlockBaseMaker {
     int startgid = param_.node_block_size * nblkid; 
 
     for (int gid = startgid; gid < endgid; ++gid) {
+
+      //empty group
+      if (posset_[gid].size() == 0) continue;
+
       //unsigned nid = posset_[gid].getEncodePosition(0);
       int  nid = posset_[gid].getNodeId(0);
       // no need to check delete node, they can not go into the posset_
@@ -1417,51 +1423,111 @@ class HistMakerBlockDense: public BlockBaseMaker {
         //}
 
         // go throught this node group nblkid
-        for (int gid = startgid; gid < endgid; ++gid) {
-          for (int j = 0; j < posset_[gid].size(); ++j) {
-            const int ridx = posset_[gid].getRowId(j);
-            const int nid = posset_[gid].getNodeId(j);
-            //const bst_uint ridx = block._index(j);
-            //const int nid = this->DecodePosition(ridx);
-            //int nid = this->position_[ridx];
-            if (CHECKHALFCOND) {
+        
+        // before split
+        if (posset_.getGroupCnt() == 1){
+            for (int gid = startgid; gid < endgid; ++gid) {
+              for (int j = 0; j < posset_[gid].size(); ++j) {
+                const int ridx = posset_[gid].getRowId(j);
+                const int nid = posset_[gid].getNodeId(j);
+                //
+                // check delete rows before split happens
+                //
+                if (CHECKHALFCOND) {
 
-              // todo, remove init outside loop
-              //if (hbuilder[nid].hist.isNull()){
-              if (hbuilder[nid].isNull()){
-                  //lazy initialize
-                  int mid = node2workindex_[nid];
-                  //hbuilder[nid].hist = this->wspace_.hset.GetHistUnitByBlkid(blkid_offset, mid);
-                  hbuilder[nid] = this->wspace_.hset.GetHistUnitByBlkidCompact(blkid_offset, mid);
-                  //init data for the first zblks
-                  if (zblkid == 0){
-                    if (CHECKHALFCOND) {
-                        //only clear the data for 'right' nodes in USE_HALFTRICK mode
-                        //hbuilder[nid].hist.ClearData();
-                        hbuilder[nid].ClearData(this->wspace_.hset.GetHistUnitByBlkidSize());
-                    }
+                  // todo, remove init outside loop
+                  //if (hbuilder[nid].hist.isNull())
+                  if (hbuilder[nid].isNull()){
+                      //lazy initialize
+                      int mid = node2workindex_[nid];
+                      //hbuilder[nid].hist = this->wspace_.hset.GetHistUnitByBlkid(blkid_offset, mid);
+                      hbuilder[nid] = this->wspace_.hset.GetHistUnitByBlkidCompact(blkid_offset, mid);
+                      //init data for the first zblks
+                      if (zblkid == 0){
+                        if (CHECKHALFCOND) {
+                            //only clear the data for 'right' nodes in USE_HALFTRICK mode
+                            //hbuilder[nid].hist.ClearData();
+                            hbuilder[nid].ClearData(this->wspace_.hset.GetHistUnitByBlkidSize());
+                        }
+                      }
                   }
-              }
 
-              for (int k = 0; k < block.rowsize(ridx); k++){
-                //hbuilder[nid].AddWithIndex(block._blkaddr(ridx, k), gpair[ridx]);
-                hbuilder[nid].AddWithIndex(block._blkaddrByRowId(ridx, k), gpair[ridx]);
+                  for (int k = 0; k < block.rowsize(ridx); k++){
+                    //hbuilder[nid].AddWithIndex(block._blkaddr(ridx, k), gpair[ridx]);
+                    hbuilder[nid].AddWithIndex(block._blkaddrByRowId(ridx, k), gpair[ridx]);
 
-                /*
-                 * not much benefits from short->byte
-                 */
-                //unsigned short blkaddr = this->blkInfo_.GetBlkAddr(block._blkaddr(j, k), k);
-                //unsigned short blkaddr = block._blkaddr(j, k)*2 + k;
-                //hbuilder[nid].AddWithIndex(blkaddr, gpair[ridx]);
+                    /*
+                     * not much benefits from short->byte
+                     */
+                    //unsigned short blkaddr = this->blkInfo_.GetBlkAddr(block._blkaddr(j, k), k);
+                    //unsigned short blkaddr = block._blkaddr(j, k)*2 + k;
+                    //hbuilder[nid].AddWithIndex(blkaddr, gpair[ridx]);
 
-                //debug only
-                #ifdef DEBUG
-                //this->datasum_ += block._blkaddr(ridx,k);
-                this->datasum_ += block._blkaddrByRowId(ridx,k);
-                #endif
+                    //debug only
+                    #ifdef DEBUG
+                    //this->datasum_ += block._blkaddr(ridx,k);
+                    this->datasum_ += block._blkaddrByRowId(ridx,k);
+                    #endif
+                  }
+                }
               }
             }
-          }
+        }
+        else{
+            //after split, no delete rows in grp
+            for (int gid = startgid; gid < endgid; ++gid) {
+              // skip dummys
+              if (posset_[gid].isDummy()) continue;
+              #ifdef USE_HALFTRICK
+              if (posset_[gid].isLeft()) continue;
+              #endif    
+
+              for (int j = 0; j < posset_[gid].size(); ++j) {
+                const int ridx = posset_[gid].getRowId(j);
+                const int nid = posset_[gid].getNodeId(j);
+                //
+                // check delete rows before split happens
+                //
+                if (1) {
+
+                  // todo, remove init outside loop
+                  //if (hbuilder[nid].hist.isNull())
+                  if (hbuilder[nid].isNull()){
+                      //lazy initialize
+                      int mid = node2workindex_[nid];
+                      //hbuilder[nid].hist = this->wspace_.hset.GetHistUnitByBlkid(blkid_offset, mid);
+                      hbuilder[nid] = this->wspace_.hset.GetHistUnitByBlkidCompact(blkid_offset, mid);
+                      //init data for the first zblks
+                      if (zblkid == 0){
+                        if (CHECKHALFCOND) {
+                            //only clear the data for 'right' nodes in USE_HALFTRICK mode
+                            //hbuilder[nid].hist.ClearData();
+                            hbuilder[nid].ClearData(this->wspace_.hset.GetHistUnitByBlkidSize());
+                        }
+                      }
+                  }
+
+                  for (int k = 0; k < block.rowsize(ridx); k++){
+                    //hbuilder[nid].AddWithIndex(block._blkaddr(ridx, k), gpair[ridx]);
+                    hbuilder[nid].AddWithIndex(block._blkaddrByRowId(ridx, k), gpair[ridx]);
+
+                    /*
+                     * not much benefits from short->byte
+                     */
+                    //unsigned short blkaddr = this->blkInfo_.GetBlkAddr(block._blkaddr(j, k), k);
+                    //unsigned short blkaddr = block._blkaddr(j, k)*2 + k;
+                    //hbuilder[nid].AddWithIndex(blkaddr, gpair[ridx]);
+
+                    //debug only
+                    #ifdef DEBUG
+                    //this->datasum_ += block._blkaddr(ridx,k);
+                    this->datasum_ += block._blkaddrByRowId(ridx,k);
+                    #endif
+                  }
+                }
+              }
+            }
+ 
         }
 
     } /*blk*/
@@ -1597,6 +1663,9 @@ class HistMakerBlockDense: public BlockBaseMaker {
           if ((*p_last_tree_)[tnid].IsDummy()) {
               continue;
           }
+          if (!(*p_last_tree_)[tnid].IsLeaf()) {
+              continue;
+          }
 
           // if a node is marked as deleted by the pruner, traverse upward to locate
           // a non-deleted leaf.
@@ -1628,23 +1697,28 @@ class HistMakerBlockDense: public BlockBaseMaker {
       // todo, not a good idea to access internal entry directly
       //
       #ifdef USE_DEBUG
-      std::cout << "POSSet in updatepred:" ;
+      double leaf_val_sum = 0.;
+      long nid_sum = 0L;
       #endif
 
-      #pragma omp parallel for schedule(static)
+      //#pragma omp parallel for schedule(static)
       for (size_t i = 0; i < posset_.getEntrySize(); ++i) {
         const int ridx = posset_.getEntry(i).getRowId();
         const int nid = posset_.getEntry(i).getEncodePosition();
         out_preds[ridx] += leaf_values[nid];
 
         #ifdef USE_DEBUG
-        std::cout << nid << ":" << ridx << " ";
-
+        CHECK((*p_last_tree_)[nid].IsLeaf()||(*p_last_tree_)[nid].IsDeleted());
+        //std::cout << nid << ":" << ridx << " ";
+        leaf_val_sum += leaf_values[nid];
+        nid_sum += nid;
         #endif
 
       }
       #ifdef USE_DEBUG
-      std::cout << "\n" ;
+      LOG(CONSOLE) << "updatech leaf_sum=" << leaf_val_sum << 
+                ",rowcnt=" << posset_.getEntrySize() <<
+                ",nid_sum=" << nid_sum;
       #endif
 
 
@@ -1668,7 +1742,7 @@ class HistMakerBlockDense: public BlockBaseMaker {
       {
         double _tstartInit = dmlc::GetTime();
         //debug 
-        int gid = 0;
+        int gid = 899;
         printPOSSet(posset_, gid);
         
         //init the position_
@@ -1690,7 +1764,7 @@ class HistMakerBlockDense: public BlockBaseMaker {
         printPOSSet(posset_, gid);
 
         _tstartInit = dmlc::GetTime();
-        if (depth > std::log2(param_.node_block_size)){
+        if (depth >= std::log2(param_.node_block_size)){
             posset_.ApplySplit();
         }
         this->tminfo.aux_time[4] += dmlc::GetTime() - _tstartInit;

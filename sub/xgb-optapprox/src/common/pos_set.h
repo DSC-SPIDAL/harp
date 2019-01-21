@@ -33,6 +33,12 @@ namespace tree {
 /*
  * This is a simple version, just to test the interface works
  */
+enum class POSGroupType{
+    NONE,
+    LEFT,
+    RIGHT,
+    DUMMY
+};
 class POSSet{
     public:
     struct POSEntry{
@@ -63,7 +69,10 @@ class POSSet{
             return _rowid < 0;
         }
         inline void setEncodePosition(int nid, bool left = false){
-            _nodeid = (_nodeid<0)? (~nid) : nid;
+            //_nodeid = (_nodeid<0)? (~nid) : nid;
+            _nodeid = nid;
+            //CHECK_GE(nid, 0);
+
             if(left){
                 _rowid |= 0x80000000;
             }
@@ -90,7 +99,7 @@ class POSSet{
     struct POSGroup{
         POSEntry* _start;
         int _len;
-        int _depth;
+        POSGroupType _type;
         
         // todo tree structure info
         //int left;
@@ -101,11 +110,11 @@ class POSSet{
 #ifdef USE_ATMOIC_HAFLLEN
         std::atomic_int _leftlen;
         std::atomic_int _rightlen;
-        std::atomic_int _deletecnt;
+        std::atomic_int _deletelen;
 #else
         int _leftlen;
         int _rightlen;
-        int _deletecnt;
+        int _deletelen;
 #endif
 
 #ifndef USE_ONENODEEACHGROUP
@@ -117,19 +126,29 @@ class POSSet{
         }
 #endif
 
-        POSGroup(POSEntry* start, int len):
-            _start(start),_len(len),_depth(0){
+        POSGroup(POSEntry* start, int len, POSGroupType type):
+            _start(start),_len(len),_type(type){
         }
 
         //copy constructor as there are atomics
         POSGroup(const POSGroup& grp){
             _start = grp._start;
             _len = grp._len;
-            _depth = grp._depth;
+            _type = grp._type;
         }
 
         inline int size(){
             return _len;
+        }
+        inline bool isDummy(){
+            return _type == POSGroupType::DUMMY;
+        }
+        inline bool isLeft(){
+            return _type == POSGroupType::LEFT;
+        }
+
+       inline bool isRight(){
+            return _type == POSGroupType::RIGHT;
         }
 
         //it's bad to expost internal data structures
@@ -138,8 +157,6 @@ class POSSet{
             //CHECK_LT(i, _len);
             return _start[i];
         }
-
-
 
         //
         // update procedure, to collect upate statistics
@@ -150,16 +167,13 @@ class POSSet{
         //  EndUpdate()
         //
         inline void BeginUpdate(int depth){
-            //CHECK_EQ(_depth, depth);
-            _depth = depth;
-
             _leftlen = 0;
             _rightlen = 0;
-            _deletecnt = 0;
+            _deletelen = 0;
         }
         inline void setDelete(int i){
             _start[i].setDelete();
-            _deletecnt ++;
+            _deletelen ++;
         }
         inline void setLeftPosition(int i, int nid){
             _start[i].setEncodePosition(nid, true);
@@ -172,22 +186,22 @@ class POSSet{
         }
 
 
-#ifdef USE_ATMOIC_HAFLLEN
+        #ifdef USE_ATMOIC_HAFLLEN
         inline void EndUpdate(int id){
             #ifdef USE_DEBUG
             LOG(CONSOLE) << "EndUpdate:[" << id << "]" << 
                 ",leftlen=" << _leftlen <<
                 ",rightlen=" << _rightlen <<
-                ",delete=" << _deletecnt <<
+                ",delete=" << _deletelen <<
                 ",len=" << _len;
             #endif
             //no update
-            if((_deletecnt == 0) && (_leftlen == 0) && (_rightlen ==0)){
+            if((_deletelen == 0) && (_leftlen == 0) && (_rightlen ==0)){
                 return;
             }
 
             // get the true len
-            int remains = _len - _deletecnt;
+            int remains = _len - _deletelen;
             if (remains == 0){
                 //all deteled
                 //CHECK_EQ(_leftlen, 0);
@@ -200,19 +214,23 @@ class POSSet{
                 _rightlen = remains - _leftlen;
             }
         }
-#else
+        #else
         // simple scan to get the halflen
         inline void EndUpdate(int id){
-
-            for (int i = 0 ; i < _len; i++){
-                if (_start[i].isDelete()){
-                    _deletecnt ++;
-                }
-                else if (_start[i].isLeft()){
-                    _leftlen ++;
-                }
-                else{
-                    _rightlen ++;
+            if (_type == POSGroupType::DUMMY){
+                _deletelen = _len;
+            }
+            else{
+                for (int i = 0 ; i < _len; i++){
+                    if (_start[i].isDelete()){
+                        _deletelen ++;
+                    }
+                    else if (_start[i].isLeft()){
+                        _leftlen ++;
+                    }
+                    else{
+                        _rightlen ++;
+                    }
                 }
             }
  
@@ -220,20 +238,11 @@ class POSSet{
             LOG(CONSOLE) << "EndUpdate:[" << id << "]" << 
                 ",leftlen=" << _leftlen <<
                 ",rightlen=" << _rightlen <<
-                ",delete=" << _deletecnt <<
+                ",delete=" << _deletelen <<
                 ",len=" << _len;
             #endif
         }
-#endif
-
-        // calc _halflen outside
-        //inline int Update(int depth, int halflen){
-        //    // depth is used to encoding nid in compact version
-        //    CHECK_EQ(_depth + 1, depth);
-        //    _depth = depth;
-        //    _halflen = halflen;
-        //}
-
+        #endif
 
         // general read access
         inline int getRowId(int i){
@@ -259,35 +268,35 @@ class POSSet{
         // split to two and save at the end of newgrp
         int ApplySplit(POSEntry* start, std::vector<POSGroup>& newgrp, int curgid){
 
-            int dummylen = _len - _leftlen - _rightlen;
-#ifdef USE_DEBUG
-            LOG(CONSOLE) << "ApplySplit::[" << curgid << "],depth=" << _depth << 
+            #ifdef USE_DEBUG
+            LOG(CONSOLE) << "ApplySplit::[" << curgid << "],type=" << static_cast<int>(_type) << 
                 ",leftlen=" << _leftlen <<
                 ",rightlen=" << _rightlen << 
-                ",dummylen=" << dummylen;
-#endif
+                ",dummylen=" << _deletelen;
+            #endif
+
             // deleted group still should copy to new group
-            //if ((_leftlen == 0) && (_rightlen == 0)){
-            //    //todo copy directly
-            //    return 0;
-            //}
+            if (_type == POSGroupType::DUMMY){
+                POSGroup dummy(start, _len,POSGroupType::DUMMY);
+                //copy data
+                std::copy(_start, _start + _len, start);
+                newgrp.push_back(dummy);
+                return 0;
+            }
 
             //write to new place
-            POSGroup left(start, _leftlen);
-            POSGroup right(start + _leftlen, _rightlen);
+            POSGroup left(start, _leftlen, POSGroupType::LEFT);
+            POSGroup right(start + _leftlen, _rightlen, POSGroupType::RIGHT);
             //write the deleted items for later upatepred
-            //POSEntry* dummy = start + _leftlen + _rightlen;
-            POSGroup dummy(start + _leftlen + _rightlen, dummylen);
+            POSGroup dummy(start + _leftlen + _rightlen, _deletelen,POSGroupType::DUMMY);
 
             //scan and write
             int l = 0, r = 0, d = 0;
             for (int i = 0 ; i < _len; i++){
                 if (_start[i].isDelete()){
                     dummy[d++] = _start[i];
-                    continue;
                 }
-
-                if (_start[i].isLeft()){
+                else if (_start[i].isLeft()){
                     left[l++] = _start[i];
                 }
                 else{
@@ -295,9 +304,26 @@ class POSSet{
                 }
             }
 
+            //debug 
+            CHECK_EQ(d+l+r, _len);
+
+            #define USE_NOEMPTY_GROUP
+            #ifdef USE_NOEMPTY_GROUP
+            //
+            // no push empty group verion
+            //
             if (_leftlen > 0) newgrp.push_back(left);
             if (_rightlen > 0) newgrp.push_back(right);
-            //if (dummylen > 0) newgrp.push_back(dummy);
+            if (_deletelen > 0) newgrp.push_back(dummy);
+            #else
+            // 
+            // always push left and right to make it symmetric
+            //
+            newgrp.push_back(left);
+            newgrp.push_back(right);
+            newgrp.push_back(dummy);
+            #endif
+
 
             return _leftlen + _rightlen;
         }
@@ -313,7 +339,6 @@ class POSSet{
 
     int rownum_;
     int base_rowid_;
-    int split_depth_;
 
     // thread local 
     std::vector<std::vector<POSGroup>> local_grp_;
@@ -321,7 +346,7 @@ class POSSet{
 
     POSSet() = default;
 
-    void Init(int rownumber, int threadnum, int start_rowid = 0, int splitdepth = 8){
+    void Init(int rownumber, int threadnum, int start_rowid = 0){
         //clear first
         Clear();
 
@@ -329,11 +354,9 @@ class POSSet{
         local_grp_.resize(threadnum);
 
         //CHECK_LE(rownumber, ROWID_MASK);
-        //CHECK_LE(splitdepth, NODEBLK_SPLITDEPTH);
 
         rownum_ = rownumber;
         base_rowid_ = start_rowid;
-        split_depth_ = splitdepth;
 
         //init from nodeid=0
         workid_ = 0;
@@ -342,12 +365,11 @@ class POSSet{
         for(int i = 0; i < rownumber; i++){
             entry_[0][i] = POSEntry(0,i);
         }
-        grp_[0].push_back(POSGroup(dmlc::BeginPtr(entry_[0]), rownumber));
+        grp_[0].push_back(POSGroup(dmlc::BeginPtr(entry_[0]), rownumber, POSGroupType::NONE));
     }
 
     void Clear(){
         base_rowid_ = 0;
-        split_depth_ = 0;
 
         //entry_[0].clear();
         grp_[0].clear();
@@ -384,6 +406,15 @@ class POSSet{
         }
     }
 
+    //debug code
+    unsigned long getNodeIdSum(){
+        unsigned long sum = 0L;
+        for (int i = 0 ; i < rownum_; i++){
+            sum += entry_[workid_][i].getEncodePosition();
+        }
+        return sum;
+    }
+
     //
     // apply split at the group level
     // call after EndUpdate() when _halflen is set correctly
@@ -395,6 +426,10 @@ class POSSet{
         int nextid = (workid_ + 1)%2;
         //std::vector<POSGroup>& newgrp = grp_[nextid];
         //newgrp.clear();
+
+        #ifdef USE_DEBUG
+        unsigned long nodeid_sum_beforesplit = getNodeIdSum();
+        #endif
 
         #pragma omp parallel for schedule(static)
         for (int i = 0; i < grp_[workid_].size() ; i++){
@@ -420,6 +455,13 @@ class POSSet{
         }
 
         workid_ = nextid;
+
+        #ifdef USE_DEBUG
+        unsigned long nodeid_sum_aftersplit = getNodeIdSum();
+        LOG(CONSOLE) << "ApplySplit: nodeidSum = " << nodeid_sum_beforesplit << 
+            ", after=" << nodeid_sum_aftersplit;
+        #endif
+
 
     }
 
