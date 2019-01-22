@@ -136,12 +136,23 @@ endif
 ifeq ($(USE_DEBUG_SAVE), 1)
 	CFLAGS += -DUSE_DEBUG_SAVE=1
 endif
+
 ifeq ($(USE_HALFTRICK), 1)
 	CFLAGS += -DUSE_HALFTRICK=1
 	export HALFTRICK=halftrick
 else
 	export HALFTRICK=nohalftrick
 endif
+ifeq ($(USE_SPLIT_PARALLELONNODE), 1)
+	CFLAGS += -DUSE_SPLIT_PARALLELONNODE=1
+	export SPLIT=splitonnode
+else
+	export SPLIT=splitonft
+endif
+
+#
+# deprecated, remove unroll support
+#
 ifeq ($(USE_UNROLL), 1)
 	CFLAGS += -DUSE_UNROLL=1
 	export UNROLL=prefetch
@@ -192,11 +203,11 @@ endif
 # set target and build dir by features
 #
 ifdef TAGNAME
-TARGET = xgboost-$(CXX)-$(THREADIMP)-$(HALFTRICK)-$(UNROLL)-$(TAGNAME)-$(VTUNE)$(OUTPUTTYPE)
+TARGET = xgboost-$(CXX)-$(THREADIMP)-$(HALFTRICK)-$(UNROLL)-$(SPLIT)-$(TAGNAME)-$(VTUNE)$(OUTPUTTYPE)
 else
-TARGET = xgboost-$(CXX)-$(THREADIMP)-$(HALFTRICK)-$(UNROLL)-noname-$(VTUNE)$(OUTPUTTYPE)
+TARGET = xgboost-$(CXX)-$(THREADIMP)-$(HALFTRICK)-$(UNROLL)-$(SPLIT)-noname-$(VTUNE)$(OUTPUTTYPE)
 endif
-WORKDIR = build-$(CXX)-$(THREADIMP)-$(HALFTRICK)-$(UNROLL)-$(VTUNE)$(OUTPUTTYPE)
+WORKDIR = build-$(CXX)-$(THREADIMP)-$(HALFTRICK)-$(UNROLL)-$(SPLIT)-$(VTUNE)$(OUTPUTTYPE)
 
 #
 # Compiler and vec report

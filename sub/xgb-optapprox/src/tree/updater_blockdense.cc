@@ -567,7 +567,7 @@ class HistMakerBlockDense: public BlockBaseMaker {
 
 
       // find split based on histogram statistics
-      #define USE_SPLIT_PARALLELONNODE
+      //#define USE_SPLIT_PARALLELONNODE
       #ifdef USE_SPLIT_PARALLELONNODE
       this->FindSplit(depth, gpair, p_tree);
       #else
@@ -1564,10 +1564,31 @@ class HistMakerBlockDense: public BlockBaseMaker {
     int endgid = posset_.getBlockEndGId(zblkid);
 
     //lazy init
+    #define LAZY_INIT
+    #ifdef LAZY_INIT
     for (int i = 0; i < tree.param.num_nodes; i++){
+    //for (int i = 0; i < this->qexpand_.size(); ++i) {
         //hbuilder[i].hist.setNull();
         hbuilder[i].setNull();
     }
+    #else
+    for (int i = 0; i < this->qexpand_.size(); ++i) {
+        int nid = this->qexpand_[i];
+        //lazy initialize
+        int mid = node2workindex_[nid];
+        //hbuilder[nid].hist = this->wspace_.hset.GetHistUnitByBlkid(blkid_offset, mid);
+        hbuilder[nid] = this->wspace_.hset.GetHistUnitByBlkidCompact(blkid_offset, mid);
+        //init data for the first zblks
+        if (zblkid == 0){
+          if (CHECKHALFCOND) {
+              //only clear the data for 'right' nodes in USE_HALFTRICK mode
+              //hbuilder[nid].hist.ClearData();
+              hbuilder[nid].ClearData(this->wspace_.hset.GetHistUnitByBlkidSize());
+          }
+        }
+    }
+    #endif  /* LAZY_INIT */
+
 #endif
 
     {
@@ -1613,6 +1634,7 @@ class HistMakerBlockDense: public BlockBaseMaker {
                 if (CHECKHALFCOND) {
 
                   // todo, remove init outside loop
+                  #ifdef LAZY_INIT
                   //if (hbuilder[nid].hist.isNull())
                   if (hbuilder[nid].isNull()){
                       //lazy initialize
@@ -1628,6 +1650,7 @@ class HistMakerBlockDense: public BlockBaseMaker {
                         }
                       }
                   }
+                  #endif
 
                   for (int k = 0; k < block.rowsize(ridx); k++){
                     //hbuilder[nid].AddWithIndex(block._blkaddr(ridx, k), gpair[ridx]);
@@ -1668,6 +1691,7 @@ class HistMakerBlockDense: public BlockBaseMaker {
                 if (1) {
 
                   // todo, remove init outside loop
+                  #ifdef LAZY_INIT
                   //if (hbuilder[nid].hist.isNull())
                   if (hbuilder[nid].isNull()){
                       //lazy initialize
@@ -1683,6 +1707,7 @@ class HistMakerBlockDense: public BlockBaseMaker {
                         }
                       }
                   }
+                  #endif
 
                   for (int k = 0; k < block.rowsize(ridx); k++){
                     //hbuilder[nid].AddWithIndex(block._blkaddr(ridx, k), gpair[ridx]);

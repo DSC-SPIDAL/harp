@@ -540,7 +540,11 @@ i*/
 
         // keep the groups in order
         std::sort(newgrp.begin(), newgrp.end(), 
-                [] (POSGroup const& a, POSGroup const& b) { return a._start < b._start; });
+                [] (POSGroup const& a, POSGroup const& b) { 
+                  return a._start < b._start;
+        //        //return a._start - dmlc::BeginPtr(entry_[nextid]) < b._start - dmlc::BeginPtr(entry_[nextid]); 
+        //        return reinterpret_cast<const unsigned long>(a._start) < reinterpret_cast<const unsigned long>(b._start); 
+                });
 
         // build block index
         int gid = 0;
@@ -560,7 +564,7 @@ i*/
             rowblk_offset_[i] = gid;
         }
         //end of block offset
-        rowblk_offset_.push_back(newgrp.size());
+        rowblk_offset_[rowblknum_] = newgrp.size();
 
         // change to new posset
         workid_ = nextid;
@@ -570,7 +574,16 @@ i*/
         LOG(CONSOLE) << "ApplySplit: nodeidSum = " << nodeid_sum_beforesplit << 
             ", after=" << nodeid_sum_aftersplit;
         #endif
-
+    
+        //printVec("ApplySplit: rowblk_offset=", rowblk_offset_);
+        std::cout <<"ApplySplit::rowblk_offset=";
+        for(int i = 0; i < std::min(getBlockCnt(), 10); i++){
+            int gid = getBlockStartGId(i);
+            // gid, startPos
+            std::cout << gid << "," <<
+                newgrp[gid]._start -dmlc::BeginPtr(entry_[nextid]) << " ";
+        }
+        std::cout << "\n";
 
     }
 
