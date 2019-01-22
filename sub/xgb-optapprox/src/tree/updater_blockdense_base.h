@@ -131,7 +131,8 @@ class BlockBaseMaker: public TreeUpdater {
   /*! \brief initialize temp data structure */
   void InitData(const std::vector<GradientPair> &gpair,
                        const DMatrix &fmat,
-                       const RegTree &tree) {
+                       const RegTree &tree,
+                       const int rowblksize) {
     CHECK_EQ(tree.param.num_nodes, tree.param.num_roots)
         << "TreeMaker: can only grow new tree";
     const std::vector<unsigned> &root_index =  fmat.Info().root_index_;
@@ -147,7 +148,8 @@ class BlockBaseMaker: public TreeUpdater {
       //        << "root index exceed setting";
       //  }
       //}
-      posset_.Init(gpair.size(),omp_get_max_threads());
+      posset_.Init(gpair.size(),omp_get_max_threads(), rowblksize);
+      //posset_.InitEntry(gpair.size());
 
       // mark delete for the deleted datas
       //for (size_t i = 0; i < position_.size(); ++i) {

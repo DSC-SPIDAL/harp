@@ -530,7 +530,9 @@ class HistMakerBlockDense: public BlockBaseMaker {
     printgh(gpair);
 
     double _tstartInitData = dmlc::GetTime();
-    this->InitData(gpair, *p_fmat, *p_tree);
+
+    int row_blksize = blkInfo_.GetRowBlkSize();
+    this->InitData(gpair, *p_fmat, *p_tree, row_blksize);
     //this->tminfo.aux_time[5] += dmlc::GetTime() - _tstartInitData;
     //this->InitWorkSet(p_fmat, *p_tree, &fwork_set_);
     // mark root node as fresh.
@@ -1098,6 +1100,8 @@ class HistMakerBlockDense: public BlockBaseMaker {
         this->wspace_.Init(this->param_, std::pow(2,this->param_.max_depth), this->blkInfo_);
 #endif
 
+        // init the posset after blkInfo_ updated
+        posset_.Init(_info.num_row_, omp_get_max_threads(), blkInfo_.GetRowBlkSize());
         this->SetDefaultPostion(p_fmat, tree);
 
         unsigned int nthread = omp_get_max_threads();
@@ -1131,6 +1135,7 @@ class HistMakerBlockDense: public BlockBaseMaker {
          */
         p_blkmat->Init(*p_fmat->GetRowBatches().begin(), p_fmat->Info(), param_.max_bin, blkInfo_);
         p_hmat->Init(*p_fmat->GetSortedColumnBatches().begin(), p_fmat->Info());
+
 
         #ifdef USE_DEBUG
         printdmat(*p_hmat);
@@ -1551,8 +1556,13 @@ class HistMakerBlockDense: public BlockBaseMaker {
  
 #else
     // one thread go through all nodeblks
-    int startgid = 0;
-    int endgid = posset_.getGroupCnt();
+    //int startgid = 0;
+    //int endgid = posset_.getGroupCnt();
+    
+    // one thread go through all groups in its block
+    int startgid = posset_.getBlockStartGId(zblkid);
+    int endgid = posset_.getBlockEndGId(zblkid);
+
     //lazy init
     for (int i = 0; i < tree.param.num_nodes; i++){
         //hbuilder[i].hist.setNull();
@@ -1592,7 +1602,7 @@ class HistMakerBlockDense: public BlockBaseMaker {
         // go throught this node group nblkid
         
         // before split
-        if (posset_.getGroupCnt() == 1){
+        if (posset_.getGroupCnt() == posset_.getBlockCnt()){
             for (int gid = startgid; gid < endgid; ++gid) {
               for (int j = 0; j < posset_[gid].size(); ++j) {
                 const int ridx = posset_[gid].getRowId(j);

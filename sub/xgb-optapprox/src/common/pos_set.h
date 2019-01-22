@@ -116,15 +116,6 @@ class POSSet{
         int _deletelen;
 #endif
 
-#ifndef USE_ONENODEEACHGROUP
-        // node id list for multiple node one group version
-        std::vector<int> nodeids_;
-        // get node id list
-        inline std::vector<int>& getNodeIdList(){
-            return nodeids_;
-        }
-#endif
-
         POSGroup(POSEntry* start, int len, POSGroupType type):
             _start(start),_len(len),_type(type){
         }
@@ -350,16 +341,27 @@ class POSSet{
 
     POSSet() = default;
 
-    void Init(int rownumber, int threadnum, int row_block_size = 0){
+    void InitEntry(int rownumber){
         //clear first
         Clear();
+
+        rownum_ = rownumber;
+        //init from nodeid=0
+        workid_ = 0;
+        entry_[0].resize(rownumber);
+        entry_[1].resize(rownumber);
+        for(int i = 0; i < rownumber; i++){
+            entry_[0][i] = POSEntry(0,i);
+        }
+    }
+
+    void Init(int rownumber, int threadnum, int row_block_size = 0){
+        //Init entry first
+        InitEntry(rownumber);
 
         // thread init
         local_grp_.resize(threadnum);
 
-        //CHECK_LE(rownumber, ROWID_MASK);
-
-        rownum_ = rownumber;
         rowblknum_ = 1;
         if (row_block_size > 0){
             rowblknum_ = (rownumber + row_block_size -1 )/ row_block_size;
@@ -368,14 +370,6 @@ class POSSet{
         else{
             rowblknum_ = 1;
             rowblksize_ = rownum_;
-        }
-
-        //init from nodeid=0
-        workid_ = 0;
-        entry_[0].resize(rownumber);
-        entry_[1].resize(rownumber);
-        for(int i = 0; i < rownumber; i++){
-            entry_[0][i] = POSEntry(0,i);
         }
 
         //init one group for each block
