@@ -1913,7 +1913,10 @@ class HistMakerBlockDense: public BlockBaseMaker {
         printPOSSet(posset_, gid);
         
         //init the position_
+        #ifdef USE_ATMOIC_HAFLLEN
         posset_.BeginUpdate(depth);
+        #endif
+
         this->SetDefaultPostion(p_hmat, tree);
         this->tminfo.aux_time[1] += dmlc::GetTime() - _tstartInit;
 
@@ -1925,7 +1928,9 @@ class HistMakerBlockDense: public BlockBaseMaker {
 
 
         _tstartInit = dmlc::GetTime();
+        #ifdef USE_ATMOIC_HAFLLEN
         posset_.EndUpdate();
+        #endif
         this->tminfo.aux_time[3] += dmlc::GetTime() - _tstartInit;
 
         printPOSSet(posset_, gid);

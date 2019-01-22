@@ -9,8 +9,8 @@
  * 3-D cube of model <node_block_size, bin_block_size, ft_block_size)
  
  */
-#ifndef XGBOOST_COMMON_POS_SET_H_
-#define XGBOOST_COMMON_POS_SET_H_
+#ifndef XGBOOST_COMMON_POS_SET_SINGLE_H_
+#define XGBOOST_COMMON_POS_SET_SINGLE_H_
 
 #include <xgboost/data.h>
 #include <algorithm>
@@ -165,7 +165,7 @@ class POSSet{
         //      ...
         //  EndUpdate()
         //
-        inline void BeginUpdate(int depth = 0){
+        inline void BeginUpdate(int depth){
             _leftlen = 0;
             _rightlen = 0;
             _deletelen = 0;
@@ -331,18 +331,13 @@ class POSSet{
     };
     /*! \brief POSGroup set 
      */
-    // static allocation of memory
+    //static allocation of memory
     std::vector<POSEntry> entry_[2];
-    // flat group set
     std::vector<POSGroup> grp_[2];
-    // row blocks, each block maintains its own group set
-    std::vector<int> rowblk_offset_;
-
     int workid_;
 
     int rownum_;
-    int rowblknum_;
-    int rowblksize_;
+    int base_rowid_;
 
     // thread local 
     std::vector<std::vector<POSGroup>> local_grp_;
@@ -350,7 +345,7 @@ class POSSet{
 
     POSSet() = default;
 
-    void Init(int rownumber, int threadnum, int row_block_size = 0){
+    void Init(int rownumber, int threadnum, int start_rowid = 0){
         //clear first
         Clear();
 
@@ -360,15 +355,7 @@ class POSSet{
         //CHECK_LE(rownumber, ROWID_MASK);
 
         rownum_ = rownumber;
-        rowblknum_ = 1;
-        if (row_block_size > 0){
-            rowblknum_ = (rownumber + row_block_size -1 )/ row_block_size;
-            rowblksize_ = row_block_size;
-        }
-        else{
-            rowblknum_ = 1;
-            rowblksize_ = rownum_;
-        }
+        base_rowid_ = start_rowid;
 
         //init from nodeid=0
         workid_ = 0;
@@ -377,36 +364,16 @@ class POSSet{
         for(int i = 0; i < rownumber; i++){
             entry_[0][i] = POSEntry(0,i);
         }
-
-        //init one group for each block
-        POSEntry* start = dmlc::BeginPtr(entry_[0]);
-        for (int i = 0; i < rowblknum_; i++){
-            int blocklen;
-            if (i == rowblknum_ -1){
-                blocklen = rownum_ % rowblksize_;
-                if (blocklen==0) blocklen = rowblksize_;
-            }
-            else{
-                blocklen = rowblksize_;
-            }
-            grp_[0].push_back(POSGroup(start + i*row_block_size
-                        , blocklen, POSGroupType::NONE));
-
-            //maintain the block offset
-            rowblk_offset_.push_back(i);
-        }
-        //end of block offset
-        rowblk_offset_.push_back(rowblknum_);
-
+        grp_[0].push_back(POSGroup(dmlc::BeginPtr(entry_[0]), rownumber, POSGroupType::NONE));
     }
 
     void Clear(){
+        base_rowid_ = 0;
+
         //entry_[0].clear();
         grp_[0].clear();
         //entry_[1].clear();
         grp_[1].clear();
-
-        rowblk_offset_.clear();
     }
 
     // entry access
@@ -417,45 +384,6 @@ class POSSet{
         return entry_[workid_][i];
     }
 
-/*
-    // group access
-    inline int getGroupCnt(int blkid = 0){
-        return grp_[workid_][blkid].size();
-    }
-    inline std::vector<POSGroup>& getGroup(int blkid = 0){
-        return grp_[workid_][blkid];
-    }
-
-    inline POSGroup& operator[](int i){
-        return grp_[workid_][i];
-    }
-
-    // global group access
-    inline void BeginUpdate(int depth){
-        for (int i = 0; i < grp_[workid_].size() ; i++){
-            auto grp = getGroup(i);
-            for (int j = 0; j < grp.size(); j++){
-                grp[i].BeginUpdate(depth);
-            }
-        }
-    }
-    inline void EndUpdate(){
-        int totalcnt = 0;
-        for (int i = 0; i < grp_[workid_].size() ; i++){
-            auto grp = getGroup(i);
-            totalcnt += grp.size(); 
-        }
-
-        #pragma omp parallel for schedule(static)
-        for (int i = 0; i < totalcnt; i++){
-            int blkid = i % rowblknum_;
-            int grp
-            auto grp = getGroup(i);
-            grp[i].BeginUpdate(depth);
-            grp[i].EndUpdate(i);
-        }
-    }
-i*/
     // group access
     inline int getGroupCnt(){
         return grp_[workid_].size();
@@ -464,18 +392,7 @@ i*/
         return grp_[workid_][i];
     }
 
-    // block access
-    inline int getBlockCnt(){
-        return rowblk_offset_.size() - 1;
-    }
-    inline int getBlockStartGId(int blkid){
-        return rowblk_offset_[blkid];
-    }
-    inline int getBlockEndGId(int blkid){
-        return rowblk_offset_[blkid+1];
-    }
 
-    // global group access
     inline void BeginUpdate(int depth){
         for (int i = 0; i < grp_[workid_].size() ; i++){
             grp_[workid_][i].BeginUpdate(depth);
@@ -487,8 +404,6 @@ i*/
             grp_[workid_][i].EndUpdate(i);
         }
     }
-
-
 
     //debug code
     unsigned long getNodeIdSum(){
@@ -517,12 +432,6 @@ i*/
 
         #pragma omp parallel for schedule(static)
         for (int i = 0; i < grp_[workid_].size() ; i++){
-            #ifndef USE_ATMOIC_HAFLLEN
-            //move BeginUpdate and EndUpdate code here
-            grp_[workid_][i].BeginUpdate();
-            grp_[workid_][i].EndUpdate(i);
-            #endif
-
             int startpos = grp_[workid_][i]._start - dmlc::BeginPtr(entry_[workid_]);
             CHECK_LT(startpos, rownum_);
 
@@ -544,31 +453,6 @@ i*/
             }
         }
 
-        // keep the groups in order
-        std::sort(newgrp.begin(), newgrp.end(), 
-                [] (POSGroup const& a, POSGroup const& b) { return a._start < b._start; });
-
-        // build block index
-        int gid = 0;
-        for (int i = 0; i < rowblknum_; i++){
-            //
-            int blkStartPos = grp_[workid_][rowblk_offset_[i]]._start - dmlc::BeginPtr(entry_[workid_]);
-
-            while(gid < newgrp.size() && 
-                    (newgrp[gid]._start -dmlc::BeginPtr(entry_[nextid])) != blkStartPos){
-                gid ++;
-            }
-
-            // should find one
-            CHECK_LT(gid, newgrp.size());
-
-            //maintain the block offset
-            rowblk_offset_[i] = gid;
-        }
-        //end of block offset
-        rowblk_offset_.push_back(newgrp.size());
-
-        // change to new posset
         workid_ = nextid;
 
         #ifdef USE_DEBUG
