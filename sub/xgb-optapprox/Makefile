@@ -208,7 +208,7 @@ ifeq ($(CXX), icc)
 CFLAGS += -xcore-avx2
 ifeq ($(USE_REPORT), 1)
 #CFLAGS += -qopt-report=5 -qopt-report-phase=vec
-CFLAGS += -qopt-report=5
+CFLAGS += -qopt-report=5 
 endif
 
 else
@@ -216,7 +216,9 @@ else
 CFLAGS += -mavx2
 
 ifeq ($(USE_REPORT), 1)
-CFLAGS += -fopt-info-vec
+#CFLAGS += -fopt-info-vec
+CFLAGS += -ftree-vectorize -fopt-info-vec-all
+
 endif
 
 endif
