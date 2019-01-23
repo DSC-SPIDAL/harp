@@ -9,6 +9,8 @@ set(CMAKE_CXX_STANDARD 14)
 
 list(APPEND CMAKE_CXX_FLAGS "-pthread -std=c++11 ${CMAKE_CXX_FLAGS}")
 
+set(INSTALL_LOCAION /home/chathura/Code/tmp)
+
 #Boost
 set(Boost_USE_STATIC_LIBS OFF)
 set(Boost_USE_MULTITHREADED ON)
@@ -33,8 +35,9 @@ include_directories(
 add_subdirectory(data_structures)
 add_subdirectory(util)
 add_subdirectory(worker)
+add_subdirectory(communication)
 
-add_executable(harpc communication/Communicator.h communication/Communicator.cpp examples/generators/DataGenerator.cpp examples/generators/DataGenerator.h kernels/kmeans/KMeans.h kernels/kmeans/KMeans.cpp kernels/math/partitions/PartitionMath.h kernels/math/partitions/PartitionMath.cpp kernels/math/table/TableMath.h kernels/math/table/TableMath.cpp kernels/math/HarpMath.h kernels/HarpKernels.h data_structures/Utils.h data_structures/Utils.cpp communication/Rotator.h communication/Rotator.cpp data_structures/PartitionAccessor.h data_structures/PartitionAccessor.cpp communication/tcp/Server.cpp communication/tcp/MessageAcceptor.cpp)
+add_executable(harpc examples/generators/DataGenerator.cpp examples/generators/DataGenerator.h kernels/kmeans/KMeans.h kernels/kmeans/KMeans.cpp kernels/math/partitions/PartitionMath.h kernels/math/partitions/PartitionMath.cpp kernels/math/table/TableMath.h kernels/math/table/TableMath.cpp kernels/math/HarpMath.h kernels/HarpKernels.h)
 #kernels/daal/DaalKMeans.cpp
 #examples/kmeans/kmeans.cpp
 
@@ -52,8 +55,23 @@ target_link_libraries(
         harp_data_structures
         harp_utils
         harp_worker
+        harp_communication
         ${Boost_LIBRARIES}
         ${DAAL_CORE_LIB}
         ${DAAL_THREAD_LIB}
         ${DAAL_SEQ_LIB}
+)
+
+message("Installing to : " ${INSTALL_LOCAION})
+
+set(CMAKE_INSTALL_PREFIX ${INSTALL_LOCAION})
+
+INSTALL(FILES harp.h
+        DESTINATION include)
+
+INSTALL(
+        TARGETS harpc
+        RUNTIME DESTINATION bin
+        LIBRARY DESTINATION lib
+        PUBLIC_HEADER DESTINATION include
 )

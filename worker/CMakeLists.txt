@@ -15,3 +15,13 @@ include_directories(
 target_link_libraries(
         harp_worker
 )
+
+FILE(GLOB PUBLIC_HEADERS *.h)
+
+INSTALL(FILES ${PUBLIC_HEADERS}
+        DESTINATION include/worker)
+
+INSTALL(
+        TARGETS harp_worker
+        LIBRARY DESTINATION lib
+)

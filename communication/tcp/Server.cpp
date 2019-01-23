@@ -4,6 +4,7 @@
 #include <utility>
 #include <boost/asio.hpp>
 #include <vector>
+#include <boost/array.hpp>
 
 using boost::asio::ip::tcp;
 using namespace std;

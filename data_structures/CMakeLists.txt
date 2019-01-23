@@ -21,3 +21,13 @@ target_link_libraries(
         harp_data_structures
         ${MPI_C_LIBRARIES}
 )
+
+FILE(GLOB PUBLIC_HEADERS *.h)
+
+INSTALL(FILES ${PUBLIC_HEADERS}
+        DESTINATION include/data_structures)
+
+INSTALL(
+        TARGETS harp_data_structures
+        LIBRARY DESTINATION lib
+)

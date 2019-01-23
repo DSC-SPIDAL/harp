@@ -10,9 +10,6 @@
 #include <thread>
 #include "future"
 
-#include "../../communication/Rotator.h"
-#include "../../communication/Rotator.cpp"
-
 #include "../../util/Timing.h"
 
 #include "../../util/Print.h"
@@ -66,11 +63,7 @@ class KMeansWorker : public harp::Worker {
             diff(0, 1, true);
             harp::ds::util::deleteTable(tab, true);
         }
-        if (workerId == 0) {
-            std::cout << "Time : " << average(0, 1) << std::endl;
-        }
 
-        return;
         int iterations = 5;
         int numOfCentroids = 25;
         int vectorSize = 1000;
