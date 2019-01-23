@@ -287,7 +287,7 @@ class RegTree {
     for (int i = param.num_roots; i < param.num_nodes; ++i) {
       if (nodes_[i].IsDeleted()) deleted_nodes_.push_back(i);
     }
-    CHECK_EQ(static_cast<int>(deleted_nodes_.size()), param.num_deleted);
+    //CHECK_EQ(static_cast<int>(deleted_nodes_.size()), param.num_deleted);
   }
   /*!
    * \brief save model to stream

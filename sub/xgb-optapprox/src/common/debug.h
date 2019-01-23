@@ -24,13 +24,16 @@
 #include <xgboost/tree_model.h>
 #include "../data/compact_dmatrix.h"
 #include "../common/hist_util.h"
+#include "../common/pos_set.h"
 #include "../tree/param.h"
+
 
 namespace xgboost {
 
 using xgboost::common::HistCutMatrix;
 using xgboost::common::GHistIndexMatrix;
 using xgboost::tree::SplitEntry;
+using xgboost::tree::POSSet;
 
 
 void startVtune(std::string tagfilename, int waittime=10000);
@@ -49,6 +52,8 @@ void printdmat(DMatrixCompact& dmat);
 void printdmat(const SparsePage& dmat);
 void printgmat(GHistIndexMatrix& gmat);
 void printcut(HistCutMatrix& gmat);
+
+void printPOSSet(POSSet& pos, int gid=0);
 
 void printgh(const std::vector<GradientPair> &gpair);
 

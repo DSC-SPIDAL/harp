@@ -6,6 +6,7 @@
  *
  * 2018,2019
  * HARPDAAL-GBT optimize based on the approx and fast_hist codebase
+ * 3-D cube of model <node_block_size, bin_block_size, ft_block_size)
  *
  */
 #include <xgboost/base.h>
@@ -13,30 +14,21 @@
 #include <vector>
 #include <atomic>
 #include <algorithm>
+#include <fstream>
+#include <dmlc/timer.h>
 #include "../data/compact_dmatrix.h"
 #include "../common/sync.h"
 #include "../common/quantile.h"
 #include "../common/group_data.h"
-#include "./updater_basemaker-inl.h"
-#include <fstream>
 #include "../common/debug.h"
 #include "../common/hist_util.h"
 #include "./fast_hist_param.h"
 #include "../common/random.h"
 #include "../common/bitmap.h"
 #include "../common/sync.h"
-#include "../common/row_set.h"
+#include "./updater_blockdense_base.h"
 
-#include <dmlc/timer.h>
 
-#ifndef USE_OMP_BUILDHIST
-//#include "tbb/tick_count.h"
-//#include "tbb/task.h"
-//#include "tbb/scalable_allocator.h"
-//#include "tbb/task_scheduler_init.h"
-#endif
-
-//#define _INIT_PER_TREE_ 1
 namespace xgboost {
 namespace tree {
 
@@ -70,7 +62,7 @@ class spin_mutex {
 
 
 template<typename TStats>
-class HistMakerBlockDense: public BaseMaker {
+class HistMakerBlockDense: public BlockBaseMaker {
  public:
 
  HistMakerBlockDense(){
@@ -96,7 +88,7 @@ class HistMakerBlockDense: public BaseMaker {
   }
 
   TimeInfo getTimeInfo() override{
-      tminfo.posset_time -= tminfo.buildhist_time;
+      //tminfo.posset_time -= tminfo.buildhist_time;
       return tminfo;
   }
 
@@ -108,10 +100,6 @@ class HistMakerBlockDense: public BaseMaker {
     float lr = param_.learning_rate;
     param_.learning_rate = lr / trees.size();
 
-    #ifndef USE_OMP_BUILDHIST
-    //// init param for scheduling
-    //this->gpair_ = gpair;
-    #endif
     blkInfo_ = BlockInfo(param_.row_block_size, param_.ft_block_size, param_.bin_block_size);
 
     // build tree
@@ -124,13 +112,6 @@ class HistMakerBlockDense: public BaseMaker {
   }
 
  protected:
-
-#ifndef USE_OMP_BUILDHIST
-  /*
-   * Task Scheduler
-   */
-#endif
-
 
     /*! \brief a single histogram */
   struct HistUnit {
@@ -150,10 +131,15 @@ class HistMakerBlockDense: public BaseMaker {
     // default constructor
     HistUnit() = default;
 
-    // constructor
-    //HistUnit(const bst_float *cut, TStats *data, unsigned size, unsigned stepsize = 1)
-    //    : cut(cut), data(data), size(size), step_size(stepsize) {}
+    //lazy init
+    inline bool isNull(){
+        return data == nullptr;
+    }
+    inline void setNull(){
+        data = nullptr;
+    }
 
+    // constructor
     HistUnit(const bst_float *cut, TStats *data, unsigned size, 
             unsigned height = 1, unsigned instep = 1, unsigned crossstep = 1)
         : cut(cut), data(data), size(size), 
@@ -170,14 +156,7 @@ class HistMakerBlockDense: public BaseMaker {
       data[i].Add(gpair, info, ridx);
     }
 
-    //
     // get i item from *data when not fid wised layout
-    //
-    // fir for (0,0,1)
-    //TStats& Get(int i) const{
-    //    return data[i*step_size];
-    //}
-
     TStats& Get(int i) const{
         return data[(i/block_height)*cross_block_step + (i % block_height) * in_block_step];
     }
@@ -187,6 +166,65 @@ class HistMakerBlockDense: public BaseMaker {
     }
 
   };
+
+  struct HistEntry {
+    typename HistMakerBlockDense<TStats>::HistUnit hist;
+    //unsigned istart;
+
+    /* OptApprox:: init bindid in pmat */
+    inline unsigned GetBinId(bst_float fv) {
+      unsigned start = 0;
+      while (start < hist.size && !(fv < hist.cut[start])) ++start;
+      //CHECK_NE(start, hist.size);
+      if(start == hist.size) start--;
+      return start;
+    }
+
+    inline void AddWithIndex(unsigned binid,
+                    GradientPair gstats) {
+        //hist.data[binid].Add(gstats);
+    #ifdef USE_BINID
+        hist.data[binid].Add(gstats);
+    #endif
+    }
+    inline void AddWithIndex(unsigned binid,
+                    const std::vector<GradientPair> &gpair,
+                    const MetaInfo &info,
+                    const bst_uint ridx) {
+    #ifdef USE_BINID
+      //CHECK_NE(binid, hist.size);
+      hist.data[binid].Add(gpair, info, ridx);
+    #endif
+    }
+
+  };
+
+  //
+  // Compact structure for BuildHist
+  //
+  struct HistEntryCompact {
+    TStats *data=nullptr;
+
+    HistEntryCompact() = default;
+    HistEntryCompact(TStats* _data):data(_data){}
+
+    inline void AddWithIndex(unsigned binid,
+                    GradientPair gstats) {
+        #ifdef USE_BINID
+        data[binid].Add(gstats);
+        #endif
+    }
+    inline bool isNull(){
+        return data == nullptr;
+    }
+    inline void setNull(){
+        data = nullptr;
+    }
+    void ClearData(int size){
+        std::memset(data, 0., sizeof(GradStats) * size);
+    }
+  };
+
 
   /*
    * Core Data Structure for Model GHSum
@@ -246,47 +284,6 @@ class HistMakerBlockDense: public BaseMaker {
     }
 
     /*
-     * get by blkid, layout as <blkid, nid, blockaddr>
-     */
-
-    // /* simple version as blkinfo=(0,0,1)
-    // *
-    // */
-    //inline HistUnit GetHistUnitByBinid(size_t binid, size_t nid) {
-    //  return HistUnit(cut, /* not use*/
-    //                  &data[0] + (featnum+1)*(binid * nodeSize + nid),
-    //                  featnum);
-    //}
-
-    //inline HistUnit GetHistUnitByFid(size_t fid, size_t nid) {
-    //  return HistUnit(cut, /* not use*/
-    //                  &data[0] + nid*(featnum+1) + fid,
-    //                  rptr[fid+1] - rptr[fid],
-    //                  (featnum+1)*nodeSize);
-    //}
-
-    // /* only for (0,0,n)
-    // *
-    // */
-    //inline HistUnit GetHistUnitByBlkid(size_t blkid, size_t nid) {
-    //  return HistUnit(cut, /* not use*/
-    //                  &data[0] + (pblkInfo->GetBinBlkSize()*(featnum+1))*(blkid * nodeSize + nid),
-    //                  pblkInfo->GetBinBlkSize()*(featnum+1));
-    //}
-
-    //
-    //inline HistUnit GetHistUnitByFid(size_t fid, size_t nid) {
-    //  return HistUnit(cut, /* not use*/
-    //                  &data[0] + nid*pblkInfo->GetBinBlkSize()*(featnum+1) + fid,
-    //                  rptr[fid+1] - rptr[fid],
-    //                  pblkInfo->GetBinBlkSize(),
-    //                  featnum,
-    //                  pblkInfo->GetBinBlkSize()*(featnum+1)*nodeSize);
-    //}
-
-
-
-    /*
      * general version of blkinfo: (row,ft,bin_blk_size)
      */
     //
@@ -298,6 +295,14 @@ class HistMakerBlockDense: public BaseMaker {
                       &data[0] + (pblkInfo->GetBinBlkSize()*pblkInfo->GetFeatureBlkSize())*(blkid * nodeSize + nid),
                       pblkInfo->GetBinBlkSize()*pblkInfo->GetFeatureBlkSize());
     }
+
+    inline HistEntryCompact GetHistUnitByBlkidCompact(size_t blkid, size_t nid) {
+      return HistEntryCompact(&data[0] + (pblkInfo->GetBinBlkSize()*pblkInfo->GetFeatureBlkSize())*(blkid * nodeSize + nid));
+    }
+    inline int GetHistUnitByBlkidSize(){
+        return pblkInfo->GetBinBlkSize()*pblkInfo->GetFeatureBlkSize();
+    }
+
 
     //
     // node summation store at the end
@@ -323,6 +328,13 @@ class HistMakerBlockDense: public BaseMaker {
 
 
   };
+
+  struct SplitInfo{
+    std::vector<SplitEntry> sol;
+    std::vector<TStats> left_sum;
+  };
+ 
+
   // thread workspace
   struct ThreadWSpace {
     /*! \brief actual unit pointer */
@@ -416,37 +428,6 @@ class HistMakerBlockDense: public BaseMaker {
 #endif
     }
 
-    void saveGHSum(int treeid, int depth, int nodecnt){
-      std::ostringstream ss;
-      ss << "ghsum_" << treeid << "_" << depth;
-
-      std::ofstream write;
-      write.open(ss.str());
- 
-      int pagesize = hset.data.size() / nodecnt;
-
-      LOG(CONSOLE) << "saveGHSUM(" << treeid << "," << depth << "," 
-          << nodecnt << ") pagesize=" << pagesize <<
-          "fset=" << hset.featnum;
-
-      for(int i=0; i< nodecnt; i++){
-          write << "NODE:" << i << "\n";
-
-          for (int fid = 0; fid < hset.featnum; fid++){
-            write << "\tF:" << fid << "\t";
-
-            int sumlen = hset.rptr[fid+1] - hset.rptr[fid]; 
-            for (int j=0; j < sumlen; j++){ 
-              auto offset = j + i*pagesize + hset.rptr[fid];
-              write << hset.data[offset].sum_grad <<"," << hset.data[offset].sum_hess << " ";
-            }
-            write << "\n";
-          }
-      }
-
-      write.close();
-    }
-
     /*! \brief clear the workspace */
     inline void Clear() {
       cut.clear(); rptr.resize(1); rptr[0] = 0;
@@ -457,75 +438,6 @@ class HistMakerBlockDense: public BaseMaker {
     }
   };
 
-  struct HistEntry {
-    typename HistMakerBlockDense<TStats>::HistUnit hist;
-    //unsigned istart;
-
-    /* OptApprox:: init bindid in pmat */
-    inline unsigned GetBinId(bst_float fv) {
-      unsigned start = 0;
-      while (start < hist.size && !(fv < hist.cut[start])) ++start;
-      //CHECK_NE(start, hist.size);
-      if(start == hist.size) start--;
-      return start;
-    }
-
-    inline void AddWithIndex(unsigned binid,
-                    GradientPair gstats) {
-        //hist.data[binid].Add(gstats);
-    #ifdef USE_BINID
-        hist.data[binid].Add(gstats);
-    #endif
-    }
-    inline void AddWithIndex(unsigned binid,
-                    const std::vector<GradientPair> &gpair,
-                    const MetaInfo &info,
-                    const bst_uint ridx) {
-    #ifdef USE_BINID
-      //CHECK_NE(binid, hist.size);
-      hist.data[binid].Add(gpair, info, ridx);
-    #endif
-    }
-
-
-    /*!
-     * \brief add a histogram to data,
-     * do linear scan, start from istart
-     */
-    //inline void Add(bst_float fv,
-    //                const std::vector<GradientPair> &gpair,
-    //                const MetaInfo &info,
-    //                const bst_uint ridx) {
-    //  while (istart < hist.size && !(fv < hist.cut[istart])) ++istart;
-    //  CHECK_NE(istart, hist.size);
-    //  hist.data[istart].Add(gpair, info, ridx);
-    //}
-    ///*!
-    // * \brief add a histogram to data,
-    // * do linear scan, start from istart
-    // */
-    //inline void Add(bst_float fv,
-    //                GradientPair gstats) {
-    //  if (fv < hist.cut[istart]) {
-    //    hist.data[istart].Add(gstats);
-    //  } else {
-    //    while (istart < hist.size && !(fv < hist.cut[istart])) ++istart;
-    //    if (istart != hist.size) {
-    //      hist.data[istart].Add(gstats);
-    //    } else {
-    //      LOG(INFO) << "fv=" << fv << ", hist.size=" << hist.size;
-    //      for (size_t i = 0; i < hist.size; ++i) {
-    //        LOG(INFO) << "hist[" << i << "]=" << hist.cut[i];
-    //      }
-    //      LOG(FATAL) << "fv=" << fv << ", hist.last=" << hist.cut[hist.size - 1];
-    //    }
-    //  }
-    //}
-  };
- 
-
-#ifndef USE_OMP_BUILDHIST
-#endif
 
  /* --------------------------------------------------
   * data members
@@ -557,13 +469,18 @@ class HistMakerBlockDense: public BaseMaker {
   // cached dmatrix where we initialized the feature on.
   const DMatrix* cache_dmatrix_{nullptr};
   // feature helper
-  BaseMaker::FMetaHelper feat_helper_;
+  BlockBaseMaker::FMetaHelper feat_helper_;
  // set of index from that are split candidates.
   //  std::vector<bst_uint> fsplit_set_;
   // used to hold statistics
   std::vector<std::vector<TStats> > thread_stats_;
   // used to hold start pointer
   std::vector<std::vector<HistEntry> > thread_hist_;
+  std::vector<std::vector<HistEntryCompact>> thread_histcompact_;
+
+  //thread level findsplit
+  std::vector<SplitInfo> thread_splitinfo_;
+
   // node statistics
   std::vector<TStats> node_stats_;
   //HistCutMatrix
@@ -575,16 +492,7 @@ class HistMakerBlockDense: public BaseMaker {
   //size_t blockSize_{0};
   BlockInfo blkInfo_;
 
-  #ifndef USE_OMP_BUILDHIST
-  ////task graph
-  //TreeNode* tg_root;
-  ////std::vector<GradientPair>& gpair_;
-  //HostDeviceVector<GradientPair> *gpair_{nullptr};
-
-  //int num_nodes_;
-  #endif
-
- // hist mat compact
+  // hist mat compact
   DMatrixDenseCube* p_blkmat;
   DMatrixCompactBlockDense* p_hmat;
 
@@ -606,8 +514,10 @@ class HistMakerBlockDense: public BaseMaker {
     printgh(gpair);
 
     double _tstartInitData = dmlc::GetTime();
-    this->InitData(gpair, *p_fmat, *p_tree);
-    this->tminfo.aux_time[5] += dmlc::GetTime() - _tstartInitData;
+
+    int row_blksize = blkInfo_.GetRowBlkSize();
+    this->InitData(gpair, *p_fmat, *p_tree, row_blksize);
+    //this->tminfo.aux_time[5] += dmlc::GetTime() - _tstartInitData;
     //this->InitWorkSet(p_fmat, *p_tree, &fwork_set_);
     // mark root node as fresh.
     for (int i = 0; i < p_tree->param.num_roots; ++i) {
@@ -617,11 +527,6 @@ class HistMakerBlockDense: public BaseMaker {
     /*
      * Initialize the histogram and DMatrixCompact
      */
-    //printVec("ResetPos::fwork_set=", fwork_set_);
-    // reset and propose candidate split
-    //this->ResetPosAndPropose(gpair, p_fmat, fwork_set_, *p_tree);
-    //printtree(p_tree, "ResetPosAndPropose");
-    // initialize the histogram only
     InitializeHist(gpair, p_fmat, *p_tree);
 
     for (int depth = 0; depth < param_.max_depth; ++depth) {
@@ -630,11 +535,9 @@ class HistMakerBlockDense: public BaseMaker {
       printVec("qexpand:", this->qexpand_);
       printVec("node2workindex:", this->node2workindex_);
       // create histogram
-      double _tstart = dmlc::GetTime();
       this->CreateHist(depth, gpair, bwork_set_, *p_tree);
-      this->tminfo.posset_time += dmlc::GetTime() - _tstart;
 
-      printVec("position:", this->position_);
+      //printVec("position:", this->position_);
       printtree(p_tree, "After CreateHist");
 
       #ifdef USE_DEBUG_SAVE
@@ -643,7 +546,12 @@ class HistMakerBlockDense: public BaseMaker {
 
 
       // find split based on histogram statistics
+      //#define USE_SPLIT_PARALLELONNODE
+      #ifdef USE_SPLIT_PARALLELONNODE
       this->FindSplit(depth, gpair, p_tree);
+      #else
+      this->FindSplitByFid(depth, gpair, p_tree);
+      #endif
       //printtree(p_tree, "FindSplit");
 
       // reset position after split
@@ -655,17 +563,13 @@ class HistMakerBlockDense: public BaseMaker {
       //this->tminfo.aux_time[6] += dmlc::GetTime() - _tstart;
       printtree(p_tree, "UpdateQueueExpand");
 
+
+      if(this->fsplit_set_.size() > 0){
+        UpdatePosition(depth, *p_tree);
+      }
+
       // if nothing left to be expand, break
       if (qexpand_.size() == 0) break;
-    }
-
-    if(this->fsplit_set_.size() > 0){
-        //update the position for update cache
-        //printVec("before updatepos:", this->position_);
-        double _tstart = dmlc::GetTime();
-        this->CreateHist(param_.max_depth, gpair, bwork_set_, *p_tree);
-        this->tminfo.posset_time += dmlc::GetTime() - _tstart;
-        //printVec("after updatepos:", this->position_);
     }
 
     for (size_t i = 0; i < qexpand_.size(); ++i) {
@@ -735,18 +639,15 @@ class HistMakerBlockDense: public BaseMaker {
   }
 
 
-  void FindSplit(int depth,
+
+  //
+  // use the existing memory layout and parallelism as in BuildHistBlock
+  //
+  void FindSplitByFid(int depth,
                  const std::vector<GradientPair> &gpair,
                  RegTree *p_tree) {
 
     double _tstartFindSplit = dmlc::GetTime();
-
-//#ifndef ALLOCATE_ALLNODES
-//    //get first nid of this level
-//    int firstnid = std::pow(2, depth) -1;
-//#else 
-//    int firstnid = 0;
-//#endif
 
     //always work on work_set_ instead of fwork_set_
     const std::vector <bst_uint> &fset = work_set_;
@@ -755,35 +656,72 @@ class HistMakerBlockDense: public BaseMaker {
     //printInt("FindSplit::num_feature = ", num_feature);
     //printVec("FindSplit::fset=", fset);
     // get the best split condition for each node
-    std::vector<SplitEntry> sol(qexpand_.size());
-    std::vector<TStats> left_sum(qexpand_.size());
     auto nexpand = static_cast<bst_omp_uint>(qexpand_.size());
-    #pragma omp parallel for schedule(dynamic, 1)
-    for (bst_omp_uint wid = 0; wid < nexpand; ++wid) {
-      int nid = qexpand_[wid];
-      SplitEntry &best = sol[wid];
 
-      //adjust the physical location of this plain
-      int mid = node2workindex_[nid];
+    //init
+    for (int i = 0; i< thread_splitinfo_.size(); i++){
+        thread_splitinfo_[i].sol.clear();
+        thread_splitinfo_[i].left_sum.clear();
+    }
 
-#ifdef USE_VECTOR4MODEL
-      TStats &node_sum = wspace_.hset.GetHistUnitByFid(num_feature, mid).data[0];
-#else
-      TStats &node_sum = wspace_.hset.GetNodeSum(mid);
-#endif
+    //#pragma omp parallel for schedule(dynamic, 1)
+    #pragma omp parallel for schedule(static)
+    for (size_t i = 0; i < fset.size(); ++i) {
+        int tid = omp_get_thread_num();
+        int fid = i;
+        
+        std::vector<SplitEntry>& sol = thread_splitinfo_[tid].sol;
+        std::vector<TStats>& left_sum = thread_splitinfo_[tid].left_sum;
 
-      for (size_t i = 0; i < fset.size(); ++i) {
-        int fid = fset[i];
-        int fidoffset = this->feat2workindex_[fid];
+        //lazy init
+        if (sol.size() == 0){
+            // reset
+            sol.resize(qexpand_.size());
+            std::fill(sol.begin(), sol.end(), SplitEntry());
+            left_sum.resize(qexpand_.size());
+            std::fill(left_sum.begin(), left_sum.end(), TStats());
+        }
 
-        CHECK_GE(fidoffset, 0);
-        EnumerateSplit(this->wspace_.hset.GetHistUnitByFid(fidoffset, mid),
+ 
+        for (bst_omp_uint wid = 0; wid < nexpand; ++wid) {
+            int nid = qexpand_[wid];
+            SplitEntry &best = sol[wid];
+            //adjust the physical location of this plain
+            int mid = node2workindex_[nid];
+
+            #ifdef USE_VECTOR4MODEL
+            TStats &node_sum = wspace_.hset.GetHistUnitByFid(num_feature, mid).data[0];
+            #else
+            TStats &node_sum = wspace_.hset.GetNodeSum(mid);
+            #endif
+
+            int fidoffset = this->feat2workindex_[fid];
+
+            CHECK_GE(fidoffset, 0);
+            EnumerateSplit(this->wspace_.hset.GetHistUnitByFid(fidoffset, mid),
                        node_sum, fid, &best, &left_sum[wid]);
 
 
-        printSplit(best, fid, nid);
+            //printSplit(best, fid, nid);
       }
+      //printSplit(best, -1, nid);
     }
+
+    // reduce from thread_local
+    std::vector<SplitEntry> sol(qexpand_.size());
+    std::vector<TStats> left_sum(qexpand_.size());
+    for (int i = 0; i < thread_splitinfo_.size(); ++i) {
+        //skip empty thread info
+        if (thread_splitinfo_[i].sol.size() == 0) continue;
+        for (bst_omp_uint wid = 0; wid < nexpand; ++wid) {
+            if (sol[wid].Update(thread_splitinfo_[i].sol[wid])){
+                left_sum[wid] = thread_splitinfo_[i].left_sum[wid];
+            }
+        }
+    }
+
+    this->tminfo.aux_time[5] += dmlc::GetTime() - _tstartFindSplit;
+
     // get the best result, we can synchronize the solution
     for (bst_omp_uint wid = 0; wid < nexpand; ++wid) {
       const int nid = qexpand_[wid];
@@ -825,11 +763,6 @@ class HistMakerBlockDense: public BaseMaker {
         //binary tree
         //they are not fresh leaf, set parent = -1 to indicate in the prune process
         p_tree->AddDummyChilds(nid);
-        //p_tree->AddChilds(nid);
-        //(*p_tree)[(*p_tree)[nid].LeftChild()].SetLeaf(0.0f);
-        //(*p_tree)[(*p_tree)[nid].RightChild()].SetLeaf(0.0f);
-        //(*p_tree)[(*p_tree)[nid].LeftChild()].SetParent(-1);
-        //(*p_tree)[(*p_tree)[nid].RightChild()].SetParent(-1);
         #endif
         //bugfix: setleaf should be after addchilds
         (*p_tree)[nid].SetLeaf(p_tree->Stat(nid).base_weight * param_.learning_rate);
@@ -838,7 +771,109 @@ class HistMakerBlockDense: public BaseMaker {
     }
     
     //end findSplit
-    this->tminfo.aux_time[3] += dmlc::GetTime() - _tstartFindSplit;
+    //this->tminfo.aux_time[8] += dmlc::GetTime() - _tstartFindSplit;
+
+  }
+
+  //
+  // using node parallelism
+  //
+  void FindSplit(int depth,
+                 const std::vector<GradientPair> &gpair,
+                 RegTree *p_tree) {
+
+    double _tstartFindSplit = dmlc::GetTime();
+
+    //always work on work_set_ instead of fwork_set_
+    const std::vector <bst_uint> &fset = work_set_;
+
+    const size_t num_feature = fset.size();
+    //printInt("FindSplit::num_feature = ", num_feature);
+    //printVec("FindSplit::fset=", fset);
+    // get the best split condition for each node
+    std::vector<SplitEntry> sol(qexpand_.size());
+    std::vector<TStats> left_sum(qexpand_.size());
+    auto nexpand = static_cast<bst_omp_uint>(qexpand_.size());
+    #pragma omp parallel for schedule(dynamic, 1)
+    for (bst_omp_uint wid = 0; wid < nexpand; ++wid) {
+      int nid = qexpand_[wid];
+      SplitEntry &best = sol[wid];
+
+      //adjust the physical location of this plain
+      int mid = node2workindex_[nid];
+
+#ifdef USE_VECTOR4MODEL
+      TStats &node_sum = wspace_.hset.GetHistUnitByFid(num_feature, mid).data[0];
+#else
+      TStats &node_sum = wspace_.hset.GetNodeSum(mid);
+#endif
+
+      for (size_t i = 0; i < fset.size(); ++i) {
+        int fid = fset[i];
+        int fidoffset = this->feat2workindex_[fid];
+
+        CHECK_GE(fidoffset, 0);
+        EnumerateSplit(this->wspace_.hset.GetHistUnitByFid(fidoffset, mid),
+                       node_sum, fid, &best, &left_sum[wid]);
+
+
+        printSplit(best, fid, nid);
+      }
+      //printSplit(best, -1, nid);
+    }
+
+    this->tminfo.aux_time[5] += dmlc::GetTime() - _tstartFindSplit;
+
+    // get the best result, we can synchronize the solution
+    for (bst_omp_uint wid = 0; wid < nexpand; ++wid) {
+      const int nid = qexpand_[wid];
+
+      const SplitEntry &best = sol[wid];
+
+      //adjust the physical location of this plain
+      int mid = node2workindex_[nid];
+#ifdef USE_VECTOR4MODEL
+      const TStats &node_sum = wspace_.hset.GetHistUnitByFid(num_feature, mid).data[0];
+#else
+      const TStats &node_sum = wspace_.hset.GetNodeSum(mid);
+#endif
+
+      //
+      //raw nid to access the tree
+      //
+      this->SetStats(p_tree, nid, node_sum);
+      // set up the values
+      p_tree->Stat(nid).loss_chg = best.loss_chg;
+      // now we know the solution in snode[nid], set split
+      if (best.loss_chg > kRtEps) {
+
+        p_tree->AddChilds(nid);
+
+        (*p_tree)[nid].SetSplit(best.SplitIndex(),
+                                 best.split_value, best.DefaultLeft());
+        // mark right child as 0, to indicate fresh leaf
+        (*p_tree)[(*p_tree)[nid].LeftChild()].SetLeaf(0.0f, 0);
+        (*p_tree)[(*p_tree)[nid].RightChild()].SetLeaf(0.0f, 0);
+        // right side sum
+        TStats right_sum;
+        right_sum.SetSubstract(node_sum, left_sum[wid]);
+        this->SetStats(p_tree, (*p_tree)[nid].LeftChild(), left_sum[wid]);
+        this->SetStats(p_tree, (*p_tree)[nid].RightChild(), right_sum);
+      } else {
+        #ifdef USE_HALFTRICK
+        //add empty childs anyway to keep the node id as the same as the full
+        //binary tree
+        //they are not fresh leaf, set parent = -1 to indicate in the prune process
+        p_tree->AddDummyChilds(nid);
+        #endif
+        //bugfix: setleaf should be after addchilds
+        (*p_tree)[nid].SetLeaf(p_tree->Stat(nid).base_weight * param_.learning_rate);
+ 
+      }
+    }
+    
+    //end findSplit
+    this->tminfo.aux_time[8] += dmlc::GetTime() - _tstartFindSplit;
 
   }
 
@@ -1026,6 +1061,8 @@ class HistMakerBlockDense: public BaseMaker {
 #else
         this->blkInfo_.init(_info.num_row_, _info.num_col_, param_.max_bin);
 #endif
+        
+        LOG(CONSOLE) << "Init Param: node_block_size=" << param_.node_block_size;
 
 #ifdef ALLOCATE_ALLNODES
         this->wspace_.Init(this->param_, std::pow(2,this->param_.max_depth+1), this->blkInfo_);
@@ -1033,13 +1070,18 @@ class HistMakerBlockDense: public BaseMaker {
         this->wspace_.Init(this->param_, std::pow(2,this->param_.max_depth), this->blkInfo_);
 #endif
 
+        // init the posset after blkInfo_ updated
+        posset_.Init(_info.num_row_, omp_get_max_threads(), blkInfo_.GetRowBlkSize());
         this->SetDefaultPostion(p_fmat, tree);
 
         unsigned int nthread = omp_get_max_threads();
         this->thread_hist_.resize(omp_get_max_threads());
+        this->thread_histcompact_.resize(omp_get_max_threads());
+        this->thread_splitinfo_.resize(omp_get_max_threads());
         for (unsigned int i=0; i< nthread; i++){
           //make memory access separate
           thread_hist_[i].resize(64);
+          thread_histcompact_[i].resize(64);
         }
 
         this->InitHistIndex(p_fmat, fset, tree);
@@ -1064,6 +1106,7 @@ class HistMakerBlockDense: public BaseMaker {
         p_blkmat->Init(*p_fmat->GetRowBatches().begin(), p_fmat->Info(), param_.max_bin, blkInfo_);
         p_hmat->Init(*p_fmat->GetSortedColumnBatches().begin(), p_fmat->Info());
 
+
         #ifdef USE_DEBUG
         printdmat(*p_hmat);
         printdmat(*p_blkmat);
@@ -1086,7 +1129,6 @@ class HistMakerBlockDense: public BaseMaker {
         #endif
 
         // the map used by scheduler
-        //this->bwork_base_blknum_ = this->blkInfo_.GetBaseBlkNum(_info.num_col_+1, param_.max_bin);
         this->bwork_base_blknum_ = p_blkmat->GetBaseBlockNum();
         bwork_lock_ = new spin_mutex[bwork_base_blknum_];
         //for(int i=0; i < p_blkmat->GetBaseBlockNum(); i++){
@@ -1104,27 +1146,12 @@ class HistMakerBlockDense: public BaseMaker {
             ":" << bwork_set_.size();
         printVec("bwork_set_:", bwork_set_);
 
-        #ifndef USE_OMP_BUILDHIST
-        ////init the task graph
-        ////tbb::task_scheduler_init init;
-        //tg_root = TreeMaker::create(*p_hmat, blockSize_ );
-
-        //std::cout << "TaskTree Depth:" << TreeNode::getTreeDepth(tg_root) << ", blockSize:" << blockSize_ << ", param.block_size:" 
-        //    << param_.block_size << "\n";
-        //#ifdef USE_DEBUG
-        //TreeNode::printTree(tg_root, 0);
-        //#endif
-
-        ////tbb::task_scheduler_init init(omp_get_max_threads());
-        #endif
-        
         //re-init the model memory space, first touch
 #ifdef ALLOCATE_ALLNODES
         this->wspace_.Init(this->param_, std::pow(2,this->param_.max_depth+1), this->blkInfo_);
 #else
         this->wspace_.Init(this->param_, std::pow(2,this->param_.max_depth), this->blkInfo_);
 #endif
-
 
         this->tminfo.aux_time[0] += dmlc::GetTime() - _tstartInit;
         /*
@@ -1144,9 +1171,11 @@ class HistMakerBlockDense: public BaseMaker {
         //init for each tree
         unsigned int nthread = omp_get_max_threads();
         this->thread_hist_.resize(omp_get_max_threads());
+        this->thread_histcompact_.resize(omp_get_max_threads());
         for (unsigned int i=0; i< nthread; i++){
           //make memory access separate
           thread_hist_[i].resize(64);
+          thread_histcompact_[i].resize(64);
         }
 
         auto _info = p_fmat->Info();
@@ -1158,7 +1187,7 @@ class HistMakerBlockDense: public BaseMaker {
         //this->wspace_.Init(this->param_, 1, std::pow(2,this->param_.max_depth+1) /*256*/, blkInfo_);
         //this->wspace_.ClearData();
 
-        this->tminfo.aux_time[8] += dmlc::GetTime() - _tstartInit;
+        //this->tminfo.aux_time[8] += dmlc::GetTime() - _tstartInit;
     }
   }
 
@@ -1178,20 +1207,19 @@ class HistMakerBlockDense: public BaseMaker {
     //LOG(CONSOLE) << "InitHistCol: num_nodes=" << tree.param.num_nodes <<
     //        ", qexpand.size=" << this->qexpand_.size() ;
 
-    //for (size_t i = 0; i < this->qexpand_.size(); ++i) {
-      //const unsigned nid = this->qexpand_[i];
-      const unsigned nid = 0;
-      hbuilder[nid].hist = this->wspace_.hset.InitGetHistUnitByFid(fid_offset,nid);
-    //}
+    // only for initialization
+    // nid should be 0
+    const unsigned nid = 0;
+    hbuilder[nid].hist = this->wspace_.hset.InitGetHistUnitByFid(fid_offset,nid);
     for (auto& c : col) {
       const bst_uint ridx = c.index;
-      const int nid = this->position_[ridx];
-      if (nid >= 0) {
-          CHECK_EQ(nid, 0);
+      //const int nid = this->position_[ridx];
+      //if (nid >= 0) {
+      //    CHECK_EQ(nid, 0);
           // update binid in pmat
           unsigned binid = hbuilder[nid].GetBinId(c.fvalue);
           c.addBinid(binid);
-      }
+      //}
     }
   } 
 
@@ -1255,13 +1283,6 @@ class HistMakerBlockDense: public BaseMaker {
   void InitHistIndexByRow( DMatrix *p_fmat,
                      const RegTree &tree){
 
-      //unsigned int nthread = omp_get_max_threads();
-      //thread_hist_.resize(omp_get_max_threads());
-      //for (unsigned int i=0; i< nthread; i++){
-      //    //make memory access separate
-      //    thread_hist_[i].resize(64);
-      //}
-
       // start accumulating statistics
       unsigned long total=0;
       for (const auto &batch : p_fmat->GetRowBatches()) {
@@ -1309,31 +1330,6 @@ class HistMakerBlockDense: public BaseMaker {
     }
 
 
-    if(0){
-        /*
-         * this code depend on the full entries in 
-         * qexpand, which fails when there are deleted 
-         * nodes in deep tree
-         */
-        //get the right node
-        const unsigned nid_start = this->qexpand_[0];
-
-        CHECK_NE(nid_start % 2, 0);
-        unsigned nid_parent = (nid_start+1)/2-1;
-        for (size_t i = 0; i < this->qexpand_.size(); i+=2) {
-          const unsigned nid = this->qexpand_[i];
-          auto parent_hist = this->wspace_.hset.GetHistUnitByBlkid(blkid_offset, nid_parent + i/2);
-          #pragma ivdep
-          #pragma omp simd
-          for(int j=0; j < hbuilder[nid].hist.size; j++){
-            hbuilder[nid].hist.Get(j).SetSubstract(
-                    parent_hist.Get(j),
-                    hbuilder[nid+1].hist.Get(j));
-          }
-
-        }
-    }
-
     /*
      * more general version
      *
@@ -1350,16 +1346,6 @@ class HistMakerBlockDense: public BaseMaker {
 
          //left child not calculated yet
          auto parent_hist = this->wspace_.hset.GetHistUnitByBlkid(blkid_offset, nid/2);
-         #ifdef NOUSE_DIRECTPTR
-         #pragma ivdep
-         #pragma omp simd
-         for(int j=0; j < hbuilder[nid].hist.size; j++){
-             hbuilder[nid].hist.Get(j).SetSubstract(
-                   parent_hist.Get(j),
-                   hbuilder[nid+1].hist.Get(j));
-         }
-
-         #else
          /*
           * two plain substraction
           * start : hist.data
@@ -1374,8 +1360,6 @@ class HistMakerBlockDense: public BaseMaker {
               p_left[j] = p_parent[j] - p_right[j];
           }
 
-          #endif
-
         }
     }
     //end 
@@ -1385,9 +1369,6 @@ class HistMakerBlockDense: public BaseMaker {
                        const RegTree &tree,
                        std::vector<HistEntry> *p_temp) {
 
-    // initialize sbuilder for use
-    std::vector<HistEntry> &hbuilder = *p_temp;
-    hbuilder.resize(tree.param.num_nodes);
     for (size_t i = 0; i < this->qexpand_.size(); i++) {
       const unsigned nid = this->qexpand_[i];
       
@@ -1407,15 +1388,21 @@ class HistMakerBlockDense: public BaseMaker {
         CHECK_NE(mid_parent, -1);
         CHECK_NE(mid_right, -1);
 
+        //double* p_left = reinterpret_cast<double*>(
+        //        this->wspace_.hset.GetHistUnitByBlkid(blkid_offset, mid_parent).data);
+
+        //double* p_right = reinterpret_cast<double*>(
+        //        this->wspace_.hset.GetHistUnitByBlkid(blkid_offset, mid_right).data);
         double* p_left = reinterpret_cast<double*>(
-                this->wspace_.hset.GetHistUnitByBlkid(blkid_offset, mid_parent).data);
+                this->wspace_.hset.GetHistUnitByBlkidCompact(blkid_offset, mid_parent).data);
 
         double* p_right = reinterpret_cast<double*>(
-                this->wspace_.hset.GetHistUnitByBlkid(blkid_offset, mid_right).data);
-
-        #pragma ivdep
-        #pragma omp simd
-        for(int j=0; j < 2 * hbuilder[nid].hist.size; j++){
+                this->wspace_.hset.GetHistUnitByBlkidCompact(blkid_offset, mid_right).data);
+        int plainSize = this->wspace_.hset.GetHistUnitByBlkidSize();
+ 
+        //#pragma omp simd
+        #pragma GCC ivdep
+        for(int j=0; j < 2 * plainSize; j++){
             //halftrick will have a full binary tree
             //reuse the parent storage for left nodes
             p_left[j] -= p_right[j];
@@ -1423,7 +1410,10 @@ class HistMakerBlockDense: public BaseMaker {
 
         // update index for left node
         // reuse the pranet mid
-        node2workindex_[nid] = mid_parent;
+        if (blkid_offset == 0){
+            //only the first fid update the global index
+            node2workindex_[nid] = mid_parent;
+        }
       }
 
     }
@@ -1439,8 +1429,9 @@ class HistMakerBlockDense: public BaseMaker {
                        const MetaInfo &info,
                        const RegTree &tree,
                        bst_uint blkid_offset,
-                       int zblkid,
-                       std::vector<HistEntry> *p_temp) {
+                       unsigned int zblkid,
+                       unsigned int nblkid,
+                       std::vector<HistEntryCompact> *p_temp) {
     //check size
     if (block.size() == 0) return;
 
@@ -1451,23 +1442,32 @@ class HistMakerBlockDense: public BaseMaker {
     //    << "\n";
     #endif
 
-    //get lock
-    bwork_lock_[blkid_offset].lock();
-
-//#ifndef ALLOCATE_ALLNODES
-//    //get first nid of this level
-//    int firstnid = std::pow(2, depth) -1;
-//#else 
-//    int firstnid = 0;
-//#endif
-
     // initialize sbuilder for use
-    std::vector<HistEntry> &hbuilder = *p_temp;
+    std::vector<HistEntryCompact> &hbuilder = *p_temp;
     hbuilder.resize(tree.param.num_nodes);
-    for (size_t i = 0; i < this->qexpand_.size(); ++i) {
-      unsigned nid = this->qexpand_[i];
-      //const unsigned wid = this->node2workindex_[nid];
+    //
+    // POSSet should be sync with qexpand_
+    // init the nblk
+    //
 
+#ifdef USE_SCHEDULE_NODEBLK
+#ifdef USE_ONENODEEACHGROUP
+    int endgid = std::min(posset_.getGroupCnt(), int(param_.node_block_size *(nblkid+1)));
+    int startgid = param_.node_block_size * nblkid; 
+
+    for (int gid = startgid; gid < endgid; ++gid) {
+
+      //empty group
+      if (posset_[gid].size() == 0) continue;
+
+      //unsigned nid = posset_[gid].getEncodePosition(0);
+      int  nid = posset_[gid].getNodeId(0);
+      // no need to check delete node, they can not go into the posset_
+      CHECK_GE(nid, 0);
+      //if (posset_[nblkid].isDelete(0)) return ;
+
+      // simple test here
+      //int nid = posset_[nblkid].getEncodePosition(0);
       //adjust the physical location of this plain
       int mid = node2workindex_[nid];
 
@@ -1481,83 +1481,193 @@ class HistMakerBlockDense: public BaseMaker {
         }
       }
     }
+#else
+    int startgid = nblkid;
+    int endgid = nblkid + 1;
 
-    //int blockNum = zcol.GetBlockNum();
-    //for(int blkid = 0; blkid < blockNum; blkid++){
-    //    const auto block = zcol.GetBlock(blkid);
-    {
-        //one block
-        #ifdef USE_UNROLL
-        if (TStats::kSimpleStats != 0 && this->param_.cache_opt != 0) {
-        #else
-        if (0){
-        #endif
+    //lazy init
+    for (int i = 0; i < tree.param.num_nodes; i++){
+        hbuilder[i].hist.setNull();
+    }
+#endif
+ 
+#else
+    #ifdef NOUSE_BLOCK_POSSET
+    // one thread go through all nodeblks
+    int startgid = 0;
+    int endgid = posset_.getGroupCnt();
+    #else
+    // one thread go through all groups in its block
+    int startgid = posset_.getBlockStartGId(zblkid);
+    int endgid = posset_.getBlockEndGId(zblkid);
 
-          constexpr bst_uint kBuffer = 32;
-          bst_uint align_length = block.size() / kBuffer * kBuffer;
-          int buf_position[kBuffer];
-          GradientPair buf_gpair[kBuffer];
+    // select the nblkid section
+    //const int group_parallel_cnt = 2;
+    int total = endgid - startgid;
+    int sectionSize = (total + param_.group_parallel_cnt -1)/ param_.group_parallel_cnt;
+    if (sectionSize > 0){
+        if (nblkid * sectionSize >= total) return;
 
-          for (bst_uint j = 0; j < align_length; j += kBuffer) {
-            
-            #pragma ivdep
-            for (bst_uint i = 0; i < kBuffer; ++i) {
-              bst_uint ridx = block._index(j+i);
-              buf_position[i]= this->DecodePosition(ridx);
-              //const int nid = buf_position[i];
-              //if (CHECKHALFCOND) {
-                  buf_gpair[i] = gpair[ridx];
-              //}
-            }
-            for (bst_uint i = 0; i < kBuffer; ++i) {
-              const int nid = buf_position[i];
-                if (CHECKHALFCOND) {
-                  for (int k = 0; k < block.rowsize(j+i); k++){
-                    hbuilder[nid].AddWithIndex(block._blkaddr(j+i, k), buf_gpair[i]);
-                  }
+        // do the sub section with the nblkid
+        startgid += nblkid * sectionSize;
+        
+        if (endgid > startgid + sectionSize){
+            endgid = startgid + sectionSize;
+        }
+    }
+    else{
+        // nblkid == 0 pass only
+        if (nblkid > 0) return;
+    }
 
-                }
-            }
-          }
-          for (bst_uint j = align_length; j < block.size(); ++j) {
-            const bst_uint ridx = block._index(j);
-            //const int nid = this->DecodePosition(ridx);
-            const int nid = this->position_[ridx];
+    #endif
 
-            if (CHECKHALFCOND) {
-                  for (int k = 0; k < block.rowsize(j); k++){
-                      hbuilder[nid].AddWithIndex(block._blkaddr(j, k), gpair[ridx]);
-                  }
-            }
-          }
-        } else {
-          //#pragma ivdep
-          //#pragma omp simd
-          for (bst_uint j = 0; j < block.size(); ++j) {
-            const bst_uint ridx = block._index(j);
-            //const int nid = this->DecodePosition(ridx);
-            int nid = this->position_[ridx];
-            if (CHECKHALFCOND) {
-
-              for (int k = 0; k < block.rowsize(j); k++){
-
-                hbuilder[nid].AddWithIndex(block._blkaddr(j, k), gpair[ridx]);
-
-                /*
-                 * not much benefits from short->byte
-                 */
-                //unsigned short blkaddr = this->blkInfo_.GetBlkAddr(block._blkaddr(j, k), k);
-                //unsigned short blkaddr = block._blkaddr(j, k)*2 + k;
-                //hbuilder[nid].AddWithIndex(blkaddr, gpair[ridx]);
-
-                //debug only
-                #ifdef DEBUG
-                this->datasum_ += block._blkaddr(j,k);
-                #endif
-              }
-            }
+    //lazy init
+    #define LAZY_INIT
+    #ifdef LAZY_INIT
+    for (int i = 0; i < tree.param.num_nodes; i++){
+    //for (int i = 0; i < this->qexpand_.size(); ++i) {
+        //hbuilder[i].hist.setNull();
+        hbuilder[i].setNull();
+    }
+    #else
+    for (int i = 0; i < this->qexpand_.size(); ++i) {
+        int nid = this->qexpand_[i];
+        //lazy initialize
+        int mid = node2workindex_[nid];
+        //hbuilder[nid].hist = this->wspace_.hset.GetHistUnitByBlkid(blkid_offset, mid);
+        hbuilder[nid] = this->wspace_.hset.GetHistUnitByBlkidCompact(blkid_offset, mid);
+        //init data for the first zblks
+        if (zblkid == 0){
+          if (CHECKHALFCOND) {
+              //only clear the data for 'right' nodes in USE_HALFTRICK mode
+              //hbuilder[nid].hist.ClearData();
+              hbuilder[nid].ClearData(this->wspace_.hset.GetHistUnitByBlkidSize());
           }
         }
+    }
+    #endif  /* LAZY_INIT */
+
+#endif
+
+    //get lock
+    bwork_lock_[blkid_offset].lock();
+
+    {
+        // go throught this node group nblkid
+        
+        // before split
+        if (posset_.getGroupCnt() == posset_.getBlockCnt()){
+            for (int gid = startgid; gid < endgid; ++gid) {
+              for (int j = 0; j < posset_[gid].size(); ++j) {
+                //const int ridx = posset_[gid].getRowId(j)- posset_.getBlockBaseRowId(zblkid);
+                const int ridx = posset_[gid].getRowId(j);
+                const int nid = posset_[gid].getNodeId(j);
+                //
+                // check delete rows before split happens
+                //
+                if (CHECKHALFCOND) {
+
+                  // todo, remove init outside loop
+                  #ifdef LAZY_INIT
+                  //if (hbuilder[nid].hist.isNull())
+                  if (hbuilder[nid].isNull()){
+                      //lazy initialize
+                      int mid = node2workindex_[nid];
+                      //hbuilder[nid].hist = this->wspace_.hset.GetHistUnitByBlkid(blkid_offset, mid);
+                      hbuilder[nid] = this->wspace_.hset.GetHistUnitByBlkidCompact(blkid_offset, mid);
+                      //init data for the first zblks
+                      if (zblkid == 0){
+                        if (CHECKHALFCOND) {
+                            //only clear the data for 'right' nodes in USE_HALFTRICK mode
+                            //hbuilder[nid].hist.ClearData();
+                            hbuilder[nid].ClearData(this->wspace_.hset.GetHistUnitByBlkidSize());
+                        }
+                      }
+                  }
+                  #endif
+
+                  for (int k = 0; k < block.rowsize(ridx); k++){
+                    //hbuilder[nid].AddWithIndex(block._blkaddr(ridx, k), gpair[ridx]);
+                    hbuilder[nid].AddWithIndex(block._blkaddrByRowId(ridx, k), gpair[ridx]);
+
+                    /*
+                     * not much benefits from short->byte
+                     */
+                    //unsigned short blkaddr = this->blkInfo_.GetBlkAddr(block._blkaddr(j, k), k);
+                    //unsigned short blkaddr = block._blkaddr(j, k)*2 + k;
+                    //hbuilder[nid].AddWithIndex(blkaddr, gpair[ridx]);
+
+                    //debug only
+                    #ifdef DEBUG
+                    //this->datasum_ += block._blkaddr(ridx,k);
+                    this->datasum_ += block._blkaddrByRowId(ridx,k);
+                    #endif
+                  }
+                }
+              }
+            }
+        }
+        else{
+            //after split, no delete rows in grp
+            for (int gid = startgid; gid < endgid; ++gid) {
+              // skip dummys
+              if (posset_[gid].isDummy()) continue;
+              #ifdef USE_HALFTRICK
+              if (posset_[gid].isLeft()) continue;
+              #endif    
+
+              for (int j = 0; j < posset_[gid].size(); ++j) {
+                //const int ridx = posset_[gid].getRowId(j)- posset_.getBlockBaseRowId(zblkid);
+                const int ridx = posset_[gid].getRowId(j);
+                const int nid = posset_[gid].getNodeId(j);
+                //
+                // check delete rows before split happens
+                //
+                if (1) {
+
+                  // todo, remove init outside loop
+                  #ifdef LAZY_INIT
+                  //if (hbuilder[nid].hist.isNull())
+                  if (hbuilder[nid].isNull()){
+                      //lazy initialize
+                      int mid = node2workindex_[nid];
+                      //hbuilder[nid].hist = this->wspace_.hset.GetHistUnitByBlkid(blkid_offset, mid);
+                      hbuilder[nid] = this->wspace_.hset.GetHistUnitByBlkidCompact(blkid_offset, mid);
+                      //init data for the first zblks
+                      if (zblkid == 0){
+                        if (CHECKHALFCOND) {
+                            //only clear the data for 'right' nodes in USE_HALFTRICK mode
+                            //hbuilder[nid].hist.ClearData();
+                            hbuilder[nid].ClearData(this->wspace_.hset.GetHistUnitByBlkidSize());
+                        }
+                      }
+                  }
+                  #endif
+
+                  for (int k = 0; k < block.rowsize(ridx); k++){
+                    //hbuilder[nid].AddWithIndex(block._blkaddr(ridx, k), gpair[ridx]);
+                    hbuilder[nid].AddWithIndex(block._blkaddrByRowId(ridx, k), gpair[ridx]);
+
+                    /*
+                     * not much benefits from short->byte
+                     */
+                    //unsigned short blkaddr = this->blkInfo_.GetBlkAddr(block._blkaddr(j, k), k);
+                    //unsigned short blkaddr = block._blkaddr(j, k)*2 + k;
+                    //hbuilder[nid].AddWithIndex(blkaddr, gpair[ridx]);
+
+                    //debug only
+                    #ifdef DEBUG
+                    //this->datasum_ += block._blkaddr(ridx,k);
+                    this->datasum_ += block._blkaddrByRowId(ridx,k);
+                    #endif
+                  }
+                }
+              }
+            }
+ 
+        }
+
     } /*blk*/
 
     //quit
@@ -1565,51 +1675,48 @@ class HistMakerBlockDense: public BaseMaker {
 
   }
 
-
-  //dup func
-  void CorrectNonDefaultPositionByBatch2(
+  /*!
+   * \brief this is helper function uses column based data structure,
+   *  to CORRECT the positions of non-default directions that WAS set to default
+   *  before calling this function.
+   * \param batch The column batch
+   * \param sorted_split_set The set of index that contains split solutions.
+   * \param tree the regression tree structure
+   */
+  void CorrectNonDefaultPositionByBatch(
       DMatrixCompactBlockDense &batch, const std::vector<bst_uint> &sorted_split_set,
       const RegTree &tree) {
     for (size_t fid = 0; fid < batch.Size(); ++fid) {
-      auto col = batch[fid];
       auto it = std::lower_bound(sorted_split_set.begin(), sorted_split_set.end(), fid);
 
       if (it != sorted_split_set.end() && *it == fid) {
-        const auto ndata = static_cast<bst_omp_uint>(col.size());
+        auto col = batch[fid];
         #pragma omp parallel for schedule(static)
-        for (bst_omp_uint j = 0; j < ndata; ++j) {
+        for (size_t i = 0; i < posset_.getEntrySize(); ++i) {
+            auto &entry = posset_.getEntry(i);
 
-          const bst_uint ridx = col._index(j);
-          const bst_uint binid = col._binid(j);
+            if(entry.isDelete()) continue;
+            const int nid = entry.getEncodePosition();
 
-          //const int nid = this->DecodePosition(ridx);
-          
-          //check if it's a non-fresh leaf node
-          const int nid = position_[ridx];
-          if (nid < 0){
-              continue;
-          }
+            //CHECK(tree[nid].IsLeaf());
+            int pid = tree[nid].Parent();
 
-          CHECK(tree[nid].IsLeaf());
+            // go back to parent, correct those who are not default
+            if (!tree[nid].IsRoot() && tree[pid].SplitIndex() == fid) {
+              const int ridx = entry.getRowId();
+              //access the data by ridx
+              //const bst_float fvalue = col[ridx].fvalue;
+              const bst_uint binid = col._binidByRowId(ridx);
 
-          //#ifdef USE_HALFTRICK
-          ////// if parent is leaf and not fresh, then this node is a dummy node, skip it
-          //if (tree[nid].IsDummy()){
-          //  continue;
-          //}
-          //#endif
-
-          int pid = tree[nid].Parent();
-
-          // go back to parent, correct those who are not default
-          if (!tree[nid].IsRoot() && tree[pid].SplitIndex() == fid) {
-            if (binid <= tree[pid].SplitCond()) {
-              this->SetEncodePosition(ridx, tree[pid].LeftChild());
-            } else {
-              this->SetEncodePosition(ridx, tree[pid].RightChild());
+              if (binid <= tree[pid].SplitCond()) {
+                //this->SetEncodePosition(ridx, tree[pid].LeftChild());
+                entry.setEncodePosition(tree[pid].LeftChild(), true);
+              } else {
+                //this->SetEncodePosition(ridx, tree[pid].RightChild());
+                entry.setEncodePosition(tree[pid].RightChild(), false);
+              }
             }
-          }
-        }
+        } /* end of group */
       }
     }
   }
@@ -1618,9 +1725,16 @@ class HistMakerBlockDense: public BaseMaker {
                              HostDeviceVector<bst_float>* p_out_preds) override {
     if ( this->param_.subsample < 1.0f) {
       return false;
-    } else {
-      std::vector<bst_float>& out_preds = p_out_preds->HostVector();
-
+    } 
+    
+    // check if it's validation
+    //const auto nrows = static_cast<bst_omp_uint>(p_fmat->Info().num_row_);
+    std::vector<bst_float>& out_preds = p_out_preds->HostVector();
+    if(out_preds.size() != posset_.getEntrySize()){
+        return false;
+    }
+    
+    {
       // p_last_fmat_ is a valid pointer as long as UpdatePredictionCache() is called in
       // conjunction with Update().
       if (!p_last_tree_) {
@@ -1643,6 +1757,9 @@ class HistMakerBlockDense: public BaseMaker {
           if ((*p_last_tree_)[tnid].IsDummy()) {
               continue;
           }
+          if (!(*p_last_tree_)[tnid].IsLeaf()) {
+              continue;
+          }
 
           // if a node is marked as deleted by the pruner, traverse upward to locate
           // a non-deleted leaf.
@@ -1656,27 +1773,93 @@ class HistMakerBlockDense: public BaseMaker {
           leaf_values[nid] = (*p_last_tree_)[tnid].LeafValue();
       }
 
-      const auto nrows = static_cast<bst_omp_uint>(p_fmat->Info().num_row_);
-      for(int ridx=0; ridx < nrows; ridx++){
-        const int nid = this->DecodePosition(ridx);
-        //const int nid = this->position_[ridx];
-        //if (nid>=0){
-            //update   
-            out_preds[ridx] += leaf_values[nid];
-        //}
+      //
+      // because there are deleted nodes
+      // todo, not a good idea to access internal entry directly
+      //
+      #ifdef USE_DEBUG
+      double leaf_val_sum = 0.;
+      long nid_sum = 0L;
+      #endif
+
+      //#pragma omp parallel for schedule(static)
+      for (size_t i = 0; i < posset_.getEntrySize(); ++i) {
+        const int ridx = posset_.getEntry(i).getRowId();
+        const int nid = posset_.getEntry(i).getEncodePosition();
+        out_preds[ridx] += leaf_values[nid];
+
+        #ifdef USE_DEBUG
+        CHECK((*p_last_tree_)[nid].IsLeaf()||(*p_last_tree_)[nid].IsDeleted());
+        //std::cout << nid << ":" << ridx << " ";
+        leaf_val_sum += leaf_values[nid];
+        nid_sum += nid;
+        #endif
+
       }
+      #ifdef USE_DEBUG
+      LOG(CONSOLE) << "updatech leaf_sum=" << leaf_val_sum << 
+                ",rowcnt=" << posset_.getEntrySize() <<
+                ",nid_sum=" << nid_sum;
+      #endif
+
 
       //LOG(CONSOLE) << "UpdatePredictionCache: nodes size=" << 
       //    nodes.size() << ",rowscnt=" << nrows;
 
-      this->tminfo.aux_time[2] += dmlc::GetTime() - _tstart;
-      printVec("updatech pos:", this->position_);
+      //this->tminfo.aux_time[5] += dmlc::GetTime() - _tstart;
+      //printVec("updatech pos:", this->position_);
       printVec("updatech leaf:", leaf_values);
       printVec("updatech pred:", out_preds);
       return true;
     }
   }
 
+  /*
+   * Update the POSSet, posistion for each row
+   */
+  void UpdatePosition(const int depth, const RegTree &tree){
+
+      double _tstart = dmlc::GetTime();
+      {
+        double _tstartInit = dmlc::GetTime();
+        //debug 
+        int gid = 0;
+        //printPOSSet(posset_, gid);
+        
+        //init the position_
+        #ifdef USE_ATMOIC_HAFLLEN
+        posset_.BeginUpdate(depth);
+        #endif
+
+        this->SetDefaultPostion(p_hmat, tree);
+        this->tminfo.aux_time[1] += dmlc::GetTime() - _tstartInit;
+
+        //printPOSSet(posset_, gid);
+
+        _tstartInit = dmlc::GetTime();
+        this->CorrectNonDefaultPositionByBatch(*p_hmat, this->fsplit_set_, tree);
+        this->tminfo.aux_time[2] += dmlc::GetTime() - _tstartInit;
+
+
+        _tstartInit = dmlc::GetTime();
+        #ifdef USE_ATMOIC_HAFLLEN
+        posset_.EndUpdate();
+        #endif
+        this->tminfo.aux_time[3] += dmlc::GetTime() - _tstartInit;
+
+        //printPOSSet(posset_, gid);
+
+        _tstartInit = dmlc::GetTime();
+        if (depth >= std::log2(param_.node_block_size)){
+            posset_.ApplySplit();
+        }
+        this->tminfo.aux_time[4] += dmlc::GetTime() - _tstartInit;
+
+        printPOSSet(posset_, gid);
+ 
+      }
+      this->tminfo.posset_time += dmlc::GetTime() - _tstart;
+  }
 
   void CreateHist(const int depth,
                   const std::vector<GradientPair> &gpair,
@@ -1684,56 +1867,105 @@ class HistMakerBlockDense: public BaseMaker {
                   const RegTree &tree) {
     const MetaInfo &info = p_hmat->Info();
 
-//#ifndef ALLOCATE_ALLNODES
-//    //get first nid of this level
-//    int firstnid = std::pow(2, depth) -1;
-//#else 
-//    int firstnid = 0;
-//#endif
-
-
-
-    // start to work
-    {
-      //this->thread_hist_.resize(omp_get_max_threads());
-
-      //init the position_
-      this->SetDefaultPostion(p_hmat, tree);
-      this->CorrectNonDefaultPositionByBatch2(*p_hmat, this->fsplit_set_, tree);
-
       if (this->qexpand_.size() == 0){
         //last step to update position 
         return;
       }
 
-
       {
         // start enumeration
         double _tstart = dmlc::GetTime();
+
         #ifdef USE_OMP_BUILDHIST
-        //const auto nsize = static_cast<bst_omp_uint>(blkset.size());
+        // block number on the base plain
         const auto nsize = p_blkmat->GetBaseBlockNum();
+        // block number in the row dimension
         const auto zsize = p_blkmat->GetBlockZCol(0).GetBlockNum();
 
+        // node dimension blocks
+       
+        #define USE_SCHEDULE_NODEBLK
+        #define USE_MULTINODEEACHGROUP
 
-        #ifdef USE_DEBUG
-        this->datasum_ = 0.;
+        #ifdef USE_SCHEDULE_NODEBLK
+        #ifdef USE_ONENODEEACHGROUP
+        // one node one group version
+        const int num_leaves = posset_.getGroupCnt();
+        const int dsize = (num_leaves + param_.node_block_size) -1)/ param_.node_block_size;
         #endif
 
+        #ifdef USE_MULTINODEEACHGROUP
+        // multiple nodes in one group version, 
+        //const int dsize = posset_.getGroupCnt();
+
+        //const int group_parallel_cnt = 2;
+        const int dsize = param_.group_parallel_cnt;
+
+        #endif
+
+        #else
+
+        // multiple nodes in one group, but schedule all groups to one task
+        const int dsize = 1;
+
+        #endif
+
+        //#ifdef USE_DEBUG
+        this->datasum_ = 0.;
+        //#endif
+
+        #ifdef USE_DYNAMIC_ROWBLOCK
         #pragma omp parallel for schedule(dynamic, 1)
-        for (bst_omp_uint i = 0; i < nsize * zsize; ++i) {
-          //int blkid = blkset[i];
-          //int offset = blkid;
-          int blkid = i;
+        for(bst_omp_uint i = 0; i < dsize * nsize * zsize; ++i){
+
+          // node block id
+          unsigned int nblkid = i / (nsize *zsize);
+          // absolute blk id
+          int blkid = i % (nsize * zsize);
+          // blk id on the base plain
           int offset = blkid % nsize;
-          int zblkid = i / nsize;
+          // blk id on the row dimension
+          unsigned int zblkid = blkid / nsize;
+
+
+          // get dataBlock
           auto block = p_blkmat->GetBlockZCol(offset).GetBlock(zblkid);
 
+          // update model by this dataBlock and node_blkid
           this->UpdateHistBlock(depth, gpair, block, info, tree,
-                offset, zblkid, 
-                &this->thread_hist_[omp_get_thread_num()]);
+                offset, zblkid, nblkid,
+                &this->thread_histcompact_[omp_get_thread_num()]);
                 //&this->thread_hist_[0]);
         }
+        #else
+        
+        for(int z = 0; z < zsize; z++){
+            #pragma omp parallel for schedule(dynamic, 1)
+            for(bst_omp_uint i = 0; i < dsize * nsize; ++i){
+
+              // node block id
+              unsigned int nblkid = i / (nsize);
+              // absolute blk id
+              int blkid = i % (nsize);
+              // blk id on the base plain
+              int offset = blkid % nsize;
+              // blk id on the row dimension
+              unsigned int zblkid = z;
+
+
+              // get dataBlock
+              auto block = p_blkmat->GetBlockZCol(offset).GetBlock(zblkid);
+
+              // update model by this dataBlock and node_blkid
+              this->UpdateHistBlock(depth, gpair, block, info, tree,
+                    offset, zblkid, nblkid,
+                    &this->thread_histcompact_[omp_get_thread_num()]);
+                    //&this->thread_hist_[0]);
+            }
+        }
+ 
+
+        #endif
 
         //build the other half
         #ifdef USE_HALFTRICK
@@ -1755,13 +1987,16 @@ class HistMakerBlockDense: public BaseMaker {
               #endif
  
             }
-            this->tminfo.aux_time[1] += dmlc::GetTime() - _tstart2;
+            this->tminfo.aux_time[6] += dmlc::GetTime() - _tstart2;
         }
         #endif
 
         #ifdef USE_DEBUG
-        std::cout << "BuildHist:: datasum_=" << this->datasum_;
+        LOG(CONSOLE) << "BuildHist:: datasum_=" << this->datasum_;
         #endif
+        LOG(CONSOLE) << "BuildHist:: dsize=" << dsize << 
+            ",nsize=" << nsize << ",zsize=" << zsize << 
+            ",gsize=" << posset_.getGroupCnt();
 
         #else
         /*
@@ -1779,24 +2014,22 @@ class HistMakerBlockDense: public BaseMaker {
         const int nid = this->qexpand_[i];
         //const int wid = this->node2workindex_[nid];
 
-      //adjust the physical location of this plain
-      int mid = node2workindex_[nid];
-#ifdef USE_VECTOR4MODEL
+        //adjust the physical location of this plain
+        int mid = node2workindex_[nid];
+        #ifdef USE_VECTOR4MODEL
         this->wspace_.hset.GetHistUnitByFid(work_set_.size(),mid)
             .data[0] = this->node_stats_[nid];
-#else
+        #else
         this->wspace_.hset.GetNodeSum(mid)
                      = this->node_stats_[nid];
-#endif
+        #endif
 
       }
-      this->tminfo.aux_time[6] += dmlc::GetTime() - _tstartSum;
-    }
+      //this->tminfo.aux_time[6] += dmlc::GetTime() - _tstartSum;
+      
     //this->histred_.Allreduce(dmlc::BeginPtr(this->wspace_.hset.data),
     //                        this->wspace_.hset.data.size());
 
-    //save the last tree point
-    //p_last_tree_ = &tree;
   }
 
   /*
@@ -1841,13 +2074,11 @@ class HistMakerBlockDense: public BaseMaker {
         tree[i].SetSplit(fid, fvalue, defaultLeft);
     }
 
-    //update the position for update cache
-    //this->CorrectNonDefaultPositionByBatch2(*p_hmat, this->fsplit_set_, tree);
 
     p_last_tree_ = &tree;
 
     //end ResetTree
-    this->tminfo.aux_time[4] += dmlc::GetTime() - _tstart;
+    //this->tminfo.aux_time[4] += dmlc::GetTime() - _tstart;
 
   }
 

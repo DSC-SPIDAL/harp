@@ -190,6 +190,13 @@ class DMatrixCompactColBlockDense {
     return len_;
   }
 
+
+  // random access interface
+  inline unsigned int _binidByRowId(int rowid) const {
+    return static_cast<unsigned int>(data_[rowid - base_rowid_]);
+  }
+ 
+
 };
 
 class DMatrixCompactBlockDense : public xgboost::data::SparsePageDMatrix {
@@ -329,9 +336,9 @@ class DMatrixCompactBlock : public xgboost::data::SparsePageDMatrix {
  */
 
 
-//typedef unsigned short BlkAddrType;
 typedef unsigned int PtrType;
-typedef unsigned char BlkAddrType;
+//typedef unsigned char BlkAddrType;
+typedef unsigned short BlkAddrType;
 
 struct BlockInfo{
     // 3-D cube <rowid, fid, binid>
@@ -421,6 +428,7 @@ class DMatrixDenseCubeBlock {
         return rowsize_;
     }
 
+    // sequential access by seq id
     inline BlkAddrType _blkaddr(int i, int j) const {
       //return static_cast<BlkAddrType>(data_[row_offset_[i] + j]);
       return static_cast<BlkAddrType>(data_[rowsize_*i + j]);
@@ -434,6 +442,11 @@ class DMatrixDenseCubeBlock {
       return len_;
     }
 
+    // random access interface
+    inline BlkAddrType _blkaddrByRowId(int ridx, int j) const {
+      //return static_cast<BlkAddrType>(data_[row_offset_[i] + j]);
+      return static_cast<BlkAddrType>(data_[rowsize_*(ridx - base_rowid_) + j]);
+    }
 };
 
 

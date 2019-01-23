@@ -69,6 +69,7 @@ endif
 
 export LDFLAGS= -pthread -lm $(ADD_LDFLAGS) $(DMLC_LDFLAGS) $(PLUGIN_LDFLAGS)
 export CFLAGS= -DDMLC_LOG_CUSTOMIZE=1 -std=c++11 -Wall -Wno-unknown-pragmas -Iinclude $(ADD_CFLAGS) $(PLUGIN_CFLAGS)
+#export CFLAGS= -DDMLC_LOG_CUSTOMIZE=1 -std=c++11 -Wno-unknown-pragmas -Iinclude $(ADD_CFLAGS) $(PLUGIN_CFLAGS)
 CFLAGS += -I$(DMLC_CORE)/include -I$(RABIT)/include -I$(GTEST_PATH)/include
 #java include path
 export JAVAINCFLAGS = -I${JAVA_HOME}/include -I./java
@@ -136,12 +137,23 @@ endif
 ifeq ($(USE_DEBUG_SAVE), 1)
 	CFLAGS += -DUSE_DEBUG_SAVE=1
 endif
+
 ifeq ($(USE_HALFTRICK), 1)
 	CFLAGS += -DUSE_HALFTRICK=1
 	export HALFTRICK=halftrick
 else
 	export HALFTRICK=nohalftrick
 endif
+ifeq ($(USE_SPLIT_PARALLELONNODE), 1)
+	CFLAGS += -DUSE_SPLIT_PARALLELONNODE=1
+	export SPLIT=splitonnode
+else
+	export SPLIT=splitonft
+endif
+
+#
+# deprecated, remove unroll support
+#
 ifeq ($(USE_UNROLL), 1)
 	CFLAGS += -DUSE_UNROLL=1
 	export UNROLL=prefetch
@@ -167,7 +179,12 @@ ifeq ($(DEBUG), 1)
 #CFLAGS += -fpermissive -fno-strict-aliasing -DUSE_BINID=1 -g -O2
 #CFLAGS += -g -O0
 CFLAGS += -g 
+
+ifeq ($(USE_DEBUG), 1)
+export OUTPUTTYPE=debuginfo
+else
 export OUTPUTTYPE=debug
+endif
 
 #TARGET = xgboost-$(CXX)-debug
 #WORKDIR = build-$(CXX)-debug
@@ -187,11 +204,11 @@ endif
 # set target and build dir by features
 #
 ifdef TAGNAME
-TARGET = xgboost-$(CXX)-$(THREADIMP)-$(HALFTRICK)-$(UNROLL)-$(TAGNAME)-$(VTUNE)$(OUTPUTTYPE)
+TARGET = xgboost-$(CXX)-$(THREADIMP)-$(HALFTRICK)-$(UNROLL)-$(SPLIT)-$(TAGNAME)-$(VTUNE)$(OUTPUTTYPE)
 else
-TARGET = xgboost-$(CXX)-$(THREADIMP)-$(HALFTRICK)-$(UNROLL)-noname-$(VTUNE)$(OUTPUTTYPE)
+TARGET = xgboost-$(CXX)-$(THREADIMP)-$(HALFTRICK)-$(UNROLL)-$(SPLIT)-noname-$(VTUNE)$(OUTPUTTYPE)
 endif
-WORKDIR = build-$(CXX)-$(THREADIMP)-$(HALFTRICK)-$(UNROLL)-$(VTUNE)$(OUTPUTTYPE)
+WORKDIR = build-$(CXX)-$(THREADIMP)-$(HALFTRICK)-$(UNROLL)-$(SPLIT)-$(VTUNE)$(OUTPUTTYPE)
 
 #
 # Compiler and vec report
@@ -203,7 +220,7 @@ ifeq ($(CXX), icc)
 CFLAGS += -xcore-avx2
 ifeq ($(USE_REPORT), 1)
 #CFLAGS += -qopt-report=5 -qopt-report-phase=vec
-CFLAGS += -qopt-report=5
+CFLAGS += -qopt-report=5 
 endif
 
 else
@@ -211,7 +228,9 @@ else
 CFLAGS += -mavx2
 
 ifeq ($(USE_REPORT), 1)
-CFLAGS += -fopt-info-vec
+#CFLAGS += -fopt-info-vec
+CFLAGS += -ftree-vectorize -fopt-info-vec-all
+
 endif
 
 endif
