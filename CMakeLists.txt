@@ -37,7 +37,7 @@ add_subdirectory(util)
 add_subdirectory(worker)
 add_subdirectory(communication)
 
-add_executable(harpc examples/generators/DataGenerator.cpp examples/generators/DataGenerator.h kernels/kmeans/KMeans.h kernels/kmeans/KMeans.cpp kernels/math/partitions/PartitionMath.h kernels/math/partitions/PartitionMath.cpp kernels/math/table/TableMath.h kernels/math/table/TableMath.cpp kernels/math/HarpMath.h kernels/HarpKernels.h)
+add_executable(harpc examples/kmeans/kmeans.cpp examples/generators/DataGenerator.cpp examples/generators/DataGenerator.h kernels/kmeans/KMeans.h kernels/kmeans/KMeans.cpp kernels/math/partitions/PartitionMath.h kernels/math/partitions/PartitionMath.cpp kernels/math/table/TableMath.h kernels/math/table/TableMath.cpp kernels/math/HarpMath.h kernels/HarpKernels.h)
 #kernels/daal/DaalKMeans.cpp
 #examples/kmeans/kmeans.cpp
 
@@ -50,12 +50,17 @@ message("Daal Core Lib : " ${DAAL_CORE_LIB})
 message("Daal Thread Lib :" ${DAAL_THREAD_LIB})
 message("Daal Sequence Lib : " ${DAAL_SEQ_LIB})
 
+target_include_directories(
+        harpc PUBLIC
+        data_structures
+        util
+        worker
+        communication
+)
+
 target_link_libraries(
         harpc
-        harp_data_structures
-        harp_utils
-        harp_worker
-        harp_communication
+        ${MPI_C_LIBRARIES}
         ${Boost_LIBRARIES}
         ${DAAL_CORE_LIB}
         ${DAAL_THREAD_LIB}

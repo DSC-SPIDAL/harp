@@ -17,5 +17,6 @@
 #include "data_structures/DataStructures.h"
 #include "worker/Worker.h"
 #include "communication/Communicator.h"
+#include "util/util.h"
 
 #endif //HARPC_HARP_H

@@ -4,16 +4,7 @@ project(harp_communication)
 include_directories(${MPI_INCLUDE_PATH})
 
 add_library(
-        harp_communication SHARED
-        Communicator.h
-        Communicator.cpp
-        tcp/MessageAcceptor.cpp
-        tcp/Server.cpp
-)
-
-target_link_libraries(
-        harp_communication
-        ${MPI_C_LIBRARIES}
+        harp_communication INTERFACE
 )
 
 FILE(GLOB PUBLIC_HEADERS *.h)

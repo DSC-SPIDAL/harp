@@ -27,7 +27,10 @@ namespace harp {
             std::map<int, Partition<TYPE> *> *partitionMap;
             std::mutex *mutex;
         public:
-            PartitionAccessor(std::map<int, Partition<TYPE> *> *partitionMap, std::mutex *mutex);
+            PartitionAccessor(std::map<int, Partition<TYPE> *> *partitionMap, std::mutex *mutex) {
+                this->partitionMap = partitionMap;
+                this->mutex = mutex;
+            }
 
             virtual bool hasNext() = 0;
 

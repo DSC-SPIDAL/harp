@@ -4,21 +4,11 @@ project(harp_data_structures)
 include_directories(${MPI_INCLUDE_PATH})
 
 add_library(
-        harp_data_structures SHARED
-        DataTypes.h DataTypes.cpp
-        DataStructures.h
-        Partition.h
-        Partition.cpp
-        PartitionAccessor.h
-        PartitionAccessor.cpp
-        Table.h
-        Table.cpp
-        Utils.h
-        Utils.cpp
+        harp_data_structures INTERFACE
 )
 
 target_link_libraries(
-        harp_data_structures
+        harp_data_structures INTERFACE
         ${MPI_C_LIBRARIES}
 )
 

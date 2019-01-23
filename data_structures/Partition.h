@@ -2,11 +2,12 @@
 #define UNTITLED_PARTITION_H
 
 #include <string>
+#include <iostream>
 #include "DataTypes.h"
 
 namespace harp {
     namespace ds {
-        template <class TYPE>
+        template<class TYPE>
         class Partition {
         private:
             int id;
@@ -14,21 +15,41 @@ namespace harp {
             int size = 0;
         public:
 
-            Partition(int id, TYPE *data, int size);
+            Partition(int id, TYPE *data, int size) {
+                this->id = id;
+                this->data = data;
+                this->size = size;
+            }
 
-            Partition(const Partition& p);
+            Partition(const Partition &p) {
+                std::cout << "Copy partition called" << std::endl;
+            }
 
-            ~Partition();
+            ~Partition() {
+                this->clear();
+            }
 
-            int getId();
+            int getId() {
+                return this->id;
+            }
 
-            TYPE *getData();
+            TYPE *getData() {
+                return this->data;
+            }
 
-            void setData(TYPE *data, int size);
+            void setData(TYPE *data, int size) {
+                this->clear();
+                this->data = data;
+                this->size = size;
+            }
 
-            int getSize();
+            int getSize() {
+                return this->size;
+            }
 
-            void clear();
+            void clear() {
+                delete[] data;
+            }
         };
 
         enum PartitionState {

@@ -2,7 +2,6 @@
 #define HARPC_WORKER_H
 
 #include "../communication/Communicator.h"
-#include "../communication/Communicator.cpp"
 
 namespace harp {
     class Worker {
@@ -12,13 +11,31 @@ namespace harp {
 
         int comThreads = 1;//no of communication threads
     public:
-        void init(int argc, char *argv[]);
+        void init(int argc, char *argv[]) {
+            int provided;
+            MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
+            if (provided < MPI_THREAD_MULTIPLE) {
+                printf("ERROR: The MPI library does not have full thread support\n");
+                MPI_Abort(MPI_COMM_WORLD, 1);
+            }
+            //MPI_Init(NULL, NULL);
 
-        void start();
+            MPI_Comm_size(MPI_COMM_WORLD, &this->worldSize);
 
-        virtual void execute(com::Communicator<int> *comm) = 0;
+            MPI_Comm_rank(MPI_COMM_WORLD, &this->workerId);
+        }
 
-        void setCommThreads(int comThreads);
+        void start() {
+            com::Communicator comm(this->workerId, this->worldSize);
+            this->execute(&comm);
+            MPI_Finalize();
+        }
+
+        virtual void execute(com::Communicator *comm) = 0;
+
+        void setCommThreads(int comThreads) {
+            this->comThreads = comThreads;
+        }
     };
 }
 

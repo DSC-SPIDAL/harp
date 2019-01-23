@@ -10,9 +10,9 @@
 #include <thread>
 #include "future"
 
-#include "../../util/Timing.h"
+#include "timing.h"
 
-#include "../../util/Print.h"
+#include "print.h"
 
 using namespace harp;
 using namespace harp::ds::util;
@@ -40,39 +40,14 @@ const int TIME_ASYNC_ROTATE_END = tagCounter++;
 
 class KMeansWorker : public harp::Worker {
 
-    void execute(com::Communicator<int> *comm) {
-        int partitions = 100;
-        int elements = 100;
-        int itc = 100;
-
-        for (int it = 0; it < itc; it++) {
-
-            auto *tab = new harp::ds::Table<int>(0);
-            for (int x = 0; x < partitions; x++) {
-                auto *arr = new int[elements];
-                for (int l = 0; l < elements; l++) {
-                    arr[l] = workerId;
-                }
-                auto *part = new harp::ds::Partition<int>(x, arr, elements);
-                tab->addPartition(part);
-            }
-
-            record(0);
-            comm->allReduce(tab, MPI_SUM);
-            record(1);
-            diff(0, 1, true);
-            harp::ds::util::deleteTable(tab, true);
-        }
+    void execute(com::Communicator *comm) {
 
         int iterations = 5;
-        int numOfCentroids = 25;
-        int vectorSize = 1000;
-        int numOfVectors = 100000;
+        int numOfCentroids = 5;
+        int vectorSize = 1000000;
+        int numOfVectors = 100;
 
         double serialDuration = 0;
-
-        string logName = to_string(workerId) + ".txt";
-        freopen(&logName[0], "w", stdout);
 
         std::cout << "Starting.." << std::endl;
 
@@ -96,6 +71,8 @@ class KMeansWorker : public harp::Worker {
             auto *centroids = new harp::ds::Table<double>(1);
             util::readKMeansDataFromFile("/tmp/harp/kmeans/centroids", vectorSize, centroids);
 
+            //printTable(centroids);
+
             record(TIME_BEFORE_SERIAL);
             harp::kernels::kmeans(centroids, points, vectorSize, iterations);
             record(TIME_AFTER_SERIAL);
@@ -104,11 +81,14 @@ class KMeansWorker : public harp::Worker {
 
 
             printTable(centroids);
+            //printPartition(centroids->getPartition(0));
 
             deleteTable(points, true);
             deleteTable(centroids, true);
 
         }
+
+        cout << "Worker " << comm->getWorkerId() << " is here" << endl;
 
         comm->barrier();
 
@@ -177,7 +157,7 @@ class KMeansWorker : public harp::Worker {
             comm->wait();
             record(TIME_AFTER_WAIT);
 
-            std::cout << "Wait time 1st rot : " << diff(TIME_BEFORE_WAIT, TIME_AFTER_WAIT, true) << std::endl;
+            //std::cout << "Wait time 1st rot : " << diff(TIME_BEFORE_WAIT, TIME_AFTER_WAIT, true) << std::endl;
 
             harp::ds::util::resetTable<double>(myCentroids, 0);
 
@@ -206,7 +186,7 @@ class KMeansWorker : public harp::Worker {
             comm->wait();
             record(TIME_AFTER_WAIT);
 
-            std::cout << "Wait time 2nd rot : " << diff(TIME_BEFORE_WAIT, TIME_AFTER_WAIT, true) << std::endl;
+            //std::cout << "Wait time 2nd rot : " << diff(TIME_BEFORE_WAIT, TIME_AFTER_WAIT, true) << std::endl;
 
             //calculating average
             for (auto c:*myCentroids->getPartitions()) {
@@ -224,18 +204,23 @@ class KMeansWorker : public harp::Worker {
         if (workerId == 0) {
             std::cout << "Speedup : " << diff(TIME_BEFORE_SERIAL, TIME_AFTER_SERIAL) /
                                          diff(TIME_PARALLEL_TOTAL_START, TIME_PARALLEL_TOTAL_END) << std::endl;
+
+            std::cout << "Avg async rotation time : " << average(TIME_ASYNC_ROTATE_BEGIN, TIME_ASYNC_ROTATE_END)
+                      << std::endl;
+            std::cout << "Avg Wait time : " << average(TIME_BEFORE_WAIT, TIME_AFTER_WAIT) << std::endl;
+            std::cout << "Total Communication time : " << total(11, 12) << std::endl;
+            std::cout << "Total Computation time : " << diff(TIME_PARALLEL_TOTAL_START, TIME_PARALLEL_TOTAL_END) -
+                                                        total(TIME_ASYNC_ROTATE_BEGIN, TIME_ASYNC_ROTATE_END) -
+                                                        diff(TIME_BEFORE_WAIT, TIME_AFTER_WAIT) << std::endl;
+
+            printTable(myCentroids);
+            //printPartition(centroids->getPartition(0));
         }
 
-        std::cout << "Avg async rotation time : " << average(TIME_ASYNC_ROTATE_BEGIN, TIME_ASYNC_ROTATE_END)
-                  << std::endl;
-        std::cout << "Avg Wait time : " << average(TIME_BEFORE_WAIT, TIME_AFTER_WAIT) << std::endl;
-        std::cout << "Total Communication time : " << total(11, 12) << std::endl;
-        std::cout << "Total Computation time : " << diff(TIME_PARALLEL_TOTAL_START, TIME_PARALLEL_TOTAL_END) -
-                                                    total(TIME_ASYNC_ROTATE_BEGIN, TIME_ASYNC_ROTATE_END) -
-                                                    diff(TIME_BEFORE_WAIT, TIME_AFTER_WAIT) << std::endl;
 
         comm->barrier();
-        printTable(myCentroids);
+        //printTable(myCentroids);
+        //printPartition(centroids->getPartition(0));
 
         deleteTable(myCentroids, true);
         deleteTable(points, true);

@@ -25,45 +25,133 @@ namespace harp {
             std::queue<Partition<TYPE> *> pendingPartitions;
             std::mutex pendingPartitionsMutex;
 
-            void pushPendingPartitions();
+            int id{};
 
-            int id;
+            void pushPendingPartitions() {
+                //this->pendingPartitionsMutex.lock();
+                while (!this->pendingPartitions.empty()) {
+                    this->addPartition(this->pendingPartitions.front());
+                    this->pendingPartitions.pop();
+                }
+                //this->pendingPartitionsMutex.unlock();
+            }
+
         public:
             std::vector<int> orderedPartitions;
 
-            Table(int id);//todo add combiner
+            Table(int id) {
+                this->id = id;
+            }//todo add combiner
 
-            Table(const Table &p);
+            Table(const Table &p) {
+                std::cout << "Copy table called" << std::endl;
+            }
 
-            ~Table();
+            ~Table() {
+                this->clear();
+            }
 
-            int getId();
+            int getId() {
+                return this->id;
+            }
 
-            long getPartitionCount();
+            long getPartitionCount() {
+                return this->partitionMap.size();
+            }
 
             //const std::unordered_set<int> *getPartitionKeySet(bool blockForAvailability = false);
 
-            std::map<int, Partition<TYPE> *> *getPartitions(bool blockForAvailability = false);
+            std::map<int, Partition<TYPE> *> *getPartitions(bool blockForAvailability = false) {
+                this->pushPendingPartitions();
+                if (blockForAvailability) {
+                    while (this->partitionMap.empty()) {
+                        this->pushPendingPartitions();
+                    }
+                }
+                return &this->partitionMap;
+            }
 
-            Partition<TYPE> *nextPartition();
+            Partition<TYPE> *nextPartition() {
+                this->pushPendingPartitions();
+                if (this->iteratingIndex < this->orderedPartitions.size()) {
+                    int index = this->orderedPartitions[this->iteratingIndex++];
+                    return this->partitionMap.at(index);
+                }
+                return nullptr;
+            }
 
-            bool hasNext(bool blockForAvailability = false);
+            bool hasNext(bool blockForAvailability = false) {
+                this->pushPendingPartitions();
+                if (blockForAvailability) {
+                    while (this->partitionMap.empty()) {//todo remove busy waiting
+                        this->pushPendingPartitions();
+                    }
+                }
+                return this->iteratingIndex < this->orderedPartitions.size();
+            }
 
-            void resetIterator();
+            void resetIterator() {
+                int markedCount = 0;
+                //iterating in reverse
+                for (auto i = this->orderedPartitions.crbegin(); i != this->orderedPartitions.crend();) {
+                    if (this->partitionMap.count(*i) == 0 || markedCount == this->partitionMap.size()) {
+                        i = decltype(i){this->orderedPartitions.erase(std::next(i).base())};
+                    } else {
+                        i++;
+                        markedCount++;
+                    }
+                }
+                this->iteratingIndex = 0;
 
-            PartitionState addPartition(Partition<TYPE> *partition);
+                this->pushPendingPartitions();
+            }
 
-            Partition<TYPE> *getPartition(int pid);
+            PartitionState addPartition(Partition<TYPE> *partition) {
+                this->partitionMap.insert(std::make_pair(partition->getId(), partition));
+                this->orderedPartitions.push_back(partition->getId());
+                return COMBINED;
+            }
 
-            long removePartition(int pid, bool clearMemory = true);
+            Partition<TYPE> *getPartition(int pid) {
+                return this->partitionMap.at(pid);
+            }
 
-            void replaceParition(int pid, Partition<TYPE> *partition);
+            long removePartition(int pid, bool clearMemory = true) {
+                if (this->partitionMap.count(pid) > 0) {
+                    if (clearMemory) {
+                        delete this->getPartition(pid);
+                    }
+                    return this->partitionMap.erase(pid);//remove from map
+                } else {
+                    return 0;
+                }
+            }
 
-            void clear(bool clearPartitions = false);
+            void replaceParition(int pid, Partition<TYPE> *partition) {
+                this->removePartition(pid);
+                this->addPartition(partition);
+            }
 
-            void swap(Table<TYPE> *table);
+            void clear(bool clearPartitions = false) {
+                if (clearPartitions) {
+                    for (auto p: this->partitionMap) {
+                        delete p.second;
+                    }
+                }
+                this->partitionMap.clear();
+            }
 
-            void addToPendingPartitions(Partition<TYPE> *partition);
+            void swap(Table<TYPE> *table) {
+                this->partitionMap = table->partitionMap;
+                this->orderedPartitions = table->orderedPartitions;
+                this->iteratingIndex = 0;
+            }
+
+            void addToPendingPartitions(Partition<TYPE> *partition) {
+                //this->pendingPartitionsMutex.lock();
+                this->pendingPartitions.push(partition);
+                //this->pendingPartitionsMutex.unlock();
+            }
         };
     }
 }

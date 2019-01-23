@@ -12,12 +12,15 @@
 //
 //
 
-#include "Timing.h"
+#ifndef HARPC_TIMING_H
+#define HARPC_TIMING_H
+
+#include <unordered_map>
+#include <chrono>
 
 namespace harp {
     namespace util {
         namespace timing {
-
             std::unordered_map<int, std::chrono::high_resolution_clock::time_point> times;
             std::unordered_map<std::string, double> sums;
             std::unordered_map<std::string, int> counts;
@@ -30,7 +33,7 @@ namespace harp {
                 }
             }
 
-            double diff(int from, int to, bool store) {
+            double diff(int from, int to, bool store = true) {
                 double diff = std::chrono::duration_cast<std::chrono::microseconds>(
                         times.at(to) - times.at(from)).count();
                 if (store) {
@@ -64,4 +67,4 @@ namespace harp {
         }
     }
 }
-
+#endif //HARPC_TIMING_H

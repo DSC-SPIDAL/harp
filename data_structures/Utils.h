@@ -21,10 +21,20 @@ namespace harp {
     namespace ds {
         namespace util {
             template<class TYPE>
-            void deleteTable(harp::ds::Table<TYPE> *table, bool clearPartitions);
+            void deleteTable(harp::ds::Table<TYPE> *table, bool clearPartitions){
+                if (table != nullptr) {
+                    table->clear(clearPartitions);
+                }
+                delete table;
+            }
 
             template<class TYPE>
-            void deleteTables(harp::ds::Table<TYPE> **tables, bool clearPartitions, int arrSize);
+            void deleteTables(harp::ds::Table<TYPE> **tables, bool clearPartitions, int arrSize){
+                for (int i = 0; i < arrSize; i++) {
+                    deleteTable(tables[i], clearPartitions);
+                }
+                delete[] tables;
+            }
 
             template<class TYPE>
             void resetPartition(harp::ds::Partition<TYPE> *partition, TYPE value) {
