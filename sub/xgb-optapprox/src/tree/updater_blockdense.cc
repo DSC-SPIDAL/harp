@@ -507,8 +507,9 @@ class HistMakerBlockDense: public BlockBaseMaker {
   // change the mask which is hard coded in CHECKHALFCOND
   // !!!
   //int node_block_size{256};
+  //int group_parallel_cnt_ = 2;
 
- // hist mat compact
+  // hist mat compact
   DMatrixDenseCube* p_blkmat;
   DMatrixCompactBlockDense* p_hmat;
 
@@ -732,7 +733,7 @@ class HistMakerBlockDense: public BlockBaseMaker {
                        node_sum, fid, &best, &left_sum[wid]);
 
 
-            printSplit(best, fid, nid);
+            //printSplit(best, fid, nid);
       }
       //printSplit(best, -1, nid);
     }
@@ -1485,7 +1486,7 @@ class HistMakerBlockDense: public BlockBaseMaker {
     #endif
 
     //get lock
-    bwork_lock_[blkid_offset].lock();
+    //bwork_lock_[blkid_offset].lock();
 
     // initialize sbuilder for use
     std::vector<HistEntryCompact> &hbuilder = *p_temp;
@@ -1555,13 +1556,40 @@ class HistMakerBlockDense: public BlockBaseMaker {
 #endif
  
 #else
+    #ifdef NOUSE_BLOCK_POSSET
     // one thread go through all nodeblks
-    //int startgid = 0;
-    //int endgid = posset_.getGroupCnt();
-    
+    int startgid = 0;
+    int endgid = posset_.getGroupCnt();
+    #else
     // one thread go through all groups in its block
     int startgid = posset_.getBlockStartGId(zblkid);
     int endgid = posset_.getBlockEndGId(zblkid);
+
+    // select the nblkid section
+    //const int group_parallel_cnt = 2;
+    int total = endgid - startgid;
+    int sectionSize = (total + param_.group_parallel_cnt -1)/ param_.group_parallel_cnt;
+    if (sectionSize > 0){
+        if (nblkid * sectionSize >= total) return;
+
+        // do the sub section with the nblkid
+        startgid += nblkid * sectionSize;
+        
+        if (endgid > startgid + sectionSize){
+            endgid = startgid + sectionSize;
+        }
+    }
+    else{
+        // nblkid == 0 pass only
+        if (nblkid > 0) return;
+    }
+
+
+
+
+
+
+    #endif
 
     //lazy init
     #define LAZY_INIT
@@ -1590,6 +1618,9 @@ class HistMakerBlockDense: public BlockBaseMaker {
     #endif  /* LAZY_INIT */
 
 #endif
+
+    //get lock
+    bwork_lock_[blkid_offset].lock();
 
     {
         //one block
@@ -1626,6 +1657,7 @@ class HistMakerBlockDense: public BlockBaseMaker {
         if (posset_.getGroupCnt() == posset_.getBlockCnt()){
             for (int gid = startgid; gid < endgid; ++gid) {
               for (int j = 0; j < posset_[gid].size(); ++j) {
+                //const int ridx = posset_[gid].getRowId(j)- posset_.getBlockBaseRowId(zblkid);
                 const int ridx = posset_[gid].getRowId(j);
                 const int nid = posset_[gid].getNodeId(j);
                 //
@@ -1683,6 +1715,7 @@ class HistMakerBlockDense: public BlockBaseMaker {
               #endif    
 
               for (int j = 0; j < posset_[gid].size(); ++j) {
+                //const int ridx = posset_[gid].getRowId(j)- posset_.getBlockBaseRowId(zblkid);
                 const int ridx = posset_[gid].getRowId(j);
                 const int nid = posset_[gid].getNodeId(j);
                 //
@@ -1944,8 +1977,8 @@ class HistMakerBlockDense: public BlockBaseMaker {
       {
         double _tstartInit = dmlc::GetTime();
         //debug 
-        int gid = 899;
-        printPOSSet(posset_, gid);
+        int gid = 0;
+        //printPOSSet(posset_, gid);
         
         //init the position_
         #ifdef USE_ATMOIC_HAFLLEN
@@ -1955,7 +1988,7 @@ class HistMakerBlockDense: public BlockBaseMaker {
         this->SetDefaultPostion(p_hmat, tree);
         this->tminfo.aux_time[1] += dmlc::GetTime() - _tstartInit;
 
-        printPOSSet(posset_, gid);
+        //printPOSSet(posset_, gid);
 
         _tstartInit = dmlc::GetTime();
         this->CorrectNonDefaultPositionByBatch(*p_hmat, this->fsplit_set_, tree);
@@ -1968,7 +2001,7 @@ class HistMakerBlockDense: public BlockBaseMaker {
         #endif
         this->tminfo.aux_time[3] += dmlc::GetTime() - _tstartInit;
 
-        printPOSSet(posset_, gid);
+        //printPOSSet(posset_, gid);
 
         _tstartInit = dmlc::GetTime();
         if (depth >= std::log2(param_.node_block_size)){
@@ -2005,6 +2038,9 @@ class HistMakerBlockDense: public BlockBaseMaker {
 
         // node dimension blocks
        
+        #define USE_SCHEDULE_NODEBLK
+        #define USE_MULTINODEEACHGROUP
+
         #ifdef USE_SCHEDULE_NODEBLK
         #ifdef USE_ONENODEEACHGROUP
         // one node one group version
@@ -2014,7 +2050,11 @@ class HistMakerBlockDense: public BlockBaseMaker {
 
         #ifdef USE_MULTINODEEACHGROUP
         // multiple nodes in one group version, 
-        const int dsize = posset_.getGroupCnt();
+        //const int dsize = posset_.getGroupCnt();
+
+        //const int group_parallel_cnt = 2;
+        const int dsize = param_.group_parallel_cnt;
+
         #endif
 
         #else
@@ -2028,6 +2068,7 @@ class HistMakerBlockDense: public BlockBaseMaker {
         this->datasum_ = 0.;
         //#endif
 
+        #ifdef USE_DYNAMIC_ROWBLOCK
         #pragma omp parallel for schedule(dynamic, 1)
         for(bst_omp_uint i = 0; i < dsize * nsize * zsize; ++i){
 
@@ -2050,6 +2091,35 @@ class HistMakerBlockDense: public BlockBaseMaker {
                 &this->thread_histcompact_[omp_get_thread_num()]);
                 //&this->thread_hist_[0]);
         }
+        #else
+        
+        for(int z = 0; z < zsize; z++){
+            #pragma omp parallel for schedule(dynamic, 1)
+            for(bst_omp_uint i = 0; i < dsize * nsize; ++i){
+
+              // node block id
+              unsigned int nblkid = i / (nsize);
+              // absolute blk id
+              int blkid = i % (nsize);
+              // blk id on the base plain
+              int offset = blkid % nsize;
+              // blk id on the row dimension
+              unsigned int zblkid = z;
+
+
+              // get dataBlock
+              auto block = p_blkmat->GetBlockZCol(offset).GetBlock(zblkid);
+
+              // update model by this dataBlock and node_blkid
+              this->UpdateHistBlock(depth, gpair, block, info, tree,
+                    offset, zblkid, nblkid,
+                    &this->thread_histcompact_[omp_get_thread_num()]);
+                    //&this->thread_hist_[0]);
+            }
+        }
+ 
+
+        #endif
 
         //build the other half
         #ifdef USE_HALFTRICK

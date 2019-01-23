@@ -402,7 +402,7 @@ void printPOSSet(POSSet& pos, int gid){
     std::cout << "POSSet(grpcnt=" << grpcnt << "):\n";
 
     for(int g = gid; g < std::min(grpcnt , gid + 8) ; g++){
-        std::cout << "[" << g << "]:";
+        std::cout << "[" << g << "=" << pos[g].size() << "]:";
         unsigned int cnt = pos[g].size();
         for (int i = 0; i< std::min(cnt, 100U); i++){
             bool del = pos[g].isDelete(i);

@@ -116,6 +116,12 @@ class POSSet{
         int _deletelen;
 #endif
 
+        POSGroup(){
+            _start = nullptr;
+            _len = 0;
+            _type = POSGroupType::NONE;
+        }
+
         POSGroup(POSEntry* start, int len, POSGroupType type):
             _start(start),_len(len),_type(type){
         }
@@ -392,6 +398,8 @@ class POSSet{
         //end of block offset
         rowblk_offset_.push_back(rowblknum_);
 
+        //debug 
+        //printGroupBlocks();
     }
 
     void Clear(){
@@ -411,45 +419,6 @@ class POSSet{
         return entry_[workid_][i];
     }
 
-/*
-    // group access
-    inline int getGroupCnt(int blkid = 0){
-        return grp_[workid_][blkid].size();
-    }
-    inline std::vector<POSGroup>& getGroup(int blkid = 0){
-        return grp_[workid_][blkid];
-    }
-
-    inline POSGroup& operator[](int i){
-        return grp_[workid_][i];
-    }
-
-    // global group access
-    inline void BeginUpdate(int depth){
-        for (int i = 0; i < grp_[workid_].size() ; i++){
-            auto grp = getGroup(i);
-            for (int j = 0; j < grp.size(); j++){
-                grp[i].BeginUpdate(depth);
-            }
-        }
-    }
-    inline void EndUpdate(){
-        int totalcnt = 0;
-        for (int i = 0; i < grp_[workid_].size() ; i++){
-            auto grp = getGroup(i);
-            totalcnt += grp.size(); 
-        }
-
-        #pragma omp parallel for schedule(static)
-        for (int i = 0; i < totalcnt; i++){
-            int blkid = i % rowblknum_;
-            int grp
-            auto grp = getGroup(i);
-            grp[i].BeginUpdate(depth);
-            grp[i].EndUpdate(i);
-        }
-    }
-i*/
     // group access
     inline int getGroupCnt(){
         return grp_[workid_].size();
@@ -467,6 +436,9 @@ i*/
     }
     inline int getBlockEndGId(int blkid){
         return rowblk_offset_[blkid+1];
+    }
+    inline int getBlockBaseRowId(int blkid){
+        return blkid * rowblksize_;
     }
 
     // global group access
@@ -576,18 +548,22 @@ i*/
         #endif
     
         //printVec("ApplySplit: rowblk_offset=", rowblk_offset_);
-        std::cout <<"ApplySplit::rowblk_offset=";
+        //printGroupBlocks();
+
+    }
+
+    void printGroupBlocks(){
+        std::cout <<"POSSET::rowblk_offset=";
         for(int i = 0; i < std::min(getBlockCnt(), 10); i++){
             int gid = getBlockStartGId(i);
             // gid, startPos
             std::cout << gid << "," <<
-                newgrp[gid]._start -dmlc::BeginPtr(entry_[nextid]) << " ";
+                grp_[workid_][gid]._start -dmlc::BeginPtr(entry_[workid_]) << " ";
         }
         std::cout << "\n";
 
+
     }
-
-
 
 };
 

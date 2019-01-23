@@ -1767,11 +1767,14 @@ class HistMakerBlockDenseSeq: public BaseMaker {
         this->datasum_ = 0.;
         #endif
 
+
+
+        #ifdef USE_DYNAMIC_ROWBLOCK
         #pragma omp parallel for schedule(dynamic, 1)
         for(bst_omp_uint i = 0; i < dsize * nsize * zsize; ++i){
 
           // node block id
-          unsigned int nblkid = (i / (nsize *zsize)) << 8;
+          unsigned int nblkid = i / (nsize *zsize);
           // absolute blk id
           int blkid = i % (nsize * zsize);
           // blk id on the base plain
@@ -1789,6 +1792,42 @@ class HistMakerBlockDenseSeq: public BaseMaker {
                 &this->thread_hist_[omp_get_thread_num()]);
                 //&this->thread_hist_[0]);
         }
+        #else
+        for(int z = 0; z < zsize; z++){
+        #pragma omp parallel for schedule(dynamic, 1)
+        for(bst_omp_uint i = 0; i < nsize; ++i){
+
+          // node block id
+          unsigned int nblkid = 0;
+          // absolute blk id
+          int blkid = i ;
+          // blk id on the base plain
+          int offset = blkid;
+          // blk id on the row dimension
+          unsigned int zblkid = z;
+
+
+          // get dataBlock
+          auto block = p_blkmat->GetBlockZCol(offset).GetBlock(zblkid);
+
+          // update model by this dataBlock and node_blkid
+          this->UpdateHistBlock(depth, gpair, block, info, tree,
+                offset, zblkid, nblkid,
+                &this->thread_hist_[omp_get_thread_num()]);
+                //&this->thread_hist_[0]);
+        }
+        }
+ 
+
+
+
+        #endif
+
+
+
+
+
+
 
         //build the other half
         #ifdef USE_HALFTRICK

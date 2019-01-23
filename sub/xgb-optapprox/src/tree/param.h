@@ -91,6 +91,7 @@ struct TrainParam : public dmlc::Parameter<TrainParam> {
   int bin_block_size;
 
   int node_block_size;
+  int group_parallel_cnt;
 
   // declare the parameters
   DMLC_DECLARE_PARAMETER(TrainParam) {
@@ -228,6 +229,11 @@ struct TrainParam : public dmlc::Parameter<TrainParam> {
         .set_default(65536)
         .set_lower_bound(0)
         .describe("Node Block size used for task scheduling, 0 means use one block.");
+    DMLC_DECLARE_FIELD(group_parallel_cnt)
+        .set_default(2)
+        .set_lower_bound(0)
+        .describe("Group Block Number used for task scheduling, 0 means use one block.");
+
 
 
 
