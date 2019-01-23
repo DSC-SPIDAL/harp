@@ -36,7 +36,7 @@ def generate_data(args):
     tmp = time.time()
     X, y = make_classification(args.rows, n_features=args.columns, n_redundant=0, n_informative=args.columns, n_repeated=0, random_state=7)
 
-    if args.sparsity < 1.0:
+    if args.sparsity > 0.0:
        X = np.array([[np.nan if rng.uniform(0, 1) < args.sparsity else x for x in x_row] for x_row in X])
 
     if args.test_size > 0:

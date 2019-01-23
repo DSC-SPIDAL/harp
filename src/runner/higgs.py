@@ -21,6 +21,9 @@ def load_option():
     op.add_option("--eval",
                   action="store", type=str, default="", 
                   help="evaluate on the result predictions.")
+    op.add_option("--convert",
+                  action="store_true",
+                  help="convert the dataset from numpy to libsvm and csv.")
     op.add_option("--trainfile",
                   action="store", type=str, default="", 
                   help="define the train dataset file name, train.cut by default.")
@@ -145,7 +148,7 @@ def runeval(predfile, testfile, label_col):
 
 
 
-def runxgb(trainfile, testfile, label_col):
+def runxgb(trainfile, testfile, label_col, convert_only = False):
     logger.info('Start loading data....')
     X_train, y_train  = loaddata(trainfile)
     X_test, y_test = loaddata(testfile)
@@ -165,6 +168,10 @@ def runxgb(trainfile, testfile, label_col):
         savedata('higgs_test.libsvm', X_test, y_test, fmt='libsvm')
     else:
         logger.info('higgs data file exist, skip overwriting')
+
+
+    if convert_only:
+        return
 
     #train
     #
@@ -217,6 +224,6 @@ if __name__=="__main__":
     if opt.eval:
         runeval(opt.eval, opt.testfile, opt.label_col)
     else:
-        runxgb(opt.trainfile, opt.testfile, opt.label_col)
+        runxgb(opt.trainfile, opt.testfile, opt.label_col, opt.convert)
 
 
