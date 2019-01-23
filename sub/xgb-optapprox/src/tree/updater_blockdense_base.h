@@ -224,52 +224,6 @@ class BlockBaseMaker: public TreeUpdater {
     // so that they are ignored in future statistics collection
     const auto ndata = static_cast<bst_omp_uint>(p_fmat->Info().num_row_);
 
-    //#pragma omp parallel for schedule(static)
-    //for (bst_omp_uint ridx = 0; ridx < ndata; ++ridx) {
-    //  const int nid = this->DecodePosition(ridx);
-    //  if (tree[nid].IsLeaf()) {
-    //    // mark finish when it is not a fresh leaf
-    //    if (tree[nid].RightChild() == -1) {
-    //      position_[ridx] = ~nid;
-    //    }
-    //  } else {
-    //    // push to default branch
-    //    if (tree[nid].DefaultLeft()) {
-    //      this->SetEncodePosition(ridx, tree[nid].LeftChild());
-    //    } else {
-    //      this->SetEncodePosition(ridx, tree[nid].RightChild());
-    //    }
-    //  }
-    //}
-    //
-    //for (int i = 0; i < posset_.getGroupCnt(); i++){
-    //    #pragma omp parallel for schedule(static)
-    //    for (int j = 0; j < posset_[i].size(); j++){
-    //      //check delete first
-
-    //      if (posset_[i].isDelete(j)) continue;
-
-
-    //      //const int ridx = posset_[i].getRowId(j);
-    //      const int nid = posset_[i].getEncodePosition(j);
-    //      if (tree[nid].IsLeaf()) {
-    //        // mark finish when it is not a fresh leaf
-    //        if (tree[nid].RightChild() == -1) {
-    //          //position_[ridx] = ~nid;
-    //          posset_[i].setDelete(j);
-    //        }
-    //      } else {
-    //        // push to default branch
-    //        if (tree[nid].DefaultLeft()) {
-    //          //this->SetEncodePosition(ridx, tree[nid].LeftChild());
-    //          posset_[i].setLeftPosition(j, tree[nid].LeftChild());
-    //        } else {
-    //          //this->SetEncodePosition(ridx, tree[nid].RightChild());
-    //          posset_[i].setRightPosition(j, tree[nid].RightChild());
-    //        }
-    //      }
-    //    }
-    //}
     #pragma omp parallel for schedule(static)
     for (size_t i = 0; i < posset_.getEntrySize(); ++i) {
         auto &entry = posset_.getEntry(i);
@@ -338,26 +292,6 @@ class BlockBaseMaker: public TreeUpdater {
     }
     
     // setup position
-    //const auto ndata = static_cast<bst_omp_uint>(fmat.Info().num_row_);
-    //#pragma omp parallel for schedule(static)
-    //for (bst_omp_uint ridx = 0; ridx < ndata; ++ridx) {
-    //  const int nid = position_[ridx];
-    //  const int tid = omp_get_thread_num();
-    //  if (nid >= 0) {
-    //    thread_temp[tid][nid].Add(gpair, info, ridx);
-    //  }
-    //}
-    //for (int i = 0; i < posset_.getGroupCnt(); i++){
-    //    #pragma omp parallel for schedule(static)
-    //    for (int j = 0; j < posset_[i].size(); j++){
-    //      if (posset_[i].isDelete(j)) continue;  
-    //      const int ridx = posset_[i].getRowId(j);
-    //      const int nid = posset_[i].getEncodePosition(j);
-    //      const int tid = omp_get_thread_num();
-    //      thread_temp[tid][nid].Add(gpair, info, ridx);
-    //    }
-    //}
-
     #pragma omp parallel for schedule(static)
     for (size_t i = 0; i < posset_.getEntrySize(); ++i) {
         auto &entry = posset_.getEntry(i);
