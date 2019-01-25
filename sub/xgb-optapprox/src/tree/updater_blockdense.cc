@@ -61,14 +61,14 @@ class spin_mutex {
 };
 
 
-template<typename TStats>
+template<typename TStats, typename TDMatrixCube, typename TDMatrixCubeBlock>
 class HistMakerBlockDense: public BlockBaseMaker {
  public:
 
  HistMakerBlockDense(){
 
       this->isInitializedHistIndex = false;
-      p_blkmat = new DMatrixDenseCube();
+      p_blkmat = new TDMatrixCube();
       p_hmat = new DMatrixCompactBlockDense();
   }
 
@@ -168,7 +168,7 @@ class HistMakerBlockDense: public BlockBaseMaker {
   };
 
   struct HistEntry {
-    typename HistMakerBlockDense<TStats>::HistUnit hist;
+    typename HistMakerBlockDense<TStats,TDMatrixCube,TDMatrixCubeBlock>::HistUnit hist;
     //unsigned istart;
 
     /* OptApprox:: init bindid in pmat */
@@ -493,7 +493,7 @@ class HistMakerBlockDense: public BlockBaseMaker {
   BlockInfo blkInfo_;
 
   // hist mat compact
-  DMatrixDenseCube* p_blkmat;
+  TDMatrixCube* p_blkmat;
   DMatrixCompactBlockDense* p_hmat;
 
   //for predict cache
@@ -1425,7 +1425,7 @@ class HistMakerBlockDense: public BlockBaseMaker {
   //
   void UpdateHistBlock(const int depth,
                        const std::vector<GradientPair> &gpair,
-                       const DMatrixDenseCubeBlock &block,
+                       const TDMatrixCubeBlock &block,
                        const MetaInfo &info,
                        const RegTree &tree,
                        bst_uint blkid_offset,
@@ -1587,7 +1587,7 @@ class HistMakerBlockDense: public BlockBaseMaker {
                   }
                   #endif
 
-                  for (int k = 0; k < block.rowsize(ridx); k++){
+                  for (int k = 0; k < block.rowsizeByRowId(ridx); k++){
                     //hbuilder[nid].AddWithIndex(block._blkaddr(ridx, k), gpair[ridx]);
                     hbuilder[nid].AddWithIndex(block._blkaddrByRowId(ridx, k), gpair[ridx]);
 
@@ -1645,7 +1645,7 @@ class HistMakerBlockDense: public BlockBaseMaker {
                   }
                   #endif
 
-                  for (int k = 0; k < block.rowsize(ridx); k++){
+                  for (int k = 0; k < block.rowsizeByRowId(ridx); k++){
                     //hbuilder[nid].AddWithIndex(block._blkaddr(ridx, k), gpair[ridx]);
                     hbuilder[nid].AddWithIndex(block._blkaddrByRowId(ridx, k), gpair[ridx]);
 
@@ -2089,7 +2089,12 @@ class HistMakerBlockDense: public BlockBaseMaker {
 XGBOOST_REGISTER_TREE_UPDATER(HistMakerBlockDense, "grow_blockdense")
 .describe("Tree constructor that uses approximate global of histogram construction.")
 .set_body([]() {
-    return new HistMakerBlockDense<GradStats>();
+    #ifdef USE_SPARSE_DMATRIX
+    return new HistMakerBlockDense<GradStats, DMatrixCube, DMatrixCubeBlock>();
+    #else
+    return new HistMakerBlockDense<GradStats, DMatrixDenseCube, DMatrixDenseCubeBlock>();
+    #endif
   });
+
 }  // namespace tree
 }  // namespace xgboost

@@ -138,6 +138,13 @@ ifeq ($(USE_DEBUG_SAVE), 1)
 	CFLAGS += -DUSE_DEBUG_SAVE=1
 endif
 
+ifeq ($(USE_SPARSE_DMATRIX), 1)
+	CFLAGS += -DUSE_SPARSE_DMATRIX=1
+	export DMATRIX=sparse
+else
+	export DMATRIX=dense
+endif
+
 ifeq ($(USE_HALFTRICK), 1)
 	CFLAGS += -DUSE_HALFTRICK=1
 	export HALFTRICK=halftrick
@@ -204,11 +211,11 @@ endif
 # set target and build dir by features
 #
 ifdef TAGNAME
-TARGET = xgboost-$(CXX)-$(THREADIMP)-$(HALFTRICK)-$(UNROLL)-$(SPLIT)-$(TAGNAME)-$(VTUNE)$(OUTPUTTYPE)
+TARGET = xgboost-$(CXX)-$(THREADIMP)-$(DMATRIX)-$(HALFTRICK)-$(UNROLL)-$(SPLIT)-$(TAGNAME)-$(VTUNE)$(OUTPUTTYPE)
 else
-TARGET = xgboost-$(CXX)-$(THREADIMP)-$(HALFTRICK)-$(UNROLL)-$(SPLIT)-noname-$(VTUNE)$(OUTPUTTYPE)
+TARGET = xgboost-$(CXX)-$(THREADIMP)-$(DMATRIX)-$(HALFTRICK)-$(UNROLL)-$(SPLIT)-noname-$(VTUNE)$(OUTPUTTYPE)
 endif
-WORKDIR = build-$(CXX)-$(THREADIMP)-$(HALFTRICK)-$(UNROLL)-$(SPLIT)-$(VTUNE)$(OUTPUTTYPE)
+WORKDIR = build-$(CXX)-$(THREADIMP)-$(DMATRIX)-$(HALFTRICK)-$(UNROLL)-$(SPLIT)-$(VTUNE)$(OUTPUTTYPE)
 
 #
 # Compiler and vec report

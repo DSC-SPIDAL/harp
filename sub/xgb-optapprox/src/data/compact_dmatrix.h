@@ -147,8 +147,11 @@ class DMatrixCompactDense : public xgboost::data::SparsePageDMatrix {
 };
 
 /*
- * Block Dense matrix stores only binid, which is one byte
- */
+ * Dense BinId only Column-wised Matrix
+ *  It's a sparse structure
+ *      rowid: <binid>
+*/
+
 class DMatrixCompactColBlockDense {
     private:
         const BinIDType* data_;
@@ -409,29 +412,26 @@ class DMatrixDenseCubeBlock {
     // Access by iterating on the blk row index
     // binid is now a general concept of 'blkaddr' inside one block on the binid-fid plain
     //
+    private:
+    const BlkAddrType* data_;
+    //const PtrType* row_offset_;
+    const PtrType rowsize_;
+
+    PtrType len_;
+    PtrType base_rowid_;
+
     public:
-        const BlkAddrType* data_;
-        //const PtrType* row_offset_;
-        const PtrType rowsize_;
-
-        PtrType len_;
-
-        PtrType base_rowid_;
-
     DMatrixDenseCubeBlock(const BlkAddrType* data, PtrType rowsize,
             PtrType len, PtrType base):
         data_(data), rowsize_(rowsize), len_(len), base_rowid_{base}{}
 
-    //elem interface
+    // sequential access by seq id
+    inline BlkAddrType _blkaddr(int i, int j) const {
+      return static_cast<BlkAddrType>(data_[rowsize_* (i + base_rowid_) + j]);
+    }
     inline int rowsize(int i) const{
         //return row_offset_[i+1] - row_offset_[i];
         return rowsize_;
-    }
-
-    // sequential access by seq id
-    inline BlkAddrType _blkaddr(int i, int j) const {
-      //return static_cast<BlkAddrType>(data_[row_offset_[i] + j]);
-      return static_cast<BlkAddrType>(data_[rowsize_*i + j]);
     }
 
     // get rowid
@@ -442,11 +442,14 @@ class DMatrixDenseCubeBlock {
       return len_;
     }
 
-    // random access interface
+    // random access by raw rowid
     inline BlkAddrType _blkaddrByRowId(int ridx, int j) const {
-      //return static_cast<BlkAddrType>(data_[row_offset_[i] + j]);
-      return static_cast<BlkAddrType>(data_[rowsize_*(ridx - base_rowid_) + j]);
+      return static_cast<BlkAddrType>(data_[rowsize_*ridx + j]);
     }
+    inline int rowsizeByRowId(int i) const{
+        return rowsize_;
+    }
+   
 };
 
 
@@ -472,11 +475,8 @@ class DMatrixDenseCubeZCol{
 
             PtrType rowidx = blk_offset_[i];
 
-            //have to use the ptr from beginning
-            //as row_offset_[] will pointer to this absolute address
-            //return {data_.data() + row_offset_[rowidx],
-            return {data_.data() + rowsize_ * rowidx,
-                //row_offset_.data() + rowidx,
+            //use the ptr from beginning
+            return {data_.data(),
                 rowsize_,
                 static_cast<PtrType>(blk_offset_[i + 1] - blk_offset_[i]), 
                 rowidx};
@@ -497,9 +497,6 @@ class DMatrixDenseCubeZCol{
             2*sizeof(PtrType) +
             blk_offset_.size()*sizeof(PtrType) + 4;
     }
-
-    inline int getRowSize(){return rowsize_;}
-    inline int getDataSize(){return data_.size();}
 
     int init(int blkid){
         blkid_ = blkid;
@@ -539,6 +536,10 @@ class DMatrixDenseCubeZCol{
     inline void append(BlkAddrType blkaddr){
         data_.push_back(blkaddr);
     }
+
+    //debug info
+    inline int getRowSize(){return rowsize_;}
+    inline int getDataSize(){return data_.size();}
 
 };
 
@@ -616,24 +617,23 @@ class DMatrixCubeBlock {
     // Access by iterating on the blk row index
     // binid is now a general concept of 'blkaddr' inside one block on the binid-fid plain
     //
-    public:
-        const BlkAddrType* data_;
-        const PtrType* row_offset_;
-        PtrType len_;
+  private:
+    const BlkAddrType* data_;
+    const PtrType* row_offset_;
+    PtrType len_;
+    PtrType base_rowid_;
 
-        PtrType base_rowid_;
-
+  public:
     DMatrixCubeBlock(const BlkAddrType* data, const PtrType* offset,
             PtrType len, PtrType base):
         data_(data), row_offset_(offset), len_(len), base_rowid_{base}{}
 
-    //elem interface
-    inline int rowsize(int i) const{
-        return row_offset_[i+1] - row_offset_[i];
-    }
-
+    // sequential access by seq id
     inline BlkAddrType _blkaddr(int i, int j) const {
-      return static_cast<BlkAddrType>(data_[row_offset_[i] + j]);
+      return static_cast<BlkAddrType>(data_[row_offset_[i + base_rowid_] + j]);
+    }
+    inline int rowsize(int i) const{
+        return row_offset_[i + base_rowid_ +1] - row_offset_[i + base_rowid_];
     }
 
     // get rowid
@@ -643,6 +643,15 @@ class DMatrixCubeBlock {
     inline size_t size() const{
       return len_;
     }
+
+    // random access by raw rowid
+    inline BlkAddrType _blkaddrByRowId(int ridx, int j) const {
+      return static_cast<BlkAddrType>(data_[row_offset_[ridx] + j]);
+    }
+    inline int rowsizeByRowId(int ridx) const{
+        return row_offset_[ridx+1] - row_offset_[ridx];
+    }
+
 
 };
 
@@ -662,15 +671,21 @@ class DMatrixCubeZCol{
         // blk_offset_ : idx in row_offset_
         // row_offset_ : addr in data_
 
-        PtrType rowidx = blk_offset_[i];
+        if (data_.size() > 0){
+            PtrType rowidx = blk_offset_[i];
 
-        //have to use the ptr from beginning
-        //as row_offset_[] will pointer to this absolute address
-        //return {data_.data() + row_offset_[rowidx],
-        return {data_.data(),
-            row_offset_.data() + rowidx,
-            static_cast<PtrType>(blk_offset_[i + 1] - blk_offset_[i]), 
-            rowidx};
+            //have to use the ptr from beginning
+            //as row_offset_[] will pointer to this absolute address
+            return {data_.data(),
+                row_offset_.data(),
+                static_cast<PtrType>(blk_offset_[i + 1] - blk_offset_[i]), 
+                rowidx};
+        }
+        else{
+            //return empty block
+            return {nullptr,0,0,0};
+        }
+        
     }
 
     inline int GetBlockNum() const{
@@ -709,6 +724,9 @@ class DMatrixCubeZCol{
         data_.push_back(blkaddr);
     }
 
+    //debug info
+    inline int getRowSize(){return -1;}
+    inline int getDataSize(){return data_.size();}
 };
 
 class DMatrixCube : public xgboost::data::SparsePageDMatrix {
@@ -725,8 +743,11 @@ class DMatrixCube : public xgboost::data::SparsePageDMatrix {
     return data_[i];
   }
 
-  inline int GetBlockNum() const{
+  inline int GetBaseBlockNum() const{
     return data_.size();
+  }
+  inline int GetBlockNum() const{
+    return data_.size() * data_[0].GetBlockNum();
   }
   //interface for compatible
   inline int Size() const{
