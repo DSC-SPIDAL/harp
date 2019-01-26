@@ -169,7 +169,7 @@ void DMatrixCompactBlock::Init(const SparsePage& page, MetaInfo& info){
 /*
  * dense cube
  *
- */
+ *
 void DMatrixDenseCube::Init(const SparsePage& page, MetaInfo& info, int num_maxbins, BlockInfo& blkInfo){
     //save the info
     //shallow copy only the num_
@@ -250,11 +250,12 @@ void DMatrixDenseCube::Init(const SparsePage& page, MetaInfo& info, int num_maxb
 
 }
 
+*/
 
 /*
  *
  *
- */
+ *
 void DMatrixCube::Init(const SparsePage& page, MetaInfo& info, int num_maxbins, BlockInfo& blkInfo){
     //save the info
     //shallow copy only the num_
@@ -334,6 +335,7 @@ void DMatrixCube::Init(const SparsePage& page, MetaInfo& info, int num_maxbins, 
         ",nonzero=" << info_.num_nonzero_;
 
 }
+*/
 
 
 

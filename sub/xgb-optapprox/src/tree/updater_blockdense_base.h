@@ -217,12 +217,12 @@ class BlockBaseMaker: public TreeUpdater {
    * \param p_fmat feature matrix needed for tree construction
    * \param tree the regression tree structure
    */
-  void SetDefaultPostion(DMatrix *p_fmat,
+  void SetDefaultPostion(MetaInfo& info,
                                 const RegTree &tree) {
     // set default direct nodes to default
     // for leaf nodes that are not fresh, mark then to ~nid,
     // so that they are ignored in future statistics collection
-    const auto ndata = static_cast<bst_omp_uint>(p_fmat->Info().num_row_);
+    const auto ndata = static_cast<bst_omp_uint>(info.num_row_);
 
     #pragma omp parallel for schedule(static)
     for (size_t i = 0; i < posset_.getEntrySize(); ++i) {
@@ -274,12 +274,12 @@ class BlockBaseMaker: public TreeUpdater {
   /*! \brief helper function to get statistics from a tree */
   template<typename TStats>
   void GetNodeStats(const std::vector<GradientPair> &gpair,
-                           const DMatrix &fmat,
+                           const MetaInfo& info,
                            const RegTree &tree,
                            std::vector< std::vector<TStats> > *p_thread_temp,
                            std::vector<TStats> *p_node_stats) {
     std::vector< std::vector<TStats> > &thread_temp = *p_thread_temp;
-    const MetaInfo &info = fmat.Info();
+    //const MetaInfo &info = fmat.Info();
     thread_temp.resize(omp_get_max_threads());
     p_node_stats->resize(tree.param.num_nodes);
     #pragma omp parallel

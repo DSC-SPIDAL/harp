@@ -341,7 +341,7 @@ class DMatrixCompactBlock : public xgboost::data::SparsePageDMatrix {
 
 typedef unsigned int PtrType;
 //typedef unsigned char BlkAddrType;
-typedef unsigned short BlkAddrType;
+//typedef unsigned short BlkAddrType;
 
 struct BlockInfo{
     // 3-D cube <rowid, fid, binid>
@@ -406,7 +406,7 @@ struct BlockInfo{
  *      no row_offset stored as in dense cube, rowsize is regular
  *      so as to blk_offset_
  */
-
+template<typename BlkAddrType>
 class DMatrixDenseCubeBlock {
     //
     // Access by iterating on the blk row index
@@ -421,7 +421,7 @@ class DMatrixDenseCubeBlock {
     PtrType base_rowid_;
 
     public:
-    DMatrixDenseCubeBlock(const BlkAddrType* data, PtrType rowsize,
+    DMatrixDenseCubeBlock<BlkAddrType>(const BlkAddrType* data, PtrType rowsize,
             PtrType len, PtrType base):
         data_(data), rowsize_(rowsize), len_(len), base_rowid_{base}{}
 
@@ -453,6 +453,7 @@ class DMatrixDenseCubeBlock {
 };
 
 
+template<typename BlkAddrType>
 class DMatrixDenseCubeZCol{
   private:
      int    blkid_;
@@ -467,7 +468,7 @@ class DMatrixDenseCubeZCol{
 
      DMatrixDenseCubeZCol() = default;
 
-    inline DMatrixDenseCubeBlock GetBlock(int i) const {
+    inline DMatrixDenseCubeBlock<BlkAddrType> GetBlock(int i) const {
         // blk_offset_ : idx in row_offset_
         // row_offset_ : addr in data_
         //if (blk_offset_.size() > i){
@@ -543,17 +544,18 @@ class DMatrixDenseCubeZCol{
 
 };
 
+template<typename BlkAddrType>
 class DMatrixDenseCube : public xgboost::data::SparsePageDMatrix {
  
  private:
-     std::vector<DMatrixDenseCubeZCol> data_;
+     std::vector<DMatrixDenseCubeZCol<BlkAddrType>> data_;
      MetaInfo info_;
 
  public:
   explicit DMatrixDenseCube(){}
 
   //interface for reading access in bulidhist
-  inline const DMatrixDenseCubeZCol& GetBlockZCol(unsigned int i) const {
+  inline const DMatrixDenseCubeZCol<BlkAddrType>& GetBlockZCol(unsigned int i) const {
     return data_[i];
   }
 
@@ -567,14 +569,95 @@ class DMatrixDenseCube : public xgboost::data::SparsePageDMatrix {
   inline int Size() const{
     return data_.size();
   }
-  inline const DMatrixDenseCubeZCol& operator[](unsigned int i) const {
+  inline const DMatrixDenseCubeZCol<BlkAddrType>& operator[](unsigned int i) const {
     return data_[i];
   }
 
 
 
   //interface for building the matrix
-  void Init(const SparsePage& page, MetaInfo& info, int maxbins, BlockInfo& blkInfo);
+  //void Init(const SparsePage& page, MetaInfo& info, int maxbins, BlockInfo& blkInfo);
+    void Init(const SparsePage& page, MetaInfo& info, int num_maxbins, BlockInfo& blkInfo){
+        //save the info
+        //shallow copy only the num_
+        info_.num_row_ = info.num_row_;
+        info_.num_col_ = info.num_col_;
+        info_.num_nonzero_ = info.num_nonzero_;
+    
+    #ifdef USE_VECTOR4MODEL
+        blkInfo.init(info.num_row_, info_.num_col_ + 1, num_maxbins);
+    #else
+        blkInfo.init(info.num_row_, info_.num_col_, num_maxbins);
+    #endif
+    
+        //init 
+        data_.clear();
+        int row_blknum = (info.num_row_ + blkInfo.GetRowBlkSize() - 1)/ blkInfo.GetRowBlkSize(); 
+    #ifdef USE_VECTOR4MODEL
+        int fid_blknum = (info.num_col_ + 1 + blkInfo.GetFeatureBlkSize() - 1)/ blkInfo.GetFeatureBlkSize(); 
+    #else
+        int fid_blknum = (info.num_col_ + blkInfo.GetFeatureBlkSize() - 1)/ blkInfo.GetFeatureBlkSize(); 
+    #endif
+        int binid_blknum = (num_maxbins + blkInfo.GetBinBlkSize() - 1)/ blkInfo.GetBinBlkSize(); 
+        data_.resize(fid_blknum * binid_blknum);
+        //todo: init blkid if necessary
+        for(int i=0; i < fid_blknum * binid_blknum; i++){
+            data_[i].init(i);
+        }
+    
+        LOG(CONSOLE) << "BlockInfo: row_blksize=" << blkInfo.GetRowBlkSize() <<
+            ",fid_blksize=" << blkInfo.GetFeatureBlkSize() <<
+            ",binid_blksize=" << blkInfo.GetBinBlkSize();
+    
+        LOG(CONSOLE) << "DenseCubeInit:row_blknum=" << row_blknum <<
+            ",fid_blknum=" << fid_blknum << ",binid_blknum=" << binid_blknum;
+    
+        // rowset
+        // go through all rows
+        int rownum = page.Size();
+        for(int rowid = 0; rowid < rownum; rowid++){
+    
+            auto row = page[rowid];
+            //split into blks to all DMatrixDenseCubeZCol items
+            int rowblkid = rowid / blkInfo.GetRowBlkSize();
+    
+            //
+            //one step for all ZCols
+            //add block before row
+            //
+            if ((rowid % blkInfo.GetRowBlkSize()) == 0){
+                addblock();
+            }
+            addrow();
+     
+            //add data
+            for (auto& ins: row){
+                //for all <features,binid> items in this row
+                int blkid = (ins.binid / blkInfo.GetBinBlkSize()) * fid_blknum + ins.index / blkInfo.GetFeatureBlkSize(); 
+                BlkAddrType blkaddr = (ins.binid % blkInfo.GetBinBlkSize()) * blkInfo.GetFeatureBlkSize() + ins.index % blkInfo.GetFeatureBlkSize();
+    
+                CHECK_LT(blkid, data_.size());
+                data_[blkid].append(blkaddr);
+                
+                // for densecube, save only binid is okay, fid is the index
+                //data_[blkid].append(ins.binid);
+            }
+    
+       }
+       //add sentinel at the end
+       addblock();
+       addrow();
+    
+    
+       LOG(CONSOLE) << "DMatrixDenseCube::Init" <<
+            ",BlkInfo=r" << blkInfo.GetRowBlkSize() << ",f" << blkInfo.GetFeatureBlkSize() << ",b" << blkInfo.GetBinBlkSize() <<
+            ",memory=" << getMemSize()/(1024*1024) << "MB" <<
+            ",rowxcol=" << info_.num_row_ << "x" << info_.num_col_ << "x" << num_maxbins <<
+            ",nonzero=" << info_.num_nonzero_;
+    
+    }
+
+
   inline void addrow(){
       for(unsigned int i=0; i< data_.size(); i++){
           data_[i].addrow();
@@ -612,6 +695,7 @@ class DMatrixDenseCube : public xgboost::data::SparsePageDMatrix {
  *
  */
 
+template<typename BlkAddrType>
 class DMatrixCubeBlock {
     //
     // Access by iterating on the blk row index
@@ -624,7 +708,7 @@ class DMatrixCubeBlock {
     PtrType base_rowid_;
 
   public:
-    DMatrixCubeBlock(const BlkAddrType* data, const PtrType* offset,
+    DMatrixCubeBlock<BlkAddrType>(const BlkAddrType* data, const PtrType* offset,
             PtrType len, PtrType base):
         data_(data), row_offset_(offset), len_(len), base_rowid_{base}{}
 
@@ -656,6 +740,7 @@ class DMatrixCubeBlock {
 };
 
 
+template<typename BlkAddrType>
 class DMatrixCubeZCol{
   private:
      int    blkid_;
@@ -667,7 +752,7 @@ class DMatrixCubeZCol{
 
      DMatrixCubeZCol() = default;
 
-    inline DMatrixCubeBlock GetBlock(int i) const {
+    inline DMatrixCubeBlock<BlkAddrType> GetBlock(int i) const {
         // blk_offset_ : idx in row_offset_
         // row_offset_ : addr in data_
 
@@ -729,17 +814,18 @@ class DMatrixCubeZCol{
     inline int getDataSize(){return data_.size();}
 };
 
+template<typename BlkAddrType>
 class DMatrixCube : public xgboost::data::SparsePageDMatrix {
  
  private:
-     std::vector<DMatrixCubeZCol> data_;
+     std::vector<DMatrixCubeZCol<BlkAddrType>> data_;
      MetaInfo info_;
 
  public:
   explicit DMatrixCube(){}
 
   //interface for reading access in bulidhist
-  inline const DMatrixCubeZCol& GetBlockZCol(unsigned int i) const {
+  inline const DMatrixCubeZCol<BlkAddrType>& GetBlockZCol(unsigned int i) const {
     return data_[i];
   }
 
@@ -753,14 +839,14 @@ class DMatrixCube : public xgboost::data::SparsePageDMatrix {
   inline int Size() const{
     return data_.size();
   }
-  inline const DMatrixCubeZCol& operator[](unsigned int i) const {
+  inline const DMatrixCubeZCol<BlkAddrType>& operator[](unsigned int i) const {
     return data_[i];
   }
 
 
 
   //interface for building the matrix
-  void Init(const SparsePage& page, MetaInfo& info, int maxbins, BlockInfo& blkInfo);
+  //void Init(const SparsePage& page, MetaInfo& info, int maxbins, BlockInfo& blkInfo);
   inline void addrow(){
       for(unsigned int i=0; i< data_.size(); i++){
           data_[i].addrow();
@@ -788,6 +874,89 @@ class DMatrixCube : public xgboost::data::SparsePageDMatrix {
   const MetaInfo& Info() const override{
       return info_;
   }
+
+    void Init(const SparsePage& page, MetaInfo& info, int num_maxbins, BlockInfo& blkInfo){
+        //save the info
+        //shallow copy only the num_
+        info_.num_row_ = info.num_row_;
+        info_.num_col_ = info.num_col_;
+        info_.num_nonzero_ = info.num_nonzero_;
+    
+    #ifdef USE_VECTOR4MODEL
+        blkInfo.init(info.num_row_, info_.num_col_ + 1, num_maxbins);
+    #else
+        blkInfo.init(info.num_row_, info_.num_col_, num_maxbins);
+    #endif
+    
+    
+        //init 
+        data_.clear();
+        int row_blknum = (info.num_row_ + blkInfo.GetRowBlkSize() - 1)/ blkInfo.GetRowBlkSize(); 
+     #ifdef USE_VECTOR4MODEL
+        int fid_blknum = (info.num_col_ + 1 + blkInfo.GetFeatureBlkSize() - 1)/ blkInfo.GetFeatureBlkSize(); 
+    #else
+        int fid_blknum = (info.num_col_ + blkInfo.GetFeatureBlkSize() - 1)/ blkInfo.GetFeatureBlkSize(); 
+    #endif
+       
+        int binid_blknum = (num_maxbins + blkInfo.GetBinBlkSize() - 1)/ blkInfo.GetBinBlkSize(); 
+        data_.resize(fid_blknum * binid_blknum);
+        //todo: init blkid if necessary
+        for(int i=0; i < fid_blknum * binid_blknum; i++){
+            data_[i].init(i);
+        }
+    
+        LOG(CONSOLE) << "BlockInfo: row_blksize=" << blkInfo.GetRowBlkSize() <<
+            ",fid_blksize=" << blkInfo.GetFeatureBlkSize() <<
+            ",binid_blksize=" << blkInfo.GetBinBlkSize();
+    
+        LOG(CONSOLE) << "CubeInit:row_blknum=" << row_blknum <<
+            ",fid_blknum=" << fid_blknum << ",binid_blknum=" << binid_blknum;
+    
+        // rowset
+        // go through all rows
+        int rownum = page.Size();
+        for(int rowid = 0; rowid < rownum; rowid++){
+    
+            auto row = page[rowid];
+            //split into blks to all DMatrixCubeZCol items
+            int rowblkid = rowid / blkInfo.GetRowBlkSize();
+    
+            //
+            //one step for all ZCols
+            //add block before row
+            //
+            if ((rowid % blkInfo.GetRowBlkSize()) == 0){
+                addblock();
+            }
+            addrow();
+     
+            //add data
+            for (auto& ins: row){
+                //for all <features,binid> items in this row
+                int blkid = (ins.binid / blkInfo.GetBinBlkSize()) * fid_blknum + ins.index / blkInfo.GetFeatureBlkSize(); 
+                BlkAddrType blkaddr = (ins.binid % blkInfo.GetBinBlkSize()) * blkInfo.GetFeatureBlkSize() + ins.index % blkInfo.GetFeatureBlkSize();
+    
+                CHECK_LT(blkid, data_.size());
+                data_[blkid].append(blkaddr);
+    
+            }
+    
+       }
+       //add sentinel at the end
+       addblock();
+       addrow();
+    
+    
+       LOG(CONSOLE) << "DMatrixCube::Init" <<
+            ",BlkInfo=r" << blkInfo.GetRowBlkSize() << ",f" << blkInfo.GetFeatureBlkSize() << ",b" << blkInfo.GetBinBlkSize() <<
+            ",memory=" << getMemSize()/(1024*1024) << "MB" <<
+            ",rowxcol=" << info_.num_row_ << "x" << info_.num_col_ << "x" << num_maxbins <<
+            ",nonzero=" << info_.num_nonzero_;
+    
+    }
+    
+
+
 };
 
 

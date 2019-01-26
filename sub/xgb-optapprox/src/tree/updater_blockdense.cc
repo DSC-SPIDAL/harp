@@ -61,15 +61,17 @@ class spin_mutex {
 };
 
 
-template<typename TStats, typename TDMatrixCube, typename TDMatrixCubeBlock>
+//template<typename TStats, typename TDMatrixCube, typename TDMatrixCubeBlock>
+template<typename TStats, typename TBlkAddr, template<typename> class TDMatrixCube, template<typename> class TDMatrixCubeBlock>
 class HistMakerBlockDense: public BlockBaseMaker {
  public:
 
  HistMakerBlockDense(){
 
       this->isInitializedHistIndex = false;
-      p_blkmat = new TDMatrixCube();
-      p_hmat = new DMatrixCompactBlockDense();
+      p_blkmat = new TDMatrixCube<TBlkAddr>();
+      p_hmat = new TDMatrixCube<unsigned char>();
+      //p_hmat = new DMatrixCompactBlockDense();
   }
 
   ~HistMakerBlockDense(){
@@ -168,7 +170,7 @@ class HistMakerBlockDense: public BlockBaseMaker {
   };
 
   struct HistEntry {
-    typename HistMakerBlockDense<TStats,TDMatrixCube,TDMatrixCubeBlock>::HistUnit hist;
+    typename HistMakerBlockDense<TStats,TBlkAddr, TDMatrixCube,TDMatrixCubeBlock>::HistUnit hist;
     //unsigned istart;
 
     /* OptApprox:: init bindid in pmat */
@@ -493,9 +495,13 @@ class HistMakerBlockDense: public BlockBaseMaker {
   BlockInfo blkInfo_;
 
   // hist mat compact
-  TDMatrixCube* p_blkmat;
-  DMatrixCompactBlockDense* p_hmat;
-
+  MetaInfo dmat_info_;
+  TDMatrixCube<TBlkAddr>* p_blkmat;
+  TDMatrixCube<unsigned char>* p_hmat;
+  //TDMatrixCompactBlockDense* p_hmat;
+  TDMatrixCube<TBlkAddr> blkmat_;
+  TDMatrixCube<unsigned char> hmat_;
+ 
   //for predict cache
   const RegTree* p_last_tree_;
   int treeid_{0};
@@ -1072,7 +1078,7 @@ class HistMakerBlockDense: public BlockBaseMaker {
 
         // init the posset after blkInfo_ updated
         posset_.Init(_info.num_row_, omp_get_max_threads(), blkInfo_.GetRowBlkSize());
-        this->SetDefaultPostion(p_fmat, tree);
+        this->SetDefaultPostion(dmat_info_, tree);
 
         unsigned int nthread = omp_get_max_threads();
         this->thread_hist_.resize(omp_get_max_threads());
@@ -1103,8 +1109,11 @@ class HistMakerBlockDense: public BlockBaseMaker {
         /*
          * build blkmat(block matrix) and hmat(column matrix)
          */
+        dmat_info_ = p_fmat->Info();
+        BlockInfo hmat_blkInfo = BlockInfo(0, 1, 0);
+        p_hmat->Init(*p_fmat->GetRowBatches().begin(), p_fmat->Info(), param_.max_bin, hmat_blkInfo);
         p_blkmat->Init(*p_fmat->GetRowBatches().begin(), p_fmat->Info(), param_.max_bin, blkInfo_);
-        p_hmat->Init(*p_fmat->GetSortedColumnBatches().begin(), p_fmat->Info());
+        //p_hmat->Init(*p_fmat->GetSortedColumnBatches().begin(), p_fmat->Info());
 
 
         #ifdef USE_DEBUG
@@ -1425,7 +1434,7 @@ class HistMakerBlockDense: public BlockBaseMaker {
   //
   void UpdateHistBlock(const int depth,
                        const std::vector<GradientPair> &gpair,
-                       const TDMatrixCubeBlock &block,
+                       const TDMatrixCubeBlock<TBlkAddr> &block,
                        const MetaInfo &info,
                        const RegTree &tree,
                        bst_uint blkid_offset,
@@ -1684,13 +1693,13 @@ class HistMakerBlockDense: public BlockBaseMaker {
    * \param tree the regression tree structure
    */
   void CorrectNonDefaultPositionByBatch(
-      DMatrixCompactBlockDense &batch, const std::vector<bst_uint> &sorted_split_set,
+      TDMatrixCube<unsigned char> &batch, const std::vector<bst_uint> &sorted_split_set,
       const RegTree &tree) {
     for (size_t fid = 0; fid < batch.Size(); ++fid) {
       auto it = std::lower_bound(sorted_split_set.begin(), sorted_split_set.end(), fid);
 
       if (it != sorted_split_set.end() && *it == fid) {
-        auto col = batch[fid];
+        auto col = batch[fid].GetBlock(0);
         #pragma omp parallel for schedule(static)
         for (size_t i = 0; i < posset_.getEntrySize(); ++i) {
             auto &entry = posset_.getEntry(i);
@@ -1706,7 +1715,8 @@ class HistMakerBlockDense: public BlockBaseMaker {
               const int ridx = entry.getRowId();
               //access the data by ridx
               //const bst_float fvalue = col[ridx].fvalue;
-              const bst_uint binid = col._binidByRowId(ridx);
+              //const bst_uint binid = col._binidByRowId(ridx);
+              const auto binid = col._blkaddrByRowId(ridx, 0);
 
               if (binid <= tree[pid].SplitCond()) {
                 //this->SetEncodePosition(ridx, tree[pid].LeftChild());
@@ -1831,7 +1841,7 @@ class HistMakerBlockDense: public BlockBaseMaker {
         posset_.BeginUpdate(depth);
         #endif
 
-        this->SetDefaultPostion(p_hmat, tree);
+        this->SetDefaultPostion(dmat_info_, tree);
         this->tminfo.aux_time[1] += dmlc::GetTime() - _tstartInit;
 
         //printPOSSet(posset_, gid);
@@ -1865,7 +1875,7 @@ class HistMakerBlockDense: public BlockBaseMaker {
                   const std::vector<GradientPair> &gpair,
                   const std::vector<bst_uint> &blkset,
                   const RegTree &tree) {
-    const MetaInfo &info = p_hmat->Info();
+      const MetaInfo &info = dmat_info_;
 
       if (this->qexpand_.size() == 0){
         //last step to update position 
@@ -2008,7 +2018,7 @@ class HistMakerBlockDense: public BlockBaseMaker {
 
       // update node statistics.
       double _tstartSum = dmlc::GetTime();
-      this->GetNodeStats(gpair, *p_hmat, tree,
+      this->GetNodeStats(gpair, dmat_info_, tree,
                          &(this->thread_stats_), &(this->node_stats_));
       for (size_t i = 0; i < this->qexpand_.size(); ++i) {
         const int nid = this->qexpand_[i];
@@ -2090,9 +2100,19 @@ XGBOOST_REGISTER_TREE_UPDATER(HistMakerBlockDense, "grow_blockdense")
 .describe("Tree constructor that uses approximate global of histogram construction.")
 .set_body([]() {
     #ifdef USE_SPARSE_DMATRIX
-    return new HistMakerBlockDense<GradStats, DMatrixCube, DMatrixCubeBlock>();
+    
+    #ifdef USE_BLKADDR_BYTE
+    return new HistMakerBlockDense<GradStats, unsigned char, DMatrixCube, DMatrixCubeBlock>();
     #else
-    return new HistMakerBlockDense<GradStats, DMatrixDenseCube, DMatrixDenseCubeBlock>();
+    return new HistMakerBlockDense<GradStats, unsigned short, DMatrixCube, DMatrixCubeBlock>();
+    #endif
+
+    #else
+    #ifdef USE_BLKADDR_BYTE
+    return new HistMakerBlockDense<GradStats, unsigned char, DMatrixDenseCube, DMatrixDenseCubeBlock>();
+    #else
+    return new HistMakerBlockDense<GradStats, unsigned short, DMatrixDenseCube, DMatrixDenseCubeBlock>();
+    #endif
     #endif
   });
 
