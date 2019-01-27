@@ -324,7 +324,11 @@ class HistMakerBlockDense: public BlockBaseMaker {
                       rptr[fid+1] - rptr[fid],
                       pblkInfo->GetBinBlkSize(),
                       pblkInfo->GetFeatureBlkSize(),
+#ifdef USE_VECTOR4MODEL
                       pblkInfo->GetBinBlkSize()*pblkInfo->GetFeatureBlkSize()*pblkInfo->GetFeatureBlkNum(featnum+1)*nodeSize);
+#else
+                      pblkInfo->GetBinBlkSize()*pblkInfo->GetFeatureBlkSize()*pblkInfo->GetFeatureBlkNum(featnum)*nodeSize);
+#endif
     }
 
 
@@ -351,7 +355,7 @@ class HistMakerBlockDense: public BlockBaseMaker {
     void Init(const TrainParam &param, int nodesize, BlockInfo& blkinfo) {
 
       // cleanup statistics
-      //for (int tid = 0; tid < nthread; ++tid) {
+      //for (int tid = 0; tid < nthread; ++tid) 
       {
 #ifdef USE_VECTOR4MODEL
         for (size_t i = 0; i < hset.data.size(); ++i) {
@@ -438,6 +442,14 @@ class HistMakerBlockDense: public BlockBaseMaker {
     inline size_t Size() const {
       return rptr.size() - 1;
     }
+
+    //debug 
+    #ifdef USE_DEBUG_SAVE
+    void saveGHSum(int treeid, int depth, int nodecnt){
+    }
+    #endif
+
+
   };
 
 
@@ -547,7 +559,7 @@ class HistMakerBlockDense: public BlockBaseMaker {
       printtree(p_tree, "After CreateHist");
 
       #ifdef USE_DEBUG_SAVE
-      //this->wspace_.saveGHSum(treeid_, depth, this->qexpand_.size());
+      this->wspace_.saveGHSum(treeid_, depth, this->qexpand_.size());
       #endif
 
 
@@ -1608,7 +1620,7 @@ class HistMakerBlockDense: public BlockBaseMaker {
                     //hbuilder[nid].AddWithIndex(blkaddr, gpair[ridx]);
 
                     //debug only
-                    #ifdef DEBUG
+                    #ifdef USE_DEBUG
                     //this->datasum_ += block._blkaddr(ridx,k);
                     this->datasum_ += block._blkaddrByRowId(ridx,k);
                     #endif
@@ -1700,6 +1712,9 @@ class HistMakerBlockDense: public BlockBaseMaker {
 
       if (it != sorted_split_set.end() && *it == fid) {
         auto col = batch[fid].GetBlock(0);
+
+        if (col.size() <= 0) continue;
+
         #pragma omp parallel for schedule(static)
         for (size_t i = 0; i < posset_.getEntrySize(); ++i) {
             auto &entry = posset_.getEntry(i);
@@ -1715,7 +1730,15 @@ class HistMakerBlockDense: public BlockBaseMaker {
               const int ridx = entry.getRowId();
               //access the data by ridx
               //const bst_float fvalue = col[ridx].fvalue;
-              //const bst_uint binid = col._binidByRowId(ridx);
+              //
+              // todo >>>>
+              // check special value of binid for MISSING value
+              // here, just use dense cube
+              //
+              //const auto binid = col._blkaddrByRowId(ridx, 0);
+              if (col.rowsizeByRowId(ridx) == 0){
+                  continue;
+              }
               const auto binid = col._blkaddrByRowId(ridx, 0);
 
               if (binid <= tree[pid].SplitCond()) {
@@ -1920,9 +1943,9 @@ class HistMakerBlockDense: public BlockBaseMaker {
 
         #endif
 
-        //#ifdef USE_DEBUG
+        #ifdef USE_DEBUG
         this->datasum_ = 0.;
-        //#endif
+        #endif
 
         #ifdef USE_DYNAMIC_ROWBLOCK
         #pragma omp parallel for schedule(dynamic, 1)
@@ -2020,6 +2043,11 @@ class HistMakerBlockDense: public BlockBaseMaker {
       double _tstartSum = dmlc::GetTime();
       this->GetNodeStats(gpair, dmat_info_, tree,
                          &(this->thread_stats_), &(this->node_stats_));
+
+      #ifdef USE_DEBUG
+      TStats modelSum;
+      #endif
+
       for (size_t i = 0; i < this->qexpand_.size(); ++i) {
         const int nid = this->qexpand_[i];
         //const int wid = this->node2workindex_[nid];
@@ -2034,7 +2062,17 @@ class HistMakerBlockDense: public BlockBaseMaker {
                      = this->node_stats_[nid];
         #endif
 
+
+        //debuf info
+        #ifdef USE_DEBUG
+        modelSum.Add(this->node_stats_[nid]);
+        #endif
       }
+
+      #ifdef USE_DEBUG
+      LOG(CONSOLE) << "modelSum=" << modelSum.sum_grad << ":" << modelSum.sum_hess;
+      #endif
+
       //this->tminfo.aux_time[6] += dmlc::GetTime() - _tstartSum;
       
     //this->histred_.Allreduce(dmlc::BeginPtr(this->wspace_.hset.data),
