@@ -326,6 +326,8 @@ class POSSet{
 
 
     };
+
+    private:
     /*! \brief POSGroup set 
      */
     // static allocation of memory
@@ -344,7 +346,7 @@ class POSSet{
     // thread local 
     std::vector<std::vector<POSGroup>> local_grp_;
 
-
+    public:
     POSSet() = default;
 
     void InitEntry(int rownumber){

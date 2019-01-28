@@ -181,6 +181,7 @@ void printgmat(GHistIndexMatrix& gmat){
   }
 }
 
+/*
 void printdmat(DMatrixCube& dmat){
   std::cout << "HMAT(Cube)======================================\n";
   int nblks = dmat.Size();
@@ -211,43 +212,10 @@ void printdmat(DMatrixCube& dmat){
      std::cout << "\n";
   }
 }
+*/
 
-void printdmat(DMatrixDenseCube& dmat){
-  std::cout << "HMAT(DenseCube)======================================\n";
-  int nblks = dmat.Size();
-  nblks = std::min(nblks, 5);
-
-  for (size_t blkid = 0; blkid < nblks; ++blkid) {
-
-    int znum = dmat[blkid].GetBlockNum();
-    int nzblks = std::min(znum, 2);
-
-    std::cout << "BLK:" << blkid << "\n";
-    for(int z = 0; z < nzblks; z++){
-        auto blk = dmat[blkid].GetBlock(z);
-        auto ndata = static_cast<bst_omp_uint>(blk.size());
-
-        std::cout << "    zblk:" << z << ", len=" << ndata << "\n";
-
-        int tn = 0;
-        for (size_t j = 0; tn < 10 && j < ndata; ++j) {
-            const bst_uint ridx = blk._index(j);
-            if (blk.rowsize(j) > 0 ){
-                std::cout << "r:" << ridx << "<";
-                for(size_t k = 0; k < std::min(blk.rowsize(j),10); k++){
-                    const bst_uint blkaddr = blk._blkaddr(j,k);
-                    std::cout << ridx << ":" << blkaddr << " ";
-                }
-                std::cout << "> ";
-
-                tn++;
-            }
-        }
-        std::cout << "\n";
-    }
-  }
-}
-
+// DMatrixCube, DMatrixCubeDense
+////
 
 void printdmat(DMatrixCompactBlock& dmat){
   std::cout << "HMAT(CompactBlockDense)======================================\n";
@@ -432,8 +400,8 @@ void printgh(const std::vector<GradientPair> &gpair)
 #else
 void printmsg(std::string msg){}
 void printtree(RegTree* ptree, std::string header /*""*/){}
-void printdmat(DMatrixCube& dmat){}
-void printdmat(DMatrixDenseCube& dmat){}
+//void printdmat(DMatrixCube& dmat){}
+//void printdmat(DMatrixDenseCube& dmat){}
 void printdmat(DMatrixCompact& dmat){}
 void printdmat(DMatrixCompactDense& dmat){}
 void printdmat(DMatrixCompactBlockDense& dmat){}
