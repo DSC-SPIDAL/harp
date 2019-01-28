@@ -145,6 +145,13 @@ else
 	export DMATRIX=dense
 endif
 
+ifeq ($(USE_BLKADDR_BYTE), 1)
+	CFLAGS += -DUSE_BLKADDR_BYTE=1
+	export BLKADDR=byte
+else
+	export BLKADDR=short
+endif
+
 ifeq ($(USE_HALFTRICK), 1)
 	CFLAGS += -DUSE_HALFTRICK=1
 	export HALFTRICK=halftrick
@@ -211,11 +218,11 @@ endif
 # set target and build dir by features
 #
 ifdef TAGNAME
-TARGET = xgboost-$(CXX)-$(THREADIMP)-$(DMATRIX)-$(HALFTRICK)-$(UNROLL)-$(SPLIT)-$(TAGNAME)-$(VTUNE)$(OUTPUTTYPE)
+TARGET = xgboost-$(CXX)-$(THREADIMP)-$(DMATRIX)-$(HALFTRICK)-$(BLKADDR)-$(SPLIT)-$(TAGNAME)-$(VTUNE)$(OUTPUTTYPE)
 else
-TARGET = xgboost-$(CXX)-$(THREADIMP)-$(DMATRIX)-$(HALFTRICK)-$(UNROLL)-$(SPLIT)-noname-$(VTUNE)$(OUTPUTTYPE)
+TARGET = xgboost-$(CXX)-$(THREADIMP)-$(DMATRIX)-$(HALFTRICK)-$(BLKADDR)-$(SPLIT)-noname-$(VTUNE)$(OUTPUTTYPE)
 endif
-WORKDIR = build-$(CXX)-$(THREADIMP)-$(DMATRIX)-$(HALFTRICK)-$(UNROLL)-$(SPLIT)-$(VTUNE)$(OUTPUTTYPE)
+WORKDIR = build-$(CXX)-$(THREADIMP)-$(DMATRIX)-$(HALFTRICK)-$(BLKADDR)-$(SPLIT)-$(VTUNE)$(OUTPUTTYPE)
 
 #
 # Compiler and vec report
