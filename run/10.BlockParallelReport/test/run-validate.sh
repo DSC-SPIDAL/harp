@@ -6,16 +6,16 @@ fi
 
 tagname=$1
 if [ -z $tagname  ] ; then
-	tagname=byte-blockdense-longcube-threadinit
+	tagname=block
 fi
 
 echo "run validate test with tagname=$tagname"
-bin=../bin/xgboost-g++-omp-halftrick-noprefetch-${tagname}-release
+bin=../bin/xgboost-g++-omp-dense-halftrick-short-splitonnode-${tagname}-release
 if [ ! -f $bin ]; then
 	echo "$bin not exist, quit"
 	exit -1
 fi
-bin=../bin/xgboost-g++-omp-nohalftrick-noprefetch-${tagname}-release
+bin=../bin/xgboost-g++-omp-dense-nohalftrick-short-splitonnode-${tagname}-release
 if [ ! -f $bin ]; then
 	echo "$bin not exist, quit"
 	exit -1
@@ -25,17 +25,17 @@ fi
 
 export RUNID=`date +%m%d%H%M%S`
 
-bin=../bin/xgboost-g++-omp-nohalftrick-noprefetch-${tagname}-release
-../bin/xgb-validation.sh ${bin} blockdense 6
-../bin/xgb-validation.sh ${bin} blockdense 8
-../bin/xgb-validation.sh ${bin} blockdense 12
-../bin/xgb-validation.sh ${bin} blockdense 16
+bin=../bin/xgboost-g++-omp-dense-nohalftrick-short-splitonnode-${tagname}-release
+../bin/xgb-validation.sh ${bin} block 6
+../bin/xgb-validation.sh ${bin} block 8
+../bin/xgb-validation.sh ${bin} block 12
+../bin/xgb-validation.sh ${bin} block 16
 
-bin=../bin/xgboost-g++-omp-halftrick-noprefetch-${tagname}-release
-../bin/xgb-validation.sh ${bin} blockdense 6
-../bin/xgb-validation.sh ${bin} blockdense 8
-../bin/xgb-validation.sh ${bin} blockdense 12
-../bin/xgb-validation.sh ${bin} blockdense 16
+bin=../bin/xgboost-g++-omp-dense-halftrick-short-splitonnode-${tagname}-release
+../bin/xgb-validation.sh ${bin} block 6
+../bin/xgb-validation.sh ${bin} block 8
+../bin/xgb-validation.sh ${bin} block 12
+../bin/xgb-validation.sh ${bin} block 16
 
 echo "====================================================="
 echo "Validate Test RUNID=$RUNID:"

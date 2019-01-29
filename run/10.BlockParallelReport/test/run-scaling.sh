@@ -7,30 +7,30 @@ fi
 
 tagname=$1
 if [ -z $tagname  ] ; then
-	tagname=byte-blockdense-longcube-threadinit
+	tagname=block
 fi
 
 echo "run scaling test with tagname=$tagname"
 
-bin=../bin/xgboost-g++-omp-halftrick-noprefetch-${tagname}-release
+bin=../bin/xgboost-g++-omp-dense-halftrick-short-splitonnode-${tagname}-release
 if [ ! -f $bin ]; then
 	echo "$bin not exist, quit"
 	exit -1
 fi
-bin=../bin/xgboost-g++-omp-nohalftrick-noprefetch-${tagname}-release
+bin=../bin/xgboost-g++-omp-dense-nohalftrick-short-splitonnode-${tagname}-release
 if [ ! -f $bin ]; then
 	echo "$bin not exist, quit"
 	exit -1
 fi
 
 
-bin=../bin/xgboost-g++-omp-halftrick-noprefetch-${tagname}-release
-../bin/xgb-strongscale.sh ${bin} higgs 10 8 blockdense 
-../bin/xgb-strongscale.sh ${bin} synset 10 8 blockdense 
+bin=../bin/xgboost-g++-omp-dense-halftrick-short-splitonnode-${tagname}-release
+../bin/xgb-strongscale.sh ${bin} higgs 10 8 block 
+../bin/xgb-strongscale.sh ${bin} synset 10 8 block 
 
-bin=../bin/xgboost-g++-omp-nohalftrick-noprefetch-${tagname}-release
-../bin/xgb-strongscale.sh ${bin} higgs 10 8 blockdense 
-../bin/xgb-strongscale.sh ${bin} synset 10 8 blockdense 
+bin=../bin/xgboost-g++-omp-dense-nohalftrick-short-splitonnode-${tagname}-release
+../bin/xgb-strongscale.sh ${bin} higgs 10 8 block 
+../bin/xgb-strongscale.sh ${bin} synset 10 8 block 
 
 echo "================================"
 echo " StrongScaling Test Results:"
