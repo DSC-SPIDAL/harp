@@ -1930,10 +1930,10 @@ class HistMakerBlock: public BlockBaseMaker {
 
         #ifdef USE_MULTINODEEACHGROUP
         // multiple nodes in one group version, 
-        //const int dsize = posset_.getGroupCnt();
+        const int grpsize = posset_.getGroupCnt() / posset_.getBlockCnt();
 
-        //const int group_parallel_cnt = 2;
-        const int dsize = param_.group_parallel_cnt;
+        //const int dsize = param_.group_parallel_cnt;
+        const int dsize = std::min(param_.group_parallel_cnt, grpsize);
 
         #endif
 
@@ -1973,6 +1973,42 @@ class HistMakerBlock: public BlockBaseMaker {
         }
         #else
         
+        //#define TEST_OMP_OVERHEAD
+        #ifdef TEST_OMP_OVERHEAD
+        for(int z = 0; z < zsize; z++){
+            
+            // test the overhead of omp scheduling
+            for(int d = 0; d < dsize; d++){
+
+            #pragma omp parallel for schedule(dynamic, 1)
+            //for(bst_omp_uint i = 0; i < dsize * nsize; ++i){
+            for(bst_omp_uint i = 0; i < nsize; ++i){
+
+              // node block id
+              //unsigned int nblkid = i / (nsize);
+              unsigned int nblkid = d;
+              // absolute blk id
+              int blkid = i % (nsize);
+              // blk id on the base plain
+              int offset = blkid % nsize;
+              // blk id on the row dimension
+              unsigned int zblkid = z;
+
+
+              // get dataBlock
+              auto block = p_blkmat->GetBlockZCol(offset).GetBlock(zblkid);
+
+              // update model by this dataBlock and node_blkid
+              this->UpdateHistBlock(depth, gpair, block, info, tree,
+                    offset, zblkid, nblkid,
+                    &this->thread_histcompact_[omp_get_thread_num()]);
+                    //&this->thread_hist_[0]);
+            }
+
+            }
+        }
+
+        #else
         for(int z = 0; z < zsize; z++){
             #pragma omp parallel for schedule(dynamic, 1)
             for(bst_omp_uint i = 0; i < dsize * nsize; ++i){
@@ -1996,8 +2032,10 @@ class HistMakerBlock: public BlockBaseMaker {
                     &this->thread_histcompact_[omp_get_thread_num()]);
                     //&this->thread_hist_[0]);
             }
+
         }
- 
+
+        #endif  //TEST_OMP_OVERHEAD
 
         #endif
 

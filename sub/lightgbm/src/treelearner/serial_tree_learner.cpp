@@ -10,6 +10,7 @@
 #include <queue>
 
 namespace LightGBM {
+#define TIMETAG
 
 #ifdef TIMETAG
 std::chrono::duration<double, std::milli> init_train_time;
@@ -216,7 +217,8 @@ Tree* SerialTreeLearner::Train(const score_t* gradients, const score_t *hessians
     #endif
     cur_depth = std::max(cur_depth, tree->leaf_depth(left_leaf));
   }
-  Log::Debug("Trained a tree with leaves = %d and max_depth = %d", tree->num_leaves(), cur_depth);
+  //Log::Debug("Trained a tree with leaves = %d and max_depth = %d", tree->num_leaves(), cur_depth);
+  Log::Info("Trained a tree with leaves = %d and max_depth = %d", tree->num_leaves(), cur_depth);
   return tree.release();
 }
 
