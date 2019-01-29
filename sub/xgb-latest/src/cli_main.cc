@@ -34,6 +34,8 @@ enum CLITask {
 struct CLIParam : public dmlc::Parameter<CLIParam> {
   /*! \brief the task name */
   int task;
+  /*! \brief whether silent */
+  int silent;
   /*! \brief whether evaluate training statistics */
   bool eval_train;
   /*! \brief number of boosting iterations */
@@ -83,6 +85,9 @@ struct CLIParam : public dmlc::Parameter<CLIParam> {
         .add_enum("dump", kDumpModel)
         .add_enum("pred", kPredict)
         .describe("Task to be performed by the CLI program.");
+    DMLC_DECLARE_FIELD(silent).set_default(0).set_range(0, 2)
+        .describe("Silent level during the task.");
+ 
     DMLC_DECLARE_FIELD(eval_train).set_default(false)
         .describe("Whether evaluate on training data during training.");
     DMLC_DECLARE_FIELD(num_round).set_default(10).set_lower_bound(1)
@@ -144,12 +149,14 @@ struct CLIParam : public dmlc::Parameter<CLIParam> {
     if (name_pred == "stdout") {
       save_period = 0;
       this->cfg.emplace_back(std::make_pair("silent", "0"));
+      silent = 0;
     }
     if (dsplit == 0 && rabit::IsDistributed()) {
       dsplit = 2;
     }
     if (rabit::GetRank() != 0) {
       this->cfg.emplace_back(std::make_pair("silent", "1"));
+      silent = 1;
     }
   }
 };
@@ -270,9 +277,9 @@ void CLITrain(const CLIParam& param) {
     LOG(CONSOLE) << "BuildPosSet Time: " << tminfo.posset_time;
     LOG(CONSOLE) << "BuildHist Time: " << tminfo.buildhist_time;
     LOG(CONSOLE) << "Training Time: " << dmlc::GetTime() -tminfo.trainstart_time;
-    LOG(CONSOLE) << "Aux Time 1: " << tminfo.aux_time[0];
-    LOG(CONSOLE) << "Aux Time 2: " << tminfo.aux_time[1];
-    LOG(CONSOLE) << "Aux Time 3: " << tminfo.aux_time[2];
+    for(int i = 0; i< 10; i++){
+        LOG(CONSOLE) << "Aux Time " << i << ": " << std::fixed << tminfo.aux_time[i];
+    }
   }
  
   //eval the final model
