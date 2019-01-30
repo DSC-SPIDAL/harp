@@ -20,6 +20,7 @@ check_init()
 
 if [ $# -eq "0" ] ; then
 	echo "Usage: xgb-strongscale.sh <bin> <dataset> <iter> <maxdepth> <tree_method> <row_blksize> <ft_blksize> <bin_blksize> <runid>"
+	echo "	$RUNID	; evn variable to set the runid for a group of testing"
     exit -1
 fi
 
@@ -35,8 +36,16 @@ dataset=higgs
 tree_method=blockdense
 bin_blksize=0
 ft_blksize=1
-row_blksize=500000
-runid=0
+#row_blksize=500000
+row_blksize=0
+
+runid=20190101
+if [ -z "$RUNID"  ] ; then
+	runid=`date +%m%d%H%M%S`
+else
+	runid=$RUNID
+fi
+
 
 if [ ! -z $2 ]; then
 	dataset=$2

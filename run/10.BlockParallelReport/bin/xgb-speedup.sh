@@ -32,11 +32,12 @@ bin=$1
 num_round=10
 max_depth=6
 dataset=higgs
-tree_method=blockdense
+tree_method=block
 thread=32
 bin_blksize=0
 ft_blksize=1
-row_blksize=500000
+#row_blksize=500000
+row_blksize=0
 runids=(0 1 2)
 #echo "runids=${runids[*]}"
 
