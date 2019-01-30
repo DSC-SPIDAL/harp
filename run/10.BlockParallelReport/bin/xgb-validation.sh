@@ -19,6 +19,26 @@ echo "$1,AUC:,$ret,Truth:,$truth,$pass" >> $output
 
 }
 
+validate_self()
+{
+#truth="0.821590"
+ret=`grep "test-auc" $1.log | tail -1 |grep -Po "[0-9]*\.[0-9]*" | gawk '{printf("%s",$1)}'`
+echo "AUC=$ret"
+
+pass="Fail"
+if (( $(echo  "$ret >= $truth" |bc -l)  )) ; then
+	pass="Pass"
+	echo "pass!"
+else
+	echo "!!!!!!!!!!!Failed, AUC=$ret, not $truth"
+fi
+
+# save result
+echo "$1,AUC:,$ret,Truth:,$truth,$pass" >> $output
+
+}
+
+
 save()
 {
 ret=`tail -13 $1.log |grep -Po "[0-9]*\.[0-9]*" | gawk '{printf("%s,",$1)}'`
@@ -55,7 +75,8 @@ tree_method=blockdense
 thread=32
 bin_blksize=0
 ft_blksize=1
-row_blksize=500000
+#row_blksize=500000
+row_blksize=0
 
 if [ ! -z "$2"  ] ; then
 	tree_method=$2
@@ -95,7 +116,7 @@ fi
 
 
 binname=`basename $bin`
-conf=${dataset}.conf
+conf=${dataset}_eval.conf
 prefix=$binname-${dataset}-n${num_round}-d${max_depth}-m${tree_method}-t${thread}-b${bin_blksize}-f${ft_blksize}-r${row_blksize}
 
 if [ ! -f $conf ]; then
@@ -121,16 +142,21 @@ output=${appname}-time-${prefix}-${runid}.csv
 save $logfile
 
 # save model
-mv "00${num_round}.model" ${logfile}.model
+#mv "00${num_round}.model" ${logfile}.model
 
-# evaluation on the model
-$bin $conf task=pred model_in=${logfile}.model
-python -m runner.runxgb --eval pred.txt --testfile higgs_test.csv 2>&1 |tee ${logfile}-eval.log
-rm pred.txt
+## evaluation on the model
+#$bin $conf task=pred model_in=${logfile}.model
+#python -m runner.runxgb --eval pred.txt --testfile higgs_test.csv 2>&1 |tee ${logfile}-eval.log
+#rm pred.txt
+#
+## validate and save result
+#output=${appname}-auc-${prefix}-${runid}.csv
+#validate ${logfile}-eval
 
-# validate and save result
 output=${appname}-auc-${prefix}-${runid}.csv
-validate ${logfile}-eval
+validate_self ${logfile}
+
+
 
 mkdir -p ${appname}-${prefix}
 mv ${prefix}* ${appname}-${prefix}

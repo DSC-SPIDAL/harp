@@ -12,6 +12,8 @@ online doc: [slides](https://docs.google.com/presentation/d/1iI4aKmvN92L_Y5Tlm_7
 
 ### 1. compile
 
+Skip this section and go to section 2 if you want to use the binary pre-compiled.
+
 Add tag to name of the binary file to indicate different features.
 
 ```
@@ -19,13 +21,32 @@ Add tag to name of the binary file to indicate different features.
 source WHEREYOURREPOROOT/gbt-test/bin/init_env.sh 
 
 # got to directory: sub/xgb-optapprox
-# this cmd will generate two release versions, with or w/o halftrick
-# with the tag name "cutmodelhalf"
+# this cmd will generate differ release versions, 
+#   with or w/o halftrick
+#   dense or sparse input support
+#   byte or short blkaddress(byte only for block size<256)
+# with the tag name "block"
 
 cd $_gbtproject_/sub/xgb-optapprox
-./makeall.sh cutmodelhalf
+./makeall.sh block
+
+# 
+# for xgb-latest
+#
+cd $_gbtproject_/sub/xgb-latest
+make -j 24
+
+#
+# for lightgbm
+#
+cd $_gbtproject_/sub/lightgbm
+mkdir -p build
+cd build
+cmake ..
+make -j 24 
 
 ```
+
 
 ### 2. deployment
 
@@ -35,26 +56,35 @@ Prepare the higgs dataset.
 ```
 mkdir -p work
 cd work
-mkdir -p bin
 
 cp -r $_gbtproject_/run/10.BlockParallelReport/* .
-cp $_gbtproject_/sub/xgb-optapprox/*cutmodelhalf* bin
+#
+# update bin if you have new release compiled
+#
+#cp $_gbtproject_/sub/xgb-optapprox/*block-release bin
+#cp $_gbtproject_/sub/xgb-latest/xgboost bin/xgb-latest
+#cp $_gbtproject_/sub/xgb-optapprox/lightgbm bin
 
 
 # test is the working dir
 cd test
 
 #$DATADIR is the dataset storage, on juliet cluster you can use:
-DATADIR=/share/jproject/fg474/share/optgbt/vtune/higgs
+DATADIR=/share/jproject/fg474/dataset/
+cp $DATADIR/higgs/higgs_train.libsvm higgs_train.libsvm
+cp $DATADIR/higgs/higgs_test.libsvm higgs_test.libsvm
+cp $DATADIR/higgs/higgs_test.csv higgs_test.csv
+head -1 higgs_train.libsvm > higgs_valid.libsvm
 
-#ln -s $DATADIR/higgs_train.libsvm higgs_train.libsvm
-#ln -s $DATADIR/higgs_valid.libsvm higgs_valid.libsvm
-#ln -s $DATADIR/higgs_test.libsvm higgs_test.libsvm
-#ln -s $DATADIR/higgs_test.csv higgs_test.csv
-cp $DATADIR/higgs_train.libsvm higgs_train.libsvm
-cp $DATADIR/higgs_valid.libsvm higgs_valid.libsvm
-cp $DATADIR/higgs_test.libsvm higgs_test.libsvm
-cp $DATADIR/higgs_test.csv higgs_test.csv
+cp $DATADIR/synset/synset_train_1000000x1024.libsvm synset_train.libsvm
+head -1 synset_train.libsvm > synset_valid.libsvm
+
+#
+# if you can not access to juliet, create the datasetset
+#
+#../bin/make_higgs.sh
+#../bin/make_synset.sh
+
 
 ```
 
@@ -66,9 +96,10 @@ Use higgs dataset, test with different tree depth is necessary. Some errors only
 
 ```
 # validate all release versions, run cmd like this
-#../bin/xgb-validation.sh ../bin/xgboost-g++-omp-nohalftrick-noprefetch-cutmodelhalf-release blockdense 12
+#../bin/xgb-validation.sh ../bin/xgboost-g++-omp-dense-halftrick-short-splitonnode-block-release block 12
+#./run-validate.sh ../bin/xgboost-g++-omp-dense-halftrick-short-splitonnode-block-release 
 
-./run-validate.sh cutmodelhalf
+./run-validate.sh 
 
 ```
 
@@ -79,19 +110,48 @@ Make sure they passed the test. You should see messages like "pass!".
 Fixed with 32 threads, show the 'best' performance of each trainer.
 
 ```
-./run-speedup.sh cutmodelhalf
+#../bin/xgb-speedup.sh <bin> <dataset> <num_round> <depth> <tree_method> <thread>
+#../bin/xgb-speedup.sh ../bin/xgb-latest higgs 10 8 hist 32
+#
+./run-speedup.sh
 
 ```
 
 ### 4. strong scaling test 
 
-Run strong scaling test on higgs with max_depth=8
+Run strong scaling test
 
 ```
-./run-scaling.sh cutmodelhalf
-
+#../bin/xgb-strongscale.sh <bin> <dataset> <num_round> <depth> <tree_method>
+#../bin/xgb-strongscale.sh ../bin/xgb-latest higgs 10 8 block 
+#
+./run-scaling.sh 
 
 ```
+
+### 5. convergence test 
+
+Run convergence test, output auc every 10 iteration
+
+```
+#../bin/xgb-convergence.sh <bin> <dataset> <num_round> <depth> <tree_method> <thread>
+#../bin/xgb-convergence.sh ../bin/xgb-latest higgs 10 8 hist 32
+#
+./run-convergence.sh 
+
+```
+
+### 6. lightgbm test
+
+refer to the scripts for details
+
+```
+./run-speedup-lightgbm.sh
+./run-scaling-lightgbm.sh 
+./run-convergence-lightgbm.sh 
+
+```
+
 
 
 
