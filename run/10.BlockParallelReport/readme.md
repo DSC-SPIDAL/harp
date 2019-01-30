@@ -141,7 +141,16 @@ Run convergence test, output auc every 10 iteration
 
 ```
 
+### 6. lightgbm test
 
+refer to the scripts for details
+
+```
+./run-speedup-lightgbm.sh
+./run-scaling-lightgbm.sh 
+./run-convergence-lightgbm.sh 
+
+```
 
 
 

@@ -11,7 +11,7 @@ for dataset in ${dbs[*]}; do
 		for depth in ${depths[*]}; do
 			for id in ${ids[*]}; do
 			#./lightgbm-speedup.sh ./lightgbm higgs 10 $depth feature 32 ${id} 
-			./lightgbm-speedup.sh ./lightgbm ${dataset} 10 $depth ${tree_method} 32 ${id} 
+			../bin/lightgbm-speedup.sh ./lightgbm ${dataset} 10 $depth ${tree_method} 32 ${id} 
 			done
 		done
 	done
@@ -24,7 +24,7 @@ for dataset in ${dbs[*]}; do
 		for depth in ${depths[*]}; do
 			for id in ${ids[*]}; do
 			#./lightgbm-speedup.sh ./lightgbm higgs 10 $depth feature 32 ${id} 
-			./lightgbm-speedup.sh ./lightgbm ${dataset} 10 $depth ${tree_method} 32 ${id} 
+			../bin/lightgbm-speedup.sh ./lightgbm ${dataset} 10 $depth ${tree_method} 32 ${id} 
 			done
 		done
 	done
