@@ -214,6 +214,47 @@ class POSSetSingle{
             return _start;
         }
  
+        
+        //
+        // remove deleted rows
+        //
+        int Prune(POSEntry* start){
+
+            #ifdef USE_DEBUG
+            LOG(CONSOLE) << "Prune::[" << 
+                getEncodePosition() << "],type=" << isDelete()?'D':'N' << ",defaultLeft=" << _defaultLeft <<
+                ",len=" << _len;
+            #endif
+
+            int w = 0, d = 0;
+            for (int i = 0 ; i < _len; i++){
+                // check if deleted
+                if (_start[i].isDelete()){
+                    d++;
+                }
+                else{
+                    start[w++] = _start[i];
+                }
+            }
+
+            //debug 
+            CHECK_EQ(w+d, _len);
+            
+            // update this row set
+            //  replace the entry point
+            //  erite to new place
+            //POSGroup leftGrp(_nodeid, start, w);
+            _len = w;
+            if (w > 0){
+                _start = start;
+            }
+            else{
+                //empty row set
+                setDummy();
+                setDelete();
+            }
+        }
+
         //
         // apply split at the group level
         // call after EndUpdate() when _halflen is set correctly

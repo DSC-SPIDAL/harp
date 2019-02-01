@@ -16,6 +16,7 @@
 #include <xgboost/base.h>
 #include <xgboost/tree_updater.h>
 #include <vector>
+#include <queue>
 #include <algorithm>
 #include <string>
 #include <limits>
@@ -111,7 +112,74 @@ class BlockBaseMakerLossguide: public TreeUpdater {
    private:
     std::vector<bst_float> fminmax_;
   };
-  
+
+   /*
+   * for applysplit
+   */
+  struct SplitInfo{
+    // best entry
+    std::vector<SplitEntry> sol;
+    std::vector<TStats> left_sum;
+
+    inline void clear(){
+        sol.clear();
+        left_sum.clear();
+    }
+
+    inline void append(SplitEntry& s, TStats& l){
+        sol.push_back(s);
+        left_sum.push_back(l);
+    }
+
+  };
+
+  /*
+   * for output of applysplit
+   * children nodes statistics
+   *
+   */
+  struct SplitResult{
+      struct SplitStat{
+        int left;
+        int left_len;
+        int right;
+        int right_len;
+
+        SplitStat():left(-1),right(-1),left_len(0),right_len(0){}
+      };
+    std::vector<SplitStat> splitResult;
+
+    inline void resize(int newSize){
+        splitResult.resize(newSize);
+    }
+    inline void clear(int i){
+        splitResult[i] = SplitStat();
+    }
+    inline void set(int i, int left, int left_len, int right, int right_len){
+        splitResult[i] = SplitStat(left, left_len, right, right_len);
+    }
+
+
+    void getResultNodeSet(std::vector<int>& nodesetSmall, std::vector<int>& nodesetLarge){
+
+        nodesetSmall.resize(splitResult.size());
+        nodesetLarge.resize(splitResult.size());
+
+        for(int i = 0; i < splitResult.size(); i++){
+            if (splitResult[i].left_len < splitResult[i].right_len){
+                nodesetSmall[i] = splitResult[i].left;
+                nodesetLarge[i] = splitResult[i].right;
+            }
+            else{
+                nodesetSmall[i] = splitResult[i].right;
+                nodesetLarge[i] = splitResult[i].left;
+            }
+        }
+    }
+
+  };
+
+ 
   //
   // tree growing policies 
   //
@@ -153,14 +221,19 @@ class BlockBaseMakerLossguide: public TreeUpdater {
                        const int rowblksize) {
     CHECK_EQ(tree.param.num_nodes, tree.param.num_roots)
         << "TreeMaker: can only grow new tree";
-    const std::vector<unsigned> &root_index =  fmat.Info().root_index_;
+    //const std::vector<unsigned> &root_index =  fmat.Info().root_index_;
     {
       // setup position
       // todo: or max_leaves
       posset_.Init(gpair.size(), std::pow(2, param_.max_depth), rowblksize);
 
-      // mark delete for the deleted datas
+      //
+      // todo: parallelism on all entry
+      //
+      // mark delete for the deleted data
       const int num_block = posset_.getBlockNum();
+
+      #pragma omp parallel for schedule(static)
       for (size_t i = 0; i < num_block; ++i) {
         //only node 0
         auto grp = posset_.getGroup(0, i);
@@ -169,6 +242,12 @@ class BlockBaseMakerLossguide: public TreeUpdater {
             if (gpair[ridx].GetHess() < 0.0f){ 
                 grp.setDelete(k);
             }
+        }
+
+        // remove deleted rows
+        auto start = posset_.getNextEntryStart(0, i);
+        grp.Prune(start);
+
       }
 
       // mark subsample
@@ -176,6 +255,7 @@ class BlockBaseMakerLossguide: public TreeUpdater {
         std::bernoulli_distribution coin_flip(param_.subsample);
         auto& rnd = common::GlobalRandom();
 
+        #pragma omp parallel for schedule(static)
         for (size_t i = 0; i < num_block; ++i) {
           //only node 0
           auto grp = posset_.getGroup(0, i);
@@ -183,7 +263,12 @@ class BlockBaseMakerLossguide: public TreeUpdater {
               const int ridx = grp.getRowId(k);
               if (gpair[ridx].GetHess() < 0.0f) continue;
               if (!coin_flip(rnd)) grp.setDelete(k);
+          }
         }
+
+        // remove deleted rows
+        auto start = posset_.getNextEntryStart(0, i);
+        grp.Prune(start);
 
       }
     }
@@ -208,12 +293,20 @@ class BlockBaseMakerLossguide: public TreeUpdater {
       thread_temp[tid][nid].Clear();
     }
     
-    // setup position
+    // get sum of valid ghpair
+    const int num_block = posset_.getBlockNum();
     #pragma omp parallel for schedule(static)
-    for (size_t i = 0; i < gpair.size(); ++i) {
-        const int ridx = i;
+    for (size_t i = 0; i < num_block; ++i) {
+      //only node 0
+      auto grp = posset_.getGroup(0, i);
+      
+      if (grp.isDummy() || grp.isDelete()) continue;
+
+      for (int k = 0; k < grp.size(); k++){
+        const int ridx = grp.getRowId(k);
         const int tid = omp_get_thread_num();
         thread_temp[tid][nid].Add(gpair, info, ridx);
+      }
     }
 
     // sum the per thread statistics together
