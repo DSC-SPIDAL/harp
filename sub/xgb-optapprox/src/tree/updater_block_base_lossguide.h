@@ -113,72 +113,6 @@ class BlockBaseMakerLossguide: public TreeUpdater {
     std::vector<bst_float> fminmax_;
   };
 
-   /*
-   * for applysplit
-   */
-  struct SplitInfo{
-    // best entry
-    std::vector<SplitEntry> sol;
-    std::vector<TStats> left_sum;
-
-    inline void clear(){
-        sol.clear();
-        left_sum.clear();
-    }
-
-    inline void append(SplitEntry& s, TStats& l){
-        sol.push_back(s);
-        left_sum.push_back(l);
-    }
-
-  };
-
-  /*
-   * for output of applysplit
-   * children nodes statistics
-   *
-   */
-  struct SplitResult{
-      struct SplitStat{
-        int left;
-        int left_len;
-        int right;
-        int right_len;
-
-        SplitStat():left(-1),right(-1),left_len(0),right_len(0){}
-      };
-    std::vector<SplitStat> splitResult;
-
-    inline void resize(int newSize){
-        splitResult.resize(newSize);
-    }
-    inline void clear(int i){
-        splitResult[i] = SplitStat();
-    }
-    inline void set(int i, int left, int left_len, int right, int right_len){
-        splitResult[i] = SplitStat(left, left_len, right, right_len);
-    }
-
-
-    void getResultNodeSet(std::vector<int>& nodesetSmall, std::vector<int>& nodesetLarge){
-
-        nodesetSmall.resize(splitResult.size());
-        nodesetLarge.resize(splitResult.size());
-
-        for(int i = 0; i < splitResult.size(); i++){
-            if (splitResult[i].left_len < splitResult[i].right_len){
-                nodesetSmall[i] = splitResult[i].left;
-                nodesetLarge[i] = splitResult[i].right;
-            }
-            else{
-                nodesetSmall[i] = splitResult[i].right;
-                nodesetLarge[i] = splitResult[i].left;
-            }
-        }
-    }
-
-  };
-
  
   //
   // tree growing policies 
@@ -207,6 +141,57 @@ class BlockBaseMakerLossguide: public TreeUpdater {
       return lhs.sol.loss_chg < rhs.sol.loss_chg;  // favor large loss_chg
     }
   }
+
+
+  //
+  // map active node to is working index offset in qexpand,
+  //   can be -1, which means the node is node actively expanding
+  // activate node are leaves
+  //
+  struct Node2Index{
+    // map nid to mid, the physical plane id
+    std::vector<int> index_;
+    int num_leaves;
+
+    inline void Init(int node_num){
+        index_.resize(node_num);
+        std::fill(index_.begin(), index_.end(), -1);
+        //set for root node
+        num_leaves = 1;
+        index_[0] = 0;
+    }
+
+    // direct access (no modify)
+    inline int operator[](int i){
+        return index_[i];
+    }
+    
+    inline bool isReady(int nid){
+        return index_[nid] >= 0;
+    }
+
+    // add a new node and allocate model to it
+    inline void append(int nid){
+        index_[nid] = num_leaves;
+        num_leaves ++;
+    }
+    // replace parent place for this new node
+    inline void replace(int nid, int pid){
+        index_[nid] = index_[pid];
+    }
+    // reset when the index is invalid
+    inline void reset(int nid){
+        index_[nid] = -1;
+    }
+
+    inline void clear(){
+        std::fill(index_.begin(), index_.end(), -1);
+        num_leaves = 0;
+    }
+
+  };
+ 
+
 
   //  ------class member helpers---------
 
@@ -264,11 +249,12 @@ class BlockBaseMakerLossguide: public TreeUpdater {
               if (gpair[ridx].GetHess() < 0.0f) continue;
               if (!coin_flip(rnd)) grp.setDelete(k);
           }
-        }
 
-        // remove deleted rows
-        auto start = posset_.getNextEntryStart(0, i);
-        grp.Prune(start);
+          // remove deleted rows
+          auto start = posset_.getNextEntryStart(0, i);
+          grp.Prune(start);
+
+        }
 
       }
     }
@@ -305,7 +291,8 @@ class BlockBaseMakerLossguide: public TreeUpdater {
       for (int k = 0; k < grp.size(); k++){
         const int ridx = grp.getRowId(k);
         const int tid = omp_get_thread_num();
-        thread_temp[tid][nid].Add(gpair, info, ridx);
+        //thread_temp[tid][nid].Add(gpair, info, ridx);
+        thread_temp[tid][nid].Add(gpair[ridx]);
       }
     }
 
@@ -329,56 +316,20 @@ class BlockBaseMakerLossguide: public TreeUpdater {
    * \brief map active node to is working index offset in qexpand,
    *   can be -1, which means the node is node actively expanding
    */
-  std::vector<int> node2workindex_;
+  Node2Index node2workindex_;
   /*!
    * \brief position of each instance in the tree
    */
-  POSSet posset_;
+  POSSetSingle posset_;
 
   TimeInfo tminfo;
 
  private:
-  inline void UpdateNode2WorkIndex(const RegTree &tree) {
-    // update the node2workindex
-    int oldsize = node2workindex_.size();
-    node2workindex_.resize(tree.param.num_nodes);
 
-    // clean the new indexes
-#ifndef USE_HALFTRICK
-    // clear all
-    std::fill(node2workindex_.begin(), node2workindex_.end(), -1);
-#else
-    if (oldsize < node2workindex_.size()){
-        //clear only the new ones, reserve the old ones
-        std::fill(node2workindex_.begin() + oldsize, node2workindex_.end(), -1);
-    }
-    else{
-        std::fill(node2workindex_.begin(), node2workindex_.end(), -1);
-    }
-#endif
 
-    for (int i = 0; i < qexpand_.size(); ++i) {
-#ifndef USE_HALFTRICK
-      //nohalftrick always use compact storage mode
-      node2workindex_[qexpand_[i]] = static_cast<int>(i);
-#else
-      //halftrick will have a full binary tree
-      #ifdef ALLOCATE_ALLNODES
-      node2workindex_[qexpand_[i]] = qexpand_[i];
-      #else
-      int nid = qexpand_[i];
-      if ((nid&1) == 0){
-        //write right nodes only
-        //interleave mode, (3,5 | 4,6) -> (7,9,11,13| 8,10,12,14)
-        int num_leaves = (tree.param.num_nodes +1 ) / 2;
-        node2workindex_[qexpand_[i]] = qexpand_[i]/2 + (qexpand_[i]%2)*num_leaves/2;
-      }
-
-      #endif  
-#endif
-    }
-  }
 };
+
+
 }  // namespace tree
 }  // namespace xgboost
 #endif  // XGBOOST_TREE_UPDATER_BASEMAKER_INL_H_

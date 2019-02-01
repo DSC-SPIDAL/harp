@@ -93,6 +93,8 @@ class POSSetSingle{
         bool _defaultLeft;
         int _leftlen;
         int _rightlen;
+        int _leftid;
+        int _rightid;
 
         POSGroup(){
             _start = nullptr;
@@ -191,7 +193,7 @@ class POSSetSingle{
 
         // general read access
         inline void setDummy(){
-            return _start = nullptr;
+            _start = nullptr;
         }
         // dummy is different to delete node
         inline bool isDummy(){
@@ -210,7 +212,7 @@ class POSSetSingle{
         inline int getNodeId() {
             return _nodeid;
         }
-        inline POSEntry* getStartPos(){
+        inline POSEntry* getStartPtr(){
             return _start;
         }
  
@@ -286,6 +288,7 @@ class POSSetSingle{
                     else{
                         left[l++] = _start[i];
                     }
+                }
                 else{
                     //default goes to right
                     if (_start[i].isLeft()){
@@ -307,8 +310,8 @@ class POSSetSingle{
             //
             // no push empty group verion
             //
-            if (_leftlen > 0) group[_leftid] = left;
-            if (_rightlen > 0) group[_rightid] = right;
+            if (_leftlen > 0) group[_leftid] = leftGrp;
+            if (_rightlen > 0) group[_rightid] = rightGrp;
 
             return 1;
         }
@@ -336,7 +339,6 @@ class POSSetSingle{
         //Init entry first
         rownum_ = rownumber;
         //init from nodeid=0
-        workid_ = 0;
         entry_[0].resize(rownumber);
         entry_[1].resize(rownumber);
         for(int i = 0; i < rownumber; i++){
@@ -364,7 +366,7 @@ class POSSetSingle{
         }
         const int omp_loop_size = rowblknum_ * nodenum;
         #pragma omp parallel for schedule(static) if (omp_loop_size >= 1024) 
-        for(int i; i < omp_loop_size; i++){
+        for(int i = 0; i < omp_loop_size; i++){
             const int blkid = i / nodenum;
             const int nodeid = i % nodenum;
             grp_[blkid][nodeid].setDummy();
@@ -402,7 +404,7 @@ class POSSetSingle{
     }
 
     // general access
-    inline int getBlocknNum(){
+    inline int getBlockNum(){
         return grp_.size();
     }
     inline int getBlockBaseRowId(int blkid){
@@ -437,7 +439,7 @@ class POSSetSingle{
         int startPos = grp.getStartPtr() - dmlc::BeginPtr(entry_[curid]);
 
         curid = (curid + 1)%2;
-        POSEntry* next = dmlc::BeginPtr(entry_[curid] + startPos;
+        POSEntry* next = dmlc::BeginPtr(entry_[curid]) + startPos;
         return next;
     }
 
