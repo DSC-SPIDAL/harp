@@ -63,8 +63,7 @@ class spin_mutex {
 
 //template<typename TStats, typename TDMatrixCube, typename TDMatrixCubeBlock>
 template<typename TStats, typename TBlkAddr, template<typename> class TDMatrixCube, template<typename> class TDMatrixCubeBlock>
-//class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
-class HistMakerBlockLossguide: public BlockBaseMakerLossguide {
+class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
  public:
 
  HistMakerBlockLossguide(){
@@ -348,7 +347,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide {
         left_sum.clear();
     }
 
-    inline void append(SplitEntry& s, TStats& l){
+    inline void append(const SplitEntry& s, const TStats& l){
         sol.push_back(s);
         left_sum.push_back(l);
     }
@@ -368,6 +367,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide {
         int right_len;
 
         SplitStat():left(-1),right(-1),left_len(0),right_len(0){}
+        SplitStat(int l, int ll, int r, int rl):left(l),right(r),left_len(ll),right_len(rl){}
       };
     std::vector<SplitStat> splitResult;
 
@@ -553,6 +553,13 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide {
   // feature helper
   typename BlockBaseMakerLossguide<TStats>::FMetaHelper feat_helper_;
   
+  // base template class members
+  using  BlockBaseMakerLossguide<TStats>::param_;
+  using  BlockBaseMakerLossguide<TStats>::node2workindex_;
+  using  BlockBaseMakerLossguide<TStats>::posset_;
+  using  BlockBaseMakerLossguide<TStats>::tminfo;
+  using  BlockBaseMakerLossguide<TStats>::qexpand_;
+  
   //
   // thread local data
   //
@@ -636,7 +643,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide {
     int depth = 0;
     int num_leaves = 0;
     unsigned timestamp = 0;
-    const int topK = param_.node_parallel_cnt;
+    const int topK = param_.group_parallel_cnt;
 
     std::vector<int> build_nodeset;
     std::vector<int> large_nodeset;
@@ -648,11 +655,12 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide {
     // start from the root node
     build_nodeset.push_back(0);
     large_nodeset.clear();
-    BuildHist(depth, gpair, build_nodeset, large_nodeset, *p_tree);
+    BuildHist(depth, gpair, build_nodeset, large_nodeset, bwork_set_, *p_tree);
     FindSplit(depth, gpair, work_set_, build_nodeset, splitOutput);
-    
-    qexpand_->push(ExpandEntry(0, depth, splitOutput.sol[0], 
-                splitOutput.lef_sum[0], timestamp++));
+ 
+
+    qexpand_->push(this->newEntry(0, depth, splitOutput.sol[0], 
+                splitOutput.left_sum[0], timestamp++));
     num_leaves++;
 
     // expand
@@ -667,7 +675,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide {
       int popCnt = 0;
       while (!qexpand_->empty() && popCnt < topK){
 
-        const ExpandEntry candidate = qexpand_->top();
+        const auto candidate = qexpand_->top();
         const int nid = candidate.nid;
         qexpand_->pop();
 
@@ -680,7 +688,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide {
         } else {
             // add to split set
             split_nodeset.push_back(nid);
-            splitOuput.append(candidate.sol, candidate.left_sum);
+            splitOutput.append(candidate.sol, candidate.left_sum);
 
             popCnt ++;
         }
@@ -694,20 +702,20 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide {
 
       // 3. build hist for the children nodes
       AllocateChildrenModel(build_nodeset, large_nodeset, *p_tree);
-      UpdateChildrenModelSum(split_nodeset, splitOutput);
-      BuildHist(depth, gpair, build_nodeset, large_nodeset, *p_tree);
+      UpdateChildrenModelSum(split_nodeset, splitOutput, *p_tree);
+      BuildHist(depth, gpair, build_nodeset, large_nodeset, bwork_set_, *p_tree);
 
       // 4. find split for these nodes
       if(large_nodeset.size() > 0){
-          bulid_nodeset.insert(build_nodeset.end(), large_nodeset.begin(),
+          build_nodeset.insert(build_nodeset.end(), large_nodeset.begin(),
                   large_nodeset.end());
       }
       FindSplit(depth, gpair, work_set_, build_nodeset, splitOutput);
       for (int i = 0; i < build_nodeset.size(); i++){
-        qexpand_->push(ExpandEntry(build_nodeset[i],
-                    p_tree->GetDepth(build_nodeset[i],
+        qexpand_->push(this->newEntry(build_nodeset[i],
+                    p_tree->GetDepth(build_nodeset[i]),
                     splitOutput.sol[i],
-                    splitOutput.lef_sum[i], timestamp++));
+                    splitOutput.left_sum[i], timestamp++));
         num_leaves++;
       }
       //remove those parents node splitted
@@ -826,7 +834,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide {
    */
   void FindSplit(int depth,
                  const std::vector<GradientPair> &gpair,
-                 std::vector<int>& featureset,
+                 std::vector<bst_uint>& featureset,
                  std::vector<int>& nodeset,
                  SplitInfo& splitOutput) {
 
@@ -861,11 +869,11 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide {
   //
   void FindSplitByFeature(int depth,
                  const std::vector<GradientPair> &gpair,
-                 std::vector<int> featureset,
+                 std::vector<bst_uint> featureset,
                  std::vector<int> nodeset,
                  SplitInfo& splitOutput) {
 
-    const std::vector<int> &fset = featureset;
+    const std::vector<bst_uint> &fset = featureset;
 
     const int num_feature = fset.size();
     const int num_node = nodeset.size();
@@ -937,20 +945,20 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide {
   //
   void FindSplitByNode(int depth,
                  const std::vector<GradientPair> &gpair,
-                 std::vector<int> featureset,
+                 std::vector<bst_uint> featureset,
                  std::vector<int> nodeset,
                  SplitInfo& splitOutput) {
 
-    const std::vector<int> &fset = featureset;
+    const std::vector<bst_uint> &fset = featureset;
 
     const int num_feature = fset.size();
     const int num_node = nodeset.size();
 
-    std::vector<SplitEntry> sol(num_node);
-    std::vector<TStats> left_sum(num_node);
+    std::vector<SplitEntry>& sol = splitOutput.sol;
+    std::vector<TStats>& left_sum = splitOutput.left_sum;
     #pragma omp parallel for schedule(dynamic, 1)
     for (int wid = 0; wid < num_node; ++wid) {
-      int nid = qexpand_[wid];
+      int nid = nodeset[wid];
       SplitEntry &best = sol[wid];
 
       //adjust the physical location of this plain
@@ -1067,7 +1075,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide {
    */
   void ApplySplitOnPos(const int depth, 
           const std::vector<int>& nodeset,
-          const SplitResult& splitResult,
+          SplitResult& splitResult,
           const RegTree &tree){
 
       double _tstart = dmlc::GetTime();
@@ -1128,7 +1136,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide {
                 }
                 const auto binid = col._blkaddrByRowId(ridx, 0);
 
-                if (binid <= tree[pid].SplitCond()) {
+                if (binid <= tree[nid].SplitCond()) {
                   grp.setLeftPosition(j);
                 } else {
                   grp.setRightPosition(j);
@@ -1165,7 +1173,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide {
             leftid = lid;
             rightid = rid;
 
-            int left_len = 0, rightlen = 0;
+            int left_len = 0, right_len = 0;
             for(int j = 0; j < num_block; j++){
                 //for block j, node i
                 auto grp = posset_.getGroup(i, j);
@@ -1304,8 +1312,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide {
           this->wspace_.rptr.push_back(static_cast<unsigned>(this->wspace_.cut.size()));
         }
         CHECK_EQ(this->wspace_.rptr.size(),
-                 //(fset.size() + 1) * this->qexpand_.size() + 1);
-                 (work_set_.size() + 1) * this->qexpand_.size() + 1);
+                 (work_set_.size() + 1)  + 1);
 
 
         //
@@ -1398,11 +1405,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide {
         //
         // 7. Set the tree growth policy
         //
-        if (param_.grow_policy == TrainParam::kLossGuide) {
-          this->qexpand_.reset(new ExpandQueue(LossGuide));
-        } else {
-          this->qexpand_.reset(new ExpandQueue(DepthWise));
-        }
+        this->InitQExpand();
 
         //
         // 7. Re-Init the model memory space, first touch
@@ -1474,7 +1477,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide {
   } 
 
 
-  void InitHistIndex( DMatrix *p_fmat,
+  void InitHistIndexByCol( DMatrix *p_fmat,
                       const std::vector<bst_uint> &fset,
                      const RegTree &tree){
 
@@ -1581,7 +1584,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide {
       int mid_sibling = node2workindex_[sibling];
       
       CHECK_NE(mid_parent, -1);
-      CHECK_NE(mid_right, -1);
+      CHECK_NE(mid_sibling, -1);
 
       double* p_left = reinterpret_cast<double*>(
               this->wspace_.hset.GetHistUnitByBlkidCompact(blkid_offset, mid_parent).data);
@@ -1601,7 +1604,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide {
       // reuse the pranet mid
       if (blkid_offset == 0){
           //only the first fid update the global index
-          node2workindex_[nid] = mid_parent;
+          node2workindex_.reset(pid);
       }
     }
   }
@@ -1624,7 +1627,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide {
                        const RegTree &tree,
                        bst_uint blkid_offset,
                        unsigned int zblkid,
-                       const std::vector<int> build_nodeset,
+                       const std::vector<int>& build_nodeset,
                        std::vector<HistEntryCompact> *p_temp) {
     //check size
     if (block.size() == 0) return;
@@ -1934,8 +1937,9 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide {
               auto block = p_blkmat->GetBlockZCol(offset).GetBlock(zblkid);
 
               // update model by this dataBlock and node_blkid
-              this->UpdateHistBlock(depth, gpair, block, info, tree,
-                    offset, zblkid, nblkid,
+              this->UpdateHistBlock(depth, gpair, block, tree,
+                    offset, zblkid, 
+                    build_nodeset,
                     &this->thread_histcompact_[omp_get_thread_num()]);
                     //&this->thread_hist_[0]);
             }
@@ -1995,7 +1999,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide {
           std::vector<int>& large_nodeset,
           const RegTree &tree) {
 
-    for (int i = 0; i < bulid_nodeset.size(); i++){
+    for (int i = 0; i < build_nodeset.size(); i++){
         node2workindex_.append(build_nodeset[i]);
     }
     for (int i = 0; i < large_nodeset.size(); i++){
@@ -2020,7 +2024,8 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide {
    */
   void UpdateChildrenModelSum(
           std::vector<int>& nodeset,
-          SplitInfo& splitOutput){
+          SplitInfo& splitOutput,
+          const RegTree &tree){
 
       // update node statistics.
       //double _tstartSum = dmlc::GetTime();
@@ -2054,8 +2059,11 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide {
         this->wspace_.hset.GetNodeSum(mid_left) = leftSum;
         this->wspace_.hset.GetNodeSum(mid_right) = rightSum;
 
-        // clear mid_this
+        #ifndef USE_HALFTRICK_EX
+        // clear mid_this if no halftrick
+        // otherwise, wait until halftrick done
         node2workindex_.reset(nid);
+        #endif
 
         //debuf info
         #ifdef USE_DEBUG

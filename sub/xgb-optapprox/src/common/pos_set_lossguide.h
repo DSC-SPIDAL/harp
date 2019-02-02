@@ -103,12 +103,14 @@ class POSSetSingle{
 
             _defaultLeft = -1;
             _leftlen = 0;
+            _rightlen = 0;
         }
 
         POSGroup(int nodeid, POSEntry* start, int len):
             _nodeid(nodeid),_start(start),_len(len){
             _defaultLeft = -1;
             _leftlen = 0;
+            _rightlen = 0;
         }
 
         //copy constructor as there are atomics
@@ -119,6 +121,7 @@ class POSSetSingle{
 
             _defaultLeft = -1;
             _leftlen = 0;
+            _rightlen = 0;
         }
 
         inline int size(){
@@ -135,13 +138,10 @@ class POSSetSingle{
         //
         inline void BeginUpdate(int leftId, int rightId,bool defaultLeft){
             _leftlen = 0;
-            _leftid = -1;
-            _rightid = -1;
-
+            _rightlen = 0;
             _leftid = leftId;
             _rightid = rightId;
             _defaultLeft = defaultLeft;
-
         }
         inline void setLeftPosition(int i){
             _start[i].setEncodePosition(true);
@@ -211,6 +211,12 @@ class POSSetSingle{
         }
         inline int getNodeId() {
             return _nodeid;
+        }
+        inline int getLeftLen(){
+            return _leftlen;
+        }
+        inline int getRightLen(){
+            return _rightlen;
         }
         inline POSEntry* getStartPtr(){
             return _start;

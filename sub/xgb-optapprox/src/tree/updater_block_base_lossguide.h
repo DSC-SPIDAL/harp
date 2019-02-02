@@ -141,7 +141,27 @@ class BlockBaseMakerLossguide: public TreeUpdater {
       return lhs.sol.loss_chg < rhs.sol.loss_chg;  // favor large loss_chg
     }
   }
+  inline ExpandEntry newEntry(int nid, int depth, SplitEntry sol, TStats left_sum, unsigned tstmp){
+    return ExpandEntry(nid, depth, sol, left_sum, tstmp);
+  }
+    
 
+
+  //
+  // reset the qexpand according to the tree growth policy
+  //
+  void InitQExpand(){
+        if (param_.grow_policy == TrainParam::kLossGuide) {
+          this->qexpand_.reset(new ExpandQueue(LossGuide));
+        } else {
+          this->qexpand_.reset(new ExpandQueue(DepthWise));
+        }
+
+        SplitEntry sol;
+        TStats left;
+        auto entry = ExpandEntry(0,0,sol, left,0);
+        qexpand_->push(entry);
+  }
 
   //
   // map active node to is working index offset in qexpand,
@@ -265,13 +285,12 @@ class BlockBaseMakerLossguide: public TreeUpdater {
    */
   void InitNodeStats(const std::vector<GradientPair> &gpair,
                            std::vector< std::vector<TStats> > *p_thread_temp,
-                           std::vector<TStats> *p_node_stats) {
+                           TStats *p_node_stats) {
     const int nid = 0;
 
     std::vector< std::vector<TStats> > &thread_temp = *p_thread_temp;
     //const MetaInfo &info = fmat.Info();
     thread_temp.resize(omp_get_max_threads());
-    p_node_stats->resize(1);
     #pragma omp parallel
     {
       const int tid = omp_get_thread_num();
@@ -297,7 +316,7 @@ class BlockBaseMakerLossguide: public TreeUpdater {
     }
 
     // sum the per thread statistics together
-    TStats &s = (*p_node_stats)[nid];
+    TStats &s = *p_node_stats;
     s.Clear();
     for (size_t tid = 0; tid < thread_temp.size(); ++tid) {
       s.Add(thread_temp[tid][nid]);
