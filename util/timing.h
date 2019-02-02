@@ -21,11 +21,11 @@
 namespace harp {
     namespace util {
         namespace timing {
-            std::unordered_map<int, std::chrono::high_resolution_clock::time_point> times;
-            std::unordered_map<std::string, double> sums;
-            std::unordered_map<std::string, int> counts;
+            extern std::unordered_map<int, std::chrono::high_resolution_clock::time_point> times;
+            extern std::unordered_map<std::string, double> sums;
+            extern std::unordered_map<std::string, int> counts;
 
-            void record(int tag) {
+            inline void record(int tag) {
                 if (times.count(tag) > 0) {
                     times[tag] = std::chrono::high_resolution_clock::now();
                 } else {
@@ -33,7 +33,7 @@ namespace harp {
                 }
             }
 
-            double diff(int from, int to, bool store = true) {
+            inline double diff(int from, int to, bool store = true) {
                 double diff = std::chrono::duration_cast<std::chrono::microseconds>(
                         times.at(to) - times.at(from)).count();
                 if (store) {
@@ -49,17 +49,17 @@ namespace harp {
                 return diff;
             }
 
-            double average(int from, int to) {
+            inline double average(int from, int to) {
                 std::string key = std::to_string(from) + "_" + std::to_string(to);
                 return sums[key] / counts[key];
             }
 
-            double total(int from, int to) {
+            inline double total(int from, int to) {
                 std::string key = std::to_string(from) + "_" + std::to_string(to);
                 return sums[key];
             }
 
-            void clear() {
+            inline void clear() {
                 times.clear();
                 sums.clear();
                 counts.clear();
