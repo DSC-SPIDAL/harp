@@ -130,7 +130,7 @@ struct LearnerTrainParam : public dmlc::Parameter<LearnerTrainParam> {
         .add_enum("densechainblock", 13)
         .add_enum("ftprune", 14)
         .add_enum("bnf00x", 15)
-        .add_enum("bnf", 16)
+        .add_enum("lossguide", 16)
         .add_enum("block", 17)
         .add_enum("blockdenseseq", 18)
         .add_enum("blockdense", 19)
@@ -204,7 +204,7 @@ class LearnerImpl : public Learner {
      } else if (tparam_.tree_method == 15) {
       cfg_["updater"] = "grow_bnf00x,prune";
      } else if (tparam_.tree_method == 16) {
-      cfg_["updater"] = "grow_bnf,prune";
+      cfg_["updater"] = "grow_block_lossguide,prune";
      } else if (tparam_.tree_method == 17) {
       cfg_["updater"] = "grow_block,prune";
      } else if (tparam_.tree_method == 18) {

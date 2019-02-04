@@ -165,7 +165,7 @@ class POSSetSingle{
             }
  
             #ifdef USE_DEBUG
-            LOG(CONSOLE) << "EndUpdate:[" << id << "]" << 
+            LOG(CONSOLE) << "EndUpdate:[" << _nodeid << "]" << 
                 ",leftlen=" << _leftlen <<
                 ",rightlen=" << _rightlen <<
                 ",len=" << _len;
@@ -230,8 +230,9 @@ class POSSetSingle{
 
             #ifdef USE_DEBUG
             LOG(CONSOLE) << "Prune::[" << 
-                getEncodePosition() << "],type=" << isDelete()?'D':'N' << ",defaultLeft=" << _defaultLeft <<
-                ",len=" << _len;
+                getEncodePosition() << "],type=" << (isDelete()?"D":"N") 
+                << ",defaultLeft=" << _defaultLeft 
+                << ",len=" << _len;
             #endif
 
             int w = 0, d = 0;
@@ -272,10 +273,11 @@ class POSSetSingle{
 
             #ifdef USE_DEBUG
             LOG(CONSOLE) << "ApplySplit::[" << 
-                getEncodePosition() << "],type=" << isDelete()?'D':'N' << ",defaultLeft=" << _defaultLeft <<
-                ",leftlen=" << _leftlen <<
-                ",rightlen=" << _rightlen <<
-                ",len=" << _len;
+                 getEncodePosition() << "],type=" << (isDelete()?"D":"N") 
+                << ",defaultLeft=" << _defaultLeft 
+                << ",leftlen=" << _leftlen 
+                << ",rightlen=" << _rightlen 
+                << ",len=" << _len;
             #endif
 
             if (isDelete()) return 0;
@@ -344,6 +346,7 @@ class POSSetSingle{
     void Init(int rownumber, int nodenum, int row_block_size = 0){
         //Init entry first
         rownum_ = rownumber;
+        nodenum_ = nodenum;
         //init from nodeid=0
         entry_[0].resize(rownumber);
         entry_[1].resize(rownumber);
@@ -367,7 +370,7 @@ class POSSetSingle{
         //
         grp_.resize(rowblknum_);
 
-        for(int i; i < rowblknum_; i++){
+        for(int i = 0; i < rowblknum_; i++){
             grp_[i].resize(nodenum);
         }
         const int omp_loop_size = rowblknum_ * nodenum;
@@ -431,7 +434,7 @@ class POSSetSingle{
     // return the next entry pointer for this nodeid
     //
     POSEntry* getNextEntryStart(int nodeid, int blkid){
-        auto grp = getGroup(nodeid, blkid);
+        auto& grp = getGroup(nodeid, blkid);
 
         POSEntry* startEntry0 = dmlc::BeginPtr(entry_[0]);
         POSEntry* endEntry0 = startEntry0 + rownum_;

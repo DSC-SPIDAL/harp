@@ -104,7 +104,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
 
 
     // build tree
-    for (auto tree : trees) {
+    for (auto& tree : trees) {
       this->Update(gpair->ConstHostVector(), p_fmat, tree);
     }
     param_.learning_rate = lr;
@@ -656,6 +656,9 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
     build_nodeset.push_back(0);
     large_nodeset.clear();
     BuildHist(depth, gpair, build_nodeset, large_nodeset, bwork_set_, *p_tree);
+
+    printtree(p_tree, "After CreateHist");
+
     FindSplit(depth, gpair, work_set_, build_nodeset, splitOutput);
  
 
@@ -695,15 +698,21 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
       }
 
       // 2. apply split on these nodes
+      printVec("ApplySplit split_nodeset:", split_nodeset);
+
       ApplySplitOnTree(depth, split_nodeset, splitOutput, p_tree);
       ApplySplitOnPos(depth, split_nodeset, splitResult, *p_tree);
 
       splitResult.getResultNodeSet(build_nodeset, large_nodeset);
+      
+      printVec("ApplySplitResult build_nodeset:", build_nodeset);
 
       // 3. build hist for the children nodes
       AllocateChildrenModel(build_nodeset, large_nodeset, *p_tree);
       UpdateChildrenModelSum(split_nodeset, splitOutput, *p_tree);
       BuildHist(depth, gpair, build_nodeset, large_nodeset, bwork_set_, *p_tree);
+
+      printtree(p_tree, "After CreateHist");
 
       // 4. find split for these nodes
       if(large_nodeset.size() > 0){
@@ -921,9 +930,9 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
                        node_sum, fid, &best, &left_sum[wid]);
 
 
-            //printSplit(best, fid, nid);
-      }
-      //printSplit(best, -1, nid);
+            printSplit(best, fid, nid);
+        }
+        //printSplit(best, -1, nid);
     }
 
     // reduce from thread_local
@@ -977,7 +986,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
 
        //printSplit(best, fid, nid);
       }
-      //printSplit(best, -1, nid);
+      printSplit(best, -1, nid);
     }
 
   }
@@ -1095,7 +1104,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
         //CHECK_EQ(tree[nid].SplitIndex(),fid);
         const int fid = tree[nid].SplitIndex();
         
-        auto grp = posset_.getGroup(nid, blkid);
+        auto& grp = posset_.getGroup(nid, blkid);
 
         //1. set default direction for this node
         //double _tstartInit = dmlc::GetTime();
@@ -1149,7 +1158,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
 
         // split this grp
         auto start = posset_.getNextEntryStart(nid, blkid);
-        auto groupSet = posset_.getGroupSet(blkid);
+        auto& groupSet = posset_.getGroupSet(blkid);
         grp.ApplySplit(start, groupSet);
 
         //printPOSSet(posset_, gid);
@@ -1176,7 +1185,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
             int left_len = 0, right_len = 0;
             for(int j = 0; j < num_block; j++){
                 //for block j, node i
-                auto grp = posset_.getGroup(i, j);
+                auto& grp = posset_.getGroup(i, j);
 
                 // get left and right
                 left_len += grp.getLeftLen();
@@ -1318,7 +1327,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
         //
         // 3. Init blkInfo
         //
-        auto _info = p_fmat->Info();
+        auto& _info = p_fmat->Info();
         this->blkInfo_ = BlockInfo(param_.row_block_size, param_.ft_block_size, param_.bin_block_size);
         this->blkInfo_.init(_info.num_row_, _info.num_col_, param_.max_bin);
         
@@ -1329,6 +1338,8 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
         // First time init model ghsum
         //
         this->wspace_.Init(this->param_, std::pow(2,this->param_.max_depth), this->blkInfo_);
+        // init the node2index map
+        node2workindex_.Init(std::pow(2,this->param_.max_depth));
 
         unsigned int nthread = omp_get_max_threads();
         this->thread_hist_.resize(omp_get_max_threads());
@@ -1346,6 +1357,10 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
 
         //DEBUG
         #ifdef USE_DEBUG
+        //check the max value of binid
+
+
+
         printcut(this->cut_);
 
         printmsg("SortedColumnBatch");
@@ -1374,7 +1389,9 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
         //
         std::cout << "Cube Statistics:\n";
         for(int i=0; i < p_blkmat->GetBaseBlockNum(); i++){
-            auto zcol = p_blkmat->GetBlockZCol(i);
+            auto& zcol = p_blkmat->GetBlockZCol(i);
+            if (zcol.getDataSize() <= 0) continue;
+
             std::cout << "blk " << i <<":" << "rowsize:" <<
                 zcol.getRowSize() << ", datasize:" << zcol.getDataSize() << ":"; 
             unsigned len = 0;
@@ -1406,6 +1423,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
         // 7. Set the tree growth policy
         //
         this->InitQExpand();
+
 
         //
         // 7. Re-Init the model memory space, first touch
@@ -1664,7 +1682,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
 
     for (int i = 0; i < build_nodeset.size(); ++i) {
         const int nid = build_nodeset[i];
-        auto grp = posset_.getGroup(nid, zblkid);
+        auto& grp = posset_.getGroup(nid, zblkid);
 
         CHECK_NE(grp.isDummy(), true);
 
@@ -1730,7 +1748,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
       CHECK_GT(out_preds.size(), 0U);
 
       //get leaf_value for all nodes
-      const auto nodes = p_last_tree_->GetNodes();
+      const auto& nodes = p_last_tree_->GetNodes();
       std::vector<float> leaf_values;
       leaf_values.resize(nodes.size());
       std::vector<int> leaf_nodeset;
@@ -1781,7 +1799,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
         const int qid = i % num_node;
         const int nid = leaf_nodeset[qid];
 
-        auto grp = posset_.getGroup(nid, blkid);
+        auto& grp = posset_.getGroup(nid, blkid);
 
         for (int k = 0; k < grp.size(); k++){
             const int ridx = grp.getRowId(k);
@@ -1847,9 +1865,9 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
         double _tstart = dmlc::GetTime();
 
         // block number on the base plain
-        const auto nsize = p_blkmat->GetBaseBlockNum();
+        const int nsize = p_blkmat->GetBaseBlockNum();
         // block number in the row dimension
-        const auto zsize = p_blkmat->GetBlockZCol(0).GetBlockNum();
+        const int zsize = p_blkmat->GetBlockZCol(0).GetBlockNum();
         // node dimension blocks
         const int qsize = build_nodeset.size();
         const int dsize = std::min(param_.group_parallel_cnt, qsize);
@@ -1873,7 +1891,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
 
 
           // get dataBlock
-          auto block = p_blkmat->GetBlockZCol(offset).GetBlock(zblkid);
+          auto& block = p_blkmat->GetBlockZCol(offset).GetBlock(zblkid);
 
           // update model by this dataBlock and node_blkid
           this->UpdateHistBlock(depth, gpair, block, info, tree,
@@ -2030,7 +2048,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
       // update node statistics.
       //double _tstartSum = dmlc::GetTime();
       #ifdef USE_DEBUG
-      TStats modelSum;
+      TStats modelSum = TStats{0.0,0.0};
       #endif
 
       for (int i = 0; i < nodeset.size(); ++i) {
@@ -2094,7 +2112,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
 
     double _tstart = dmlc::GetTime();
 
-    const auto nodes = tree.GetNodes();
+    const auto& nodes = tree.GetNodes();
     for(int i=0; i < nodes.size(); i++){
         if (tree[i].IsLeaf() || tree[i].IsDeleted() || tree[i].IsDummy()){
             continue;

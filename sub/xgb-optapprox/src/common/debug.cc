@@ -147,8 +147,14 @@ void printVec(std::string msg, const std::vector<float>& vec){
 
 
 void printcut(HistCutMatrix& cut){
-  std::cout << "GHistCutMAT======================================\n";
   int nfeature = cut.row_ptr.size() - 1;
+
+  //check max value of binid
+  int maxSize = 0;
+  for (size_t fid = 0; fid < nfeature; ++fid) {
+      if (cut[fid].size > maxSize) maxSize = cut[fid].size;
+  }
+  std::cout << "GHistCutMAT[maxsize=" << maxSize << "]======================================\n";
 
   nfeature = std::min(nfeature, 50);
 
