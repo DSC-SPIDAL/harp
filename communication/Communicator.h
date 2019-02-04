@@ -130,6 +130,55 @@ namespace harp {
             }
 
             template<class TYPE>
+            void allReduce(harp::ds::Table<TYPE> *table, MPI_Op operation, bool inPlace) {
+
+                MPI_Datatype dataType = getMPIDataType<TYPE>();
+                MPI_Request requests[table->getPartitionCount()];
+                std::vector<TYPE *> dataArrays;
+                int index = 0;
+                for (auto p : *table->getPartitions()) {//keys are ordered in ascending order
+                    auto *data = new TYPE[p.second->getSize()];
+                    MPI_Iallreduce(
+                            p.second->getData(),
+                            data,
+                            p.second->getSize(),
+                            dataType,
+                            operation,
+                            MPI_COMM_WORLD,
+                            &requests[index++]
+                    );
+                    dataArrays.push_back(data);
+                }
+
+                MPI_Waitall(static_cast<int>(table->getPartitionCount()), requests, MPI_STATUS_IGNORE);
+
+                if (inPlace)
+                {
+                    // use the memory space of the original table, delete the 
+                    // data buf
+                    index = 0;
+                    for (auto p : *table->getPartitions())
+                    {
+                        std::copy(dataArrays[index], dataArrays[index]+p.second->getSize(), 
+                        p.second->getData());
+                        delete[] dataArrays[index];
+                        dataArrays[index] = nullptr;
+                        index++;
+                    }
+
+                }else
+                {
+                    // set the created new data to the table
+                    /* code */
+                    index = 0;
+                    for (auto p : *table->getPartitions())
+                    {
+                        p.second->setData(dataArrays[index++], p.second->getSize());
+                    }
+                }
+            }
+
+            template<class TYPE>
             void broadcast(harp::ds::Table<TYPE> *table, int bcastWorkerId) {
                 //determining number of partitions to bcast
                 int partitionCount;
