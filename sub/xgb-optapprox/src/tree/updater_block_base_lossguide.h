@@ -230,7 +230,7 @@ class BlockBaseMakerLossguide: public TreeUpdater {
     {
       // setup position
       // todo: or max_leaves
-      posset_.Init(gpair.size(), std::pow(2, param_.max_depth), rowblksize);
+      posset_.Init(gpair.size(), std::pow(2, param_.max_depth + 1), rowblksize);
 
       //
       // todo: parallelism on all entry

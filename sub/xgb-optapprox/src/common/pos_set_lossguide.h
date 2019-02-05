@@ -43,8 +43,8 @@ class POSSetSingle{
 
         POSEntry() = default;
 
-        POSEntry(int rowid):
-            _rowid(rowid){
+        POSEntry(int rowid){
+            _rowid = rowid & 0x1fffffff;
         }
 
         POSEntry(const POSEntry& pos){
@@ -61,7 +61,7 @@ class POSSetSingle{
             return (_rowid & 0x40000000) != 0;
         }
         inline bool isRight(){
-            return (_rowid & 0x20000000) != 0;
+            return (_rowid & 0x40000000) == 0;
         }
 
         inline void setEncodePosition(bool left = false){
@@ -69,7 +69,7 @@ class POSSetSingle{
                 _rowid |= 0x40000000;
             }
             else{
-                _rowid |= 0x20000000;
+                _rowid &= (~0x40000000);
             }
         }
         inline void setDelete(){
@@ -321,6 +321,9 @@ class POSSetSingle{
             if (_leftlen > 0) group[_leftid] = leftGrp;
             if (_rightlen > 0) group[_rightid] = rightGrp;
 
+            //clear this grp
+            this->setDummy();
+
             return 1;
         }
 
@@ -413,6 +416,9 @@ class POSSetSingle{
     }
 
     // general access
+    inline int getNodeNum(){
+        return nodenum_;
+    }
     inline int getBlockNum(){
         return grp_.size();
     }

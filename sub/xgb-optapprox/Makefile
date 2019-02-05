@@ -192,7 +192,7 @@ ifeq ($(DEBUG), 1)
 #CFLAGS += -fpermissive -fno-strict-aliasing -DUSE_BINID=1 -g -O0
 #CFLAGS += -fpermissive -fno-strict-aliasing -DUSE_BINID=1 -g -O2
 #CFLAGS += -g -O0
-CFLAGS += -g 
+CFLAGS += -g -fno-inline
 
 ifeq ($(USE_DEBUG), 1)
 export OUTPUTTYPE=debuginfo

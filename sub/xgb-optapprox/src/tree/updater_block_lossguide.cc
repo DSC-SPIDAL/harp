@@ -222,7 +222,9 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
         data = nullptr;
     }
     void ClearData(int size){
-        std::memset(data, 0., sizeof(GradStats) * size);
+        if (data != nullptr){
+            std::memset(data, 0., sizeof(GradStats) * size);
+        }
     }
   };
 
@@ -621,14 +623,8 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
       (*p_tree)[i].SetLeaf(0.0f, 0);
     }
 
-    //
-    // Initialize the histogram and DMatrixCompact
-    //
-    if (!isInitializedHistIndex_) {
-        InitializeHist(gpair, p_fmat, *p_tree);
-
-        isInitializedHistIndex_ = true;
-    }
+    // Initialize the histogram and model related
+    InitializeHist(gpair, p_fmat, *p_tree);
 
     // init the posset before building the tree
     this->InitPosSet(gpair, *p_fmat, *p_tree, 
@@ -697,11 +693,16 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
         }
       }
 
+      //quit if no need to split
+      if (split_nodeset.size() == 0) continue;
+
       // 2. apply split on these nodes
       printVec("ApplySplit split_nodeset:", split_nodeset);
 
       ApplySplitOnTree(depth, split_nodeset, splitOutput, p_tree);
       ApplySplitOnPos(depth, split_nodeset, splitResult, *p_tree);
+
+      printPOSSetSingle(posset_);
 
       splitResult.getResultNodeSet(build_nodeset, large_nodeset);
       
@@ -730,17 +731,17 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
       //remove those parents node splitted
       num_leaves -= large_nodeset.size();
 
-    }
+    } /* end of while */
 
     // set all the rest expanding nodes to leaf
     // This post condition is not needed in current code, but may be necessary
     // when there are stopping rule that leaves qexpand non-empty
-    while (!qexpand_->empty()) {
-      const int nid = qexpand_->top().nid;
-      qexpand_->pop();
-      //(*p_tree)[nid].SetLeaf(snode_[nid].weight * param_.learning_rate);
-      (*p_tree)[nid].SetLeaf(p_tree->Stat(nid).base_weight * param_.learning_rate);
-    }
+    //while (!qexpand_->empty()) {
+    //  const int nid = qexpand_->top().nid;
+    //  qexpand_->pop();
+    //  //(*p_tree)[nid].SetLeaf(snode_[nid].weight * param_.learning_rate);
+    //  (*p_tree)[nid].SetLeaf(p_tree->Stat(nid).base_weight * param_.learning_rate);
+    //}
     // remember auxiliary statistics in the tree node
     //for (int nid = 0; nid < p_tree->param.num_nodes; ++nid) {
     //  p_tree->Stat(nid).loss_chg = snode_[nid].best.loss_chg;
@@ -1106,6 +1107,8 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
         
         auto& grp = posset_.getGroup(nid, blkid);
 
+        CHECK_NE(grp.isDelete(), true);
+
         //1. set default direction for this node
         //double _tstartInit = dmlc::GetTime();
         if (tree[nid].IsLeaf()) {
@@ -1259,7 +1262,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
   void InitializeHist(const std::vector<GradientPair> &gpair,
                           DMatrix *p_fmat,
                           const RegTree &tree) {
-    if(1){
+    if (!isInitializedHistIndex_) {
         double _tstartInit = dmlc::GetTime();
         const MetaInfo &info = p_fmat->Info();
 
@@ -1339,7 +1342,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
         //
         this->wspace_.Init(this->param_, std::pow(2,this->param_.max_depth), this->blkInfo_);
         // init the node2index map
-        node2workindex_.Init(std::pow(2,this->param_.max_depth));
+        node2workindex_.Init(std::pow(2,this->param_.max_depth + 1));
 
         unsigned int nthread = omp_get_max_threads();
         this->thread_hist_.resize(omp_get_max_threads());
@@ -1439,9 +1442,12 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
 
         this->tminfo.trainstart_time = dmlc::GetTime();
 
+        isInitializedHistIndex_ = true;
 
     }// end if(isInitializedHistIndex_)
     else{
+
+        node2workindex_.Init(std::pow(2,this->param_.max_depth + 1));
         //
         // todo, remove this part, not necessary
         //
@@ -1801,6 +1807,9 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
 
         auto& grp = posset_.getGroup(nid, blkid);
 
+        // for pruned nodes, new leaves are in posset
+        if(grp.isDummy()) continue;
+
         for (int k = 0; k < grp.size(); k++){
             const int ridx = grp.getRowId(k);
             out_preds[ridx] += leaf_values[nid];
@@ -2017,6 +2026,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
           std::vector<int>& large_nodeset,
           const RegTree &tree) {
 
+#ifdef USE_HALFTRICK_EX
     for (int i = 0; i < build_nodeset.size(); i++){
         node2workindex_.append(build_nodeset[i]);
     }
@@ -2024,6 +2034,17 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
         const int pid = tree[large_nodeset[i]].Parent();
         node2workindex_.replace(large_nodeset[i], pid);
     }
+#else
+    CHECK_EQ(large_nodeset.size(), 0);
+
+    CHECK_EQ(build_nodeset.size()%2, 0);
+    // left and right come in pair
+    for (int i = 0; i < build_nodeset.size()/2; i++){
+        node2workindex_.append(build_nodeset[i*2]);
+        const int pid = tree[build_nodeset[i*2 + 1]].Parent();
+        node2workindex_.replace(build_nodeset[i*2 + 1], pid);
+    }
+#endif
 
   }
 
