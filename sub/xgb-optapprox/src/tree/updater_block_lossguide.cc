@@ -363,13 +363,15 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
    */
   struct SplitResult{
       struct SplitStat{
+        int depth;
         int left;
         int left_len;
         int right;
         int right_len;
 
-        SplitStat():left(-1),right(-1),left_len(0),right_len(0){}
-        SplitStat(int l, int ll, int r, int rl):left(l),right(r),left_len(ll),right_len(rl){}
+        SplitStat():depth(-1),left(-1),right(-1),left_len(0),right_len(0){}
+        SplitStat(int d, int l, int ll, int r, int rl):
+            depth(d),left(l),right(r),left_len(ll),right_len(rl){}
       };
     std::vector<SplitStat> splitResult;
 
@@ -379,15 +381,18 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
     inline void clear(int i){
         splitResult[i] = SplitStat();
     }
-    inline void set(int i, int left, int left_len, int right, int right_len){
-        splitResult[i] = SplitStat(left, left_len, right, right_len);
+    inline void set(int i, int depth, int left, int left_len, int right, int right_len){
+        splitResult[i] = SplitStat(depth, left, left_len, right, right_len);
     }
 
 
     //
     // create the children node list for buildhist
     //
-    void getResultNodeSet(std::vector<int>& nodesetSmall, std::vector<int>& nodesetLarge){
+    void getResultNodeSet(std::vector<int>& nodesetSmall, 
+            std::vector<int>& depthSmall, 
+            std::vector<int>& nodesetLarge,
+            std::vector<int>& depthLarge){
         //
         // filter out the unsplit nodes
         //
@@ -397,6 +402,9 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
         //
         nodesetSmall.resize(0);
         nodesetLarge.resize(0);
+        depthSmall.resize(0);
+        depthLarge.resize(0);
+
 
         for(int i = 0; i < splitResult.size(); i++){
             if (splitResult[i].left < 0) continue;
@@ -404,10 +412,16 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
             if (splitResult[i].left_len < splitResult[i].right_len){
                 nodesetSmall.push_back( splitResult[i].left );
                 nodesetLarge.push_back( splitResult[i].right );
+
+                depthSmall.push_back( splitResult[i].depth + 1 );
+                depthLarge.push_back( splitResult[i].depth + 1 );
             }
             else{
                 nodesetSmall.push_back( splitResult[i].right );
                 nodesetLarge.push_back( splitResult[i].left );
+
+                depthSmall.push_back( splitResult[i].depth + 1);
+                depthLarge.push_back( splitResult[i].depth + 1);
             }
         }
 #else
@@ -416,12 +430,17 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
         //
         nodesetSmall.resize(0);
         nodesetLarge.resize(0);
+        depthSmall.resize(0);
+        depthLarge.resize(0);
+
 
         for(int i = 0; i < splitResult.size(); i++){
             if (splitResult[i].left < 0) continue;
 
             nodesetSmall.push_back( splitResult[i].left );
             nodesetSmall.push_back( splitResult[i].right );
+            depthSmall.push_back( splitResult[i].depth + 1 );
+            depthSmall.push_back( splitResult[i].depth + 1 );
         }
 
 #endif
@@ -644,6 +663,10 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
     std::vector<int> build_nodeset;
     std::vector<int> large_nodeset;
     std::vector<int> split_nodeset;
+    //depth
+    std::vector<int> build_depth;
+    std::vector<int> large_depth;
+    std::vector<int> split_depth;
 
     SplitInfo splitOutput;
     SplitResult splitResult;
@@ -651,14 +674,14 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
     // start from the root node
     build_nodeset.push_back(0);
     large_nodeset.clear();
-    BuildHist(depth, gpair, build_nodeset, large_nodeset, bwork_set_, *p_tree);
+    BuildHist(gpair, build_nodeset, large_nodeset, bwork_set_, *p_tree);
 
     printtree(p_tree, "After CreateHist");
 
-    FindSplit(depth, gpair, work_set_, build_nodeset, splitOutput);
+    FindSplit(gpair, work_set_, build_nodeset, splitOutput);
  
 
-    qexpand_->push(this->newEntry(0, depth, splitOutput.sol[0], 
+    qexpand_->push(this->newEntry(0, 0 /* depth */, splitOutput.sol[0], 
                 splitOutput.left_sum[0], timestamp++));
     num_leaves++;
 
@@ -670,6 +693,10 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
       large_nodeset.clear();
       split_nodeset.clear();
       splitOutput.clear();
+      build_depth.clear();
+      large_depth.clear();
+      split_depth.clear();
+      
 
       int popCnt = 0;
       while (!qexpand_->empty() && popCnt < topK){
@@ -687,6 +714,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
         } else {
             // add to split set
             split_nodeset.push_back(nid);
+            split_depth.push_back(candidate.depth);
             splitOutput.append(candidate.sol, candidate.left_sum);
 
             popCnt ++;
@@ -699,19 +727,42 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
       // 2. apply split on these nodes
       printVec("ApplySplit split_nodeset:", split_nodeset);
 
-      ApplySplitOnTree(depth, split_nodeset, splitOutput, p_tree);
-      ApplySplitOnPos(depth, split_nodeset, splitResult, *p_tree);
+      ApplySplitOnTree(split_nodeset, splitOutput, p_tree);
+      ApplySplitOnPos(split_nodeset, split_depth, splitResult, *p_tree);
 
       printPOSSetSingle(posset_);
 
-      splitResult.getResultNodeSet(build_nodeset, large_nodeset);
+      splitResult.getResultNodeSet(build_nodeset, build_depth,
+              large_nodeset, large_depth);
       
       printVec("ApplySplitResult build_nodeset:", build_nodeset);
+      printVec("ApplySplitResult build_depth:", build_depth);
+
 
       // 3. build hist for the children nodes
       AllocateChildrenModel(build_nodeset, large_nodeset, *p_tree);
       UpdateChildrenModelSum(split_nodeset, splitOutput, *p_tree);
-      BuildHist(depth, gpair, build_nodeset, large_nodeset, bwork_set_, *p_tree);
+
+      // 3.5 do we need continue on the new nodes?
+      if (param_.max_depth > 0){
+          printVec("BeforeRemove build_nodeset:", build_nodeset);
+          printVec("BeforeRemove build_depth:", build_depth);
+
+          // remove the nodes with max_depth already
+          RemoveNodesWithMaxDepth(build_nodeset, build_depth,
+                  large_nodeset, large_depth,
+                  param_.max_depth, p_tree);
+          printVec("AfterRemove build_nodeset:", build_nodeset);
+          printVec("AfterRemove build_depth:", build_depth);
+
+
+      }
+
+      if (build_nodeset.size() == 0 && large_nodeset.size() == 0) continue;
+
+      // do buildhist  
+      printVec("BuildHist on build_nodeset:", build_nodeset);
+      BuildHist(gpair, build_nodeset, large_nodeset, bwork_set_, *p_tree);
 
       printtree(p_tree, "After CreateHist");
 
@@ -719,11 +770,14 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
       if(large_nodeset.size() > 0){
           build_nodeset.insert(build_nodeset.end(), large_nodeset.begin(),
                   large_nodeset.end());
+          build_depth.insert(build_depth.end(), large_depth.begin(),
+                  large_depth.end());
       }
-      FindSplit(depth, gpair, work_set_, build_nodeset, splitOutput);
+      FindSplit(gpair, work_set_, build_nodeset, splitOutput);
       for (int i = 0; i < build_nodeset.size(); i++){
         qexpand_->push(this->newEntry(build_nodeset[i],
-                    p_tree->GetDepth(build_nodeset[i]),
+                    build_depth[i],
+                    //p_tree->GetDepth(build_nodeset[i]),
                     splitOutput.sol[i],
                     splitOutput.left_sum[i], timestamp++));
         num_leaves++;
@@ -842,8 +896,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
    *    feat2workindex_  ; global mapping from feature id to workable feauture position
    *    model   ;  workspace hset
    */
-  void FindSplit(int depth,
-                 const std::vector<GradientPair> &gpair,
+  void FindSplit(const std::vector<GradientPair> &gpair,
                  std::vector<bst_uint>& featureset,
                  std::vector<int>& nodeset,
                  SplitInfo& splitOutput) {
@@ -863,11 +916,11 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
     const int threadNum = omp_get_max_threads();
     if (threadNum > nodeset.size()){
         //call feature wised parallelism
-        FindSplitByFeature(depth, gpair, featureset, nodeset, splitOutput);
+        FindSplitByFeature(gpair, featureset, nodeset, splitOutput);
     }
     else{
         //call node wised parallelism
-        FindSplitByNode(depth, gpair, featureset, nodeset, splitOutput);
+        FindSplitByNode(gpair, featureset, nodeset, splitOutput);
     }
     this->tminfo.aux_time[5] += dmlc::GetTime() - _tstartFindSplit;
 
@@ -877,8 +930,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
   //
   // use the existing memory layout and parallelism as in BuildHistBlock
   //
-  void FindSplitByFeature(int depth,
-                 const std::vector<GradientPair> &gpair,
+  void FindSplitByFeature(const std::vector<GradientPair> &gpair,
                  std::vector<bst_uint> featureset,
                  std::vector<int> nodeset,
                  SplitInfo& splitOutput) {
@@ -953,8 +1005,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
   //
   // using node parallelism
   //
-  void FindSplitByNode(int depth,
-                 const std::vector<GradientPair> &gpair,
+  void FindSplitByNode(const std::vector<GradientPair> &gpair,
                  std::vector<bst_uint> featureset,
                  std::vector<int> nodeset,
                  SplitInfo& splitOutput) {
@@ -1019,8 +1070,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
    *
    */
 
-  void ApplySplitOnTree(int depth,
-                 std::vector<int>& nodeset,
+  void ApplySplitOnTree(std::vector<int>& nodeset,
                  SplitInfo& splitOutput,
                  RegTree *p_tree) {
 
@@ -1083,8 +1133,8 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
    *    posset_ ; the pos data to update
    * 
    */
-  void ApplySplitOnPos(const int depth, 
-          const std::vector<int>& nodeset,
+  void ApplySplitOnPos(const std::vector<int>& nodeset,
+          const std::vector<int>& depthset,
           SplitResult& splitResult,
           const RegTree &tree){
 
@@ -1176,6 +1226,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
         // clear 
         splitResult.clear(i);
         const int nid = nodeset[i];
+        const int depth = depthset[i];
 
         int lid = tree[nid].LeftChild();
         if (lid >= 0) {
@@ -1194,7 +1245,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
                 left_len += grp.getLeftLen();
                 right_len += grp.getRightLen();
             }
-            splitResult.set(i, leftid, left_len, rightid, right_len);
+            splitResult.set(i, depth, leftid, left_len, rightid, right_len);
         }
       }
 
@@ -1645,8 +1696,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
    *    posset_ ;   row set info
    *
    */
-  void UpdateHistBlock(const int depth,
-                       const std::vector<GradientPair> &gpair,
+  void UpdateHistBlock(const std::vector<GradientPair> &gpair,
                        const TDMatrixCubeBlock<TBlkAddr> &block,
                        const RegTree &tree,
                        bst_uint blkid_offset,
@@ -1856,8 +1906,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
    *
    *
    */
-  void BuildHist(const int depth,
-                  const std::vector<GradientPair> &gpair,
+  void BuildHist( const std::vector<GradientPair> &gpair,
                   const std::vector<int>& build_nodeset,
                   const std::vector<int>& large_nodeset,
                   const std::vector<bst_uint> &blkset,
@@ -1879,7 +1928,8 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
         const int zsize = p_blkmat->GetBlockZCol(0).GetBlockNum();
         // node dimension blocks
         const int qsize = build_nodeset.size();
-        const int dsize = std::min(param_.group_parallel_cnt, qsize);
+        //const int dsize = std::min(param_.group_parallel_cnt, qsize);
+        const int dsize = 1;
 
         #ifdef USE_DEBUG
         this->datasum_ = 0.;
@@ -1903,7 +1953,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
           auto& block = p_blkmat->GetBlockZCol(offset).GetBlock(zblkid);
 
           // update model by this dataBlock and node_blkid
-          this->UpdateHistBlock(depth, gpair, block, info, tree,
+          this->UpdateHistBlock(gpair, block, info, tree,
                 offset, zblkid, nblkid,
                 &this->thread_histcompact_[omp_get_thread_num()]);
                 //&this->thread_hist_[0]);
@@ -1935,7 +1985,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
                   auto block = p_blkmat->GetBlockZCol(offset).GetBlock(zblkid);
 
                   // update model by this dataBlock and node_blkid
-                  this->UpdateHistBlock(depth, gpair, block, info, tree,
+                  this->UpdateHistBlock(gpair, block, info, tree,
                         offset, zblkid, nblkid,
                         &this->thread_histcompact_[omp_get_thread_num()]);
                         //&this->thread_hist_[0]);
@@ -1964,7 +2014,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
               auto block = p_blkmat->GetBlockZCol(offset).GetBlock(zblkid);
 
               // update model by this dataBlock and node_blkid
-              this->UpdateHistBlock(depth, gpair, block, tree,
+              this->UpdateHistBlock(gpair, block, tree,
                     offset, zblkid, 
                     build_nodeset,
                     &this->thread_histcompact_[omp_get_thread_num()]);
@@ -1998,7 +2048,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
         #endif
         LOG(CONSOLE) << "BuildHist:: dsize=" << dsize << 
             ",nsize=" << nsize << ",zsize=" << zsize << 
-            ",gsize=" << build_nodeset.size();
+            ",nodeset_size=" << build_nodeset.size();
 
         this->tminfo.buildhist_time += dmlc::GetTime() - _tstart;
       } // end of one-page
@@ -2047,6 +2097,80 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
 #endif
 
   }
+
+  /*
+   * RemoveNodesWithMaxDepth
+   *    remove nodes which has the max depth already
+   * Input:
+   *    build_nodeset   ; the node set to work on
+   *    large_nodeset   ;
+   * Output:
+   *    build_nodeset   ; max-depth nodes removed
+   *    large_nodeset   ;
+   *
+   */
+  void RemoveNodesWithMaxDepth(
+          std::vector<int>& build_nodeset,
+          std::vector<int>& build_depth,
+          std::vector<int>& large_nodeset,
+          std::vector<int>& large_depth,
+          const int max_depth,
+          RegTree *p_tree) {
+
+    std::set<int> blacklist; 
+    for (int i = 0; i < build_nodeset.size(); i++){
+        if (build_depth[i] >= max_depth){
+            blacklist.insert(i);
+
+            const int nid = build_nodeset[i];
+            (*p_tree)[nid].SetLeaf(p_tree->Stat(nid).base_weight * param_.learning_rate);
+        }
+    }
+
+    if (blacklist.size() > 0){
+        auto it = std::remove_if(
+                    build_nodeset.begin(),
+                    build_nodeset.end(),
+                    [&blacklist](int i){
+                    return blacklist.find(i) != blacklist.end();});
+        build_nodeset.erase(it, build_nodeset.end());
+
+        it = std::remove_if(
+                    build_depth.begin(),
+                    build_depth.end(),
+                    [&blacklist](int i){
+                    return blacklist.find(i) != blacklist.end();});
+        build_depth.erase(it, build_depth.end());
+    }
+
+    // do for largeset
+    blacklist.clear();
+    for (int i = 0; i < large_nodeset.size(); i++){
+        if (large_depth[i] >= max_depth){
+            blacklist.insert(i);
+            const int nid = large_nodeset[i];
+            (*p_tree)[nid].SetLeaf(p_tree->Stat(nid).base_weight * param_.learning_rate);
+        }
+    }
+
+    if (blacklist.size() > 0){
+        auto it = std::remove_if(
+                    large_nodeset.begin(),
+                    large_nodeset.end(),
+                    [&blacklist](int i){
+                    return blacklist.find(i) != blacklist.end();});
+        large_nodeset.erase(it, large_nodeset.end());
+
+        it = std::remove_if(
+                    large_depth.begin(),
+                    large_depth.end(),
+                    [&blacklist](int i){
+                    return blacklist.find(i) != blacklist.end();});
+        large_depth.erase(it, large_depth.end());
+    }
+
+  }
+
 
   /*
    * UpdateNodeModelSum
