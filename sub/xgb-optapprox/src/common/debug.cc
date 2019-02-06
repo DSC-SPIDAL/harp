@@ -369,7 +369,7 @@ void printSplit(SplitEntry& split, int fid, int nid){
 
 void printPOSSetSingle(POSSetSingle& pos, int nodeid){
 
-    const int nodenum = pos.getNodeNum();
+    const int nodenum = std::min(pos.getNodeNum(), 10);
     const int blknum = pos.getBlockNum();
 
     std::cout << "POSSetSingle(nodenum=" << nodenum << "):\n";

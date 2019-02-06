@@ -603,6 +603,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
  
   // block configure
   BlockInfo blkInfo_;
+  int max_leaves_;
 
   // hist mat compact
   MetaInfo dmat_info_;
@@ -1157,7 +1158,8 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
         
         auto& grp = posset_.getGroup(nid, blkid);
 
-        CHECK_NE(grp.isDelete(), true);
+        //CHECK_NE(grp.isDelete(), true);
+        if (grp.isDelete() || grp.isDummy()) continue;
 
         //1. set default direction for this node
         //double _tstartInit = dmlc::GetTime();
@@ -1391,9 +1393,22 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
         // 4. Add binid to dmatrix.
         // First time init model ghsum
         //
-        this->wspace_.Init(this->param_, std::pow(2,this->param_.max_depth), this->blkInfo_);
+        max_leaves_ = 0;
+        if (param_.grow_policy == TrainParam::kLossGuide) {
+            if (param_.max_leaves > 0){
+                max_leaves_ = param_.max_leaves;
+            }
+        }
+        else{
+            if (param_.max_depth > 0){
+                max_leaves_ = std::pow(2,this->param_.max_depth);
+            }
+        }
+        CHECK_NE(max_leaves_, 0);
+
+        this->wspace_.Init(this->param_, max_leaves_, this->blkInfo_);
         // init the node2index map
-        node2workindex_.Init(std::pow(2,this->param_.max_depth + 1));
+        node2workindex_.Init(max_leaves_ * 2);
 
         unsigned int nthread = omp_get_max_threads();
         this->thread_hist_.resize(omp_get_max_threads());
@@ -1482,7 +1497,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
         //
         // 7. Re-Init the model memory space, first touch
         //
-        this->wspace_.Init(this->param_, std::pow(2,this->param_.max_depth), this->blkInfo_);
+        this->wspace_.Init(this->param_, max_leaves_, this->blkInfo_);
 
         this->tminfo.aux_time[0] += dmlc::GetTime() - _tstartInit;
         //
@@ -1498,7 +1513,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
     }// end if(isInitializedHistIndex_)
     else{
 
-        node2workindex_.Init(std::pow(2,this->param_.max_depth + 1));
+        node2workindex_.Init(max_leaves_ * 2);
         //
         // todo, remove this part, not necessary
         //
@@ -1740,7 +1755,8 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
         const int nid = build_nodeset[i];
         auto& grp = posset_.getGroup(nid, zblkid);
 
-        CHECK_NE(grp.isDummy(), true);
+        //CHECK_NE(grp.isDummy(), true);
+        if (grp.isDummy()) continue;
 
         for (int j = 0; j < grp.size(); ++j) {
             const int ridx = grp.getRowId(j);

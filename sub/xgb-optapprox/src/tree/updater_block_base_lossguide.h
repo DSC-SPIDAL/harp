@@ -201,7 +201,7 @@ class BlockBaseMakerLossguide: public TreeUpdater {
     }
     // reset when the index is invalid
     inline void reset(int nid){
-        index_[nid] = -1;
+        //index_[nid] = -1;
     }
 
     inline void clear(){

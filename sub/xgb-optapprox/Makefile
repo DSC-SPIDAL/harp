@@ -152,12 +152,18 @@ else
 	export BLKADDR=short
 endif
 
+ifeq ($(USE_HALFTRICK_EX), 1)
+	CFLAGS += -DUSE_HALFTRICK_EX=1
+	export HALFTRICK=halftrick
+else
 ifeq ($(USE_HALFTRICK), 1)
 	CFLAGS += -DUSE_HALFTRICK=1
 	export HALFTRICK=halftrick
 else
 	export HALFTRICK=nohalftrick
 endif
+endif
+
 ifeq ($(USE_SPLIT_PARALLELONNODE), 1)
 	CFLAGS += -DUSE_SPLIT_PARALLELONNODE=1
 	export SPLIT=splitonnode
