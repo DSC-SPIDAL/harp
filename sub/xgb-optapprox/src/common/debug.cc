@@ -117,34 +117,6 @@ void printInt(std::string msg, int val){
     stringStream << msg << ":" << val;
     printmsg(stringStream.str());
 }
-void printVec(std::string msg, const std::vector<unsigned int>& vec){
-    std::ostringstream stringStream;
-    stringStream << msg ;
-    for(int i=0; i< std::min(int(vec.size()), 50); i++){
-    stringStream << vec[i] << ",";
-    }
-    printmsg(stringStream.str());
-}
-void printVec(std::string msg, const std::vector<int>& vec){
-    std::ostringstream stringStream;
-    stringStream << msg ;
-    for(int i=0; i< std::min(int(vec.size()), 50); i++){
-    stringStream << vec[i] << ",";
-    }
-    printmsg(stringStream.str());
-}
-void printVec(std::string msg, const std::vector<float>& vec){
-    std::ostringstream stringStream;
-    stringStream << msg ;
-    for(int i=0; i< std::min(int(vec.size()), 50); i++){
-    stringStream << vec[i] << ",";
-    }
-    printmsg(stringStream.str());
-}
-
-
-
-
 
 void printcut(HistCutMatrix& cut){
   int nfeature = cut.row_ptr.size() - 1;
@@ -473,10 +445,6 @@ void printcut(HistCutMatrix& gmat){}
 void printSplit(SplitEntry& split, int fid, int nid){}
 void printInt(std::string msg, int val){}
 //void printnodes(std::vector<NodeEntry>& nodes, std::string header=""){}
-void printVec(std::string msg, const std::vector<unsigned int>& vec){}
-void printVec(std::string msg, const std::vector<int>& vec){}
-void printVec(std::string msg, const std::vector<float>& vec){}
-   
 void printPOSSet(POSSet& pos, int gid){}
 void printPOSSetSingle(POSSetSingle& pos, int nodeid){}
 void printgh(const std::vector<GradientPair> &gpair){}

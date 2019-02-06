@@ -39,9 +39,7 @@ using xgboost::tree::POSSetSingle;
 
 
 void startVtune(std::string tagfilename, int waittime=10000);
-void printVec(std::string msg, const std::vector<unsigned int>& vec);
-void printVec(std::string msg, const std::vector<int>& vec);
-void printVec(std::string msg, const std::vector<float>& vec);
+
 void printInt(std::string msg, int val);
 void printmsg(std::string msg);
 void printtree(RegTree* ptree, std::string header="");
@@ -69,6 +67,16 @@ void save_grads(int iterid, int tree_method, HostDeviceVector<GradientPair>& gpa
 /*
  * template functions
  */
+template<typename T>
+void printVec(std::string msg, const T& vec){
+    std::ostringstream stringStream;
+    stringStream << msg ;
+    for(int i=0; i< std::min(int(vec.size()), 50); i++){
+    stringStream << vec[i] << ",";
+    }
+    printmsg(stringStream.str());
+}
+
 template<typename T>
 void printdmat(T& dmat){
   std::cout << "HMAT(DMatrixCube)======================================\n";

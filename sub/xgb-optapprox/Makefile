@@ -300,7 +300,7 @@ CFLAGS += $(OPENMP_FLAGS)
 all: lib/libxgboost.a $(XGBOOST_DYLIB) $(TARGET)
 
 $(DMLC_CORE)/libdmlc.a: $(wildcard $(DMLC_CORE)/src/*.cc $(DMLC_CORE)/src/*/*.cc)
-	+ cd $(DMLC_CORE); "$(MAKE)" libdmlc.a config=$(ROOTDIR)/$(config); cd $(ROOTDIR)
+	+ cd $(DMLC_CORE); "$(MAKE)" libdmlc.a DEBUG=${DEBUG} config=$(ROOTDIR)/$(config); cd $(ROOTDIR)
 
 $(RABIT)/lib/$(LIB_RABIT): $(wildcard $(RABIT)/src/*.cc)
 	+ cd $(RABIT); "$(MAKE)" lib/$(LIB_RABIT) USE_SSE=$(USE_SSE); cd $(ROOTDIR)

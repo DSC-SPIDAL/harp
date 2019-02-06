@@ -192,6 +192,9 @@ class BlockBaseMakerLossguide: public TreeUpdater {
 
     // add a new node and allocate model to it
     inline void append(int nid){
+        //todo, remove
+        //CHECK_LT(nid, index_.size());
+
         index_[nid] = num_leaves;
         num_leaves ++;
     }
@@ -223,6 +226,7 @@ class BlockBaseMakerLossguide: public TreeUpdater {
   void InitPosSet(const std::vector<GradientPair> &gpair,
                        const DMatrix &fmat,
                        const RegTree &tree,
+                       const int max_leaves,
                        const int rowblksize) {
     CHECK_EQ(tree.param.num_nodes, tree.param.num_roots)
         << "TreeMaker: can only grow new tree";
@@ -230,7 +234,7 @@ class BlockBaseMakerLossguide: public TreeUpdater {
     {
       // setup position
       // todo: or max_leaves
-      posset_.Init(gpair.size(), std::pow(2, param_.max_depth + 1), rowblksize);
+      posset_.Init(gpair.size(), max_leaves * 2, rowblksize);
 
       //
       // todo: parallelism on all entry

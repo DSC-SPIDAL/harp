@@ -272,15 +272,17 @@ class POSSetSingle{
         int ApplySplit(POSEntry* start, std::vector<POSGroup>& group){
 
             #ifdef USE_DEBUG
-            LOG(CONSOLE) << "ApplySplit::[" << 
-                 getEncodePosition() << "],type=" << (isDelete()?"D":"N") 
-                << ",defaultLeft=" << _defaultLeft 
-                << ",leftlen=" << _leftlen 
-                << ",rightlen=" << _rightlen 
-                << ",len=" << _len;
+            //LOG(CONSOLE) << "ApplySplit::[" << 
+            //     getEncodePosition() << "],type=" << (isDelete()?"D":"N") 
+            //    << ",defaultLeft=" << _defaultLeft 
+            //    << ",leftlen=" << _leftlen 
+            //    << ",rightlen=" << _rightlen 
+            //    << ",len=" << _len;
             #endif
 
-            if (isDelete()) return 0;
+            if (isDelete()||isDummy()) return 0;
+
+            CHECK_LE(_leftlen, _len);
 
             //scan and write
             POSEntry* left = start;
