@@ -45,6 +45,7 @@ ENV CLASSPATH="/harp/lib/*"
 ADD core/harp-collective/target/harp-collective-0.1.0.jar \
     third_party/fastutil-7.0.13.jar \
     third_party/log4j-1.2.17.jar \
+    core/scripts/log4j.properties \
     /harp/lib/
 
 WORKDIR /harp/
