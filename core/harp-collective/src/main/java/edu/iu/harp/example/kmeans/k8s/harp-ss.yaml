@@ -1,0 +1,79 @@
+################################################################
+# Running Harp on Kubernetes as a StatefulSet
+#
+# We define:
+#   a service,
+#   a StatefulSet
+#
+# Things to update when running in a new cluster:
+#   1. default namespace is used. If you are using another namespace,
+#      please change namespace value in both entities below.
+#   2. Update Harp resources.
+#      By default it uses 1.0 core and 2048MB of memory
+#
+################################################################
+# ------------------- Harp Headless Service ---------------------- #
+
+kind: Service
+apiVersion: v1
+metadata:
+  labels:
+    app: harp-test
+  name: harp-test
+  namespace: default
+spec:
+  clusterIP: None
+  selector:
+    app: harp-test
+
+---
+################################################################
+# ------------------- Dashboard StatefulSet ------------------ #
+
+apiVersion: apps/v1beta2
+kind: StatefulSet
+metadata:
+  name: harp-test
+  namespace: default
+  labels:
+    app: harp-test
+
+spec:
+  replicas: 3
+  serviceName: harp-test
+
+  selector:
+    matchLabels:
+      app: harp-test
+
+  template:
+    metadata:
+      labels:
+        app: harp-test
+
+    spec:
+      terminationGracePeriodSeconds: 0
+
+      containers:
+      - name: harp-test
+        image: harp/harp-k8s:0.1.0
+        imagePullPolicy: IfNotPresent
+        command: ["java", "edu.iu.harp.example.kmeans.k8s.HelloWorld"]
+        args: ["no-arg"]
+
+        ports:
+        - name: harp-port
+          containerPort: 8080
+          protocol: TCP
+
+        resources:
+          requests:
+            cpu: 1.0
+            memory: 2048Mi
+
+        env:
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP

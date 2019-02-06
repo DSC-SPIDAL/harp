@@ -12,8 +12,8 @@ FROM ubuntu:18.04
 ENV DEBIAN_FRONTEND noninteractive
 
 ##############################################################################
-# install apt-utils and locales, set up language
-RUN apt-get update && apt-get install -y apt-utils locales locales-all
+# install apt-utils and locales, nano, set up language
+RUN apt-get update && apt-get install -y apt-utils locales locales-all nano
 ENV LC_ALL en_US.UTF-8
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US.UTF-8
@@ -42,7 +42,9 @@ ENV JAVA_HOME /usr/lib/jvm/java-8-oracle
 #
 ENV CLASSPATH="/harp/lib/*"
 
-ADD core/harp-collective/target/harp-collective-0.1.0.jar /harp/lib/
-ADD third_party/fastutil-7.0.13.jar /harp/lib/
+ADD core/harp-collective/target/harp-collective-0.1.0.jar \
+    third_party/fastutil-7.0.13.jar \
+    third_party/log4j-1.2.17.jar \
+    /harp/lib/
 
 WORKDIR /harp/
