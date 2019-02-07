@@ -59,7 +59,7 @@ spec:
         image: harp/harp-k8s:0.1.0
         imagePullPolicy: IfNotPresent
         command: ["java", "edu.iu.harp.example.kmeans.k8s.HelloWorld"]
-        args: ["no-arg"]
+#        args: ["no-arg"]
 
         ports:
         - name: harp-port
@@ -84,4 +84,4 @@ spec:
               fieldPath: metadata.name
         # NUMBER_OF_WORKERS should be the same as replicas
         - name: NUMBER_OF_WORKERS
-          value: 3
+          value: "3"
