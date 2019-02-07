@@ -657,7 +657,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
     int depth = 0;
     int num_leaves = 0;
     unsigned timestamp = 0;
-    const int topK = param_.group_parallel_cnt;
+    const int topK = param_.node_block_size;
 
     std::vector<int> build_nodeset;
     std::vector<int> large_nodeset;
@@ -706,7 +706,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
 
         if (candidate.sol.loss_chg <= kRtEps
             || (param_.max_depth > 0 && candidate.depth == param_.max_depth)
-            || (param_.max_leaves > 0 && num_leaves == param_.max_leaves) ) {
+            || (param_.max_leaves > 0 && num_leaves + popCnt == param_.max_leaves) ) {
 
           //(*p_tree)[nid].SetLeaf(snode_[nid].weight * param_.learning_rate);
             (*p_tree)[nid].SetLeaf(p_tree->Stat(nid).base_weight * param_.learning_rate);
@@ -2059,10 +2059,12 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
         #ifdef USE_DEBUG
         LOG(CONSOLE) << "BuildHist:: datasum_=" << this->datasum_;
         #endif
+        if (param_.grow_policy != TrainParam::kLossGuide) {
         LOG(CONSOLE) << "BuildHist:: dsize=" << dsize << 
             ",nsize=" << nsize << ",zsize=" << zsize << 
             ",nodeset_size=" << build_nodeset.size() <<
             ",largeset_size=" << large_nodeset.size();
+        }
 
         this->tminfo.buildhist_time += dmlc::GetTime() - _tstart;
       } // end of one-page
