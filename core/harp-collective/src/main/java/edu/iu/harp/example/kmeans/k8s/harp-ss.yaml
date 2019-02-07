@@ -34,7 +34,7 @@ metadata:
   name: harp-demo
   namespace: default
   labels:
-    app: harp-test
+    app: harp-selector
     role: harp-worker
 
 spec:
@@ -48,7 +48,7 @@ spec:
   template:
     metadata:
       labels:
-        app: harp-test
+        app: harp-selector
         role: harp-worker
 
     spec:
