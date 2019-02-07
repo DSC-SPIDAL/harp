@@ -33,10 +33,11 @@ spec:
 apiVersion: apps/v1beta2
 kind: StatefulSet
 metadata:
-  name: harp-test
+  name: harp-demo
   namespace: default
   labels:
     app: harp-test
+    role: harp-worker
 
 spec:
   replicas: 3
@@ -50,9 +51,10 @@ spec:
     metadata:
       labels:
         app: harp-test
+        role: harp-worker
 
     spec:
-      terminationGracePeriodSeconds: 0
+      terminationGracePeriodSeconds: 1
 
       containers:
       - name: harp-test

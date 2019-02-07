@@ -5,6 +5,7 @@ import org.apache.log4j.Logger;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Map;
 
 public class HelloWorld {
   protected static final Logger LOG = Logger.getLogger(HelloWorld.class);
@@ -14,14 +15,25 @@ public class HelloWorld {
   public static void main(String[] args) {
     String podIP = System.getenv("POD_IP");
     String podName = System.getenv("POD_NAME");
-    String numberOfWorkers = System.getenv("NUMBER_OF_WORKERS");
+    int numberOfWorkers = Integer.parseInt(System.getenv("NUMBER_OF_WORKERS"));
 
     LOG.info("Hello from the worker: " + getPodIndex(podName));
     LOG.info("My PodIP: " + podIP);
     LOG.info("My PodName: " + podName);
     LOG.info("numberOfWorkers: " + numberOfWorkers);
 
-    echoServer(SERVER_PORT, podName);
+    String namespace = "default";
+    Map<String, String> podMap =
+        PodWatchUtils.getWorkerIPsByWatchingPodsToRunning(namespace, numberOfWorkers, 100);
+
+    // List pods:
+    StringBuffer toLog = new StringBuffer();
+    for (Map.Entry<String, String> entry: podMap.entrySet()) {
+      toLog.append(entry.getKey() + ": " + entry.getValue() + "\n");
+    }
+    LOG.info("Pod List: \n" + toLog.toString());
+
+//    echoServer(SERVER_PORT, podName);
 
     waitIndefinitely();
   }
