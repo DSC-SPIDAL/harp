@@ -17,14 +17,12 @@
 kind: Service
 apiVersion: v1
 metadata:
-  labels:
-    app: harp-test
-  name: harp-test
+  name: harp-service
   namespace: default
 spec:
   clusterIP: None
   selector:
-    app: harp-test
+    app: harp-selector
 
 ---
 ################################################################
@@ -41,11 +39,11 @@ metadata:
 
 spec:
   replicas: 3
-  serviceName: harp-test
+  serviceName: harp-service
 
   selector:
     matchLabels:
-      app: harp-test
+      app: harp-selector
 
   template:
     metadata:
