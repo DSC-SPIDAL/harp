@@ -77,3 +77,11 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.podIP
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        # NUMBER_OF_WORKERS should be the same as replicas
+        - name: NUMBER_OF_WORKERS
+          value: 3

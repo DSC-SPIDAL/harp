@@ -6,10 +6,14 @@ public class HelloWorld {
   protected static final Logger LOG = Logger.getLogger(HelloWorld.class);
 
   public static void main(String[] args) {
-    LOG.info("Hello from a worker. ");
-
     String podIP = System.getenv("POD_IP");
+    String podName = System.getenv("POD_NAME");
+    String numberOfWorkers = System.getenv("NUMBER_OF_WORKERS");
+
+    LOG.info("Hello from the worker: " + getPodIndex(podName));
     LOG.info("My PodIP: " + podIP);
+    LOG.info("My PodName: " + podName);
+    LOG.info("numberOfWorkers: " + numberOfWorkers);
 
     waitIndefinitely();
   }
@@ -28,6 +32,15 @@ public class HelloWorld {
         LOG.warn("Thread sleep interrupted.", e);
       }
     }
+  }
+
+  /**
+   * get pod Index from pod name
+   * @param podName
+   * @return
+   */
+  public static int getPodIndex(String podName) {
+    return Integer.parseInt(podName.substring(podName.lastIndexOf("-") + 1));
   }
 
 }
