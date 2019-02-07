@@ -49,6 +49,7 @@ ADD core/harp-collective/target/harp-collective-0.1.0.jar \
     third_party/client-java-api-3.0.0.jar \
     third_party/client-java-proto-3.0.0.jar \
     third_party/guava-20.0.jar \
+    third_party/gson-2.6.2.jar \
     third_party/commons-codec-1.11.jar \
     third_party/commons-compress-1.15.jar \
     third_party/commons-lang3-3.6.jar \
