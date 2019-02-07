@@ -54,6 +54,7 @@ ADD core/harp-collective/target/harp-collective-0.1.0.jar \
     third_party/commons-lang3-3.6.jar \
     third_party/okhttp-2.7.5.jar \
     third_party/okhttp-ws-2.7.5.jar \
+    third_party/okio-1.6.0.jar \
     third_party/slf4j-api-1.7.25.jar \
     /harp/lib/
 
