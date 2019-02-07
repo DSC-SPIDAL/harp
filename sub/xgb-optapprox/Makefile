@@ -152,12 +152,18 @@ else
 	export BLKADDR=short
 endif
 
+ifeq ($(USE_HALFTRICK_EX), 1)
+	CFLAGS += -DUSE_HALFTRICK_EX=1
+	export HALFTRICK=halftrick
+else
 ifeq ($(USE_HALFTRICK), 1)
 	CFLAGS += -DUSE_HALFTRICK=1
 	export HALFTRICK=halftrick
 else
 	export HALFTRICK=nohalftrick
 endif
+endif
+
 ifeq ($(USE_SPLIT_PARALLELONNODE), 1)
 	CFLAGS += -DUSE_SPLIT_PARALLELONNODE=1
 	export SPLIT=splitonnode
@@ -192,7 +198,7 @@ ifeq ($(DEBUG), 1)
 #CFLAGS += -fpermissive -fno-strict-aliasing -DUSE_BINID=1 -g -O0
 #CFLAGS += -fpermissive -fno-strict-aliasing -DUSE_BINID=1 -g -O2
 #CFLAGS += -g -O0
-CFLAGS += -g 
+CFLAGS += -g -fno-inline
 
 ifeq ($(USE_DEBUG), 1)
 export OUTPUTTYPE=debuginfo
@@ -294,7 +300,7 @@ CFLAGS += $(OPENMP_FLAGS)
 all: lib/libxgboost.a $(XGBOOST_DYLIB) $(TARGET)
 
 $(DMLC_CORE)/libdmlc.a: $(wildcard $(DMLC_CORE)/src/*.cc $(DMLC_CORE)/src/*/*.cc)
-	+ cd $(DMLC_CORE); "$(MAKE)" libdmlc.a config=$(ROOTDIR)/$(config); cd $(ROOTDIR)
+	+ cd $(DMLC_CORE); "$(MAKE)" libdmlc.a DEBUG=${DEBUG} config=$(ROOTDIR)/$(config); cd $(ROOTDIR)
 
 $(RABIT)/lib/$(LIB_RABIT): $(wildcard $(RABIT)/src/*.cc)
 	+ cd $(RABIT); "$(MAKE)" lib/$(LIB_RABIT) USE_SSE=$(USE_SSE); cd $(ROOTDIR)

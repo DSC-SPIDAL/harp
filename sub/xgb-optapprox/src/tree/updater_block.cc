@@ -836,9 +836,9 @@ class HistMakerBlock: public BlockBaseMaker {
                        node_sum, fid, &best, &left_sum[wid]);
 
 
-        printSplit(best, fid, nid);
+        //printSplit(best, fid, nid);
       }
-      //printSplit(best, -1, nid);
+      printSplit(best, -1, nid);
     }
 
     this->tminfo.aux_time[5] += dmlc::GetTime() - _tstartFindSplit;

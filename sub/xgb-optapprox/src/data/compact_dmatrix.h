@@ -555,7 +555,7 @@ class DMatrixDenseCube : public xgboost::data::SparsePageDMatrix {
   explicit DMatrixDenseCube(){}
 
   //interface for reading access in bulidhist
-  inline const DMatrixDenseCubeZCol<BlkAddrType>& GetBlockZCol(unsigned int i) const {
+  inline DMatrixDenseCubeZCol<BlkAddrType>& GetBlockZCol(unsigned int i) {
     return data_[i];
   }
 
@@ -825,7 +825,7 @@ class DMatrixCube : public xgboost::data::SparsePageDMatrix {
   explicit DMatrixCube(){}
 
   //interface for reading access in bulidhist
-  inline const DMatrixCubeZCol<BlkAddrType>& GetBlockZCol(unsigned int i) const {
+  inline DMatrixCubeZCol<BlkAddrType>& GetBlockZCol(unsigned int i){
     return data_[i];
   }
 

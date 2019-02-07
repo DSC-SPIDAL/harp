@@ -28,6 +28,21 @@ group_parallel_cnt  |   omp for |   training time
 
 Overhead of omp threads synchronization is very large here. 
 
+### use node_block_size to control node level parallelism
+
+
+    higgs   TrainingTime       higgs   TrainingTime               Speedup-hist            speedup-lightgbm
+    Tree_depth  xgboost block-depth Tree_depth  xgboost-lossguide   lightgbm    block-lossguide Tree_depth  block-depth block-lossguide lightgbm    block-lossguide
+    8   7.78    4.27    8   9.33    7.11    6.27    8   1.82    1.49    1.31    1.13
+    12  32.35   7.86    12  35.74   17.83   13.47   12  4.12    2.65    2.00    1.32
+    16  245.83  17.24   16  403.58  126.51  44.36   16  14.26   9.10    3.19    2.85
+
+
+### TODO: remove OMP scheduling and thread synchronization overhead 
+
+it can be an mix mode that using task scheduling for each node when node number is big enough, 
+and using normal fid/bid level parallelism in the first few levels.
+
 
 
 

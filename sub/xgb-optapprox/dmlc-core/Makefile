@@ -25,6 +25,11 @@ ifeq ($(USE_SSE), 1)
 	CFLAGS += -msse2
 endif
 
+ifeq ($(DEBUG), 1)
+CFLAGS += -g -fno-inline
+endif
+
+
 ifdef DEPS_PATH
 CFLAGS+= -I$(DEPS_PATH)/include
 LDFLAGS+= -L$(DEPS_PATH)/lib

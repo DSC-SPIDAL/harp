@@ -117,38 +117,16 @@ void printInt(std::string msg, int val){
     stringStream << msg << ":" << val;
     printmsg(stringStream.str());
 }
-void printVec(std::string msg, const std::vector<unsigned int>& vec){
-    std::ostringstream stringStream;
-    stringStream << msg ;
-    for(int i=0; i< std::min(int(vec.size()), 50); i++){
-    stringStream << vec[i] << ",";
-    }
-    printmsg(stringStream.str());
-}
-void printVec(std::string msg, const std::vector<int>& vec){
-    std::ostringstream stringStream;
-    stringStream << msg ;
-    for(int i=0; i< std::min(int(vec.size()), 50); i++){
-    stringStream << vec[i] << ",";
-    }
-    printmsg(stringStream.str());
-}
-void printVec(std::string msg, const std::vector<float>& vec){
-    std::ostringstream stringStream;
-    stringStream << msg ;
-    for(int i=0; i< std::min(int(vec.size()), 50); i++){
-    stringStream << vec[i] << ",";
-    }
-    printmsg(stringStream.str());
-}
-
-
-
-
 
 void printcut(HistCutMatrix& cut){
-  std::cout << "GHistCutMAT======================================\n";
   int nfeature = cut.row_ptr.size() - 1;
+
+  //check max value of binid
+  int maxSize = 0;
+  for (size_t fid = 0; fid < nfeature; ++fid) {
+      if (cut[fid].size > maxSize) maxSize = cut[fid].size;
+  }
+  std::cout << "GHistCutMAT[maxsize=" << maxSize << "]======================================\n";
 
   nfeature = std::min(nfeature, 50);
 
@@ -361,31 +339,86 @@ void printSplit(SplitEntry& split, int fid, int nid){
     m.unlock();
 }
 
-void printPOSSet(POSSet& pos, int gid){
+void printPOSSetSingle(POSSetSingle& pos, int nodeid){
 
-    int grpcnt = pos.getGroupCnt();
+    const int nodenum = std::min(pos.getNodeNum(), 10);
+    const int blknum = pos.getBlockNum();
 
-    //print 8 near gid
-    if (gid < 0 || gid > grpcnt) return; 
-    std::cout << "POSSet(grpcnt=" << grpcnt << "):\n";
+    std::cout << "POSSetSingle(nodenum=" << nodenum << "):\n";
+    //
+    const int blkid = 0;
+    for(int i = 0; i < nodenum; i++){
+        auto& grp = pos.getGroup(i, blkid);
+        if (grp.isDummy()) continue;
 
-    for(int g = gid; g < std::min(grpcnt , gid + 8) ; g++){
-        std::cout << "[" << g << "=" << pos[g].size() << "]:";
-        unsigned int cnt = pos[g].size();
-        for (int i = 0; i< std::min(cnt, 100U); i++){
-            bool del = pos[g].isDelete(i);
-            bool left = pos[g].isLeft(i);
-            int nid = pos[g].getEncodePosition(i);
-            int ridx = pos[g].getRowId(i);
+        std::cout << "[" << i << "=" << grp.size() << "]:";
+        unsigned int cnt = grp.size();
+        for (int j = 0; j< std::min(cnt, 100U); j++){
+            bool del = grp.isDelete(j);
+            bool left = grp.isLeft(j);
+            int ridx = grp.getRowId(j);
 
             std::cout << (del?"-":"") << ":" << (left?"l":"r") << ":" <<
-                nid << ":" << ridx << " ";
+                ridx << " ";
         }
         std::cout << "\n";
     }
     std::cout << "\n";
 
 }
+
+void printPOSSet(POSSet& pos, int gid){
+
+    int grpcnt = pos.getGroupCnt();
+    int startGid = 0;
+    int endGid = std::min(grpcnt , startGid + 10);
+
+    std::cout << "POSSet(grpcnt=" << grpcnt << "):\n";
+
+    for(int g = startGid; g < endGid; g++){
+        int nid = pos[g].getEncodePosition(0);
+        std::cout << "[" << nid << "=" << pos[g].size() << "]:";
+        unsigned int cnt = pos[g].size();
+        for (int i = 0; i< std::min(cnt, 100U); i++){
+            bool del = pos[g].isDelete(i);
+            bool left = pos[g].isLeft(i);
+            //int nid = pos[g].getEncodePosition(i);
+            int ridx = pos[g].getRowId(i);
+
+            std::cout << (del?"-":"") << ":" << (left?"l":"r") << ":" <<
+                ridx << " ";
+        }
+        std::cout << "\n";
+    }
+    std::cout << "\n";
+
+}
+
+//void printPOSSet(POSSet& pos, int gid){
+//
+//    int grpcnt = pos.getGroupCnt();
+//
+//    //print 8 near gid
+//    if (gid < 0 || gid > grpcnt) return; 
+//    std::cout << "POSSet(grpcnt=" << grpcnt << "):\n";
+//
+//    for(int g = gid; g < std::min(grpcnt , gid + 8) ; g++){
+//        std::cout << "[" << g << "=" << pos[g].size() << "]:";
+//        unsigned int cnt = pos[g].size();
+//        for (int i = 0; i< std::min(cnt, 100U); i++){
+//            bool del = pos[g].isDelete(i);
+//            bool left = pos[g].isLeft(i);
+//            int nid = pos[g].getEncodePosition(i);
+//            int ridx = pos[g].getRowId(i);
+//
+//            std::cout << (del?"-":"") << ":" << (left?"l":"r") << ":" <<
+//                nid << ":" << ridx << " ";
+//        }
+//        std::cout << "\n";
+//    }
+//    std::cout << "\n";
+//
+//}
 
 void printgh(const std::vector<GradientPair> &gpair)
 {
@@ -412,11 +445,8 @@ void printcut(HistCutMatrix& gmat){}
 void printSplit(SplitEntry& split, int fid, int nid){}
 void printInt(std::string msg, int val){}
 //void printnodes(std::vector<NodeEntry>& nodes, std::string header=""){}
-void printVec(std::string msg, const std::vector<unsigned int>& vec){}
-void printVec(std::string msg, const std::vector<int>& vec){}
-void printVec(std::string msg, const std::vector<float>& vec){}
-   
 void printPOSSet(POSSet& pos, int gid){}
+void printPOSSetSingle(POSSetSingle& pos, int nodeid){}
 void printgh(const std::vector<GradientPair> &gpair){}
 
 #endif

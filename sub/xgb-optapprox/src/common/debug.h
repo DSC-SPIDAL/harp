@@ -25,6 +25,7 @@
 #include "../data/compact_dmatrix.h"
 #include "../common/hist_util.h"
 #include "../common/pos_set.h"
+#include "../common/pos_set_lossguide.h"
 #include "../tree/param.h"
 
 
@@ -34,12 +35,11 @@ using xgboost::common::HistCutMatrix;
 using xgboost::common::GHistIndexMatrix;
 using xgboost::tree::SplitEntry;
 using xgboost::tree::POSSet;
+using xgboost::tree::POSSetSingle;
 
 
 void startVtune(std::string tagfilename, int waittime=10000);
-void printVec(std::string msg, const std::vector<unsigned int>& vec);
-void printVec(std::string msg, const std::vector<int>& vec);
-void printVec(std::string msg, const std::vector<float>& vec);
+
 void printInt(std::string msg, int val);
 void printmsg(std::string msg);
 void printtree(RegTree* ptree, std::string header="");
@@ -54,6 +54,7 @@ void printgmat(GHistIndexMatrix& gmat);
 void printcut(HistCutMatrix& gmat);
 
 void printPOSSet(POSSet& pos, int gid=0);
+void printPOSSetSingle(POSSetSingle& pos, int nodeid=-1);
 
 void printgh(const std::vector<GradientPair> &gpair);
 
@@ -66,6 +67,16 @@ void save_grads(int iterid, int tree_method, HostDeviceVector<GradientPair>& gpa
 /*
  * template functions
  */
+template<typename T>
+void printVec(std::string msg, const T& vec){
+    std::ostringstream stringStream;
+    stringStream << msg ;
+    for(int i=0; i< std::min(int(vec.size()), 50); i++){
+    stringStream << vec[i] << ",";
+    }
+    printmsg(stringStream.str());
+}
+
 template<typename T>
 void printdmat(T& dmat){
   std::cout << "HMAT(DMatrixCube)======================================\n";
