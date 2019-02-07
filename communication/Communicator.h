@@ -39,7 +39,7 @@ namespace harp {
             }
 
             template<class TYPE>
-            void allGather(harp::ds::Table<TYPE> *table) {
+            void allGatherDeprecated(harp::ds::Table<TYPE> *table) {
                 auto *partitionCounts = new int[worldSize];//no of partitions in each node
                 int partitionCount = static_cast<int>(table->getPartitionCount());
                 MPI_Allgather(
@@ -99,6 +99,159 @@ namespace harp {
 
                     std::cout << std::endl;
                 }
+            }
+
+            template <class TYPE>
+            void allGather(harp::ds::Table<TYPE>* &table)
+            {
+                // auto *partitionCounts = new int[worldSize]; //no of partitions in each node
+                std::unique_ptr<int[]> partitionCounts(new int[worldSize]); //no of partitions in each node
+                int partitionCount = static_cast<int>(table->getPartitionCount());
+                MPI_Allgather(
+                    &partitionCount,
+                    1,
+                    MPI_INT,
+                    (void*)(partitionCounts.get()),
+                    1,
+                    MPI_INT,
+                    MPI_COMM_WORLD);
+
+                //debug
+                // std::cout<<"finish allgather step 1"<<std::endl;
+
+                int totalPartitionsInWorld = 0;
+                // int *recvCounts = new int[worldSize];
+                // int *displacements = new int[worldSize];
+                std::unique_ptr<int[]> recvCounts(new int[worldSize]);
+                std::unique_ptr<int[]> displacements(new int[worldSize]);
+                displacements[0] = 0;
+                for (int i = 0; i < worldSize; i++)
+                {
+                    totalPartitionsInWorld += partitionCounts[i];
+                    recvCounts[i] = 1 + (partitionCounts[i] * 2); //size + [{id,size}]
+                    if (i != 0)
+                    {
+                        displacements[i] = displacements[i - 1] + recvCounts[i];
+                    }
+                }
+
+                int worldPartitionMetaDataSize = worldSize +
+                                                 (totalPartitionsInWorld *
+                                                  2); //1*worldSize(for sizes) + [{id,size}]
+
+                // long *worldPartitionMetaData = new long[worldPartitionMetaDataSize];
+                std::unique_ptr<long[]> worldPartitionMetaData(new long[worldPartitionMetaDataSize]);
+
+                long thisNodeTotalDataSize = 0; //total size of data
+
+                int thisNodeMetaSendSize = static_cast<int>(1 +
+                                                            (table->getPartitionCount() * 2)); //totalSize + [{id,size}]
+                //debug
+                // std::cout<<"finish allgather step 2"<<std::endl;
+
+                // long *thisNodePartitionMetaData = new long[thisNodeMetaSendSize];
+                std::unique_ptr<long[]> thisNodePartitionMetaData(new long[thisNodeMetaSendSize]);
+
+                int pIdIndex = 1;
+
+                std::vector<TYPE> thisNodeDataBuffer;
+                for (const auto p : *table->getPartitions())
+                {
+                    std::copy(p.second->getData(), p.second->getData() + p.second->getSize(),
+                              std::back_inserter(thisNodeDataBuffer));
+                    thisNodeTotalDataSize += p.second->getSize();
+                    thisNodePartitionMetaData[pIdIndex++] = p.first;
+                    thisNodePartitionMetaData[pIdIndex++] = p.second->getSize();
+                }
+                thisNodePartitionMetaData[0] = thisNodeTotalDataSize;
+
+                //                std::cout << "Node " << workerId << " total size : " << thisNodeTotalDataSize << std::endl;
+                //
+                //                harp::util::print::printArray(thisNodePartitionMetaData, thisNodeMetaSendSize);
+                //debug
+                // std::cout<<"finish allgather step 3"<<std::endl;
+
+                MPI_Allgatherv(
+                    thisNodePartitionMetaData.get(),
+                    thisNodeMetaSendSize,
+                    MPI_LONG,
+                    worldPartitionMetaData.get(),
+                    recvCounts.get(),
+                    displacements.get(),
+                    MPI_LONG,
+                    MPI_COMM_WORLD);
+
+                // done meta data exchange
+                //                if (workerId == 0) {
+                //                    harp::util::print::printArray(worldPartitionMetaData, worldPartitionMetaDataSize);
+                //                }
+                //debug
+                // std::cout<<"finish allgather step 4"<<std::endl;
+
+                long totalDataSize = worldPartitionMetaData[0];
+                int tempLastIndex = 0;
+                recvCounts[0] = static_cast<int>(worldPartitionMetaData[0]); //todo cast?
+                displacements[0] = 0;
+                for (int i = 1; i < worldSize; i++)
+                {
+                    int thisIndex = tempLastIndex + (partitionCounts[i - 1] * 2) + 1;
+                    displacements[i] = static_cast<int>(totalDataSize);
+                    totalDataSize += worldPartitionMetaData[thisIndex];
+                    recvCounts[i] = static_cast<int>(worldPartitionMetaData[thisIndex]);
+                    tempLastIndex = thisIndex;
+                }
+
+                MPI_Datatype dataType = getMPIDataType<TYPE>();
+
+                //debug
+                // std::cout<<"finish allgather step 5"<<std::endl;
+
+                // auto *worldDataBuffer = new TYPE[totalDataSize];
+                std::unique_ptr<TYPE[]> worldDataBuffer(new TYPE[totalDataSize]);
+                MPI_Allgatherv(
+                    &thisNodeDataBuffer[0],
+                    static_cast<int>(thisNodeTotalDataSize),
+                    dataType,
+                    worldDataBuffer.get(),
+                    recvCounts.get(),
+                    displacements.get(),
+                    dataType,
+                    MPI_COMM_WORLD);
+                
+                //                if (workerId == 0) {
+                //                    harp::util::print::printArray(worldDataBuffer, totalDataSize);
+                //                }
+
+                //now we have all data
+                auto *recvTab = new harp::ds::Table<TYPE>(table->getId());
+                int lastIndex = 0;
+                int metaIndex = 0;
+                for (int i = 0; i < worldSize; i++)
+                {
+                    int noOfPartitions = partitionCounts[i];
+                    metaIndex++;
+                    for (int j = 0; j < noOfPartitions; j++)
+                    {
+                        int partitionId = static_cast<int>(worldPartitionMetaData[metaIndex++]);
+                        int partitionSize = static_cast<int>(worldPartitionMetaData[metaIndex++]);
+                        auto *partitionData = new TYPE[partitionSize];
+                        auto *partition = new harp::ds::Partition<TYPE>(partitionId, partitionData, partitionSize);
+                        std::copy(worldDataBuffer.get() + lastIndex, worldDataBuffer.get() + lastIndex + partitionSize,
+                                  partitionData);
+                        //                        if (workerId == 0) {
+                        //                            std::cout << "pSize:" << partitionSize << std::endl;
+                        //                            harp::util::print::printPartition(partition);
+                        //                        }
+                        lastIndex += partitionSize;
+                        recvTab->addPartition(partition);
+                    }
+                }
+                harp::ds::Table<TYPE>* tableSwap = table;
+                table = recvTab; 
+                recvTab = nullptr;
+                //debug
+                // std::cout<<"finish allgather step 6"<<std::endl;
+                harp::ds::util::deleteTable(tableSwap, true);
             }
 
             template<class TYPE>

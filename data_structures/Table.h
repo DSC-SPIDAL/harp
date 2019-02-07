@@ -90,6 +90,10 @@ namespace harp {
                 return this->iteratingIndex < this->orderedPartitions.size();
             }
 
+            void resetIndex() {
+                this->iteratingIndex = 0;
+            }
+
             void resetIterator() {
                 int markedCount = 0;
                 //iterating in reverse
