@@ -584,6 +584,7 @@ class DMatrixDenseCube : public xgboost::data::SparsePageDMatrix {
  private:
      std::vector<DMatrixDenseCubeZCol<BlkAddrType>> data_;
      MetaInfo info_;
+     BlockInfo blkInfo_;
 
  public:
   explicit DMatrixDenseCube(){}
@@ -619,10 +620,14 @@ class DMatrixDenseCube : public xgboost::data::SparsePageDMatrix {
         info_.num_nonzero_ = info.num_nonzero_;
     
     #ifdef USE_VECTOR4MODEL
-        blkInfo.init(info.num_row_, info_.num_col_ + 1, num_maxbins);
+        blkInfo.init(info_.num_row_, info_.num_col_ + 1, num_maxbins);
     #else
-        blkInfo.init(info.num_row_, info_.num_col_, num_maxbins);
+        blkInfo.init(info_.num_row_, info_.num_col_, num_maxbins);
     #endif
+
+        // todo, to check match in loading data from binary file
+        //save it
+        blkInfo_ = blkInfo;
     
         //init 
         data_.clear();
@@ -736,7 +741,7 @@ class DMatrixDenseCube : public xgboost::data::SparsePageDMatrix {
     delete fs;
   }
 
-  void load(std::string& cubeFileName){
+  void load(std::string& cubeFileName, int num_maxbins, BlockInfo& blkInfo){
     dmlc::Stream * fs = dmlc::Stream::Create(cubeFileName.c_str(), "r");
     //load zol vector
     int vecSize;
@@ -751,6 +756,31 @@ class DMatrixDenseCube : public xgboost::data::SparsePageDMatrix {
     info_.LoadBinary(fs);
 
     delete fs;
+
+    blkInfo.init(info_.num_row_, info_.num_col_, num_maxbins);
+
+    //output the init msg
+    LOG(CONSOLE) << "BlockInfo: row_blksize=" << blkInfo.GetRowBlkSize() <<
+        ",fid_blksize=" << blkInfo.GetFeatureBlkSize() <<
+        ",binid_blksize=" << blkInfo.GetBinBlkSize();
+
+    int row_blknum = (info_.num_row_ + blkInfo.GetRowBlkSize() - 1)/ blkInfo.GetRowBlkSize(); 
+    int fid_blknum = (info_.num_col_ + blkInfo.GetFeatureBlkSize() - 1)/ blkInfo.GetFeatureBlkSize(); 
+    int binid_blknum = (num_maxbins + blkInfo.GetBinBlkSize() - 1)/ blkInfo.GetBinBlkSize(); 
+    
+    LOG(CONSOLE) << "DenseCubeInit:row_blknum=" << row_blknum <<
+        ",fid_blknum=" << fid_blknum << ",binid_blknum=" << binid_blknum;
+ 
+    //verify
+    CHECK_EQ(fid_blknum*binid_blknum, GetBaseBlockNum());
+    CHECK_EQ(row_blknum, GetBlockZCol(0).GetBlockNum());
+
+
+    LOG(CONSOLE) << "DMatrixDenseCube::Init" <<
+         ",BlkInfo=r" << blkInfo.GetRowBlkSize() << ",f" << blkInfo.GetFeatureBlkSize() << ",b" << blkInfo.GetBinBlkSize() <<
+         ",memory=" << getMemSize()/(1024*1024) << "MB" <<
+         ",rowxcol=" << info_.num_row_ << "x" << info_.num_col_ << "x" << num_maxbins <<
+         ",nonzero=" << info_.num_nonzero_;
   }
 
 };
