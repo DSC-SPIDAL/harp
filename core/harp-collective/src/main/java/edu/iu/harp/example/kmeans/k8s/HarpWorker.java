@@ -1,10 +1,16 @@
 package edu.iu.harp.example.kmeans.k8s;
 
 import edu.iu.harp.client.SyncClient;
+import edu.iu.harp.collective.BcastCollective;
 import edu.iu.harp.collective.Communication;
+import edu.iu.harp.combiner.ByteArrCombiner;
+import edu.iu.harp.combiner.Operation;
 import edu.iu.harp.io.Constant;
 import edu.iu.harp.io.DataMap;
 import edu.iu.harp.io.EventQueue;
+import edu.iu.harp.partition.Partition;
+import edu.iu.harp.partition.Table;
+import edu.iu.harp.resource.ByteArray;
 import edu.iu.harp.worker.WorkerInfo;
 import edu.iu.harp.worker.Workers;
 import edu.iu.harp.server.Server;
@@ -95,6 +101,7 @@ public class HarpWorker {
     }
 
     // do computations here
+    testBcastCollective(workerID, workers, dataMap);
 
     //stopping servers, releasing resources
     LOG.info("Execution completed. Shutting harp Sync Client down....");
@@ -115,6 +122,32 @@ public class HarpWorker {
     if (!successful) {
       throw new IOException("Failed to do master barrier");
     }
+  }
+
+  private static void testBcastCollective(int workerID, Workers harpWorkers, DataMap harpDataMap) {
+    byte[] helloArray = new byte["Hello from your master".getBytes().length];
+
+    if (harpWorkers.isMaster()) {
+      helloArray = "Hello from your master".getBytes();
+    }
+    ByteArray intArray = new ByteArray(helloArray, 0, helloArray.length);
+    Partition<ByteArray> ap = new Partition<>(0, intArray);
+    Table<ByteArray> helloTable = new Table<>(0, new ByteArrCombiner(Operation.SUM));
+    helloTable.addPartition(ap);
+
+    String contextName = "hello-harp-context";
+    String operationName = "master-bcast";
+
+    LOG.info(String.format("Calling broadcasting. Data before bcast : %s", new String(helloArray)));
+    BcastCollective.broadcast(contextName,
+        operationName, helloTable, harpWorkers.getMasterID(),
+        true, harpDataMap, harpWorkers);
+    harpDataMap.cleanOperationData(contextName,
+        operationName);
+
+    LOG.info(String.format("Broadcast done. Printing at worker %d : %s",
+        workerID, new String(helloArray)));
+
   }
 
 
