@@ -1,7 +1,7 @@
 #!/bin/bash
 
 bin=$1
-if [ -z $tagname  ] ; then
+if [ -z $bin  ] ; then
     bin=../bin/xgb-latest
 fi
 

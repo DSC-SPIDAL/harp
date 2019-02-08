@@ -1,7 +1,7 @@
 #!/bin/bash
 
 bin=$1
-if [ -z $tagname  ] ; then
+if [ -z $bin  ] ; then
     bin=../bin/xgboost-g++-omp-dense-halftrick-short-splitonnode-lossguide-release
 fi
 

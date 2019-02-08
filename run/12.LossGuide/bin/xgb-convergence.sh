@@ -61,7 +61,7 @@ if [ -z "$RUNID"  ] ; then
 else
 	runtag=$RUNID
 fi
-runids=($runid)
+runids=($runtag)
 
 
 if [ ! -z $2 ]; then
