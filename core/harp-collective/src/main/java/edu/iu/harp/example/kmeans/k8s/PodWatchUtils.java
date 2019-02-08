@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -49,7 +50,7 @@ public class PodWatchUtils {
    *
    * return null, if it can not get the full list
    */
-  public static HashMap<String, String> getWorkerIPsByWatchingPodsToRunning(String namespace,
+  public static Map<String, String> getWorkerIPsByWatchingPodsToRunning(String namespace,
                                                                       int numberOfPods,
                                                                       int timeout) {
 
@@ -82,7 +83,7 @@ public class PodWatchUtils {
 
     int eventCounter = 0;
     LOG.finest("Getting watcher events.");
-    HashMap<String, String> podMap = new HashMap<>();
+    Map<String, String> podMap = new TreeMap<>();
 
     for (Watch.Response<V1Pod> item : watch) {
       if (item.object != null
