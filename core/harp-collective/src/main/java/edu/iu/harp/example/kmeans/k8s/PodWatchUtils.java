@@ -9,8 +9,6 @@ import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.util.Watch;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;

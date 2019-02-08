@@ -196,7 +196,9 @@ public class Server implements Runnable {
         conn = new ServerConn(in, socket);
         commandType = (byte) in.read();
       } catch (Exception e) {
-        LOG.error("Exception on Server", e);
+        if (!forceStopped) {
+          LOG.error("Exception on Server", e);
+        }
         if (conn != null) {
           conn.close();
           conn = null;
