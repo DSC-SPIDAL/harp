@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <cstring>
 #include <vector>
+#include <dmlc/base.h>
 #include "sparse_page_dmatrix.h"
 
 namespace xgboost {
@@ -542,6 +543,39 @@ class DMatrixDenseCubeZCol{
     inline int getRowSize(){return rowsize_;}
     inline int getDataSize(){return data_.size();}
 
+    //save/load interface
+    void save(dmlc::Stream* fs){
+        fs->Write((&blkid_), sizeof(blkid_));
+        fs->Write((&rowsize_), sizeof(rowsize_));
+        fs->Write((&rowcnt_), sizeof(rowcnt_));
+        //vectors
+        int vecSize = data_.size();
+        fs->Write((&vecSize), sizeof(vecSize));
+        fs->Write((data_.data()), 
+                sizeof(BlkAddrType)*vecSize);
+        vecSize = blk_offset_.size();
+        fs->Write((&vecSize), sizeof(vecSize));
+        fs->Write((blk_offset_.data()), 
+                sizeof(PtrType)*vecSize);
+    }
+
+    void load(dmlc::Stream* fs){
+        fs->Read((&blkid_), sizeof(blkid_));
+        fs->Read((&rowsize_), sizeof(rowsize_));
+        fs->Read((&rowcnt_), sizeof(rowcnt_));
+        //vectors
+        int vecSize;
+        fs->Read((&vecSize), sizeof(vecSize));
+        data_.resize(vecSize);
+        fs->Read((data_.data()), 
+                sizeof(BlkAddrType)*vecSize);
+
+        fs->Read((&vecSize), sizeof(vecSize));
+        blk_offset_.resize(vecSize);
+        fs->Read((blk_offset_.data()), 
+                sizeof(PtrType)*vecSize);
+    }
+
 };
 
 template<typename BlkAddrType>
@@ -685,6 +719,40 @@ class DMatrixDenseCube : public xgboost::data::SparsePageDMatrix {
   const MetaInfo& Info() const override{
       return info_;
   }
+
+  //save/load interface
+  void save(std::string& cubeFileName){
+    dmlc::Stream * fs = dmlc::Stream::Create(cubeFileName.c_str(), "w");
+    //save zol vector
+    int vecSize = data_.size();
+    fs->Write(&vecSize, sizeof(vecSize));
+    for(int i = 0; i < vecSize; i++){
+        //write each zcol
+        data_[i].save(fs);
+    }
+
+    //save metainfo
+    info_.SaveBinary(fs);
+    delete fs;
+  }
+
+  void load(std::string& cubeFileName){
+    dmlc::Stream * fs = dmlc::Stream::Create(cubeFileName.c_str(), "r");
+    //load zol vector
+    int vecSize;
+    fs->Read(&vecSize, sizeof(vecSize));
+    data_.resize(vecSize);
+    for(int i = 0; i < vecSize; i++){
+        //read each zcol
+        data_[i].load(fs);
+    }
+
+    //load metainfo
+    info_.LoadBinary(fs);
+
+    delete fs;
+  }
+
 };
 
 
