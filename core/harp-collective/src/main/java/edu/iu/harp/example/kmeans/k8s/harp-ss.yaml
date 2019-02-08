@@ -52,13 +52,13 @@ spec:
         role: harp-worker
 
     spec:
-      terminationGracePeriodSeconds: 1
+      terminationGracePeriodSeconds: 0
 
       containers:
       - name: harp-test
         image: harp/harp-k8s:0.1.0
         imagePullPolicy: IfNotPresent
-        command: ["java", "edu.iu.harp.example.kmeans.k8s.HelloWorld"]
+        command: ["java", "edu.iu.harp.example.kmeans.k8s.HarpWorker"]
 #        args: ["no-arg"]
 
         ports:
