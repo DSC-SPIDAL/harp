@@ -93,6 +93,9 @@ struct TrainParam : public dmlc::Parameter<TrainParam> {
   int node_block_size;
   int group_parallel_cnt;
 
+  std::string savemeta;
+  std::string loadmeta;
+
   // declare the parameters
   DMLC_DECLARE_PARAMETER(TrainParam) {
     DMLC_DECLARE_FIELD(learning_rate)
@@ -233,10 +236,12 @@ struct TrainParam : public dmlc::Parameter<TrainParam> {
         .set_default(2)
         .set_lower_bound(0)
         .describe("Group Block Number used for task scheduling, 0 means use one block.");
-
-
-
-
+    DMLC_DECLARE_FIELD(savemeta)
+        .set_default("")
+        .describe("Save initialized meta, cut and cubes into binary files.");
+    DMLC_DECLARE_FIELD(loadmeta)
+        .set_default("")
+        .describe("Load eta, cut and cubes from binary files, thus skip initialization from the source dmat.");
 
 
     // add alias of parameters

@@ -109,7 +109,7 @@ class BlockBaseMakerLossguide: public TreeUpdater {
       fs.Read(&findex);
     }
 
-   private:
+   //private:
     std::vector<bst_float> fminmax_;
   };
 
