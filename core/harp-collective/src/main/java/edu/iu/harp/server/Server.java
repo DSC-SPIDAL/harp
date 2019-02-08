@@ -56,6 +56,7 @@ public class Server implements Runnable {
   private final Workers workers;
 
   private boolean forceStopped;
+  private boolean stopRequested = false;
 
   /**
    * Cache necessary information since "workers"
@@ -124,6 +125,8 @@ public class Server implements Runnable {
   }
 
   public void stop(boolean force){
+    stopRequested = true;
+
     if(!force) {
       closeServer(this.node, this.port);
       for (Thread thread : acceptorThreads) {
@@ -196,7 +199,7 @@ public class Server implements Runnable {
         conn = new ServerConn(in, socket);
         commandType = (byte) in.read();
       } catch (Exception e) {
-        if (!forceStopped) {
+        if (!stopRequested) {
           LOG.error("Exception on Server", e);
         }
         if (conn != null) {

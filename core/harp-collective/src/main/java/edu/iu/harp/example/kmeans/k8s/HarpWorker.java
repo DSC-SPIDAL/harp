@@ -139,11 +139,9 @@ public class HarpWorker {
     String operationName = "master-bcast";
 
     LOG.info(String.format("Calling broadcasting. Data before bcast : %s", new String(helloArray)));
-    BcastCollective.broadcast(contextName,
-        operationName, helloTable, harpWorkers.getMasterID(),
+    BcastCollective.broadcast(contextName, operationName, helloTable, harpWorkers.getMasterID(),
         true, harpDataMap, harpWorkers);
-    harpDataMap.cleanOperationData(contextName,
-        operationName);
+    harpDataMap.cleanOperationData(contextName, operationName);
 
     LOG.info(String.format("Broadcast done. Printing at worker %d : %s",
         workerID, new String(helloArray)));
