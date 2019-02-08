@@ -1515,14 +1515,15 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
             }
         }
         else{
+            LOG(CONSOLE) << "Load cube from metafile:" << param_.loadmeta;
+
             //load cube
             std::string fname;
             fname = param_.loadmeta + ".blkmat";
-            p_blkmat->load(fname);
+            p_blkmat->load(fname, param_.max_bin, blkInfo_);
             fname = param_.loadmeta + ".hmat";
-            p_hmat->load(fname);
-
-            LOG(CONSOLE) << "Load cube from metafile:" << fname;
+            BlockInfo hmat_blkInfo = BlockInfo(0, 1, 0);
+            p_hmat->load(fname, param_.max_bin, hmat_blkInfo);
         }
 
         //DEBUG

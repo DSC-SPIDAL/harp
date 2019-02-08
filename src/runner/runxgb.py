@@ -152,9 +152,17 @@ def sStr(vec):
 
 
 def runeval(predfile, testfile, label_col, bineval=False):
-    data = read_csv(testfile, header=None)
-    dataset = data.values
-    y_test = dataset[:,-2]
+
+    if (testfile.find(".libsvm") < 0):
+        data = read_csv(testfile, header=None)
+        dataset = data.values
+        y_test = dataset[:,-2]
+    else:
+        with open(testfile, "r") as inf:
+            labels = []
+            for line in inf:
+                labels.append((int)(line.split()[0]))
+        y_test = np.array(labels).reshape((len(labels), 1))
 
     pred = np.loadtxt(predfile)
     if bineval:
