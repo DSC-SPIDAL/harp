@@ -41,6 +41,7 @@ public class Acceptor implements Runnable {
   private final Workers workers;
   private byte commandType;
   private final int selfID;
+  private boolean stopForced = false;
 
   private InputStream in;
 
@@ -57,6 +58,8 @@ public class Acceptor implements Runnable {
   }
 
   public void forceStop(){
+    stopForced = true;
+
     if(this.in!=null){
       try {
         this.in.close();
@@ -123,7 +126,9 @@ public class Acceptor implements Runnable {
         // commandType);
       } while (true);
     } catch (Exception e) {
-      LOG.error("Exception on Acceptor.", e);
+      if (!stopForced) {
+        LOG.error("Exception on Acceptor.", e);
+      }
     } finally {
       if (conn != null) {
         conn.close();
