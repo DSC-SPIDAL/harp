@@ -374,8 +374,16 @@ namespace harp {
                 }
             }
 
+            /**
+             * @brief fix the memory leak issue
+             * 
+             * @tparam TYPE 
+             * @param table 
+             * @param sendTag 
+             * @param recvTag 
+             */
             template<class TYPE>
-            void rotate(harp::ds::Table<TYPE> *table, int sendTag = -1, int recvTag = -1) {
+            void rotate(harp::ds::Table<TYPE> *table, int sendTag = 1, int recvTag = 1) {
                 MPI_Datatype dataType = getMPIDataType<TYPE>();
 
                 int sendTo = (this->workerId + 1) % this->worldSize;
@@ -385,8 +393,8 @@ namespace harp {
                 int numOfPartitionsToSend = static_cast<int>(table->getPartitionCount());
                 int numOfPartitionsToRecv = 0;
 
-
-                //std::cout << "Will send " << numOfPartitionsToSend << " partitions to " << sendTo << std::endl;
+                if (table->getId() == 0)
+                    std::cout << "Will send " << numOfPartitionsToSend << " partitions to " << sendTo << std::endl;
 
                 MPI_Sendrecv(
                         &numOfPartitionsToSend, 1, MPI_INT, sendTo, sendTag,
@@ -395,72 +403,100 @@ namespace harp {
                         MPI_STATUS_IGNORE
                 );
 
-                //std::cout << "Will recv " << numOfPartitionsToRecv << " from " << receiveFrom << std::endl;
+                if (table->getId() == 0)
+                    std::cout << "Will recv " << numOfPartitionsToRecv << " from " << receiveFrom << std::endl;
 
                 //exchange PARTITION METADATA
                 int sendingMetaSize = 1 + (numOfPartitionsToSend * 2);// totalDataSize(1) + [{id, size}]
                 int receivingMetaSize = 1 + (numOfPartitionsToRecv * 2);// totalDataSize(1) + [{id, size}]
 
-                int partitionMetaToSend[sendingMetaSize];
-                int partitionMetaToRecv[receivingMetaSize];
+                // contains partition id and the size (of bytes)
+                std::unique_ptr<int[]> partitionMetaToSend(new int[sendingMetaSize]);
+                // int partitionMetaToSend[sendingMetaSize];
 
+                // contains partition id and the size (of bytes)
+                std::unique_ptr<int[]> partitionMetaToRecv(new int[receivingMetaSize]);
+                // int partitionMetaToRecv[receivingMetaSize];
+
+                // index 0 reserves for total size
                 int index = 1;
                 int totalDataSize = 0;
-                std::vector<TYPE> dataBuffer;//todo possible error: data buffer gets cleared immediately after returning this function
-
+                // pack all of the partitions to the buffer
                 for (const auto p : *table->getPartitions()) {
                     partitionMetaToSend[index++] = p.first;
                     partitionMetaToSend[index++] = p.second->getSize();
                     totalDataSize += p.second->getSize();
-                    //todo prevent memory copying if possible
-                    std::copy(p.second->getData(), p.second->getData() + p.second->getSize(),
-                              std::back_inserter(dataBuffer));
                 }
                 partitionMetaToSend[0] = totalDataSize;
 
-                //std::cout << "Will send " << partitionMetaToSend[0] << " elements to " << sendTo << std::endl;
+                if (table->getId() == 0)
+                    std::cout << "Total Data size "<< partitionMetaToSend[0]<< std::endl;
+
+                // check this data buffer issue
+                // std::vector<TYPE> dataBuffer;//todo possible error: data buffer gets cleared immediately after returning this function
+                // copy the data
+                std::unique_ptr<TYPE[]> dataBuffer(new TYPE[totalDataSize]);
+                int parSizeStart = 0;
+                for (const auto p : *table->getPartitions()) {
+                    //todo prevent memory copying if possible
+                    std::copy(p.second->getData(), p.second->getData() + p.second->getSize(),
+                              dataBuffer.get() + parSizeStart);
+
+                    parSizeStart += p.second->getSize();
+                } 
+
+                if (table->getId() == 0)
+                    std::cout << "Will send " << partitionMetaToSend[0] << " elements to " << sendTo << std::endl;
 
                 MPI_Sendrecv(
-                        &partitionMetaToSend, sendingMetaSize, MPI_INT, sendTo, sendTag,
-                        &partitionMetaToRecv, receivingMetaSize, MPI_INT, receiveFrom, recvTag,
+                        partitionMetaToSend.get(), sendingMetaSize, MPI_INT, sendTo, sendTag,
+                        partitionMetaToRecv.get(), receivingMetaSize, MPI_INT, receiveFrom, recvTag,
                         MPI_COMM_WORLD,
                         MPI_STATUS_IGNORE
                 );
 
-                //std::cout << "Will recv " << partitionMetaToRecv[0] << " from " << receiveFrom << std::endl;
+                if (table->getId() == 0)
+                    std::cout << "Will recv " << partitionMetaToRecv[0] << " from " << receiveFrom << std::endl;
 
                 //sending DATA
                 //todo implement support for data arrays larger than INT_MAX
                 MPI_Request dataSendRequest;
-                MPI_Isend(&dataBuffer[0], totalDataSize, dataType, sendTo, sendTag, MPI_COMM_WORLD,
+                MPI_Isend(dataBuffer.get(), totalDataSize, dataType, sendTo, sendTag, MPI_COMM_WORLD,
                           &dataSendRequest);
 
-                auto *recvTab = new harp::ds::Table<TYPE>(table->getId());
-                auto *recvBuffer = new TYPE[partitionMetaToRecv[0]];
+                // why use two tables ???
+                // auto *recvTab = new harp::ds::Table<TYPE>(table->getId());
 
-                MPI_Recv(recvBuffer, partitionMetaToRecv[0], dataType, receiveFrom, recvTag,
+                std::unique_ptr<TYPE[]> recvBuffer(new TYPE[partitionMetaToRecv[0]]);
+                // auto *recvBuffer = new TYPE[partitionMetaToRecv[0]];
+
+                MPI_Recv(recvBuffer.get(), partitionMetaToRecv[0], dataType, receiveFrom, recvTag,
                          MPI_COMM_WORLD,
                          MPI_STATUS_IGNORE);
 
+                // unpack the receiving data
+                // clean the table 
+                table->clear(false);
                 int copiedCount = 0;
                 for (long i = 1; i < receivingMetaSize; i += 2) {
                     int partitionId = partitionMetaToRecv[i];
                     int partitionSize = partitionMetaToRecv[i + 1];
 
                     auto *data = new TYPE[partitionSize];
-                    std::copy(recvBuffer + copiedCount, recvBuffer + copiedCount + partitionSize, data);
+                    std::copy(recvBuffer.get() + copiedCount, recvBuffer.get() + copiedCount + partitionSize, data);
                     copiedCount += partitionSize;
 
                     auto *newPartition = new harp::ds::Partition<TYPE>(partitionId, data, partitionSize);
-                    recvTab->addPartition(newPartition);
+                    // recvTab->addPartition(newPartition);
+                    table->addPartition(newPartition);
                 }
 
+                // here to prevent the destroy of databuffer
                 MPI_Wait(&dataSendRequest, MPI_STATUS_IGNORE);
 
                 //delete table;
-                table->swap(recvTab);
-                harp::ds::util::deleteTable(recvTab, false);
-
+                // table->swap(recvTab);
+                // harp::ds::util::deleteTable(recvTab, false);
             }
 
             template<class TYPE>
