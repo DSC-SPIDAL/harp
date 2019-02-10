@@ -372,7 +372,10 @@ struct BlockInfo{
     inline unsigned int GetBaseBlkNum(int ftnum, int binnum){
         return GetBinBlkNum(binnum) * GetFeatureBlkNum(ftnum);
     }
-
+    inline unsigned int GetRowBlkNum(int rownum){
+        return rownum / row_blksize + ((rownum % row_blksize)?1:0);
+    }
+ 
 
     // cube size (maximum) 
     // not compact to make offset calculation easier
