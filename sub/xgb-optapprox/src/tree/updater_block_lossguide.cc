@@ -1436,8 +1436,12 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
             } else {
               CHECK_EQ(offset, -2);
               bst_float cpt = feat_helper_.MaxValue(fid);
-              LOG(CONSOLE) << "Special Colulum:" << fid << ",cpt=" << cpt;
+              LOG(CONSOLE) << "Special Colulmn:" << fid << ",cpt=" << cpt;
 
+              // TODO: deal with special columns correctly
+              // need to change the logic of feat2workindex_
+              // should add these special column to match the model with the input matrix(cube)
+              //
               //this->wspace_.cut.push_back(cpt + fabs(cpt) + kRtEps);
               //this->wspace_.rptr.push_back(static_cast<unsigned>(this->wspace_.cut.size()));
               //this->wspace_.min_val.push_back(cut_.min_val[fid]);
@@ -1449,8 +1453,9 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
           this->wspace_.cut.push_back(0.0f);
           this->wspace_.rptr.push_back(static_cast<unsigned>(this->wspace_.cut.size()));
         }
-        CHECK_EQ(this->wspace_.rptr.size(),
-                 (work_set_.size() + 1)  + 1);
+        // TODO: deal with special columns correctly
+        //CHECK_EQ(this->wspace_.rptr.size(), (fwork_set_.size() + 1)  + 1);
+        CHECK_EQ(this->wspace_.rptr.size(), (work_set_.size() + 1)  + 1);
 
 
         //
