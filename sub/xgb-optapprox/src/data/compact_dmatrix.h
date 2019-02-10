@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <cstring>
 #include <vector>
+#include <dmlc/base.h>
 #include "sparse_page_dmatrix.h"
 
 namespace xgboost {
@@ -542,6 +543,39 @@ class DMatrixDenseCubeZCol{
     inline int getRowSize(){return rowsize_;}
     inline int getDataSize(){return data_.size();}
 
+    //save/load interface
+    void save(dmlc::Stream* fs){
+        fs->Write((&blkid_), sizeof(blkid_));
+        fs->Write((&rowsize_), sizeof(rowsize_));
+        fs->Write((&rowcnt_), sizeof(rowcnt_));
+        //vectors
+        int vecSize = data_.size();
+        fs->Write((&vecSize), sizeof(vecSize));
+        fs->Write((data_.data()), 
+                sizeof(BlkAddrType)*vecSize);
+        vecSize = blk_offset_.size();
+        fs->Write((&vecSize), sizeof(vecSize));
+        fs->Write((blk_offset_.data()), 
+                sizeof(PtrType)*vecSize);
+    }
+
+    void load(dmlc::Stream* fs){
+        fs->Read((&blkid_), sizeof(blkid_));
+        fs->Read((&rowsize_), sizeof(rowsize_));
+        fs->Read((&rowcnt_), sizeof(rowcnt_));
+        //vectors
+        int vecSize;
+        fs->Read((&vecSize), sizeof(vecSize));
+        data_.resize(vecSize);
+        fs->Read((data_.data()), 
+                sizeof(BlkAddrType)*vecSize);
+
+        fs->Read((&vecSize), sizeof(vecSize));
+        blk_offset_.resize(vecSize);
+        fs->Read((blk_offset_.data()), 
+                sizeof(PtrType)*vecSize);
+    }
+
 };
 
 template<typename BlkAddrType>
@@ -550,6 +584,7 @@ class DMatrixDenseCube : public xgboost::data::SparsePageDMatrix {
  private:
      std::vector<DMatrixDenseCubeZCol<BlkAddrType>> data_;
      MetaInfo info_;
+     BlockInfo blkInfo_;
 
  public:
   explicit DMatrixDenseCube(){}
@@ -585,10 +620,14 @@ class DMatrixDenseCube : public xgboost::data::SparsePageDMatrix {
         info_.num_nonzero_ = info.num_nonzero_;
     
     #ifdef USE_VECTOR4MODEL
-        blkInfo.init(info.num_row_, info_.num_col_ + 1, num_maxbins);
+        blkInfo.init(info_.num_row_, info_.num_col_ + 1, num_maxbins);
     #else
-        blkInfo.init(info.num_row_, info_.num_col_, num_maxbins);
+        blkInfo.init(info_.num_row_, info_.num_col_, num_maxbins);
     #endif
+
+        // todo, to check match in loading data from binary file
+        //save it
+        blkInfo_ = blkInfo;
     
         //init 
         data_.clear();
@@ -685,6 +724,65 @@ class DMatrixDenseCube : public xgboost::data::SparsePageDMatrix {
   const MetaInfo& Info() const override{
       return info_;
   }
+
+  //save/load interface
+  void save(std::string& cubeFileName){
+    dmlc::Stream * fs = dmlc::Stream::Create(cubeFileName.c_str(), "w");
+    //save zol vector
+    int vecSize = data_.size();
+    fs->Write(&vecSize, sizeof(vecSize));
+    for(int i = 0; i < vecSize; i++){
+        //write each zcol
+        data_[i].save(fs);
+    }
+
+    //save metainfo
+    info_.SaveBinary(fs);
+    delete fs;
+  }
+
+  void load(std::string& cubeFileName, int num_maxbins, BlockInfo& blkInfo){
+    dmlc::Stream * fs = dmlc::Stream::Create(cubeFileName.c_str(), "r");
+    //load zol vector
+    int vecSize;
+    fs->Read(&vecSize, sizeof(vecSize));
+    data_.resize(vecSize);
+    for(int i = 0; i < vecSize; i++){
+        //read each zcol
+        data_[i].load(fs);
+    }
+
+    //load metainfo
+    info_.LoadBinary(fs);
+
+    delete fs;
+
+    blkInfo.init(info_.num_row_, info_.num_col_, num_maxbins);
+
+    //output the init msg
+    LOG(CONSOLE) << "BlockInfo: row_blksize=" << blkInfo.GetRowBlkSize() <<
+        ",fid_blksize=" << blkInfo.GetFeatureBlkSize() <<
+        ",binid_blksize=" << blkInfo.GetBinBlkSize();
+
+    int row_blknum = (info_.num_row_ + blkInfo.GetRowBlkSize() - 1)/ blkInfo.GetRowBlkSize(); 
+    int fid_blknum = (info_.num_col_ + blkInfo.GetFeatureBlkSize() - 1)/ blkInfo.GetFeatureBlkSize(); 
+    int binid_blknum = (num_maxbins + blkInfo.GetBinBlkSize() - 1)/ blkInfo.GetBinBlkSize(); 
+    
+    LOG(CONSOLE) << "DenseCubeInit:row_blknum=" << row_blknum <<
+        ",fid_blknum=" << fid_blknum << ",binid_blknum=" << binid_blknum;
+ 
+    //verify
+    CHECK_EQ(fid_blknum*binid_blknum, GetBaseBlockNum());
+    CHECK_EQ(row_blknum, GetBlockZCol(0).GetBlockNum());
+
+
+    LOG(CONSOLE) << "DMatrixDenseCube::Init" <<
+         ",BlkInfo=r" << blkInfo.GetRowBlkSize() << ",f" << blkInfo.GetFeatureBlkSize() << ",b" << blkInfo.GetBinBlkSize() <<
+         ",memory=" << getMemSize()/(1024*1024) << "MB" <<
+         ",rowxcol=" << info_.num_row_ << "x" << info_.num_col_ << "x" << num_maxbins <<
+         ",nonzero=" << info_.num_nonzero_;
+  }
+
 };
 
 
@@ -812,6 +910,51 @@ class DMatrixCubeZCol{
     //debug info
     inline int getRowSize(){return -1;}
     inline int getDataSize(){return data_.size();}
+
+    //save/load interface
+    void save(dmlc::Stream* fs){
+        fs->Write((&blkid_), sizeof(blkid_));
+        //vectors
+        int vecSize = data_.size();
+        fs->Write((&vecSize), sizeof(vecSize));
+        fs->Write((data_.data()), 
+                sizeof(BlkAddrType)*vecSize);
+
+        vecSize = row_offset_.size();
+        fs->Write((&vecSize), sizeof(vecSize));
+        fs->Write((row_offset_.data()), 
+                sizeof(PtrType)*vecSize);
+
+        vecSize = blk_offset_.size();
+        fs->Write((&vecSize), sizeof(vecSize));
+        fs->Write((blk_offset_.data()), 
+                sizeof(PtrType)*vecSize);
+        
+    }
+
+    void load(dmlc::Stream* fs){
+        fs->Read((&blkid_), sizeof(blkid_));
+        //vectors
+        int vecSize;
+        fs->Read((&vecSize), sizeof(vecSize));
+        data_.resize(vecSize);
+        fs->Read((data_.data()), 
+                sizeof(BlkAddrType)*vecSize);
+
+        fs->Read((&vecSize), sizeof(vecSize));
+        row_offset_.resize(vecSize);
+        fs->Read((row_offset_.data()), 
+                sizeof(PtrType)*vecSize);
+
+        fs->Read((&vecSize), sizeof(vecSize));
+        blk_offset_.resize(vecSize);
+        fs->Read((blk_offset_.data()), 
+                sizeof(PtrType)*vecSize);
+        
+    }
+
+
+
 };
 
 template<typename BlkAddrType>
@@ -955,6 +1098,64 @@ class DMatrixCube : public xgboost::data::SparsePageDMatrix {
     
     }
     
+  //save/load interface
+  void save(std::string& cubeFileName){
+    dmlc::Stream * fs = dmlc::Stream::Create(cubeFileName.c_str(), "w");
+    //save zol vector
+    int vecSize = data_.size();
+    fs->Write(&vecSize, sizeof(vecSize));
+    for(int i = 0; i < vecSize; i++){
+        //write each zcol
+        data_[i].save(fs);
+    }
+
+    //save metainfo
+    info_.SaveBinary(fs);
+    delete fs;
+  }
+
+  void load(std::string& cubeFileName, int num_maxbins, BlockInfo& blkInfo){
+    dmlc::Stream * fs = dmlc::Stream::Create(cubeFileName.c_str(), "r");
+    //load zol vector
+    int vecSize;
+    fs->Read(&vecSize, sizeof(vecSize));
+    data_.resize(vecSize);
+    for(int i = 0; i < vecSize; i++){
+        //read each zcol
+        data_[i].load(fs);
+    }
+
+    //load metainfo
+    info_.LoadBinary(fs);
+
+    delete fs;
+
+    blkInfo.init(info_.num_row_, info_.num_col_, num_maxbins);
+
+    //output the init msg
+    LOG(CONSOLE) << "BlockInfo: row_blksize=" << blkInfo.GetRowBlkSize() <<
+        ",fid_blksize=" << blkInfo.GetFeatureBlkSize() <<
+        ",binid_blksize=" << blkInfo.GetBinBlkSize();
+
+    int row_blknum = (info_.num_row_ + blkInfo.GetRowBlkSize() - 1)/ blkInfo.GetRowBlkSize(); 
+    int fid_blknum = (info_.num_col_ + blkInfo.GetFeatureBlkSize() - 1)/ blkInfo.GetFeatureBlkSize(); 
+    int binid_blknum = (num_maxbins + blkInfo.GetBinBlkSize() - 1)/ blkInfo.GetBinBlkSize(); 
+    
+    LOG(CONSOLE) << "CubeInit:row_blknum=" << row_blknum <<
+        ",fid_blknum=" << fid_blknum << ",binid_blknum=" << binid_blknum;
+ 
+    //verify
+    CHECK_EQ(fid_blknum*binid_blknum, GetBaseBlockNum());
+    CHECK_EQ(row_blknum, GetBlockZCol(0).GetBlockNum());
+
+
+    LOG(CONSOLE) << "DMatrixCube::Init" <<
+         ",BlkInfo=r" << blkInfo.GetRowBlkSize() << ",f" << blkInfo.GetFeatureBlkSize() << ",b" << blkInfo.GetBinBlkSize() <<
+         ",memory=" << getMemSize()/(1024*1024) << "MB" <<
+         ",rowxcol=" << info_.num_row_ << "x" << info_.num_col_ << "x" << num_maxbins <<
+         ",nonzero=" << info_.num_nonzero_;
+  }
+
 
 
 };

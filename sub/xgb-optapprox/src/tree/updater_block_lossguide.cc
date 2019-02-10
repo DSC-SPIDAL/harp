@@ -577,6 +577,8 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
   using  BlockBaseMakerLossguide<TStats>::posset_;
   using  BlockBaseMakerLossguide<TStats>::tminfo;
   using  BlockBaseMakerLossguide<TStats>::qexpand_;
+
+  using BlockBaseMakerLossguide<TStats>::FMetaHelper;
   
   //
   // thread local data
@@ -1258,13 +1260,16 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
   // initialize the work set of tree
   void InitWorkSet(DMatrix *p_fmat,
                    const RegTree &tree,
-                   std::vector<bst_uint> *p_fset){
+                   std::vector<bst_uint> *p_fset,
+                   bool initFtHelper){
 
-    if (p_fmat != cache_dmatrix_) {
-      feat_helper_.InitByCol(p_fmat, tree);
-      cache_dmatrix_ = p_fmat;
+    if (initFtHelper){
+        if (p_fmat != cache_dmatrix_) {
+          feat_helper_.InitByCol(p_fmat, tree);
+          cache_dmatrix_ = p_fmat;
+        }
+        feat_helper_.SyncInfo();
     }
-    feat_helper_.SyncInfo();
 
 
     /*
@@ -1306,6 +1311,72 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
   }
 
   /*
+   * save/load for HistCutMatrix, MetaInfo and FMetaHelper
+   *
+   */
+  void LoadMatrixMeta(HistCutMatrix& cut, 
+          MetaInfo& info,
+          typename BlockBaseMakerLossguide<TStats>::FMetaHelper& fthelper,
+          std::string& cutFileName){
+    dmlc::Stream * fs = dmlc::Stream::Create(cutFileName.c_str(), "r");
+    int vecSize;
+    //save meta
+    info.LoadBinary(fs);
+    
+    //fthelper
+    fs->Read(&vecSize, sizeof(vecSize));
+    fthelper.fminmax_.resize(vecSize);
+    fs->Read((fthelper.fminmax_.data()), sizeof(bst_float)*vecSize);
+
+    //load HistCutMatrix
+    fs->Read(&vecSize, sizeof(vecSize));
+    cut.row_ptr.resize(vecSize);
+    fs->Read((cut.row_ptr.data()), sizeof(uint32_t)*vecSize);
+
+    fs->Read(&vecSize, sizeof(vecSize));
+    cut.min_val.resize(vecSize);
+    fs->Read((cut.min_val.data()), sizeof(bst_float)*vecSize);
+
+    fs->Read(&vecSize, sizeof(vecSize));
+    cut.cut.resize(vecSize);
+    fs->Read((cut.cut.data()), sizeof(bst_float)*vecSize);
+
+
+
+    delete fs;
+ 
+  }
+
+  void SaveMatrixMeta(HistCutMatrix& cut, 
+          MetaInfo& info,
+          typename BlockBaseMakerLossguide<TStats>::FMetaHelper& fthelper,
+          std::string& cutFileName){
+    dmlc::Stream * fs = dmlc::Stream::Create(cutFileName.c_str(), "w");
+    int vecSize;
+    //save meta
+    info.SaveBinary(fs);
+    //save fthelper
+    vecSize = fthelper.fminmax_.size();
+    fs->Write(&vecSize, sizeof(vecSize));
+    fs->Write((fthelper.fminmax_.data()), sizeof(bst_float)*vecSize);
+
+    //save zol vector
+    vecSize = cut.row_ptr.size();
+    fs->Write(&vecSize, sizeof(vecSize));
+    fs->Write((cut.row_ptr.data()), sizeof(uint32_t)*vecSize);
+
+    vecSize = cut.min_val.size();
+    fs->Write(&vecSize, sizeof(vecSize));
+    fs->Write((cut.min_val.data()), sizeof(bst_float)*vecSize);
+
+    vecSize = cut.cut.size();
+    fs->Write(&vecSize, sizeof(vecSize));
+    fs->Write((cut.cut.data()), sizeof(bst_float)*vecSize);
+
+    delete fs;
+  }
+
+  /*
    * initialize the proposal for only one time
    */
   void InitializeHist(const std::vector<GradientPair> &gpair,
@@ -1313,18 +1384,24 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
                           const RegTree &tree) {
     if (!isInitializedHistIndex_) {
         double _tstartInit = dmlc::GetTime();
-        const MetaInfo &info = p_fmat->Info();
 
-        //
-        // 1. Initilize the feature set
-        //
         auto& fset = fwork_set_;
-        this->InitWorkSet(p_fmat, tree, &fset);
+        if (!param_.loadmeta.empty()) {
+            std::string fname;
+            fname = param_.loadmeta + ".meta";
+            // load saved binary 
+            LoadMatrixMeta(cut_, dmat_info_, feat_helper_, fname);
+            // 1. Initilize the feature set
+            this->InitWorkSet(p_fmat, tree, &fset, false /*init from p_fmat*/);
+        }
+        else{
+            // 1. Initilize the feature set
+            this->InitWorkSet(p_fmat, tree, &fset, true /*init from p_fmat*/);
 
-        //
-        // 2. Initilize the histgram
-        //
-        cut_.Init(p_fmat,param_.max_bin /*256*/);
+            // 2. Initilize the histgram
+            cut_.Init(p_fmat,param_.max_bin /*256*/);
+        }
+
 
         // now we get the final result of sketch, setup the cut
         // layout of wspace_.cut  (feature# +1) x (cut_points#)
@@ -1359,8 +1436,12 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
             } else {
               CHECK_EQ(offset, -2);
               bst_float cpt = feat_helper_.MaxValue(fid);
-              LOG(CONSOLE) << "Special Colulum:" << fid << ",cpt=" << cpt;
+              LOG(CONSOLE) << "Special Colulmn:" << fid << ",cpt=" << cpt;
 
+              // TODO: deal with special columns correctly
+              // need to change the logic of feat2workindex_
+              // should add these special column to match the model with the input matrix(cube)
+              //
               //this->wspace_.cut.push_back(cpt + fabs(cpt) + kRtEps);
               //this->wspace_.rptr.push_back(static_cast<unsigned>(this->wspace_.cut.size()));
               //this->wspace_.min_val.push_back(cut_.min_val[fid]);
@@ -1372,14 +1453,15 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
           this->wspace_.cut.push_back(0.0f);
           this->wspace_.rptr.push_back(static_cast<unsigned>(this->wspace_.cut.size()));
         }
-        CHECK_EQ(this->wspace_.rptr.size(),
-                 (work_set_.size() + 1)  + 1);
+        // TODO: deal with special columns correctly
+        //CHECK_EQ(this->wspace_.rptr.size(), (fwork_set_.size() + 1)  + 1);
+        CHECK_EQ(this->wspace_.rptr.size(), (work_set_.size() + 1)  + 1);
 
 
         //
         // 3. Init blkInfo
         //
-        auto& _info = p_fmat->Info();
+        auto& _info = dmat_info_;
         this->blkInfo_ = BlockInfo(param_.row_block_size, param_.ft_block_size, param_.bin_block_size);
         this->blkInfo_.init(_info.num_row_, _info.num_col_, param_.max_bin);
         
@@ -1416,33 +1498,51 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
           thread_histcompact_[i].resize(64);
         }
 
-        // add binid to matrix
-        this->InitHistIndexByCol(p_fmat, fset, tree);
-        this->InitHistIndexByRow(p_fmat, tree);
+
+        if (param_.loadmeta.empty()) {
+            // add binid to matrix
+            //this->InitHistIndexByCol(p_fmat, fset, tree);
+            this->InitHistIndexByRow(p_fmat, tree);
+
+            //
+            // 5. Build blkmat(block matrix) and hmat(column matrix)
+            //
+            dmat_info_ = p_fmat->Info();
+            p_blkmat->Init(*p_fmat->GetRowBatches().begin(), p_fmat->Info(), param_.max_bin, blkInfo_);
+            //if (blkInfo_.bin_block_size == 0 && blkInfo_.ft_block_size == 1){
+            if (0){
+                //reuse p_blkmat and set BLKADDR to byte for all matrix
+                //p_hmat = p_blkmat;
+            }
+            else{
+                BlockInfo hmat_blkInfo = BlockInfo(0, 1, 0);
+                p_hmat->Init(*p_fmat->GetRowBatches().begin(), p_fmat->Info(), param_.max_bin, hmat_blkInfo);
+            }
+        }
+        else{
+            LOG(CONSOLE) << "Load cube from metafile:" << param_.loadmeta;
+
+            //load cube
+            std::string fname;
+            fname = param_.loadmeta + ".blkmat";
+            p_blkmat->load(fname, param_.max_bin, blkInfo_);
+            fname = param_.loadmeta + ".hmat";
+            BlockInfo hmat_blkInfo = BlockInfo(0, 1, 0);
+            p_hmat->load(fname, param_.max_bin, hmat_blkInfo);
+        }
 
         //DEBUG
         #ifdef USE_DEBUG
         //check the max value of binid
-
-
-
         printcut(this->cut_);
 
-        printmsg("SortedColumnBatch");
-        printdmat(*p_fmat->GetSortedColumnBatches().begin());
+        //printmsg("SortedColumnBatch");
+        //printdmat(*p_fmat->GetSortedColumnBatches().begin());
 
         printmsg("RowBatch");
         printdmat(*p_fmat->GetRowBatches().begin());
         #endif
 
-        //
-        // 5. Build blkmat(block matrix) and hmat(column matrix)
-        //
-        dmat_info_ = p_fmat->Info();
-        BlockInfo hmat_blkInfo = BlockInfo(0, 1, 0);
-        p_hmat->Init(*p_fmat->GetRowBatches().begin(), p_fmat->Info(), param_.max_bin, hmat_blkInfo);
-        p_blkmat->Init(*p_fmat->GetRowBatches().begin(), p_fmat->Info(), param_.max_bin, blkInfo_);
-        //p_hmat->Init(*p_fmat->GetSortedColumnBatches().begin(), p_fmat->Info());
 
 
         #ifdef USE_DEBUG
@@ -1494,6 +1594,23 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
         // 7. Re-Init the model memory space, first touch
         //
         this->wspace_.Init(this->param_, max_leaves_, this->blkInfo_);
+
+        // save meta mat
+        if (!param_.savemeta.empty()){
+
+            LOG(CONSOLE) << "Save metafile:" << param_.savemeta;
+
+            std::string fname;
+            fname = param_.savemeta + ".meta";
+            SaveMatrixMeta(cut_, dmat_info_, feat_helper_,
+                    fname);
+
+            fname = param_.savemeta + ".blkmat";
+            p_blkmat->save(fname);
+            fname = param_.savemeta + ".hmat";
+            p_hmat->save(fname);
+        }
+
 
         this->tminfo.aux_time[0] += dmlc::GetTime() - _tstartInit;
         //
