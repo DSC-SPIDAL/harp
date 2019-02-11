@@ -96,6 +96,8 @@ struct TrainParam : public dmlc::Parameter<TrainParam> {
   std::string savemeta;
   std::string loadmeta;
 
+  int data_parallelism;
+
   // declare the parameters
   DMLC_DECLARE_PARAMETER(TrainParam) {
     DMLC_DECLARE_FIELD(learning_rate)
@@ -242,7 +244,11 @@ struct TrainParam : public dmlc::Parameter<TrainParam> {
     DMLC_DECLARE_FIELD(loadmeta)
         .set_default("")
         .describe("Load eta, cut and cubes from binary files, thus skip initialization from the source dmat.");
-
+    DMLC_DECLARE_FIELD(data_parallelism)
+        .set_default(0)
+        .set_lower_bound(0)
+        .describe("Run with data parallelism based on model replicas.");
+ 
 
     // add alias of parameters
     DMLC_DECLARE_ALIAS(reg_lambda, lambda);
