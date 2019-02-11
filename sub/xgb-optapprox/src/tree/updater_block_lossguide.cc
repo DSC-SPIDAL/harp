@@ -243,11 +243,6 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
      * GHSum is the model, preallocated
      *
      */
-#ifdef USE_VECTOR4MODEL
-    // store sum for each node as the last feature vector, 
-    // and only use the first element
-    std::vector<TStats> data;
-#else
     // avoid object initialization and first touch in main thread
     // layout of model
     //      <nodeid, binid , fid>
@@ -256,7 +251,13 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
     unsigned long size{0};
     TStats  *nodesum{nullptr};
 
-#endif
+    // model replicas in data parallelism
+    //row block replicas
+    int rowblknum;
+    TStats  *data_replica{nullptr};
+    unsigned long size_replica{0};
+    size_t node_block_size;
+
     //add fset size
     size_t fsetSize;
     size_t nodeSize;
@@ -293,20 +294,6 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
     // model organized by block, memory are continuous for each block
     // used in BuildHist
     //
-    inline HistUnit GetHistUnitByBlkid(size_t blkid, size_t nid) {
-      return HistUnit(cut, /* not use*/
-                      &data[0] + (pblkInfo->GetBinBlkSize()*pblkInfo->GetFeatureBlkSize())*(blkid * nodeSize + nid),
-                      pblkInfo->GetBinBlkSize()*pblkInfo->GetFeatureBlkSize());
-    }
-
-    inline HistEntryCompact GetHistUnitByBlkidCompact(size_t blkid, size_t nid) {
-      return HistEntryCompact(&data[0] + (pblkInfo->GetBinBlkSize()*pblkInfo->GetFeatureBlkSize())*(blkid * nodeSize + nid));
-    }
-    inline int GetHistUnitByBlkidSize(){
-        return pblkInfo->GetBinBlkSize()*pblkInfo->GetFeatureBlkSize();
-    }
-
-
     //
     // node summation store at the end
     //
@@ -314,9 +301,62 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
         return nodesum[nid];
     }
 
-    //
-    // FindSplit will go through model by a feature column, not continuous
-    //
+
+    //#ifdef USE_ROW_MODELREPLICA
+    //inline HistEntryCompact GetHistUnitByBlkidCompact(
+    //        int blkid, int nid, int zid = 0) {
+    //  return HistEntryCompact(
+    //          &data[0] + (pblkInfo->GetBinBlkSize()*pblkInfo->GetFeatureBlkSize())*(blkid * nodeSize * rowblknum + nodeSize*zid + nid));
+    //}
+    //inline int GetHistUnitByBlkidSize(){
+    //    return pblkInfo->GetBinBlkSize()*pblkInfo->GetFeatureBlkSize();
+    //}
+    ////
+    //// FindSplit will go through model by a feature column, not continuous
+    ////
+    //inline HistUnit GetHistUnitByFid(size_t fid, size_t nid) {
+    //  int blkid = fid / pblkInfo->GetFeatureBlkSize();
+    //  unsigned int blkoff = (pblkInfo->GetBinBlkSize()*pblkInfo->GetFeatureBlkSize())*(blkid * nodeSize*rowblknum + nid);
+    //  return HistUnit(cut, /* not use*/
+    //                  &data[0] + blkoff + fid % pblkInfo->GetFeatureBlkSize(),
+    //                  rptr[fid+1] - rptr[fid],
+    //                  pblkInfo->GetBinBlkSize(),
+    //                  pblkInfo->GetFeatureBlkSize(),
+    //                  pblkInfo->GetBinBlkSize()*pblkInfo->GetFeatureBlkSize()*pblkInfo->GetFeatureBlkNum(featnum)*nodeSize*rowblknum);
+    //}
+
+ 
+    //#else
+
+
+    inline HistEntryCompact GetHistUnitByBlkidCompact(
+            int blkid, int nid, int zid = 0) {
+      if (rowblknum == 1 || zid == 0){
+        //go to the main model data
+        return HistEntryCompact(
+                &data[0] + (pblkInfo->GetBinBlkSize()*pblkInfo->GetFeatureBlkSize())*(blkid * nodeSize + nid));
+      }
+      else{
+        //CHECK_LT(nid, node_block_size);
+        //CHECK_LT(zid, rowblknum);
+
+        //go to the replicas
+        return HistEntryCompact(
+                &data_replica[0] + 
+                (pblkInfo->GetBinBlkSize()*pblkInfo->GetFeatureBlkSize())*(blkid * node_block_size * rowblknum + node_block_size * zid + nid));
+
+      }
+    }
+
+    //todo: add blkid to support blk with different size
+    inline int GetHistUnitByBlkidSize(){
+        return pblkInfo->GetBinBlkSize()*pblkInfo->GetFeatureBlkSize();
+    }
+
+
+    // FindSplit will go through model by a feature column, 
+    // not continuous in case of some block configures
+    // always go to the main model
     inline HistUnit GetHistUnitByFid(size_t fid, size_t nid) {
       int blkid = fid / pblkInfo->GetFeatureBlkSize();
       unsigned int blkoff = (pblkInfo->GetBinBlkSize()*pblkInfo->GetFeatureBlkSize())*(blkid * nodeSize + nid);
@@ -325,13 +365,10 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
                       rptr[fid+1] - rptr[fid],
                       pblkInfo->GetBinBlkSize(),
                       pblkInfo->GetFeatureBlkSize(),
-#ifdef USE_VECTOR4MODEL
-                      pblkInfo->GetBinBlkSize()*pblkInfo->GetFeatureBlkSize()*pblkInfo->GetFeatureBlkNum(featnum+1)*nodeSize);
-#else
                       pblkInfo->GetBinBlkSize()*pblkInfo->GetFeatureBlkSize()*pblkInfo->GetFeatureBlkNum(featnum)*nodeSize);
-#endif
     }
 
+    //#endif
 
 
   };
@@ -459,7 +496,8 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
     HistSet hset;
 
     // initialize the hist set
-    void Init(const TrainParam &param, int nodesize, BlockInfo& blkinfo) {
+    void Init(const TrainParam &param, int nodesize, BlockInfo& blkinfo,
+            int rowblknum = 1) {
 
       // cleanup statistics
       //for (int tid = 0; tid < nthread; ++tid) 
@@ -469,6 +507,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
         hset.fsetSize = rptr.back();
         hset.featnum = rptr.size() - 2;
         hset.nodeSize = nodesize;
+        hset.rowblknum = 1;
 
         hset.pblkInfo = &blkinfo;
 
@@ -479,16 +518,22 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
         //
         unsigned long cubesize = blkinfo.GetModelCubeSize(param.max_bin, hset.featnum, nodesize);
 
-        LOG(CONSOLE)<< "Init hset(memset): rptrSize:" << rptr.size() <<
-            ",cutSize:" <<  cut.size() <<",nodesize:" << nodesize <<
-            ",fsetSize:" << rptr.back() << ",max_depth:" << param.max_depth << 
-            ",featnum:" << hset.featnum <<
-            ",cubesize:" << cubesize << ":" << 8*cubesize/(1024*1024*1024) << "GB";
-
         // this function will be called for only two times and in intialization
         if (hset.data != nullptr){
             //second time call init will prepare the memory for UpdateHistBlock
             std::free(hset.data);
+
+            //allocate replica memory
+            if (param.data_parallelism != 0){
+                //hset.rowblknum = blkinfo.GetRowBlkNum(dmat_info_.num_row_);
+                hset.rowblknum = rowblknum;
+                hset.node_block_size = param.node_block_size;
+
+                hset.size_replica = blkinfo.GetModelCubeSize(
+                        param.max_bin, hset.featnum, hset.rowblknum * param.node_block_size);
+
+                hset.data_replica = static_cast<TStats*>(malloc(sizeof(TStats) * hset.size_replica));
+            }
         }
         // add sum at the end
         hset.data = static_cast<TStats*>(malloc(sizeof(TStats) * cubesize));
@@ -501,9 +546,44 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
             std::exit(-1);
         }
 
+        LOG(CONSOLE)<< "Init hset(memset): rptrSize:" << rptr.size() <<
+            ",cutSize:" <<  cut.size() <<",nodesize:" << nodesize <<
+            ",fsetSize:" << rptr.back() << ",max_depth:" << param.max_depth << 
+            ",featnum:" << hset.featnum <<
+            ",rowblknum:" << hset.rowblknum << 
+            ",nodeblksize:" << hset.node_block_size << 
+            ",replics:" << hset.size_replica << 
+            ",cubesize:" << cubesize << ":" << 8*cubesize/(1024*1024*1024) << "GB";
+
       }
 
    }
+
+    //
+    // alloc memory for model
+    //
+    void reallocModelMem(const TrainParam &param, int nodesize, int rowblknum = 1){
+        unsigned long cubesize = hset.pblkInfo->GetModelCubeSize(param.max_bin, hset.featnum, nodesize);
+
+        hset.nodeSize = nodesize;
+        hset.rowblknum = rowblknum;
+        cubesize *= rowblknum;
+
+        LOG(CONSOLE)<< "Init hset(memset),nodesize:" << nodesize <<
+            ",rowblknum:" << rowblknum <<
+            ",cubesize:" << cubesize << ":" << 8*cubesize/(1024*1024*1024) << "GB";
+
+        if (hset.data != nullptr){
+            std::free(hset.data);
+        }
+        // add sum at the end
+        hset.data = static_cast<TStats*>(malloc(sizeof(TStats) * cubesize));
+        hset.size = cubesize;
+        if (hset.data == nullptr){
+            LOG(CONSOLE) << "FATAL ERROR, quit";
+            std::exit(-1);
+        }
+    }
 
     void release(){
         if (hset.data != nullptr){
@@ -659,7 +739,13 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
     int depth = 0;
     int num_leaves = 0;
     unsigned timestamp = 0;
-    const int topK = param_.node_block_size;
+    int topK;
+    if (param_.grow_policy == TrainParam::kLossGuide) {
+        topK = param_.node_block_size;
+    }
+    else{
+        topK = max_leaves_;
+    }
 
     std::vector<int> build_nodeset;
     std::vector<int> large_nodeset;
@@ -1576,7 +1662,8 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
         this->bwork_base_blknum_ = p_blkmat->GetBaseBlockNum();
         bwork_lock_ = new spin_mutex[bwork_base_blknum_];
         bwork_set_.clear();
-        for(int i=0; i < p_blkmat->GetBlockNum(); i++){
+        //for(int i=0; i < p_blkmat->GetBlockNum(); i++){
+        for(int i=0; i < p_blkmat->GetBaseBlockNum(); i++){
             bwork_set_.push_back(i);
         }
 
@@ -1593,7 +1680,10 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
         //
         // 7. Re-Init the model memory space, first touch
         //
-        this->wspace_.Init(this->param_, max_leaves_, this->blkInfo_);
+        int rowblknum = blkInfo_.GetRowBlkNum(dmat_info_.num_row_);
+        this->wspace_.Init(this->param_, max_leaves_, 
+                this->blkInfo_, rowblknum);
+        //this->wspace_.reallocModelMem(this->param_, max_leaves_, rowblknum);
 
         // save meta mat
         if (!param_.savemeta.empty()){
@@ -1819,16 +1909,105 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
    *    block   ;   a cube block of input data
    *    blkid_offset    ;   blkid in the base plain
    *    zblkid  ;   row blk id
+   *    nodeblkid   ;   node blk id (param_.node_block_size)
    *    build_nodeset  ;   node set to build
    * Dependency:
    *    posset_ ;   row set info
    *
    */
+  void UpdateHistBlockWithReplica(const std::vector<GradientPair> &gpair,
+                       const TDMatrixCubeBlock<TBlkAddr> &block,
+                       const RegTree &tree,
+                       bst_uint blkid_offset,
+                       unsigned int zblkid,
+                       int nodeblkid,
+                       const std::vector<int>& build_nodeset,
+                       std::vector<HistEntryCompact> *p_temp) {
+    //check size
+    if (block.size() == 0) return;
+
+    // initialize sbuilder for use
+    std::vector<HistEntryCompact> &hbuilder = *p_temp;
+    //todo, 
+    //  as in lossguide, build_nodeset.size() is small
+    //  change vector to map will be better here
+    hbuilder.resize(tree.param.num_nodes);
+
+    int start_node_offset, end_node_offset;
+    if (nodeblkid >= 0 ){
+        start_node_offset = nodeblkid * param_.node_block_size;
+        end_node_offset = std::min((int)build_nodeset.size(),
+            start_node_offset + param_.node_block_size);
+    }
+    else{
+        start_node_offset = 0;
+        end_node_offset = build_nodeset.size();
+    }
+
+    // no lazy init neccessary for a small size nodeset
+    for (int i = start_node_offset; i < end_node_offset; ++i) {
+        int nid = build_nodeset[i];
+        //lazy initialize
+        if (zblkid == 0){
+            //get model from main model
+            int mid = node2workindex_[nid];
+            hbuilder[nid] = this->wspace_.hset.GetHistUnitByBlkidCompact(blkid_offset, mid, zblkid);
+        }
+        else{
+            //get from replicas
+            int mid = i - start_node_offset;
+            hbuilder[nid] = this->wspace_.hset.GetHistUnitByBlkidCompact(blkid_offset, mid, zblkid);
+
+        }
+        //init data
+        hbuilder[nid].ClearData(this->wspace_.hset.GetHistUnitByBlkidSize());
+    }
+
+    //get lock
+    //bwork_lock_[blkid_offset].lock();
+
+    for (int i = start_node_offset; i < end_node_offset; ++i) {
+        const int nid = build_nodeset[i];
+        auto& grp = posset_.getGroup(nid, zblkid);
+
+        //CHECK_NE(grp.isDummy(), true);
+        if (grp.isDummy()) continue;
+
+        for (int j = 0; j < grp.size(); ++j) {
+            const int ridx = grp.getRowId(j);
+
+            for (int k = 0; k < block.rowsizeByRowId(ridx); k++){
+                hbuilder[nid].AddWithIndex(block._blkaddrByRowId(ridx, k), gpair[ridx]);
+
+                /*
+                 * not much benefits from short->byte
+                 */
+                //unsigned short blkaddr = this->blkInfo_.GetBlkAddr(block._blkaddr(j, k), k);
+                //unsigned short blkaddr = block._blkaddr(j, k)*2 + k;
+                //hbuilder[nid].AddWithIndex(blkaddr, gpair[ridx]);
+
+                //debug only
+                #ifdef DEBUG
+                this->datasum_ += block._blkaddrByRowId(ridx,k);
+                #endif
+            }
+        }
+    } /*loop build_nodeset*/
+
+    //quit
+    //bwork_lock_[blkid_offset].unlock();
+
+  }
+
+  //
+  // no rowblk model replicas
+  //
   void UpdateHistBlock(const std::vector<GradientPair> &gpair,
                        const TDMatrixCubeBlock<TBlkAddr> &block,
                        const RegTree &tree,
                        bst_uint blkid_offset,
                        unsigned int zblkid,
+                       int nodeblkid,
                        const std::vector<int>& build_nodeset,
                        std::vector<HistEntryCompact> *p_temp) {
     //check size
@@ -1848,8 +2027,20 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
     //  change vector to map will be better here
     hbuilder.resize(tree.param.num_nodes);
 
+    int start_node_offset, end_node_offset;
+    if (nodeblkid >= 0 ){
+        start_node_offset = nodeblkid * param_.node_block_size;
+        end_node_offset = std::min((int)build_nodeset.size(),
+            start_node_offset + param_.node_block_size);
+    }
+    else{
+        start_node_offset = 0;
+        end_node_offset = build_nodeset.size();
+    }
+
+
     // no lazy init neccessary for a small size nodeset
-    for (int i = 0; i < build_nodeset.size(); ++i) {
+    for (int i = start_node_offset; i < end_node_offset; ++i) {
         int nid = build_nodeset[i];
         //lazy initialize
         int mid = node2workindex_[nid];
@@ -1864,7 +2055,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
     //get lock
     bwork_lock_[blkid_offset].lock();
 
-    for (int i = 0; i < build_nodeset.size(); ++i) {
+    for (int i = start_node_offset; i < end_node_offset; ++i) {
         const int nid = build_nodeset[i];
         auto& grp = posset_.getGroup(nid, zblkid);
 
@@ -1896,6 +2087,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
     bwork_lock_[blkid_offset].unlock();
 
   }
+
 
   /*
    * UpdatePredictionCache
@@ -2052,109 +2244,157 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
         double _tstart = dmlc::GetTime();
 
         // block number on the base plain
-        const int nsize = p_blkmat->GetBaseBlockNum();
+        // const int nsize = p_blkmat->GetBaseBlockNum();
+        const int nsize = blkset.size();
         // block number in the row dimension
         const int zsize = p_blkmat->GetBlockZCol(0).GetBlockNum();
-        // node dimension blocks
-        const int qsize = build_nodeset.size();
-        //const int dsize = std::min(param_.group_parallel_cnt, qsize);
-        const int dsize = 1;
+        // block number in the node dimension
+        const int qsize = build_nodeset.size()/ param_.node_block_size + ((build_nodeset.size() % param_.node_block_size)?1:0);
+
 
         #ifdef USE_DEBUG
         this->datasum_ = 0.;
         #endif
 
-        #ifdef USE_DYNAMIC_ROWBLOCK
-        #pragma omp parallel for schedule(dynamic, 1)
-        for(bst_omp_uint i = 0; i < dsize * nsize * zsize; ++i){
+        //
+        // use data parallelism will bulid model on replicas
+        // it's efficient for thin matrix
+        //
+        if (param_.data_parallelism != 0){
+            //move node block parallelism out to 
+            //control the replica memory foot print
 
-          // node block id
-          unsigned int nblkid = i / (nsize *zsize);
-          // absolute blk id
-          int blkid = i % (nsize * zsize);
-          // blk id on the base plain
-          int offset = blkid % nsize;
-          // blk id on the row dimension
-          unsigned int zblkid = blkid / nsize;
-
-
-          // get dataBlock
-          auto& block = p_blkmat->GetBlockZCol(offset).GetBlock(zblkid);
-
-          // update model by this dataBlock and node_blkid
-          this->UpdateHistBlock(gpair, block, info, tree,
-                offset, zblkid, nblkid,
-                &this->thread_histcompact_[omp_get_thread_num()]);
-                //&this->thread_hist_[0]);
-        }
-        #else
-
-        //#define TEST_OMP_OVERHEAD
-        #ifdef TEST_OMP_OVERHEAD
-        for(int z = 0; z < zsize; z++){
-
-            // test the overhead of omp scheduling
-            for(int d = 0; d < dsize; d++){
-
+            //int omp_loop_size = qsize * zsize * nsize;
+            for(int nblkid = 0 ; nblkid < qsize; nblkid++){
+                int omp_loop_size = zsize * nsize;
                 #pragma omp parallel for schedule(dynamic, 1)
-                for(bst_omp_uint i = 0; i < nsize; ++i){
+                for(int i = 0; i < omp_loop_size; i++){
+                      // decode to get the block ids
+                      // get node block id
+                      //unsigned int nblkid = i / (zsize * nsize);
 
-                  // node block id
-                  //unsigned int nblkid = i / (nsize);
-                  unsigned int nblkid = d;
-                  // absolute blk id
-                  int blkid = i % (nsize);
-                  // blk id on the base plain
-                  int offset = blkid % nsize;
-                  // blk id on the row dimension
-                  unsigned int zblkid = z;
+                      // blk id in the model cube
+                      int blkid = i % (zsize * nsize);
+                      // blk id on the base plain
+                      int offset = blkset[blkid % nsize];
+                      // blk id on the row dimension
+                      unsigned int zblkid = blkid / nsize;
 
+                      // get dataBlock
+                      auto block = p_blkmat->GetBlockZCol(offset).GetBlock(zblkid);
 
-                  // get dataBlock
-                  auto block = p_blkmat->GetBlockZCol(offset).GetBlock(zblkid);
-
-                  // update model by this dataBlock and node_blkid
-                  this->UpdateHistBlock(gpair, block, info, tree,
-                        offset, zblkid, nblkid,
-                        &this->thread_histcompact_[omp_get_thread_num()]);
-                        //&this->thread_hist_[0]);
+                      // update model by this dataBlock and node_blkid
+                      this->UpdateHistBlockWithReplica(gpair, block, tree,
+                            offset, zblkid, nblkid,
+                            build_nodeset,
+                            &this->thread_histcompact_[omp_get_thread_num()]);
                 }
+            
+                //reduce the replicas
+                // nodesize * blksize
+                int start_node_offset, end_node_offset, gsize;
+                start_node_offset = nblkid * param_.node_block_size;
+                end_node_offset = std::min((int)build_nodeset.size(),
+                    start_node_offset + param_.node_block_size);
+                gsize = end_node_offset - start_node_offset;
 
+                omp_loop_size = gsize * nsize;
+                #pragma omp parallel for schedule(static)
+                for(bst_omp_uint i = 0; i < omp_loop_size; ++i){
+                    // get node blk offset
+                    int nodeblk_offset = i / nsize;
+                    // absolute blk id
+                    int blkid_offset = blkset[i % (nsize)];
+                    int plainSize = this->wspace_.hset.GetHistUnitByBlkidSize();
+
+                    int nid = build_nodeset[start_node_offset + nodeblk_offset];
+
+                    // plain 0 in main model
+                    int mid = node2workindex_[nid];
+                    double* p_zplain0 = reinterpret_cast<double*>(
+                        this->wspace_.hset.GetHistUnitByBlkidCompact(blkid_offset, mid, 0).data);
+
+                    // other plains in replica
+                    mid = nodeblk_offset;
+                    for(int z = 1; z < zsize; z++){
+                        //sum to rowblk 0
+                        double* p_z = reinterpret_cast<double*>(
+                            this->wspace_.hset.GetHistUnitByBlkidCompact(blkid_offset, mid, z).data);
+ 
+                        //#pragma omp simd
+                        #pragma GCC ivdep
+                        for(int j = 0; j < 2 * plainSize; j++){
+                            p_zplain0[j] += p_z[j];
+                        }
+
+                    }
+                }
             }
         }
+        else{
+            // no data parallelism goes here
+            // use spin lock instead of replicas
+            // it's good for fat matrix
+            
+            //
+            // use spinlock to schedule zbloks together
+            //
+            if (param_.use_spinlock == 1){
+                int omp_loop_size = qsize * zsize * nsize;
+                #pragma omp parallel for schedule(dynamic, 1)
+                for(int i = 0; i < omp_loop_size; i++){
+                    // decode to get the block ids
+                    // get node block id
+                    unsigned int nblkid = i / (zsize * nsize);
 
-        #else   // TEST_OMP_OVERHEAD
+                    // blk id in the model cube
+                    int blkid = i % (zsize * nsize);
+                    // blk id on the base plain
+                    int offset = blkset[blkid % nsize];
+                    // blk id on the row dimension
+                    unsigned int zblkid = blkid / nsize;
 
-        for(int z = 0; z < zsize; z++){
-            #pragma omp parallel for schedule(dynamic, 1)
-            for(bst_omp_uint i = 0; i < dsize * nsize; ++i){
+                    // get dataBlock
+                    auto block = p_blkmat->GetBlockZCol(offset).GetBlock(zblkid);
+                
+                    // update model by this dataBlock and node_blkid
+                    this->UpdateHistBlock(gpair, block, tree,
+                            offset, zblkid, nblkid,
+                            build_nodeset,
+                            &this->thread_histcompact_[omp_get_thread_num()]);
+                }
+            }
+            else{
+                for (int z = 0; z < zsize; z++){
+                    int omp_loop_size = qsize * nsize;
+                    #pragma omp parallel for schedule(dynamic, 1)
+                    for(int i = 0; i < omp_loop_size; i++){
+                        // decode to get the block ids
+                        // get node block id
+                        unsigned int nblkid = i / (nsize);
 
-              // node block id
-              unsigned int nblkid = i / (nsize);
-              // absolute blk id
-              int blkid = i % (nsize);
-              // blk id on the base plain
-              int offset = blkid % nsize;
-              // blk id on the row dimension
-              unsigned int zblkid = z;
+                        // blk id in the model cube
+                        int blkid = i % (nsize);
+                        // blk id on the base plain
+                        int offset = blkset[blkid % nsize];
+                        // blk id on the row dimension
+                        unsigned int zblkid = z;
 
-
-              // get dataBlock
-              auto block = p_blkmat->GetBlockZCol(offset).GetBlock(zblkid);
-
-              // update model by this dataBlock and node_blkid
-              this->UpdateHistBlock(gpair, block, tree,
-                    offset, zblkid, 
-                    build_nodeset,
-                    &this->thread_histcompact_[omp_get_thread_num()]);
-                    //&this->thread_hist_[0]);
+                        // get dataBlock
+                        auto block = p_blkmat->GetBlockZCol(offset).GetBlock(zblkid);
+                    
+                        // update model by this dataBlock and node_blkid
+                        this->UpdateHistBlock(gpair, block, tree,
+                                offset, zblkid, nblkid,
+                                build_nodeset,
+                                &this->thread_histcompact_[omp_get_thread_num()]);
+                    }
+                }
             }
 
         }
 
-        #endif  //TEST_OMP_OVERHEAD
 
-        #endif  //USE_DYNAMIC_ROWBLOCK
 
         //
         // build the other half
@@ -2165,7 +2405,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
             double _tstart2 = dmlc::GetTime();
             #pragma omp parallel for schedule(static)
             for (int i = 0; i < nsize; ++i) {
-              int offset = i;
+              int offset = blkset[i];
 
               this->UpdateHalfTrick(offset, tree, large_nodeset);
             }
@@ -2177,7 +2417,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
         LOG(CONSOLE) << "BuildHist:: datasum_=" << this->datasum_;
         #endif
         if (param_.grow_policy != TrainParam::kLossGuide) {
-        LOG(CONSOLE) << "BuildHist:: dsize=" << dsize << 
+        LOG(CONSOLE) << "BuildHist:: qsize=" << qsize << 
             ",nsize=" << nsize << ",zsize=" << zsize << 
             ",nodeset_size=" << build_nodeset.size() <<
             ",largeset_size=" << large_nodeset.size();
