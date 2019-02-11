@@ -97,6 +97,7 @@ struct TrainParam : public dmlc::Parameter<TrainParam> {
   std::string loadmeta;
 
   int data_parallelism;
+  int use_spinlock;
 
   // declare the parameters
   DMLC_DECLARE_PARAMETER(TrainParam) {
@@ -248,6 +249,10 @@ struct TrainParam : public dmlc::Parameter<TrainParam> {
         .set_default(0)
         .set_lower_bound(0)
         .describe("Run with data parallelism based on model replicas.");
+    DMLC_DECLARE_FIELD(use_spinlock)
+        .set_default(0)
+        .set_lower_bound(0)
+        .describe("Run with spinlock and schedule zblocks together.");
  
 
     // add alias of parameters
