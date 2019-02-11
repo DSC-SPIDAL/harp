@@ -102,7 +102,7 @@ namespace harp {
             }
 
             template <class TYPE>
-            void allGather(harp::ds::Table<TYPE>* &table)
+            void allGather(harp::ds::Table<TYPE>* &table, bool freeData = true)
             {
                 // auto *partitionCounts = new int[worldSize]; //no of partitions in each node
                 std::unique_ptr<int[]> partitionCounts(new int[worldSize]); //no of partitions in each node
@@ -251,7 +251,7 @@ namespace harp {
                 recvTab = nullptr;
                 //debug
                 // std::cout<<"finish allgather step 6"<<std::endl;
-                harp::ds::util::deleteTable(tableSwap, true);
+                harp::ds::util::deleteTable(tableSwap, freeData);
             }
 
             template<class TYPE>
