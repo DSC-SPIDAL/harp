@@ -875,22 +875,12 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
 
     } /* end of while */
 
-    // set all the rest expanding nodes to leaf
-    // This post condition is not needed in current code, but may be necessary
-    // when there are stopping rule that leaves qexpand non-empty
-    //while (!qexpand_->empty()) {
-    //  const int nid = qexpand_->top().nid;
-    //  qexpand_->pop();
-    //  //(*p_tree)[nid].SetLeaf(snode_[nid].weight * param_.learning_rate);
-    //  (*p_tree)[nid].SetLeaf(p_tree->Stat(nid).base_weight * param_.learning_rate);
-    //}
-    // remember auxiliary statistics in the tree node
-    //for (int nid = 0; nid < p_tree->param.num_nodes; ++nid) {
-    //  p_tree->Stat(nid).loss_chg = snode_[nid].best.loss_chg;
-    //  p_tree->Stat(nid).base_weight = snode_[nid].weight;
-    //  p_tree->Stat(nid).sum_hess = static_cast<float>(snode_[nid].stats.sum_hess);
-    //  snode_[nid].stats.SetLeafVec(param_, p_tree->Leafvec(nid));
-    //}
+    // mix mode, go on with the remain expansion in node parallelism
+    #ifdef USE_MIXMODE
+
+
+
+    #endif
 
     //reset the binid to fvalue in this tree
     ResetTree(*p_tree);
@@ -2582,6 +2572,8 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
       TStats modelSum = TStats{0.0,0.0};
       #endif
 
+      int omp_loop_size = nodeset.size();
+      #pragma omp parallel for schedule(static) if (omp_loop_size >= 512)
       for (int i = 0; i < nodeset.size(); ++i) {
         const int nid = nodeset[i];
         const int left = tree[nid].LeftChild();
