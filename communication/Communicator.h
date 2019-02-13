@@ -159,6 +159,7 @@ namespace harp {
                 {
                     std::copy(p.second->getData(), p.second->getData() + p.second->getSize(),
                               std::back_inserter(thisNodeDataBuffer));
+
                     thisNodeTotalDataSize += p.second->getSize();
                     thisNodePartitionMetaData[pIdIndex++] = p.first;
                     thisNodePartitionMetaData[pIdIndex++] = p.second->getSize();
@@ -393,8 +394,8 @@ namespace harp {
                 int numOfPartitionsToSend = static_cast<int>(table->getPartitionCount());
                 int numOfPartitionsToRecv = 0;
 
-                if (table->getId() == 0)
-                    std::cout << "Will send " << numOfPartitionsToSend << " partitions to " << sendTo << std::endl;
+                // if (table->getId() == 0)
+                    // std::cout << "Will send " << numOfPartitionsToSend << " partitions to " << sendTo << std::endl;
 
                 MPI_Sendrecv(
                         &numOfPartitionsToSend, 1, MPI_INT, sendTo, sendTag,
@@ -403,8 +404,8 @@ namespace harp {
                         MPI_STATUS_IGNORE
                 );
 
-                if (table->getId() == 0)
-                    std::cout << "Will recv " << numOfPartitionsToRecv << " from " << receiveFrom << std::endl;
+                // if (table->getId() == 0)
+                    // std::cout << "Will recv " << numOfPartitionsToRecv << " from " << receiveFrom << std::endl;
 
                 //exchange PARTITION METADATA
                 int sendingMetaSize = 1 + (numOfPartitionsToSend * 2);// totalDataSize(1) + [{id, size}]
@@ -429,8 +430,8 @@ namespace harp {
                 }
                 partitionMetaToSend[0] = totalDataSize;
 
-                if (table->getId() == 0)
-                    std::cout << "Total Data size "<< partitionMetaToSend[0]<< std::endl;
+                // if (table->getId() == 0)
+                    // std::cout << "Total Data size "<< partitionMetaToSend[0]<< std::endl;
 
                 // check this data buffer issue
                 // std::vector<TYPE> dataBuffer;//todo possible error: data buffer gets cleared immediately after returning this function
@@ -445,8 +446,8 @@ namespace harp {
                     parSizeStart += p.second->getSize();
                 } 
 
-                if (table->getId() == 0)
-                    std::cout << "Will send " << partitionMetaToSend[0] << " elements to " << sendTo << std::endl;
+                // if (table->getId() == 0)
+                    // std::cout << "Will send " << partitionMetaToSend[0] << " elements to " << sendTo << std::endl;
 
                 MPI_Sendrecv(
                         partitionMetaToSend.get(), sendingMetaSize, MPI_INT, sendTo, sendTag,
@@ -455,8 +456,8 @@ namespace harp {
                         MPI_STATUS_IGNORE
                 );
 
-                if (table->getId() == 0)
-                    std::cout << "Will recv " << partitionMetaToRecv[0] << " from " << receiveFrom << std::endl;
+                // if (table->getId() == 0)
+                    // std::cout << "Will recv " << partitionMetaToRecv[0] << " from " << receiveFrom << std::endl;
 
                 //sending DATA
                 //todo implement support for data arrays larger than INT_MAX
