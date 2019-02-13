@@ -137,6 +137,9 @@ endif
 ifeq ($(USE_DEBUG_SAVE), 1)
 	CFLAGS += -DUSE_DEBUG_SAVE=1
 endif
+ifeq ($(USE_MIXMODE), 1)
+	CFLAGS += -DUSE_MIXMODE=1
+endif
 
 ifeq ($(USE_SPARSE_DMATRIX), 1)
 	CFLAGS += -DUSE_SPARSE_DMATRIX=1
