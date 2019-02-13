@@ -748,12 +748,20 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
     int num_leaves = 0;
     unsigned timestamp = 0;
     int topK;
+    int max_leaves = param_.max_leaves;
     if (param_.grow_policy == TrainParam::kLossGuide) {
         topK = param_.node_block_size;
+
+        #ifdef USE_MIXMODE
+        const int threadNum = omp_get_max_threads();
+        max_leaves = threadNum * 2;
+        #endif
     }
     else{
         topK = max_leaves_;
     }
+
+    //stop condition
 
     std::vector<int> build_nodeset;
     std::vector<int> large_nodeset;
@@ -802,7 +810,8 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
 
         if (candidate.sol.loss_chg <= kRtEps
             || (param_.max_depth > 0 && candidate.depth == param_.max_depth)
-            || (param_.max_leaves > 0 && num_leaves + popCnt == param_.max_leaves) ) {
+            || (max_leaves > 0 && num_leaves + popCnt == max_leaves) ) {
+            //|| (param_.max_leaves > 0 && num_leaves + popCnt == param_.max_leaves) ) {
 
           //(*p_tree)[nid].SetLeaf(snode_[nid].weight * param_.learning_rate);
             (*p_tree)[nid].SetLeaf(p_tree->Stat(nid).base_weight * param_.learning_rate);
@@ -881,6 +890,12 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
       //remove those parents node splitted
       num_leaves -= large_nodeset.size();
 
+
+      #ifdef USE_MIXMODE
+      if (max_leaves > 0 && num_leaves >= max_leaves) {
+          break;
+      }
+      #endif
     } /* end of while */
 
     // mix mode, go on with the remain expansion in node parallelism
@@ -915,10 +930,19 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
   void BuildTree4OneNode (const std::vector<GradientPair> &gpair,
                       DMatrix *p_fmat,
                       RegTree *p_tree,
+                      TrainParam& param,
                       std::atomic<int>& num_leaves,
-                      std::atomic<int>& timestamp
+                      std::atomic<int>& timestamp,
+                      int max_leaves
                       ) {
-      
+      #ifdef USE_DEBUG
+      auto curThreadId = std::this_thread::get_id();
+      LOG(CONSOLE) << "Inside Thread :: ID  = "<<std::this_thread::get_id() <<
+          "cur_num_leaves=" << num_leaves <<
+          "stop_leaves=" << max_leaves <<
+          "max_leaves=" << param.max_leaves;
+      #endif
+
       std::vector<int> build_nodeset;
       std::vector<int> large_nodeset;
       std::vector<int> split_nodeset;
@@ -956,7 +980,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
 
           if (candidate.sol.loss_chg <= kRtEps
               || (param_.max_depth > 0 && candidate.depth == param_.max_depth)
-              || (param_.max_leaves > 0 && num_leaves + popCnt == param_.max_leaves) ) {
+              || (param_.max_leaves > 0 && num_leaves + popCnt == max_leaves) ) {
 
             //(*p_tree)[nid].SetLeaf(snode_[nid].weight * param_.learning_rate);
               (*p_tree)[nid].SetLeaf(p_tree->Stat(nid).base_weight * param_.learning_rate);
@@ -972,6 +996,12 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
 
         //quit if no need to split
         if (split_nodeset.size() == 0) continue;
+
+        #ifdef USE_DEBUG
+        std::ostringstream stringStream;
+        stringStream << "ThreadId=" << curThreadId << ", splitNode=" << split_nodeset[0];
+        printmsg(stringStream.str());
+        #endif
 
         // 2. apply split on these nodes
         printVec("ApplySplit split_nodeset:", split_nodeset);
@@ -1039,6 +1069,12 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
         //remove those parents node splitted
         num_leaves -= large_nodeset.size();
 
+        //check finish
+        if (max_leaves != param.max_leaves && num_leaves >= max_leaves) {
+          //in the middle, can jump out
+          //but the last one, must wait until all items in the queue pop out
+          break;
+        }
       } /* end of while */
   };
 
@@ -1056,6 +1092,10 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
                       unsigned tstamp
                       ) {
 
+
+    LOG(CONSOLE) << "Enter node parallel mode: num_leaves=" << nleaves 
+        << ",group_parallel_cnt=" << param_.group_parallel_cnt;
+
     //use stomic as shared data structure
     std::atomic<int> num_leaves(nleaves);
     std::atomic<int> timestamp(tstamp);
@@ -1064,11 +1104,32 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
     this->StopOpenMP();
 
     // spawn threads
-    const int threadNum = omp_get_max_threads();
+    int threadNum = param_.group_parallel_cnt;
+    //int threadNum = omp_get_max_threads();
+    //const int threadNum = 1;
     std::vector<std::thread> threads;
     for(int i = 0; i < threadNum; ++i){
         threads.push_back(std::thread([&]{
-                   BuildTree4OneNode(gpair, p_fmat, p_tree, num_leaves, timestamp);}));
+                   BuildTree4OneNode(gpair, p_fmat, p_tree, param_,
+                       num_leaves, timestamp, 
+                       param_.max_leaves - threadNum
+                       );}));
+    }
+
+    //wait for end
+    for(int i = 0; i < threads.size() ; i++)
+    {
+        threads.at(i).join();
+    }
+
+
+    //debug only
+    threads.clear();
+    threadNum = 1;
+    for(int i = 0; i < threadNum; ++i){
+        threads.push_back(std::thread([&]{
+                   BuildTree4OneNode(gpair, p_fmat, p_tree, param_,
+                       num_leaves, timestamp, param_.max_leaves);}));
     }
 
     //wait for end
@@ -2309,9 +2370,11 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
           int tnid = nid;
 
           //skip dummy nodes first
+          #ifndef USE_MIXMODE
           if ((*p_last_tree_)[tnid].IsDummy()) {
               continue;
           }
+          #endif
           if (!(*p_last_tree_)[tnid].IsLeaf()) {
               continue;
           }
@@ -2368,7 +2431,8 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
         }
       }
       #ifdef USE_DEBUG
-      LOG(CONSOLE) << "updatech leaf_sum=" << leaf_val_sum << 
+      LOG(CONSOLE) << "UpdateCache: num_leaves=" << num_node <<
+                ",leaf_sum=" << leaf_val_sum << 
                 ",rowcnt=" << posset_.getEntrySize() <<
                 ",nid_sum=" << nid_sum;
       #endif
@@ -2854,6 +2918,10 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
         tree[i].SetSplit(fid, fvalue, defaultLeft);
     }
 
+
+    #ifdef USE_MIXMODE
+    tree.param.num_nodes = static_cast<int>(nodes.size());
+    #endif
 
     p_last_tree_ = &tree;
 

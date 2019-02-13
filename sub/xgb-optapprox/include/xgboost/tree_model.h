@@ -159,6 +159,9 @@ class TreeModel {
     inline bool IsDummy() const {
       return parent_ == -2;
     }
+    inline void SetDummy(){
+        parent_ = -2;
+    }
  
     /*!
      * \brief set the right child
@@ -374,10 +377,20 @@ class TreeModel {
     //local counter
     num_nodes = 1;
   }
+  //
+  // alloc all nodes in the beginning, in MIXMODE
+  // to keep the memry static in multithreading env
+  //
   inline void InitModelNodes(int max_nodes){
     nodes_.resize(max_nodes);
     stats_.resize(max_nodes);
     leaf_vector_.resize(max_nodes * param.size_leaf_vector, 0.0f);
+
+    //set all dummy
+    for(int i = 1; i < max_nodes; i++){
+        nodes_[i].SetDummy();
+    }
+
   }
 
   /*! \brief get node given nid */
@@ -451,7 +464,13 @@ class TreeModel {
    * \brief save model to stream
    * \param fo output stream
    */
-  inline void Save(dmlc::Stream* fo) const {
+  //inline void Save(dmlc::Stream* fo) const {
+  inline void Save(dmlc::Stream* fo) {
+
+    #ifdef USE_MIXMODE
+    param.num_nodes = static_cast<int>(nodes_.size());
+    #endif
+
     CHECK_EQ(param.num_nodes, static_cast<int>(nodes_.size()));
     CHECK_EQ(param.num_nodes, static_cast<int>(stats_.size()));
     fo->Write(&param, sizeof(TreeParam));
