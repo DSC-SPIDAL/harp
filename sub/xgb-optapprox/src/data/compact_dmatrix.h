@@ -401,6 +401,10 @@ struct BlockInfo{
         if (bin_blksize <= 0){
             bin_blksize = binnum;
         }
+
+        LOG(CONSOLE) << "BlockInfo::Init row_blocksize=" << row_blksize <<
+            ",ft_block_size=" << ft_blksize <<
+            ",bin_block_size=" << bin_blksize;
     }
 };
 

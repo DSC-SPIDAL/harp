@@ -758,8 +758,8 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
 
         #ifdef USE_MIXMODE
         const int threadNum = omp_get_max_threads();
-        //max_leaves = threadNum * 2;
-        max_leaves = threadNum;
+        max_leaves = threadNum * 2;
+        //max_leaves = threadNum;
         #endif
     }
     else{
@@ -801,9 +801,15 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
     // mix mode, go on with the remain expansion in node parallelism
     #ifdef USE_MIXMODE
     this->StopOpenMP();
+    //this->DisableDataParallelism();
+    int save_dataparallelism = param_.data_parallelism;
+    param_.data_parallelism = 0;
     UpdateWithNodeParallel(gpair, p_fmat, p_tree,
             num_leaves, timestamp);
     this->StartOpenMP();
+    //this->EnableDataParallelism();
+    param_.data_parallelism = save_dataparallelism;
+
     #endif
 
     // end part, go back to openmp
@@ -1712,6 +1718,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
         //
         // 3. Init blkInfo
         //
+        dmat_info_ = p_fmat->Info();
         auto& _info = dmat_info_;
         this->blkInfo_ = BlockInfo(param_.row_block_size, param_.ft_block_size, param_.bin_block_size);
         this->blkInfo_.init(_info.num_row_, _info.num_col_, param_.max_bin);
@@ -2553,6 +2560,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
                 for (int z = 0; z < zsize; z++){
                     int omp_loop_size = qsize * nsize;
                     if (threadid == -1){
+                    //if (1){
                     #pragma omp parallel for schedule(dynamic, 1) if(runopenmp)
                     for(int i = 0; i < omp_loop_size; i++){
                         // decode to get the block ids
