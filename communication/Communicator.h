@@ -154,17 +154,30 @@ namespace harp {
 
                 int pIdIndex = 1;
 
+                TYPE* pthisNodeDataBuffer = nullptr;
                 std::vector<TYPE> thisNodeDataBuffer;
+                
                 for (const auto p : *table->getPartitions())
                 {
-                    std::copy(p.second->getData(), p.second->getData() + p.second->getSize(),
+                    if (table->getPartitionCount() > 1)
+                    {
+                         std::copy(p.second->getData(), p.second->getData() + p.second->getSize(),
                               std::back_inserter(thisNodeDataBuffer));
+                    } else
+                    {
+                        pthisNodeDataBuffer = p.second->getData();
+                    }
 
                     thisNodeTotalDataSize += p.second->getSize();
                     thisNodePartitionMetaData[pIdIndex++] = p.first;
                     thisNodePartitionMetaData[pIdIndex++] = p.second->getSize();
                 }
+                
                 thisNodePartitionMetaData[0] = thisNodeTotalDataSize;
+                if (table->getPartitionCount() > 1)
+                {
+                    pthisNodeDataBuffer = &thisNodeDataBuffer[0];
+                }
 
                 //                std::cout << "Node " << workerId << " total size : " << thisNodeTotalDataSize << std::endl;
                 //
@@ -210,7 +223,8 @@ namespace harp {
                 // auto *worldDataBuffer = new TYPE[totalDataSize];
                 std::unique_ptr<TYPE[]> worldDataBuffer(new TYPE[totalDataSize]);
                 MPI_Allgatherv(
-                    &thisNodeDataBuffer[0],
+                    // &thisNodeDataBuffer[0],
+                    pthisNodeDataBuffer,
                     static_cast<int>(thisNodeTotalDataSize),
                     dataType,
                     worldDataBuffer.get(),
@@ -436,15 +450,26 @@ namespace harp {
                 // check this data buffer issue
                 // std::vector<TYPE> dataBuffer;//todo possible error: data buffer gets cleared immediately after returning this function
                 // copy the data
-                std::unique_ptr<TYPE[]> dataBuffer(new TYPE[totalDataSize]);
+                TYPE* dataBuffer = nullptr;
+                if (numOfPartitionsToSend > 1 )
+                {
+                    dataBuffer = new TYPE[totalDataSize];
+                }
+
                 int parSizeStart = 0;
-                for (const auto p : *table->getPartitions()) {
+                for (const auto p : *table->getPartitions())
+                {
                     //todo prevent memory copying if possible
-                    std::copy(p.second->getData(), p.second->getData() + p.second->getSize(),
-                              dataBuffer.get() + parSizeStart);
+                    if (numOfPartitionsToSend > 1)
+                    {
+                        std::copy(p.second->getData(), p.second->getData() + p.second->getSize(),
+                                  dataBuffer + parSizeStart);
+                    }else{
+                        dataBuffer = p.second->getData();
+                    }
 
                     parSizeStart += p.second->getSize();
-                } 
+                }
 
                 // if (table->getId() == 0)
                     // std::cout << "Will send " << partitionMetaToSend[0] << " elements to " << sendTo << std::endl;
@@ -462,16 +487,15 @@ namespace harp {
                 //sending DATA
                 //todo implement support for data arrays larger than INT_MAX
                 MPI_Request dataSendRequest;
-                MPI_Isend(dataBuffer.get(), totalDataSize, dataType, sendTo, sendTag, MPI_COMM_WORLD,
+                MPI_Isend(dataBuffer, totalDataSize, dataType, sendTo, sendTag, MPI_COMM_WORLD,
                           &dataSendRequest);
 
                 // why use two tables ???
                 // auto *recvTab = new harp::ds::Table<TYPE>(table->getId());
 
-                std::unique_ptr<TYPE[]> recvBuffer(new TYPE[partitionMetaToRecv[0]]);
-                // auto *recvBuffer = new TYPE[partitionMetaToRecv[0]];
+                TYPE* recvBuffer = new TYPE[partitionMetaToRecv[0]];
 
-                MPI_Recv(recvBuffer.get(), partitionMetaToRecv[0], dataType, receiveFrom, recvTag,
+                MPI_Recv(recvBuffer, partitionMetaToRecv[0], dataType, receiveFrom, recvTag,
                          MPI_COMM_WORLD,
                          MPI_STATUS_IGNORE);
 
@@ -483,9 +507,15 @@ namespace harp {
                     int partitionId = partitionMetaToRecv[i];
                     int partitionSize = partitionMetaToRecv[i + 1];
 
-                    auto *data = new TYPE[partitionSize];
-                    std::copy(recvBuffer.get() + copiedCount, recvBuffer.get() + copiedCount + partitionSize, data);
-                    copiedCount += partitionSize;
+                    TYPE *data = nullptr;
+                    if (numOfPartitionsToRecv > 1)
+                    {
+                       data =  new TYPE[partitionSize];
+                       std::copy(recvBuffer + copiedCount, recvBuffer + copiedCount + partitionSize, data);
+                       copiedCount += partitionSize;
+                    }else{
+                        data = recvBuffer;
+                    }
 
                     auto *newPartition = new harp::ds::Partition<TYPE>(partitionId, data, partitionSize);
                     // recvTab->addPartition(newPartition);
@@ -495,9 +525,16 @@ namespace harp {
                 // here to prevent the destroy of databuffer
                 MPI_Wait(&dataSendRequest, MPI_STATUS_IGNORE);
 
-                //delete table;
-                // table->swap(recvTab);
-                // harp::ds::util::deleteTable(recvTab, false);
+                // clean the buffer data
+                if (numOfPartitionsToRecv > 1)
+                {
+                    delete[] dataBuffer;
+                }
+                if (numOfPartitionsToSend > 1)
+                {
+                    delete[] recvBuffer;
+                }
+                
             }
 
             template<class TYPE>
