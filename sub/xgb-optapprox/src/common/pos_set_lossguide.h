@@ -151,9 +151,20 @@ class POSSetSingle{
             _start[i].setEncodePosition(false);
             _rightlen ++;
         }
+        inline void setDefaultPosition(int i){
+            if (_defaultLeft){
+                _start[i].setEncodePosition(true);
+                _leftlen ++;
+            }else{
+                _start[i].setEncodePosition(false);
+                _rightlen ++;
+            }
+        }
+
 
 
         inline void EndUpdate(){
+            CHECK_EQ(_leftlen + _rightlen, _len);
             //if (_nodeid < 0) return;
             if (_defaultLeft){
                 // rightlen is accurate

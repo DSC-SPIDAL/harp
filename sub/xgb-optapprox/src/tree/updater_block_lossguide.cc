@@ -1453,9 +1453,14 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
                 if (col.rowsizeByRowId(ridx) == 0){
                     continue;
                 }
-                const auto binid = col._blkaddrByRowId(ridx, 0);
+                //const auto binid = col._blkaddrByRowId(ridx, 0);
+                const auto binid = col._binidByRowId(ridx, 0);
 
-                if (binid <= tree[nid].SplitCond()) {
+                //#ifndef  USE_NOEMPTYPLACEHOLDER
+                if (binid == EMPTYBINID){
+                    // missing value, go to default
+                    grp.setDefaultPosition(j);
+                } else if (binid <= tree[nid].SplitCond()) {
                   grp.setLeftPosition(j);
                 } else {
                   grp.setRightPosition(j);
@@ -2149,6 +2154,9 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
             const int ridx = grp.getRowId(j);
 
             for (int k = 0; k < block.rowsizeByRowId(ridx); k++){
+
+                if (block._binidByRowId(ridx,k) == EMPTYBINID) continue;
+
                 hbuilder[nid].AddWithIndex(block._blkaddrByRowId(ridx, k), gpair[ridx]);
 
                 /*
@@ -2249,6 +2257,9 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
             const int ridx = grp.getRowId(j);
 
             for (int k = 0; k < block.rowsizeByRowId(ridx); k++){
+
+                if (block._binidByRowId(ridx,k) == EMPTYBINID) continue;
+
                 hbuilder[nid].AddWithIndex(block._blkaddrByRowId(ridx, k), gpair[ridx]);
 
                 /*
