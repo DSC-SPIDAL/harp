@@ -561,13 +561,27 @@ class DMatrixDenseCubeZCol{
     void save(dmlc::Stream* fs){
         fs->Write((&blkid_), sizeof(blkid_));
         fs->Write((&rowsize_), sizeof(rowsize_));
-        fs->Write((&colsize_), sizeof(colsize_));
+        //no use colsize_
+        //fs->Write((&colsize_), sizeof(colsize_));
         fs->Write((&rowcnt_), sizeof(rowcnt_));
         //vectors
-        int vecSize = data_.size();
+        long vecSize = data_.size();
         fs->Write((&vecSize), sizeof(vecSize));
+
         fs->Write((data_.data()), 
                 sizeof(BlkAddrType)*vecSize);
+ 
+        //LOG(CONSOLE) <<"zcol::save vecSize=" << vecSize;
+        ////large file > 2GB
+        //const int chunkSize = 512*1024*1024;
+        //BlkAddrType* dataPtr = data_.data();
+        //for(int i = 0; i < vecSize; i += chunkSize){
+        //    int writeSize = (i + chunkSize > vecSize)? (vecSize % chunkSize):
+        //        chunkSize;
+
+        //    fs->Write(dataPtr + i, sizeof(BlkAddrType)*writeSize);
+        //}
+
         vecSize = blk_offset_.size();
         fs->Write((&vecSize), sizeof(vecSize));
         fs->Write((blk_offset_.data()), 
@@ -577,14 +591,24 @@ class DMatrixDenseCubeZCol{
     void load(dmlc::Stream* fs){
         fs->Read((&blkid_), sizeof(blkid_));
         fs->Read((&rowsize_), sizeof(rowsize_));
-        fs->Read((&colsize_), sizeof(colsize_));
+        //no use colsize_
+        //fs->Read((&colsize_), sizeof(colsize_));
         fs->Read((&rowcnt_), sizeof(rowcnt_));
         //vectors
-        int vecSize;
+        long vecSize;
         fs->Read((&vecSize), sizeof(vecSize));
         data_.resize(vecSize);
+
         fs->Read((data_.data()), 
                 sizeof(BlkAddrType)*vecSize);
+        //read large content
+        //const int chunkSize = 512*1024*1024;
+        //BlkAddrType* dataPtr = data_.data();
+        //for(int i = 0; i < vecSize; i += chunkSize){
+        //    int readSize = (i + chunkSize > vecSize)? (vecSize % chunkSize):
+        //        chunkSize;
+        //    fs->Read(dataPtr + i, sizeof(BlkAddrType)*readSize);
+        //}
 
         fs->Read((&vecSize), sizeof(vecSize));
         blk_offset_.resize(vecSize);

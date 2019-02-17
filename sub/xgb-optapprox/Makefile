@@ -111,6 +111,9 @@ endif
 #
 #	export THREADIMP=tbb
 #endif
+
+CFLAGS += -D_FILE_OFFSET_BITS=64
+
 ifndef NOUSE_COMPACT
 	CFLAGS += -DUSE_COMPACT=1
 endif

@@ -8,6 +8,8 @@
  * HARPDAAL-GBT optimize based on the approx and fast_hist codebase
  * 3-D cube of model <node_block_size, bin_block_size, ft_block_size)
  *
+ * This is code in mixmode, which contains 3-phases, dp-mp-dp
+ *
  */
 #include <xgboost/base.h>
 #include <xgboost/tree_updater.h>
@@ -741,26 +743,26 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
             &(this->thread_stats_), 
             &(this->wspace_.hset.GetNodeSum(0)));
 
-    #ifdef USE_MIXMODE
     // init the tree
     p_tree->InitModelNodes(max_leaves_ * 2);
-    #endif
 
     // start tree building
     int depth = 0;
+
     std::atomic<int> num_leaves(0);
     std::atomic<int> timestamp(0);
 
     int topK;
     int max_leaves = param_.max_leaves;
+    const int threadNum = omp_get_max_threads();
     if (param_.grow_policy == TrainParam::kLossGuide) {
-        topK = param_.node_block_size;
+        topK = param_.topk;
 
-        #ifdef USE_MIXMODE
-        const int threadNum = omp_get_max_threads();
-        max_leaves = threadNum * 2;
-        //max_leaves = threadNum;
-        #endif
+        // async_mixmode=2 will skip mixmode
+        if (param_.async_mixmode != 2){
+            max_leaves = threadNum * 2;
+            //max_leaves = threadNum;
+        }
     }
     else{
         topK = max_leaves_;
@@ -799,18 +801,49 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
             num_leaves, timestamp, max_leaves, topK);
 
     // mix mode, go on with the remain expansion in node parallelism
-    #ifdef USE_MIXMODE
-    this->StopOpenMP();
-    //this->DisableDataParallelism();
+    LOG(CONSOLE) << "Enter node parallel mode: num_leaves=" << num_leaves 
+        << ",group_parallel_cnt=" << param_.group_parallel_cnt <<
+        ",async_mode=" << param_.async_mixmode <<
+        ",topk=" << param_.topk;
+
+    if (param_.grow_policy == TrainParam::kLossGuide) {
+        const int nsize = bwork_set_.size();
+        // block number in the row dimension
+        const int zsize = p_blkmat->GetBlockZCol(0).GetBlockNum();
+        // block number in the node dimension
+        const int qsize = param_.topk/ param_.node_block_size + ((param_.topk % param_.node_block_size)?1:0);
+
+        LOG(CONSOLE) << "BuildHist:: qsize=" << qsize << 
+            ",nsize=" << nsize << ",zsize=" << zsize;
+    }
+
+
     int save_dataparallelism = param_.data_parallelism;
     param_.data_parallelism = 0;
-    UpdateWithNodeParallel(gpair, p_fmat, p_tree,
-            num_leaves, timestamp);
-    this->StartOpenMP();
-    //this->EnableDataParallelism();
+    if (param_.async_mixmode == 1){
+        this->StopOpenMP();
+        //this->DisableDataParallelism();
+        UpdateWithNodeParallel(gpair, p_fmat, p_tree,
+                num_leaves, timestamp);
+        this->StartOpenMP();
+        //this->EnableDataParallelism();
+    }
+    else{
+        // stop dataparallelism only
+        // set node_block_size = 1 in lossguide
+        int save_nodeblksize = param_.node_block_size;
+        if (param_.grow_policy == TrainParam::kLossGuide) {
+        //    param_.node_block_size = 1;
+        }
+        GrowTheTree(gpair, p_fmat, p_tree, param_,
+                num_leaves, timestamp, 
+                param_.max_leaves - threadNum,
+                topK /*topK*/
+                );
+        //restore the nodebk setting
+        param_.node_block_size = save_nodeblksize;
+    }
     param_.data_parallelism = save_dataparallelism;
-
-    #endif
 
     // end part, go back to openmp
     GrowTheTree(gpair, p_fmat, p_tree, param_,
@@ -976,7 +1009,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
         // do buildhist  
         printVec("BuildHist on build_nodeset:", build_nodeset);
         printVec("BuildHist on large_nodeset:", large_nodeset);
-        BuildHist(gpair, build_nodeset, large_nodeset, bwork_set_, *p_tree);
+        BuildHist(gpair, build_nodeset, large_nodeset, bwork_set_, *p_tree, threadid);
 
         printtree(p_tree, "After CreateHist");
 
@@ -987,7 +1020,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
             build_depth.insert(build_depth.end(), large_depth.begin(),
                     large_depth.end());
         }
-        FindSplit(gpair, work_set_, build_nodeset, splitOutput);
+        FindSplit(gpair, work_set_, build_nodeset, splitOutput, threadid);
         for (int i = 0; i < build_nodeset.size(); i++){
 
           mutex_qexpand_.lock();
@@ -1028,8 +1061,8 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
 
     CHECK_LT(num_leaves, param_.max_leaves);
 
-    LOG(CONSOLE) << "Enter node parallel mode: num_leaves=" << num_leaves 
-        << ",group_parallel_cnt=" << param_.group_parallel_cnt;
+    //LOG(CONSOLE) << "Enter node parallel mode: num_leaves=" << num_leaves 
+    //    << ",group_parallel_cnt=" << param_.group_parallel_cnt;
 
     //use stomic as shared data structure
     //std::atomic<int> num_leaves(nleaves);
@@ -1041,13 +1074,15 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
     //int threadNum = omp_get_max_threads();
     //const int threadNum = 1;
     std::vector<std::thread> threads;
-    for(int i = 0; i < threadNum; ++i){
+    for(int i = 0; i < threadNum; i++){
+        const int threadid = i;
+        //becareful & is dangerous
         threads.push_back(std::thread([&]{
                    GrowTheTree(gpair, p_fmat, p_tree, param_,
                        num_leaves, timestamp, 
                        param_.max_leaves - threadNum,
                        1 /*topK*/,
-                       i /*threadid*/
+                       threadid /*threadid*/
                        );}));
     }
 
@@ -1171,6 +1206,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
 
     //adjust parallelism by the number of nodes
     const int threadNum = omp_get_max_threads();
+    //TODO: need check runopenmp?
     if (threadNum > nodeset.size() && runopenmp){
         //call feature wised parallelism
         FindSplitByFeature(gpair, featureset, nodeset, splitOutput, threadid);
@@ -1728,7 +1764,9 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
         this->blkInfo_ = BlockInfo(param_.row_block_size, param_.ft_block_size, param_.bin_block_size);
         this->blkInfo_.init(_info.num_row_, _info.num_col_, param_.max_bin);
         
-        LOG(CONSOLE) << "Init Param: node_block_size=" << param_.node_block_size;
+        LOG(CONSOLE) << "Init Param: node_block_size=" << param_.node_block_size <<
+            ",topK=" << param_.topk <<
+            ",group_parallel_cnt=" << param_.group_parallel_cnt;
 
         //
         // 4. Add binid to dmatrix.
@@ -1787,8 +1825,16 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
 
             //load cube
             std::string fname;
-            fname = param_.loadmeta + ".blkmat";
+
+            //load from meta-r#f#b#.blkmat
+            std::ostringstream stringStream;
+            stringStream << param_.loadmeta << 
+                "-r" << blkInfo_.GetRowBlkSize() <<
+                "-f" << blkInfo_.GetFeatureBlkSize() <<
+                "-b" << blkInfo_.GetBinBlkSize() <<  ".blkmat";
+            fname = stringStream.str();
             p_blkmat->load(fname, param_.max_bin, blkInfo_);
+
             fname = param_.loadmeta + ".hmat";
             BlockInfo hmat_blkInfo = BlockInfo(0, 1, 0);
             p_hmat->load(fname, param_.max_bin, hmat_blkInfo);
@@ -1872,8 +1918,14 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
             SaveMatrixMeta(cut_, dmat_info_, feat_helper_,
                     fname);
 
-            fname = param_.savemeta + ".blkmat";
+            std::ostringstream stringStream;
+            stringStream << param_.savemeta << 
+                "-r" << blkInfo_.GetRowBlkSize() <<
+                "-f" << blkInfo_.GetFeatureBlkSize() <<
+                "-b" << blkInfo_.GetBinBlkSize() <<  ".blkmat";
+            fname = stringStream.str();
             p_blkmat->save(fname);
+
             fname = param_.savemeta + ".hmat";
             p_hmat->save(fname);
         }
@@ -2568,10 +2620,69 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
                 }
             }
             else{
-                for (int z = 0; z < zsize; z++){
+                //
+                // this sync for each zcol level
+                //
+
+                if (param_.async_mixmode == 1){
+                    for (int z = 0; z < zsize; z++){
+                        int omp_loop_size = qsize * nsize;
+                        if (threadid == -1){
+                            #pragma omp parallel for schedule(dynamic, 1) if(runopenmp)
+                            for(int i = 0; i < omp_loop_size; i++){
+                                // decode to get the block ids
+                                // get node block id
+                                unsigned int nblkid = i / (nsize);
+
+                                // blk id in the model cube
+                                int blkid = i % (nsize);
+                                // blk id on the base plain
+                                int offset = blkset[blkid % nsize];
+                                // blk id on the row dimension
+                                unsigned int zblkid = z;
+
+                                // get dataBlock
+                                auto block = p_blkmat->GetBlockZCol(offset).GetBlock(zblkid);
+                            
+                                int tid = (threadid == -1)?omp_get_thread_num():threadid;
+                                // update model by this dataBlock and node_blkid
+                                this->UpdateHistBlock(gpair, block, tree,
+                                        offset, zblkid, nblkid,
+                                        build_nodeset,
+                                        &this->thread_histcompact_[tid]);
+                            }
+                        }
+                        else{
+                            for(int i = 0; i < omp_loop_size; i++){
+                                // decode to get the block ids
+                                // get node block id
+                                unsigned int nblkid = i / (nsize);
+
+                                // blk id in the model cube
+                                int blkid = i % (nsize);
+                                // blk id on the base plain
+                                int offset = blkset[blkid % nsize];
+                                // blk id on the row dimension
+                                unsigned int zblkid = z;
+
+                                // get dataBlock
+                                auto block = p_blkmat->GetBlockZCol(offset).GetBlock(zblkid);
+                            
+                                int tid = (threadid == -1)?omp_get_thread_num():threadid;
+                                // update model by this dataBlock and node_blkid
+                                this->UpdateHistBlock(gpair, block, tree,
+                                        offset, zblkid, nblkid,
+                                        build_nodeset,
+                                        &this->thread_histcompact_[tid]);
+                            }
+
+                        }
+
+                    } /* for z */
+                }
+                else{
+                    // no async mode
                     int omp_loop_size = qsize * nsize;
-                    if (threadid == -1){
-                    //if (1){
                     #pragma omp parallel for schedule(dynamic, 1) if(runopenmp)
                     for(int i = 0; i < omp_loop_size; i++){
                         // decode to get the block ids
@@ -2582,50 +2693,23 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
                         int blkid = i % (nsize);
                         // blk id on the base plain
                         int offset = blkset[blkid % nsize];
+               
+                        int tid = (threadid == -1)?omp_get_thread_num():threadid;
+ 
+
+                        for (int z = 0; z < zsize; z++){
                         // blk id on the row dimension
                         unsigned int zblkid = z;
-
                         // get dataBlock
                         auto block = p_blkmat->GetBlockZCol(offset).GetBlock(zblkid);
-                    
-                        int tid = (threadid == -1)?omp_get_thread_num():threadid;
-                        // update model by this dataBlock and node_blkid
+                        
+                       // update model by this dataBlock and node_blkid
                         this->UpdateHistBlock(gpair, block, tree,
                                 offset, zblkid, nblkid,
                                 build_nodeset,
                                 &this->thread_histcompact_[tid]);
+                        }
                     }
-
-                    }
-                    else{
-                    for(int i = 0; i < omp_loop_size; i++){
-                        // decode to get the block ids
-                        // get node block id
-                        unsigned int nblkid = i / (nsize);
-
-                        // blk id in the model cube
-                        int blkid = i % (nsize);
-                        // blk id on the base plain
-                        int offset = blkset[blkid % nsize];
-                        // blk id on the row dimension
-                        unsigned int zblkid = z;
-
-                        // get dataBlock
-                        auto block = p_blkmat->GetBlockZCol(offset).GetBlock(zblkid);
-                    
-                        int tid = (threadid == -1)?omp_get_thread_num():threadid;
-                        // update model by this dataBlock and node_blkid
-                        this->UpdateHistBlock(gpair, block, tree,
-                                offset, zblkid, nblkid,
-                                build_nodeset,
-                                &this->thread_histcompact_[tid]);
-                    }
-
-
-
-
-                    }
-
                 }
             }
 
