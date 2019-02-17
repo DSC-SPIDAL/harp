@@ -18,6 +18,8 @@
 namespace xgboost {
 //namespace data {
 
+#define EMPTYBINID 255
+
 #ifndef USE_COMPACT_BINID
 class EntryCompact{
     public:
@@ -401,6 +403,11 @@ struct BlockInfo{
         if (bin_blksize <= 0){
             bin_blksize = binnum;
         }
+
+        LOG(CONSOLE) << "BlockInfo::Init row_blocksize=" << row_blksize <<
+            ",ft_block_size=" << ft_blksize <<
+            ",bin_block_size=" << bin_blksize;
+        
     }
 };
 
@@ -420,18 +427,20 @@ class DMatrixDenseCubeBlock {
     const BlkAddrType* data_;
     //const PtrType* row_offset_;
     const PtrType rowsize_;
+    const PtrType colsize_;
 
     PtrType len_;
     PtrType base_rowid_;
 
     public:
     DMatrixDenseCubeBlock<BlkAddrType>(const BlkAddrType* data, PtrType rowsize,
-            PtrType len, PtrType base):
-        data_(data), rowsize_(rowsize), len_(len), base_rowid_{base}{}
+            PtrType colsize, PtrType len, PtrType base):
+        data_(data), rowsize_(rowsize), colsize_(colsize),
+        len_(len), base_rowid_{base}{}
 
     // sequential access by seq id
-    inline BlkAddrType _blkaddr(int i, int j) const {
-      return static_cast<BlkAddrType>(data_[rowsize_* (i + base_rowid_) + j]);
+    inline int _blkaddr(int i, int j) const {
+      return static_cast<int>(data_[rowsize_* (i + base_rowid_) + j])*rowsize_  + j;
     }
     inline int rowsize(int i) const{
         //return row_offset_[i+1] - row_offset_[i];
@@ -447,8 +456,11 @@ class DMatrixDenseCubeBlock {
     }
 
     // random access by raw rowid
-    inline BlkAddrType _blkaddrByRowId(int ridx, int j) const {
-      return static_cast<BlkAddrType>(data_[rowsize_*ridx + j]);
+    inline int _blkaddrByRowId(int ridx, int j) const {
+      return static_cast<int>(data_[rowsize_*ridx + j])*rowsize_ + j;
+    }
+    inline BlkAddrType _binidByRowId(int ridx, int j) const {
+      return data_[rowsize_*ridx + j];
     }
     inline int rowsizeByRowId(int i) const{
         return rowsize_;
@@ -465,6 +477,7 @@ class DMatrixDenseCubeZCol{
      //std::vector<PtrType> row_offset_;
      std::vector<PtrType> blk_offset_;
      PtrType rowsize_;
+     PtrType colsize_;
      PtrType rowcnt_;
      //PtrType blksize_;
 
@@ -483,12 +496,13 @@ class DMatrixDenseCubeZCol{
             //use the ptr from beginning
             return {data_.data(),
                 rowsize_,
+                colsize_,
                 static_cast<PtrType>(blk_offset_[i + 1] - blk_offset_[i]), 
                 rowidx};
         }
         else{
             //return empty block
-            return {nullptr,0,0,0};
+            return {nullptr,0,0,0,0};
         }
     }
 
@@ -499,11 +513,11 @@ class DMatrixDenseCubeZCol{
     inline long getMemSize(){
         return sizeof(BlkAddrType)*data_.size() + 
             //row_offset_.size()*sizeof(PtrType) +
-            2*sizeof(PtrType) +
+            3*sizeof(PtrType) +
             blk_offset_.size()*sizeof(PtrType) + 4;
     }
 
-    int init(int blkid){
+    int init(int blkid, int ft_blk_size, int bin_blk_size){
         blkid_ = blkid;
         data_.clear();
         //row_offset_.clear();
@@ -511,15 +525,12 @@ class DMatrixDenseCubeZCol{
         //row_offset_.push_back(0);
         //blk_offset_.push_back(0);
         
-        rowsize_ = 0;
+        rowsize_ = ft_blk_size;
+        colsize_ = bin_blk_size;
         rowcnt_ = 0;
     }
 
     inline void addrow(){
-        if (rowsize_ == 0){
-            rowsize_ = data_.size();
-        }
-
         //assert
         CHECK_EQ(rowcnt_ * rowsize_, data_.size());
         rowcnt_ ++;
@@ -550,12 +561,27 @@ class DMatrixDenseCubeZCol{
     void save(dmlc::Stream* fs){
         fs->Write((&blkid_), sizeof(blkid_));
         fs->Write((&rowsize_), sizeof(rowsize_));
+        //no use colsize_
+        //fs->Write((&colsize_), sizeof(colsize_));
         fs->Write((&rowcnt_), sizeof(rowcnt_));
         //vectors
-        int vecSize = data_.size();
+        long vecSize = data_.size();
         fs->Write((&vecSize), sizeof(vecSize));
+
         fs->Write((data_.data()), 
                 sizeof(BlkAddrType)*vecSize);
+ 
+        //LOG(CONSOLE) <<"zcol::save vecSize=" << vecSize;
+        ////large file > 2GB
+        //const int chunkSize = 512*1024*1024;
+        //BlkAddrType* dataPtr = data_.data();
+        //for(int i = 0; i < vecSize; i += chunkSize){
+        //    int writeSize = (i + chunkSize > vecSize)? (vecSize % chunkSize):
+        //        chunkSize;
+
+        //    fs->Write(dataPtr + i, sizeof(BlkAddrType)*writeSize);
+        //}
+
         vecSize = blk_offset_.size();
         fs->Write((&vecSize), sizeof(vecSize));
         fs->Write((blk_offset_.data()), 
@@ -565,13 +591,24 @@ class DMatrixDenseCubeZCol{
     void load(dmlc::Stream* fs){
         fs->Read((&blkid_), sizeof(blkid_));
         fs->Read((&rowsize_), sizeof(rowsize_));
+        //no use colsize_
+        //fs->Read((&colsize_), sizeof(colsize_));
         fs->Read((&rowcnt_), sizeof(rowcnt_));
         //vectors
-        int vecSize;
+        long vecSize;
         fs->Read((&vecSize), sizeof(vecSize));
         data_.resize(vecSize);
+
         fs->Read((data_.data()), 
                 sizeof(BlkAddrType)*vecSize);
+        //read large content
+        //const int chunkSize = 512*1024*1024;
+        //BlkAddrType* dataPtr = data_.data();
+        //for(int i = 0; i < vecSize; i += chunkSize){
+        //    int readSize = (i + chunkSize > vecSize)? (vecSize % chunkSize):
+        //        chunkSize;
+        //    fs->Read(dataPtr + i, sizeof(BlkAddrType)*readSize);
+        //}
 
         fs->Read((&vecSize), sizeof(vecSize));
         blk_offset_.resize(vecSize);
@@ -644,7 +681,7 @@ class DMatrixDenseCube : public xgboost::data::SparsePageDMatrix {
         data_.resize(fid_blknum * binid_blknum);
         //todo: init blkid if necessary
         for(int i=0; i < fid_blknum * binid_blknum; i++){
-            data_[i].init(i);
+            data_[i].init(i, blkInfo.GetFeatureBlkSize(), blkInfo.GetBinBlkSize());
         }
     
         LOG(CONSOLE) << "BlockInfo: row_blksize=" << blkInfo.GetRowBlkSize() <<
@@ -654,6 +691,13 @@ class DMatrixDenseCube : public xgboost::data::SparsePageDMatrix {
         LOG(CONSOLE) << "DenseCubeInit:row_blknum=" << row_blknum <<
             ",fid_blknum=" << fid_blknum << ",binid_blknum=" << binid_blknum;
     
+        #ifndef  USE_NOEMPTYPLACEHOLDER
+        std::vector<BlkAddrType> ftmap;
+        //TODO: save different rowsize_ to remove this overhead
+        //should align to even width
+        ftmap.resize(fid_blknum * blkInfo.GetFeatureBlkSize());
+        //const int EMPTYBINID = num_maxbins - 1; /*255*/
+        #endif
         // rowset
         // go through all rows
         int rownum = page.Size();
@@ -672,7 +716,11 @@ class DMatrixDenseCube : public xgboost::data::SparsePageDMatrix {
             }
             addrow();
      
-            //add data
+            //
+            // add data to all zcol
+            // add EMPYT binid to missing value
+            //
+            #ifdef  USE_NOEMPTYPLACEHOLDER
             for (auto& ins: row){
                 //for all <features,binid> items in this row
                 int blkid = (ins.binid / blkInfo.GetBinBlkSize()) * fid_blknum + ins.index / blkInfo.GetFeatureBlkSize(); 
@@ -684,6 +732,25 @@ class DMatrixDenseCube : public xgboost::data::SparsePageDMatrix {
                 // for densecube, save only binid is okay, fid is the index
                 //data_[blkid].append(ins.binid);
             }
+            #else
+
+            std::fill(ftmap.begin(), ftmap.end(),EMPTYBINID);
+
+            for (auto& ins: row){
+                //for all <features,binid> items in this row
+                ftmap[ins.index] = ins.binid;
+            }
+
+            //fill the empty cells
+            for(int j = 0; j < ftmap.size(); j++){
+                int blkid = (ftmap[j] / blkInfo.GetBinBlkSize()) * fid_blknum + j / blkInfo.GetFeatureBlkSize(); 
+
+                CHECK_LT(blkid, data_.size());
+                data_[blkid].append(ftmap[j]);
+            }
+            
+
+            #endif
     
        }
        //add sentinel at the end

@@ -16,6 +16,7 @@
 #include <xgboost/base.h>
 #include <xgboost/tree_updater.h>
 #include <vector>
+#include <atomic>
 #include <queue>
 #include <algorithm>
 #include <string>
@@ -171,7 +172,8 @@ class BlockBaseMakerLossguide: public TreeUpdater {
   struct Node2Index{
     // map nid to mid, the physical plane id
     std::vector<int> index_;
-    int num_leaves;
+    //int num_leaves;
+    std::atomic<int> num_leaves;
 
     inline void Init(int node_num){
         index_.resize(node_num);
@@ -194,9 +196,7 @@ class BlockBaseMakerLossguide: public TreeUpdater {
     inline void append(int nid){
         //todo, remove
         //CHECK_LT(nid, index_.size());
-
-        index_[nid] = num_leaves;
-        num_leaves ++;
+        index_[nid] = num_leaves++;
     }
     // replace parent place for this new node
     inline void replace(int nid, int pid){
@@ -326,6 +326,20 @@ class BlockBaseMakerLossguide: public TreeUpdater {
       s.Add(thread_temp[tid][nid]);
     }
   }
+
+
+  /*
+   * OpenMP Control in MixMode
+   */
+  void StopOpenMP(){
+      runopenmp = false;
+      //posset_.StopOpenMP();
+  }
+  void StartOpenMP(){
+      runopenmp = true;
+      //posset_.StartOpenMP();
+  }
+
   
   /*! \brief training parameter of tree grower */
   TrainParam param_;
@@ -346,6 +360,10 @@ class BlockBaseMakerLossguide: public TreeUpdater {
   POSSetSingle posset_;
 
   TimeInfo tminfo;
+
+  //
+  //
+  bool runopenmp;
 
  private:
 

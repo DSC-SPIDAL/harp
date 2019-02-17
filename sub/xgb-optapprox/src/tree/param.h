@@ -86,12 +86,19 @@ struct TrainParam : public dmlc::Parameter<TrainParam> {
   /* blockSize */
   int block_size;
 
+  /* unit of x block parallelism */
   int row_block_size;
   int ft_block_size;
   int bin_block_size;
-
+  /* unit of node block parallelism */
   int node_block_size;
+
+  /* async mixmode threadnumber */
   int group_parallel_cnt;
+
+  /* topk in lossguide mode */
+  int topk;
+  int async_mixmode;
 
   std::string savemeta;
   std::string loadmeta;
@@ -253,6 +260,14 @@ struct TrainParam : public dmlc::Parameter<TrainParam> {
         .set_default(0)
         .set_lower_bound(0)
         .describe("Run with spinlock and schedule zblocks together.");
+    DMLC_DECLARE_FIELD(topk)
+        .set_default(32)
+        .set_lower_bound(0)
+        .describe("number of node selected out from priority queue in lossguide.");
+    DMLC_DECLARE_FIELD(async_mixmode)
+        .set_default(0)
+        .set_lower_bound(0)
+        .describe("run model parallelism in async mode in which every node grows independently.");
  
 
     // add alias of parameters

@@ -90,7 +90,8 @@ class TreePruner: public TreeUpdater {
 
     //#pragma omp parallel for schedule(static)
     for (int nid = 0; nid < tree.param.num_nodes; ++nid) {
-      #ifdef USE_HALFTRICK
+      //#ifdef USE_HALFTRICK
+      #ifdef USE_HALFTRICK_EX
       //for the dummy leaf nodes, parent==-1
       if (tree[nid].IsLeaf() && !tree[nid].IsDummy()) {
       #else

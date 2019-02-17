@@ -111,6 +111,9 @@ endif
 #
 #	export THREADIMP=tbb
 #endif
+
+CFLAGS += -D_FILE_OFFSET_BITS=64
+
 ifndef NOUSE_COMPACT
 	CFLAGS += -DUSE_COMPACT=1
 endif
@@ -136,6 +139,9 @@ endif
 #
 ifeq ($(USE_DEBUG_SAVE), 1)
 	CFLAGS += -DUSE_DEBUG_SAVE=1
+endif
+ifeq ($(USE_MIXMODE), 1)
+	CFLAGS += -DUSE_MIXMODE=1
 endif
 
 ifeq ($(USE_SPARSE_DMATRIX), 1)

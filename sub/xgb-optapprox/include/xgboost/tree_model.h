@@ -11,6 +11,7 @@
 #include <dmlc/parameter.h>
 #include <limits>
 #include <vector>
+#include <atomic>
 #include <string>
 #include <cstring>
 #include <algorithm>
@@ -21,6 +22,31 @@
 #include "./feature_map.h"
 
 namespace xgboost {
+
+class spin_mutex {
+    volatile std::atomic_flag flag = ATOMIC_FLAG_INIT;
+    unsigned long dirtyCnt_ = 0;
+    public:
+    spin_mutex() = default;
+    spin_mutex(const spin_mutex&) = delete;
+    spin_mutex& operator= (const spin_mutex&) = delete;
+    void lock() {
+        while(flag.test_and_set(std::memory_order_acquire)){
+            __asm__("pause");
+            dirtyCnt_ ++;
+            ;
+        }
+    }
+    void unlock() {
+        flag.clear(std::memory_order_release);
+    }
+
+    unsigned long getCnt(){return dirtyCnt_;}
+    void clear(){
+        dirtyCnt_ = 0;
+    }
+};
+
 
 /*! \brief meta parameters of the tree */
 struct TreeParam : public dmlc::Parameter<TreeParam> {
@@ -133,6 +159,9 @@ class TreeModel {
     inline bool IsDummy() const {
       return parent_ == -2;
     }
+    inline void SetDummy(){
+        parent_ = -2;
+    }
  
     /*!
      * \brief set the right child
@@ -195,7 +224,13 @@ class TreeModel {
     }
   };
 
+ //public 
  protected:
+
+  //thread sage
+  spin_mutex mutex_node_;
+
+
   // vector of nodes
   std::vector<Node> nodes_;
   // free node space, used during training process
@@ -240,6 +275,28 @@ class TreeModel {
   }
 
   #else  
+
+  #ifdef USE_MIXMODE
+  //thread safe code
+  inline int AllocNode() {
+    //remove resize, assume nodes are all pre-allocated
+    mutex_node_.lock();
+    if (param.num_deleted != 0) {
+      int nd = deleted_nodes_.back();
+      deleted_nodes_.pop_back();
+      --param.num_deleted;
+      mutex_node_.unlock();
+      return nd;
+    }
+    mutex_node_.unlock();
+
+    int nd = num_nodes++;
+    return nd;
+
+  }
+
+  #else
+  //standard code
   inline int AllocNode() {
 
     if (param.num_deleted != 0) {
@@ -259,14 +316,17 @@ class TreeModel {
 
   }
   #endif
+  #endif
 
 
   // delete a tree node, keep the parent field to allow trace back
   inline void DeleteNode(int nid) {
+    mutex_node_.lock();
     CHECK_GE(nid, param.num_roots);
     deleted_nodes_.push_back(nid);
     nodes_[nid].MarkDelete();
     ++param.num_deleted;
+    mutex_node_.unlock();
   }
 
  public:
@@ -303,6 +363,8 @@ class TreeModel {
   }
 
  public:
+
+  std::atomic<int> num_nodes;
   /*! \brief model parameter */
   TreeParam param;
   /*! \brief constructor */
@@ -311,7 +373,26 @@ class TreeModel {
     param.num_roots = 1;
     param.num_deleted = 0;
     nodes_.resize(1);
+
+    //local counter
+    num_nodes = 1;
   }
+  //
+  // alloc all nodes in the beginning, in MIXMODE
+  // to keep the memry static in multithreading env
+  //
+  inline void InitModelNodes(int max_nodes){
+    nodes_.resize(max_nodes);
+    stats_.resize(max_nodes);
+    leaf_vector_.resize(max_nodes * param.size_leaf_vector, 0.0f);
+
+    //set all dummy
+    for(int i = 1; i < max_nodes; i++){
+        nodes_[i].SetDummy();
+    }
+
+  }
+
   /*! \brief get node given nid */
   inline Node& operator[](int nid) {
     return nodes_[nid];
@@ -383,7 +464,13 @@ class TreeModel {
    * \brief save model to stream
    * \param fo output stream
    */
-  inline void Save(dmlc::Stream* fo) const {
+  //inline void Save(dmlc::Stream* fo) const {
+  inline void Save(dmlc::Stream* fo) {
+
+    #ifdef USE_MIXMODE
+    param.num_nodes = static_cast<int>(nodes_.size());
+    #endif
+
     CHECK_EQ(param.num_nodes, static_cast<int>(nodes_.size()));
     CHECK_EQ(param.num_nodes, static_cast<int>(stats_.size()));
     fo->Write(&param, sizeof(TreeParam));

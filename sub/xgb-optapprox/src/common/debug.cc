@@ -109,7 +109,10 @@ void printtree(RegTree* ptree, std::string header /*""*/){
 }
 
 void printmsg(std::string msg){
+    static std::mutex mm;
+    mm.lock();
     std::cout << "MSG:" << msg << "\n";
+    mm.unlock();
 }
 
 void printInt(std::string msg, int val){
