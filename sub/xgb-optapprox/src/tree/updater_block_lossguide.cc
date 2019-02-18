@@ -752,22 +752,26 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
     std::atomic<int> num_leaves(0);
     std::atomic<int> timestamp(0);
 
-    int topK;
-    int max_leaves = param_.max_leaves;
+    //int max_leaves = param_.max_leaves;
+    int max_leaves = max_leaves_;
     const int threadNum = omp_get_max_threads();
-    if (param_.grow_policy == TrainParam::kLossGuide) {
-        topK = param_.topk;
-
-        // async_mixmode=2 will skip mixmode
-        if (param_.async_mixmode != 2){
-            max_leaves = threadNum * 2;
-            //max_leaves = threadNum;
+    
+    int topK = param_.topk;
+    if (param_.topk <= 0){
+        if (param_.grow_policy != TrainParam::kLossGuide) {
+            topK = max_leaves_;
+        }
+        else{
+            topK = 1;
         }
     }
-    else{
-        topK = max_leaves_;
-    }
 
+    // async_mixmode=2 will skip mixmode
+    if (param_.async_mixmode != 2){
+        max_leaves = threadNum * 2;
+        //max_leaves = threadNum;
+    }
+ 
     //stop condition
 
     std::vector<int> build_nodeset;
@@ -806,7 +810,8 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
         ",async_mode=" << param_.async_mixmode <<
         ",topk=" << param_.topk;
 
-    if (param_.grow_policy == TrainParam::kLossGuide) {
+    //if (param_.grow_policy == TrainParam::kLossGuide) {
+    {
         const int nsize = bwork_set_.size();
         // block number in the row dimension
         const int zsize = p_blkmat->GetBlockZCol(0).GetBlockNum();
@@ -837,7 +842,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
         }
         GrowTheTree(gpair, p_fmat, p_tree, param_,
                 num_leaves, timestamp, 
-                param_.max_leaves - threadNum,
+                max_leaves_ - threadNum,
                 topK /*topK*/
                 );
         //restore the nodebk setting
@@ -847,7 +852,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
 
     // end part, go back to openmp
     GrowTheTree(gpair, p_fmat, p_tree, param_,
-            num_leaves, timestamp, param_.max_leaves, topK);
+            num_leaves, timestamp, max_leaves_, topK);
 
     //reset the binid to fvalue in this tree
     ResetTree(*p_tree);
@@ -942,7 +947,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
               //
               // only the final run will set leaf when stop condition matched
               //
-              if (max_leaves == param.max_leaves){
+              if (max_leaves == max_leaves_){
                   //continue popout until queue empty
                   (*p_tree)[nid].SetLeaf(p_tree->Stat(nid).base_weight * param_.learning_rate);
               }
@@ -1059,7 +1064,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
                       std::atomic<int>& timestamp
                       ) {
 
-    CHECK_LT(num_leaves, param_.max_leaves);
+    CHECK_LT(num_leaves, max_leaves_);
 
     //LOG(CONSOLE) << "Enter node parallel mode: num_leaves=" << num_leaves 
     //    << ",group_parallel_cnt=" << param_.group_parallel_cnt;
@@ -1070,7 +1075,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
 
     // spawn threads
     int threadNum = param_.group_parallel_cnt;
-    CHECK_GT(param_.max_leaves - threadNum, 0);
+    CHECK_GT(max_leaves_ - threadNum, 0);
     //int threadNum = omp_get_max_threads();
     //const int threadNum = 1;
     std::vector<std::thread> threads;
@@ -1080,7 +1085,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
         threads.push_back(std::thread([&]{
                    GrowTheTree(gpair, p_fmat, p_tree, param_,
                        num_leaves, timestamp, 
-                       param_.max_leaves - threadNum,
+                       max_leaves_ - threadNum,
                        1 /*topK*/,
                        threadid /*threadid*/
                        );}));
@@ -2737,12 +2742,12 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
         #ifdef USE_DEBUG
         LOG(CONSOLE) << "BuildHist:: datasum_=" << this->datasum_;
         #endif
-        if (param_.grow_policy != TrainParam::kLossGuide) {
-        LOG(CONSOLE) << "BuildHist:: qsize=" << qsize << 
-            ",nsize=" << nsize << ",zsize=" << zsize << 
-            ",nodeset_size=" << build_nodeset.size() <<
-            ",largeset_size=" << large_nodeset.size();
-        }
+        //if (param_.grow_policy != TrainParam::kLossGuide) {
+        //LOG(CONSOLE) << "BuildHist:: qsize=" << qsize << 
+        //    ",nsize=" << nsize << ",zsize=" << zsize << 
+        //    ",nodeset_size=" << build_nodeset.size() <<
+        //    ",largeset_size=" << large_nodeset.size();
+        //}
 
         this->tminfo.buildhist_time += dmlc::GetTime() - _tstart;
       } // end of one-page
