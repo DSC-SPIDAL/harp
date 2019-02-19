@@ -13,10 +13,9 @@ Testbed of gbt optimization project
 + 11212018    Proposal of block-based parallelism, priliminary results of a simple version (single feature column as a block) [link](https://github.iu.edu/pengb/gbt-test/tree/master/doc/meeting/1121-GBTReport)
 + 11302018    C++ Collective Communication operator, allreduce, rotate, ready, by Chathura. [link](https://github.com/DSC-SPIDAL/harpc)
 + 01072019    Block-based parallelism full version ready and Report at[10.BlockParallelReport](run/10.BlockParallelReport) at tag [block_parallelism_gbt](https://github.iu.edu/pengb/gbt-test/tree/block_parallelism_gbt)
++ 02192019    Intel ShowCase report at[15.IntelShowCase](run/15.IntelShowCase) at tag [unity-02192019](https://github.iu.edu/pengb/gbt-test/tree/unity-02192019)
 
 ### Tasks To-do list
 
-+ block-based parallelism, full version
-+ performance evaluation
 + distributed version with block-based kernel
 + pruning of ghsum statistics building process
