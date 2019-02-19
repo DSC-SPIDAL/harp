@@ -39,32 +39,6 @@ using xgboost::common::HistCutMatrix;
 
 DMLC_REGISTRY_FILE_TAG(updater_block_lossguide);
 
-class spin_mutex {
-    volatile std::atomic_flag flag = ATOMIC_FLAG_INIT;
-    unsigned long dirtyCnt_ = 0;
-    public:
-    spin_mutex() = default;
-    spin_mutex(const spin_mutex&) = delete;
-    spin_mutex& operator= (const spin_mutex&) = delete;
-    void lock() {
-        while(flag.test_and_set(std::memory_order_acquire)){
-            __asm__("pause");
-            dirtyCnt_ ++;
-            ;
-        }
-    }
-    void unlock() {
-        flag.clear(std::memory_order_release);
-    }
-
-    unsigned long getCnt(){return dirtyCnt_;}
-    void clear(){
-        dirtyCnt_ = 0;
-    }
-};
-
-
-//template<typename TStats, typename TDMatrixCube, typename TDMatrixCubeBlock>
 template<typename TStats, typename TBlkAddr, template<typename> class TDMatrixCube, template<typename> class TDMatrixCubeBlock>
 class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
  public:
@@ -565,32 +539,6 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
 
    }
 
-    //
-    // alloc memory for model
-    //
-    void reallocModelMem(const TrainParam &param, int nodesize, int rowblknum = 1){
-        unsigned long cubesize = hset.pblkInfo->GetModelCubeSize(param.max_bin, hset.featnum, nodesize);
-
-        hset.nodeSize = nodesize;
-        hset.rowblknum = rowblknum;
-        cubesize *= rowblknum;
-
-        LOG(CONSOLE)<< "Init hset(memset),nodesize:" << nodesize <<
-            ",rowblknum:" << rowblknum <<
-            ",cubesize:" << cubesize << ":" << 8*cubesize/(1024*1024*1024) << "GB";
-
-        if (hset.data != nullptr){
-            std::free(hset.data);
-        }
-        // add sum at the end
-        hset.data = static_cast<TStats*>(malloc(sizeof(TStats) * cubesize));
-        hset.size = cubesize;
-        if (hset.data == nullptr){
-            LOG(CONSOLE) << "FATAL ERROR, quit";
-            std::exit(-1);
-        }
-    }
-
     void release(){
         if (hset.data != nullptr){
             std::free(hset.data);
@@ -615,13 +563,6 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
     inline size_t Size() const {
       return rptr.size() - 1;
     }
-
-    //debug 
-    #ifdef USE_DEBUG_SAVE
-    void saveGHSum(int treeid, int depth, int nodecnt){
-    }
-    #endif
-
 
   };
 
@@ -743,19 +684,24 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
             &(this->thread_stats_), 
             &(this->wspace_.hset.GetNodeSum(0)));
 
-    // init the tree
+    // init the nodes in the tree
     p_tree->InitModelNodes(max_leaves_ * 2);
 
-    // start tree building
-    int depth = 0;
-
+    // init the counters on num_leaves to track the progress
+    // of tree growth
     std::atomic<int> num_leaves(0);
     std::atomic<int> timestamp(0);
 
-    //int max_leaves = param_.max_leaves;
-    int max_leaves = max_leaves_;
+    // init the stop condition of phase1
+    int max_leaves_phase1 = max_leaves_;
     const int threadNum = omp_get_max_threads();
+    // async_mixmode=2 will skip mixmode
+    if (param_.async_mixmode != 2){
+        //max_leaves_phase1 = threadNum;
+        max_leaves_phase1 = threadNum * 2;
+    }
     
+    // init the number of nodes pop out from the priority queue
     int topK = param_.topk;
     if (param_.topk <= 0){
         if (param_.grow_policy != TrainParam::kLossGuide) {
@@ -766,93 +712,92 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
         }
     }
 
-    // async_mixmode=2 will skip mixmode
-    if (param_.async_mixmode != 2){
-        max_leaves = threadNum * 2;
-        //max_leaves = threadNum;
-    }
- 
-    //stop condition
 
-    std::vector<int> build_nodeset;
-    std::vector<int> large_nodeset;
-    std::vector<int> split_nodeset;
-    //depth
-    std::vector<int> build_depth;
-    std::vector<int> large_depth;
-    std::vector<int> split_depth;
-
-    SplitInfo splitOutput;
-    SplitResult splitResult;
-
-    // start from the root node
-    this->StartOpenMP();
-    build_nodeset.push_back(0);
-    large_nodeset.clear();
-    BuildHist(gpair, build_nodeset, large_nodeset, bwork_set_, *p_tree);
-
-    printtree(p_tree, "After CreateHist");
-
-    FindSplit(gpair, work_set_, build_nodeset, splitOutput);
- 
-
-    qexpand_->push(this->newEntry(0, 0 /* depth */, splitOutput.sol[0], 
-                splitOutput.left_sum[0], timestamp++));
-    num_leaves++;
-
-    // first few nodes, openmp
-    GrowTheTree(gpair, p_fmat, p_tree, param_,
-            num_leaves, timestamp, max_leaves, topK);
-
-    // mix mode, go on with the remain expansion in node parallelism
-    LOG(CONSOLE) << "Enter node parallel mode: num_leaves=" << num_leaves 
-        << ",group_parallel_cnt=" << param_.group_parallel_cnt <<
-        ",async_mode=" << param_.async_mixmode <<
-        ",topk=" << param_.topk;
-
-    //if (param_.grow_policy == TrainParam::kLossGuide) {
+    // process the root node
     {
-        const int nsize = bwork_set_.size();
-        // block number in the row dimension
-        const int zsize = p_blkmat->GetBlockZCol(0).GetBlockNum();
-        // block number in the node dimension
-        const int qsize = param_.topk/ param_.node_block_size + ((param_.topk % param_.node_block_size)?1:0);
+        std::vector<int> build_nodeset;
+        std::vector<int> large_nodeset;
+        std::vector<int> split_nodeset;
+        //depth
+        std::vector<int> build_depth;
+        std::vector<int> large_depth;
+        std::vector<int> split_depth;
 
-        LOG(CONSOLE) << "BuildHist:: qsize=" << qsize << 
-            ",nsize=" << nsize << ",zsize=" << zsize;
-    }
+        SplitInfo splitOutput;
+        SplitResult splitResult;
 
-
-    int save_dataparallelism = param_.data_parallelism;
-    param_.data_parallelism = 0;
-    if (param_.async_mixmode == 1){
-        this->StopOpenMP();
-        //this->DisableDataParallelism();
-        UpdateWithNodeParallel(gpair, p_fmat, p_tree,
-                num_leaves, timestamp);
+        // start from the root node
         this->StartOpenMP();
-        //this->EnableDataParallelism();
-    }
-    else{
-        // stop dataparallelism only
-        // set node_block_size = 1 in lossguide
-        int save_nodeblksize = param_.node_block_size;
-        if (param_.grow_policy == TrainParam::kLossGuide) {
-        //    param_.node_block_size = 1;
-        }
-        GrowTheTree(gpair, p_fmat, p_tree, param_,
-                num_leaves, timestamp, 
-                max_leaves_ - threadNum,
-                topK /*topK*/
-                );
-        //restore the nodebk setting
-        param_.node_block_size = save_nodeblksize;
-    }
-    param_.data_parallelism = save_dataparallelism;
+        build_nodeset.push_back(0);
+        large_nodeset.clear();
+        BuildHist(gpair, build_nodeset, large_nodeset, bwork_set_, *p_tree);
 
-    // end part, go back to openmp
+        printtree(p_tree, "After CreateHist");
+
+        FindSplit(gpair, work_set_, build_nodeset, splitOutput);
+ 
+
+        qexpand_->push(this->newEntry(0, 0 /* depth */, splitOutput.sol[0], 
+                    splitOutput.left_sum[0], timestamp++));
+        num_leaves++;
+    }
+
+    // go to the first phase, in mose cases for few nodes with openmp
     GrowTheTree(gpair, p_fmat, p_tree, param_,
-            num_leaves, timestamp, max_leaves_, topK);
+            num_leaves, timestamp, max_leaves_phase1, topK);
+
+    if (max_leaves_phase1 < max_leaves_){
+        // mix mode, go on with the remain expansion in node parallelism
+        LOG(CONSOLE) << "Enter node parallel mode: num_leaves=" << num_leaves 
+            << ",group_parallel_cnt=" << param_.group_parallel_cnt <<
+            ",async_mode=" << param_.async_mixmode <<
+            ",topk=" << param_.topk;
+
+        //if (param_.grow_policy == TrainParam::kLossGuide) {
+        {
+            const int nsize = bwork_set_.size();
+            // block number in the row dimension
+            const int zsize = p_blkmat->GetBlockZCol(0).GetBlockNum();
+            // block number in the node dimension
+            const int qsize = param_.topk/ param_.node_block_size + ((param_.topk % param_.node_block_size)?1:0);
+
+            LOG(CONSOLE) << "BuildHist:: qsize=" << qsize << 
+                ",nsize=" << nsize << ",zsize=" << zsize;
+        }
+
+        //
+        // model parallelism in the middle phase
+        //
+        int save_dataparallelism = param_.data_parallelism;
+        // stop dataparallelism
+        param_.data_parallelism = 0;
+        if (param_.async_mixmode == 1){
+            this->StopOpenMP();
+            UpdateWithNodeParallel(gpair, p_fmat, p_tree,
+                    num_leaves, timestamp);
+            this->StartOpenMP();
+        }
+        else{
+            // stop dataparallelism only
+            // set node_block_size = 1 in lossguide
+            int save_nodeblksize = param_.node_block_size;
+            if (param_.grow_policy == TrainParam::kLossGuide) {
+            //    param_.node_block_size = 1;
+            }
+            GrowTheTree(gpair, p_fmat, p_tree, param_,
+                    num_leaves, timestamp, 
+                    max_leaves_ - threadNum,
+                    topK /*topK*/
+                    );
+            //restore the nodebk setting
+            param_.node_block_size = save_nodeblksize;
+        }
+        param_.data_parallelism = save_dataparallelism;
+
+        // end part, go back to openmp
+        GrowTheTree(gpair, p_fmat, p_tree, param_,
+                num_leaves, timestamp, max_leaves_, topK);
+    }
 
     //reset the binid to fvalue in this tree
     ResetTree(*p_tree);
@@ -941,30 +886,51 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
           mutex_qexpand_.unlock();
 
           if (candidate.sol.loss_chg <= kRtEps){
+              //
+              // set to permanent leaf when loss_chg is too small
+              //
               (*p_tree)[nid].SetLeaf(p_tree->Stat(nid).base_weight * param_.learning_rate);
-          } else if((param_.max_depth > 0 && candidate.depth == param_.max_depth)
-              || (param_.max_leaves > 0 && num_leaves + popCnt == max_leaves) ) {
+          } else if(param_.max_depth > 0 && candidate.depth == param_.max_depth){
+              //
+              // when stop condition matches for depth aspect
+              //
+              (*p_tree)[nid].SetLeaf(p_tree->Stat(nid).base_weight * param_.learning_rate);
+              //if (param_.grow_policy == TrainParam::kLossGuide) {
+              //    //continue popout until queue empty
+              //    (*p_tree)[nid].SetLeaf(p_tree->Stat(nid).base_weight * param_.learning_rate);
+              //}
+              //else{
+              //    // depthwise mode, last level leaves should not 
+              //    // go to the priority queue
+              //    // should not be here
+              //    CHECK_NE(1,1);
+              //}
+          //} else if(param_.max_leaves > 0 && num_leaves + popCnt == max_leaves){
+          } else if(num_leaves + popCnt == max_leaves){
+              //
+              // when stop condition matches for num_leaves aspect
               //
               // only the final run will set leaf when stop condition matched
-              //
               if (max_leaves == max_leaves_){
                   //continue popout until queue empty
                   (*p_tree)[nid].SetLeaf(p_tree->Stat(nid).base_weight * param_.learning_rate);
               }
               else{
-                  //jump out, leave nodes in the queue
+                  // jump out, stop pop out
+                  // and go for work at once
                   break;
-
               }
           } else {
-              // add to split set
+              //
+              // add to split set, they are ready to go
+              //
               split_nodeset.push_back(nid);
               split_depth.push_back(candidate.depth);
               splitOutput.append(candidate.sol, candidate.left_sum);
 
               popCnt ++;
           }
-        }
+        } /* end of while pop out nodes */
 
         //quit if no need to split
         if (split_nodeset.size() == 0) continue;
@@ -1005,8 +971,6 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
                     param_.max_depth, p_tree);
             printVec("AfterRemove build_nodeset:", build_nodeset);
             printVec("AfterRemove build_depth:", build_depth);
-
-
         }
 
         if (build_nodeset.size() == 0 && large_nodeset.size() == 0) continue;
@@ -1042,7 +1006,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
         num_leaves -= large_nodeset.size();
 
         //check finish
-        if (max_leaves != param.max_leaves && num_leaves >= max_leaves) {
+        if (max_leaves != max_leaves_ && num_leaves >= max_leaves) {
           //in the middle, can jump out
           //but the last one, must wait until all items in the queue pop out
           break;
@@ -1054,7 +1018,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
   /*
    * Build Tree By node parallelism
    * each node runs in parallel to grow the tree
-   * this generate a different tree 
+   * this generates a different tree 
    *
    */
   void UpdateWithNodeParallel(const std::vector<GradientPair> &gpair,
@@ -1066,18 +1030,15 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
 
     CHECK_LT(num_leaves, max_leaves_);
 
-    //LOG(CONSOLE) << "Enter node parallel mode: num_leaves=" << num_leaves 
-    //    << ",group_parallel_cnt=" << param_.group_parallel_cnt;
-
-    //use stomic as shared data structure
-    //std::atomic<int> num_leaves(nleaves);
-    //std::atomic<int> timestamp(tstamp);
-
+    //
     // spawn threads
+    //
+    // group_parallel_cnt can be different with omp_max_threads()
+    // in debug mode
+    //
     int threadNum = param_.group_parallel_cnt;
     CHECK_GT(max_leaves_ - threadNum, 0);
-    //int threadNum = omp_get_max_threads();
-    //const int threadNum = 1;
+
     std::vector<std::thread> threads;
     for(int i = 0; i < threadNum; i++){
         const int threadid = i;
@@ -1096,22 +1057,6 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
     {
         threads.at(i).join();
     }
-
-
-    ////debug only
-    //threads.clear();
-    //threadNum = 1;
-    //for(int i = 0; i < threadNum; ++i){
-    //    threads.push_back(std::thread([&]{
-    //               BuildTree4OneNode(gpair, p_fmat, p_tree, param_,
-    //                   num_leaves, timestamp, param_.max_leaves);}));
-    //}
-
-    ////wait for end
-    //for(int i = 0; i < threads.size() ; i++)
-    //{
-    //    threads.at(i).join();
-    //}
 
   }
 
@@ -1911,7 +1856,6 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
         int rowblknum = blkInfo_.GetRowBlkNum(dmat_info_.num_row_);
         this->wspace_.Init(this->param_, max_leaves_, 
                 this->blkInfo_, rowblknum);
-        //this->wspace_.reallocModelMem(this->param_, max_leaves_, rowblknum);
 
         // save meta mat
         if (!param_.savemeta.empty()){
