@@ -74,7 +74,8 @@ void printtree(RegTree* ptree, std::string header /*""*/){
        ",num_roots=" << ptree->param.num_roots <<
        ",deleted=" << ptree->param.num_deleted << "\n";
 
-   int nsize = ptree->GetNodes().size();
+   //int nsize = ptree->GetNodes().size();
+   int nsize = ptree->getSize();
    for(int i=0; i< nsize; i++){
        auto node = ptree->GetNodes()[i];
        auto stat = ptree->Stat(i);

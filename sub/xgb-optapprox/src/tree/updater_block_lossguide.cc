@@ -379,6 +379,16 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
         }
     }
 
+    //debug
+    void print(char* tag, std::vector<int>& nodeset){
+        const int num_node = sol.size();
+        for (int wid = 0; wid < num_node; ++wid) {
+            std::cout << tag << " nid:" << nodeset[wid] << ",fid:" << sol[wid].SplitIndex() <<
+                ",val:" << sol[wid].split_value << 
+                ",loss:" << sol[wid].loss_chg << "\n";
+        }
+    }
+
   };
 
   /*
@@ -986,87 +996,125 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
 
         if (build_nodeset.size() == 0 && large_nodeset.size() == 0) continue;
 
-#ifdef USE_NOMODELROTATE
-        // do buildhist  
-        printVec("BuildHist on build_nodeset:", build_nodeset);
-        printVec("BuildHist on large_nodeset:", large_nodeset);
-        BuildHist(gpair, build_nodeset, large_nodeset, bwork_set_, *p_tree, threadid);
-        printtree(p_tree, "After CreateHist");
-
-        // 4. find split for these nodes
-        if(large_nodeset.size() > 0){
-            build_nodeset.insert(build_nodeset.end(), large_nodeset.begin(),
-                    large_nodeset.end());
-            build_depth.insert(build_depth.end(), large_depth.begin(),
-                    large_depth.end());
-        }
-        FindSplit(gpair, work_set_, build_nodeset, splitOutput, threadid);
-#else
-        // ================= begin simulate model rotation ==========================
-
         const int workerNum = param_.num_worker;
-        std::vector<int> nullset;
-        std::vector<bst_uint> bwork_set;
-        std::vector<bst_uint> fwork_set;
-        nullset.resize(0);
-
-
-        for ( int i = 0; i < workerNum; i++){
-            //prepare the bwork_set
-            const int bblk_chunksize = bwork_set_.size()/workerNum;
-            const int bblk_size = (i == workerNum-1)? 
-                    (bwork_set_.size() - i* bblk_chunksize): bblk_chunksize;
-            bwork_set.resize(bblk_size);
-            std::copy(bwork_set.begin(), bwork_set.end(), bwork_set_.data()+i * bblk_size);
-
+        if (workerNum <= 1){
             // do buildhist  
             printVec("BuildHist on build_nodeset:", build_nodeset);
             printVec("BuildHist on large_nodeset:", large_nodeset);
-
-            LOG(CONSOLE) << "BuildHist on worker: " << i <<
-                ",bwork_set.size=" << bwork_set.size() <<
-                ",[" << bwork_set[0];
-
-            BuildHist(gpair, build_nodeset, nullset, bwork_set, *p_tree, threadid);
+            BuildHist(gpair, build_nodeset, large_nodeset, bwork_set_, *p_tree, threadid);
             printtree(p_tree, "After CreateHist");
 
-        }
-        //halftrick
-        BuildHist(gpair, nullset, large_nodeset, bwork_set_, *p_tree, threadid);
-
-
-        // 4. find split for these nodes
-        if(large_nodeset.size() > 0){
-            build_nodeset.insert(build_nodeset.end(), large_nodeset.begin(),
-                    large_nodeset.end());
-            build_depth.insert(build_depth.end(), large_depth.begin(),
-                    large_depth.end());
-        }
-
-        for ( int i = 0; i < workerNum; i++){
-            SplitInfo splitOutputPartial;
-            const int fblk_chunksize = work_set_.size()/workerNum;
-            const int fblk_size = (i == workerNum-1)? 
-                    (work_set_.size() - i* fblk_chunksize): fblk_chunksize;
-            fwork_set.resize(fblk_size);
-            std::copy(fwork_set.begin(), fwork_set.end(), work_set_.data()+i * fblk_size);
-
-            LOG(CONSOLE) << "FindSplit on worker: " << i <<
-                ",fwork_set.size=" << fwork_set.size() <<
-                ",[" << fwork_set[0];
-
-            FindSplit(gpair, fwork_set, build_nodeset, splitOutputPartial, threadid);
-
-            if (i==0){
-                splitOutput = splitOutputPartial;
+            // 4. find split for these nodes
+            if(large_nodeset.size() > 0){
+                build_nodeset.insert(build_nodeset.end(), large_nodeset.begin(),
+                        large_nodeset.end());
+                build_depth.insert(build_depth.end(), large_depth.begin(),
+                        large_depth.end());
             }
-            else{
-                splitOutput.update(splitOutputPartial);
-            }
-        }
 
-        // ================= end simulate model rotation ==========================
+            FindSplit(gpair, work_set_, build_nodeset, splitOutput, threadid);
+            //debug
+            #ifdef USE_DEBUG
+            splitOutput.print("SplitInfo", build_nodeset);
+            #endif      
+            
+        }
+        else{
+            // ================= begin simulate model rotation ==========================
+
+            std::vector<int> nullset;
+            std::vector<bst_uint> bwork_set;
+            std::vector<bst_uint> fwork_set;
+            nullset.resize(0);
+
+
+#ifdef TRUE_ROTATE
+            BuildHist(gpair, build_nodeset, large_nodeset, bwork_set_, *p_tree, threadid);
+#else
+            const int bblk_chunksize = (bwork_set_.size() + workerNum -1)/workerNum;
+            for ( int i = 0; i < workerNum; i++){
+                //prepare the bwork_set
+                const int bblk_size = (i == workerNum-1)? 
+                        (bwork_set_.size() - i* bblk_chunksize): bblk_chunksize;
+                bwork_set.resize(bblk_size);
+                std::copy(bwork_set_.data() + i*bblk_size, 
+                        bwork_set_.data() + i*bblk_size + bblk_size,
+                        bwork_set.begin() );
+
+                // do buildhist  
+                printVec("BuildHist on build_nodeset:", build_nodeset);
+                printVec("BuildHist on large_nodeset:", large_nodeset);
+
+                //LOG(CONSOLE) << "BuildHist on worker: " << i <<
+                //    ",bwork_set.size=" << bwork_set.size();
+                printVec("bwork_set:" , bwork_set);
+
+
+                #ifdef USE_DEBUG
+                {
+                    const int nsize = bwork_set_.size();
+                    // block number in the row dimension
+                    const int zsize = p_blkmat->GetBlockZCol(0).GetBlockNum();
+                    // block number in the node dimension
+                    const int qsize = build_nodeset.size()/ param_.node_block_size + ((build_nodeset.size() % param_.node_block_size)?1:0);
+                    LOG(CONSOLE) << "BuildHist:: qsize=" << qsize << 
+                        ",nsize=" << nsize << ",zsize=" << zsize;
+                }
+                #endif
+
+                BuildHist(gpair, build_nodeset, nullset, bwork_set, *p_tree, threadid);
+                BuildHist(gpair, nullset, large_nodeset, bwork_set, *p_tree, threadid);
+                //BuildHist(gpair, build_nodeset, large_nodeset, bwork_set, *p_tree, threadid);
+                printtree(p_tree, "After CreateHist");
+
+            }
+            //halftrick
+            //BuildHist(gpair, nullset, large_nodeset, bwork_set_, *p_tree, threadid);
+
 #endif
+            // 4. find split for these nodes
+            if(large_nodeset.size() > 0){
+                build_nodeset.insert(build_nodeset.end(), large_nodeset.begin(),
+                        large_nodeset.end());
+                build_depth.insert(build_depth.end(), large_depth.begin(),
+                        large_depth.end());
+            }
+
+            const int fblk_chunksize = (fwork_set_.size() + workerNum -1)/workerNum;
+            for ( int i = 0; i < workerNum; i++){
+                SplitInfo splitOutputPartial;
+                const int fblk_size = (i == workerNum-1)? 
+                        (work_set_.size() - i* fblk_chunksize): fblk_chunksize;
+                fwork_set.resize(fblk_size);
+                std::copy(fwork_set_.data() + i*fblk_size, 
+                        fwork_set_.data() + i*fblk_size + fblk_size,
+                        fwork_set.begin() );
+
+
+                //LOG(CONSOLE) << "FindSplit on worker: " << i <<
+                //    ",fwork_set.size=" << fwork_set.size();
+                printVec("fwork_set:" , fwork_set);
+
+                FindSplit(gpair, fwork_set, build_nodeset, splitOutputPartial, threadid);
+                #ifdef USE_DEBUG
+                splitOutputPartial.print("SplitInfoPartial", build_nodeset);
+                #endif
+
+                if (i == 0){
+                    splitOutput = splitOutputPartial;
+                }
+                else{
+                    splitOutput.update(splitOutputPartial);
+                }
+
+                //debug
+                #ifdef USE_DEBUG
+                splitOutput.print("SplitInfo", build_nodeset);
+                #endif
+            }
+            // ================= end simulate model rotation ==========================
+        }
+
 
         // 4. push result to queue
         for (int i = 0; i < build_nodeset.size(); i++){
@@ -1276,7 +1324,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
     #pragma omp parallel for schedule(static) if(runopenmp)
     for (size_t i = 0; i < fset.size(); ++i) {
         int tid = (threadid == -1)?omp_get_thread_num():threadid;
-        int fid = i;
+        int fid = fset[i];
         
         std::vector<SplitEntry>& sol = thread_splitinfo_[tid].sol;
         std::vector<TStats>& left_sum = thread_splitinfo_[tid].left_sum;
@@ -2514,10 +2562,10 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
                   const int threadid = -1) {
       const MetaInfo &info = dmat_info_;
 
-      if (build_nodeset.size() == 0){
+      //if (build_nodeset.size() == 0){
         //last step to update position 
-        return;
-      }
+      //  return;
+      //}
 
       // start enumeration
       double _tstart = dmlc::GetTime();
@@ -2535,7 +2583,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
       this->datasum_ = 0.;
       #endif
 
-      if(qsize > 0){
+      if(build_nodeset.size() > 0){
         //
         // use data parallelism will bulid model on replicas
         // it's efficient for thin matrix
@@ -2738,6 +2786,9 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
                                 &this->thread_histcompact_[tid]);
                         }
                     }
+
+                    //debug
+                    datasum_ += 1;
                 }
             }
 
@@ -2759,6 +2810,9 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
 
             this->UpdateHalfTrick(offset, tree, large_nodeset);
           }
+
+          //debug
+          datasum_ += 10000;
           this->tminfo.aux_time[6] += dmlc::GetTime() - _tstart2;
           #endif
       }

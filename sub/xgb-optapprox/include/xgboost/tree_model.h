@@ -377,6 +377,10 @@ class TreeModel {
     //local counter
     num_nodes = 1;
   }
+
+  inline int getSize(){
+      return num_nodes;
+  }
   //
   // alloc all nodes in the beginning, in MIXMODE
   // to keep the memry static in multithreading env
