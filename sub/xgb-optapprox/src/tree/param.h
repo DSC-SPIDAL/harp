@@ -105,6 +105,7 @@ struct TrainParam : public dmlc::Parameter<TrainParam> {
 
   int data_parallelism;
   int use_spinlock;
+  int num_worker;
 
   // declare the parameters
   DMLC_DECLARE_PARAMETER(TrainParam) {
@@ -268,7 +269,13 @@ struct TrainParam : public dmlc::Parameter<TrainParam> {
         .set_default(0)
         .set_lower_bound(0)
         .describe("run model parallelism in async mode in which every node grows independently.");
+     DMLC_DECLARE_FIELD(num_worker)
+        .set_default(1)
+        .set_lower_bound(0)
+        .describe("simulate the model rotation with workers.");
  
+
+
 
     // add alias of parameters
     DMLC_DECLARE_ALIAS(reg_lambda, lambda);
