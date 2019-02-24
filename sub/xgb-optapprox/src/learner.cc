@@ -158,12 +158,16 @@ DMLC_REGISTER_PARAMETER(LearnerTrainParam);
  */
 class LearnerImpl : public Learner {
  public:
-  explicit LearnerImpl(std::vector<std::shared_ptr<DMatrix> >  cache)
-      : cache_(std::move(cache)) {
+  explicit LearnerImpl(std::vector<std::shared_ptr<DMatrix> > cache)
+      : cache_(std::move(cache)){
     // boosted tree
     name_obj_ = "reg:linear";
     name_gbm_ = "gbtree";
+    harpCom_ = nullptr;
+    
   }
+
+void setHarpCom(harp::com::Communicator* harpCom) override {harpCom_ = harpCom;}
 
   static void AssertGPUSupport() {
 #ifndef XGBOOST_USE_CUDA
@@ -171,6 +175,7 @@ class LearnerImpl : public Learner {
 #endif
   }
 
+  // TODO: add the harpcom to updator
   void ConfigureUpdaters() {
     if (tparam_.tree_method == 0 || tparam_.tree_method == 1 ||
         tparam_.tree_method == 2) {
@@ -243,6 +248,7 @@ class LearnerImpl : public Learner {
                 " updater=" << cfg_["updater"] << "\n";
   }
 
+  // configure the updator but not yet create an updator
   void Configure(
       const std::vector<std::pair<std::string, std::string> >& args) override {
     // add to configurations
@@ -285,6 +291,7 @@ class LearnerImpl : public Learner {
       cfg_["max_delta_step"] = kMaxDeltaStepDefaultValue;
     }
 
+    // only configure not create the updator
     ConfigureUpdaters();
 
     if (cfg_.count("objective") == 0) {
@@ -294,6 +301,7 @@ class LearnerImpl : public Learner {
       cfg_["booster"] = "gbtree";
     }
 
+    // initialize the model and params
     if (!this->ModelInitialized()) {
       mparam_.InitAllowUnknown(args);
       name_obj_ = cfg_["objective"];
@@ -307,7 +315,11 @@ class LearnerImpl : public Learner {
     cfg_["num_class"] = common::ToString(mparam_.num_class);
 
     if (gbm_ != nullptr) {
+      // configure the gbm 
+      // focus on the gbm_ to be gbtree  
       gbm_->Configure(cfg_.begin(), cfg_.end());
+      // assign the harp communicator
+      gbm_->setHarpCom(harpCom_);
     }
     if (obj_ != nullptr) {
       obj_->Configure(cfg_.begin(), cfg_.end());
@@ -423,7 +435,12 @@ class LearnerImpl : public Learner {
       fo->Write(metr);
     }
   }
-
+  /**
+   * @brief The major function for training one iteration
+   * 
+   * @param iter 
+   * @param train 
+   */
   void UpdateOneIter(int iter, DMatrix* train) override {
     monitor_.Start("UpdateOneIter");
     CHECK(ModelInitialized())
@@ -437,7 +454,6 @@ class LearnerImpl : public Learner {
     monitor_.Stop("PredictRaw");
 
     //save preds
-    //
     save_preds(this->iterid_, this->tparam_.tree_method, preds_);
 
 
@@ -448,6 +464,7 @@ class LearnerImpl : public Learner {
     
     save_grads(this->iterid_, this->tparam_.tree_method, gpair_);
 
+    // the major step of training
     gbm_->DoBoost(train, &gpair_, obj_.get());
     monitor_.Stop("UpdateOneIter");
 
@@ -563,37 +580,80 @@ class LearnerImpl : public Learner {
       cfg_["updater"] = "grow_histmaker,prune";
       if (gbm_ != nullptr) {
         gbm_->Configure(cfg_.begin(), cfg_.end());
+        gbm_->setHarpCom(harpCom_);
       }
     }
   }
 
   // return whether model is already initialized.
   inline bool ModelInitialized() const { return gbm_ != nullptr; }
-  // lazily initialize the model if it haven't yet been initialized.
+
   inline void LazyInitModel() {
     if (this->ModelInitialized()) return;
     // estimate feature bound
     unsigned num_feature = 0;
+
+    // obtain the maximal feature number from training data and evaluation data
     for (auto & matrix : cache_) {
       CHECK(matrix != nullptr);
       num_feature = std::max(num_feature,
                              static_cast<unsigned>(matrix->Info().num_col_));
     }
+
     // run allreduce on num_feature to find the maximum value
     rabit::Allreduce<rabit::op::Max>(&num_feature, 1);
-    if (num_feature > mparam_.num_feature) {
-      mparam_.num_feature = num_feature;
+    if (harpCom_ != nullptr && harpCom_->getWorldSize() > 1)
+    {
+      // int num_feature_all = 0;
+      // int *num_feature_local = new int[1];
+      // num_feature_local[0] = (int)num_feature;
+      // harp::ds::Table<int> *fNumTable = new harp::ds::Table<int>(harpCom_->getWorkerId());
+      // fNumTable->addPartition(new harp::ds::Partition<int>(0, num_feature_local, 1));
+      // // doing allreduce
+      // harpCom_->allReduce<int>(fNumTable, MPI_MAX);
+      // num_feature_all = (*(fNumTable->getPartition(0)->getData()));
+      int num_feature_global = (int)num_feature;
+      harp::ds::Table<int> *fNumTable = new harp::ds::Table<int>(harpCom_->getWorkerId());
+      fNumTable->addPartition(new harp::ds::Partition<int>(0, &num_feature_global, 1));
+      harpCom_->allReduce<int>(fNumTable, MPI_MAX, true);
+
+      // if (num_feature_all > mparam_.num_feature)
+      if (num_feature_global > mparam_.num_feature)
+      {
+        // mparam_.num_feature = (unsigned)num_feature_all;
+        mparam_.num_feature = (unsigned)num_feature_global;
+      }
+
+      fNumTable->removePartition(0, false);
+      delete fNumTable;
     }
+    else
+    {
+      // adjust the param of feature number
+      if (num_feature > mparam_.num_feature)
+      {
+        mparam_.num_feature = num_feature;
+      }
+    }
+
     // setup
     cfg_["num_feature"] = common::ToString(mparam_.num_feature);
+
     CHECK(obj_ == nullptr && gbm_ == nullptr);
+
     obj_.reset(ObjFunction::Create(name_obj_));
     obj_->Configure(cfg_.begin(), cfg_.end());
+
     // reset the base score
     mparam_.base_score = obj_->ProbToMargin(mparam_.base_score);
+    // reset and configure gbm 
     gbm_.reset(GradientBooster::Create(name_gbm_, cache_, mparam_.base_score));
     gbm_->Configure(cfg_.begin(), cfg_.end());
+    // setup the harp comm
+    gbm_->setHarpCom(harpCom_);
+
   }
+
   /*!
    * \brief get un-transformed prediction
    * \param data training data matrix
@@ -628,6 +688,9 @@ class LearnerImpl : public Learner {
   // iterid
   int iterid_{0};
 
+  // harp communicator
+  harp::com::Communicator* harpCom_;
+
  private:
   /*! \brief random number transformation seed. */
   static const int kRandSeedMagic = 127;
@@ -635,6 +698,8 @@ class LearnerImpl : public Learner {
   std::vector<std::shared_ptr<DMatrix> > cache_;
 
   common::Monitor monitor_;
+
+
 };
 
 Learner* Learner::Create(

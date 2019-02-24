@@ -15,6 +15,8 @@
 #include "../tree/param.h"
 #include "./quantile.h"
 
+#include "harp.h"
+
 namespace xgboost {
 
 namespace common {
@@ -86,9 +88,9 @@ struct HistCutMatrix {
 
   // create histogram cut matrix given statistics from data
   // using approximate quantile sketch approach
-  void Init(DMatrix* p_fmat, uint32_t max_num_bins);
+  void Init(DMatrix* p_fmat, uint32_t max_num_bins, harp::com::Communicator* harpCom = nullptr);
 
-  void Init(std::vector<WXQSketch>* sketchs, uint32_t max_num_bins);
+  void Init(std::vector<WXQSketch>* sketchs, uint32_t max_num_bins, harp::com::Communicator* harpCom = nullptr);
 };
 
 /*! \brief Builds the cut matrix on the GPU */

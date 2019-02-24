@@ -24,6 +24,10 @@
 #include "./common/debug.h"
 #include <fstream>
 
+//add the harp communication library
+#include "harp.h"
+using namespace harp;
+
 #ifndef USE_OMP_BUILDHIST
 #include "tbb/task.h"
 #include "tbb/task_scheduler_init.h"
@@ -169,46 +173,87 @@ struct CLIParam : public dmlc::Parameter<CLIParam> {
 
 DMLC_REGISTER_PARAMETER(CLIParam);
 
-void CLITrain(const CLIParam& param) {
+
+/**
+ * @brief the kernel to train the xgboost model
+ *
+ * @param param
+ */
+void CLITrain(const CLIParam& param, com::Communicator* harpComm) {
+
   const double tstart_data_load = dmlc::GetTime();
+
   if (rabit::IsDistributed()) {
     std::string pname = rabit::GetProcessorName();
     LOG(CONSOLE) << "start " << pname << ":" << rabit::GetRank();
   }
-  // load in data.
+
+  // ---------------- prepare the training data ----------------
+  // load in data for each (harp) mapper
+  // a pointer to the training data (dense mat)
+  // TODO: load data from distributed storage
+  // (1) convert dtrain into harp tables (split into partitions)
+  // (2) regroup the data  
   std::shared_ptr<DMatrix> dtrain(
       DMatrix::Load(param.train_path, param.silent != 0, param.dsplit == 2));
+
   std::vector<std::shared_ptr<DMatrix> > deval;
+
+  // cache_mats has both of training and test data pointer
+  // what is cache_mats for ??
   std::vector<std::shared_ptr<DMatrix> > cache_mats;
+  // evaluation datasets
   std::vector<DMatrix*> eval_datasets;
+
+  // load in the training data 
   cache_mats.push_back(dtrain);
+
+  harpComm->barrier();
+
+  // ---------------- prepare the evaluation data ----------------
+  // load in the evaluation (test) data 
+  // TODO: this shall be on node 0
   for (size_t i = 0; i < param.eval_data_names.size(); ++i) {
+
     deval.emplace_back(
         std::shared_ptr<DMatrix>(DMatrix::Load(param.eval_data_paths[i],
                                                param.silent != 0, param.dsplit == 2)));
     eval_datasets.push_back(deval.back().get());
     cache_mats.push_back(deval.back());
   }
+
+  // TODO: evaluation only on node 0
   std::vector<std::string> eval_data_names = param.eval_data_names;
   if (param.eval_train) {
     eval_datasets.push_back(dtrain.get());
     eval_data_names.emplace_back("train");
   }
+
+  harpComm->barrier();
+
   // initialize the learner.
+  // TODO: partition the model data to each distributed node 
+  // what is the size of the cache_mats ? 
+  // pass the com::Communicator to learner 
   std::unique_ptr<Learner> learner(Learner::Create(cache_mats));
+  learner->setHarpCom(harpComm);
   int version = rabit::LoadCheckPoint(learner.get());
   if (version == 0) {
     // initialize the model if needed.
+    // if there is the given initial data for the model, load the data
+    // TODO: split and distributed the loaded initial model
     if (param.model_in != "NULL") {
       std::unique_ptr<dmlc::Stream> fi(
           dmlc::Stream::Create(param.model_in.c_str(), "r"));
       learner->Load(fi.get());
       learner->Configure(param.cfg);
     } else {
+      // configure and generate the initial model
       learner->Configure(param.cfg);
       learner->InitModel();
     }
   }
+
   if (param.silent == 0) {
     LOG(INFO) << "Loading data: " << dmlc::GetTime() - tstart_data_load << " sec";
   }
@@ -227,28 +272,42 @@ void CLITrain(const CLIParam& param) {
   #endif
 
   // start training.
+  harpComm->barrier();
+  // shall be on multiple distributed nodes
   const double start = dmlc::GetTime();
-  for (int i = version / 2; i < param.num_round; ++i) {
+  for (int i = version / 2; i < param.num_round; ++i) 
+  {
     double elapsed = dmlc::GetTime() - start;
-    if (version % 2 == 0) {
+
+    if (version % 2 == 0) 
+    {
       if (param.silent == 0) {
         LOG(CONSOLE) << "boosting round " << i << ", " << elapsed << " sec elapsed";
       }
+
+      // update the model
+      // to be distributed
       learner->UpdateOneIter(i, dtrain.get());
+
+      // for fault-tolerance
       if (learner->AllowLazyCheckPoint()) {
         rabit::LazyCheckPoint(learner.get());
       } else {
         rabit::CheckPoint(learner.get());
       }
+
       version += 1;
     }
 
+    harpComm->barrier();
     /*
      * add output evaluation result
+     * TODO:shall be on node 0
      */
     if (param.silent < 2 &&
         param.eval_period != 0 &&
-        (i + 1) % param.eval_period == 0) {
+        (i + 1) % param.eval_period == 0) 
+    {
  
         CHECK_EQ(version, rabit::VersionNumber());
         std::string res = learner->EvalOneIter(i, eval_datasets, eval_data_names);
@@ -263,12 +322,16 @@ void CLITrain(const CLIParam& param) {
         }
     }
 
+    harpComm->barrier();
     /*
-     * save model
+     * save model (partial)
+     * TODO: on node 0
+     * 
      */
     if (param.save_period != 0 &&
         (i + 1) % param.save_period == 0 &&
-        rabit::GetRank() == 0) {
+        harpComm->getWorkerId() == 0) {
+        // rabit::GetRank() == 0) {
       std::ostringstream os;
       os << param.model_dir << '/'
          << std::setfill('0') << std::setw(4)
@@ -285,13 +348,17 @@ void CLITrain(const CLIParam& param) {
     }
     version += 1;
     CHECK_EQ(version, rabit::VersionNumber());
-  }
+
+    harpComm->barrier();
+
+  } // end of iterative training process 
 
   //
   //bugfix: calculate training time here rather than at the end
   //otherwise including the model saving time 
+  // TODO: on node 0
   //
-  if (param.silent == 0) {
+  if (param.silent == 0 && harpComm->getWorkerId() == 0) {
     double elapsed = dmlc::GetTime() - start;
     LOG(CONSOLE) << "update end, " << elapsed << " sec in all";
 
@@ -305,6 +372,7 @@ void CLITrain(const CLIParam& param) {
   }
 
   //eval the final model
+  // TODO: on node 0
   if (param.silent < 2 && param.eval_period != 0 && 
           (param.num_round % param.eval_period) != 0){
       CHECK_EQ(version, rabit::VersionNumber());
@@ -321,9 +389,11 @@ void CLITrain(const CLIParam& param) {
   }
 
   // always save final round
+  // TODO: on node 0
   if ((param.save_period == 0 || param.num_round % param.save_period != 0) &&
       param.model_out != "NONE" &&
-      rabit::GetRank() == 0) {
+      harpComm->getWorkerId() == 0) {
+      // rabit::GetRank() == 0) {
     std::ostringstream os;
     if (param.model_out == "NULL") {
       os << param.model_dir << '/'
@@ -412,11 +482,13 @@ void CLIPredict(const CLIParam& param) {
   os.set_stream(nullptr);
 }
 
-int CLIRunTask(int argc, char *argv[]) {
+int CLIRunTask(int argc, char *argv[], com::Communicator* harpComm) {
   if (argc < 2) {
     printf("Usage: <config>\n");
     return 0;
   }
+
+  //another layer of communication by rabit, disbale it
   rabit::Init(argc, argv);
 
   std::vector<std::pair<std::string, std::string> > cfg;
@@ -433,19 +505,56 @@ int CLIRunTask(int argc, char *argv[]) {
       cfg.emplace_back(std::string(name), std::string(val));
     }
   }
+
+  // config params
   CLIParam param;
   param.Configure(cfg);
 
+  // execution
   switch (param.task) {
-    case kTrain: CLITrain(param); break;
+    case kTrain: CLITrain(param, harpComm); break; /*train the model, to be distributed*/
     case kDumpModel: CLIDumpModel(param); break;
     case kPredict: CLIPredict(param); break;
   }
+
   rabit::Finalize();
   return 0;
 }
 }  // namespace xgboost
 
+// the launcher of harpc-xgboost
+class HGBTWorker : public Worker {
+    // re-implement the execution of harp worker (mpi procs)
+    public:
+        HGBTWorker(): _argc(0), _argv(nullptr) {}
+
+    void execute(com::Communicator *comm) override 
+    {
+        comm->barrier();
+        xgboost::CLIRunTask(_argc, _argv, comm);
+    }
+
+    void initGBT(int argc, char** argv) 
+    {
+        init(argc, argv); 
+        _argc = argc;
+        _argv = argv; 
+    }
+
+    private:
+
+        int _argc;
+        char** _argv;
+
+};
+
 int main(int argc, char *argv[]) {
-  return xgboost::CLIRunTask(argc, argv);
+
+    HGBTWorker hgbtWorker;
+    // initialize the mpi comm 
+    hgbtWorker.initGBT(argc, argv);
+    // start the mpi procs underyling harp
+    hgbtWorker.start();
+    return 0;
+    //return xgboost::CLIRunTask(argc, argv);
 }

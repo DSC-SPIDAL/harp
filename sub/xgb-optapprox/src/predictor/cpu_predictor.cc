@@ -152,6 +152,7 @@ class CPUPredictor : public Predictor {
   }
 
  public:
+  // predict the output prior to calculating error (gradient)
   void PredictBatch(DMatrix* dmat, HostDeviceVector<bst_float>* out_preds,
                     const gbm::GBTreeModel& model, int tree_begin,
                     unsigned ntree_limit = 0) override {

@@ -16,7 +16,7 @@
 namespace xgboost {
 namespace common {
 
-void HistCutMatrix::Init(DMatrix* p_fmat, uint32_t max_num_bins) {
+void HistCutMatrix::Init(DMatrix* p_fmat, uint32_t max_num_bins, harp::com::Communicator* harpCom) {
   const MetaInfo& info = p_fmat->Info();
 
   // safe factor for better accuracy
@@ -33,6 +33,7 @@ void HistCutMatrix::Init(DMatrix* p_fmat, uint32_t max_num_bins) {
   }
 
   const auto& weights = info.weights_.HostVector();
+  // fetch a batch from the training data
   for (const auto &batch : p_fmat->GetRowBatches()) {
     #pragma omp parallel num_threads(nthread)
     {
@@ -56,15 +57,26 @@ void HistCutMatrix::Init(DMatrix* p_fmat, uint32_t max_num_bins) {
     }
   }
 
-  Init(&sketchs, max_num_bins);
+  Init(&sketchs, max_num_bins, harpCom);
 }
-
+/**
+ * @brief check for the allreduce pattern
+ * 
+ * @param in_sketchs 
+ * @param max_num_bins 
+ */
 void HistCutMatrix::Init
-(std::vector<WXQSketch>* in_sketchs, uint32_t max_num_bins) {
+(std::vector<WXQSketch>* in_sketchs, uint32_t max_num_bins, harp::com::Communicator* harpCom) {
+
   std::vector<WXQSketch>& sketchs = *in_sketchs;
   constexpr int kFactor = 8;
-  // gather the histogram data
-  rabit::SerializeReducer<WXQSketch::SummaryContainer> sreducer;
+
+  // gather the histogram data customized allreduce in rabit
+  // re-implement this by using harp allreduce
+  // ----------- start of allreducing the summary_array -----------
+  // having a workaround to load allreduced SummaryContainer from disk
+
+/*   rabit::SerializeReducer<WXQSketch::SummaryContainer> sreducer;
   std::vector<WXQSketch::SummaryContainer> summary_array;
   summary_array.resize(sketchs.size());
   for (size_t i = 0; i < sketchs.size(); ++i) {
@@ -74,7 +86,96 @@ void HistCutMatrix::Init
     summary_array[i].SetPrune(out, max_num_bins * kFactor);
   }
   size_t nbytes = WXQSketch::SummaryContainer::CalcMemCost(max_num_bins * kFactor);
+  // allreduce on the std::vector of the SummaryContainer type
   sreducer.Allreduce(dmlc::BeginPtr(summary_array), nbytes, summary_array.size());
+
+ */  // ----------- end of allreducing the summary_array -----------
+
+  // ----------------- start allgather via harp on serialized summary_array -----------------
+  LOG(CONSOLE) << "Start the Cut Init" <<std::endl;
+
+  std::vector<WXQSketch::SummaryContainer> summary_array;
+  summary_array.resize(sketchs.size());
+  for (size_t i = 0; i < sketchs.size(); ++i) {
+    WXQSketch::SummaryContainer out;
+    sketchs[i].GetSummary(&out);
+    summary_array[i].Reserve(max_num_bins * kFactor);
+    summary_array[i].SetPrune(out, max_num_bins * kFactor);
+  }
+  
+  // debug printout the content of summary_array
+  /* for(int i = 0; i < summary_array.size(); i++)
+  {
+    std::cout<<"Beofre allreduce worker: " << harpCom->getWorkerId() << " Summary container " << i << " is: " 
+    << summary_array[i].data[3].value << std::endl;
+  } */
+  
+
+  // serialize to char* array
+  if (harpCom && harpCom->getWorldSize() > 1)
+  {
+  
+  size_t nbytesElement = WXQSketch::SummaryContainer::CalcMemCost(max_num_bins * kFactor);
+  size_t nbytes = nbytesElement*summary_array.size();
+  char* psumBuffer = new char[nbytes/sizeof(char)];
+  // std::string sumBuffer;
+  // sumBuffer.resize(nbytes);
+  // std::string* psumBuffer = &sumBuffer; 
+  for (size_t i = 0; i < summary_array.size(); ++i) {
+      rabit::utils::MemoryFixSizeBuffer fs(&psumBuffer[0] + i*nbytesElement, nbytesElement);
+      summary_array[i].Save(fs);
+  }
+
+  // create the harp table<char>
+  int* psumBufInt = reinterpret_cast<int*>(psumBuffer);
+  harp::ds::Table<int>* syncTable = new harp::ds::Table<int>(harpCom->getWorkerId());
+  harp::ds::Partition<int>* dataPar = new harp::ds::Partition<int>(harpCom->getWorkerId(), psumBufInt, nbytes/sizeof(int));
+  syncTable->addPartition(dataPar);
+
+  LOG(CONSOLE) << "Finish the Cut Init Serialization" <<std::endl;
+  // trigger the allgather function
+  LOG(CONSOLE) << "Start the Cut Init allreduce nybtes: " << nbytes <<std::endl;
+  harpCom->allGather<int>(syncTable);
+
+  LOG(CONSOLE) << "Finish the Cut Init allreduce" <<std::endl;
+  // now syncTable contains multiple partitions
+  // sreducer.Allreduce(dmlc::BeginPtr(summary_array), nbytes, summary_array.size());
+  // ----------------- end allgather via harp on serialized summary_array -----------------
+  // deserialize from syncTable
+  // syncTable->resetIterator();
+  syncTable->resetIndex();
+  while(syncTable->hasNext())
+  {
+    harp::ds::Partition<int>* pPar = syncTable->nextPartition();
+    if (pPar->getId() != harpCom->getWorkerId())
+    {
+      // reduce
+      char* summaryBase = reinterpret_cast<char*>(pPar->getData()); 
+      for(int j=0;j<summary_array.size(); j++)
+      {
+        WXQSketch::SummaryContainer recvElem;
+        rabit::utils::MemoryFixSizeBuffer fsrc(summaryBase + j*nbytesElement, nbytesElement); // NOLINT(*)
+        recvElem.Load(fsrc);
+        summary_array[j].Reduce(static_cast<const WXQSketch::SummaryContainer &>(recvElem), nbytesElement);
+      }
+
+    }
+  }
+
+  LOG(CONSOLE) << "Finish the Cut Init deserialization" <<std::endl;
+     // clean table
+     harp::ds::util::deleteTable(syncTable, true);
+
+  }
+
+  LOG(CONSOLE) << "End the Cut Init" <<std::endl;
+
+  // debug printout the content of summary_array
+  /* for(int i = 0; i < summary_array.size(); i++)
+  {
+    std::cout<<"After allreduce worker: " << harpCom->getWorkerId() << " Summary container " << i << " is: " 
+    << summary_array[i].data[3].value << std::endl;
+  } */
 
   this->min_val.resize(sketchs.size());
   row_ptr.push_back(0);

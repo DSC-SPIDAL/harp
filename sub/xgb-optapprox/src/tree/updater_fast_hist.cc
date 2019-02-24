@@ -602,6 +602,8 @@ class FastHistMaker: public TreeUpdater {
 
     }
 
+    // check whether allreduce op
+    // : no allreduce op
     inline void ApplySplit(int nid,
                            const GHistIndexMatrix& gmat,
                            const ColumnMatrix& column_matrix,
@@ -659,6 +661,7 @@ class FastHistMaker: public TreeUpdater {
         nid, row_split_tloc_, (*p_tree)[nid].LeftChild(), (*p_tree)[nid].RightChild());
     }
 
+    // no allreduce op
     inline void ApplySplitDenseData(const RowSetCollection::Elem rowset,
                                     const GHistIndexMatrix& gmat,
                                     std::vector<RowSetCollection::Split>* p_row_split_tloc,

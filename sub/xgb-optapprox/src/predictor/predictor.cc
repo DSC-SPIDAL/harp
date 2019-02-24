@@ -30,12 +30,22 @@ void Predictor::Init(
           << d.get()->Info().num_col_ ;
     }
   }
+
+  // initialize harpCom
+  harpCom_ = nullptr;
+
 }
+// set up the harp communicator
+void Predictor::setHarpCom(harp::com::Communicator* harpCom){
+      harpCom_ = harpCom;
+}
+
 Predictor* Predictor::Create(std::string name) {
   auto* e = ::dmlc::Registry<PredictorReg>::Get()->Find(name);
   if (e == nullptr) {
     LOG(FATAL) << "Unknown predictor type " << name;
   }
+
   return (e->body)();
 }
 }  // namespace xgboost

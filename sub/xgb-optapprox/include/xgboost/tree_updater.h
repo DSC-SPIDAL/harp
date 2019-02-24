@@ -17,6 +17,7 @@
 #include "./data.h"
 #include "./tree_model.h"
 #include "../../src/common/host_device_vector.h"
+#include "harp.h"
 
 namespace xgboost {
 /*!
@@ -31,6 +32,15 @@ class TreeUpdater {
    * \param args arguments to the objective function.
    */
   virtual void Init(const std::vector<std::pair<std::string, std::string> >& args) = 0;
+
+  /**
+   * @brief Set the Harp Com object
+   * 
+   * @param harpCom 
+   */
+  virtual void setHarpCom(harp::com::Communicator* harpCom) {}
+  virtual void enableModelRotation() {}
+  virtual void enableRotationPipeline() {}
   /*!
    * \brief perform update to the tree models
    * \param gpair the gradient pair statistics of the data

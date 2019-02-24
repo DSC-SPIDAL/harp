@@ -17,7 +17,11 @@
 #include "./metric.h"
 #include "./objective.h"
 
+//add the harp communication library
+#include "harp.h"
+
 namespace xgboost {
+
 /*!
  * \brief Learner class that does training and prediction.
  *  This is the user facing module of xgboost training.
@@ -58,6 +62,8 @@ class Learner : public rabit::Serializable {
    *  An model have to be either Loaded or initialized before Update/Predict/Save can be called.
    */
   virtual void InitModel() = 0;
+  // set harp communicator
+  virtual void setHarpCom(harp::com::Communicator* harpCom) {}
   /*!
    * \brief load model from stream
    * \param fi input stream.
@@ -176,11 +182,13 @@ class Learner : public rabit::Serializable {
    * \param cache_data The matrix to cache the prediction.
    * \return Created learner.
    */
-  static Learner* Create(const std::vector<std::shared_ptr<DMatrix> >& cache_data);
+  static Learner* Create(const std::vector<std::shared_ptr<DMatrix> >& cache_data); // cache_data is the model data
 
   virtual TimeInfo getTimeInfo(){
     return gbm_->getTimeInfo();
   }
+
+  
 
  protected:
   /*! \brief internal base score of the model */
@@ -191,6 +199,7 @@ class Learner : public rabit::Serializable {
   std::unique_ptr<GradientBooster> gbm_;
   /*! \brief The evaluation metrics used to evaluate the model. */
   std::vector<std::unique_ptr<Metric> > metrics_;
+
 };
 
 // implementation of inline functions.

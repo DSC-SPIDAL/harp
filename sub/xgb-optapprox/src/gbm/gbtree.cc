@@ -22,6 +22,7 @@
 #include "../common/random.h"
 #include "gbtree_model.h"
 #include "../common/timer.h"
+#include "harp.h"
 
 namespace xgboost {
 namespace gbm {
@@ -134,14 +135,20 @@ struct CacheEntry {
 };
 
 // gradient boosted trees
+// create a member to be harpCom
 class GBTree : public GradientBooster {
  public:
-  explicit GBTree(bst_float base_margin) : model_(base_margin) {}
+  explicit GBTree(bst_float base_margin) : model_(base_margin), harpCom_(nullptr) {}
 
   void InitCache(const std::vector<std::shared_ptr<DMatrix> > &cache) {
     cache_ = cache;
   }
 
+  void setHarpCom(harp::com::Communicator* harpCom) override {
+    harpCom_ = harpCom;
+  }
+
+  // check this: the initialization of model and updator
   void Configure(const std::vector<std::pair<std::string, std::string> >& cfg) override {
     this->cfg_ = cfg;
     model_.Configure(cfg);
@@ -157,7 +164,8 @@ class GBTree : public GradientBooster {
       model_.InitTreesToUpdate();
     }
 
-    // configure predictor
+    // configure predictor (focus on the cpu version)
+    // add the harpcom 
     predictor_ = std::unique_ptr<Predictor>(Predictor::Create(tparam_.predictor));
     predictor_->Init(cfg, cache_);
     monitor_.Init("GBTree", tparam_.debug_verbose);
@@ -180,6 +188,14 @@ class GBTree : public GradientBooster {
         tparam_.updater_seq.find("distcol") != std::string::npos;
   }
 
+  /**
+   * @brief The major step of training the boost tree
+   * check the place of creating the updator and pass the harpCom
+   * 
+   * @param p_fmat 
+   * @param in_gpair 
+   * @param obj 
+   */
   void DoBoost(DMatrix* p_fmat,
                HostDeviceVector<GradientPair>* in_gpair,
                ObjFunction* obj) override {
@@ -187,10 +203,12 @@ class GBTree : public GradientBooster {
     const int ngroup = model_.param.num_output_group;
     monitor_.Start("BoostNewTrees");
     if (ngroup == 1) {
+      // check this branch for the gbt
       std::vector<std::unique_ptr<RegTree> > ret;
       BoostNewTrees(in_gpair, p_fmat, 0, &ret);
       new_trees.push_back(std::move(ret));
     } else {
+      // for random forest
       CHECK_EQ(in_gpair->Size() % ngroup, 0U)
           << "must have exactly ngroup*nrow gpairs";
       // TODO(canonizer): perform this on GPU if HostDeviceVector has device set.
@@ -257,6 +275,7 @@ class GBTree : public GradientBooster {
 
  protected:
   // initialize updater before using them
+  // may contain more than one updator
   inline void InitUpdater() {
     if (updaters_.size() != 0) return;
     std::string tval = tparam_.updater_seq;
@@ -264,19 +283,35 @@ class GBTree : public GradientBooster {
     for (const std::string& pstr : ups) {
       std::unique_ptr<TreeUpdater> up(TreeUpdater::Create(pstr.c_str()));
       up->Init(this->cfg_);
+      // set up harp communicator
+      up->setHarpCom(harpCom_);
+      // comment out this for allreduce version
+      //up->enableModelRotation();
+      //up->enableRotationPipeline();
       updaters_.push_back(std::move(up));
     }
   }
 
   // do group specific group
+  /**
+   * @brief the major function of creating a new boost tree
+   * 
+   * @param gpair 
+   * @param p_fmat 
+   * @param bst_group 
+   * @param ret 
+   */
   inline void BoostNewTrees(HostDeviceVector<GradientPair>* gpair,
                             DMatrix *p_fmat,
                             int bst_group,
                             std::vector<std::unique_ptr<RegTree> >* ret) {
+    // create the updator (block updator)
+    // shall pass the harpCom
     this->InitUpdater();
     std::vector<RegTree*> new_trees;
     ret->clear();
     // create the trees
+    // num_parallel_tree shall be one
     for (int i = 0; i < tparam_.num_parallel_tree; ++i) {
       if (tparam_.process_type == kDefault) {
         // create new tree
@@ -295,6 +330,7 @@ class GBTree : public GradientBooster {
       }
     }
     // update the trees
+    // the major step for training the trees 
     for (auto& up : updaters_) {
       up->Update(gpair, p_fmat, new_trees);
 }
@@ -337,6 +373,9 @@ class GBTree : public GradientBooster {
   std::vector<std::shared_ptr<DMatrix>> cache_;
   std::unique_ptr<Predictor> predictor_;
   common::Monitor monitor_;
+
+  harp::com::Communicator* harpCom_;
+  
 };
 
 // dart

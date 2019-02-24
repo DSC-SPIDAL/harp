@@ -14,6 +14,7 @@
 #include <vector>
 #include "../../src/gbm/gbtree_model.h"
 #include "../../src/common/host_device_vector.h"
+#include "harp.h"
 
 // Forward declarations
 namespace xgboost {
@@ -160,6 +161,7 @@ class Predictor {
                                    unsigned ntree_limit = 0,
                                    bool approximate = false) = 0;
 
+  void setHarpCom(harp::com::Communicator* harpCom); 
   /**
    * \fn  static Predictor* Predictor::Create(std::string name);
    *
@@ -168,6 +170,8 @@ class Predictor {
    */
 
   static Predictor* Create(std::string name);
+
+
 
  protected:
   /**
@@ -186,6 +190,7 @@ class Predictor {
    */
 
   std::unordered_map<DMatrix*, PredictionCacheEntry> cache_;
+  harp::com::Communicator* harpCom_;
 };
 
 /*!

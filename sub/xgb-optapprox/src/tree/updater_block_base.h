@@ -26,6 +26,7 @@
 #include "../common/random.h"
 #include "../common/quantile.h"
 #include "../common/pos_set.h"
+#include "harp.h"
 
 namespace xgboost {
 namespace tree {
@@ -70,6 +71,24 @@ class BlockBaseMaker: public TreeUpdater {
     inline void SyncInfo() {
       rabit::Allreduce<rabit::op::Max>(dmlc::BeginPtr(fminmax_), fminmax_.size());
     }
+  
+    /**
+     * @brief overload the syncrhonize the information by using harp
+     * 
+     * @param harpCom 
+     */
+    inline void SyncInfo(harp::com::Communicator* harpCom) {
+      // bst_float* sendBuf = new bst_float[fminmax_.size()];
+      harp::ds::Table<bst_float>* syncTable = 
+      new harp::ds::Table<bst_float>(harpCom->getWorkerId());
+      harp::ds::Partition<bst_float>* syncPar = 
+      new harp::ds::Partition<bst_float>(0, &fminmax_[0], fminmax_.size());
+      syncTable->addPartition(syncPar);
+      harpCom->allReduce<bst_float>(syncTable, MPI_MAX, true);
+      syncTable->removePartition(0, false);
+      delete syncTable;
+    } 
+
     // get feature type, 0:empty 1:binary 2:real
     inline int Type(bst_uint fid) const {
       CHECK_LT(fid * 2 + 1, fminmax_.size())
@@ -148,6 +167,9 @@ class BlockBaseMaker: public TreeUpdater {
       //        << "root index exceed setting";
       //  }
       //}
+
+      // posset init require an allreduce operation ?
+      // no allreduce operation
       posset_.Init(gpair.size(),omp_get_max_threads(), rowblksize);
       //posset_.InitEntry(gpair.size());
 
@@ -185,6 +207,7 @@ class BlockBaseMaker: public TreeUpdater {
     }
   }
   /*! \brief update queue expand add in new leaves */
+  // no allreduce com op here
   void UpdateQueueExpand(const RegTree &tree) {
     std::vector<int> newnodes;
     for (int nid : qexpand_) {

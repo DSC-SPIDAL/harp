@@ -19,6 +19,7 @@
 #include "./objective.h"
 #include "./feature_map.h"
 #include "../../src/common/host_device_vector.h"
+#include "harp.h"
 
 namespace xgboost {
 /*!
@@ -61,6 +62,9 @@ class GradientBooster {
   virtual bool AllowLazyCheckPoint() const {
     return false;
   }
+
+  virtual void setHarpCom(harp::com::Communicator* harpCom) {}
+
   /*!
    * \brief perform update to the model(boosting)
    * \param p_fmat feature matrix that provide access to features

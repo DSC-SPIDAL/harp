@@ -177,6 +177,12 @@ else
 	export SPLIT=splitonft
 endif
 
+# harpc features
+ifeq ($(USE_HARP),1)
+	export HARPINCFLAGS=-I$(HARP_INCLUDE) -I$(MPI_PATH)/include
+	export HARPLDFLAGS=-Wl,-rpath,$(MPI_PATH)/lib $(MPI_PATH)/lib/libmpi.so
+endif
+
 #
 # deprecated, remove unroll support
 #
@@ -323,22 +329,22 @@ include tests/cpp/xgboost_test.mk
 
 $(WORKDIR)/%.o: src/%.cc
 	@mkdir -p $(@D)
-	$(CXX) $(CFLAGS) -MM -MT $(WORKDIR)/$*.o $< >$(WORKDIR)/$*.d
-	$(CXX) -c $(CFLAGS) $< -o $@
+	$(CXX) $(CFLAGS) $(HARPINCFLAGS) -MM -MT $(WORKDIR)/$*.o $< >$(WORKDIR)/$*.d
+	$(CXX) -c $(CFLAGS) $(HARPINCFLAGS) $< -o $@
 
 build_plugin/%.o: plugin/%.cc
 	@mkdir -p $(@D)
-	$(CXX) $(CFLAGS) -MM -MT build_plugin/$*.o $< >build_plugin/$*.d
-	$(CXX) -c $(CFLAGS) $< -o $@
+	$(CXX) $(CFLAGS) $(HARPINCFLAGS) -MM -MT build_plugin/$*.o $< >build_plugin/$*.d
+	$(CXX) -c $(CFLAGS) $(HARPINCFLAGS) $< -o $@
 
 # The should be equivalent to $(ALL_OBJ)  except for build/cli_main.o
 amalgamation/xgboost-all0.o: amalgamation/xgboost-all0.cc
-	$(CXX) -c $(CFLAGS) $< -o $@
+	$(CXX) -c $(CFLAGS) $(HARPINCFLAGS) $< -o $@
 
 # Equivalent to lib/libxgboost_all.so
 lib/libxgboost_all.so: $(AMALGA_OBJ) $(LIB_DEP)
 	@mkdir -p $(@D)
-	$(CXX) $(CFLAGS) -shared -o $@ $(filter %.o %.a, $^) $(LDFLAGS)
+	$(CXX) $(CFLAGS) $(HARPINCFLAGS) -shared -o $@ $(filter %.o %.a, $^) $(LDFLAGS) $(HARPLDFLAGS)
 
 lib/libxgboost.a: $(ALL_DEP)
 	@mkdir -p $(@D)
@@ -346,16 +352,16 @@ lib/libxgboost.a: $(ALL_DEP)
 
 lib/xgboost.dll lib/libxgboost.so lib/libxgboost.dylib: $(ALL_DEP)
 	@mkdir -p $(@D)
-	$(CXX) $(CFLAGS) -shared -o $@ $(filter %.o %a,  $^) $(LDFLAGS)
+	$(CXX) $(CFLAGS) $(HARPINCFLAGS) -shared -o $@ $(filter %.o %a,  $^) $(LDFLAGS) $(HARPLDFLAGS)
 
 jvm-packages/lib/libxgboost4j.so: jvm-packages/xgboost4j/src/native/xgboost4j.cpp $(ALL_DEP)
 	@mkdir -p $(@D)
-	$(CXX) $(CFLAGS) $(JAVAINCFLAGS) -shared -o $@ $(filter %.cpp %.o %.a, $^) $(LDFLAGS)
+	$(CXX) $(CFLAGS) $(HARPINCFLAGS) $(JAVAINCFLAGS) -shared -o $@ $(filter %.cpp %.o %.a, $^) $(LDFLAGS) $(HARPLDFLAGS)
 
 
 #xgboost: $(CLI_OBJ) $(ALL_DEP)
 $(TARGET): $(CLI_OBJ) $(ALL_DEP)
-	$(CXX) $(CFLAGS) -o $@  $(filter %.o %.a, $^)  $(LDFLAGS)
+	$(CXX) $(CFLAGS) $(HARPINCFLAGS) -o $@  $(filter %.o %.a, $^)  $(LDFLAGS) $(HARPLDFLAGS)
 
 #xgboost: $(CLI_OBJ) $(ALL_DEP)
 #	$(CXX) $(CFLAGS) -o $@  $(filter %.o %.a, $^)  $(LDFLAGS)

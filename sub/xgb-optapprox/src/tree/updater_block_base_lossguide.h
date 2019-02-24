@@ -29,6 +29,8 @@
 #include "../common/quantile.h"
 #include "../common/pos_set_lossguide.h"
 
+#include "harp.h"
+
 namespace xgboost {
 namespace tree {
 /*!
@@ -73,6 +75,40 @@ class BlockBaseMakerLossguide: public TreeUpdater {
     inline void SyncInfo() {
       rabit::Allreduce<rabit::op::Max>(dmlc::BeginPtr(fminmax_), fminmax_.size());
     }
+
+    /**
+     * @brief overload the syncrhonize the information by using harp
+     * 
+     * @param harpCom 
+     */
+    inline void SyncInfo(harp::com::Communicator* harpCom) {
+      // bst_float* sendBuf = new bst_float[fminmax_.size()];
+      // check the max allreduce
+      //debug
+      /* for(int i = 0; i < fminmax_.size(); i++)
+      {
+        std::cout<<"Before Worker ID: " << harpCom->getWorkerId() << " i: " 
+        << i << " fminmax val: " << fminmax_[i] << std::endl;
+      } */
+      
+      harp::ds::Table<bst_float>* syncTable = 
+      new harp::ds::Table<bst_float>(harpCom->getWorkerId());
+      harp::ds::Partition<bst_float>* syncPar = 
+      new harp::ds::Partition<bst_float>(0, &fminmax_[0], fminmax_.size());
+      syncTable->addPartition(syncPar);
+      harpCom->allReduce<bst_float>(syncTable, MPI_MAX, true);
+      syncTable->removePartition(0, false);
+      delete syncTable;
+      
+      //debug
+      /* for(int i = 0; i < fminmax_.size(); i++)
+      {
+        std::cout<<"After Worker ID: " << harpCom->getWorkerId() << " i: " 
+        << i << " fminmax val: " << fminmax_[i] << std::endl;
+      } */
+
+    }
+
     // get feature type, 0:empty 1:binary 2:real
     inline int Type(bst_uint fid) const {
       CHECK_LT(fid * 2 + 1, fminmax_.size())
