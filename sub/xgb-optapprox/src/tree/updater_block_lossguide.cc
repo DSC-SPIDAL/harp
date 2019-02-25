@@ -102,6 +102,9 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
     harpCom_ = harpCom;
   }
 
+  void enableModelRotation() override { useModelRotation_ = true;}
+  void enableRotationPipeline() override { usePipeline_ = true;}
+
  protected:
 
   harp::com::Communicator* harpCom_;
@@ -473,16 +476,20 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
 
 
         for(int i = 0; i < splitResult.size(); i++){
+
             if (splitResult[i].left < 0) continue;
 
-            if (splitResult[i].left_len < splitResult[i].right_len){
-                nodesetSmall.push_back( splitResult[i].left );
-                nodesetLarge.push_back( splitResult[i].right );
-            }
-            else{
-                nodesetSmall.push_back( splitResult[i].right );
-                nodesetLarge.push_back( splitResult[i].left );
-            }
+            // fix the split of nodes
+            nodesetSmall.push_back( splitResult[i].left );
+            nodesetLarge.push_back( splitResult[i].right );
+            //if (splitResult[i].left_len < splitResult[i].right_len){
+                //nodesetSmall.push_back( splitResult[i].left );
+                //nodesetLarge.push_back( splitResult[i].right );
+            //}
+            //else{
+                //nodesetSmall.push_back( splitResult[i].right );
+                //nodesetLarge.push_back( splitResult[i].left );
+            //}
 
             depthSmall.push_back( splitResult[i].depth + 1);
             depthLarge.push_back( splitResult[i].depth + 1);
@@ -2745,234 +2752,47 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
       this->datasum_ = 0.;
       #endif
 
-      // only works on the build_nodeset
-      if(build_nodeset.size() > 0){
-        //
-        // use data parallelism will bulid model on replicas
-        // it's efficient for thin matrix
-        //
-        if (param_.data_parallelism != 0){
-            //move node block parallelism out to 
-            //control the replica memory foot print
-
-            //int omp_loop_size = qsize * zsize * nsize;
-            for(int nblkid = 0 ; nblkid < qsize; nblkid++){
-                // omp parallel on zsize*nsize
-                int omp_loop_size = zsize * nsize;
-                #pragma omp parallel for schedule(dynamic, 1) if(runopenmp)
-                for(int i = 0; i < omp_loop_size; i++){
-                      // decode to get the block ids
-                      // get node block id
-                      //unsigned int nblkid = i / (zsize * nsize);
-
-                      // blk id in the model cube
-                      int blkid = i % (zsize * nsize);
-                      // blk id on the base plain
-                      int offset = (*pblkCompSet)[blkid % nsize];
-                      // blk id on the row dimension
-                      unsigned int zblkid = blkid / nsize;
-
-                      // get dataBlock
-                      auto block = p_blkmat->GetBlockZCol(offset).GetBlock(zblkid);
-
-                      int tid = (threadid == -1)?omp_get_thread_num():threadid;
-
-                      // update model by this dataBlock and node_blkid
-                      this->UpdateHistBlockWithReplica(gpair, block, tree,
-                            offset, zblkid, nblkid,
-                            build_nodeset,
-                            &this->thread_histcompact_[tid]);
-
-                } // end of omp loop over zsize*nsize
-            
-                //reduce the replicas
-                // nodesize * blksize
-                int start_node_offset, end_node_offset, gsize;
-                start_node_offset = nblkid * param_.node_block_size;
-                end_node_offset = std::min((int)build_nodeset.size(),
-                    start_node_offset + param_.node_block_size);
-                gsize = end_node_offset - start_node_offset;
-
-                omp_loop_size = gsize * nsize;
-                #pragma omp parallel for schedule(static) if(runopenmp)
-                for(bst_omp_uint i = 0; i < omp_loop_size; ++i){
-                    // get node blk offset
-                    int nodeblk_offset = i / nsize;
-                    // absolute blk id
-                    int blkid_offset = (*pblkCompSet)[i % (nsize)];
-                    int plainSize = this->wspace_.hset.GetHistUnitByBlkidSize();
-
-                    int nid = build_nodeset[start_node_offset + nodeblk_offset];
-
-                    // plain 0 in main model
-                    int mid = node2workindex_[nid];
-                    double* p_zplain0 = reinterpret_cast<double*>(
-                        this->wspace_.hset.GetHistUnitByBlkidCompact(blkid_offset, mid, 0).data);
-
-                    // other plains in replica
-                    mid = nodeblk_offset;
-                    for(int z = 1; z < zsize; z++){
-                        //sum to rowblk 0
-                        double* p_z = reinterpret_cast<double*>(
-                            this->wspace_.hset.GetHistUnitByBlkidCompact(blkid_offset, mid, z).data);
- 
-                        //#pragma omp simd
-                        #pragma GCC ivdep
-                        for(int j = 0; j < 2 * plainSize; j++){
-                            p_zplain0[j] += p_z[j];
-                        }
-
-                    }
-                } // end of omp loop on gsize*nsize 
-
-            } // end of loop over qsize
-        } // end of non-data parallelsim
-        else{
-
-            // no data parallelism goes here
-            // use spin lock instead of replicas
-            // it's good for fat matrix
-            
-            //
-            // use spinlock to schedule zbloks together
-            //
-            if (param_.use_spinlock == 1){
-                int omp_loop_size = qsize * zsize * nsize;
-                #pragma omp parallel for schedule(dynamic, 1) if(runopenmp)
-                for(int i = 0; i < omp_loop_size; i++){
-                    // decode to get the block ids
-                    // get node block id
-                    unsigned int nblkid = i / (zsize * nsize);
-
-                    // blk id in the model cube
-                    int blkid = i % (zsize * nsize);
-                    // blk id on the base plain
-                    int offset = (*pblkCompSet)[blkid % nsize];
-                    // blk id on the row dimension
-                    unsigned int zblkid = blkid / nsize;
-
-                    // get dataBlock
-                    auto block = p_blkmat->GetBlockZCol(offset).GetBlock(zblkid);
-                
-                    int tid = (threadid == -1)?omp_get_thread_num():threadid;
-                    // update model by this dataBlock and node_blkid
-                    this->UpdateHistBlock(gpair, block, tree,
-                            offset, zblkid, nblkid,
-                            build_nodeset,
-                            &this->thread_histcompact_[tid]);
-                }
-            }
-            else{
-                //
-                // this sync for each zcol level
-                //
-
-                if (param_.async_mixmode == 1){
-                    for (int z = 0; z < zsize; z++){
-                        int omp_loop_size = qsize * nsize;
-                        if (threadid == -1){
-                            #pragma omp parallel for schedule(dynamic, 1) if(runopenmp)
-                            for(int i = 0; i < omp_loop_size; i++){
-                                // decode to get the block ids
-                                // get node block id
-                                unsigned int nblkid = i / (nsize);
-
-                                // blk id in the model cube
-                                int blkid = i % (nsize);
-                                // blk id on the base plain
-                                int offset = (*pblkCompSet)[blkid % nsize];
-                                // blk id on the row dimension
-                                unsigned int zblkid = z;
-
-                                // get dataBlock
-                                auto block = p_blkmat->GetBlockZCol(offset).GetBlock(zblkid);
-                            
-                                int tid = (threadid == -1)?omp_get_thread_num():threadid;
-                                // update model by this dataBlock and node_blkid
-                                this->UpdateHistBlock(gpair, block, tree,
-                                        offset, zblkid, nblkid,
-                                        build_nodeset,
-                                        &this->thread_histcompact_[tid]);
-                            }
-                        }
-                        else{
-                            for(int i = 0; i < omp_loop_size; i++){
-                                // decode to get the block ids
-                                // get node block id
-                                unsigned int nblkid = i / (nsize);
-
-                                // blk id in the model cube
-                                int blkid = i % (nsize);
-                                // blk id on the base plain
-                                int offset = (*pblkCompSet)[blkid % nsize];
-                                // blk id on the row dimension
-                                unsigned int zblkid = z;
-
-                                // get dataBlock
-                                auto block = p_blkmat->GetBlockZCol(offset).GetBlock(zblkid);
-                            
-                                int tid = (threadid == -1)?omp_get_thread_num():threadid;
-                                // update model by this dataBlock and node_blkid
-                                this->UpdateHistBlock(gpair, block, tree,
-                                        offset, zblkid, nblkid,
-                                        build_nodeset,
-                                        &this->thread_histcompact_[tid]);
-                            }
-
-                        }
-
-                    } /* for z */
-                } // for async mixmode 
-                else{
-
-                    // no async mode
-                    int omp_loop_size = qsize * nsize;
-                    #pragma omp parallel for schedule(dynamic, 1) if(runopenmp)
-                    for(int i = 0; i < omp_loop_size; i++){
-                        // decode to get the block ids
-                        // get node block id
-                        unsigned int nblkid = i / (nsize);
-
-                        // blk id in the model cube
-                        int blkid = i % (nsize);
-                        // blk id on the base plain
-                        int offset = (*pblkCompSet)[blkid % nsize];
-               
-                        int tid = (threadid == -1)?omp_get_thread_num():threadid;
- 
-
-                        for (int z = 0; z < zsize; z++){
-                        // blk id on the row dimension
-                        unsigned int zblkid = z;
-                        // get dataBlock
-                        auto block = p_blkmat->GetBlockZCol(offset).GetBlock(zblkid);
-                        
-                       // update model by this dataBlock and node_blkid
-                        this->UpdateHistBlock(gpair, block, tree,
-                                offset, zblkid, nblkid,
-                                build_nodeset,
-                                &this->thread_histcompact_[tid]);
-                        }
-                    }
-
-                    //debug
-                    datasum_ += 1;
-
-                } // end for no async mode
-
-            } // end of sync z
-
-        } // end of data parallelsim
-
-
-      } // end of build_nodeset
+      // local computation
+      LocalComputation(nsize, zsize, qsize, threadid, gpair, build_nodeset, pblkCompSet,tree);
 
       // implement the allreduce computation model 
-      // could not apply allreduce because each procs may have different build_nodeset size
-      //if (build_nodeset.size() > 0 && harpCom_ && harpCom_->getWorldSize() > 1 && (!useModelRotation_))
-      //{
-          //AllreduceModel(pblkCompSet, build_nodeset);
-      //}
+      if (build_nodeset.size() > 0 && harpCom_ && harpCom_->getWorldSize() > 1 && (!useModelRotation_))
+      {
+          AllreduceModel(pblkCompSet, build_nodeset);
+      }
+
+      // implement the model rotation model 
+      if (harpCom_ && harpCom_->getWorldSize() > 1 && useModelRotation_)
+      {
+          harp::ds::Table<double> *syncTable = new harp::ds::Table<double>(harpCom_->getWorkerId());
+          harp::ds::Table<int> *syncTableMeta = new harp::ds::Table<int>(harpCom_->getWorkerId());
+
+          RotateAllreduceNodeSum(syncTable);
+
+          // (2) rotate hset.data
+          if (!usePipeline_)
+          {
+
+              for(int rIter = 0; rIter<harpCom_->getWorldSize(); rIter++) 
+              {
+                  // first rotate but not copy data to hset
+                  RotateComm(syncTable, syncTableMeta, build_nodeset);
+
+                  // ---------------------------- start the local computation on the rotated data ----------------------------
+                  if (rIter != harpCom_->getWorldSize() - 1)
+                  { // do not update the last rotated block
+                      LocalComputation(nsize, zsize, qsize, threadid, gpair, build_nodeset, &(this->wspace_.localMBlk),tree);
+                  } 
+
+                  // add the rotated data back to hset.data
+
+              } //  End of rotate for loop  
+
+          }
+
+          delete syncTable;
+          delete syncTableMeta;
+      }
 
       //
       // build the other half
@@ -3011,21 +2831,364 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
 
   }
 
+  /**
+   * @brief rotate model without pipeline, communicate data
+   * 
+   */
+  void RotateComm(harp::ds::Table<double>* syncTable, harp::ds::Table<int>* syncTableMeta, 
+          const std::vector<int>& build_nodeset) 
+  {
+      // takes out the nodes in build_nodeset
+      //int rawDataPackSize = pblkCompSet->size()*this->wspace_.hset.GetHistUnitByBlkidSize()*build_nodeset.size()*2; 
+      //double* rawDataPack = new double[rawDataPackSize];
+      //// pack copy the data
+      //// retrieve all node values
+      //int copyVolume = this->wspace_.hset.GetHistUnitByBlkidSize()*2;
+      //int packOffset = 0;
+      //for(int i=0; i<pblkCompSet->size(); i++)
+      //{
+          //int hsetOffset = (*pblkCompSet)[i]*this->wspace_.hset.GetHistUnitByBlkidSize()*this->wspace_.hset.nodeSize*2;
+          //for (int j = 0; j < build_nodeset.size(); ++j) 
+          //{
+              //int nodesOffset = copyVolume*node2workindex_[build_nodeset[j]];
+              //std::copy(rawData + hsetOffset + nodesOffset, rawData + hsetOffset + nodesOffset + copyVolume, rawDataPack + copyVolume*packOffset);
+              //packOffset++;
+          //}
+      //}
+      
+      harpCom_->barrier();
+      // pack the local data
+      double *rawData = reinterpret_cast<double *>(this->wspace_.hset.data);
+      // for each block, only takes out the first max_leaves_ nodes to communicate
+      int rawDataPackSize = this->wspace_.localMBlk.size()*this->wspace_.hset.GetHistUnitByBlkidSize()*this->node2workindex_.num_leaves*2; 
+      double* rawDataPack = new double[rawDataPackSize];
+
+      // pack copy the data
+      for(int i=0; i<this->wspace_.localMBlk.size(); i++)
+      {
+          int hsetOffset = (this->wspace_.localMBlk[i] -this->wspace_.hset.firstBlkID)*this->wspace_.hset.GetHistUnitByBlkidSize()*this->wspace_.hset.nodeSize*2;
+          int nodesVolume = this->wspace_.hset.GetHistUnitByBlkidSize()*this->node2workindex_.num_leaves*2;
+          std::copy(rawData + hsetOffset, rawData + hsetOffset + nodesVolume, rawDataPack + nodesVolume*i );
+      }
+
+      harp::ds::Partition<double> *dataPar = new harp::ds::Partition<double>(harpCom_->getWorkerId(), rawDataPack, rawDataPackSize);
+      syncTable->addPartition(dataPar);
+      // start rotate
+      harpCom_->rotate<double>(syncTable);
+      delete[] rawDataPack;
+
+      // recover the hset.firstBlk, localblkNum, and wspace_.localMBlk 
+      // rotate the wspace_.localMBlk vector
+      int* localBlkMetaData = reinterpret_cast<int*>(&(this->wspace_.localMBlk)[0]);
+      harp::ds::Partition<int> *localBlkMetaPar = new harp::ds::Partition<int>(harpCom_->getWorkerId(), localBlkMetaData, this->wspace_.localMBlk.size());
+      syncTableMeta->addPartition(localBlkMetaPar);
+      harpCom_->rotate<int>(syncTableMeta);
+
+      // std::cout<<"Finish rotation of localMBlk"<<std::endl;
+
+      // only one partition allowed in one rotation
+      for (const auto p : *syncTableMeta->getPartitions()) {
+          //debug
+          // std::cout<<"Receiving Meta data from worker: "<<p.first<<std::endl;
+          this->wspace_.localMBlk.clear();
+          this->wspace_.localMBlk.resize(p.second->getSize());
+          std::copy(p.second->getData(), p.second->getData()+p.second->getSize(), &(this->wspace_.localMBlk[0]));
+      }
+
+      this->wspace_.hset.firstBlkID = this->wspace_.localMBlk[0];
+      this->wspace_.hset.localBlkNum = this->wspace_.localMBlk.size();
+
+      // free the memory
+      syncTableMeta->clear(true);
+
+      // check out the received data to hset.data
+      // clean the original data in hset.data
+      if (this->wspace_.hset.data)
+      {
+          delete[] this->wspace_.hset.data;
+          this->wspace_.hset.data = nullptr;
+      }
+
+      // only one partiton allowed
+      for (const auto p : *syncTable->getPartitions()) {
+
+          // create the new buffer
+          double* recvBuf = new double[this->wspace_.localMBlk.size()*(this->wspace_.hset.GetHistUnitByBlkidSize())*this->wspace_.hset.nodeSize*2];
+
+          // unpack the reduced data back to hset.data
+          for(int i=0; i<this->wspace_.localMBlk.size(); i++)
+          {
+              int hsetOffset = (this->wspace_.localMBlk[i] - this->wspace_.hset.firstBlkID)*this->wspace_.hset.GetHistUnitByBlkidSize()*this->wspace_.hset.nodeSize*2;
+              int nodesVolume = this->wspace_.hset.GetHistUnitByBlkidSize()*this->node2workindex_.num_leaves*2;
+
+              std::copy(p.second->getData() + nodesVolume*i, p.second->getData() + nodesVolume*(i+1), recvBuf + hsetOffset);
+          }
+
+          // try the up_cast
+          this->wspace_.hset.data = reinterpret_cast<GradStats*>(recvBuf);
+          this->wspace_.hset.size = (this->wspace_.localMBlk.size()*this->wspace_.hset.GetHistUnitByBlkidSize()*this->wspace_.hset.nodeSize); 
+
+      } 
+
+      syncTable->clear(true);
+
+
+  }
+
+  /**
+   * @brief allreduce the first element of hset.nodesum in rotation
+   * 
+   * @param syncTable 
+   */
+  void RotateAllreduceNodeSum(harp::ds::Table<double>* syncTable) {
+
+        double *rawNodeSum = reinterpret_cast<double *>(this->wspace_.hset.nodesum);
+        int rawNodeSumSize = 2;
+        harp::ds::Partition<double> *nodeSumPar = new harp::ds::Partition<double>(0, rawNodeSum, rawNodeSumSize);
+        syncTable->addPartition(nodeSumPar);
+        harpCom_->allReduce<double>(syncTable, MPI_SUM, true);
+        syncTable->removePartition(0, false);
+  }
+
+  void LocalComputation(const int nsize, const int zsize, const int qsize, const int threadid,
+          const std::vector<GradientPair> &gpair, const std::vector<int>& build_nodeset, 
+          const std::vector<bst_uint>* pblkCompSet,
+          const RegTree &tree) 
+  {
+      // only works on the build_nodeset
+      if(build_nodeset.size() > 0)
+      {
+          //
+          // use data parallelism will bulid model on replicas
+          // it's efficient for thin matrix
+          //
+          if (param_.data_parallelism != 0){
+              //move node block parallelism out to 
+              //control the replica memory foot print
+
+              //int omp_loop_size = qsize * zsize * nsize;
+              for(int nblkid = 0 ; nblkid < qsize; nblkid++){
+                  // omp parallel on zsize*nsize
+                  int omp_loop_size = zsize * nsize;
+#pragma omp parallel for schedule(dynamic, 1) if(runopenmp)
+                  for(int i = 0; i < omp_loop_size; i++){
+                      // decode to get the block ids
+                      // get node block id
+                      //unsigned int nblkid = i / (zsize * nsize);
+
+                      // blk id in the model cube
+                      int blkid = i % (zsize * nsize);
+                      // blk id on the base plain
+                      int offset = (*pblkCompSet)[blkid % nsize];
+                      // blk id on the row dimension
+                      unsigned int zblkid = blkid / nsize;
+
+                      // get dataBlock
+                      auto block = p_blkmat->GetBlockZCol(offset).GetBlock(zblkid);
+
+                      int tid = (threadid == -1)?omp_get_thread_num():threadid;
+
+                      // update model by this dataBlock and node_blkid
+                      this->UpdateHistBlockWithReplica(gpair, block, tree,
+                              offset, zblkid, nblkid,
+                              build_nodeset,
+                              &this->thread_histcompact_[tid]);
+
+                  } // end of omp loop over zsize*nsize
+
+                  //reduce the replicas
+                  // nodesize * blksize
+                  int start_node_offset, end_node_offset, gsize;
+                  start_node_offset = nblkid * param_.node_block_size;
+                  end_node_offset = std::min((int)build_nodeset.size(),
+                          start_node_offset + param_.node_block_size);
+                  gsize = end_node_offset - start_node_offset;
+
+                  omp_loop_size = gsize * nsize;
+#pragma omp parallel for schedule(static) if(runopenmp)
+                  for(bst_omp_uint i = 0; i < omp_loop_size; ++i){
+                      // get node blk offset
+                      int nodeblk_offset = i / nsize;
+                      // absolute blk id
+                      int blkid_offset = (*pblkCompSet)[i % (nsize)];
+                      int plainSize = this->wspace_.hset.GetHistUnitByBlkidSize();
+
+                      int nid = build_nodeset[start_node_offset + nodeblk_offset];
+
+                      // plain 0 in main model
+                      int mid = node2workindex_[nid];
+                      double* p_zplain0 = reinterpret_cast<double*>(
+                              this->wspace_.hset.GetHistUnitByBlkidCompact(blkid_offset, mid, 0).data);
+
+                      // other plains in replica
+                      mid = nodeblk_offset;
+                      for(int z = 1; z < zsize; z++){
+                          //sum to rowblk 0
+                          double* p_z = reinterpret_cast<double*>(
+                                  this->wspace_.hset.GetHistUnitByBlkidCompact(blkid_offset, mid, z).data);
+
+                          //#pragma omp simd
+#pragma GCC ivdep
+                          for(int j = 0; j < 2 * plainSize; j++){
+                              p_zplain0[j] += p_z[j];
+                          }
+
+                      }
+                  } // end of omp loop on gsize*nsize 
+
+              } // end of loop over qsize
+          } // end of non-data parallelsim
+          else{
+
+              // no data parallelism goes here
+              // use spin lock instead of replicas
+              // it's good for fat matrix
+
+              //
+              // use spinlock to schedule zbloks together
+              //
+              if (param_.use_spinlock == 1){
+                  int omp_loop_size = qsize * zsize * nsize;
+#pragma omp parallel for schedule(dynamic, 1) if(runopenmp)
+                  for(int i = 0; i < omp_loop_size; i++){
+                      // decode to get the block ids
+                      // get node block id
+                      unsigned int nblkid = i / (zsize * nsize);
+
+                      // blk id in the model cube
+                      int blkid = i % (zsize * nsize);
+                      // blk id on the base plain
+                      int offset = (*pblkCompSet)[blkid % nsize];
+                      // blk id on the row dimension
+                      unsigned int zblkid = blkid / nsize;
+
+                      // get dataBlock
+                      auto block = p_blkmat->GetBlockZCol(offset).GetBlock(zblkid);
+
+                      int tid = (threadid == -1)?omp_get_thread_num():threadid;
+                      // update model by this dataBlock and node_blkid
+                      this->UpdateHistBlock(gpair, block, tree,
+                              offset, zblkid, nblkid,
+                              build_nodeset,
+                              &this->thread_histcompact_[tid]);
+                  }
+              }
+              else{
+                  //
+                  // this sync for each zcol level
+                  //
+
+                  if (param_.async_mixmode == 1){
+                      for (int z = 0; z < zsize; z++){
+                          int omp_loop_size = qsize * nsize;
+                          if (threadid == -1){
+#pragma omp parallel for schedule(dynamic, 1) if(runopenmp)
+                              for(int i = 0; i < omp_loop_size; i++){
+                                  // decode to get the block ids
+                                  // get node block id
+                                  unsigned int nblkid = i / (nsize);
+
+                                  // blk id in the model cube
+                                  int blkid = i % (nsize);
+                                  // blk id on the base plain
+                                  int offset = (*pblkCompSet)[blkid % nsize];
+                                  // blk id on the row dimension
+                                  unsigned int zblkid = z;
+
+                                  // get dataBlock
+                                  auto block = p_blkmat->GetBlockZCol(offset).GetBlock(zblkid);
+
+                                  int tid = (threadid == -1)?omp_get_thread_num():threadid;
+                                  // update model by this dataBlock and node_blkid
+                                  this->UpdateHistBlock(gpair, block, tree,
+                                          offset, zblkid, nblkid,
+                                          build_nodeset,
+                                          &this->thread_histcompact_[tid]);
+                              }
+                          }
+                          else{
+                              for(int i = 0; i < omp_loop_size; i++){
+                                  // decode to get the block ids
+                                  // get node block id
+                                  unsigned int nblkid = i / (nsize);
+
+                                  // blk id in the model cube
+                                  int blkid = i % (nsize);
+                                  // blk id on the base plain
+                                  int offset = (*pblkCompSet)[blkid % nsize];
+                                  // blk id on the row dimension
+                                  unsigned int zblkid = z;
+
+                                  // get dataBlock
+                                  auto block = p_blkmat->GetBlockZCol(offset).GetBlock(zblkid);
+
+                                  int tid = (threadid == -1)?omp_get_thread_num():threadid;
+                                  // update model by this dataBlock and node_blkid
+                                  this->UpdateHistBlock(gpair, block, tree,
+                                          offset, zblkid, nblkid,
+                                          build_nodeset,
+                                          &this->thread_histcompact_[tid]);
+                              }
+
+                          }
+
+                      } /* for z */
+                  } // for async mixmode 
+                  else{
+
+                      // no async mode
+                      int omp_loop_size = qsize * nsize;
+#pragma omp parallel for schedule(dynamic, 1) if(runopenmp)
+                      for(int i = 0; i < omp_loop_size; i++){
+                          // decode to get the block ids
+                          // get node block id
+                          unsigned int nblkid = i / (nsize);
+
+                          // blk id in the model cube
+                          int blkid = i % (nsize);
+                          // blk id on the base plain
+                          int offset = (*pblkCompSet)[blkid % nsize];
+
+                          int tid = (threadid == -1)?omp_get_thread_num():threadid;
+
+
+                          for (int z = 0; z < zsize; z++){
+                              // blk id on the row dimension
+                              unsigned int zblkid = z;
+                              // get dataBlock
+                              auto block = p_blkmat->GetBlockZCol(offset).GetBlock(zblkid);
+
+                              // update model by this dataBlock and node_blkid
+                              this->UpdateHistBlock(gpair, block, tree,
+                                      offset, zblkid, nblkid,
+                                      build_nodeset,
+                                      &this->thread_histcompact_[tid]);
+                          }
+                      }
+
+                      //debug
+                      datasum_ += 1;
+
+                  } // end for no async mode
+
+              } // end of sync z
+
+          } // end of data parallelsim
+
+
+      } // end of build_nodeset
+
+  }
+
   void AllreduceModel(const std::vector<bst_uint>* pblkCompSet, const std::vector<int>& build_nodeset) 
   {
-          harpCom_->barrier();
           // use the allreduce computation model
           // check this snippet of codes
           harp::ds::Table<double> *syncTable = new harp::ds::Table<double>(harpCom_->getWorkerId());
           double *rawData = reinterpret_cast<double *>(this->wspace_.hset.data);
           double *rawNodeSum = reinterpret_cast<double *>(this->wspace_.hset.nodesum);
 
-          //debug for buildnode size
-          //std::cout<<"build node size for procs "<< harpCom_->getWorkerId() <<" is " <<build_nodeset.size()
-              //<<std::endl;
-
           // takes out the nodes in build_nodeset
-          //int rawDataPackSize = pblkCompSet->size()*this->wspace_.hset.GetHistUnitByBlkidSize()*this->node2workindex_.num_leaves*2; 
           int rawDataPackSize = pblkCompSet->size()*this->wspace_.hset.GetHistUnitByBlkidSize()*build_nodeset.size()*2; 
           double* rawDataPack = new double[rawDataPackSize];
           // pack copy the data
@@ -3037,25 +3200,24 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
             int hsetOffset = (*pblkCompSet)[i]*this->wspace_.hset.GetHistUnitByBlkidSize()*this->wspace_.hset.nodeSize*2;
             for (int j = 0; j < build_nodeset.size(); ++j) 
             {
-                int nodesOffset = copyVolume*build_nodeset[j];
+                int nodesOffset = copyVolume*node2workindex_[build_nodeset[j]];
                 std::copy(rawData + hsetOffset + nodesOffset, rawData + hsetOffset + nodesOffset + copyVolume, rawDataPack + copyVolume*packOffset);
                 packOffset++;
             }
           }
 
-          // check raw data values before allreduce
-          // int rawDataSize = 2 * this->wspace_.hset.size;
-
           int rawNodeSumSize = 2;
-          // harp::ds::Partition<double> *dataPar = new harp::ds::Partition<double>(0, rawData, rawDataSize);
           harp::ds::Partition<double> *dataPar = new harp::ds::Partition<double>(0, rawDataPack, rawDataPackSize);
           harp::ds::Partition<double> *nodeSumPar = new harp::ds::Partition<double>(1, rawNodeSum, rawNodeSumSize);
 
           syncTable->addPartition(dataPar);
           syncTable->addPartition(nodeSumPar);
 
+          harpCom_->barrier();
+
           harpCom_->allReduce<double>(syncTable, MPI_SUM, true);
 
+          harpCom_->barrier();
           syncTable->removePartition(0, false);
           syncTable->removePartition(1, false);
 
@@ -3064,21 +3226,18 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
           for(int i=0; i<pblkCompSet->size(); i++)
           {
             int hsetOffset = (*pblkCompSet)[i]*this->wspace_.hset.GetHistUnitByBlkidSize()*this->wspace_.hset.nodeSize*2;
-            //int nodesVolume = this->wspace_.hset.GetHistUnitByBlkidSize()*this->node2workindex_.num_leaves*2;
             for (int j = 0; j < build_nodeset.size(); ++j) 
             {
-                int nodesOffset = copyVolume*build_nodeset[j];
+                int nodesOffset = copyVolume*node2workindex_[build_nodeset[j]];
                 std::copy(rawDataPack + copyVolume*packOffset, rawDataPack + copyVolume*(packOffset+1), rawData + hsetOffset + nodesOffset);
                 packOffset++;
             }
 
           }
 
-          harpCom_->barrier();
           delete[] rawDataPack;
           delete syncTable;
-          // debug
-          // std::cout << "Langshi Finishing allreduce communication after local build hist " << std::endl;
+
   }
 
 
