@@ -31,6 +31,7 @@
 #include "../common/sync.h"
 #include "./updater_block_base_lossguide.h"
 
+#include <thread>
 
 namespace xgboost {
 namespace tree {
@@ -539,6 +540,9 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
     // for model rotation pipeline
     std::vector<bst_uint> localComp; // the computation pipeline (half elements of localMBlk)
     std::vector<bst_uint> localComm; // the communication pipelien
+    // for pipeline
+    std::vector<bst_uint>* plocalComp;
+    std::vector<bst_uint>* plocalComm;
 
     // initialize the hist set
     void Init(const TrainParam &param, int nodesize, BlockInfo& blkinfo, int rowblknum = 1, 
@@ -2864,8 +2868,8 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
       const std::vector<bst_uint>* pblkCompSet = nullptr;
       if (harpCom_ && harpCom_->getWorldSize() > 1 && usePipeline_) {
           pblkCompSet = &this->wspace_.localComp;
-          this->wspace_.hset.inPipeline = true;
-          this->wspace_.hset.isDataSeperate = false;
+          //this->wspace_.hset.inPipeline = true;
+          //this->wspace_.hset.isDataSeperate = false;
       }else{
           pblkCompSet = &blkset;
       }
@@ -2887,7 +2891,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
       LocalComputation(nsize, zsize, qsize, threadid, gpair, build_nodeset, pblkCompSet,tree);
 
       // implement the allreduce computation model 
-      if (build_nodeset.size() > 0 && harpCom_ && harpCom_->getWorldSize() > 1 && (!useModelRotation_))
+      if (harpCom_ && harpCom_->getWorldSize() > 1 && (!useModelRotation_))
       {
           AllreduceModel(pblkCompSet, build_nodeset);
       }
@@ -2903,28 +2907,113 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
           // (2) rotate hset.data
           if (!usePipeline_)
           {
+              double* appendDataNext = nullptr;
 
               for(int rIter = 0; rIter<harpCom_->getWorldSize(); rIter++) 
               {
                   // first rotate but not copy data to hset, only update the localMBlk 
-                  RotateComm(syncTable, syncTableMeta, build_nodeset);
+                  RotateComm(syncTable, syncTableMeta, build_nodeset, &appendDataNext);
 
                   // ---------------------------- start the local computation on the rotated data ----------------------------
                   if (rIter != harpCom_->getWorldSize() - 1)
                   { // do not update the last rotated block
-                      LocalComputation(nsize, zsize, qsize, threadid, gpair, build_nodeset, &(this->wspace_.localMBlk),tree);
+                      LocalComputation(nsize, zsize, qsize, threadid, gpair, build_nodeset, &(this->wspace_.localMBlk), tree);
                   } 
 
                   // add the rotated data back to hset.data
-                  RotateCommAppend(rIter, syncTable, build_nodeset);
+                  RotateCommAppend(rIter, build_nodeset, &appendDataNext);
 
               } //  End of rotate for loop  
 
           }
+          else 
+          {
+              // for pipeline version
+              // initialize the pointers to the fid workset
+              this->wspace_.plocalComp = &(this->wspace_.localComp);
+              this->wspace_.plocalComm = &(this->wspace_.localComm);
+
+              double* appendData = nullptr;
+              double* appendDataNext = nullptr;
+
+              //check plocalComp before 
+              printBlkIds("before pipeline ");
+              //if (harpCom_->getWorkerId() == 0)
+              //{
+                  //for(int k=0; k<this->wspace_.plocalComp->size(); k++)
+                  //{
+                      //std::cout<<"Before pipeline plocalComp " << (*(this->wspace_.plocalComp))[k] << std::endl; 
+                  //}
+              //}
+
+              for(int rIter = 0; rIter<2*harpCom_->getWorldSize(); rIter++) 
+              {
+
+                  // 1) step one: switch the computation and communication slot
+                  // switch the data pointer
+                  //GradStats* tempSwitchData = this->wspace_.hset.dataSlotComp;
+                  //this->wspace_.hset.dataSlotComp = this->wspace_.hset.dataSlotComm;
+                  //this->wspace_.hset.dataSlotComm = tempSwitchData; 
+                  // switch the data size
+                  //unsigned long tempSwitchSize = this->wspace_.hset.sizeComp;
+                  //this->wspace_.hset.sizeComp = this->wspace_.hset.sizeComm;
+                  //this->wspace_.hset.sizeComm = tempSwitchSize; 
+                  
+                  // switch the other aux info blkset ids 
+                  size_t tempSwitchFirstBlk = this->wspace_.hset.firstBlkID;
+                  this->wspace_.hset.firstBlkID = this->wspace_.hset.firstBlkDComm; 
+                  this->wspace_.hset.firstBlkDComm = tempSwitchFirstBlk;
+
+                  size_t tempSwitchBlkNum = this->wspace_.hset.localBlkNum;
+                  this->wspace_.hset.localBlkNum = this->wspace_.hset.blkCommNum;
+                  this->wspace_.hset.blkCommNum = tempSwitchBlkNum; 
+
+                  // switch the workset, using the pointers
+                  std::vector<bst_uint>* tempSwitchWSet = this->wspace_.plocalComp;
+                  this->wspace_.plocalComp = this->wspace_.plocalComm; 
+                  this->wspace_.plocalComm = tempSwitchWSet;
+
+                  // spawn a single thread to handle the communication 
+                  //std::thread rotatePipelineObj(&HistMakerBlockLossguide::RotatePipelineComm, this, syncTable, syncTableMeta, build_nodeset, &appendDataNext);
+                  RotatePipelineComm(syncTable, syncTableMeta, build_nodeset, &appendDataNext);
+                  // ---------------------------- start the local computation on the rotated data for pipeline version ----------------------------
+                  if (rIter != 2*harpCom_->getWorldSize() - 1)
+                  { // do not update the last rotated block
+                      LocalComputation(nsize, zsize, qsize, threadid, gpair, build_nodeset, this->wspace_.plocalComp,tree);
+                      //LocalComputation(zsize, this->wspace_.plocalComp, gpair, build_nodeset, tree); 
+                  } // end of if check for last non-compute rotate
+
+                  // wait for the terminate of rotation communication
+                  //rotatePipelineObj.join();
+
+                  if (appendData != nullptr )
+                      RotatePipelineCommAppend(rIter, build_nodeset, this->wspace_.plocalComp, &appendData);
+                  
+                  // switch the append pointer
+                  if (rIter != 2*harpCom_->getWorldSize() - 1) 
+                  {
+                      appendData = appendDataNext;
+                      appendDataNext = nullptr;
+                  }
+                  else {
+                      RotatePipelineCommAppend(rIter, build_nodeset, this->wspace_.plocalComm, &appendDataNext);
+                      appendData = nullptr;
+                      appendDataNext = nullptr;
+                  }
+
+                  harpCom_->barrier();
+
+              } //  End of rotate for loop
+
+              //check plocalComp before 
+              
+              printBlkIds("after pipeline ");
+              
+          }
 
           delete syncTable;
           delete syncTableMeta;
-      }
+      } 
 
       //
       // build the other half
@@ -2963,12 +3052,101 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
 
   }
 
+  void printBlkIds(std::string info, int workerID = 1)
+  {
+      //check plocalComp before 
+      if (harpCom_->getWorkerId() == workerID)
+      {
+          for(int k=0; k<this->wspace_.plocalComp->size(); k++)
+          {
+              std::cout<<info<<" "<< (*(this->wspace_.plocalComp))[k] << std::endl; 
+          }
+      }
+  }
+
+/**
+ * @brief rotate the data within communication slot in pipeline implementation 
+ * 
+ * @param syncTable 
+ */
+  void RotatePipelineComm(harp::ds::Table<double>* syncTable, harp::ds::Table<int>* syncTableMeta, 
+          const std::vector<int>& build_nodeset, double** nextAppData) 
+  {
+
+      double *rawData = reinterpret_cast<double *>(this->wspace_.hset.data);
+      //double *rawData = reinterpret_cast<double *>(this->wspace_.hset.dataSlotComm);
+      // for each block, only takes out the first max_leaves_ nodes to communicate
+      int rawDataPackSize = this->wspace_.plocalComm->size()*this->wspace_.hset.GetHistUnitByBlkidSize()*build_nodeset.size()*2; 
+      double* rawDataPack = new double[rawDataPackSize];
+
+      // pack copy the data
+      //for(int i=0; i<this->wspace_.plocalComm->size(); i++)
+      //{
+          //int hsetOffset = ((*(this->wspace_.plocalComm))[i] -this->wspace_.hset.firstBlkDComm)*this->wspace_.hset.GetHistUnitByBlkidSize()*this->wspace_.hset.nodeSize*2;
+          //int nodesVolume = this->wspace_.hset.GetHistUnitByBlkidSize()*this->node2workindex_.num_leaves*2;
+          //std::copy(rawData + hsetOffset, rawData + hsetOffset + nodesVolume, rawDataPack + nodesVolume*i );
+      //}
+
+      // pack copy the data
+      int copyVolume = this->wspace_.hset.GetHistUnitByBlkidSize()*2;
+      int packOffset = 0;
+
+      for(int i=0; i<this->wspace_.plocalComm->size(); i++)
+      {
+          int hsetOffset = ((*(this->wspace_.plocalComm))[i])*this->wspace_.hset.GetHistUnitByBlkidSize()*this->wspace_.hset.nodeSize*2;
+          for (int j = 0; j < build_nodeset.size(); ++j) 
+          {
+              int nodesOffset = copyVolume*node2workindex_[build_nodeset[j]];
+              std::copy(rawData + hsetOffset + nodesOffset, rawData + hsetOffset + nodesOffset + copyVolume, rawDataPack + copyVolume*packOffset);
+              packOffset++;
+          }
+      }
+
+      // int rawDataSize = 2 * this->wspace_.hset.sizeComm; 
+      harp::ds::Partition<double> *dataPar = new harp::ds::Partition<double>(harpCom_->getWorkerId(), rawDataPack, rawDataPackSize);
+      syncTable->addPartition(dataPar);
+
+      // start rotate
+      harpCom_->barrier();
+      harpCom_->rotate<double>(syncTable);
+      harpCom_->barrier();
+      for (const auto p : *syncTable->getPartitions()) 
+      {
+        *nextAppData = p.second->getData();
+      }
+
+      delete[] rawDataPack;
+
+      // recover the plocalComm information
+      int* localBlkMetaData = reinterpret_cast<int*>( &((*(this->wspace_.plocalComm))[0]));
+      harp::ds::Partition<int> *localBlkMetaPar = new harp::ds::Partition<int>(harpCom_->getWorkerId(), localBlkMetaData, this->wspace_.plocalComm->size());
+      syncTableMeta->addPartition(localBlkMetaPar);
+      harpCom_->rotate<int>(syncTableMeta);
+
+      // only one partition allowed in one rotation
+      for (const auto p : *syncTableMeta->getPartitions()) {
+          //debug
+          // std::cout<<"Receiving Meta data from worker: "<<p.first<<std::endl;
+          this->wspace_.plocalComm->clear();
+          this->wspace_.plocalComm->resize(p.second->getSize());
+          std::copy(p.second->getData(), p.second->getData()+p.second->getSize(), &((*(this->wspace_.plocalComm))[0]));
+      }
+
+      this->wspace_.hset.firstBlkDComm = (*(this->wspace_.plocalComm))[0];
+      this->wspace_.hset.blkCommNum = this->wspace_.plocalComm->size();
+
+      // free the memory
+      syncTableMeta->clear(true);
+      syncTable->clear(false);
+
+  }
+
   /**
    * @brief rotate model without pipeline, communicate data
    * 
    */
   void RotateComm(harp::ds::Table<double>* syncTable, harp::ds::Table<int>* syncTableMeta, 
-          const std::vector<int>& build_nodeset) 
+          const std::vector<int>& build_nodeset, double** appendData) 
   {
       
       harpCom_->barrier();
@@ -2977,9 +3155,6 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
 
       // for each block, only takes out nodes in build_nodeset 
       int rawDataPackSize = this->wspace_.localMBlk.size()*this->wspace_.hset.GetHistUnitByBlkidSize()*build_nodeset.size()*2; 
-      // a dummy rotation if build_nodeset == 0
-      if (rawDataPackSize == 0)
-          rawDataPackSize = 1;
 
       double* rawDataPack = new double[rawDataPackSize];
 
@@ -2987,27 +3162,28 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
       int copyVolume = this->wspace_.hset.GetHistUnitByBlkidSize()*2;
       int packOffset = 0;
 
-      if (build_nodeset.size() > 0)
+      for(int i=0; i<this->wspace_.localMBlk.size(); i++)
       {
-          for(int i=0; i<this->wspace_.localMBlk.size(); i++)
+          int hsetOffset = (this->wspace_.localMBlk[i])*this->wspace_.hset.GetHistUnitByBlkidSize()*this->wspace_.hset.nodeSize*2;
+          for (int j = 0; j < build_nodeset.size(); ++j) 
           {
-              int hsetOffset = (this->wspace_.localMBlk[i])*this->wspace_.hset.GetHistUnitByBlkidSize()*this->wspace_.hset.nodeSize*2;
-              for (int j = 0; j < build_nodeset.size(); ++j) 
-              {
-                  int nodesOffset = copyVolume*node2workindex_[build_nodeset[j]];
-                  std::copy(rawData + hsetOffset + nodesOffset, rawData + hsetOffset + nodesOffset + copyVolume, rawDataPack + copyVolume*packOffset);
-                  packOffset++;
-              }
+              int nodesOffset = copyVolume*node2workindex_[build_nodeset[j]];
+              std::copy(rawData + hsetOffset + nodesOffset, rawData + hsetOffset + nodesOffset + copyVolume, rawDataPack + copyVolume*packOffset);
+              packOffset++;
           }
-      }else {
-          // dummy rotation
-          rawDataPack[0] = 0;
       }
+
 
       harp::ds::Partition<double> *dataPar = new harp::ds::Partition<double>(harpCom_->getWorkerId(), rawDataPack, rawDataPackSize);
       syncTable->addPartition(dataPar);
       // start rotate
       harpCom_->rotate<double>(syncTable);
+
+      for (const auto p : *syncTable->getPartitions()) 
+      {
+          (*appendData) = p.second->getData();
+      }
+
       delete[] rawDataPack;
 
       // recover the hset.firstBlk, localblkNum, and wspace_.localMBlk 
@@ -3033,10 +3209,12 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
 
       // free the memory
       syncTableMeta->clear(true);
+      syncTable->clear(false);
 
   }
 
-  void RotateCommAppend(int rIter, harp::ds::Table<double>* syncTable, const std::vector<int>& build_nodeset) 
+  void RotatePipelineCommAppend(int rIter, const std::vector<int>& build_nodeset, 
+          std::vector<bst_uint>* updateSet, double** appendData) 
   {
 
       double *rawData = reinterpret_cast<double *>(this->wspace_.hset.data);
@@ -3044,40 +3222,82 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
       int copyVolume = this->wspace_.hset.GetHistUnitByBlkidSize()*2;
       int packOffset = 0;
       // only one partiton allowed
-      // deferred 
-      for (const auto p : *syncTable->getPartitions()) {
 
-          // create the new buffer
-          // append the reduced data back to hset.data
-          for(int i=0; i<this->wspace_.localMBlk.size(); i++)
+      // create the new buffer
+      // append the reduced data back to hset.data
+      for(int i=0; i<updateSet->size(); i++)
+      {
+          int hsetOffset = ((*updateSet)[i])*this->wspace_.hset.GetHistUnitByBlkidSize()*this->wspace_.hset.nodeSize*2;
+
+          for (int j = 0; j < build_nodeset.size(); ++j) 
           {
-              int hsetOffset = (this->wspace_.localMBlk[i])*this->wspace_.hset.GetHistUnitByBlkidSize()*this->wspace_.hset.nodeSize*2;
-
-              for (int j = 0; j < build_nodeset.size(); ++j) 
+              int nodesOffset = copyVolume*node2workindex_[build_nodeset[j]];
+              double* psrc = (*appendData) + packOffset*copyVolume; 
+              double* pdst = rawData + hsetOffset + nodesOffset; 
+              if (rIter != 2*harpCom_->getWorldSize() - 1)
               {
-                  int nodesOffset = copyVolume*node2workindex_[build_nodeset[j]];
-                  double* psrc = p.second->getData() + packOffset*copyVolume; 
-                  double* pdst = rawData + hsetOffset + nodesOffset; 
-                  if (rIter != harpCom_->getWorldSize() - 1)
+                  for(int k=0; k < copyVolume; k++)
                   {
-                      for(int k=0; k < copyVolume; k++)
-                      {
-                          pdst[k] += psrc[k];
-                      }
-
-                  }
-                  else{
-                      std::copy(psrc, psrc + copyVolume, pdst);
+                      pdst[k] += psrc[k];
                   }
 
-                  packOffset++;
+              }
+              else{
+                  std::copy(psrc, psrc + copyVolume, pdst);
               }
 
+              packOffset++;
           }
 
       } 
 
-      syncTable->clear(true);
+      delete[] (*appendData);
+      (*appendData) = nullptr;
+
+  }
+
+  void RotateCommAppend(int rIter, const std::vector<int>& build_nodeset, double** appendData) 
+  {
+
+      double *rawData = reinterpret_cast<double *>(this->wspace_.hset.data);
+
+      int copyVolume = this->wspace_.hset.GetHistUnitByBlkidSize()*2;
+      int packOffset = 0;
+
+
+      // create the new buffer
+      // append the reduced data back to hset.data
+      for(int i=0; i<this->wspace_.localMBlk.size(); i++)
+      {
+          int hsetOffset = (this->wspace_.localMBlk[i])*this->wspace_.hset.GetHistUnitByBlkidSize()*this->wspace_.hset.nodeSize*2;
+
+          for (int j = 0; j < build_nodeset.size(); ++j) 
+          {
+              int nodesOffset = copyVolume*node2workindex_[build_nodeset[j]];
+              //double* psrc = p.second->getData() + packOffset*copyVolume; 
+              double* psrc = (*appendData) + packOffset*copyVolume; 
+              double* pdst = rawData + hsetOffset + nodesOffset; 
+              if (rIter != harpCom_->getWorldSize() - 1)
+              {
+                  for(int k=0; k < copyVolume; k++)
+                  {
+                      pdst[k] += psrc[k];
+                  }
+
+              }
+              else{
+                  std::copy(psrc, psrc + copyVolume, pdst);
+              }
+
+              packOffset++;
+          }
+
+      }
+
+
+      delete[] (*appendData);
+      (*appendData) = nullptr;
+
   }
 
   /**
