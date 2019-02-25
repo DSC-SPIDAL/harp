@@ -49,6 +49,10 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
       p_blkmat = new TDMatrixCube<TBlkAddr>();
       p_hmat = new TDMatrixCube<unsigned char>();
       //p_hmat = new DMatrixCompactBlockDense();
+      // for harpcom
+      harpCom_ = nullptr;
+      useModelRotation_ = false;
+      usePipeline_ = false;
   }
 
   ~HistMakerBlockLossguide(){
@@ -89,7 +93,21 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
 
   }
 
+  /**
+   * @brief Set the Harp Com object
+   * 
+   * @param harpCom 
+   */
+  void setHarpCom(harp::com::Communicator* harpCom) override {
+    harpCom_ = harpCom;
+  }
+
  protected:
+
+  harp::com::Communicator* harpCom_;
+  bool useModelRotation_;
+  bool usePipeline_;
+  std::vector<bst_uint> localFeatSet_;
 
     /*! \brief a single histogram */
   struct HistUnit {
@@ -240,6 +258,19 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
     size_t nodeSize;
     size_t featnum;
     BlockInfo* pblkInfo;
+
+    // add for model rotation
+    // record the first id of local blks
+    size_t firstBlkID = 0;
+    // record the number of local blks
+    size_t localBlkNum = 0;
+
+    // for pipeline in model rotation
+    size_t firstBlkDComm = 0;
+    size_t blkCommNum = 0;
+
+    bool inPipeline = false;
+    bool isDataSeperate = false;
 
     /*
      * GHSum is the model, preallocated
@@ -493,9 +524,20 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
     // the model
     HistSet hset;
 
+    // added for model rotation, the local model block id
+    std::vector<bst_uint> localMBlk;
+    // model block id invariant in rotation
+    std::vector<bst_uint> ownedMBlk; 
+
+    // for model rotation pipeline
+    std::vector<bst_uint> localComp; // the computation pipeline (half elements of localMBlk)
+    std::vector<bst_uint> localComm; // the communication pipelien
+
     // initialize the hist set
-    void Init(const TrainParam &param, int nodesize, BlockInfo& blkinfo,
-            int rowblknum = 1) {
+    void Init(const TrainParam &param, int nodesize, BlockInfo& blkinfo, int rowblknum = 1, 
+            harp::com::Communicator* harpCom = nullptr, std::vector<bst_uint>* localFSet = nullptr, 
+            bool usePipeline = false) 
+    {
 
       // cleanup statistics
       //for (int tid = 0; tid < nthread; ++tid) 
@@ -556,9 +598,86 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
             ",replics:" << hset.size_replica << 
             ",cubesize:" << cubesize << ":" << 8*cubesize/(1024*1024*1024) << "GB";
 
+        // for model rotation
+        if (localFSet)
+        {
+            int binBlkNum = blkinfo.GetBinBlkNum(param.max_bin); 
+            int featBlkNum = blkinfo.GetFeatureBlkNum(hset.featnum);
+            int baseFNum = (featBlkNum + harpCom->getWorldSize() - 1)/harpCom->getWorldSize();
+            int workerID = harpCom->getWorkerId();
+
+            for(int fid = 0; fid < featBlkNum; fid++)
+            {
+                if ((fid / baseFNum) == workerID)
+                {
+                    // shall put all of the features in fid block into localFSet
+                    if (fid != featBlkNum -1)
+                    {
+                        // feature start from fid*blkinfo.ft_blksize to (fid+1)*blkinfo.ft_blksize
+                        for(int k=fid*blkinfo.ft_blksize; k<(fid+1)*blkinfo.ft_blksize; k++)
+                        {
+                            localFSet->push_back(k);
+                        }
+
+                    } else {
+                        for(int k=fid*blkinfo.ft_blksize; k<hset.featnum; k++) {
+                            localFSet->push_back(k);
+                        }
+                    }
+
+                    for (int j = 0; j < binBlkNum; j++)
+                    {
+                        localMBlk.push_back(fid * binBlkNum + j);
+                        ownedMBlk.push_back(fid * binBlkNum + j);
+                    }
+                }
+            }
+
+            // for pipeline
+            if (!usePipeline) {
+
+                //hset.data = new TStats[localMBlk.size()*hset.GetHistUnitByBlkidSize()*nodesize];
+                //hset.size = localMBlk.size()*hset.GetHistUnitByBlkidSize()*nodesize;
+                hset.localBlkNum = localMBlk.size();
+                hset.firstBlkID = localMBlk[0];
+
+            } else {
+
+                // for pipeline version of rotation
+                //hset.size = localMBlk.size()*hset.GetHistUnitByBlkidSize()*nodesize;
+                //hset.data = nullptr; //defer the memory allocation
+                //  hset.localBlkNum = localMBlk.size();
+                //  hset.firstBlkID = localMBlk[0];
+                // split localMBlk into two parts
+                int pipeSize = (localMBlk.size()/2) > 0 ? (localMBlk.size()/2) : 1;
+                for (size_t i = 0; i < localMBlk.size(); i++)
+                {
+                    if (i < pipeSize)
+                    {
+                        localComp.push_back(localMBlk[i]);
+                    }
+                    else
+                    {
+                        localComm.push_back(localMBlk[i]);
+                    }
+                }
+
+                //hset.dataSlotComp = new TStats[localComp.size()*hset.GetHistUnitByBlkidSize()*nodesize];
+                //hset.sizeComp = localComp.size()*hset.GetHistUnitByBlkidSize()*nodesize;
+                //hset.dataSlotComm = new TStats[localComm.size()*hset.GetHistUnitByBlkidSize()*nodesize];
+                //hset.sizeComm = localComm.size()*hset.GetHistUnitByBlkidSize()*nodesize;
+                hset.localBlkNum = localComp.size();
+                hset.firstBlkID = localComp[0];
+
+                hset.blkCommNum = localComm.size();
+                hset.firstBlkDComm = localComm[0];
+
+            }
+        }
+
       }
 
-   }
+    }
 
     void release(){
         if (hset.data != nullptr){
@@ -679,6 +798,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
 
   /*
    * update function implementation
+   * the entrance of gbm execution
    */
   void Update(const std::vector<GradientPair> &gpair,
                       DMatrix *p_fmat,
@@ -694,6 +814,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
     }
 
     // Initialize the histogram and model related
+    // TODO:harp allreduce here
     InitializeHist(gpair, p_fmat, *p_tree);
 
     // init the posset before building the tree
@@ -1643,7 +1764,9 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
           feat_helper_.InitByCol(p_fmat, tree);
           cache_dmatrix_ = p_fmat;
         }
-        feat_helper_.SyncInfo();
+
+        if (harpCom_ && harpCom_->getWorldSize() > 1)
+            feat_helper_.SyncInfo(harpCom_);
     }
 
 
@@ -1774,7 +1897,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
             this->InitWorkSet(p_fmat, tree, &fset, true /*init from p_fmat*/);
 
             // 2. Initilize the histgram
-            cut_.Init(p_fmat,param_.max_bin /*256*/);
+            cut_.Init(p_fmat,param_.max_bin, harpCom_ /*256*/);
         }
 
 
@@ -1879,6 +2002,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
 
         if (param_.loadmeta.empty()) {
             // add binid to matrix
+            // InitHistIndexByCol removed !!
             //this->InitHistIndexByCol(p_fmat, fset, tree);
             this->InitHistIndexByRow(p_fmat, tree);
 
@@ -1954,35 +2078,62 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
         }
         #endif
 
+        // 7. Set the tree growth policy
+        //
+        LOG(INFO) << "re-order qexpand and block work set initialization";
+        this->InitQExpand();
+//
+        // 7. Re-Init the model memory space, first touch
+        //
+        int rowblknum = blkInfo_.GetRowBlkNum(dmat_info_.num_row_);
+
+        if (this->harpCom_ && this->harpCom_->getWorldSize() > 1 && useModelRotation_) 
+        {
+            this->wspace_.Init(this->param_, max_leaves_, this->blkInfo_, rowblknum, 
+                    harpCom_, &localFeatSet_, usePipeline_);
+        }else{
+            this->wspace_.Init(this->param_, max_leaves_, this->blkInfo_, rowblknum);
+        }
+            
         //
         // 6. Init the block work set
         //  fwork_set_ --> the full features set
         //  work_set_  --> working feature set
         //  bwork_set_ --> the block set
-        this->bwork_base_blknum_ = p_blkmat->GetBaseBlockNum();
-        bwork_lock_ = new spin_mutex[bwork_base_blknum_];
-        bwork_set_.clear();
-        //for(int i=0; i < p_blkmat->GetBlockNum(); i++){
-        for(int i=0; i < p_blkmat->GetBaseBlockNum(); i++){
-            bwork_set_.push_back(i);
+    
+        if (this->harpCom_ && this->harpCom_->getWorldSize() > 1 && this->useModelRotation_)
+        {
+            std::vector<bst_uint> &localWSet = this->wspace_.localMBlk; 
+            // only use assigned partitions of model block ids
+            this->bwork_base_blknum_ = localWSet.size();
+            bwork_lock_ = new spin_mutex[this->bwork_base_blknum_];
+            bwork_set_.clear();
+            //bwork_set_ contains the block workset ids
+            for (int i = 0; i < localWSet.size(); i++)
+            {
+                bwork_set_.push_back(localWSet[i]);
+            }
+
+            LOG(CONSOLE) << "Init bwork_set_: base_blknum=" << bwork_base_blknum_ << ":" << bwork_set_.size();
+            printVec("bwork_set_:", bwork_set_);
+
+        } else {
+
+            this->bwork_base_blknum_ = p_blkmat->GetBaseBlockNum();
+            bwork_lock_ = new spin_mutex[bwork_base_blknum_];
+            bwork_set_.clear();
+            //for(int i=0; i < p_blkmat->GetBlockNum(); i++){
+            for(int i=0; i < p_blkmat->GetBaseBlockNum(); i++){
+                bwork_set_.push_back(i);
+            }
+
+            LOG(CONSOLE) << "Init bwork_set_: base_blknum=" << bwork_base_blknum_ <<
+                ":" << bwork_set_.size();
+            printVec("bwork_set_:", bwork_set_);
+
         }
 
-        LOG(CONSOLE) << "Init bwork_set_: base_blknum=" << bwork_base_blknum_ <<
-            ":" << bwork_set_.size();
-        printVec("bwork_set_:", bwork_set_);
-
         //
-        // 7. Set the tree growth policy
-        //
-        this->InitQExpand();
-
-
-        //
-        // 7. Re-Init the model memory space, first touch
-        //
-        int rowblknum = blkInfo_.GetRowBlkNum(dmat_info_.num_row_);
-        this->wspace_.Init(this->param_, max_leaves_, 
-                this->blkInfo_, rowblknum);
 
         // save meta mat
         if (!param_.savemeta.empty()){
@@ -2560,6 +2711,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
                   const std::vector<bst_uint> &blkset,
                   const RegTree &tree,
                   const int threadid = -1) {
+
       const MetaInfo &info = dmat_info_;
 
       //if (build_nodeset.size() == 0){
@@ -2570,9 +2722,19 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
       // start enumeration
       double _tstart = dmlc::GetTime();
 
+      // for model rotation
+      const std::vector<bst_uint>* pblkCompSet = nullptr;
+      if (harpCom_ && harpCom_->getWorldSize() > 1 && usePipeline_) {
+          pblkCompSet = &this->wspace_.localComp;
+          this->wspace_.hset.inPipeline = true;
+          this->wspace_.hset.isDataSeperate = false;
+      }else{
+          pblkCompSet = &blkset;
+      }
+
       // block number on the base plain
       // const int nsize = p_blkmat->GetBaseBlockNum();
-      const int nsize = blkset.size();
+      const int nsize = pblkCompSet->size();
       // block number in the row dimension
       const int zsize = p_blkmat->GetBlockZCol(0).GetBlockNum();
       // block number in the node dimension
@@ -2583,6 +2745,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
       this->datasum_ = 0.;
       #endif
 
+      // only works on the build_nodeset
       if(build_nodeset.size() > 0){
         //
         // use data parallelism will bulid model on replicas
@@ -2594,6 +2757,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
 
             //int omp_loop_size = qsize * zsize * nsize;
             for(int nblkid = 0 ; nblkid < qsize; nblkid++){
+                // omp parallel on zsize*nsize
                 int omp_loop_size = zsize * nsize;
                 #pragma omp parallel for schedule(dynamic, 1) if(runopenmp)
                 for(int i = 0; i < omp_loop_size; i++){
@@ -2604,7 +2768,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
                       // blk id in the model cube
                       int blkid = i % (zsize * nsize);
                       // blk id on the base plain
-                      int offset = blkset[blkid % nsize];
+                      int offset = (*pblkCompSet)[blkid % nsize];
                       // blk id on the row dimension
                       unsigned int zblkid = blkid / nsize;
 
@@ -2618,7 +2782,8 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
                             offset, zblkid, nblkid,
                             build_nodeset,
                             &this->thread_histcompact_[tid]);
-                }
+
+                } // end of omp loop over zsize*nsize
             
                 //reduce the replicas
                 // nodesize * blksize
@@ -2634,7 +2799,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
                     // get node blk offset
                     int nodeblk_offset = i / nsize;
                     // absolute blk id
-                    int blkid_offset = blkset[i % (nsize)];
+                    int blkid_offset = (*pblkCompSet)[i % (nsize)];
                     int plainSize = this->wspace_.hset.GetHistUnitByBlkidSize();
 
                     int nid = build_nodeset[start_node_offset + nodeblk_offset];
@@ -2658,10 +2823,12 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
                         }
 
                     }
-                }
-            }
-        }
+                } // end of omp loop on gsize*nsize 
+
+            } // end of loop over qsize
+        } // end of non-data parallelsim
         else{
+
             // no data parallelism goes here
             // use spin lock instead of replicas
             // it's good for fat matrix
@@ -2680,7 +2847,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
                     // blk id in the model cube
                     int blkid = i % (zsize * nsize);
                     // blk id on the base plain
-                    int offset = blkset[blkid % nsize];
+                    int offset = (*pblkCompSet)[blkid % nsize];
                     // blk id on the row dimension
                     unsigned int zblkid = blkid / nsize;
 
@@ -2713,7 +2880,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
                                 // blk id in the model cube
                                 int blkid = i % (nsize);
                                 // blk id on the base plain
-                                int offset = blkset[blkid % nsize];
+                                int offset = (*pblkCompSet)[blkid % nsize];
                                 // blk id on the row dimension
                                 unsigned int zblkid = z;
 
@@ -2737,7 +2904,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
                                 // blk id in the model cube
                                 int blkid = i % (nsize);
                                 // blk id on the base plain
-                                int offset = blkset[blkid % nsize];
+                                int offset = (*pblkCompSet)[blkid % nsize];
                                 // blk id on the row dimension
                                 unsigned int zblkid = z;
 
@@ -2755,8 +2922,9 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
                         }
 
                     } /* for z */
-                }
+                } // for async mixmode 
                 else{
+
                     // no async mode
                     int omp_loop_size = qsize * nsize;
                     #pragma omp parallel for schedule(dynamic, 1) if(runopenmp)
@@ -2768,7 +2936,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
                         // blk id in the model cube
                         int blkid = i % (nsize);
                         // blk id on the base plain
-                        int offset = blkset[blkid % nsize];
+                        int offset = (*pblkCompSet)[blkid % nsize];
                
                         int tid = (threadid == -1)?omp_get_thread_num():threadid;
  
@@ -2789,13 +2957,22 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
 
                     //debug
                     datasum_ += 1;
-                }
-            }
 
-        }
+                } // end for no async mode
+
+            } // end of sync z
+
+        } // end of data parallelsim
 
 
       } // end of build_nodeset
+
+      // implement the allreduce computation model 
+      // could not apply allreduce because each procs may have different build_nodeset size
+      //if (build_nodeset.size() > 0 && harpCom_ && harpCom_->getWorldSize() > 1 && (!useModelRotation_))
+      //{
+          //AllreduceModel(pblkCompSet, build_nodeset);
+      //}
 
       //
       // build the other half
@@ -2833,6 +3010,77 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
       //                        this->wspace_.hset.data.size());
 
   }
+
+  void AllreduceModel(const std::vector<bst_uint>* pblkCompSet, const std::vector<int>& build_nodeset) 
+  {
+          harpCom_->barrier();
+          // use the allreduce computation model
+          // check this snippet of codes
+          harp::ds::Table<double> *syncTable = new harp::ds::Table<double>(harpCom_->getWorkerId());
+          double *rawData = reinterpret_cast<double *>(this->wspace_.hset.data);
+          double *rawNodeSum = reinterpret_cast<double *>(this->wspace_.hset.nodesum);
+
+          //debug for buildnode size
+          //std::cout<<"build node size for procs "<< harpCom_->getWorkerId() <<" is " <<build_nodeset.size()
+              //<<std::endl;
+
+          // takes out the nodes in build_nodeset
+          //int rawDataPackSize = pblkCompSet->size()*this->wspace_.hset.GetHistUnitByBlkidSize()*this->node2workindex_.num_leaves*2; 
+          int rawDataPackSize = pblkCompSet->size()*this->wspace_.hset.GetHistUnitByBlkidSize()*build_nodeset.size()*2; 
+          double* rawDataPack = new double[rawDataPackSize];
+          // pack copy the data
+          // retrieve all node values
+          int copyVolume = this->wspace_.hset.GetHistUnitByBlkidSize()*2;
+          int packOffset = 0;
+          for(int i=0; i<pblkCompSet->size(); i++)
+          {
+            int hsetOffset = (*pblkCompSet)[i]*this->wspace_.hset.GetHistUnitByBlkidSize()*this->wspace_.hset.nodeSize*2;
+            for (int j = 0; j < build_nodeset.size(); ++j) 
+            {
+                int nodesOffset = copyVolume*build_nodeset[j];
+                std::copy(rawData + hsetOffset + nodesOffset, rawData + hsetOffset + nodesOffset + copyVolume, rawDataPack + copyVolume*packOffset);
+                packOffset++;
+            }
+          }
+
+          // check raw data values before allreduce
+          // int rawDataSize = 2 * this->wspace_.hset.size;
+
+          int rawNodeSumSize = 2;
+          // harp::ds::Partition<double> *dataPar = new harp::ds::Partition<double>(0, rawData, rawDataSize);
+          harp::ds::Partition<double> *dataPar = new harp::ds::Partition<double>(0, rawDataPack, rawDataPackSize);
+          harp::ds::Partition<double> *nodeSumPar = new harp::ds::Partition<double>(1, rawNodeSum, rawNodeSumSize);
+
+          syncTable->addPartition(dataPar);
+          syncTable->addPartition(nodeSumPar);
+
+          harpCom_->allReduce<double>(syncTable, MPI_SUM, true);
+
+          syncTable->removePartition(0, false);
+          syncTable->removePartition(1, false);
+
+          // unpack the reduced data back to hset.data
+          packOffset = 0;
+          for(int i=0; i<pblkCompSet->size(); i++)
+          {
+            int hsetOffset = (*pblkCompSet)[i]*this->wspace_.hset.GetHistUnitByBlkidSize()*this->wspace_.hset.nodeSize*2;
+            //int nodesVolume = this->wspace_.hset.GetHistUnitByBlkidSize()*this->node2workindex_.num_leaves*2;
+            for (int j = 0; j < build_nodeset.size(); ++j) 
+            {
+                int nodesOffset = copyVolume*build_nodeset[j];
+                std::copy(rawDataPack + copyVolume*packOffset, rawDataPack + copyVolume*(packOffset+1), rawData + hsetOffset + nodesOffset);
+                packOffset++;
+            }
+
+          }
+
+          harpCom_->barrier();
+          delete[] rawDataPack;
+          delete syncTable;
+          // debug
+          // std::cout << "Langshi Finishing allreduce communication after local build hist " << std::endl;
+  }
+
 
   /*
    * AllocateChildrenModel
