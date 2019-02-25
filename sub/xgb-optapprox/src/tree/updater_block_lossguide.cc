@@ -883,7 +883,14 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
 
         printtree(p_tree, "After CreateHist");
 
-        FindSplit(gpair, work_set_, build_nodeset, splitOutput);
+        if (localFeatSet_.size() > 0)
+        {
+            FindSplit(gpair, localFeatSet_, build_nodeset, splitOutput);
+
+        } else {
+
+            FindSplit(gpair, work_set_, build_nodeset, splitOutput);
+        }
  
 
         qexpand_->push(this->newEntry(0, 0 /* depth */, splitOutput.sol[0], 
@@ -1124,7 +1131,8 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
 
         if (build_nodeset.size() == 0 && large_nodeset.size() == 0) continue;
 
-        const int workerNum = param_.num_worker;
+        //const int workerNum = param_.num_worker;
+        const int workerNum = 1;
         if (workerNum <= 1){
             // do buildhist  
             printVec("BuildHist on build_nodeset:", build_nodeset);
@@ -1140,7 +1148,15 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
                         large_depth.end());
             }
 
-            FindSplit(gpair, work_set_, build_nodeset, splitOutput, threadid);
+            if (localFeatSet_.size() > 0)
+            {
+                FindSplit(gpair, localFeatSet_, build_nodeset, splitOutput, threadid);
+
+            } else {
+
+                FindSplit(gpair, work_set_, build_nodeset, splitOutput, threadid);
+            }
+
             //debug
             #ifdef USE_DEBUG
             splitOutput.print("SplitInfo", build_nodeset);
@@ -1223,7 +1239,16 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
                 //    ",fwork_set.size=" << fwork_set.size();
                 printVec("fwork_set:" , fwork_set);
 
-                FindSplit(gpair, fwork_set, build_nodeset, splitOutputPartial, threadid);
+                if (localFeatSet_.size() > 0)
+                {
+                    FindSplit(gpair, localFeatSet_, build_nodeset, splitOutputPartial, threadid);
+
+                }else {
+
+                    FindSplit(gpair, work_set_, build_nodeset, splitOutputPartial, threadid);
+
+                }
+
                 #ifdef USE_DEBUG
                 splitOutputPartial.print("SplitInfoPartial", build_nodeset);
                 #endif
@@ -1422,7 +1447,113 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
     }
     this->tminfo.aux_time[5] += dmlc::GetTime() - _tstartFindSplit;
 
+    if (harpCom_ && harpCom_->getWorldSize() > 1 && useModelRotation_ ) 
+    {
+        // model rotation to allreduce the splitOuput
+        // splitOutput->std::vector<SplitEntry> sol;
+        // splitOUput->std::vector<TStats> left_sum;
+        // serialize sol and left_sum
+        // first allgather sol and left_sum, than reduce them according to SplitEntry loss_chg
+        int splitElementSize = splitOutput.sol.size();
+
+        //debug check the sol and left_sum value
+        /* for(int k=0; k<splitElementSize;k++)
+           {
+           std::cout<<"Worker: "<< harpCom_->getWorkerId() << " Before Split Node "<<k<<" loss: "<<splitOutput.sol[k].loss_chg <<" sindex: "<<splitOutput.sol[k].sindex <<
+           " split value: " << splitOutput.sol[k].split_value<< std::endl;
+           } */
+
+        harp::ds::Table<int>* syncSolTable = new harp::ds::Table<int>(harpCom_->getWorkerId());
+        harp::ds::Table<double>* syncSumTable = new harp::ds::Table<double>(harpCom_->getWorkerId());
+
+        int IntPerElem = sizeof(SplitEntry)/sizeof(int);
+        int DoublePerElem = sizeof(GradStats)/sizeof(double);
+
+        // from SplitEntry* to int*
+        int* solBufLocal = reinterpret_cast<int*>(&(splitOutput.sol[0]));
+        int solBufLocalSize = (IntPerElem)*splitElementSize; 
+        harp::ds::Partition<int>* solPar = new harp::ds::Partition<int>(harpCom_->getWorkerId(), solBufLocal, solBufLocalSize);
+        syncSolTable->addPartition(solPar);
+        // do not free data on input table
+        harpCom_->allGather<int>(syncSolTable, false);
+
+        // now syncTable has new partition data and the original splitOUput.sol underlying data is lost
+        double* sumBufLocal = reinterpret_cast<double*>(&(splitOutput.left_sum[0]));
+        int sumBufLocalSize = (DoublePerElem)*splitElementSize;
+        harp::ds::Partition<double>* sumPar = new harp::ds::Partition<double>(harpCom_->getWorkerId(), sumBufLocal, sumBufLocalSize);
+        syncSumTable->addPartition(sumPar);
+        harpCom_->allGather<double>(syncSumTable, false);
+
+        // find the partition with max loss the table
+        std::vector<int> selectParID;
+        for(int k = 0; k<splitElementSize; k++)
+        {
+            bst_float lossChgBase = 0.0;
+            unsigned sindexBase = 0;
+            int parIDBase = harpCom_->getWorkerId();
+            bool initBase = false; 
+
+            int offsetBuf = (k*IntPerElem);
+            for (const auto p : *syncSolTable->getPartitions())
+            {
+                bool toReplace = false;
+                int* pBufPar = p.second->getData() + offsetBuf;
+                bst_float lossChgCompare = (reinterpret_cast<bst_float*>(pBufPar))[0];
+                unsigned sindexCompare = (reinterpret_cast<unsigned*>(pBufPar))[(sizeof(bst_float)/sizeof(int))]; 
+                sindexCompare = sindexCompare & ((1U << 31) - 1U);
+                if (!initBase)
+                {
+                    lossChgBase = lossChgCompare;
+                    sindexBase = sindexCompare;
+                    parIDBase = p.first;
+                    initBase = true;
+                }
+                else {
+
+                    if (sindexBase <= sindexCompare) {
+                        toReplace = (lossChgCompare > lossChgBase);
+                    } else {
+                        toReplace = !(lossChgBase > lossChgCompare);
+                    }
+
+                    if (toReplace)
+                    {
+                        lossChgBase = lossChgCompare;
+                        sindexBase = sindexCompare;
+                        parIDBase = p.first;
+                    }
+
+                }
+
+            }
+
+            selectParID.push_back(parIDBase);
+
+        }
+
+        // deserialize and construct the new splitElementSize;
+        splitOutput.sol.clear();
+        splitOutput.left_sum.clear();
+        for(int k = 0; k<splitElementSize; k++)
+        {
+            int* selectBuf = syncSolTable->getPartition(selectParID[k])->getData();
+            SplitEntry selectEntry; 
+            std::copy(selectBuf + k*IntPerElem, selectBuf + (k+1)*IntPerElem, reinterpret_cast<int*>(&selectEntry));
+            splitOutput.sol.push_back(selectEntry);
+
+            double* selectSumBuf = syncSumTable->getPartition(selectParID[k])->getData();
+            GradStats selectSum;
+            std::copy(selectSumBuf + k*DoublePerElem, selectSumBuf + (k+1)*DoublePerElem, reinterpret_cast<double*>(&selectSum));
+            splitOutput.left_sum.push_back(selectSum);
+        }
+
+        harp::ds::util::deleteTable(syncSolTable, true);
+        harp::ds::util::deleteTable(syncSumTable, true);
+
+    }  
+
   }
+    
 
 
   //
@@ -2775,7 +2906,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
 
               for(int rIter = 0; rIter<harpCom_->getWorldSize(); rIter++) 
               {
-                  // first rotate but not copy data to hset
+                  // first rotate but not copy data to hset, only update the localMBlk 
                   RotateComm(syncTable, syncTableMeta, build_nodeset);
 
                   // ---------------------------- start the local computation on the rotated data ----------------------------
@@ -2785,6 +2916,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
                   } 
 
                   // add the rotated data back to hset.data
+                  RotateCommAppend(rIter, syncTable, build_nodeset);
 
               } //  End of rotate for loop  
 
@@ -2838,37 +2970,38 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
   void RotateComm(harp::ds::Table<double>* syncTable, harp::ds::Table<int>* syncTableMeta, 
           const std::vector<int>& build_nodeset) 
   {
-      // takes out the nodes in build_nodeset
-      //int rawDataPackSize = pblkCompSet->size()*this->wspace_.hset.GetHistUnitByBlkidSize()*build_nodeset.size()*2; 
-      //double* rawDataPack = new double[rawDataPackSize];
-      //// pack copy the data
-      //// retrieve all node values
-      //int copyVolume = this->wspace_.hset.GetHistUnitByBlkidSize()*2;
-      //int packOffset = 0;
-      //for(int i=0; i<pblkCompSet->size(); i++)
-      //{
-          //int hsetOffset = (*pblkCompSet)[i]*this->wspace_.hset.GetHistUnitByBlkidSize()*this->wspace_.hset.nodeSize*2;
-          //for (int j = 0; j < build_nodeset.size(); ++j) 
-          //{
-              //int nodesOffset = copyVolume*node2workindex_[build_nodeset[j]];
-              //std::copy(rawData + hsetOffset + nodesOffset, rawData + hsetOffset + nodesOffset + copyVolume, rawDataPack + copyVolume*packOffset);
-              //packOffset++;
-          //}
-      //}
       
       harpCom_->barrier();
       // pack the local data
       double *rawData = reinterpret_cast<double *>(this->wspace_.hset.data);
-      // for each block, only takes out the first max_leaves_ nodes to communicate
-      int rawDataPackSize = this->wspace_.localMBlk.size()*this->wspace_.hset.GetHistUnitByBlkidSize()*this->node2workindex_.num_leaves*2; 
+
+      // for each block, only takes out nodes in build_nodeset 
+      int rawDataPackSize = this->wspace_.localMBlk.size()*this->wspace_.hset.GetHistUnitByBlkidSize()*build_nodeset.size()*2; 
+      // a dummy rotation if build_nodeset == 0
+      if (rawDataPackSize == 0)
+          rawDataPackSize = 1;
+
       double* rawDataPack = new double[rawDataPackSize];
 
       // pack copy the data
-      for(int i=0; i<this->wspace_.localMBlk.size(); i++)
+      int copyVolume = this->wspace_.hset.GetHistUnitByBlkidSize()*2;
+      int packOffset = 0;
+
+      if (build_nodeset.size() > 0)
       {
-          int hsetOffset = (this->wspace_.localMBlk[i] -this->wspace_.hset.firstBlkID)*this->wspace_.hset.GetHistUnitByBlkidSize()*this->wspace_.hset.nodeSize*2;
-          int nodesVolume = this->wspace_.hset.GetHistUnitByBlkidSize()*this->node2workindex_.num_leaves*2;
-          std::copy(rawData + hsetOffset, rawData + hsetOffset + nodesVolume, rawDataPack + nodesVolume*i );
+          for(int i=0; i<this->wspace_.localMBlk.size(); i++)
+          {
+              int hsetOffset = (this->wspace_.localMBlk[i])*this->wspace_.hset.GetHistUnitByBlkidSize()*this->wspace_.hset.nodeSize*2;
+              for (int j = 0; j < build_nodeset.size(); ++j) 
+              {
+                  int nodesOffset = copyVolume*node2workindex_[build_nodeset[j]];
+                  std::copy(rawData + hsetOffset + nodesOffset, rawData + hsetOffset + nodesOffset + copyVolume, rawDataPack + copyVolume*packOffset);
+                  packOffset++;
+              }
+          }
+      }else {
+          // dummy rotation
+          rawDataPack[0] = 0;
       }
 
       harp::ds::Partition<double> *dataPar = new harp::ds::Partition<double>(harpCom_->getWorkerId(), rawDataPack, rawDataPackSize);
@@ -2901,38 +3034,50 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
       // free the memory
       syncTableMeta->clear(true);
 
-      // check out the received data to hset.data
-      // clean the original data in hset.data
-      if (this->wspace_.hset.data)
-      {
-          delete[] this->wspace_.hset.data;
-          this->wspace_.hset.data = nullptr;
-      }
+  }
 
+  void RotateCommAppend(int rIter, harp::ds::Table<double>* syncTable, const std::vector<int>& build_nodeset) 
+  {
+
+      double *rawData = reinterpret_cast<double *>(this->wspace_.hset.data);
+
+      int copyVolume = this->wspace_.hset.GetHistUnitByBlkidSize()*2;
+      int packOffset = 0;
       // only one partiton allowed
+      // deferred 
       for (const auto p : *syncTable->getPartitions()) {
 
           // create the new buffer
-          double* recvBuf = new double[this->wspace_.localMBlk.size()*(this->wspace_.hset.GetHistUnitByBlkidSize())*this->wspace_.hset.nodeSize*2];
-
-          // unpack the reduced data back to hset.data
+          // append the reduced data back to hset.data
           for(int i=0; i<this->wspace_.localMBlk.size(); i++)
           {
-              int hsetOffset = (this->wspace_.localMBlk[i] - this->wspace_.hset.firstBlkID)*this->wspace_.hset.GetHistUnitByBlkidSize()*this->wspace_.hset.nodeSize*2;
-              int nodesVolume = this->wspace_.hset.GetHistUnitByBlkidSize()*this->node2workindex_.num_leaves*2;
+              int hsetOffset = (this->wspace_.localMBlk[i])*this->wspace_.hset.GetHistUnitByBlkidSize()*this->wspace_.hset.nodeSize*2;
 
-              std::copy(p.second->getData() + nodesVolume*i, p.second->getData() + nodesVolume*(i+1), recvBuf + hsetOffset);
+              for (int j = 0; j < build_nodeset.size(); ++j) 
+              {
+                  int nodesOffset = copyVolume*node2workindex_[build_nodeset[j]];
+                  double* psrc = p.second->getData() + packOffset*copyVolume; 
+                  double* pdst = rawData + hsetOffset + nodesOffset; 
+                  if (rIter != harpCom_->getWorldSize() - 1)
+                  {
+                      for(int k=0; k < copyVolume; k++)
+                      {
+                          pdst[k] += psrc[k];
+                      }
+
+                  }
+                  else{
+                      std::copy(psrc, psrc + copyVolume, pdst);
+                  }
+
+                  packOffset++;
+              }
+
           }
-
-          // try the up_cast
-          this->wspace_.hset.data = reinterpret_cast<GradStats*>(recvBuf);
-          this->wspace_.hset.size = (this->wspace_.localMBlk.size()*this->wspace_.hset.GetHistUnitByBlkidSize()*this->wspace_.hset.nodeSize); 
 
       } 
 
       syncTable->clear(true);
-
-
   }
 
   /**

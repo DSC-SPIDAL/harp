@@ -272,7 +272,7 @@ void CLITrain(const CLIParam& param, com::Communicator* harpComm) {
   #endif
 
   // start training.
-  harpComm->barrier();
+  //harpComm->barrier();
   // shall be on multiple distributed nodes
   const double start = dmlc::GetTime();
   for (int i = version / 2; i < param.num_round; ++i) 
@@ -299,7 +299,7 @@ void CLITrain(const CLIParam& param, com::Communicator* harpComm) {
       version += 1;
     }
 
-    harpComm->barrier();
+    //harpComm->barrier();
     /*
      * add output evaluation result
      * TODO:shall be on node 0
@@ -322,7 +322,7 @@ void CLITrain(const CLIParam& param, com::Communicator* harpComm) {
         }
     }
 
-    harpComm->barrier();
+    //harpComm->barrier();
     /*
      * save model (partial)
      * TODO: on node 0
@@ -349,7 +349,7 @@ void CLITrain(const CLIParam& param, com::Communicator* harpComm) {
     version += 1;
     CHECK_EQ(version, rabit::VersionNumber());
 
-    harpComm->barrier();
+    //harpComm->barrier();
 
   } // end of iterative training process 
 
