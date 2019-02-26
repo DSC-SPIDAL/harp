@@ -2888,7 +2888,10 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
       #endif
 
       // local computation
+      
+      double startLocalCmp = dmlc::GetTime();
       LocalComputation(pblkCompSet->size(), zsize, qsize, threadid, gpair, build_nodeset, pblkCompSet,tree);
+      this->tminfo.aux_time[1] += dmlc::GetTime() - startLocalCmp;
 
       // implement the allreduce computation model 
       if (harpCom_ && harpCom_->getWorldSize() > 1 && (!useModelRotation_))
@@ -2915,6 +2918,8 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
                   RotateComm(syncTable, syncTableMeta, build_nodeset, &appendDataNext);
 
                   // ---------------------------- start the local computation on the rotated data ----------------------------
+                  
+                  double startLocalCmp = dmlc::GetTime();
                   if (rIter != harpCom_->getWorldSize() - 1)
                   { // do not update the last rotated block
                       LocalComputation(this->wspace_.localMBlk.size(), zsize, qsize, threadid, gpair, build_nodeset, &(this->wspace_.localMBlk), tree);
@@ -2922,7 +2927,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
 
                   // add the rotated data back to hset.data
                   RotateCommAppend(rIter, build_nodeset, &appendDataNext);
-
+                  this->tminfo.aux_time[1] += dmlc::GetTime() - startLocalCmp;
               } //  End of rotate for loop  
 
           }
@@ -2977,6 +2982,8 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
                   std::thread rotatePipelineObj(&HistMakerBlockLossguide::RotatePipelineComm, this, syncTable, syncTableMeta, build_nodeset, &appendDataNext);
                   //RotatePipelineComm(syncTable, syncTableMeta, build_nodeset, &appendDataNext);
                   // ---------------------------- start the local computation on the rotated data for pipeline version ----------------------------
+                  
+                  double startLocalCmp = dmlc::GetTime();
                   if (rIter != 2*harpCom_->getWorldSize() - 1)
                   { // do not update the last rotated block
                       LocalComputation(this->wspace_.plocalComp->size(), zsize, qsize, threadid, gpair, build_nodeset, this->wspace_.plocalComp,tree);
@@ -2985,6 +2992,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
                   if (appendData != nullptr )
                       RotatePipelineCommAppend(rIter, build_nodeset, this->wspace_.plocalComp, &appendData);
 
+                  this->tminfo.aux_time[1] += dmlc::GetTime() - startLocalCmp;
                   // wait for the terminate of rotation communication
                   rotatePipelineObj.join();
                                     
@@ -3017,6 +3025,8 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
       //
       // build the other half
       //
+      //
+      startLocalCmp = dmlc::GetTime();
       if (large_nodeset.size() != 0){
           // only happens when in halftrick
           #ifdef USE_HALFTRICK_EX
@@ -3034,6 +3044,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
           #endif
       }
 
+      this->tminfo.aux_time[1] += dmlc::GetTime() - startLocalCmp;
       #ifdef USE_DEBUG
       LOG(CONSOLE) << "BuildHist:: datasum_=" << this->datasum_;
       #endif
@@ -3235,6 +3246,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
               double* pdst = rawData + hsetOffset + nodesOffset; 
               if (rIter != 2*harpCom_->getWorldSize() - 1)
               {
+#pragma GCC ivdep
                   for(int k=0; k < copyVolume; k++)
                   {
                       pdst[k] += psrc[k];
