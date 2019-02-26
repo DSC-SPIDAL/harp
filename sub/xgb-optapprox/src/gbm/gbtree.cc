@@ -287,7 +287,7 @@ class GBTree : public GradientBooster {
       up->setHarpCom(harpCom_);
       // comment out this for allreduce version
       up->enableModelRotation();
-      //up->enableRotationPipeline();
+      up->enableRotationPipeline();
       updaters_.push_back(std::move(up));
     }
   }

@@ -2876,7 +2876,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
 
       // block number on the base plain
       // const int nsize = p_blkmat->GetBaseBlockNum();
-      const int nsize = pblkCompSet->size();
+      const int nsize = blkset.size();
       // block number in the row dimension
       const int zsize = p_blkmat->GetBlockZCol(0).GetBlockNum();
       // block number in the node dimension
@@ -2888,7 +2888,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
       #endif
 
       // local computation
-      LocalComputation(nsize, zsize, qsize, threadid, gpair, build_nodeset, pblkCompSet,tree);
+      LocalComputation(pblkCompSet->size(), zsize, qsize, threadid, gpair, build_nodeset, pblkCompSet,tree);
 
       // implement the allreduce computation model 
       if (harpCom_ && harpCom_->getWorldSize() > 1 && (!useModelRotation_))
@@ -2917,7 +2917,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
                   // ---------------------------- start the local computation on the rotated data ----------------------------
                   if (rIter != harpCom_->getWorldSize() - 1)
                   { // do not update the last rotated block
-                      LocalComputation(nsize, zsize, qsize, threadid, gpair, build_nodeset, &(this->wspace_.localMBlk), tree);
+                      LocalComputation(this->wspace_.localMBlk.size(), zsize, qsize, threadid, gpair, build_nodeset, &(this->wspace_.localMBlk), tree);
                   } 
 
                   // add the rotated data back to hset.data
@@ -2937,7 +2937,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
               double* appendDataNext = nullptr;
 
               //check plocalComp before 
-              printBlkIds("before pipeline ");
+              //printBlkIds("before pipeline ");
               //if (harpCom_->getWorkerId() == 0)
               //{
                   //for(int k=0; k<this->wspace_.plocalComp->size(); k++)
@@ -2974,21 +2974,20 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
                   this->wspace_.plocalComm = tempSwitchWSet;
 
                   // spawn a single thread to handle the communication 
-                  //std::thread rotatePipelineObj(&HistMakerBlockLossguide::RotatePipelineComm, this, syncTable, syncTableMeta, build_nodeset, &appendDataNext);
-                  RotatePipelineComm(syncTable, syncTableMeta, build_nodeset, &appendDataNext);
+                  std::thread rotatePipelineObj(&HistMakerBlockLossguide::RotatePipelineComm, this, syncTable, syncTableMeta, build_nodeset, &appendDataNext);
+                  //RotatePipelineComm(syncTable, syncTableMeta, build_nodeset, &appendDataNext);
                   // ---------------------------- start the local computation on the rotated data for pipeline version ----------------------------
                   if (rIter != 2*harpCom_->getWorldSize() - 1)
                   { // do not update the last rotated block
-                      LocalComputation(nsize, zsize, qsize, threadid, gpair, build_nodeset, this->wspace_.plocalComp,tree);
-                      //LocalComputation(zsize, this->wspace_.plocalComp, gpair, build_nodeset, tree); 
+                      LocalComputation(this->wspace_.plocalComp->size(), zsize, qsize, threadid, gpair, build_nodeset, this->wspace_.plocalComp,tree);
                   } // end of if check for last non-compute rotate
-
-                  // wait for the terminate of rotation communication
-                  //rotatePipelineObj.join();
 
                   if (appendData != nullptr )
                       RotatePipelineCommAppend(rIter, build_nodeset, this->wspace_.plocalComp, &appendData);
-                  
+
+                  // wait for the terminate of rotation communication
+                  rotatePipelineObj.join();
+                                    
                   // switch the append pointer
                   if (rIter != 2*harpCom_->getWorldSize() - 1) 
                   {
@@ -3007,7 +3006,7 @@ class HistMakerBlockLossguide: public BlockBaseMakerLossguide<TStats> {
 
               //check plocalComp before 
               
-              printBlkIds("after pipeline ");
+              //printBlkIds("after pipeline ");
               
           }
 
