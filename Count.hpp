@@ -57,6 +57,7 @@ class Count {
         double estimateFlopsPruned();
 
         void colorInit();
+        void colorInitSeq();
         int factorial(int n);
 
         // local graph data

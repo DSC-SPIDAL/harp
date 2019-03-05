@@ -112,7 +112,7 @@ double Count::compute(Graph& templates, bool isEstimate)
     double probColorful = factorial(_color_num) / 
                 ( factorial(_color_num - _templates->get_vert_num())*pow(_color_num, _templates->get_vert_num()));
 
-    printf("Final raw count is %f\n", finalCount);
+    printf("Final raw count is %e\n", finalCount);
     std::fflush(stdout);
 
     printf("Prob is %f\n", probColorful);
@@ -131,7 +131,8 @@ double Count::compute(Graph& templates, bool isEstimate)
 double Count::colorCounting()
 {/*{{{*/
 
-    colorInit();
+    // colorInit();
+    colorInitSeq();
 
     double countTotal = 0.0;
 
@@ -937,6 +938,16 @@ double Count::countNonBottomePruned(int subsId)
     return countSum;
 
 }/*}}}*/
+
+/**
+ * @brief used in error validation
+ */
+void Count::colorInitSeq()
+{
+    for (int i = 0; i < _vert_num; ++i) {
+        _colors_local[i] = (rand()%_color_num);
+    }
+}
 
 void Count::colorInit()
 {
