@@ -1,5 +1,4 @@
 *.o
 *.bin
 *.optrpt
-*.sh
 .tags
