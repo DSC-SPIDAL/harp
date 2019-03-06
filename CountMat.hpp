@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <cstring>
+#include <iostream>
 // #include <string.h>
 
 #include "Graph.hpp"

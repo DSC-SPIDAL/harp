@@ -1,5 +1,3 @@
-#include <omp.h>
-
 #include <stdio.h>
 #include <cstdlib>
 #include <assert.h>
@@ -16,8 +14,6 @@
 #include <stdint.h>
 #include <omp.h>
 
-#include "mkl.h"
-
 #include "Graph.hpp"
 #include "CSRGraph.hpp"
 #include "CSCGraph.hpp"
@@ -26,10 +22,12 @@
 #include "EdgeList.hpp"
 
 // for testing pb radix
+#ifndef NEC 
+
+#include "mkl.h"
 #include "radix/commons/builder.h"
 #include "radix/commons/command_line.h"
 #include "radix/pr.h"
-
 // for testing spmd3
 #include "SpDM3/include/dmat.h"
 #include "SpDM3/include/spmat.h"
@@ -37,6 +35,9 @@
 
 // for RCM reordering
 #include "SpMP/CSR.hpp"
+
+#endif
+
 
 #ifdef __INTEL_COMPILER
 // use avx intrinsics
@@ -60,7 +61,7 @@ void flushLlc(float* bufToFlushLlc)
   fprintf(fp, "%f\n", sum);
   fclose(fp);
 }
-
+#ifndef NEC 
 void benchmarkSpMVPBRadix(int argc, char** argv, EdgeList& elist, int numCols)
 {
     double startTime = 0.0;
@@ -139,6 +140,8 @@ void benchmarkSpMVPBRadix(int argc, char** argv, EdgeList& elist, int numCols)
     // -------------------- end debug the Radix SpMV ------------------------------
 }
 
+#endif
+
 // test bandwidth utilization and throughput
 void benchmarkSpMVNaive(int argc, char** argv, EdgeList& elist, int numCols, int comp_thds)
 {
@@ -152,17 +155,24 @@ void benchmarkSpMVNaive(int argc, char** argv, EdgeList& elist, int numCols, int
     double bytesTotal = sizeof(float)*2*csrnaiveG.getNumVertices() + sizeof(int)*(csrnaiveG.getNNZ() + csrnaiveG.getNumVertices()); 
     flopsTotal /= (1024*1024*1024);
     bytesTotal /= (1024*1024*1024);
-
+#ifndef NEC
     float* xMat = (float*)_mm_malloc(csrnaiveG.getNumVertices()*sizeof(float), 64);
     float* yMat = (float*)_mm_malloc(csrnaiveG.getNumVertices()*sizeof(float), 64);
+#else
+    float* xMat = (float*)malloc(csrnaiveG.getNumVertices()*sizeof(float));
+    float* yMat = (float*)malloc(csrnaiveG.getNumVertices()*sizeof(float));
+#endif
 
 #pragma omp parallel for
     for (int i = 0; i < csrnaiveG.getNumVertices(); ++i) {
         xMat[i] = 2.0; 
         yMat[i] = 0.0; 
     }
-
+#ifndef NEC
     float* bufToFlushLlc = (float*)_mm_malloc(LLC_CAPACITY, 64);
+#else
+    float* bufToFlushLlc = (float*)malloc(LLC_CAPACITY);
+#endif
 
     // test SpMV naive
     // startTime = utility::timer();
@@ -191,10 +201,15 @@ void benchmarkSpMVNaive(int argc, char** argv, EdgeList& elist, int numCols, int
         printf("Elem: %d is: %f\n", i, yMat[i]); 
         std::fflush(stdout);
     }
-
+#ifndef NEC
     _mm_free(xMat);
     _mm_free(yMat);
     _mm_free(bufToFlushLlc);
+#else
+    free(xMat);
+    free(yMat);
+    free(bufToFlushLlc);
+#endif
 }
 
 void benchmarkSpMVNaiveFull(int argc, char** argv, EdgeList& elist, int numCols, int comp_thds)
@@ -214,17 +229,24 @@ void benchmarkSpMVNaiveFull(int argc, char** argv, EdgeList& elist, int numCols,
     bytesTotal /= (1024*1024*1024);
 
     int testLen = csrnaiveG.getNumVertices()*numCols;
-
+#ifndef NEC
     float* xMat = (float*)_mm_malloc(testLen*sizeof(float), 64);
     float* yMat = (float*)_mm_malloc(testLen*sizeof(float), 64);
+#else
+    float* xMat = (float*)malloc(testLen*sizeof(float));
+    float* yMat = (float*)malloc(testLen*sizeof(float));
+#endif
 
 #pragma omp parallel for
     for (int i = 0; i < testLen; ++i) {
         xMat[i] = 2.0; 
         yMat[i] = 0.0; 
     }
-
+#ifndef NEC
     float* bufToFlushLlc = (float*)_mm_malloc(LLC_CAPACITY, 64);
+#else
+    float* bufToFlushLlc = (float*)malloc(LLC_CAPACITY);
+#endif
 
     // test SpMV naive
     // startTime = utility::timer();
@@ -255,10 +277,15 @@ void benchmarkSpMVNaiveFull(int argc, char** argv, EdgeList& elist, int numCols,
         printf("Elem: %d is: %f\n", i, yMat[i]); 
         std::fflush(stdout);
     }
-
+#ifndef NEC
     _mm_free(xMat);
     _mm_free(yMat);
     _mm_free(bufToFlushLlc);
+#else
+    free(xMat);
+    free(yMat);
+    free(bufToFlushLlc);
+#endif
 }
 
 void benchmarkSpMVNaiveFullCSC(int argc, char** argv, EdgeList& elist, int numCols, int comp_thds)
@@ -278,17 +305,24 @@ void benchmarkSpMVNaiveFullCSC(int argc, char** argv, EdgeList& elist, int numCo
 
     flopsTotal /= (1024*1024*1024);
     bytesTotal /= (1024*1024*1024);
-
+#ifndef NEC
     float* xMat = (float*)_mm_malloc(csrnaiveG.getNumVertices()*sizeof(float), 64);
     float* yMat = (float*)_mm_malloc(csrnaiveG.getNumVertices()*sizeof(float), 64);
+#else
+    float* xMat = (float*)malloc(csrnaiveG.getNumVertices()*sizeof(float));
+    float* yMat = (float*)malloc(csrnaiveG.getNumVertices()*sizeof(float));
+#endif
 
 #pragma omp parallel for
     for (int i = 0; i < csrnaiveG.getNumVertices(); ++i) {
         xMat[i] = 2.0; 
         yMat[i] = 0.0; 
     }
-
+#ifndef NEC
     float* bufToFlushLlc = (float*)_mm_malloc(LLC_CAPACITY, 64);
+#else
+    float* bufToFlushLlc = (float*)malloc(LLC_CAPACITY);
+#endif
 
     // test SpMV naive
     // startTime = utility::timer();
@@ -320,11 +354,18 @@ void benchmarkSpMVNaiveFullCSC(int argc, char** argv, EdgeList& elist, int numCo
         printf("Elem: %d is: %f\n", i, yMat[i]); 
         std::fflush(stdout);
     }
-
+#ifndef NEC
     _mm_free(xMat);
     _mm_free(yMat);
     _mm_free(bufToFlushLlc);
+#else
+    free(xMat);
+    free(yMat);
+    free(bufToFlushLlc);
+#endif
 }
+
+#ifndef NEC
 
 void benchmarkCSCSplitMM(int argc, char** argv, EdgeList& elist, int numCols, int comp_thds, int benchItr)
 {
@@ -406,6 +447,9 @@ void benchmarkCSCSplitMM(int argc, char** argv, EdgeList& elist, int numCols, in
 
 }
 
+#endif
+
+#ifndef NEC
 // Inspector-Executor interface in MKL 11.3+
 // NOTICE: the way to invoke the mkl 11.3 inspector-executor
 void benchmarkSpMVMKL(int argc, char** argv, EdgeList& elist, int numCols, int comp_thds)
@@ -497,6 +541,9 @@ void benchmarkSpMVMKL(int argc, char** argv, EdgeList& elist, int numCols, int c
     _mm_free(bufToFlushLlc);
 }
 
+#endif
+
+#ifndef NEC
 void benchmarkMMMKL(int argc, char** argv, EdgeList& elist, int numCols, int comp_thds)
 {
   
@@ -575,6 +622,9 @@ void benchmarkMMMKL(int argc, char** argv, EdgeList& elist, int numCols, int com
     _mm_free(yMat);
 }
 
+#endif
+
+#ifndef NEC
 void benchmarkSpMMMKL(int argc, char** argv, EdgeList& elist, int numCols, int comp_thds)
 {
     double startTime = 0.0;
@@ -648,6 +698,9 @@ void benchmarkSpMMMKL(int argc, char** argv, EdgeList& elist, int numCols, int c
 
 }
 
+#endif
+
+#ifndef NEC
 void benchmarkSpDM3(int argc, char** argv, EdgeList& elist, int numCols, int comp_thds)
 {    
 
@@ -716,6 +769,8 @@ void benchmarkSpDM3(int argc, char** argv, EdgeList& elist, int numCols, int com
     _mm_free(xArray);
     _mm_free(yArray);
 }
+
+#endif
 
 void arrayWiseFMAAVX(float** blockPtrDst,float** blockPtrA,float** blockPtrB, int* blockSize, 
         int blockSizeBasic, float* dst, float* a, float* b, int num_threads)
@@ -840,10 +895,15 @@ void benchmarkEMA(int argc, char** argv, EdgeList& elist, int numCols, int comp_
     double bytesTotal = sizeof(float)*(3*csrnaiveG.getNumVertices()); 
     flopsTotal /= (1024*1024*1024);
     bytesTotal /= (1024*1024*1024);
-
+#ifndef NEC
     float* xMat = (float*)_mm_malloc(csrnaiveG.getNumVertices()*sizeof(float), 64);
     float* yMat = (float*)_mm_malloc(csrnaiveG.getNumVertices()*sizeof(float), 64);
     float* zMat = (float*)_mm_malloc(csrnaiveG.getNumVertices()*sizeof(float), 64);
+#else
+    float* xMat = (float*)malloc(csrnaiveG.getNumVertices()*sizeof(float));
+    float* yMat = (float*)malloc(csrnaiveG.getNumVertices()*sizeof(float));
+    float* zMat = (float*)malloc(csrnaiveG.getNumVertices()*sizeof(float));
+#endif
 
     #pragma omp parallel for
     for (int i = 0; i < csrnaiveG.getNumVertices(); ++i) {
@@ -851,8 +911,11 @@ void benchmarkEMA(int argc, char** argv, EdgeList& elist, int numCols, int comp_
         yMat[i] = 2.0;
         zMat[i] = 0.0;
     }
-
+#ifndef NEC
     float* bufToFlushLlc = (float*)_mm_malloc(LLC_CAPACITY, 64);
+#else
+    float* bufToFlushLlc = (float*)malloc(LLC_CAPACITY);
+#endif
 
     int blockSizeBasic = csrnaiveG.getNumVertices()/comp_thds;
     int* blockSize = (int*) malloc(comp_thds*sizeof(int));
@@ -899,11 +962,17 @@ void benchmarkEMA(int argc, char** argv, EdgeList& elist, int numCols, int comp_
     printf("EMA Bd: %f GBytes/sec\n", bytesTotal*numCols*iteration/timeElapsed);
     printf("EMA Tht: %f GFLOP/sec\n", flopsTotal*numCols*iteration/timeElapsed);
     std::fflush(stdout);           
-
+#ifndef NEC
     _mm_free(xMat);
     _mm_free(yMat);
     _mm_free(zMat);
     _mm_free(bufToFlushLlc);
+#else
+    free(xMat);
+    free(yMat);
+    free(zMat);
+    free(bufToFlushLlc);
+#endif
 
     free(blockPtrDst);
     free(blockPtrA);
@@ -932,10 +1001,15 @@ void benchmarkEMAThdScale(int argc, char** argv, EdgeList& elist, int numCols, i
     double bytesTotal = sizeof(float)*(3*csrnaiveG.getNumVertices()); 
     flopsTotal /= (1024*1024*1024);
     bytesTotal /= (1024*1024*1024);
-
+#ifndef NEC
     float* xMat = (float*)_mm_malloc(csrnaiveG.getNumVertices()*sizeof(float), 64);
     float* yMat = (float*)_mm_malloc(csrnaiveG.getNumVertices()*sizeof(float), 64);
     float* zMat = (float*)_mm_malloc(csrnaiveG.getNumVertices()*sizeof(float), 64);
+#else
+    float* xMat = (float*)malloc(csrnaiveG.getNumVertices()*sizeof(float));
+    float* yMat = (float*)malloc(csrnaiveG.getNumVertices()*sizeof(float));
+    float* zMat = (float*)malloc(csrnaiveG.getNumVertices()*sizeof(float));
+#endif
 
     #pragma omp parallel for
     for (int i = 0; i < csrnaiveG.getNumVertices(); ++i) {
@@ -943,8 +1017,11 @@ void benchmarkEMAThdScale(int argc, char** argv, EdgeList& elist, int numCols, i
         yMat[i] = 2.0;
         zMat[i] = 0.0;
     }
-
+#ifndef NEC
     float* bufToFlushLlc = (float*)_mm_malloc(LLC_CAPACITY, 64);
+#else
+    float* bufToFlushLlc = (float*)malloc(LLC_CAPACITY);
+#endif
 
     std::vector<int> thdsSpec;
     thdsSpec.push_back(64);
@@ -1019,14 +1096,21 @@ void benchmarkEMAThdScale(int argc, char** argv, EdgeList& elist, int numCols, i
         free(blockSize);
 
     }
-
+#ifndef NEC
     _mm_free(xMat);
     _mm_free(yMat);
     _mm_free(zMat);
     _mm_free(bufToFlushLlc);
+#else
+    free(xMat);
+    free(yMat);
+    free(zMat);
+    free(bufToFlushLlc);
+#endif
 
 }
 
+#ifndef NEC
 // for check reordering
 bool checkPerm(const int *perm, int n)
 {
@@ -1055,6 +1139,9 @@ bool checkPerm(const int *perm, int n)
   return true;
 }
 
+#endif
+
+#ifndef NEC
 void SpMVSpMP(int m, int* rowPtr, int* colPtr, float* vals, float* x, float* y, int comp_thds)
 {
 
@@ -1076,6 +1163,9 @@ void SpMVSpMP(int m, int* rowPtr, int* colPtr, float* vals, float* x, float* y, 
     }
 }
 
+#endif
+
+#ifndef NEC
 void SpMVSpMPFull(int m, int* rowPtr, int* colPtr, float* vals, float* x, float* y, int comp_thds)
 {
 
@@ -1095,6 +1185,9 @@ void SpMVSpMPFull(int m, int* rowPtr, int* colPtr, float* vals, float* x, float*
         y[i] = sum;
     }
 }
+#endif
+
+#ifndef NEC
 void benchmarkSpMP(int argc, char** argv, EdgeList& elist, int numCols, int comp_thds)
 {
     double startTime = 0.0;
@@ -1209,6 +1302,9 @@ void benchmarkSpMP(int argc, char** argv, EdgeList& elist, int numCols, int comp
 
 }
 
+#endif
+
+#ifndef NEC
 void benchmarkSpMPFull(int argc, char** argv, EdgeList& elist, int numCols, int comp_thds)
 {
     double startTime = 0.0;
@@ -1323,6 +1419,8 @@ void benchmarkSpMPFull(int argc, char** argv, EdgeList& elist, int numCols, int 
 
 }
 
+#endif
+
 int main(int argc, char** argv)
 {
    
@@ -1346,8 +1444,8 @@ int main(int argc, char** argv)
     bool useCSC = true;
     // bool useCSC = false;
 
-    // bool isBenchmark = true;
-    bool isBenchmark = false;
+    bool isBenchmark = true;
+    //bool isBenchmark = false;
     // turn on this to estimate flops and memory bytes 
     // without running the codes
     bool isEstimate = false;

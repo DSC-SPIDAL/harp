@@ -2,7 +2,10 @@
 #include <cstring>
 #include <cstdlib>
 #include <stdio.h>
+
+#ifndef NEC
 #include "mkl.h"
+#endif
 
 using namespace std;
 
@@ -203,6 +206,7 @@ void CSRGraph::SpMVNaiveFull(valType* x, valType* y, int thdNum)
 
 void CSRGraph::SpMVMKL(valType* x, valType* y, int thdNum)
 {
+#ifndef NEC
     if (_useMKL)
     {
         mkl_sparse_s_mv(SPARSE_OPERATION_NON_TRANSPOSE, 1, _mklA, _descA, x, 0, y);
@@ -215,12 +219,15 @@ void CSRGraph::SpMVMKL(valType* x, valType* y, int thdNum)
     // mkl_set_num_threads(thdNum);
     // const char tran = 'N';
     // mkl_cspblas_scsrgemv(&tran, &_numVertices, _edgeVal, _indexRow, _indexCol, x, y);
+#endif
 }
 
 void CSRGraph::SpMVMKLHint(int callNum)
 {
+#ifndef NEC
     mkl_sparse_set_mv_hint(_mklA, SPARSE_OPERATION_NON_TRANSPOSE, _descA, callNum);
     mkl_sparse_optimize(_mklA);
+#endif
 }
 
 void CSRGraph::serialize(ofstream& outputFile)
@@ -303,6 +310,7 @@ void CSRGraph::makeOneIndex()
     }
 }
 
+#ifndef NEC
 // fill the spdm3 CSR format (CSR and zero based)
 void CSRGraph::fillSpMat(spdm3::SpMat<int, float> &smat)
 {
@@ -315,9 +323,11 @@ void CSRGraph::fillSpMat(spdm3::SpMat<int, float> &smat)
     smat.SetValues(_edgeVal);
 
 }
+#endif
 
 void CSRGraph::createMKLMat()
 {
+#ifndef NEC
     printf("Create MKL format for input graph\n");
     std::fflush(stdout);
 
@@ -341,11 +351,12 @@ void CSRGraph::createMKLMat()
 
     _descA.type = SPARSE_MATRIX_TYPE_GENERAL;
     _descA.diag = SPARSE_DIAG_NON_UNIT;
-
+#endif
 }
 
 void CSRGraph::rcmReordering()
 {
+#ifndef NEC
     _rcmMat = new SpMP::CSR(_numVertices, _numVertices, _indexRow, _indexCol, _edgeVal);
     int* perm = (int*)_mm_malloc(_rcmMat->m*sizeof(int), 64);
     int* inversePerm = (int*) _mm_malloc(_rcmMat->m*sizeof(int), 64);
@@ -359,5 +370,6 @@ void CSRGraph::rcmReordering()
 
     _mm_free(perm);
     _mm_free(inversePerm);
+#endif
 }
 

@@ -270,7 +270,7 @@ void EdgeList::readfromfileNoVerticesNum(string fileName)
     delete[] v_id;
 
 }
-
+#ifndef NEC
 void EdgeList::convertToRadixList(pvector<EdgePair<int32_t, int32_t> > &List)
 {
     for (int i = 0; i < _numEdges; ++i) {
@@ -278,4 +278,5 @@ void EdgeList::convertToRadixList(pvector<EdgePair<int32_t, int32_t> > &List)
         List[i].v = _dstList[i];
     }
 }
+#endif
 

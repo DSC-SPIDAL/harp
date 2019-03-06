@@ -9,7 +9,9 @@
 #include <omp.h>
 #include <vector>
 #include <map>
+#ifndef NEC
 #include "mkl.h"
+#endif
 
 #include "CountMat.hpp"
 #include "Helper.hpp"
@@ -625,6 +627,7 @@ double CountMat::countNonBottomePrunedSPMM(int subsId)
    if (_graph != nullptr) 
    {
 
+#ifndef NEC
        // CSR MKL SpMM implementation 
        int batchNum = (auxTableLen + _bufMatCols - 1)/(_bufMatCols);
        int colStart = 0;
@@ -678,6 +681,7 @@ double CountMat::countNonBottomePrunedSPMM(int subsId)
            colStart += batchSize;
        }
 
+#endif
    }
    else
    {
