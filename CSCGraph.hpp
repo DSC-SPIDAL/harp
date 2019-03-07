@@ -289,7 +289,7 @@ void CSCGraph<idxType, valType>::spmmSplit(valType* x, valType* y, idxType xColN
 #else
             // compiler auto vectorization
 // #pragma omp simd
-#pragma omp simd aligned(writeBufPtr, readBufPtr: 64)
+//#pragma omp simd aligned(writeBufPtr, readBufPtr: 64)
             for (int k = 0; k < xColNum; ++k) {
                 writeBufPtr[k] += (readBufPtr[k]); 
             }

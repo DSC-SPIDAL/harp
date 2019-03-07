@@ -38,6 +38,8 @@
 
 #endif
 
+#include <sys/time.h>
+#include <float.h>
 
 #ifdef __INTEL_COMPILER
 // use avx intrinsics
@@ -45,7 +47,61 @@
 #include "zmmintrin.h"
 #endif
 
+static long  TestArraySize = 500000000;
+
 using namespace std;
+
+double mysecond()
+{
+    struct timeval tp;
+    struct timezone tzp;
+    int i;
+
+    i = gettimeofday(&tp,&tzp);
+    return ( (double) tp.tv_sec + (double) tp.tv_usec * 1.e-6  );
+
+}
+
+#define M 20
+#ifndef MIN
+#define MIN(x,y) ((x)<(y)?(x):(y))
+#endif
+#ifndef MAX
+#define MAX(x,y) ((x)>(y)?(x):(y))
+#endif
+
+int checktick()
+{
+    int     i, minDelta, Delta;
+    double  t1, t2, timesfound[M];
+
+    /*  Collect a sequence of M unique time values from the system. */
+
+    for (i = 0; i < M; i++) {
+        t1 = mysecond();
+        while( ((t2=mysecond()) - t1) < 1.0E-6  )
+            ;
+        timesfound[i] = t1 = t2;
+
+    }
+
+    /*
+     *  * Determine the minimum difference between these M values.
+     *   * This result will be our estimate (in microseconds) for the
+     *    * clock granularity.
+     *     */
+
+    minDelta = 1000000;
+    for (i = 1; i < M; i++) {
+        Delta = (int)( 1.0E6 * (timesfound[i]-timesfound[i-1]) );
+        minDelta = MIN(minDelta, MAX(Delta,0));
+
+    }
+
+    return(minDelta);
+
+}
+
 
 // LLC 33 for Skylake
 static const size_t LLC_CAPACITY = 33*1024*1024;
@@ -785,89 +841,17 @@ void arrayWiseFMAAVX(float** blockPtrDst,float** blockPtrA,float** blockPtrB, in
         blockPtrB[i] = blockPtrB[i-1] + blockSizeBasic;
     }
 
-#pragma omp parallel for schedule(static) num_threads(num_threads)
+//#pragma omp parallel for schedule(static) num_threads(num_threads)
     for(int i=0; i<num_threads; i++)
     {
         float* blockPtrDstLocal = blockPtrDst[i]; 
         float* blockPtrALocal = blockPtrA[i]; 
         float* blockPtrBLocal = blockPtrB[i]; 
         int blockSizeLocal = blockSize[i];
-
-#ifdef __AVX512F__ 
-
-    // unrolled by 16 float
-    int n16 = blockSizeLocal & ~(16-1); 
-    __m512 tmpzero = _mm512_set1_ps (0);
-    __mmask16 mask = (1 << (blockSizeLocal - n16)) - 1;
-
-    __m512 vecA;
-    __m512 vecB;
-    __m512 vecC;
-    __m512 vecBuf;
-
-    for (int j = 0; j < n16; j+=16)
-    {
-        vecA = _mm512_load_ps (&(blockPtrALocal[j]));
-        vecB = _mm512_load_ps (&(blockPtrBLocal[j]));
-        vecC = _mm512_load_ps (&(blockPtrDstLocal[j]));
-        vecBuf = _mm512_fmadd_ps(vecA, vecB, vecC);
-        _mm512_store_ps(&(blockPtrDstLocal[j]), vecBuf);
-    }
-
-    if (n16 < blockSizeLocal)
-    {
-        vecA = _mm512_mask_load_ps(tmpzero, mask, &(blockPtrALocal[n16]));
-        vecB = _mm512_mask_load_ps(tmpzero, mask, &(blockPtrBLocal[n16]));
-        vecC = _mm512_mask_load_ps(tmpzero, mask, &(blockPtrDstLocal[n16]));
-        vecBuf = _mm512_fmadd_ps(vecA, vecB, vecC);
-        _mm512_mask_store_ps(&(blockPtrDstLocal[n16]), mask, vecBuf);
-    }
-#else
-
-#ifdef __AVX2__ 
-    // use avx256
-    // unrolled by 8 float
-    int n8 = blockSizeLocal & ~(8-1); 
-
-    int mask_integer[8]={0,0,0,0,0,0,0,0};
-    for (int i=0;i<(blockSizeLocal - n8); i++)
-        mask_integer[i] = -1;
-
-    __m256i mask = _mm256_setr_epi32(mask_integer[0],mask_integer[1],mask_integer[2],mask_integer[3],mask_integer[4],
-                mask_integer[5],mask_integer[6],mask_integer[7]);
-
-    __m256 vecA;
-    __m256 vecB;
-    __m256 vecC;
-    __m256 vecBuf;
-
-    for (int j = 0; j < n8; j+=8)
-    {
-        vecA = _mm256_load_ps (&(blockPtrALocal[j]));
-        vecB = _mm256_load_ps (&(blockPtrBLocal[j]));
-        vecC = _mm256_load_ps (&(blockPtrDstLocal[j]));
-        vecBuf = _mm256_fmadd_ps(vecA, vecB, vecC);
-        _mm256_store_ps(&(blockPtrDstLocal[j]), vecBuf);
-    }
-
-    if (n8 < blockSizeLocal)
-    {
-        vecA = _mm256_maskload_ps(&(blockPtrALocal[n8]), mask);
-        vecB = _mm256_maskload_ps(&(blockPtrBLocal[n8]), mask);
-        vecC = _mm256_maskload_ps(&(blockPtrDstLocal[n8]), mask);
-        vecBuf = _mm256_fmadd_ps(vecA, vecB, vecC);
-        _mm256_maskstore_ps(&(blockPtrDstLocal[n8]), mask, vecBuf);
-    }   
-
-#else
-   // no avx detected 
- #pragma omp simd aligned(dst, a, b: 64)
+   // nec vec opt 
+   //#pragma omp simd aligned(dst, a, b: 64)
         for(int j=0; j<blockSizeLocal;j++)
             blockPtrDstLocal[j] = blockPtrDstLocal[j] + blockPtrALocal[j]*blockPtrBLocal[j];          
-#endif
-
-#endif
-
     }
 
 }
@@ -882,31 +866,40 @@ void benchmarkEMA(int argc, char** argv, EdgeList& elist, int numCols, int comp_
     printf("Start benchmarking eMA\n");
     std::fflush(stdout);           
 
+    printf("Input EdgeList: vert: %d, Edges: %d\n", elist.getNumVertices(), elist.getNumEdges());
+    std::fflush(stdout);           
+
     double startTime = 0.0;
     double timeElapsed = 0.0;
 
     CSRGraph csrnaiveG;
     csrnaiveG.createFromEdgeListFile(elist.getNumVertices(), elist.getNumEdges(), elist.getSrcList(), elist.getDstList(), false, false, true);
+    printf("Input Graph: vert: %d, NNZ: %d\n", csrnaiveG.getNumVertices(), csrnaiveG.getNNZ());
+    std::fflush(stdout);           
 
+    long testArraySize = csrnaiveG.getNumVertices(); 
     // a mul plus a add
-    double flopsTotal =  2*csrnaiveG.getNumVertices();
+    double flopsTotal =  2*testArraySize;
     // z += x*y
     // 3n read/write
-    double bytesTotal = sizeof(float)*(3*csrnaiveG.getNumVertices()); 
+    double bytesTotal = sizeof(float)*(3*testArraySize); 
     flopsTotal /= (1024*1024*1024);
     bytesTotal /= (1024*1024*1024);
 #ifndef NEC
-    float* xMat = (float*)_mm_malloc(csrnaiveG.getNumVertices()*sizeof(float), 64);
-    float* yMat = (float*)_mm_malloc(csrnaiveG.getNumVertices()*sizeof(float), 64);
-    float* zMat = (float*)_mm_malloc(csrnaiveG.getNumVertices()*sizeof(float), 64);
+    float* xMat = (float*)_mm_malloc(testArraySize*sizeof(float), 64);
+    float* yMat = (float*)_mm_malloc(testArraySize*sizeof(float), 64);
+    float* zMat = (float*)_mm_malloc(testArraySize*sizeof(float), 64);
 #else
-    float* xMat = (float*)malloc(csrnaiveG.getNumVertices()*sizeof(float));
-    float* yMat = (float*)malloc(csrnaiveG.getNumVertices()*sizeof(float));
-    float* zMat = (float*)malloc(csrnaiveG.getNumVertices()*sizeof(float));
+    //float* xMat = (float*)aligned_alloc(64,testArraySize*sizeof(float));
+    //float* yMat = (float*)aligned_alloc(64,testArraySize*sizeof(float));
+    //float* zMat = (float*)aligned_alloc(64,testArraySize*sizeof(float));
+    float* xMat = (float*)malloc(testArraySize*sizeof(float));
+    float* yMat = (float*)malloc(testArraySize*sizeof(float));
+    float* zMat = (float*)malloc(testArraySize*sizeof(float));
 #endif
 
     #pragma omp parallel for
-    for (int i = 0; i < csrnaiveG.getNumVertices(); ++i) {
+    for (int i = 0; i < testArraySize; ++i) {
         xMat[i] = 2.0;
         yMat[i] = 2.0;
         zMat[i] = 0.0;
@@ -914,16 +907,16 @@ void benchmarkEMA(int argc, char** argv, EdgeList& elist, int numCols, int comp_
 #ifndef NEC
     float* bufToFlushLlc = (float*)_mm_malloc(LLC_CAPACITY, 64);
 #else
-    float* bufToFlushLlc = (float*)malloc(LLC_CAPACITY);
+    float* bufToFlushLlc = (float*)aligned_alloc(64, LLC_CAPACITY);
 #endif
 
-    int blockSizeBasic = csrnaiveG.getNumVertices()/comp_thds;
+    int blockSizeBasic = testArraySize/comp_thds;
     int* blockSize = (int*) malloc(comp_thds*sizeof(int));
     for (int i = 0; i < comp_thds; ++i) {
        blockSize[i] = blockSizeBasic; 
     }
-    blockSize[comp_thds-1] = ((csrnaiveG.getNumVertices()%comp_thds == 0) ) ? blockSizeBasic : 
-        (blockSizeBasic + (csrnaiveG.getNumVertices()%comp_thds)); 
+    blockSize[comp_thds-1] = ((testArraySize%comp_thds == 0) ) ? blockSizeBasic : 
+        (blockSizeBasic + (testArraySize%comp_thds)); 
 
     float** blockPtrDst = (float**) malloc(comp_thds*sizeof(float*));
     float** blockPtrA = (float**) malloc(comp_thds*sizeof(float*));
@@ -950,6 +943,7 @@ void benchmarkEMA(int argc, char** argv, EdgeList& elist, int numCols, int comp_
         // }
 
         startTime = utility::timer();
+
         arrayWiseFMAAVX(blockPtrDst, blockPtrA, blockPtrB, blockSize, blockSizeBasic, 
                 zMat, xMat, yMat, comp_thds);
 
@@ -972,6 +966,143 @@ void benchmarkEMA(int argc, char** argv, EdgeList& elist, int numCols, int comp_
     free(yMat);
     free(zMat);
     free(bufToFlushLlc);
+#endif
+
+    free(blockPtrDst);
+    free(blockPtrA);
+    free(blockPtrB);
+    free(blockSize);
+
+}
+
+void benchmarkEMANEC(int argc, char** argv, int numCols, int comp_thds, int benchItr)
+{
+    int iteration = benchItr;
+
+    printf("Start benchmarking eMA\n");
+    std::fflush(stdout);           
+    printf("Granularity of clock tick: %d microseconds\n", checktick());
+    std::fflush(stdout);           
+
+    //printf("Input EdgeList: vert: %d, Edges: %d\n", elist.getNumVertices(), elist.getNumEdges());
+    //std::fflush(stdout);           
+
+    double startTime = 0.0;
+    double timeElapsed = 0.0;
+
+    //CSRGraph csrnaiveG;
+    //csrnaiveG.createFromEdgeListFile(elist.getNumVertices(), elist.getNumEdges(), elist.getSrcList(), elist.getDstList(), false, false, true);
+    //printf("Input Graph: vert: %d, NNZ: %d\n", csrnaiveG.getNumVertices(), csrnaiveG.getNNZ());
+    //std::fflush(stdout);           
+
+    //long testArraySize = 500000000; 
+    // a mul plus a add
+    double flopsTotal =  2*TestArraySize;
+    // z += x*y
+    // 3n read/write
+    double bytesTotal = sizeof(float)*(3*TestArraySize); 
+    //flopsTotal /= (1024*1024*1024);
+    //bytesTotal /= (1024*1024*1024);
+#ifndef NEC
+    float* xMat = (float*)_mm_malloc(TestArraySize*sizeof(float), 64);
+    float* yMat = (float*)_mm_malloc(TestArraySize*sizeof(float), 64);
+    float* zMat = (float*)_mm_malloc(TestArraySize*sizeof(float), 64);
+#else
+    //float* xMat = (float*)aligned_alloc(64,TestArraySize*sizeof(float));
+    //float* yMat = (float*)aligned_alloc(64,TestArraySize*sizeof(float));
+    //float* zMat = (float*)aligned_alloc(64,TestArraySize*sizeof(float));
+    float* xMat = (float*)malloc(TestArraySize*sizeof(float));
+    float* yMat = (float*)malloc(TestArraySize*sizeof(float));
+    float* zMat = (float*)malloc(TestArraySize*sizeof(float));
+#endif
+
+    #pragma omp parallel for
+    for (int i = 0; i < TestArraySize; ++i) {
+        xMat[i] = 2.0;
+        yMat[i] = 2.0;
+        zMat[i] = 0.0;
+    }
+
+
+    double t = mysecond();
+#pragma omp parallel for
+    for (int j = 0; j < TestArraySize; j++)
+        yMat[j] = 2.0E0 * yMat[j];
+
+    //t = 1.0E6 * (mysecond() - t);
+    t = (mysecond() - t);
+
+    printf("Each test below will take on the order"
+            " of %f seconds.\n", t  );
+
+
+//#ifndef NEC
+    //float* bufToFlushLlc = (float*)_mm_malloc(LLC_CAPACITY, 64);
+//#else
+    ////float* bufToFlushLlc = (float*)aligned_alloc(64, LLC_CAPACITY);
+    //float* bufToFlushLlc = (float*)malloc(LLC_CAPACITY);
+//#endif
+
+
+    int blockSizeBasic = TestArraySize/comp_thds;
+    int* blockSize = (int*) malloc(comp_thds*sizeof(int));
+    for (int i = 0; i < comp_thds; ++i) {
+       blockSize[i] = blockSizeBasic; 
+    }
+    blockSize[comp_thds-1] = ((TestArraySize%comp_thds == 0) ) ? blockSizeBasic : 
+        (blockSizeBasic + (TestArraySize%comp_thds)); 
+
+    float** blockPtrDst = (float**) malloc(comp_thds*sizeof(float*));
+    float** blockPtrA = (float**) malloc(comp_thds*sizeof(float*));
+    float** blockPtrB = (float**) malloc(comp_thds*sizeof(float*));
+
+    for (int i = 0; i < comp_thds; ++i) {
+       blockPtrDst[i] = nullptr; 
+       blockPtrA[i] = nullptr; 
+       blockPtrB[i] = nullptr; 
+    }
+
+#ifdef VTUNE
+        ofstream vtune_trigger;
+        vtune_trigger.open("vtune-flag.txt");
+        vtune_trigger << "Start training process and trigger vtune profiling.\n";
+        vtune_trigger.close();
+#endif
+
+    for (int j = 0; j < numCols*iteration; ++j) 
+    {
+    
+    //for (int j = 0; j < numCols; ++j) {
+    // ------ start test ------
+    startTime = utility::timer();
+
+#pragma omp parallel for
+    for(int j=0; j<TestArraySize; j++)
+        zMat[j] = zMat[j] + xMat[j]*yMat[j];
+
+    timeElapsed += (utility::timer() - startTime);
+
+    }
+
+    // ------ end test ------
+        //startTime = utility::timer();
+    printf("EMA using %f secs\n", timeElapsed);
+    printf("EMA using %f secs per col\n", timeElapsed/(numCols*iteration));
+    printf("EMA Arith Intensity %f\n", (flopsTotal/bytesTotal));
+    printf("EMA Bd: %f GBytes/sec\n", (1.0E-09)*bytesTotal*numCols*iteration/timeElapsed);
+    printf("EMA Tht: %f GFLOP/sec\n", (1.0E-09)*flopsTotal*numCols*iteration/timeElapsed);
+    std::fflush(stdout);           
+
+#ifndef NEC
+    _mm_free(xMat);
+    _mm_free(yMat);
+    _mm_free(zMat);
+    //_mm_free(bufToFlushLlc);
+#else
+    free(xMat);
+    free(yMat);
+    free(zMat);
+    //free(bufToFlushLlc);
 #endif
 
     free(blockPtrDst);
@@ -1434,7 +1565,7 @@ int main(int argc, char** argv)
     int vtuneStart = -1;
     // bool calculate_automorphism = true;
     bool calculate_automorphism = false;
-    int benchItr = 10;
+    int benchItr = 1;
 
     int useSPMM = 1;
     // bool useMKL = true;
@@ -1471,7 +1602,8 @@ int main(int argc, char** argv)
         benchItr = atoi(argv[10]);
 
     // end of arguments
-    
+    benchmarkEMANEC(argc, argv, 10, comp_thds, benchItr);
+
     // SPMM in CSR uses MKL
     if (useSPMM && (!useCSC))
         useMKL = true;

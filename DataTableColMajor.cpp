@@ -1,6 +1,7 @@
 #include "DataTableColMajor.hpp"
 #include <cstring>
 #include <stdlib.h>
+#include <omp.h>
 
 #ifdef __INTEL_COMPILER
 // use avx intrinsics
@@ -299,7 +300,7 @@ void DataTableColMajor::updateArrayVec(float*& src, float*& dst)
         float* blockPtrValsLocal = _blockPtrB[i]; 
         int blockSizeLocal = _blockSize[i];
 
-#pragma omp simd aligned(blockPtrObjLocal, blockPtrValsLocal: 64)
+//#pragma omp simd aligned(blockPtrObjLocal, blockPtrValsLocal: 64)
         for(int j=0; j<blockSizeLocal;j++)
             blockPtrObjLocal[j] = blockPtrValsLocal[j];
     }
@@ -335,7 +336,7 @@ void DataTableColMajor::arrayWiseFMA(float* dst, float* a, float* b)
         float* blockPtrBLocal = _blockPtrB[i]; 
         int blockSizeLocal = _blockSize[i];
 
-#pragma omp simd aligned(dst, a, b: 64)
+//#pragma omp simd aligned(dst, a, b: 64)
         for(int j=0; j<blockSizeLocal;j++)
             blockPtrDstLocal[j] = blockPtrDstLocal[j] + blockPtrALocal[j]*blockPtrBLocal[j];
     }
@@ -363,7 +364,7 @@ void DataTableColMajor::arrayWiseFMAScale(float* dst, float* a, float* b, float 
         float* blockPtrBLocal = _blockPtrB[i]; 
         int blockSizeLocal = _blockSize[i];
 
-#pragma omp simd aligned(dst, a, b: 64)
+//#pragma omp simd aligned(dst, a, b: 64)
         for(int j=0; j<blockSizeLocal;j++)
             blockPtrDstLocal[j] = blockPtrDstLocal[j] + (blockPtrALocal[j]*(double)blockPtrBLocal[j])*scale;
     }
@@ -391,7 +392,7 @@ void DataTableColMajor::arrayWiseFMALast(double* dst, float* a, float* b)
         float* blockPtrBLocal = _blockPtrB[i]; 
         int blockSizeLocal = _blockSize[i];
 
-#pragma omp simd aligned(dst, a, b: 64)
+//#pragma omp simd aligned(dst, a, b: 64)
         for(int j=0; j<blockSizeLocal;j++)
             blockPtrDstLocal[j] = blockPtrDstLocal[j] + blockPtrALocal[j]*blockPtrBLocal[j];
     }
@@ -487,7 +488,7 @@ void DataTableColMajor::arrayWiseFMAAVX(float* dst, float* a, float* b)
 
 #else
    // no avx detected 
- #pragma omp simd aligned(dst, a, b: 64)
+ //#pragma omp simd aligned(dst, a, b: 64)
         for(int j=0; j<blockSizeLocal;j++)
             blockPtrDstLocal[j] = blockPtrDstLocal[j] + blockPtrALocal[j]*blockPtrBLocal[j];          
 #endif
@@ -501,7 +502,7 @@ void DataTableColMajor::arrayWiseFMAAVX(float* dst, float* a, float* b)
 void DataTableColMajor::arrayWiseFMANaive(float* dst, float* a, float* b)
 {
 
-#pragma omp parallel for simd schedule(static) aligned(dst, a, b: 64)
+//#pragma omp parallel for simd schedule(static) aligned(dst, a, b: 64)
     for (int i = 0; i < _vertsNum; ++i) {
         dst[i] = dst[i] + a[i]*b[i]; 
     }
@@ -542,7 +543,7 @@ void DataTableColMajor::arrayWiseFMANaiveAVX(float* dst, float* a, float* b)
     }
 
 #else
-#pragma omp parallel for simd schedule(static) aligned(dst, a, b: 64)
+//#pragma omp parallel for simd schedule(static) aligned(dst, a, b: 64)
     for (int i = 0; i < _vertsNum; ++i) {
         dst[i] = dst[i] + a[i]*b[i]; 
     }

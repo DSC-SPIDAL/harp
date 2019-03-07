@@ -2,6 +2,7 @@
 #include <cstring>
 #include <cstdlib>
 #include <stdio.h>
+#include <omp.h>
 
 #ifndef NEC
 #include "mkl.h"
@@ -116,7 +117,7 @@ void CSRGraph::SpMVNaive(valType* x, valType* y)
         idxType rowLen = getRowLen(i);
         idxType* rowColIdx = getColIdx(i);
 
-        #pragma omp simd reduction(+:sum) 
+        //#pragma omp simd reduction(+:sum) 
         for(idxType j=0; j<rowLen;j++)
             sum += (x[rowColIdx[j]]);
 
@@ -136,7 +137,7 @@ void CSRGraph::SpMVNaiveFull(valType* x, valType* y)
         valType* rowElem = getEdgeVals(i); 
         idxType* rowColIdx = getColIdx(i);
 
-        #pragma omp simd reduction(+:sum) 
+        //#pragma omp simd reduction(+:sum) 
         for(idxType j=0; j<rowLen;j++)
             sum += rowElem[j] * (x[rowColIdx[j]]);
 
@@ -156,7 +157,7 @@ void CSRGraph::SpMVNaiveScale(valType* x, valType* y, float scale)
         valType* rowElem = getEdgeVals(i); 
         idxType* rowColIdx = getColIdx(i);
 
-        #pragma omp simd reduction(+:sum) 
+        //#pragma omp simd reduction(+:sum) 
         for(idxType j=0; j<rowLen;j++)
             sum += rowElem[j]*((double)scale*(x[rowColIdx[j]]));
 
@@ -176,7 +177,7 @@ void CSRGraph::SpMVNaive(valType* x, valType* y, int thdNum)
         idxType rowLen = getRowLen(i);
         idxType* rowColIdx = getColIdx(i);
 
-        #pragma omp simd reduction(+:sum) 
+        //#pragma omp simd reduction(+:sum) 
         for(idxType j=0; j<rowLen;j++)
             sum += (x[rowColIdx[j]]);
 
@@ -196,7 +197,7 @@ void CSRGraph::SpMVNaiveFull(valType* x, valType* y, int thdNum)
         valType* rowElem = getEdgeVals(i); 
         idxType* rowColIdx = getColIdx(i);
 
-        #pragma omp simd reduction(+:sum) 
+        //#pragma omp simd reduction(+:sum) 
         for(idxType j=0; j<rowLen;j++)
             sum += rowElem[j] * (x[rowColIdx[j]]);
 

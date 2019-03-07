@@ -1,7 +1,6 @@
 #ifndef EDGE_LIST_H
 #define EDGE_LIST_H
 
-#include <cstring>
 #include <cstdlib>
 #include <stdlib.h>
 #include <stdio.h>
