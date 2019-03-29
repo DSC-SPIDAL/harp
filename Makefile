@@ -1,7 +1,7 @@
 ## compilation for different platforms and 
 ## compilers
-ARCHS = knl hsw skl nec
-ARCH ?= hsw
+ARCHS = knl hsw skl nec gpu
+ARCH ?= gpu
 
 COMPILERs = icc gnu ncc
 COMPILER ?= gnu
@@ -28,6 +28,10 @@ ARCH_is_$(ARCH)         := yes
 -prefetch := $(if $(COMPILER_is_icc), -qopt-prefetch=3,)
 # -mpiheader := -I/opt/intel/compilers_and_libraries_2019.0.117/linux/mpi/intel64/include
 
+# GPU cuda 
+-gpuflag := $(if $(ARCH_is_gpu), -DGPU,)
+-cudaflag := $(if $(ARCH_is_gpu), -lcusparse -lcudart,)
+
 ## include the proprogation blocking codes
 # VPATH=./radix
 ## ----------- start of compilation -----------
@@ -37,7 +41,8 @@ BIN := sc-$(ARCH)-$(COMPILER).bin
 
 # source files
 SRCS := \
-	$(wildcard *.cpp)
+	$(wildcard *.cpp) \
+	$(wildcard *.cu)
    # $(wildcard ./radix/*.cpp) \
 	#$(wildcard ./radix/commons/*.cpp) \
 	#$(wildcard ./SpBLAS/*.cpp) \
@@ -70,20 +75,22 @@ $(shell mkdir -p $(dir $(DEPS)) >/dev/null)
 CC := $(if $(COMPILER_is_ncc), ncc, $(if $(COMPILER_is_icc), icc, gcc))
 # C++ compiler
 CXX := $(if $(COMPILER_is_ncc), nc++, $(if $(COMPILER_is_icc), icpc, g++))
+# cuda compiler
+NVCC := nvcc
 # linker
 LD := $(if $(COMPILER_is_ncc), nc++, $(if $(COMPILER_is_icc), icpc, g++))
 # tar
 TAR := tar
 
 # C flags
-CFLAGS := -std=c11 $(-nccflag) $(-omp) $(-avx) $(-rpt) $(-mkl) -O3
+CFLAGS := -std=c11 $(-nccflag) $(-omp) $(-avx) $(-rpt) $(-mkl) $(-gpuflag) -O3
 # C++ flags
-CXXFLAGS := -std=c++11 $(-nccflag) $(-omp) $(-avx) $(-rpt) $(-mkl) $(-prefetch) -O3
+CXXFLAGS := -std=c++11 $(-nccflag) $(-omp) $(-avx) $(-rpt) $(-mkl) $(-prefetch) $(-gpuflag) -O3
 # C/C++ flags
-CPPFLAGS := -g -Wall -Wextra -pedantic -DVTUNE -DVERBOSE -DUSE_BLAS
+CPPFLAGS := -g -Wall -Wextra -pedantic -DVERBOSE -DUSE_BLAS
 # CPPFLAGS := -g -Wall -pedantic -DVERBOSE
 # linker flags
-LDFLAGS := $(-omp) $(-mklld)
+LDFLAGS := $(-omp) $(-mklld) $(-cudaflag)
 # flags required for dependency generation; passed to compilers
 DEPFLAGS = $(-nccdep) -MT $@ -MD -MP -MF  $(DEPDIR)/$*.Td
 
@@ -92,6 +99,8 @@ COMPILE.c = $(CC) $(DEPFLAGS) $(CFLAGS) $(CPPFLAGS) -c -o $@
 # compile C++ source files
 #COMPILE.cc = $(CXX) $(DEPFLAGS) $(CXXFLAGS) $(CPPFLAGS) -c -o $@
 COMPILE.cc = $(CXX) $(DEPFLAGS) $(CXXFLAGS) -c -o $@
+# compile CUDA source files
+COMPILE.cu = $(NVCC) $(DEPFLAGS) $(CXXFLAGS) $(CPPFLAGS) -c -o $@
 # link object files to binary
 LINK.o = $(LD) $(LDFLAGS) $(LDLIBS) -o $@
 # precompile step
@@ -135,6 +144,13 @@ $(OBJDIR)/%.o: %.c
 $(OBJDIR)/%.o: %.c $(DEPDIR)/%.d
 	$(PRECOMPILE)
 	$(COMPILE.c) $<
+	$(POSTCOMPILE)
+
+## add for cuda files
+$(OBJDIR)/%.o: %.cu
+$(OBJDIR)/%.o: %.cu $(DEPDIR)/%.d
+	$(PRECOMPILE)
+	$(COMPILE.cu) $<
 	$(POSTCOMPILE)
 
 $(OBJDIR)/%.o: %.cpp

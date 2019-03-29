@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <omp.h>
 
-#ifndef NEC
+#ifndef GPU
 #include "mkl.h"
 #endif
 
@@ -207,7 +207,7 @@ void CSRGraph::SpMVNaiveFull(valType* x, valType* y, int thdNum)
 
 void CSRGraph::SpMVMKL(valType* x, valType* y, int thdNum)
 {
-#ifndef NEC
+#ifndef GPU
     if (_useMKL)
     {
         mkl_sparse_s_mv(SPARSE_OPERATION_NON_TRANSPOSE, 1, _mklA, _descA, x, 0, y);
@@ -225,7 +225,7 @@ void CSRGraph::SpMVMKL(valType* x, valType* y, int thdNum)
 
 void CSRGraph::SpMVMKLHint(int callNum)
 {
-#ifndef NEC
+#ifndef GPU
     mkl_sparse_set_mv_hint(_mklA, SPARSE_OPERATION_NON_TRANSPOSE, _descA, callNum);
     mkl_sparse_optimize(_mklA);
 #endif
@@ -311,7 +311,7 @@ void CSRGraph::makeOneIndex()
     }
 }
 
-#ifndef NEC
+#ifndef GPU
 // fill the spdm3 CSR format (CSR and zero based)
 void CSRGraph::fillSpMat(spdm3::SpMat<int, float> &smat)
 {
@@ -328,7 +328,7 @@ void CSRGraph::fillSpMat(spdm3::SpMat<int, float> &smat)
 
 void CSRGraph::createMKLMat()
 {
-#ifndef NEC
+#ifndef GPU
     printf("Create MKL format for input graph\n");
     std::fflush(stdout);
 
@@ -357,7 +357,7 @@ void CSRGraph::createMKLMat()
 
 void CSRGraph::rcmReordering()
 {
-#ifndef NEC
+#ifndef GPU
     _rcmMat = new SpMP::CSR(_numVertices, _numVertices, _indexRow, _indexCol, _edgeVal);
     int* perm = (int*)_mm_malloc(_rcmMat->m*sizeof(int), 64);
     int* inversePerm = (int*) _mm_malloc(_rcmMat->m*sizeof(int), 64);

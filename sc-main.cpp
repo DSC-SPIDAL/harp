@@ -22,7 +22,7 @@
 #include "EdgeList.hpp"
 
 // for testing pb radix
-#ifndef NEC 
+#ifndef GPU 
 
 #include "mkl.h"
 #include "radix/commons/builder.h"
@@ -117,7 +117,7 @@ void flushLlc(float* bufToFlushLlc)
   fprintf(fp, "%f\n", sum);
   fclose(fp);
 }
-#ifndef NEC 
+#ifndef GPU 
 void benchmarkSpMVPBRadix(int argc, char** argv, EdgeList& elist, int numCols)
 {
     double startTime = 0.0;
@@ -211,7 +211,7 @@ void benchmarkSpMVNaive(int argc, char** argv, EdgeList& elist, int numCols, int
     double bytesTotal = sizeof(float)*2*csrnaiveG.getNumVertices() + sizeof(int)*(csrnaiveG.getNNZ() + csrnaiveG.getNumVertices()); 
     flopsTotal /= (1024*1024*1024);
     bytesTotal /= (1024*1024*1024);
-#ifndef NEC
+#ifndef GPU
     float* xMat = (float*)_mm_malloc(csrnaiveG.getNumVertices()*sizeof(float), 64);
     float* yMat = (float*)_mm_malloc(csrnaiveG.getNumVertices()*sizeof(float), 64);
 #else
@@ -224,7 +224,7 @@ void benchmarkSpMVNaive(int argc, char** argv, EdgeList& elist, int numCols, int
         xMat[i] = 2.0; 
         yMat[i] = 0.0; 
     }
-#ifndef NEC
+#ifndef GPU
     float* bufToFlushLlc = (float*)_mm_malloc(LLC_CAPACITY, 64);
 #else
     float* bufToFlushLlc = (float*)malloc(LLC_CAPACITY);
@@ -257,7 +257,7 @@ void benchmarkSpMVNaive(int argc, char** argv, EdgeList& elist, int numCols, int
         printf("Elem: %d is: %f\n", i, yMat[i]); 
         std::fflush(stdout);
     }
-#ifndef NEC
+#ifndef GPU
     _mm_free(xMat);
     _mm_free(yMat);
     _mm_free(bufToFlushLlc);
@@ -285,7 +285,7 @@ void benchmarkSpMVNaiveFull(int argc, char** argv, EdgeList& elist, int numCols,
     bytesTotal /= (1024*1024*1024);
 
     int testLen = csrnaiveG.getNumVertices()*numCols;
-#ifndef NEC
+#ifndef GPU
     float* xMat = (float*)_mm_malloc(testLen*sizeof(float), 64);
     float* yMat = (float*)_mm_malloc(testLen*sizeof(float), 64);
 #else
@@ -298,7 +298,7 @@ void benchmarkSpMVNaiveFull(int argc, char** argv, EdgeList& elist, int numCols,
         xMat[i] = 2.0; 
         yMat[i] = 0.0; 
     }
-#ifndef NEC
+#ifndef GPU
     float* bufToFlushLlc = (float*)_mm_malloc(LLC_CAPACITY, 64);
 #else
     float* bufToFlushLlc = (float*)malloc(LLC_CAPACITY);
@@ -333,7 +333,7 @@ void benchmarkSpMVNaiveFull(int argc, char** argv, EdgeList& elist, int numCols,
         printf("Elem: %d is: %f\n", i, yMat[i]); 
         std::fflush(stdout);
     }
-#ifndef NEC
+#ifndef GPU
     _mm_free(xMat);
     _mm_free(yMat);
     _mm_free(bufToFlushLlc);
@@ -361,7 +361,7 @@ void benchmarkSpMVNaiveFullCSC(int argc, char** argv, EdgeList& elist, int numCo
 
     flopsTotal /= (1024*1024*1024);
     bytesTotal /= (1024*1024*1024);
-#ifndef NEC
+#ifndef GPU
     float* xMat = (float*)_mm_malloc(csrnaiveG.getNumVertices()*sizeof(float), 64);
     float* yMat = (float*)_mm_malloc(csrnaiveG.getNumVertices()*sizeof(float), 64);
 #else
@@ -374,7 +374,7 @@ void benchmarkSpMVNaiveFullCSC(int argc, char** argv, EdgeList& elist, int numCo
         xMat[i] = 2.0; 
         yMat[i] = 0.0; 
     }
-#ifndef NEC
+#ifndef GPU
     float* bufToFlushLlc = (float*)_mm_malloc(LLC_CAPACITY, 64);
 #else
     float* bufToFlushLlc = (float*)malloc(LLC_CAPACITY);
@@ -410,7 +410,7 @@ void benchmarkSpMVNaiveFullCSC(int argc, char** argv, EdgeList& elist, int numCo
         printf("Elem: %d is: %f\n", i, yMat[i]); 
         std::fflush(stdout);
     }
-#ifndef NEC
+#ifndef GPU
     _mm_free(xMat);
     _mm_free(yMat);
     _mm_free(bufToFlushLlc);
@@ -421,7 +421,7 @@ void benchmarkSpMVNaiveFullCSC(int argc, char** argv, EdgeList& elist, int numCo
 #endif
 }
 
-#ifndef NEC
+#ifndef GPU
 
 void benchmarkCSCSplitMM(int argc, char** argv, EdgeList& elist, int numCols, int comp_thds, int benchItr)
 {
@@ -505,7 +505,7 @@ void benchmarkCSCSplitMM(int argc, char** argv, EdgeList& elist, int numCols, in
 
 #endif
 
-#ifndef NEC
+#ifndef GPU
 // Inspector-Executor interface in MKL 11.3+
 // NOTICE: the way to invoke the mkl 11.3 inspector-executor
 void benchmarkSpMVMKL(int argc, char** argv, EdgeList& elist, int numCols, int comp_thds)
@@ -599,7 +599,7 @@ void benchmarkSpMVMKL(int argc, char** argv, EdgeList& elist, int numCols, int c
 
 #endif
 
-#ifndef NEC
+#ifndef GPU
 void benchmarkMMMKL(int argc, char** argv, EdgeList& elist, int numCols, int comp_thds)
 {
   
@@ -680,7 +680,7 @@ void benchmarkMMMKL(int argc, char** argv, EdgeList& elist, int numCols, int com
 
 #endif
 
-#ifndef NEC
+#ifndef GPU
 void benchmarkSpMMMKL(int argc, char** argv, EdgeList& elist, int numCols, int comp_thds)
 {
     double startTime = 0.0;
@@ -756,7 +756,7 @@ void benchmarkSpMMMKL(int argc, char** argv, EdgeList& elist, int numCols, int c
 
 #endif
 
-#ifndef NEC
+#ifndef GPU
 void benchmarkSpDM3(int argc, char** argv, EdgeList& elist, int numCols, int comp_thds)
 {    
 
@@ -885,7 +885,7 @@ void benchmarkEMA(int argc, char** argv, EdgeList& elist, int numCols, int comp_
     double bytesTotal = sizeof(float)*(3*testArraySize); 
     flopsTotal /= (1024*1024*1024);
     bytesTotal /= (1024*1024*1024);
-#ifndef NEC
+#ifndef GPU
     float* xMat = (float*)_mm_malloc(testArraySize*sizeof(float), 64);
     float* yMat = (float*)_mm_malloc(testArraySize*sizeof(float), 64);
     float* zMat = (float*)_mm_malloc(testArraySize*sizeof(float), 64);
@@ -904,7 +904,7 @@ void benchmarkEMA(int argc, char** argv, EdgeList& elist, int numCols, int comp_
         yMat[i] = 2.0;
         zMat[i] = 0.0;
     }
-#ifndef NEC
+#ifndef GPU
     float* bufToFlushLlc = (float*)_mm_malloc(LLC_CAPACITY, 64);
 #else
     float* bufToFlushLlc = (float*)aligned_alloc(64, LLC_CAPACITY);
@@ -956,7 +956,7 @@ void benchmarkEMA(int argc, char** argv, EdgeList& elist, int numCols, int comp_
     printf("EMA Bd: %f GBytes/sec\n", bytesTotal*numCols*iteration/timeElapsed);
     printf("EMA Tht: %f GFLOP/sec\n", flopsTotal*numCols*iteration/timeElapsed);
     std::fflush(stdout);           
-#ifndef NEC
+#ifndef GPU
     _mm_free(xMat);
     _mm_free(yMat);
     _mm_free(zMat);
@@ -1003,7 +1003,7 @@ void benchmarkEMANEC(int argc, char** argv, int numCols, int comp_thds, int benc
     double bytesTotal = sizeof(float)*(3*TestArraySize); 
     //flopsTotal /= (1024*1024*1024);
     //bytesTotal /= (1024*1024*1024);
-#ifndef NEC
+#ifndef GPU
     float* xMat = (float*)_mm_malloc(TestArraySize*sizeof(float), 64);
     float* yMat = (float*)_mm_malloc(TestArraySize*sizeof(float), 64);
     float* zMat = (float*)_mm_malloc(TestArraySize*sizeof(float), 64);
@@ -1036,7 +1036,7 @@ void benchmarkEMANEC(int argc, char** argv, int numCols, int comp_thds, int benc
             " of %f seconds.\n", t  );
 
 
-//#ifndef NEC
+//#ifndef GPU
     //float* bufToFlushLlc = (float*)_mm_malloc(LLC_CAPACITY, 64);
 //#else
     ////float* bufToFlushLlc = (float*)aligned_alloc(64, LLC_CAPACITY);
@@ -1093,7 +1093,7 @@ void benchmarkEMANEC(int argc, char** argv, int numCols, int comp_thds, int benc
     printf("EMA Tht: %f GFLOP/sec\n", (1.0E-09)*flopsTotal*numCols*iteration/timeElapsed);
     std::fflush(stdout);           
 
-#ifndef NEC
+#ifndef GPU
     _mm_free(xMat);
     _mm_free(yMat);
     _mm_free(zMat);
@@ -1132,7 +1132,7 @@ void benchmarkEMAThdScale(int argc, char** argv, EdgeList& elist, int numCols, i
     double bytesTotal = sizeof(float)*(3*csrnaiveG.getNumVertices()); 
     flopsTotal /= (1024*1024*1024);
     bytesTotal /= (1024*1024*1024);
-#ifndef NEC
+#ifndef GPU
     float* xMat = (float*)_mm_malloc(csrnaiveG.getNumVertices()*sizeof(float), 64);
     float* yMat = (float*)_mm_malloc(csrnaiveG.getNumVertices()*sizeof(float), 64);
     float* zMat = (float*)_mm_malloc(csrnaiveG.getNumVertices()*sizeof(float), 64);
@@ -1148,7 +1148,7 @@ void benchmarkEMAThdScale(int argc, char** argv, EdgeList& elist, int numCols, i
         yMat[i] = 2.0;
         zMat[i] = 0.0;
     }
-#ifndef NEC
+#ifndef GPU
     float* bufToFlushLlc = (float*)_mm_malloc(LLC_CAPACITY, 64);
 #else
     float* bufToFlushLlc = (float*)malloc(LLC_CAPACITY);
@@ -1227,7 +1227,7 @@ void benchmarkEMAThdScale(int argc, char** argv, EdgeList& elist, int numCols, i
         free(blockSize);
 
     }
-#ifndef NEC
+#ifndef GPU
     _mm_free(xMat);
     _mm_free(yMat);
     _mm_free(zMat);
@@ -1241,7 +1241,7 @@ void benchmarkEMAThdScale(int argc, char** argv, EdgeList& elist, int numCols, i
 
 }
 
-#ifndef NEC
+#ifndef GPU
 // for check reordering
 bool checkPerm(const int *perm, int n)
 {
@@ -1272,7 +1272,7 @@ bool checkPerm(const int *perm, int n)
 
 #endif
 
-#ifndef NEC
+#ifndef GPU
 void SpMVSpMP(int m, int* rowPtr, int* colPtr, float* vals, float* x, float* y, int comp_thds)
 {
 
@@ -1296,7 +1296,7 @@ void SpMVSpMP(int m, int* rowPtr, int* colPtr, float* vals, float* x, float* y, 
 
 #endif
 
-#ifndef NEC
+#ifndef GPU
 void SpMVSpMPFull(int m, int* rowPtr, int* colPtr, float* vals, float* x, float* y, int comp_thds)
 {
 
@@ -1318,7 +1318,7 @@ void SpMVSpMPFull(int m, int* rowPtr, int* colPtr, float* vals, float* x, float*
 }
 #endif
 
-#ifndef NEC
+#ifndef GPU
 void benchmarkSpMP(int argc, char** argv, EdgeList& elist, int numCols, int comp_thds)
 {
     double startTime = 0.0;
@@ -1435,7 +1435,7 @@ void benchmarkSpMP(int argc, char** argv, EdgeList& elist, int numCols, int comp
 
 #endif
 
-#ifndef NEC
+#ifndef GPU
 void benchmarkSpMPFull(int argc, char** argv, EdgeList& elist, int numCols, int comp_thds)
 {
     double startTime = 0.0;
@@ -1663,7 +1663,10 @@ int main(int argc, char** argv)
          std::fflush(stdout);   
 #endif
 
+        double iotStart = utility::timer();
         ifstream input_file(graph_name.c_str(), ios::binary);
+        std::cout<<"Disk Load Binary Data using " << (utility::timer() - iotStart) << " s" << std::endl;
+
         if (csrInputG != nullptr)
             csrInputG->deserialize(input_file, useMKL, useRcm);
         else
@@ -1681,7 +1684,13 @@ int main(int argc, char** argv)
         std::fflush(stdout);           
 #endif
 
+        // the io work is here
+        double iotStart = utility::timer();
+
         EdgeList elist(graph_name); 
+
+        std::cout<<"Disk Load Text Data using " << (utility::timer() - iotStart) << " s" << std::endl;
+
         if (isBenchmark)
         {
 
@@ -1770,7 +1779,7 @@ int main(int argc, char** argv)
         output_file.close();
     }
 
-    printf("Loading Datasets using %f secs\n", (utility::timer() - startTime));
+    printf("Prepare Datasets using %f secs\n", (utility::timer() - startTime));
     std::fflush(stdout);           
     
     // ---------------- start of computing ----------------

@@ -7,7 +7,7 @@
 #include <algorithm>
 #include <iostream>
 
-#ifndef NEC
+#ifndef GPU
 #include "SpDM3/include/spmat.h"
 #include "mkl.h"
 // for RCM reordering
@@ -25,7 +25,7 @@ class CSRGraph
         typedef int32_t idxType;
         // typedef int idxType;
         typedef float valType;
-#ifndef NEC
+#ifndef GPU
         CSRGraph(): _isDirected(false), _isOneBased(false), _numEdges(-1), _numVertices(-1), _nnZ(-1),  
             _edgeVal(nullptr), _indexRow(nullptr), _indexCol(nullptr), 
             _degList(nullptr), _useMKL(false), _useRcm(false), _rcmMat(nullptr), _rcmMatR(nullptr) {}
@@ -44,7 +44,7 @@ class CSRGraph
 
             if (_indexCol != nullptr)
                 free(_indexCol);
-#ifndef NEC
+#ifndef GPU
             if (_rcmMatR != nullptr)
                 delete _rcmMatR;
 #endif
@@ -52,7 +52,7 @@ class CSRGraph
 
         valType* getEdgeVals(idxType rowId)
         {
-#ifndef NEC
+#ifndef GPU
             return (_rcmMatR != nullptr) ? (_rcmMatR->svalues + _rcmMatR->rowptr[rowId]) : (_edgeVal + _indexRow[rowId]); 
 #else
             return (_edgeVal + _indexRow[rowId]); 
@@ -61,7 +61,7 @@ class CSRGraph
 
         idxType* getColIdx(idxType rowId)
         {
-#ifndef NEC
+#ifndef GPU
             return (_rcmMatR != nullptr ) ? (_rcmMatR->colidx + _rcmMatR->rowptr[rowId]) : (_indexCol + _indexRow[rowId]);
 #else
             return (_indexCol + _indexRow[rowId]);
@@ -70,7 +70,7 @@ class CSRGraph
 
         idxType getRowLen(idxType rowId)
         {
-#ifndef NEC
+#ifndef GPU
             return (_rcmMatR != nullptr ) ? (_rcmMatR->rowptr[rowId + 1] - _rcmMatR->rowptr[rowId]) : (_indexRow[rowId+1] - _indexRow[rowId]);
 #else
             return (_indexRow[rowId+1] - _indexRow[rowId]);
@@ -84,13 +84,13 @@ class CSRGraph
         void SpMVNaiveFull(valType* x, valType* y, int thdNum);
         void SpMVMKL(valType* x, valType* y, int thdNum);
         void SpMVMKLHint(int callNum);
-#ifndef NEC
+#ifndef GPU
         idxType getNumVertices() {return (_rcmMatR != nullptr) ? _rcmMatR->m : _numVertices;} 
 #else
         idxType getNumVertices() {return _numVertices;} 
 #endif
 
-#ifndef NEC
+#ifndef GPU
         idxType getNNZ() {return (_rcmMatR != nullptr) ? _rcmMatR->rowptr[_rcmMatR->m] : _indexRow[_numVertices]; }
         idxType* getIndexRow() {return (_rcmMatR != nullptr) ? _rcmMatR->rowptr : _indexRow;}
         idxType* getIndexCol() {return (_rcmMatR != nullptr) ? _rcmMatR->colidx : _indexCol;}
@@ -114,7 +114,7 @@ class CSRGraph
         void serialize(ofstream& outputFile);
         void deserialize(ifstream& inputFile, bool useMKL = false, bool useRcm = false);
 
-#ifndef NEC
+#ifndef GPU
         void fillSpMat(spdm3::SpMat<int, float> &smat);
 #endif
         void rcmReordering();
@@ -134,13 +134,13 @@ class CSRGraph
         idxType* _indexRow;
         idxType* _indexCol;
         idxType* _degList;
-#ifndef NEC
+#ifndef GPU
         sparse_matrix_t _mklA;
         matrix_descr _descA;
 #endif
         bool _useMKL;
 
-#ifndef NEC
+#ifndef GPU
         SpMP::CSR* _rcmMat;
         SpMP::CSR* _rcmMatR;
 #endif

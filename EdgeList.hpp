@@ -9,7 +9,7 @@
 #include <omp.h>
 #include <string>
 
-#ifndef NEC
+#ifndef GPU
 #include "radix/pvector.h"
 #include "radix/commons/graph.h"
 #endif
@@ -48,7 +48,7 @@ class EdgeList
         idxType* getSrcList() {return _srcList;}
         idxType* getDstList() {return _dstList;}
 
-#ifndef NEC
+#ifndef GPU
         // for radix
         void convertToRadixList(pvector<EdgePair<int32_t, int32_t> >& List);
 #endif
