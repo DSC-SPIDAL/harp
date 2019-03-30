@@ -385,10 +385,9 @@ __global__ void cudaEMA(T* xArray, T* yArray, T* zArray, I len)
         zArray[idx] = zArray[idx] + xArray[idx]*yArray[idx];
 }
 
-void DataTableColMajor::arrayWiseFMACUDA(float* dst, float* a, float* b)
+void DataTableColMajor::arrayWiseFMACUDA(float* dst, float* a, float* b, int blkSize)
 {
 
-    int blkSize = 512;
     int gridSize = (_vertsNum + blkSize - 1 )/blkSize;
 
     dim3 block(blkSize);
@@ -399,9 +398,8 @@ void DataTableColMajor::arrayWiseFMACUDA(float* dst, float* a, float* b)
 
 }
 
-void DataTableColMajor::arrayWiseFMAScaleCUDA(float* dst, float* a, float* b, float scale)
+void DataTableColMajor::arrayWiseFMAScaleCUDA(float* dst, float* a, float* b, float scale, int blkSize)
 {
-    int blkSize = 512;
     int gridSize = (_vertsNum + blkSize - 1 )/blkSize;
 
     dim3 block(blkSize);
@@ -452,10 +450,9 @@ __global__ void cudaEMALast(T* xArray, T* yArray, L* zArray, I len)
         zArray[idx] = zArray[idx] + xArray[idx]*yArray[idx];
 }
 
-void DataTableColMajor::arrayWiseFMALastCUDA(double* dst, float* a, float* b)
+void DataTableColMajor::arrayWiseFMALastCUDA(double* dst, float* a, float* b, int blkSize)
 {
 
-    int blkSize = 512;
     int gridSize = (_vertsNum + blkSize - 1 )/blkSize;
 
     dim3 block(blkSize);

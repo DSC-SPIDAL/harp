@@ -1580,6 +1580,9 @@ int main(int argc, char** argv)
     // without running the codes
     bool isEstimate = false;
     // bool isEstimate = true;
+    //
+    int gpuDeviceIdx = 0;
+    int gpuBlkSize = 1024;
 
     graph_name = argv[1];
     template_name = argv[2];
@@ -1594,14 +1597,35 @@ int main(int argc, char** argv)
     if (argc > 8)
         useSPMM = atoi(argv[8]);
 
-    if (argc > 9)
-        vtuneStart = atoi(argv[9]);
+    //if (argc > 9)
+        //vtuneStart = atoi(argv[9]);
 
-    if (argc > 10)
-        benchItr = atoi(argv[10]);
+    //if (argc > 10)
+        //benchItr = atoi(argv[10]);
+
+    if (argc > 11)
+        gpuDeviceIdx = atoi(argv[11]);
+
+    if (argc > 12)
+        gpuBlkSize = atoi(argv[12]);
+
+
+#ifdef GPU
+
+    // setup the gpu device
+    int devicesCount;
+    cudaGetDeviceCount(&devicesCount); 
+    if (gpuDeviceIdx < devicesCount)
+    {
+        cudaSetDevice(gpuDeviceIdx);
+    }else{
+        std::cout<<"Wrong GPU device !" << std::endl;
+    }
+
+#endif
 
     // end of arguments
-    benchmarkEMANEC(argc, argv, 10, comp_thds, benchItr);
+    //benchmarkEMANEC(argc, argv, 10, comp_thds, benchItr);
 
     // SPMM in CSR uses MKL
     if (useSPMM && (!useCSC))
@@ -1644,6 +1668,10 @@ int main(int argc, char** argv)
     else
         cscInputG = new CSCGraph<int32_t, float>();
         
+#ifdef GPU
+    csrInputG->setGPUBlkSize(gpuBlkSize);
+#endif
+
     Graph input_template;
     double startTime = utility::timer();
 
@@ -1787,7 +1815,7 @@ int main(int argc, char** argv)
 
     // start CSR mat computing
     CountMat executor;
-    executor.initialization(csrInputG, cscInputG, comp_thds, iterations, isPruned, useSPMM, vtuneStart, calculate_automorphism);
+    executor.initialization(csrInputG, cscInputG, comp_thds, iterations, isPruned, useSPMM, vtuneStart, calculate_automorphism, gpuBlkSize);
 
     executor.compute(input_template, isEstimate);
 

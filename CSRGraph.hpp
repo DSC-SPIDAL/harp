@@ -37,7 +37,7 @@ class CSRGraph
 #else
         CSRGraph(): _isDirected(false), _isOneBased(false), _numEdges(-1), _numVertices(-1), _nnZ(-1),  
             _edgeVal(nullptr), _indexRow(nullptr), _indexCol(nullptr), 
-            _edgeValDev(nullptr), _indexRowDev(nullptr), _indexColDev(nullptr), _handle(0), _descr(0), _cudaAlpha(1.0), _cudaBeta(0.0), 
+            _edgeValDev(nullptr), _indexRowDev(nullptr), _indexColDev(nullptr), _handle(0), _descr(0), _cudaAlpha(1.0), _cudaBeta(0.0), _gpuBlkSize(512), 
             _degList(nullptr), _useMKL(false), _useRcm(false) {}
 #endif
 
@@ -101,6 +101,7 @@ class CSRGraph
         void SpMVMKLHint(int callNum);
 
 #ifdef GPU
+        void setGPUBlkSize(int size) { _gpuBlkSize = size; }
         void cudaSpMV(valType* xInput, valType* yOutput);
         void cudaSpMVCuSparse(valType* xInput, valType* yOutput);
 #endif
@@ -166,6 +167,7 @@ class CSRGraph
         // used in CuSparse
         valType _cudaAlpha;
         valType _cudaBeta;
+        int _gpuBlkSize;
 #endif
 
         idxType* _degList;

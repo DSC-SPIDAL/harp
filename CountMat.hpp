@@ -35,7 +35,7 @@ class CountMat {
         _useCSC(1) {} 
 
         void initialization(CSRGraph* graph, CSCGraph<int32_t, float>* graphCSC, int thd_num, int itr_num, int isPruned, int useSPMM, int vtuneStart=-1,
-                bool calculate_automorphisms = false);
+                bool calculate_automorphisms = false, int blkSize = 512);
 
         double compute(Graph& templates, bool isEstimate = false);
 
@@ -213,6 +213,11 @@ class CountMat {
 
         int _vtuneStart;
         int _useCSC;
+
+#ifdef GPU
+        int _blkSize;
+#endif
+
 };
 
 #endif

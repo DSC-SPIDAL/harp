@@ -171,7 +171,7 @@ void CSRGraph::createFromEdgeListFile(CSRGraph::idxType numVerts, CSRGraph::idxT
 void CSRGraph::cudaSpMV(valType* xInput, valType* yOutput)
 {
     //launch the kernel
-    int blkSize = 1024;
+    int blkSize = _gpuBlkSize;
     int gridSize = (_numVertices + blkSize - 1)/blkSize; 
 
     dim3 block(blkSize);

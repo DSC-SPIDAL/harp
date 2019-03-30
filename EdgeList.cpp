@@ -13,15 +13,15 @@ void EdgeList::readfromfile(string fileName)
     printf("File name: %s\n", fileName.c_str()); 
     std::fflush(stdout);
 
-    // check the header
-    //char c = file_strm.get();
-    //while (c == '%')
-    //{
-        //isMMIO = true;
-        //std::getline(file_strm, line);
-        //c = file_strm.get();
-    //}
-    //file_strm.unget();
+    // check the header not applicable to NEC machine
+    char c = file_strm.get();
+    while (c == '%')
+    {
+        isMMIO = true;
+        std::getline(file_strm, line);
+        c = file_strm.get();
+    }
+    file_strm.unget();
 
     if (isMMIO)
         readfromMMIO(file_strm);

@@ -1,8 +1,8 @@
 ## ----------- start of compilation -----------
 CXX := g++
 NVCC := nvcc
-CXXFLAGS := -std=c++11 -DGPU -fopenmp -O3 -I.
-CUFLAGS := -std=c++11 -DGPU -Xcompiler -fopenmp -O3 -I.
+CXXFLAGS := -std=c++11 -DGPU -DVERBOSE -fopenmp -O3 -I.
+CUFLAGS := -std=c++11 -DGPU -DVERBOSE -Xcompiler -fopenmp -O3 -I.
 LDFLAGS := -lcusparse -lcudart -lgomp 
 DEPS := $(wildcard *.hpp)
 Obj := sc-main.o CountMat.o CSRGraph.o DataTableColMajor.o DivideTemplates.o EdgeList.o Graph.o Helper.o IndexSys.o

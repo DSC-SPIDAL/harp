@@ -23,11 +23,16 @@
 
 using namespace std;
 
-void CountMat::initialization(CSRGraph* graph, CSCGraph<int32_t, float>* graphCSC, int thd_num, int itr_num, int isPruned, int useSPMM, int vtuneStart, bool calculate_automorphisms)
+void CountMat::initialization(CSRGraph* graph, CSCGraph<int32_t, float>* graphCSC, int thd_num, int itr_num, int isPruned, int useSPMM, int vtuneStart, bool calculate_automorphisms, int blkSize)
 {
     // either use _graph or _graphCSC
     _graph = graph;
     _graphCSC = graphCSC;
+
+#ifdef GPU
+    _blkSize = blkSize;
+#endif
+
 
     if (_graph != nullptr)
         _vert_num = _graph->getNumVertices();
@@ -243,10 +248,10 @@ double CountMat::compute(Graph& templates, bool isEstimate)
     printf("Peak Mem Usage is : %9.6lf GB\n", _peakMemUsage);
     std::fflush(stdout);
 
-    printf("SpMM time is : %f second; EMA time is: %f \n", _spmvElapsedTime/_itr_num, _fmaElapsedTime/_itr_num);
+    printf("SpMV/SpMM time is : %f second; EMA time is: %f \n", _spmvElapsedTime/_itr_num, _fmaElapsedTime/_itr_num);
     std::fflush(stdout);
 
-    printf("SpMM Memory bandwidth is : %f GBytes per second\n", (_spmvMemBytes*_itr_num)/_spmvElapsedTime);
+    printf("SpMV/SpMM Memory bandwidth is : %f GBytes per second\n", (_spmvMemBytes*_itr_num)/_spmvElapsedTime);
     std::fflush(stdout);
     printf("FMA Memory bandwidth is : %f GBytes per second\n", (_fmaMemBytes*_itr_num)/_fmaElapsedTime);
     std::fflush(stdout);
@@ -255,7 +260,7 @@ double CountMat::compute(Graph& templates, bool isEstimate)
             ((_spmvMemBytes+_fmaMemBytes)*_itr_num)/(_spmvElapsedTime + _fmaElapsedTime));
     std::fflush(stdout);
 
-    printf("SpMM Throughput is : %f Gflops per second\n", (_spmvFlops*_itr_num)/_spmvElapsedTime);
+    printf("SpMV/SpMM Throughput is : %f Gflops per second\n", (_spmvFlops*_itr_num)/_spmvElapsedTime);
     std::fflush(stdout);
     printf("FMA Throughput is : %f Gflops per second\n", (_fmaFlops*_itr_num)/_fmaElapsedTime);
     std::fflush(stdout);
@@ -524,7 +529,7 @@ double CountMat::countNonBottomePruned(int subsId)
                 if (_isScaled == 0)
                 {
 #ifdef GPU
-                    _dTable.arrayWiseFMAScaleCUDA(objArray, auxArraySelect, mainArraySelect, 1.0e-12);
+                    _dTable.arrayWiseFMAScaleCUDA(objArray, auxArraySelect, mainArraySelect, 1.0e-12, _blkSize);
 #else
                     _dTable.arrayWiseFMAScale(objArray, auxArraySelect, mainArraySelect, 1.0e-12);
 #endif
@@ -533,7 +538,7 @@ double CountMat::countNonBottomePruned(int subsId)
                 else
                 {
 #ifdef GPU
-                    _dTable.arrayWiseFMACUDA(objArray, auxArraySelect, mainArraySelect);
+                    _dTable.arrayWiseFMACUDA(objArray, auxArraySelect, mainArraySelect, _blkSize);
 #else
                     _dTable.arrayWiseFMAAVX(objArray, auxArraySelect, mainArraySelect);
 #endif
@@ -543,7 +548,7 @@ double CountMat::countNonBottomePruned(int subsId)
             {
                 // the last scale use 
 #ifdef GPU
-                _dTable.arrayWiseFMALastCUDA(bufLastSub, auxArraySelect, mainArraySelect);
+                _dTable.arrayWiseFMALastCUDA(bufLastSub, auxArraySelect, mainArraySelect, _blkSize);
 #else
                 _dTable.arrayWiseFMALast(bufLastSub, auxArraySelect, mainArraySelect);
 #endif
