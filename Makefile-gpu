@@ -1,6 +1,8 @@
 ## ----------- start of compilation -----------
-CXX := nvcc 
-CXXFLAGS := -x cu -std=c++11 -DGPU -Xcompiler -fopenmp -O3 -I.
+CXX := g++
+NVCC := nvcc
+CXXFLAGS := -std=c++11 -DGPU -fopenmp -O3 -I.
+CUFLAGS := -std=c++11 -DGPU -Xcompiler -fopenmp -O3 -I.
 LDFLAGS := -lcusparse -lcudart -lgomp 
 DEPS := $(wildcard *.hpp)
 Obj := sc-main.o CountMat.o CSRGraph.o DataTableColMajor.o DivideTemplates.o EdgeList.o Graph.o Helper.o IndexSys.o
@@ -9,6 +11,9 @@ all: sc-gpu-gnu.bin
 
 %.o: %.cpp $(DEPS)
 	$(CXX) -c -o $@ $< $(CXXFLAGS)
+
+%.o: %.cu $(DEPS)
+	$(NVCC) -c -o $@ $< $(CUFLAGS)
 
 sc-gpu-gnu.bin: $(Obj)
 	$(CXX) -o $@ $^ $(LDFLAGS)
