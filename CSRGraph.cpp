@@ -8,7 +8,38 @@
 #include "mkl.h"
 #endif
 
+#ifdef GPU
+#include <cuda_runtime.h>
+#include "cusparse.h"
+#endif
+
 using namespace std;
+
+#ifdef GPU
+
+template <typename T, typename I>
+__global__ void cudaSpMVKernel(T* xInput, T* yOutput, I* rowIdx,
+      I* colIdx, T* val, I numRow)
+{
+    T sumPerThd;
+    // one row per block
+    I row = (I)(blockIdx.x*blockDim.x + threadIdx.x);
+
+    if (row < numRow)
+    {
+        I rowLen = (rowIdx[row+1] - rowIdx[row]);
+        I* rowColIdx = colIdx + rowIdx[row];
+        T* rowElem = val + rowIdx[row];
+        for (I j = 0; j < rowLen; ++j) 
+        {
+           sumPerThd += rowElem[j]*(xInput[rowColIdx[j]]); 
+        }
+
+        yOutput[row] = sumPerThd;
+    }
+}
+
+#endif
 
 // create a CSR graph from edge list 
 void CSRGraph::createFromEdgeListFile(CSRGraph::idxType numVerts, CSRGraph::idxType numEdges, 
@@ -102,9 +133,68 @@ void CSRGraph::createFromEdgeListFile(CSRGraph::idxType numVerts, CSRGraph::idxT
            createMKLMat();
     }
 
+    // transfer data from host to device if GPU is available
+#ifdef GPU
+    cudaMalloc(&_indexRowDev, (_numVertices+1)*sizeof(_indexRowDev[0]));    
+    cudaMalloc(&_indexColDev, (_nnZ)*sizeof(_indexColDev[0]));    
+    cudaMalloc(&_edgeValDev, (_nnZ)*sizeof(_edgeValDev[0]));    
+
+    cudaMemcpy(_indexRowDev, _indexRow, (_numVertices+1)*sizeof(idxType), cudaMemcpyHostToDevice);
+    cudaMemcpy(_indexColDev, _indexCol, (_nnZ)*sizeof(idxType), cudaMemcpyHostToDevice);
+    cudaMemcpy(_edgeValDev, _edgeVal, (_nnZ)*sizeof(valType), cudaMemcpyHostToDevice);
+
+    // for cusparse
+    _status= cusparseCreate(&_handle);
+    if (_status != CUSPARSE_STATUS_SUCCESS) {
+        std::printf("CUSPARSE Library initialization failed\n");
+        std::fflush(stdout);
+        cudaDeviceReset();
+    }
+
+    //create and setup matrix descriptor 
+    _status= cusparseCreateMatDescr(&_descr); 
+    if (_status != CUSPARSE_STATUS_SUCCESS) {
+        std::printf("Matrix descriptor initialization failed\n");
+        std::fflush(stdout);
+        cudaDeviceReset();
+    }
+
+    // subscribe the descriptor and set up the types 
+    cusparseSetMatType(_descr,CUSPARSE_MATRIX_TYPE_GENERAL);
+    cusparseSetMatIndexBase(_descr,CUSPARSE_INDEX_BASE_ZERO);  
+
+#endif
 
 }/*}}}*/
 
+#ifdef GPU
+void CSRGraph::cudaSpMV(valType* xInput, valType* yOutput)
+{
+    //launch the kernel
+    int blkSize = 1024;
+    int gridSize = (_numVertices + blkSize - 1)/blkSize; 
+
+    dim3 block(blkSize);
+    dim3 grid(gridSize);
+
+    cudaSpMVKernel<valType,idxType><<<grid, block>>>(xInput, yOutput, 
+            _indexRowDev, _indexColDev, _edgeValDev, _numVertices);
+
+    cudaDeviceSynchronize();
+
+}
+
+void CSRGraph::cudaSpMVCuSparse(valType* xInput, valType* yOutput)
+{
+
+    _status= cusparseScsrmv(_handle,CUSPARSE_OPERATION_NON_TRANSPOSE, _numVertices, _numVertices, _nnZ,
+            &_cudaAlpha, _descr, _edgeValDev, _indexRowDev, _indexColDev, 
+            xInput, &_cudaBeta, yOutput);
+
+    cudaDeviceSynchronize();
+}
+
+#endif
 
 void CSRGraph::SpMVNaive(valType* x, valType* y)
 {

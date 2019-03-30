@@ -14,6 +14,11 @@
 #include "IndexSys.hpp"
 #include "DataTableColMajor.hpp"
 
+#ifdef GPU
+#include <cuda_runtime.h>
+#include "cusparse.h"
+#endif
+
 using namespace std;
 
 class CountMat {
@@ -44,7 +49,11 @@ class CountMat {
 #ifdef __INTEL_COMPILER
                 _mm_free(_bufVec); 
 #else
+#ifdef GPU
+                cudaFree(_bufVec); 
+#else
                 free(_bufVec); 
+#endif
 #endif
             }
 
@@ -53,7 +62,11 @@ class CountMat {
 #ifdef __INTEL_COMPILER
                 _mm_free(_bufMatY); 
 #else
+#ifdef GPU
+                cudaFree(_bufMatY); 
+#else
                 free(_bufMatY); 
+#endif
 #endif
             }
 
@@ -62,7 +75,11 @@ class CountMat {
 #ifdef __INTEL_COMPILER
                 _mm_free(_bufMatX); 
 #else
+#ifdef GPU
+                cudaFree(_bufMatX); 
+#else
                 free(_bufMatX); 
+#endif
 #endif
             }
 
@@ -75,7 +92,11 @@ class CountMat {
 #ifdef __INTEL_COMPILER
                         _mm_free(_bufVecLeaf[i]); 
 #else
+#ifdef GPU
+                        cudaFree(_bufVecLeaf[i]); 
+#else
                         free(_bufVecLeaf[i]); 
+#endif
 #endif                   
                     }
 
@@ -85,7 +106,11 @@ class CountMat {
 #ifdef __INTEL_COMPILER
                         _mm_free(_bufVecLeaf[0]); 
 #else
+#ifdef GPU
+                        cudaFree(_bufVecLeaf[0]); 
+#else
                         free(_bufVecLeaf[0]); 
+#endif
 #endif                   
 
                 }

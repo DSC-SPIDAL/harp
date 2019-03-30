@@ -14,6 +14,11 @@
 #include "SpMP/CSR.hpp"
 #endif
 
+#ifdef GPU
+#include <cuda_runtime.h>
+#include "cusparse.h"
+#endif
+
 using namespace std;
 
 // store the edgelist graph data into a CSR format (non-symmetric)
@@ -32,6 +37,7 @@ class CSRGraph
 #else
         CSRGraph(): _isDirected(false), _isOneBased(false), _numEdges(-1), _numVertices(-1), _nnZ(-1),  
             _edgeVal(nullptr), _indexRow(nullptr), _indexCol(nullptr), 
+            _edgeValDev(nullptr), _indexRowDev(nullptr), _indexColDev(nullptr), _handle(0), _descr(0), _cudaAlpha(1.0), _cudaBeta(0.0), 
             _degList(nullptr), _useMKL(false), _useRcm(false) {}
 #endif
 
@@ -47,6 +53,15 @@ class CSRGraph
 #ifndef GPU
             if (_rcmMatR != nullptr)
                 delete _rcmMatR;
+#else
+            if (_edgeValDev != nullptr)
+                cudaFree(_edgeValDev);
+
+            if (_indexRowDev != nullptr)
+                cudaFree(_indexRowDev);
+
+            if (_indexColDev != nullptr)
+                cudaFree(_indexColDev);
 #endif
         }
 
@@ -84,6 +99,12 @@ class CSRGraph
         void SpMVNaiveFull(valType* x, valType* y, int thdNum);
         void SpMVMKL(valType* x, valType* y, int thdNum);
         void SpMVMKLHint(int callNum);
+
+#ifdef GPU
+        void cudaSpMV(valType* xInput, valType* yOutput);
+        void cudaSpMVCuSparse(valType* xInput, valType* yOutput);
+#endif
+
 #ifndef GPU
         idxType getNumVertices() {return (_rcmMatR != nullptr) ? _rcmMatR->m : _numVertices;} 
 #else
@@ -130,9 +151,23 @@ class CSRGraph
         idxType _numEdges;
         idxType _numVertices;
         idxType _nnZ;
+
         valType* _edgeVal;
         idxType* _indexRow;
         idxType* _indexCol;
+
+#ifdef GPU
+        valType* _edgeValDev;
+        idxType* _indexRowDev;
+        idxType* _indexColDev;
+        cusparseStatus_t _status;
+        cusparseHandle_t _handle;
+        cusparseMatDescr_t _descr;
+        // used in CuSparse
+        valType _cudaAlpha;
+        valType _cudaBeta;
+#endif
+
         idxType* _degList;
 #ifndef GPU
         sparse_matrix_t _mklA;

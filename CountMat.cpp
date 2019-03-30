@@ -16,6 +16,11 @@
 #include "CountMat.hpp"
 #include "Helper.hpp"
 
+#ifdef GPU
+#include <cuda_runtime.h>
+#include "cusparse.h"
+#endif
+
 using namespace std;
 
 void CountMat::initialization(CSRGraph* graph, CSCGraph<int32_t, float>* graphCSC, int thd_num, int itr_num, int isPruned, int useSPMM, int vtuneStart, bool calculate_automorphisms)
@@ -51,7 +56,11 @@ void CountMat::initialization(CSRGraph* graph, CSCGraph<int32_t, float>* graphCS
 #ifdef __INTEL_COMPILER
     _bufVec = (float*) _mm_malloc(_vert_num*sizeof(float), 64); 
 #else
+#ifdef GPU
+    cudaMallocManaged(&_bufVec, _vert_num*sizeof(_bufVec[0]));
+#else
     _bufVec = (float*) aligned_alloc(64, _vert_num*sizeof(float)); 
+#endif
 #endif
 #pragma omp parallel for num_threads(omp_get_max_threads())
     for (int i = 0; i < _vert_num; ++i) {
@@ -65,8 +74,13 @@ void CountMat::initialization(CSRGraph* graph, CSCGraph<int32_t, float>* graphCS
     _bufMatY = (float*) _mm_malloc(_vert_num*_bufMatCols*sizeof(float), 64); 
     _bufMatX = (float*) _mm_malloc(_vert_num*_bufMatCols*sizeof(float), 64); 
 #else
+#ifdef GPU
+    cudaMallocManaged(&_bufMatY, _vert_num*_bufMatCols*sizeof(_bufMatY[0]));
+    cudaMallocManaged(&_bufMatX, _vert_num*_bufMatCols*sizeof(_bufMatX[0]));
+#else
     _bufMatY = (float*) aligned_alloc(64, _vert_num*_bufMatCols*sizeof(float)); 
     _bufMatX = (float*) aligned_alloc(64, _vert_num*_bufMatCols*sizeof(float)); 
+#endif
 #endif
 
 #pragma omp parallel for num_threads(omp_get_max_threads())
@@ -178,7 +192,11 @@ double CountMat::compute(Graph& templates, bool isEstimate)
 #ifdef __INTEL_COMPILER
             _bufVecLeaf[i] =  (float*) _mm_malloc(_vert_num*sizeof(float), 64); 
 #else
+#ifdef GPU
+            cudaMallocManaged(&(_bufVecLeaf[i]), _vert_num*sizeof(_bufVecLeaf[i][0]));
+#else
             _bufVecLeaf[i] =  (float*) aligned_alloc(64, _vert_num*sizeof(float)); 
+#endif
 #endif 
         }
 
@@ -188,7 +206,11 @@ double CountMat::compute(Graph& templates, bool isEstimate)
 #ifdef __INTEL_COMPILER
         _bufVecLeaf[0] =  (float*) _mm_malloc((int64_t)(_vert_num)*_color_num*sizeof(float), 64); 
 #else
+#ifdef GPU
+        cudaMallocManaged(&(_bufVecLeaf[0]), (_vert_num)*_color_num*sizeof(_bufVecLeaf[0][0]));
+#else
         _bufVecLeaf[0] =  (float*) aligned_alloc(64, (int64_t)(_vert_num)*_color_num*sizeof(float)); 
+#endif
 #endif 
 
         for (int i = 1; i < _color_num; ++i) {
@@ -368,7 +390,11 @@ double CountMat::countNonBottomePruned(int subsId)
 #ifdef __INTEL_COMPILER
       bufLastSub = (double*) _mm_malloc(_vert_num*sizeof(double), 64); 
 #else
+#ifdef GPU
+      cudaMallocManaged(&bufLastSub, _vert_num*sizeof(bufLastSub[0]));
+#else
       bufLastSub = (double*) aligned_alloc(64, _vert_num*sizeof(double)); 
+#endif
 #endif
 
 #pragma omp parallel for num_threads(omp_get_max_threads())
@@ -409,6 +435,7 @@ double CountMat::countNonBottomePruned(int subsId)
        if (_graph != nullptr)
        {
 
+           // use CSR format
            if (_graph->useMKL())
            {
                //set up hint and optimize
@@ -416,7 +443,13 @@ double CountMat::countNonBottomePruned(int subsId)
            }
            else
            {
+               // add support to CUDA CuSparse kernel
+#ifdef GPU
+               //_graph->cudaSpMV(auxObjArray, _bufVec);
+               _graph->cudaSpMVCuSparse(auxObjArray, _bufVec);
+#else
                _graph->SpMVNaiveFull(auxObjArray, _bufVec, _thd_num); 
+#endif
            }
        }
        else
@@ -440,6 +473,7 @@ double CountMat::countNonBottomePruned(int subsId)
           std::memcpy(auxObjArray, _bufVec, _vert_num*sizeof(float));
        else
           std::memcpy(_bufVecLeaf[i], _bufVec, _vert_num*sizeof(float));
+
    }
 #ifdef VERBOSE
    eltSpmv += (utility::timer() - startTimeComp); 
@@ -488,17 +522,31 @@ double CountMat::countNonBottomePruned(int subsId)
             if (subsId > 0)
             {
                 if (_isScaled == 0)
+                {
+#ifdef GPU
+                    _dTable.arrayWiseFMAScaleCUDA(objArray, auxArraySelect, mainArraySelect, 1.0e-12);
+#else
                     _dTable.arrayWiseFMAScale(objArray, auxArraySelect, mainArraySelect, 1.0e-12);
+#endif
+
+                }
                 else
                 {
+#ifdef GPU
+                    _dTable.arrayWiseFMACUDA(objArray, auxArraySelect, mainArraySelect);
+#else
                     _dTable.arrayWiseFMAAVX(objArray, auxArraySelect, mainArraySelect);
-                    // _dTable.arrayWiseFMA(objArray, auxArraySelect, mainArraySelect);
+#endif
                 }
             }
             else
             {
                 // the last scale use 
+#ifdef GPU
+                _dTable.arrayWiseFMALastCUDA(bufLastSub, auxArraySelect, mainArraySelect);
+#else
                 _dTable.arrayWiseFMALast(bufLastSub, auxArraySelect, mainArraySelect);
+#endif
             }
 
             #ifdef VERBOSE
@@ -531,7 +579,11 @@ double CountMat::countNonBottomePruned(int subsId)
 #ifdef __INTEL_COMPILER
         _mm_free(bufLastSub);
 #else
+#ifdef GPU
+        cudaFree(bufLastSub);
+#else
         free(bufLastSub);
+#endif
 #endif
     }
 
@@ -599,7 +651,11 @@ double CountMat::countNonBottomePrunedSPMM(int subsId)
 #ifdef __INTEL_COMPILER
       bufLastSub = (double*) _mm_malloc(_vert_num*sizeof(double), 64); 
 #else
+#ifdef GPU
+      cudaMallocManaged(&bufLastSub, _vert_num*sizeof(bufLastSub[0]));
+#else
       bufLastSub = (double*) aligned_alloc(64, _vert_num*sizeof(double)); 
+#endif
 #endif
 
 #pragma omp parallel for num_threads(omp_get_max_threads())
@@ -826,7 +882,11 @@ double CountMat::countNonBottomePrunedSPMM(int subsId)
 #ifdef __INTEL_COMPILER
         _mm_free(bufLastSub);
 #else
+#ifdef GPU
+        cudaFree(bufLastSub);
+#else
         free(bufLastSub);
+#endif
 #endif
     }
 
@@ -889,7 +949,11 @@ double CountMat::countNonBottomeOriginal(int subsId)
 #ifdef __INTEL_COMPILER
       bufLastSub = (float*) _mm_malloc(_vert_num*sizeof(float), 64); 
 #else
+#ifdef GPU
+      cudaMallocManaged(&bufLastSub, _vert_num*sizeof(bufLastSub[0]));
+#else
       bufLastSub = (float*) aligned_alloc(64, _vert_num*sizeof(float)); 
+#endif
 #endif
 #pragma omp parallel for num_threads(omp_get_max_threads())
       for (int i = 0; i < _vert_num; ++i) {
@@ -957,7 +1021,11 @@ double CountMat::countNonBottomeOriginal(int subsId)
 #ifdef __INTEL_COMPILER
         _mm_free(bufLastSub);
 #else
+#ifdef GPU
+        cudaFree(bufLastSub);
+#else
         free(bufLastSub);
+#endif
 #endif
     }
 

@@ -49,6 +49,13 @@ class DataTableColMajor
         void arrayWiseFMA(float* dst, float* a, float* b);
         void arrayWiseFMAScale(float* dst, float* a, float* b, float scale);
         void arrayWiseFMALast(double* dst, float* a, float* b);
+        // for GPU
+#ifdef GPU
+        void arrayWiseFMACUDA(float* dst, float* a, float* b);
+        void arrayWiseFMAScaleCUDA(float* dst, float* a, float* b, float scale);
+        void arrayWiseFMALastCUDA(double* dst, float* a, float* b);
+#endif
+
         void arrayWiseFMAAVX(float* dst, float* a, float* b);
         void arrayWiseFMANaive(float* dst, float* a, float* b);
         void arrayWiseFMANaiveAVX(float* dst, float* a, float* b);

@@ -1,20 +1,20 @@
 ## ----------- start of compilation -----------
-CXX := nc++ 
-#CXXFLAGS := -std=c++11 -DNEC -fopenmp -mparallel -O3 -I.
-CXXFLAGS := -std=c++11 -DNEC -fopenmp -O3 -I.
+CXX := nvcc 
+CXXFLAGS := -x cu -std=c++11 -DGPU -Xcompiler -fopenmp -O3 -I.
+LDFLAGS := -lcusparse -lcudart -lgomp 
 DEPS := $(wildcard *.hpp)
 Obj := sc-main.o CountMat.o CSRGraph.o DataTableColMajor.o DivideTemplates.o EdgeList.o Graph.o Helper.o IndexSys.o
 
-all: sc-nec-ncc.bin 
+all: sc-gpu-gnu.bin 
 
 %.o: %.cpp $(DEPS)
 	$(CXX) -c -o $@ $< $(CXXFLAGS)
 
-sc-nec-ncc.bin: $(Obj)
-	$(CXX) -o $@ $^ $(CXXFLAGS)
+sc-gpu-gnu.bin: $(Obj)
+	$(CXX) -o $@ $^ $(LDFLAGS)
 
 clean:
 	rm *.o
 
 cleandist:
-	rm *.o sc-nec-ncc.bin
+	rm *.o sc-gpu-gnu.bin

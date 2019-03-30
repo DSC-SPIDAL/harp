@@ -1,4 +1,5 @@
 #!/bin/bash
 
-make distclean ARCH=gpu COMPILER=gnu
-make ARCH=gpu COMPILER=gnu
+make -f Makefile-gpu cleandist
+make -f Makefile-gpu
+make -f Makefile-gpu clean

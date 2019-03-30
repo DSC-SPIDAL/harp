@@ -15,6 +15,11 @@
 #include "zmmintrin.h"
 #endif
 
+#ifdef GPU
+#include <cuda_runtime.h>
+#include "cusparse.h"
+#endif
+
 using namespace std;
 
 template<class idxType, class valType>
@@ -312,8 +317,16 @@ double CSCGraph<idxType, valType>::spmmSplitExp(valType* x, valType* y, idxType 
 
     // data format conversion
     // creating the first buffer
+#ifdef GPU
+    valType* readBuf = nullptr;
+    cudaMallocManaged(&readBuf, _numVertices*xColNum*sizeof(readBuf[0]));
+
+    valType* writeBuf = nullptr;
+    cudaMallocManaged(&writeBuf, _numVertices*xColNum*sizeof(writeBuf[0]));
+#else
     valType* readBuf = (valType*) _mm_malloc(_numVertices*xColNum*sizeof(valType), 64);
     valType* writeBuf = (valType*) _mm_malloc(_numVertices*xColNum*sizeof(valType), 64);
+#endif
 
     startTime = utility::timer();
     // convert x from column majored to row majord
@@ -404,9 +417,13 @@ double CSCGraph<idxType, valType>::spmmSplitExp(valType* x, valType* y, idxType 
     }   
 
     conversionTime += (utility::timer() - startTime);
-
+#ifdef GPU
+    cudaFree(readBuf);
+    cudaFree(writeBuf);
+#else
     _mm_free(readBuf);
     _mm_free(writeBuf);
+#endif
 
     printf("Compute Time: %f sec, Conversion Time: %f sec\n", 
             computeTime, conversionTime);

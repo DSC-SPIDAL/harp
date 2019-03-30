@@ -9,6 +9,11 @@
 #include "zmmintrin.h"
 #endif
 
+#ifdef GPU
+#include <cuda_runtime.h>
+#include "cusparse.h"
+#endif
+
 using namespace std;
 
 void DataTableColMajor::initDataTable(Graph* subTempsList, IndexSys* indexer, int subsNum, int colorNum, idxType vertsNum, 
@@ -82,7 +87,12 @@ void DataTableColMajor::initSubTempTable(int subsId)
 #ifdef __INTEL_COMPILER
                 _curTable[i] = (float*) _mm_malloc(_vertsNum*sizeof(float), 64); 
 #else
+
+#ifdef GPU
+                cudaMallocManaged(&_curTable[i], _vertsNum*sizeof(_curTable[i][0]));    
+#else
                 _curTable[i] = (float*) aligned_alloc(64, _vertsNum*sizeof(float)); 
+#endif
 #endif
 
 #pragma omp parallel for num_threads(omp_get_max_threads())
@@ -105,7 +115,13 @@ void DataTableColMajor::initSubTempTable(int subsId)
 #ifdef __INTEL_COMPILER
                 _curTable[colStart] = (float*)_mm_malloc(_vertsNum*batchSize*sizeof(float), 64); 
 #else
+
+#ifdef GPU
+                cudaMallocManaged(&_curTable[colStart], 
+                _vertsNum*batchSize*sizeof(_curTable[colStart][0]));    
+#else
                 _curTable[colStart] = (float*)aligned_alloc(64, _vertsNum*batchSize*sizeof(float)); 
+#endif
 #endif
 
 #pragma omp parallel for num_threads(omp_get_max_threads())
@@ -191,7 +207,11 @@ void DataTableColMajor::cleanSubTempTable(int subsId, bool isBottom)
 #ifdef __INTEL_COMPILER
                         _mm_free(_dataTable[subsId][i]);
 #else
+#ifdef GPU
+                        cudaFree(_dataTable[subsId][i]);
+#else
                         free(_dataTable[subsId][i]);
+#endif
 #endif
                     }
                 }
@@ -208,7 +228,11 @@ void DataTableColMajor::cleanSubTempTable(int subsId, bool isBottom)
 #ifdef __INTEL_COMPILER
                         _mm_free(_dataTable[subsId][colStart]);
 #else
+#ifdef GPU
+                        cudaFree(_dataTable[subsId][colStart]);
+#else
                         free(_dataTable[subsId][colStart]);
+#endif
 #endif                       
                     }
 
@@ -343,6 +367,53 @@ void DataTableColMajor::arrayWiseFMA(float* dst, float* a, float* b)
 
 }
 
+#ifdef GPU
+
+template <typename T, typename I>
+__global__ void cudaEMAScale(T* xArray, T* yArray, T* zArray, I len, T scale)
+{
+    I idx = blockDim.x*blockIdx.x + threadIdx.x;
+    if (idx < len)
+        zArray[idx] = zArray[idx] + xArray[idx]*(double)yArray[idx]*scale;
+}
+
+template <typename T, typename I>
+__global__ void cudaEMA(T* xArray, T* yArray, T* zArray, I len)
+{
+    I idx = blockDim.x*blockIdx.x + threadIdx.x;
+    if (idx < len)
+        zArray[idx] = zArray[idx] + xArray[idx]*yArray[idx];
+}
+
+void DataTableColMajor::arrayWiseFMACUDA(float* dst, float* a, float* b)
+{
+
+    int blkSize = 512;
+    int gridSize = (_vertsNum + blkSize - 1 )/blkSize;
+
+    dim3 block(blkSize);
+    dim3 grid(gridSize);
+
+    cudaEMA<float, int><<<grid, block>>>(a, b, dst, _vertsNum);
+    cudaDeviceSynchronize();
+
+}
+
+void DataTableColMajor::arrayWiseFMAScaleCUDA(float* dst, float* a, float* b, float scale)
+{
+    int blkSize = 512;
+    int gridSize = (_vertsNum + blkSize - 1 )/blkSize;
+
+    dim3 block(blkSize);
+    dim3 grid(gridSize);
+
+    cudaEMAScale<float, int><<<grid, block>>>(a, b, dst, _vertsNum, scale);
+    cudaDeviceSynchronize();
+
+}
+
+#endif
+
 void DataTableColMajor::arrayWiseFMAScale(float* dst, float* a, float* b, float scale)
 {
     _blockPtrDst[0] = dst; 
@@ -370,6 +441,32 @@ void DataTableColMajor::arrayWiseFMAScale(float* dst, float* a, float* b, float 
     }
 
 }
+
+#ifdef GPU
+
+template <typename L, typename T, typename I>
+__global__ void cudaEMALast(T* xArray, T* yArray, L* zArray, I len)
+{
+    I idx = blockDim.x*blockIdx.x + threadIdx.x;
+    if (idx < len)
+        zArray[idx] = zArray[idx] + xArray[idx]*yArray[idx];
+}
+
+void DataTableColMajor::arrayWiseFMALastCUDA(double* dst, float* a, float* b)
+{
+
+    int blkSize = 512;
+    int gridSize = (_vertsNum + blkSize - 1 )/blkSize;
+
+    dim3 block(blkSize);
+    dim3 grid(gridSize);
+
+    cudaEMALast<double, float, int><<<grid, block>>>(a, b, dst, _vertsNum);
+    cudaDeviceSynchronize();
+
+}
+
+#endif
 
 void DataTableColMajor::arrayWiseFMALast(double* dst, float* a, float* b)
 {

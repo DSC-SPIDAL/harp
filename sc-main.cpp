@@ -47,6 +47,12 @@
 #include "zmmintrin.h"
 #endif
 
+#ifdef GPU
+#include <cuda_runtime.h>
+#include "cusparse.h"
+#endif
+
+
 static long  TestArraySize = 500000000;
 
 using namespace std;
@@ -289,8 +295,11 @@ void benchmarkSpMVNaiveFull(int argc, char** argv, EdgeList& elist, int numCols,
     float* xMat = (float*)_mm_malloc(testLen*sizeof(float), 64);
     float* yMat = (float*)_mm_malloc(testLen*sizeof(float), 64);
 #else
-    float* xMat = (float*)malloc(testLen*sizeof(float));
-    float* yMat = (float*)malloc(testLen*sizeof(float));
+    // allocate input output vectors on CUDA managed memory
+    float* xMat = nullptr;
+    cudaMallocManaged(&xMat, testLen*sizeof(xMat[0]));    
+    float* yMat = nullptr;
+    cudaMallocManaged(&yMat, testLen*sizeof(yMat[0]));    
 #endif
 
 #pragma omp parallel for
@@ -298,34 +307,24 @@ void benchmarkSpMVNaiveFull(int argc, char** argv, EdgeList& elist, int numCols,
         xMat[i] = 2.0; 
         yMat[i] = 0.0; 
     }
-#ifndef GPU
-    float* bufToFlushLlc = (float*)_mm_malloc(LLC_CAPACITY, 64);
-#else
-    float* bufToFlushLlc = (float*)malloc(LLC_CAPACITY);
-#endif
 
     // test SpMV naive
-    // startTime = utility::timer();
+    startTime = utility::timer();
     for (int j = 0; j < numCols; ++j) {
 
-        // // flush out LLC
-        // for (int k = 0; k < 16; ++k) {
-        //     flushLlc(bufToFlushLlc);
-        // }
+        csrnaiveG.cudaSpMV(xMat+j*csrnaiveG.getNumVertices(), 
+                yMat+j*csrnaiveG.getNumVertices());
         
-
-
-        startTime = utility::timer();
-        csrnaiveG.SpMVNaiveFull(xMat+j*csrnaiveG.getNumVertices(), 
-                yMat+j*csrnaiveG.getNumVertices(), comp_thds);
-        
-        timeElapsed += (utility::timer() - startTime);
     }
 
-    printf("Naive SpMVFull using %f secs\n", timeElapsed/numCols);
-    printf("Naive SpMVFull Arith Intensity %f\n", (flopsTotal/bytesTotal));
-    printf("Naive SpMVFull Bd: %f GBytes/sec\n", bytesTotal*numCols/timeElapsed);
-    printf("Naive SpMVFull Tht: %f GFLOP/sec\n", flopsTotal*numCols/timeElapsed);
+    cudaDeviceSynchronize();
+
+    timeElapsed += (utility::timer() - startTime);
+
+    printf("GPU SpMVFull using %f secs\n", timeElapsed/numCols);
+    printf("GPU SpMVFull Arith Intensity %f\n", (flopsTotal/bytesTotal));
+    printf("GPU SpMVFull Bd: %f GBytes/sec\n", bytesTotal*numCols/timeElapsed);
+    printf("GPU SpMVFull Tht: %f GFLOP/sec\n", flopsTotal*numCols/timeElapsed);
     std::fflush(stdout);           
 
     // check yMat
@@ -333,15 +332,15 @@ void benchmarkSpMVNaiveFull(int argc, char** argv, EdgeList& elist, int numCols,
         printf("Elem: %d is: %f\n", i, yMat[i]); 
         std::fflush(stdout);
     }
+
 #ifndef GPU
     _mm_free(xMat);
     _mm_free(yMat);
-    _mm_free(bufToFlushLlc);
 #else
-    free(xMat);
-    free(yMat);
-    free(bufToFlushLlc);
+    cudaFree(xMat);
+    cudaFree(yMat);
 #endif
+
 }
 
 void benchmarkSpMVNaiveFullCSC(int argc, char** argv, EdgeList& elist, int numCols, int comp_thds)
@@ -1572,11 +1571,11 @@ int main(int argc, char** argv)
     bool useMKL = false;
     // bool useRcm = true;
     bool useRcm = false;
-    bool useCSC = true;
-    // bool useCSC = false;
+    //bool useCSC = true;
+    bool useCSC = false;
 
-    bool isBenchmark = true;
-    //bool isBenchmark = false;
+    //bool isBenchmark = true;
+    bool isBenchmark = false;
     // turn on this to estimate flops and memory bytes 
     // without running the codes
     bool isEstimate = false;
@@ -1728,8 +1727,8 @@ int main(int argc, char** argv)
             // benchmarking Naive SpMV
             // benchmarkSpMVNaive(argc, argv, elist, numCols, comp_thds);
             
-            // benchmarking Naive SpMV Full
-            // benchmarkSpMVNaiveFull(argc, argv, elist, numCols, comp_thds);
+            // benchmarking Naive SpMV Full for GPU
+            benchmarkSpMVNaiveFull(argc, argv, elist, numCols, comp_thds);
             //
             // benchmarking Naive SpMV Full
             // benchmarkSpMVNaiveFullCSC(argc, argv, elist, numCols, comp_thds);
@@ -1738,7 +1737,7 @@ int main(int argc, char** argv)
             // benchmarkCSCSplitMM(argc, argv, elist, numCols, comp_thds, benchItr);
 
             // benchmarking eMA 
-            benchmarkEMA(argc, argv, elist, numCols, comp_thds, benchItr);
+            //benchmarkEMA(argc, argv, elist, numCols, comp_thds, benchItr);
             
             // benchmark eMA thd scaling
             // benchmarkEMAThdScale(argc, argv, elist, numCols, comp_thds, benchItr);
