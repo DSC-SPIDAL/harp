@@ -104,6 +104,7 @@ class CSRGraph
         void setGPUBlkSize(int size) { _gpuBlkSize = size; }
         void cudaSpMV(valType* xInput, valType* yOutput);
         void cudaSpMVCuSparse(valType* xInput, valType* yOutput);
+        void cudaSpMMCuSparse(valType* xInput, valType* yOutput, idxType batchSize);
 #endif
 
 #ifndef GPU

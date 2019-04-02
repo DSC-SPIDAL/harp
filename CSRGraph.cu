@@ -194,6 +194,17 @@ void CSRGraph::cudaSpMVCuSparse(valType* xInput, valType* yOutput)
     cudaDeviceSynchronize();
 }
 
+void CSRGraph::cudaSpMMCuSparse(valType* xInput, valType* yOutput, idxType batchSize)
+{
+
+    _status = cusparseScsrmm(_handle, CUSPARSE_OPERATION_NON_TRANSPOSE, _numVertices, batchSize, _numVertices, 
+           _nnZ, &_cudaAlpha, _descr, 
+           _edgeValDev, _indexRowDev, _indexColDev, xInput,
+           _numVertices, &_cudaBeta, yOutput, _numVertices);
+
+    cudaDeviceSynchronize();
+}
+
 #endif
 
 void CSRGraph::SpMVNaive(valType* x, valType* y)

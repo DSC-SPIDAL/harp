@@ -709,8 +709,6 @@ double CountMat::countNonBottomePrunedSPMM(int subsId)
        int* csrRowIdx = _graph->getIndexRow();
        int* csrColIdx = _graph->getIndexCol();
 
-
-
        mkl_set_num_threads(_thd_num);
        for (int i = 0; i < batchNum; ++i) 
        {
@@ -723,6 +721,43 @@ double CountMat::countNonBottomePrunedSPMM(int subsId)
 #endif
            // invoke the mkl scsrmm kernel
            mkl_scsrmm(&transa, &m, &n, &k, &alpha, matdescra, csrVals, csrColIdx, csrRowIdx, &(csrRowIdx[1]), _dTable.getAuxArray(colStart), &k, &beta, _bufMatY, &k);
+
+#ifdef VERBOSE
+       _spmvElapsedTime += (utility::timer() - spmvStart);
+#endif
+
+           // copy columns from _bufMatY
+           if (auxSize > 1)
+           {
+               std::memcpy(_dTable.getAuxArray(colStart), _bufMatY, _vert_num*batchSize*sizeof(float));
+           }
+           else
+           {
+               std::memcpy(_bufVecLeaf[colStart], _bufMatY, _vert_num*batchSize*sizeof(float));
+           }
+
+           // increase colStart;
+           colStart += batchSize;
+       }
+#else
+       // start the cuSparse spmm impl
+       // CSR cuSparse SpMM implementation 
+       int batchNum = (auxTableLen + _bufMatCols - 1)/(_bufMatCols);
+       int colStart = 0;
+
+       for (int i = 0; i < batchNum; ++i) 
+       {
+
+           int batchSize = (i < batchNum -1) ? (_bufMatCols) : (auxTableLen - _bufMatCols*(batchNum-1));
+           //n = batchSize;
+
+#ifdef VERBOSE
+       spmvStart = utility::timer();
+#endif
+           // invoke the mkl scsrmm kernel
+           //mkl_scsrmm(&transa, &m, &n, &k, &alpha, matdescra, csrVals, csrColIdx, csrRowIdx, &(csrRowIdx[1]), _dTable.getAuxArray(colStart), &k, &beta, _bufMatY, &k);
+           _graph->cudaSpMMCuSparse(_dTable.getAuxArray(colStart), _bufMatY, batchSize);
+           
 
 #ifdef VERBOSE
        _spmvElapsedTime += (utility::timer() - spmvStart);
