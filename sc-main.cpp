@@ -1339,14 +1339,11 @@ int main(int argc, char** argv)
     int benchItr = 10;
 
     int useSPMM = 1;
-    // bool useMKL = true;
     bool useMKL = false;
-    // bool useRcm = true;
     bool useRcm = false;
     bool useCSC = true;
-    // bool useCSC = false;
 
-    // bool isBenchmark = true;
+    //bool isBenchmark = true;
     bool isBenchmark = false;
     // turn on this to estimate flops and memory bytes 
     // without running the codes
@@ -1367,21 +1364,28 @@ int main(int argc, char** argv)
         useSPMM = atoi(argv[8]);
 
     if (argc > 9)
-        vtuneStart = atoi(argv[9]);
+        useCSC = atoi(argv[9]);
 
     if (argc > 10)
-        benchItr = atoi(argv[10]);
+        vtuneStart = atoi(argv[10]);
+
+    if (argc > 11)
+        benchItr = atoi(argv[11]);
 
     // end of arguments
     
     // SPMM in CSR uses MKL
-    if (useSPMM && (!useCSC))
-        useMKL = true;
+    //if (useSPMM && (!useCSC))
+        //useMKL = true;
 
     if (useCSC)
     {
         useRcm = false;
         useMKL = false;
+    }else
+    {
+        //CSR use MKL
+        useMKL = true;
     }
 
 #ifdef VERBOSE 
@@ -1433,7 +1437,10 @@ int main(int argc, char** argv)
          std::fflush(stdout);   
 #endif
 
+        double iotStart = utility::timer();
         ifstream input_file(graph_name.c_str(), ios::binary);
+        std::cout<<"Disk Load Binary Data using " << (utility::timer() - iotStart) << " s" << std::endl;
+
         if (csrInputG != nullptr)
             csrInputG->deserialize(input_file, useMKL, useRcm);
         else
@@ -1451,7 +1458,11 @@ int main(int argc, char** argv)
         std::fflush(stdout);           
 #endif
 
+        // the io work is here
+        double iotStart = utility::timer();
         EdgeList elist(graph_name); 
+        std::cout<<"Disk Load Text Data using " << (utility::timer() - iotStart) << " s" << std::endl;
+
         if (isBenchmark)
         {
 

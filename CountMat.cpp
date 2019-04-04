@@ -272,6 +272,14 @@ double CountMat::colorCounting()
     // reset scaling flag
     _isScaled = 0;
 
+    // start vtune profiling the counting procesure
+#ifdef VTUNE
+        ofstream vtune_trigger;
+        vtune_trigger.open("vtune-flag.txt");
+        vtune_trigger << "Start training process and trigger vtune profiling.\n";
+        vtune_trigger.close();
+#endif
+
     for (int s = _total_sub_num - 1; s >= 0; --s) {
 
         int subSize = _subtmp_array[s].get_vert_num();
@@ -323,16 +331,11 @@ double CountMat::colorCounting()
 double CountMat::countNonBottomePruned(int subsId)
 {/*{{{*/
 
-    if (subsId == _vtuneStart)
-    {
+    //if (subsId == _vtuneStart)
+    //{
         // for vtune miami u15-2 subids==3 takes 103 secs
-#ifdef VTUNE
-        ofstream vtune_trigger;
-        vtune_trigger.open("vtune-flag.txt");
-        vtune_trigger << "Start training process and trigger vtune profiling.\n";
-        vtune_trigger.close();
-#endif
-    }
+
+    //}
 
     int subSize = _subtmp_array[subsId].get_vert_num();
 
