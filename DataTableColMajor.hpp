@@ -48,6 +48,7 @@ class DataTableColMajor
     
         void arrayWiseFMA(float* dst, float* a, float* b);
         void arrayWiseFMAScale(float* dst, float* a, float* b, float scale);
+
         void arrayWiseFMALast(double* dst, float* a, float* b);
         void arrayWiseFMAAVX(float* dst, float* a, float* b);
         void arrayWiseFMANaive(float* dst, float* a, float* b);

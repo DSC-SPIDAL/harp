@@ -1,6 +1,7 @@
 #include "DataTableColMajor.hpp"
 #include <cstring>
 #include <stdlib.h>
+#include "mkl.h"
 
 #ifdef __INTEL_COMPILER
 // use avx intrinsics
@@ -341,6 +342,8 @@ void DataTableColMajor::arrayWiseFMA(float* dst, float* a, float* b)
     }
 
 }
+
+
 
 void DataTableColMajor::arrayWiseFMAScale(float* dst, float* a, float* b, float scale)
 {

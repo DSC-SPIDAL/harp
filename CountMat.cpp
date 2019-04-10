@@ -489,7 +489,9 @@ double CountMat::countNonBottomePruned(int subsId)
             if (subsId > 0)
             {
                 if (_isScaled == 0)
+                {
                     _dTable.arrayWiseFMAScale(objArray, auxArraySelect, mainArraySelect, 1.0e-12);
+                }
                 else
                 {
                     _dTable.arrayWiseFMAAVX(objArray, auxArraySelect, mainArraySelect);
