@@ -1,9 +1,9 @@
 ## compilation for different platforms and 
 ## compilers
-ARCHS = knl hsw skl nec
+ARCHS = hsw skl
 ARCH ?= hsw
 
-COMPILERs = icc gnu ncc
+COMPILERs = icc gnu
 COMPILER ?= gnu
 
 $(if $(filter $(COMPILERs),$(COMPILER)),,$(error COMPILER must be one of $(COMPILERs)))
@@ -17,16 +17,12 @@ ARCH_is_$(ARCH)         := yes
 ## for intel avx
 -avx := $(if $(COMPILER_is_icc), $(if $(ARCH_is_knl), -xMIC-AVX512, $(if $(ARCH_is_skl), -xCORE-AVX512, -xCORE-AVX2) ),)
 -rpt := $(if $(COMPILER_is_icc), -qopt-report=5, -ftree-vectorize -fopt-info-vec-missed)
-## for nec mpi version
--nccflag := $(if $(COMPILER_is_ncc), -DNEC -DSXVE,)
--nccdep := $(if $(COMPILER_is_ncc), -M,)
 ## for knl MCDRAM
 -knlflag := $(if $(ARCH_is_knl), -DSC_MEMKIND -I./memkind/include -L./memkind/lib -lmemkind, )
 -mkl := $(if $(COMPILER_is_icc), -I/opt/intel/mkl/include, )
 -mklld := $(if $(COMPILER_is_icc), -L/opt/intel/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core,)
 ## for intel prefetch
 -prefetch := $(if $(COMPILER_is_icc), -qopt-prefetch=3,)
-# -mpiheader := -I/opt/intel/compilers_and_libraries_2019.0.117/linux/mpi/intel64/include
 
 ## include the proprogation blocking codes
 # VPATH=./radix
@@ -67,25 +63,24 @@ $(shell mkdir -p $(dir $(OBJS)) >/dev/null)
 $(shell mkdir -p $(dir $(DEPS)) >/dev/null)
 
 # C compiler
-CC := $(if $(COMPILER_is_ncc), ncc, $(if $(COMPILER_is_icc), icc, gcc))
+CC := $(if $(COMPILER_is_icc), icc, gcc)
 # C++ compiler
-CXX := $(if $(COMPILER_is_ncc), ncc, $(if $(COMPILER_is_icc), icpc, g++))
+CXX := $(if $(COMPILER_is_icc), icpc, g++)
 # linker
-LD := $(if $(COMPILER_is_ncc), g++, $(if $(COMPILER_is_icc), icpc, g++))
+LD := $(if $(COMPILER_is_icc), icpc, g++)
 # tar
 TAR := tar
 
 # C flags
-CFLAGS := -std=c11 $(-nccflag) $(-omp) $(-avx) $(-rpt) $(-mkl) -O3
+CFLAGS := -std=c11 $(-omp) $(-avx) $(-rpt) $(-mkl) -O3
 # C++ flags
-CXXFLAGS := -std=c++11 $(-nccflag) $(-omp) $(-avx) $(-rpt) $(-mkl) $(-prefetch) -O3
+CXXFLAGS := -std=c++11 $(-omp) $(-avx) $(-rpt) $(-mkl) $(-prefetch) -O3
 # C/C++ flags
 CPPFLAGS := -g -Wall -Wextra -pedantic -DVTUNE -DVERBOSE -DUSE_BLAS
-# CPPFLAGS := -g -Wall -pedantic -DVERBOSE
 # linker flags
 LDFLAGS := $(-omp) $(-mklld)
 # flags required for dependency generation; passed to compilers
-DEPFLAGS = $(-nccdep) -MT $@ -MD -MP -MF  $(DEPDIR)/$*.Td
+DEPFLAGS = -MT $@ -MD -MP -MF  $(DEPDIR)/$*.Td
 
 # compile C source files
 COMPILE.c = $(CC) $(DEPFLAGS) $(CFLAGS) $(CPPFLAGS) -c -o $@
