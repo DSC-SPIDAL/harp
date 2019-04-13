@@ -16,7 +16,34 @@ For SpMV kernel, we provide two options on CPU.
 
 ## To compile the codes
 
+Choose the platform in `ARCH` and compiler in `COMPILER` 
+
+```bash
+## to compile on Haswell architecture and use Intel icc compiler
+make ARCH=hsw COMPILER=icc
+```
+
+Currenlty, we have tested the codes on Haswell and Skylake architectures with icc and g++ compiler. You can customize the 
+`Makefile` to use other compilers and test more hardware platforms.
+
 ## To run the codes
+
+A minimial script to run SubGraph2Vec is shown below:
+
+```bash
+app=sc-skl-icc.bin ## run SubGraph2Vec on a skylake node compiled by Intel icc
+graph_file=gnp.graph ## specify the input network
+template_file=u3-1.fascia ## specify the tree template
+Itr=1 ## the number of iteration 
+tpproc=24 ## the number of threads per process
+read_binary=0 ## equals 1 if graph_file is in binary format
+writeBinary=0 ## set this value to 1 and the input text graph_file is output in a binary file 
+prune=1 ## trigger the complexity reduction (default)
+useSPMM=1 ## 0 for SpMV kernel and 1 for SpMM kernel (by default) 
+useCSC=1  ## choose the adjacency matrix format, 1 for CSC-Split and 0 for CSR
+
+$app ${graph_file} ${template_file} ${Itr} ${tpproc} ${read_binary} ${writeBinary} ${prune} ${useSPMM}
+```
 
 
 

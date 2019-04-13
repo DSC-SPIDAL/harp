@@ -2,7 +2,3 @@
 *.bin
 *.optrpt
 .tags
-syncCluster.s
-.ycm_extra_conf.py
-testscripts
-compile-*.sh
