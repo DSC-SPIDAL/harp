@@ -3,4 +3,4 @@
 ## sync to the futuresystem account
 dataPath=/N/u/lc37/WorkSpace/cpuPGBSC
 ssh $LCJULIET "mkdir -p ${dataPath}"
-rsync -r -a -v -e ssh --exclude ".git" --delete . $LCJULIET:${dataPath}
+rsync -r -a -v -e ssh --exclude ".git" --exclude ".d" --exclude ".o" --delete . $LCJULIET:${dataPath}

@@ -24,7 +24,14 @@ class CSRGraph
 
         CSRGraph(): _isDirected(false), _isOneBased(false), _numEdges(-1), _numVertices(-1), _nnZ(-1),  
             _edgeVal(nullptr), _indexRow(nullptr), _indexCol(nullptr), 
-            _degList(nullptr), _useMKL(false), _useRcm(false), _rcmMat(nullptr), _rcmMatR(nullptr) {}
+            _degList(nullptr), _useMKL(false), _rcmMat(nullptr),_rcmMatR(nullptr), _useRcm(false), _isDistri(false),
+            _nprocs(0), _myrank(0), _vOffset(0), _vNLocal(0) {}
+
+        // for distributed version
+        CSRGraph(bool isDistri, int nprocs, int myrank): _isDirected(false), _isOneBased(false), _numEdges(-1), _numVertices(-1), _nnZ(-1),  
+            _edgeVal(nullptr), _indexRow(nullptr), _indexCol(nullptr), 
+            _degList(nullptr), _useMKL(false), _rcmMat(nullptr),_rcmMatR(nullptr), _useRcm(false), _isDistri(isDistri),
+            _nprocs(nprocs), _myrank(myrank), _vOffset(0), _vNLocal(0) {}
 
         ~CSRGraph(){
             if (_edgeVal != nullptr)
@@ -57,11 +64,21 @@ class CSRGraph
 
         void SpMVNaive(valType* x, valType* y);
         void SpMVNaiveFull(valType* x, valType* y);
+        void SpMVNaiveFullDistri(valType* x, valType* y, int thdNum);
+
         void SpMVNaiveScale(valType* x, valType* y, float scale);
         void SpMVNaive(valType* x, valType* y, int thdNum);
         void SpMVNaiveFull(valType* x, valType* y, int thdNum);
         void SpMVMKL(valType* x, valType* y, int thdNum);
+        void SpMMMKL(valType* x, valType* y, idxType m, idxType n, int thdNum);
+        void SpMVMKLDistri(valType* x, valType* y, int thdNum);
         void SpMVMKLHint(int callNum);
+        void SpMMMKLHint(int mCols, int callNum);
+        bool isDistributed () { return _isDistri; }
+        idxType getVNLocal() {return _vNLocal;}
+        idxType getVOffset() {return _vOffset;}
+
+        void prepComBuf(); 
 
         idxType getNumVertices() {return (_rcmMatR != nullptr) ? _rcmMatR->m : _numVertices;} 
 
@@ -107,6 +124,13 @@ class CSRGraph
         SpMP::CSR* _rcmMat;
         SpMP::CSR* _rcmMatR;
         bool _useRcm;
+        // for distributed version
+        bool _isDistri;
+        int _nprocs;
+        int _myrank;
+        idxType _vOffset; // offset of local vertices 
+        idxType _vNLocal; // local number of vertices
+
 };
 
 #endif

@@ -44,6 +44,11 @@
 #include "zmmintrin.h"
 #endif
 
+// for OpenMPI in distributed mode
+#ifdef DISTRI
+#include <mpi.h>
+#endif
+
 using namespace std;
 
 // LLC 33 for Skylake
@@ -1325,7 +1330,11 @@ void benchmarkSpMPFull(int argc, char** argv, EdgeList& elist, int numCols, int 
 
 int main(int argc, char** argv)
 {
-   
+
+#ifdef DISTRI 
+    MPI_Init(&argc, &argv);
+#endif
+
     int load_binary = 0;
     int write_binary = 0;
     string graph_name;
@@ -1342,6 +1351,11 @@ int main(int argc, char** argv)
     bool useMKL = false;
     bool useRcm = false;
     bool useCSC = true;
+
+    // for communication
+    bool isDistri = false;
+    int nprocs = 1;
+    int myrank = 0;
 
     //bool isBenchmark = true;
     bool isBenchmark = false;
@@ -1411,13 +1425,21 @@ int main(int argc, char** argv)
 #endif
 #endif
 
+#ifdef DISTRI
+    // initialize the mpi procs
+    MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
+    MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
+    isDistri = true;
+#endif
+
     CSRGraph* csrInputG = nullptr;
     CSCGraph<int32_t, float>* cscInputG = nullptr;
 
+    // add support of distributed nodes
     if (!useCSC)
-        csrInputG = new CSRGraph();
+        csrInputG = new CSRGraph(isDistri, nprocs, myrank);
     else
-        cscInputG = new CSCGraph<int32_t, float>();
+        cscInputG = new CSCGraph<int32_t, float>(isDistri, nprocs, myrank);
         
     Graph input_template;
     double startTime = utility::timer();
@@ -1425,10 +1447,11 @@ int main(int argc, char** argv)
     // read in graph file and make 
     printf("Start loading datasets\n");
     std::fflush(stdout);
-
     startTime = utility::timer();
 
     // load input graph 
+    // in a distributed env, the loaded binary shall be already 
+    // row partitioned  
     if (load_binary)
     {
 
@@ -1526,11 +1549,26 @@ int main(int argc, char** argv)
         {
 
             if (csrInputG != nullptr)
+            {
+                // TODO: add support to the distributed nodes
                 csrInputG->createFromEdgeListFile(elist.getNumVertices(), elist.getNumEdges(), elist.getSrcList(), elist.getDstList(), useMKL, useRcm, false);
+                if (csrInputG->isDistributed())
+                {
+                    // TODO: pre-compute the send/recv buf info
+
+                }
+            }
             else
             {
+                // TODO: add support to the distributed nodes
                 cscInputG->createFromEdgeListFile(elist.getNumVertices(), elist.getNumEdges(), elist.getSrcList(), elist.getDstList(), false);
                 cscInputG->splitCSC(4*comp_thds);
+
+                if (cscInputG->isDistributed())
+                {
+                    // TODO: pre-compute the send/recv buf info
+
+                }
             }
         }
     }
@@ -1560,7 +1598,7 @@ int main(int argc, char** argv)
 
     // start CSR mat computing
     CountMat executor;
-    executor.initialization(csrInputG, cscInputG, comp_thds, iterations, isPruned, useSPMM, vtuneStart, calculate_automorphism);
+    executor.initialization(csrInputG, cscInputG, comp_thds, iterations, isPruned, useSPMM, isDistri, nprocs, myrank, vtuneStart,  calculate_automorphism);
 
     executor.compute(input_template, isEstimate);
 
@@ -1569,6 +1607,10 @@ int main(int argc, char** argv)
 
     if (cscInputG != nullptr)
         delete cscInputG;
+
+#ifdef DISTRI
+    MPI_Finalize();
+#endif
 
     return 0;
 

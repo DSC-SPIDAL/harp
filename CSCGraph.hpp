@@ -23,8 +23,14 @@ class CSCGraph
     public:
 
         CSCGraph(): _isDirected(false), _isOneBased(false), _numEdges(-1), _numVertices(-1), _nnZ(-1), 
+        _edgeVal(nullptr), _indexRow(nullptr), _indexCol(nullptr),
+        _degList(nullptr), _numsplits(0), _splitsRowIds(nullptr), _splitsColIds(nullptr), _splitsVals(nullptr), 
+        _isDistri(false), _nprocs(0), _myrank(0) {}
+
+        CSCGraph(bool isDistri, int nprocs, int myrank): _isDirected(false), _isOneBased(false), _numEdges(-1), _numVertices(-1), _nnZ(-1), 
         _edgeVal(nullptr), _indexRow(nullptr), _indexCol(nullptr), 
-        _degList(nullptr), _numsplits(0), _splitsRowIds(nullptr), _splitsColIds(nullptr), _splitsVals(nullptr) {}
+        _degList(nullptr), _numsplits(0), _splitsRowIds(nullptr), _splitsColIds(nullptr), _splitsVals(nullptr), 
+        _isDistri(isDistri), _nprocs(nprocs), _myrank(myrank) {}
 
         ~CSCGraph () {
 
@@ -58,6 +64,7 @@ class CSCGraph
         valType* getNNZVal() {return _edgeVal;} 
 
         idxType* getDegList() {return _degList;}
+        bool isDistributed () { return _isDistri; }
 
         void createFromEdgeListFile(idxType numVerts, idxType numEdges, 
                 idxType* srcList, idxType* dstList, bool isBenchmark = false);       
@@ -88,6 +95,9 @@ class CSCGraph
         std::vector<idxType>* _splitsColIds;
         std::vector<valType>* _splitsVals;
 
+        bool _isDistri;
+        int _nprocs;
+        int _myrank;
 };
 
 template<class idxType, class valType>

@@ -11,8 +11,8 @@
 
 using namespace std;
 
-void DataTableColMajor::initDataTable(Graph* subTempsList, IndexSys* indexer, int subsNum, int colorNum, idxType vertsNum, 
-        int thdNum, int useSPMM, int bufMatCols)
+void DataTableColMajor::initDataTable(Graph* subTempsList, IndexSys* indexer, int subsNum, int colorNum, idxType vertsNum,
+        idxType localVertsNum, int thdNum, int useSPMM, int bufMatCols)
 {
 
     _subTempsList = subTempsList; 
@@ -20,6 +20,7 @@ void DataTableColMajor::initDataTable(Graph* subTempsList, IndexSys* indexer, in
     _subsNum = subsNum;
     _colorNum = colorNum;
     _vertsNum = vertsNum;
+    _localVertsNum = localVertsNum;
     _thdNum = thdNum;
     _useSPMM = useSPMM;
     _bufMatCols = bufMatCols;
@@ -38,13 +39,22 @@ void DataTableColMajor::initDataTable(Graph* subTempsList, IndexSys* indexer, in
     }
 
     // copy vals in parallel and vectorization with length _vertNum
+#ifdef DISTRI
+    _blockSizeBasic = (_localVertsNum)/_thdNum;
+#else
     _blockSizeBasic = (_vertsNum)/_thdNum;
+#endif
+
     _blockSize = (int*) malloc(_thdNum*sizeof(int));
     for(int i=0;i<_thdNum-1;i++)
         _blockSize[i] = _blockSizeBasic;
 
     // remains
+#ifdef DISTRI
+    _blockSize[_thdNum-1] = ( (_localVertsNum%_thdNum == 0) ) ? _blockSizeBasic : (_blockSizeBasic + (_localVertsNum%_thdNum)); 
+#else
     _blockSize[_thdNum-1] = ( (_vertsNum%_thdNum == 0) ) ? _blockSizeBasic : (_blockSizeBasic + (_vertsNum%_thdNum)); 
+#endif
 
     _blockPtrDst = (float**) malloc(_thdNum*sizeof(float*));
     _blockPtrDstLast = (double**) malloc(_thdNum*sizeof(double*));
@@ -79,6 +89,22 @@ void DataTableColMajor::initSubTempTable(int subsId)
             for (int i = 0; i < lenCur; ++i) 
             {
 
+#ifdef DISTRI
+
+#ifdef __INTEL_COMPILER
+                _curTable[i] = (float*) _mm_malloc(_localVertsNum*sizeof(float), 64); 
+#else
+                _curTable[i] = (float*) aligned_alloc(64, _localVertsNum*sizeof(float)); 
+#endif
+
+#pragma omp parallel for num_threads(omp_get_max_threads())
+                for (int k = 0; k < _localVertsNum; ++k) {
+                    _curTable[i][k] = 0;
+                }
+
+#else
+// start single node
+// 
 #ifdef __INTEL_COMPILER
                 _curTable[i] = (float*) _mm_malloc(_vertsNum*sizeof(float), 64); 
 #else
@@ -89,7 +115,8 @@ void DataTableColMajor::initSubTempTable(int subsId)
                 for (int k = 0; k < _vertsNum; ++k) {
                     _curTable[i][k] = 0;
                 }
-                // std::memset(_curTable[i], 0, _vertsNum*sizeof(float));
+
+#endif
             }
 
         }
@@ -102,6 +129,26 @@ void DataTableColMajor::initSubTempTable(int subsId)
             {
                 int batchSize = (i < batchNum -1) ? (_bufMatCols) : (lenCur - _bufMatCols*(batchNum-1));
 
+#ifdef DISTRI // start distributed
+
+#ifdef __INTEL_COMPILER
+                _curTable[colStart] = (float*)_mm_malloc(_localVertsNum*batchSize*sizeof(float), 64); 
+#else
+                _curTable[colStart] = (float*)aligned_alloc(64, _localVertsNum*batchSize*sizeof(float)); 
+#endif
+
+#pragma omp parallel for num_threads(omp_get_max_threads())
+                for (int k = 0; k < _localVertsNum*batchSize; ++k) {
+                    _curTable[colStart][k] = 0;
+                }
+
+
+                for (int j = 1; j < batchSize; ++j) {
+                   _curTable[colStart+j] = _curTable[colStart] + j*_localVertsNum; 
+                }
+
+#else // start single node
+
 #ifdef __INTEL_COMPILER
                 _curTable[colStart] = (float*)_mm_malloc(_vertsNum*batchSize*sizeof(float), 64); 
 #else
@@ -113,19 +160,14 @@ void DataTableColMajor::initSubTempTable(int subsId)
                     _curTable[colStart][k] = 0;
                 }
 
-                // std::memset(_curTable[colStart], 0, _vertsNum*batchSize*sizeof(float));
 
                 for (int j = 1; j < batchSize; ++j) {
                    _curTable[colStart+j] = _curTable[colStart] + j*_vertsNum; 
                 }
-
+#endif
                 colStart += batchSize;
             }
 
-            // for (int i = 1; i < lenCur; ++i) {
-            //    // _curTable[i] = _curTable[0] + i*(int64_t)_vertsNum; 
-            //    _curTable[i] = &((_curTable[0])[i*(int64_t)_vertsNum]); 
-            // }
             
         }
 
@@ -556,6 +598,19 @@ void DataTableColMajor::countCurBottom(int*& idxCToC, int*& colorVals)
 {
     if (_curSubId == _subsNum - 1)
     {
+#ifdef DISTRI
+
+#pragma omp parallel for
+        for(idxType v=0; v<_localVertsNum; v++)
+        {
+            int* idxCToCLocal = idxCToC;
+            int* colorValsLocal = colorVals;
+            float** curTableLocal = _curTable;
+            int idxLocal = idxCToCLocal[colorValsLocal[v]];
+            curTableLocal[idxLocal][v] = 1.0; 
+        }
+#else
+
 #pragma omp parallel for
         for(idxType v=0; v<_vertsNum; v++)
         {
@@ -565,6 +620,7 @@ void DataTableColMajor::countCurBottom(int*& idxCToC, int*& colorVals)
             int idxLocal = idxCToCLocal[colorValsLocal[v]];
             curTableLocal[idxLocal][v] = 1.0; 
         }
+#endif
     }
     
 }

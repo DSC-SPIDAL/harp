@@ -16,11 +16,11 @@ class DataTableColMajor
         DataTableColMajor(): _subTempsList(nullptr), _dataTable(nullptr), 
         _tableLen(nullptr), _curTable(nullptr), _curMainTable(nullptr), 
         _curAuxTable(nullptr), _indexer(nullptr), _thdNum(1), _blockSizeBasic(1), _blockSize(nullptr),
-        _blockPtrDst(nullptr), _blockPtrDstLast(nullptr), _blockPtrA(nullptr), _blockPtrB(nullptr), _useSPMM(0), _bufMatCols(0) {}
+        _blockPtrDst(nullptr), _blockPtrDstLast(nullptr), _blockPtrA(nullptr), _blockPtrB(nullptr), _useSPMM(0), _bufMatCols(0), _vertsNum(0), _localVertsNum(0) {}
 
         ~DataTableColMajor () {cleanTable();}
 
-        void initDataTable(Graph* subTempsList, IndexSys* indexer, int subsNum, int colorNum, idxType vertsNum, int thdNum, int useSPMM, int bufMatCols);
+        void initDataTable(Graph* subTempsList, IndexSys* indexer, int subsNum, int colorNum, idxType vertsNum, idxType localVertsNum, int thdNum, int useSPMM, int bufMatCols);
         void initSubTempTable(int subsId);
         void initSubTempTable(int subsId, int mainId, int auxId);
         void cleanSubTempTable(int subsId, bool isBottom);
@@ -86,6 +86,9 @@ class DataTableColMajor
 
         int _useSPMM;
         int _bufMatCols;
+
+        // for distributed 
+        idxType _localVertsNum;
         
 
 };

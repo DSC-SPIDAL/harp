@@ -1,18 +1,16 @@
-## compilation for different platforms and 
+## compilation for json compilation database and 
 ## compilers
 ARCHS = hsw skl
 ARCH ?= hsw
-DISTRI ?= no
 
 COMPILERs = icc gnu
-COMPILER ?= gnu 
+COMPILER ?= gnu
 
 $(if $(filter $(COMPILERs),$(COMPILER)),,$(error COMPILER must be one of $(COMPILERs)))
 $(if $(filter $(ARCHS),$(ARCH)),,$(error ARCH must be one of $(ARCHS)))
 
 COMPILER_is_$(COMPILER) := yes
 ARCH_is_$(ARCH)         := yes
-DISTRI_is_$(DISTRI)     := yes
 
 ## for openmp
 -omp := $(if $(COMPILER_is_icc), -qopenmp, -fopenmp)
@@ -21,13 +19,10 @@ DISTRI_is_$(DISTRI)     := yes
 -rpt := $(if $(COMPILER_is_icc), -qopt-report=5, -ftree-vectorize -fopt-info-vec-missed)
 ## for knl MCDRAM
 -knlflag := $(if $(ARCH_is_knl), -DSC_MEMKIND -I./memkind/include -L./memkind/lib -lmemkind, )
--mkl := $(if $(COMPILER_is_icc), -I/opt/intel/mkl/include, )
+-mkl := $(if $(COMPILER_is_icc), -I/opt/intel/mkl/include, -I/home/lc37/localLib/mkl-inc)
 -mklld := $(if $(COMPILER_is_icc), -L/opt/intel/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core,)
-
-## for MPI
-#-mpi := -I/N/u/lc37/Lib/openmpi_build/include 
--distridef := $(if $(DISTRI_is_mpiicc), -DDISTRI, ) 
-
+## for OpenMPI
+-mpi := -I/home/lc37/localLib/openmpi_build/include 
 ## for intel prefetch
 -prefetch := $(if $(COMPILER_is_icc), -qopt-prefetch=3,)
 
@@ -36,7 +31,7 @@ DISTRI_is_$(DISTRI)     := yes
 ## ----------- start of compilation -----------
 
 # output binary
-BIN := sc-$(ARCH)-$(COMPILER)-${DISTRI}.bin
+BIN := sc-$(ARCH)-$(COMPILER).bin
 
 # source files
 SRCS := \
@@ -70,20 +65,20 @@ $(shell mkdir -p $(dir $(OBJS)) >/dev/null)
 $(shell mkdir -p $(dir $(DEPS)) >/dev/null)
 
 # C compiler
-CC := $(if $(DISTRI_is_mpiicc), mpiicc , $(if $(COMPILER_is_icc),icc, gcc))
+CC := $(if $(COMPILER_is_icc), icc, gcc)
 # C++ compiler
-CXX := $(if $(DISTRI_is_mpiicc), mpiicpc, $(if $(COMPILER_is_icc), icpc, g++))
+CXX := $(if $(COMPILER_is_icc), icpc, g++)
 # linker
-LD := $(if $(DISTRI_is_mpiicc), mpiicpc, $(if $(COMPILER_is_icc), icpc, g++))
+LD := $(if $(COMPILER_is_icc), icpc, g++)
 # tar
 TAR := tar
 
 # C flags
-CFLAGS := -std=c11 $(-omp) $(-avx) $(-rpt) $(-mkl) -O3
+CFLAGS := -std=c11 $(-omp) $(-avx) $(-rpt) $(-mkl) $(-mpi) -O3
 # C++ flags
-CXXFLAGS := -std=c++11 $(-omp) $(-avx) $(-rpt) $(-mkl) $(-prefetch) -O3
+CXXFLAGS := -std=c++11 $(-omp) $(-avx) $(-rpt) $(-mkl) $(-prefetch) $(-mpi) -O3
 # C/C++ flags
-CPPFLAGS := -g -Wall -Wextra -pedantic -DVTUNE -DVERBOSE -DUSE_BLAS $(-distridef) 
+CPPFLAGS := -g -Wall -Wextra -pedantic -DVTUNE -DVERBOSE -DUSE_BLAS -DDISTRI
 # linker flags
 LDFLAGS := $(-omp) $(-mklld)
 # flags required for dependency generation; passed to compilers

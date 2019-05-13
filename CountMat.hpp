@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <iostream>
 #include <cstring>
 // #include <string.h>
 
@@ -26,9 +27,10 @@ class CountMat {
         _bufVec(nullptr), _bufMatY(nullptr), _bufMatX(nullptr), _bufMatCols(-1), _bufVecLeaf(nullptr), _spmvTime(0), _eMATime(0), 
         _isPruned(1), _isScaled(0), _useSPMM(0), _peakMemUsage(0), _spmvElapsedTime(0), _fmaElapsedTime(0), _spmvFlops(0),
         _spmvMemBytes(0), _fmaFlops(0), _fmaMemBytes(0), _vtuneStart(-1), _calculate_automorphisms(false), 
-        _useCSC(1) {} 
+        _useCSC(1), _isDistri(false), _local_vert_num(0), _myrank(0), _nprocs(1){} 
 
-        void initialization(CSRGraph* graph, CSCGraph<int32_t, float>* graphCSC, int thd_num, int itr_num, int isPruned, int useSPMM, int vtuneStart=-1,
+        void initialization(CSRGraph* graph, CSCGraph<int32_t, float>* graphCSC, int thd_num, int itr_num, int isPruned, int useSPMM, bool isDistr = false, 
+                int nprocs = 1, int myrank = 0, int vtuneStart=-1,
                 bool calculate_automorphisms = false);
 
         double compute(Graph& templates, bool isEstimate = false);
@@ -187,6 +189,13 @@ class CountMat {
 
         int _vtuneStart;
         int _useCSC;
+
+        // for distributed 
+        bool _isDistri;
+        idxType _local_vert_num;
+        int _myrank;
+        int _nprocs;
+
 };
 
 #endif
