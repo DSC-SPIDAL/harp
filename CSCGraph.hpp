@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <cstdlib>
 #include <fstream>
+#include <iostream>
 #include <cstring>
 #include <stdio.h>
 #include <omp.h>

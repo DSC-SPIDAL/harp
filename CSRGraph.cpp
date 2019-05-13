@@ -576,12 +576,117 @@ void CSRGraph::rcmReordering()
  */
 void CSRGraph::prepComBuf()
 {
-    // this function is to use the 
+
+#ifdef DISTRI
+
+    _sendCounts = new idxType[_nprocs];
+    _recvCounts = new idxType[_nprocs];
+    
+    _sendDispls = new idxType[_nprocs];
+    _recvDispls = new idxType[_nprocs];
+
+    for (int i = 0; i < _nprocs; ++i) {
+       _sendCounts[i] = _vNLocal;
+    }
+
+    _recvCounts[_myrank] = 0;
+    //alltoall and get 
+    MPI_Alltoall((const void *)_sendCounts, 1, MPI_INT,
+                 (void *)_recvCounts, 1, MPI_INT, MPI_COMM_WORLD);
+
+    // debug check print 
+    for (int i = 0; i < _nprocs; ++i) {
+        std::cout<<"Rank: "<< _myrank << " sending to rank:" << i << " is " << _sendCounts[i]<< std::endl;
+        std::cout<<"Rank: "<< _myrank << " receiving from rank:" << i << " is " << _recvCounts[i]<< std::endl;
+    }   
+
+    _sendDispls[0] = 0;
+    _recvDispls[0] = 0;
+    for (int i = 1; i < _nprocs; ++i) {
+        _sendDispls[i] = _sendDispls[i-1] + _sendCounts[i-1];
+        _recvDispls[i] = _recvDispls[i-1] + _recvCounts[i-1];
+    }
+
+    for (int i = 0; i < _nprocs; ++i) {
+       _sendBufLen += _sendCounts[i]; 
+       _recvBufLen += _recvCounts[i];
+    }
+
+#endif
+}
+
+
+void CSRGraph::assembleSendBuf(valType* data, valType* sendbuf, idxType dataLen, 
+                idxType batchSize, idxType* metaC, idxType* metaDispls)
+{
+#ifdef DISTRI
+    if (sendbuf)
+    {
+        // determine the meta counts and displacements
+        for (int i = 0; i < _nprocs; ++i) {
+            metaC[i] = _sendCounts[i]*batchSize; 
+        }
+
+        metaDispls[0] = 0;
+        for (int i = 1; i < _nprocs; ++i) {
+           metaDispls[i] = metaDispls[i-1] + metaC[i-1]; 
+        }
+        
+        // column majored copy data to sendbuf in parallel
+        for (int i = 0; i < _nprocs; ++i) {
+#pragma omp parallel for 
+                for (int j = 0; j < batchSize; ++j) {
+                    std::copy(data + j*dataLen, data + j*dataLen + 
+                            _sendCounts[i], sendbuf+metaDispls[i]+j*_sendCounts[i]);
+                }
+            
+        } 
+    }
+#endif
+}
+
+void CSRGraph::csrAlltoAll(valType* sendbuf, valType* recvbuf, idxType bufLen, idxType batchSize, idxType* sendMetaC,
+                idxType* sendMetaDispls, idxType* recvMetaC, idxType* recvMetaDispls)
+{
+#ifdef DISTRI
+    if (recvbuf)
+    {
+
+        // determine the meta counts and displacements
+        for (int i = 0; i < _nprocs; ++i) {
+            recvMetaC[i] = _recvCounts[i]*batchSize; 
+        }
+
+        recvMetaDispls[0] = 0;
+        for (int i = 1; i < _nprocs; ++i) {
+           recvMetaDispls[i] = recvMetaDispls[i-1] + recvMetaC[i-1]; 
+        }
+
+        // launch mpi_alltoallv
+        MPI_Alltoallv((const void *)sendbuf, (const int*) sendMetaC,
+                  (const int *)sendMetaDispls, MPI_FLOAT, (void *)recvbuf,
+                  (const int *)recvMetaC, (const int *)recvMetaDispls, MPI_FLOAT,
+                  MPI_COMM_WORLD);
+
+    }
+#endif
 
 }
 
 
+void CSRGraph::reorgBuf(valType* input, valType* output, idxType batchSize, idxType* recvMetaC, idxType* recvMetaDispls)
+{
+#ifdef DISTRI
+    for (int i = 0; i < _nprocs; ++i) {
+#pragma omp parallel for 
+        for (int j = 0; j < batchSize; ++j) {
+            std::copy(input+recvMetaDispls[i]+j*_recvCounts[i], input+recvMetaDispls[i]+j*_recvCounts[i]
+                    + _recvCounts[i], output+j*_numVertices+_recvDispls[i]);
+        }
+    }
 
+#endif
+}
 
 
 

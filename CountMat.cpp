@@ -47,10 +47,6 @@ void CountMat::initialization(CSRGraph* graph, CSCGraph<int32_t, float>* graphCS
     _vtuneStart = vtuneStart;
     _calculate_automorphisms = calculate_automorphisms;
 
-    // mkl spmm use one-based csr
-    //if (_graph != nullptr && _graph->useMKL() && _useSPMM == 1)
-        //_graph->makeOneIndex();
-
 #ifdef DISTRI
 
     _colors_local = (int*)malloc(_local_vert_num*sizeof(int));
@@ -826,6 +822,31 @@ double CountMat::countNonBottomePrunedSPMM(int subsId)
            int batchSize = (i < batchNum -1) ? (_bufMatCols) : (auxTableLen - _bufMatCols*(batchNum-1));
            n = batchSize;
 
+           // prep sending and receiving buffer
+#ifdef DISTRI
+           valType* sendBufMPI = new valType[_graph->getSendBuflen()*batchSize];
+           idxType* sendMetaC = new idxType[_nprocs];
+           idxType* sendMetaDispls = new idxType[_nprocs];
+
+           valType* recvBufMPI = new valType[_graph->getRecvBuflen()*batchSize];
+           valType* compBuf = new valType[_graph->getRecvBuflen()*batchSize];
+           idxType* recvMetaC = new idxType[_nprocs];
+           idxType* recvMetaDispls = new idxType[_nprocs];
+
+           // assembling the sendbuf
+           if (_nprocs > 1)
+           {
+               _graph->assembleSendBuf(_dTable.getAuxArray(colStart), sendBufMPI, m, batchSize, 
+                       sendMetaC, sendMetaDispls);
+
+               // communication 
+               _graph->csrAlltoAll(sendBufMPI, recvBufMPI, _vert_num, batchSize, sendMetaC, 
+                       sendMetaDispls, recvMetaC, recvMetaDispls);
+
+               _graph->reorgBuf(recvBufMPI, compBuf, batchSize, recvMetaC, recvMetaDispls);
+
+           }
+#endif
            //debug dummy xinput 
            //valType* dummyinput = new valType[n*k];  
 //#pragma omp parallel for
@@ -833,20 +854,33 @@ double CountMat::countNonBottomePrunedSPMM(int subsId)
               //dummyinput[i] = 1; 
            //}
 
-
 #ifdef VERBOSE
        spmvStart = utility::timer();
 #endif
            // invoke the mkl scsrmm kernel
            std::cout<<"sub: "<< subsId << " Rank: " <<_myrank << " Start scsrmm batch id: " << i <<" total batch num: " << batchNum <<std::endl;
-           //_graph->SpMMMKL(dummyinput, _bufMatY, m, n, 24);
+
+#ifdef DISTRI
+           if (_nprocs > 1)
+                _graph->SpMMMKL(compBuf, _bufMatY, m, n, k, 24);
+           else
+                _graph->SpMMMKL(_dTable.getAuxArray(colStart), _bufMatY, m, n, k, 24);
+#else
            _graph->SpMMMKL(_dTable.getAuxArray(colStart), _bufMatY, m, n, k, 24);
-           //mkl_scsrmm(&transa, &m, &n, &k, &alpha, matdescra, csrVals, csrColIdx, csrRowIdx, &(csrRowIdx[1]), _dTable.getAuxArray(colStart), &k, &beta, _bufMatY, &k);
-           //mkl_scsrmm(&transa, &m, &n, &k, &alpha, matdescra, csrVals, csrColIdx, csrRowIdx, &(csrRowIdx[1]), dummyinput, &k, &beta, _bufMatY, &k);
+#endif
            std::cout<<"sub: "<< subsId << " Rank: " <<_myrank << " End scsrmm batch id: " << i <<" total batch num: " << batchNum <<std::endl;
 
            //release dummy xinput
            //delete[] dummyinput;
+#ifdef DISTRI
+           delete[] sendBufMPI;
+           delete[] sendMetaC;
+           delete[] sendMetaDispls;
+           delete[] recvMetaC;
+           delete[] recvMetaDispls;
+           delete[] recvBufMPI;
+           delete[] compBuf;
+#endif 
 
 #ifdef VERBOSE
        _spmvElapsedTime += (utility::timer() - spmvStart);
@@ -1012,11 +1046,18 @@ double CountMat::countNonBottomePrunedSPMM(int subsId)
         for (int k = 0; k < _local_vert_num; ++k) {
             countSum += bufLastSub[k];
         }
+        // mpi allreduce to obtain the reduced countSum
+        if (_nprocs > 1)
+        {
+            double countLocal = countSum;
+            MPI_Allreduce((const void*)&countLocal, (void*)&countSum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+        }
 #else
         for (int k = 0; k < _vert_num; ++k) {
             countSum += bufLastSub[k];
         }
 #endif
+
 
         // to recover the scale down process
         if (_isScaled == 1)

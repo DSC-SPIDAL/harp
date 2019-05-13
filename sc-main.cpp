@@ -1600,6 +1600,11 @@ int main(int argc, char** argv)
     CountMat executor;
     executor.initialization(csrInputG, cscInputG, comp_thds, iterations, isPruned, useSPMM, isDistri, nprocs, myrank, vtuneStart,  calculate_automorphism);
 
+#ifdef DISTRI
+    if (csrInputG)
+        csrInputG->prepComBuf();
+#endif
+
     executor.compute(input_template, isEstimate);
 
     if (csrInputG != nullptr)
