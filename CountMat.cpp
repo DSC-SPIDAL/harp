@@ -48,8 +48,8 @@ void CountMat::initialization(CSRGraph* graph, CSCGraph<int32_t, float>* graphCS
     _calculate_automorphisms = calculate_automorphisms;
 
     // mkl spmm use one-based csr
-    if (_graph != nullptr && _graph->useMKL() && _useSPMM == 1)
-        _graph->makeOneIndex();
+    //if (_graph != nullptr && _graph->useMKL() && _useSPMM == 1)
+        //_graph->makeOneIndex();
 
 #ifdef DISTRI
 
@@ -531,8 +531,8 @@ double CountMat::countNonBottomePruned(int subsId)
                for (int j = 0; j < _vert_num; ++j) {
                    dummyinput[j] = 1.0;
                }
-               //_graph->SpMVMKL(auxObjArray, _bufVec, _thd_num);
-               _graph->SpMVMKL(dummyinput, _bufVec, _thd_num);
+               _graph->SpMVMKL(auxObjArray, _bufVec, _thd_num);
+               //_graph->SpMVMKL(dummyinput, _bufVec, _thd_num);
                delete[] dummyinput;
 #else
                _graph->SpMVMKL(auxObjArray, _bufVec, _thd_num);
@@ -827,11 +827,11 @@ double CountMat::countNonBottomePrunedSPMM(int subsId)
            n = batchSize;
 
            //debug dummy xinput 
-           valType* dummyinput = new valType[n*k];  
-#pragma omp parallel for
-           for (int i = 0; i < n*k; ++i) {
-              dummyinput[i] = 1; 
-           }
+           //valType* dummyinput = new valType[n*k];  
+//#pragma omp parallel for
+           //for (int i = 0; i < n*k; ++i) {
+              //dummyinput[i] = 1; 
+           //}
 
 
 #ifdef VERBOSE
@@ -839,13 +839,14 @@ double CountMat::countNonBottomePrunedSPMM(int subsId)
 #endif
            // invoke the mkl scsrmm kernel
            std::cout<<"sub: "<< subsId << " Rank: " <<_myrank << " Start scsrmm batch id: " << i <<" total batch num: " << batchNum <<std::endl;
-           _graph->SpMMMKL(dummyinput, _bufMatY, m, n, 24);
+           //_graph->SpMMMKL(dummyinput, _bufMatY, m, n, 24);
+           _graph->SpMMMKL(_dTable.getAuxArray(colStart), _bufMatY, m, n, k, 24);
            //mkl_scsrmm(&transa, &m, &n, &k, &alpha, matdescra, csrVals, csrColIdx, csrRowIdx, &(csrRowIdx[1]), _dTable.getAuxArray(colStart), &k, &beta, _bufMatY, &k);
            //mkl_scsrmm(&transa, &m, &n, &k, &alpha, matdescra, csrVals, csrColIdx, csrRowIdx, &(csrRowIdx[1]), dummyinput, &k, &beta, _bufMatY, &k);
            std::cout<<"sub: "<< subsId << " Rank: " <<_myrank << " End scsrmm batch id: " << i <<" total batch num: " << batchNum <<std::endl;
 
            //release dummy xinput
-           delete[] dummyinput;
+           //delete[] dummyinput;
 
 #ifdef VERBOSE
        _spmvElapsedTime += (utility::timer() - spmvStart);

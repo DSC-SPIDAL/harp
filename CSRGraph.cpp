@@ -338,12 +338,12 @@ void CSRGraph::SpMVMKL(valType* x, valType* y, int thdNum)
     // mkl_cspblas_scsrgemv(&tran, &_numVertices, _edgeVal, _indexRow, _indexCol, x, y);
 }
 
-void CSRGraph::SpMMMKL(valType* x, valType* y, idxType m, idxType n, int thdNum)
+void CSRGraph::SpMMMKL(valType* x, valType* y, idxType m, idxType n, idxType k,  int thdNum)
 {
     if (_useMKL)
     {
         mkl_sparse_s_mm(SPARSE_OPERATION_NON_TRANSPOSE, 1, _mklA, _descA, SPARSE_LAYOUT_COLUMN_MAJOR, 
-            x, n, m, 0, y, m);
+            x, n, k, 0, y, m);
     }
     
 }

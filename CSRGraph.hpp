@@ -70,7 +70,7 @@ class CSRGraph
         void SpMVNaive(valType* x, valType* y, int thdNum);
         void SpMVNaiveFull(valType* x, valType* y, int thdNum);
         void SpMVMKL(valType* x, valType* y, int thdNum);
-        void SpMMMKL(valType* x, valType* y, idxType m, idxType n, int thdNum);
+        void SpMMMKL(valType* x, valType* y, idxType m, idxType n, idxType k, int thdNum);
         void SpMVMKLDistri(valType* x, valType* y, int thdNum);
         void SpMVMKLHint(int callNum);
         void SpMMMKLHint(int mCols, int callNum);
