@@ -1387,11 +1387,6 @@ int main(int argc, char** argv)
         benchItr = atoi(argv[11]);
 
     // end of arguments
-    
-    // SPMM in CSR uses MKL
-    //if (useSPMM && (!useCSC))
-        //useMKL = true;
-
     if (useCSC)
     {
         useRcm = false;

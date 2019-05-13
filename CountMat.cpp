@@ -500,6 +500,25 @@ double CountMat::countNonBottomePruned(int subsId)
        _graph->SpMVMKLHint(auxTableLen);
    }
 
+#ifdef DISTRI
+
+           valType* sendBufMPI = nullptr;
+           idxType* sendMetaC = new idxType[_nprocs];
+           idxType* sendMetaDispls = new idxType[_nprocs];
+
+           valType* recvBufMPI = nullptr;
+           valType* compBuf = nullptr;
+           idxType* recvMetaC = new idxType[_nprocs];
+           idxType* recvMetaDispls = new idxType[_nprocs];
+
+           if (_graph)
+           {
+               sendBufMPI = new valType[_graph->getSendBuflen()];
+               recvBufMPI = new valType[_graph->getRecvBuflen()];
+               compBuf = new valType[_graph->getRecvBuflen()];
+           }
+#endif
+
    for (int i = 0; i < auxTableLen; ++i) {
 
        float* auxObjArray = _dTable.getAuxArray(i);
@@ -510,26 +529,39 @@ double CountMat::countNonBottomePruned(int subsId)
 
        if (_graph != nullptr)
        {
+#ifdef DISTRI
+           if (_nprocs > 1)
+           {
+            _graph->assembleSendBuf(auxObjArray, sendBufMPI, _local_vert_num, 1, 
+                       sendMetaC, sendMetaDispls);
+
+    
+            // communication 
+            _graph->csrAlltoAll(sendBufMPI, recvBufMPI, _vert_num, 1, sendMetaC, 
+                       sendMetaDispls, recvMetaC, recvMetaDispls);
+
+            _graph->reorgBuf(recvBufMPI, compBuf, 1, recvMetaC, recvMetaDispls);
+
+           }
+#endif
 
            if (_graph->useMKL())
            {
 
                //set up hint and optimize
 #ifdef DISTRI
-               //debug
-               if (i == 0)
-               {
-                   std::cout<<"Distri Test use csr mkl"<< std::endl;
-               }
 
-               valType* dummyinput = new valType[_vert_num];
-#pragma omp parallel for
-               for (int j = 0; j < _vert_num; ++j) {
-                   dummyinput[j] = 1.0;
-               }
-               _graph->SpMVMKL(auxObjArray, _bufVec, _thd_num);
+
+
+               //valType* dummyinput = new valType[_vert_num];
+//#pragma omp parallel for
+               //for (int j = 0; j < _vert_num; ++j) {
+                   //dummyinput[j] = 1.0;
+               //}
+               _graph->SpMVMKL(compBuf, _bufVec, _thd_num);
                //_graph->SpMVMKL(dummyinput, _bufVec, _thd_num);
-               delete[] dummyinput;
+               //delete[] dummyinput;
+
 #else
                _graph->SpMVMKL(auxObjArray, _bufVec, _thd_num);
 #endif
@@ -537,20 +569,20 @@ double CountMat::countNonBottomePruned(int subsId)
            else
            {
 #ifdef DISTRI
-               valType* dummyinput = new valType[_vert_num];
-#pragma omp parallel for
-               for (int j = 0; j < _vert_num; ++j) {
-                   dummyinput[j] = 1.0;
-               }
+               //valType* dummyinput = new valType[_vert_num];
+//#pragma omp parallel for
+               //for (int j = 0; j < _vert_num; ++j) {
+                   //dummyinput[j] = 1.0;
+               //}
 
-               //_graph->SpMVNaiveFullDistri(auxObjArray, _bufVec, _thd_num); 
-               _graph->SpMVNaiveFullDistri(dummyinput, _bufVec, _thd_num); 
-               delete[] dummyinput;
+               _graph->SpMVNaiveFullDistri(compBuf, _bufVec, _thd_num); 
+               //delete[] dummyinput;
 
 #else
                _graph->SpMVNaiveFull(auxObjArray, _bufVec, _thd_num); 
 #endif
            }
+
        }
        else
        {
@@ -587,7 +619,27 @@ double CountMat::countNonBottomePruned(int subsId)
 #endif
 
        }
+
    }
+
+#ifdef DISTRI
+
+   if (sendBufMPI)
+       delete[] sendBufMPI;
+
+   if (recvBufMPI)
+       delete[] recvBufMPI;
+
+   if (compBuf)
+       delete[] compBuf;
+
+   delete[] sendMetaC;
+   delete[] sendMetaDispls;
+   delete[] recvMetaC;
+   delete[] recvMetaDispls;
+
+#endif
+
 #ifdef VERBOSE
    eltSpmv += (utility::timer() - startTimeComp); 
 #endif   
@@ -672,6 +724,12 @@ double CountMat::countNonBottomePruned(int subsId)
 #ifdef DISTRI
         for (int k = 0; k < _local_vert_num; ++k) {
             countSum += bufLastSub[k];
+        }
+        // mpi allreduce to obtain the reduced countSum
+        if (_nprocs > 1)
+        {
+            double countLocal = countSum;
+            MPI_Allreduce((const void*)&countLocal, (void*)&countSum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
         }
 #else
         for (int k = 0; k < _vert_num; ++k) {
