@@ -604,10 +604,18 @@ double CountMat::countNonBottomePruned(int subsId)
            }
 
            _graphCSC->spmvNaiveSplit(auxObjArray, _bufMatX, _thd_num);
-           // copy data from _bufMatX to _bufVec
-           std::copy(_bufMatX+ _graphCSC->getRecvDispls()[_myrank], 
-                   _bufMatX+ _graphCSC->getRecvDispls()[_myrank] + 
-                   _graphCSC->getRecvCounts()[_myrank], _bufVec);
+
+            if (_nprocs > 1)
+            {
+                _graphCSC->cscReduce(_bufMatX, _bufVec, 1, recvMetaC, recvMetaDispls);
+            }
+            else
+            {
+                // copy data from _bufMatX to _bufVec
+                std::copy(_bufMatX+ _graphCSC->getRecvDispls()[_myrank], 
+                        _bufMatX+ _graphCSC->getRecvDispls()[_myrank] + 
+                        _graphCSC->getRecvCounts()[_myrank], _bufVec);
+            }
 
 #else
            // clear _bufVec

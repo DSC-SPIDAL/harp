@@ -109,6 +109,9 @@ class CSCGraph
         idxType* getRecvDispls() {return _recvDispls; }
 
         void prepComBuf(); 
+        void cscReduce(valType* input, valType* output, idxType batchSize,
+                idxType* recvMetaC, idxType* recvMetaDispls);
+
 
     private:
         /* data */
@@ -727,5 +730,62 @@ void CSCGraph<idxType, valType>::prepComBuf()
 
 }
 
+/**
+ * @brief 
+ *
+ * @tparam idxType
+ * @tparam valType
+ * @param input: length _vert_num, row_majored
+ * @param output: length _local_vert_num, colum_majored
+ * @param batchSize
+ * @param sendMetaC
+ * @param sendMetaDispls
+ * @param recvMetaC
+ * @param recvMetaDispls
+ */
+template<class idxType, class valType>
+void CSCGraph<idxType, valType>::cscReduce(valType* input, valType* output, idxType batchSize,idxType* recvMetaC, idxType* recvMetaDispls)
+{
+
+#ifdef DISTRI
+    // a row_majored tmpBuf
+    valType* tmpBuf = new valType[_vNLocal*batchSize];
+
+    // determine the meta counts and displacements
+    for (int i = 0; i < _nprocs; ++i) {
+        recvMetaC[i] = _recvCounts[i]*batchSize; 
+    }
+
+    recvMetaDispls[0] = 0;
+    for (int i = 1; i < _nprocs; ++i) {
+        recvMetaDispls[i] = recvMetaDispls[i-1] + recvMetaC[i-1]; 
+    }
+
+    // debug
+    std::cout<<"Rank: " << _myrank << " finish recvMeta" << std::endl;
+
+    // mpi reduce 
+    for (int i = 0; i < _nprocs; ++i) {
+
+        MPI_Reduce((const void *)(input+recvMetaDispls[i]), (void *)tmpBuf, recvMetaC[i], MPI_FLOAT, 
+               MPI_SUM, i, MPI_COMM_WORLD);
+
+        // convert tmpbuf to output (row-majored to column majored)
+        if (i == _myrank)
+        {
+
+#pragma omp parallel for num_threads(omp_get_max_threads())
+           for (int k = 0; k < _vNLocal; ++k) {
+                 for (int j = 0; j < batchSize; ++j) {
+                    output[j*_vNLocal+k] = tmpBuf[k*batchSize+j];
+                }
+            }
+        }
+    }
+
+    delete[] tmpBuf;
+
+#endif
+}
 
 #endif
