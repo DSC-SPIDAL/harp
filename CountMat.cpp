@@ -1006,11 +1006,60 @@ double CountMat::countNonBottomePrunedSPMM(int subsId)
        int batchNum = (auxTableLen + _bufMatCols - 1)/(_bufMatCols);
        int colStart = 0;
 
+#ifdef DISTRI
+       idxType* recvMetaC = new idxType[_nprocs];
+       idxType* recvMetaDispls = new idxType[_nprocs];
+#endif
+
        for (int i = 0; i < batchNum; ++i) 
        {
+
            int batchSize = (i < batchNum -1) ? (_bufMatCols) : (auxTableLen - _bufMatCols*(batchNum-1));
 
            valType* xInput = _dTable.getAuxArray(colStart);
+
+#ifdef DISTRI
+
+           // convert data structre from column-majored to row-majored
+           // here switch bufmat X and bufmatY, Y is input, X is ouput
+#pragma omp parallel for num_threads(omp_get_max_threads())
+    for (int j = 0; j <_local_vert_num; ++j) 
+    {
+        for (int k = 0; k < batchSize; ++k) {
+            _bufMatY[j*batchSize+k] = xInput[k*_local_vert_num+j];
+        }
+    }
+
+    // clean Xoutput
+#pragma omp parallel for num_threads(omp_get_max_threads())
+    for (int j = 0; j < _vert_num*batchSize; ++j) {
+        _bufMatX[j] = 0.0; 
+    }
+
+#ifdef VERBOSE
+       spmvStart = utility::timer();
+#endif
+
+    // invoke the spmm kernel
+    _graphCSC->spmmSplit(_bufMatY, _bufMatX, batchSize, _thd_num);
+
+#ifdef VERBOSE
+       _spmvElapsedTime += (utility::timer() - spmvStart);
+#endif
+
+       // convert data structure back to column-majored
+       valType* yOutput = (auxSize > 1) ? _dTable.getAuxArray(colStart) : _bufVecLeaf[colStart];
+
+       _graphCSC->cscReduce(_bufMatX, yOutput, batchSize, recvMetaC, recvMetaDispls);
+
+//#pragma omp parallel for num_threads(omp_get_max_threads())
+       //for (int j = 0; j < _local_vert_num; ++j) {
+           //for (int k = 0; k < batchSize; ++k) {
+               //yOutput[k*_local_vert_num+j] = _bufMatX[j*batchSize+k];
+           //}
+       //}
+
+#else
 
            // convert data structre from column-majored to row-majored
 #pragma omp parallel for num_threads(omp_get_max_threads())
@@ -1032,6 +1081,7 @@ double CountMat::countNonBottomePrunedSPMM(int subsId)
            // invoke the spmm kernel
            _graphCSC->spmmSplit(_bufMatX, _bufMatY, batchSize, _thd_num);
 
+
 #ifdef VERBOSE
        _spmvElapsedTime += (utility::timer() - spmvStart);
 #endif
@@ -1046,9 +1096,17 @@ double CountMat::countNonBottomePrunedSPMM(int subsId)
         }
     }
 
+#endif
            // increase colStart;
            colStart += batchSize;
+
        }
+
+#ifdef DISTRI
+        delete[] recvMetaC;
+        delete[] recvMetaDispls;
+#endif
+
    }
 
 #ifdef VERBOSE

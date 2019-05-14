@@ -762,7 +762,7 @@ void CSCGraph<idxType, valType>::cscReduce(valType* input, valType* output, idxT
     }
 
     // debug
-    std::cout<<"Rank: " << _myrank << " finish recvMeta" << std::endl;
+    //std::cout<<"Rank: " << _myrank << " finish recvMeta" << std::endl;
 
     // mpi reduce 
     for (int i = 0; i < _nprocs; ++i) {
