@@ -26,12 +26,17 @@ class CSCGraph
         CSCGraph(): _isDirected(false), _isOneBased(false), _numEdges(-1), _numVertices(-1), _nnZ(-1), 
         _edgeVal(nullptr), _indexRow(nullptr), _indexCol(nullptr),
         _degList(nullptr), _numsplits(0), _splitsRowIds(nullptr), _splitsColIds(nullptr), _splitsVals(nullptr), 
-        _isDistri(false), _nprocs(0), _myrank(0) {}
+        _isDistri(false), _nprocs(0), _myrank(0), _vOffset(0), _vNLocal(0), 
+        _sendCounts(nullptr), _recvCounts(nullptr),_sendDispls(nullptr), _recvDispls(nullptr),
+        _sendBufLen(0), _recvBufLen(0){}
+
 
         CSCGraph(bool isDistri, int nprocs, int myrank): _isDirected(false), _isOneBased(false), _numEdges(-1), _numVertices(-1), _nnZ(-1), 
         _edgeVal(nullptr), _indexRow(nullptr), _indexCol(nullptr), 
-        _degList(nullptr), _numsplits(0), _splitsRowIds(nullptr), _splitsColIds(nullptr), _splitsVals(nullptr), 
-        _isDistri(isDistri), _nprocs(nprocs), _myrank(myrank) {}
+        _degList(nullptr), _numsplits(0), _splitsRowIds(nullptr), _splitsColIds(nullptr), _splitsVals(nullptr),
+        _isDistri(isDistri), _nprocs(nprocs), _myrank(myrank), _vOffset(0), _vNLocal(0), 
+        _sendCounts(nullptr), _recvCounts(nullptr),_sendDispls(nullptr), _recvDispls(nullptr) ,
+        _sendBufLen(0), _recvBufLen(0){}
 
         ~CSCGraph () {
 
@@ -52,6 +57,19 @@ class CSCGraph
 
             if (_splitsVals != nullptr)
                 delete[] _splitsVals; 
+
+            if (_sendCounts)
+                delete[] _sendCounts;
+
+            if (_recvCounts)
+                delete[] _recvCounts;
+
+            if (_sendDispls)
+                delete[] _sendDispls;
+
+            if (_recvDispls)
+                delete[] _recvDispls;
+
         }
 
         valType* getEdgeVals(idxType colId) {return _edgeVal + _indexCol[colId]; }
@@ -65,7 +83,6 @@ class CSCGraph
         valType* getNNZVal() {return _edgeVal;} 
 
         idxType* getDegList() {return _degList;}
-        bool isDistributed () { return _isDistri; }
 
         void createFromEdgeListFile(idxType numVerts, idxType numEdges, 
                 idxType* srcList, idxType* dstList, bool isBenchmark = false);       
@@ -77,6 +94,21 @@ class CSCGraph
 
         void serialize(ofstream& outputFile);
         void deserialize(ifstream& inputFile);
+
+        // for distributed env
+        bool isDistributed () { return _isDistri; }
+        idxType getVNLocal() {return _vNLocal;}
+        idxType getVOffset() {return _vOffset;}
+        idxType getSendBuflen() { return _sendBufLen; }
+        idxType getRecvBuflen() { return _recvBufLen; }
+
+        idxType* getSendCounts() {return _sendCounts; }
+        idxType* getRecvCounts() {return _recvCounts; }
+
+        idxType* getSendDispls() {return _sendDispls; }
+        idxType* getRecvDispls() {return _recvDispls; }
+
+        void prepComBuf(); 
 
     private:
         /* data */
@@ -96,9 +128,21 @@ class CSCGraph
         std::vector<idxType>* _splitsColIds;
         std::vector<valType>* _splitsVals;
 
+        // for distributed version
         bool _isDistri;
         int _nprocs;
         int _myrank;
+        idxType _vOffset; // offset of local vertices 
+        idxType _vNLocal; // local number of vertices
+
+        idxType* _sendCounts; // num of vertices to send
+        idxType* _recvCounts; // num of vertices to recv
+        idxType* _sendDispls; // displacement of sending vertices 
+        idxType* _recvDispls; // displacement of receiving vertices 
+        idxType _sendBufLen;
+        idxType _recvBufLen;
+
+
 };
 
 template<class idxType, class valType>
@@ -106,6 +150,21 @@ void CSCGraph<idxType, valType>::createFromEdgeListFile(idxType numVerts, idxTyp
 {
     _numEdges = numEdges;
     _numVertices = numVerts;
+
+#ifdef DISTRI
+
+    _vNLocal = (_numVertices + _nprocs - 1)/_nprocs;
+    _vOffset = _myrank*_vNLocal;
+
+    if (_myrank == _nprocs -1)
+    {
+        // adjust the last rank
+        _vNLocal = _numVertices - _vNLocal*(_nprocs -1);
+    }
+
+    printf("nprocs: %d, rank: %d, vTotal is: %d, _vNLocal is : %d, _vOffset is: %d\n", _nprocs, _myrank, _numVertices, _vNLocal, _vOffset);
+    std::fflush(stdout); 
+#endif
 
     _degList = (idxType*) malloc(_numVertices*sizeof(idxType)); 
 
@@ -133,28 +192,98 @@ void CSCGraph<idxType, valType>::createFromEdgeListFile(idxType numVerts, idxTyp
     }
 
     // calculate the col index of CSC (offset)
+    // column partitioned
     // size numVerts + 1
+#ifdef DISTRI
+    _indexCol = (idxType*)malloc((_vNLocal+1)*sizeof(idxType));
+#else
     _indexCol = (idxType*)malloc((_numVertices+1)*sizeof(idxType));
+#endif
+
     _indexCol[0] = 0;
+
+#ifdef DISTRI
+    for(idxType i=1; i<= _vNLocal;i++)
+        _indexCol[i] = _indexCol[i-1] + _degList[i+_vOffset-1]; 
+
+#else
     for(idxType i=1; i<= _numVertices;i++)
         _indexCol[i] = _indexCol[i-1] + _degList[i-1]; 
+#endif
 
     // create the row index and val 
+#ifdef DISTRI
+    _nnZ = _indexCol[_vNLocal];
+#else
     _nnZ = _indexCol[_numVertices];
+#endif
 
+#ifdef DISTRI
+    _indexRow = (idxType*)malloc(_indexCol[_vNLocal]*sizeof(idxType));
+    std::vector<idxType> indexRowVec(_indexCol[_vNLocal]);
+    _edgeVal = (valType*)malloc(_indexCol[_vNLocal]*sizeof(valType));
+#pragma omp parallel for num_threads(omp_get_max_threads())
+    for (int i = 0; i < _indexCol[_vNLocal]; ++i) {
+        _edgeVal[i] = 0;
+    }
+
+#else
     _indexRow = (idxType*)malloc(_indexCol[_numVertices]*sizeof(idxType));
     std::vector<idxType> indexRowVec(_indexCol[_numVertices]);
-
     _edgeVal = (valType*)malloc(_indexCol[_numVertices]*sizeof(valType));
-
 #pragma omp parallel for num_threads(omp_get_max_threads())
     for (int i = 0; i < _indexCol[_numVertices]; ++i) {
         _edgeVal[i] = 0;
     }
 
+#endif
+
+#ifdef DISTRI
+
     for(idxType i = 0; i< _numEdges; i++)
     {
+        idxType srcId = srcList[i];
+        idxType dstId = dstList[i];
 
+        idxType vLocalId = dstId - _vOffset;
+        if (vLocalId >=0 && vLocalId < _vNLocal)
+        {
+            indexRowVec[_indexCol[vLocalId]] = srcId;
+            _edgeVal[(_indexCol[vLocalId])++] = 1.0;
+        }
+
+        // non-directed graph
+        if (!_isDirected)
+        {
+            idxType vLocalIdSrc = srcId - _vOffset;
+            if (vLocalIdSrc >= 0 && vLocalIdSrc < _vNLocal)
+            {
+                indexRowVec[_indexCol[vLocalIdSrc]] = dstId;
+                _edgeVal[(_indexCol[vLocalIdSrc])++] = 1.0;
+            }
+        }
+    }
+
+    // recover the indexRow 
+#pragma omp parallel for
+    for(idxType i=0; i<_vNLocal;i++)
+        _indexCol[i] -= _degList[i+_vOffset];
+
+    // sort the row id for each col
+    // no need to sort the val in adjacency matrix
+#pragma omp parallel for
+    for (idxType i = 0; i < _vNLocal; ++i) {
+
+        // is this thread safe ?
+        std::sort(indexRowVec.begin()+_indexCol[i], indexRowVec.begin()+_indexCol[i+1]);
+    }
+
+    std::copy(indexRowVec.begin(), indexRowVec.end(), _indexRow);
+
+#else
+
+    for(idxType i = 0; i< _numEdges; i++)
+    {
         idxType srcId = srcList[i];
         idxType dstId = dstList[i];
 
@@ -184,6 +313,9 @@ void CSCGraph<idxType, valType>::createFromEdgeListFile(idxType numVerts, idxTyp
     }
 
     std::copy(indexRowVec.begin(), indexRowVec.end(), _indexRow);
+
+#endif
+
 }
 
 template<class idxType, class valType>
@@ -203,6 +335,24 @@ void CSCGraph<idxType, valType>::splitCSC(idxType numsplits)
     _splitsColIds = new std::vector<idxType>[_numsplits];
     _splitsVals = new std::vector<valType>[_numsplits];
 
+#ifdef DISTRI
+
+    idxType perpiece = _numVertices / _numsplits;
+
+    for (idxType i=0; i < _vNLocal; ++i)
+    {
+        for (idxType j = _indexCol[i]; j < _indexCol[i+1]; ++j)
+        {
+            // already sorted
+            idxType rowid = _indexRow[j];
+            idxType owner = std::min(rowid / perpiece, (_numsplits-1));
+            _splitsColIds[owner].push_back(i);
+            _splitsRowIds[owner].push_back(rowid);
+            _splitsVals[owner].push_back(_edgeVal[j]);
+        }
+    }
+
+#else
     idxType perpiece = _numVertices / _numsplits;
 
     for (idxType i=0; i < _numVertices; ++i)
@@ -217,11 +367,16 @@ void CSCGraph<idxType, valType>::splitCSC(idxType numsplits)
             _splitsVals[owner].push_back(_edgeVal[j]);
         }
     }
+
+#endif
+
 }
 
 template<class idxType, class valType>
 void CSCGraph<idxType, valType>::spmvNaiveSplit(valType* x, valType* y, idxType numThds)
 {
+#ifdef DISTRI
+
     // split CSC spmv
 #pragma omp parallel for num_threads(numThds) 
     for (idxType s = 0; s < _numsplits; ++s) {
@@ -239,6 +394,28 @@ void CSCGraph<idxType, valType>::spmvNaiveSplit(valType* x, valType* y, idxType 
             y[rowid] += (val*x[colid]);
         }
     }
+
+#else
+
+    // split CSC spmv
+#pragma omp parallel for num_threads(numThds) 
+    for (idxType s = 0; s < _numsplits; ++s) {
+
+        std::vector<idxType>* localRowIds = &(_splitsRowIds[s]);
+        std::vector<idxType>* localColIds = &(_splitsColIds[s]);
+        std::vector<valType>* localVals = &(_splitsVals[s]);
+        idxType localSize = localRowIds->size();
+
+// here the usage of simd will cause write conflict on rowid
+        for (idxType j = 0; j < localSize; ++j) {
+            idxType colid = (*localColIds)[j];
+            idxType rowid = (*localRowIds)[j];
+            valType val = (*localVals)[j];
+            y[rowid] += (val*x[colid]);
+        }
+    }
+
+#endif
 }
 
 // sparse matrix dense matrix (multiple dense vectors) 
@@ -430,17 +607,55 @@ double CSCGraph<idxType, valType>::spmmSplitExp(valType* x, valType* y, idxType 
 template<class idxType, class valType>
 void CSCGraph<idxType, valType>::serialize(ofstream& outputFile)
 {
+#ifdef DISTRI
+    outputFile.write((char*)&_numEdges, sizeof(idxType));
+    outputFile.write((char*)&_numVertices, sizeof(idxType));
+    outputFile.write((char*)&_vNLocal, sizeof(idxType));
+    outputFile.write((char*)&_vOffset, sizeof(idxType));
+    outputFile.write((char*)_degList, _numVertices*sizeof(idxType));
+    outputFile.write((char*)_indexCol, (_vNLocal+1)*sizeof(idxType));
+    outputFile.write((char*)_indexRow, (_indexCol[_vNLocal])*sizeof(idxType));
+    outputFile.write((char*)_edgeVal, (_indexCol[_vNLocal])*sizeof(valType));
+#else
     outputFile.write((char*)&_numEdges, sizeof(idxType));
     outputFile.write((char*)&_numVertices, sizeof(idxType));
     outputFile.write((char*)_degList, _numVertices*sizeof(idxType));
     outputFile.write((char*)_indexCol, (_numVertices+1)*sizeof(idxType));
     outputFile.write((char*)_indexRow, (_indexCol[_numVertices])*sizeof(idxType));
     outputFile.write((char*)_edgeVal, (_indexCol[_numVertices])*sizeof(valType));
+#endif
 }
         
 template<class idxType, class valType>
 void CSCGraph<idxType, valType>::deserialize(ifstream& inputFile)
 {
+#ifdef DISTRI
+
+    inputFile.read((char*)&_numEdges, sizeof(idxType));
+    inputFile.read((char*)&_numVertices, sizeof(idxType));
+    inputFile.read((char*)&_vNLocal, sizeof(idxType));
+    inputFile.read((char*)&_vOffset, sizeof(idxType));
+
+    _degList = (idxType*) malloc (_numVertices*sizeof(idxType)); 
+    inputFile.read((char*)_degList, _numVertices*sizeof(idxType));
+
+    _indexCol = (idxType*) malloc ((_vNLocal+1)*sizeof(idxType)); 
+    inputFile.read((char*)_indexCol, (_vNLocal+1)*sizeof(idxType));
+
+    _indexRow = (idxType*) malloc (_indexCol[_vNLocal]*sizeof(idxType)); 
+    inputFile.read((char*)_indexRow, (_indexCol[_vNLocal])*sizeof(idxType));
+
+    _edgeVal = (valType*) malloc ((_indexCol[_vNLocal])*sizeof(valType)); 
+    inputFile.read((char*)_edgeVal, (_indexCol[_vNLocal])*sizeof(valType));
+
+    _nnZ = _indexCol[_vNLocal];
+
+    printf("CSC Format Total vertices is : %d\n", _numVertices);
+    printf("CSC Format Total Edges is : %d\n", _numEdges);
+    printf("CSC Format Local vertices is : %d\n", _vNLocal);
+    std::fflush(stdout); 
+
+#else
 
     inputFile.read((char*)&_numEdges, sizeof(idxType));
     inputFile.read((char*)&_numVertices, sizeof(idxType));
@@ -463,6 +678,54 @@ void CSCGraph<idxType, valType>::deserialize(ifstream& inputFile)
     printf("CSC Format Total Edges is : %d\n", _numEdges);
     std::fflush(stdout); 
 
+#endif
 }
+
+template<class idxType, class valType>
+void CSCGraph<idxType, valType>::prepComBuf()
+{
+#ifdef DISTRI
+
+    std::cout<<"start prep csc" <<std::endl;
+
+    _sendCounts = new idxType[_nprocs];
+    _recvCounts = new idxType[_nprocs];
+    
+    _sendDispls = new idxType[_nprocs];
+    _recvDispls = new idxType[_nprocs];
+
+    for (int i = 0; i < _nprocs; ++i) {
+       _sendCounts[i] = _vNLocal;
+    }
+
+    _recvCounts[_myrank] = 0;
+    //alltoall and get 
+    MPI_Alltoall((const void *)_sendCounts, 1, MPI_INT,
+                 (void *)_recvCounts, 1, MPI_INT, MPI_COMM_WORLD);
+
+    // debug check print 
+    for (int i = 0; i < _nprocs; ++i) {
+        std::cout<<"Rank: "<< _myrank << " sending to rank:" << i << " is " << _sendCounts[i]<< std::endl;
+        std::cout<<"Rank: "<< _myrank << " receiving from rank:" << i << " is " << _recvCounts[i]<< std::endl;
+    }   
+
+    _sendDispls[0] = 0;
+    _recvDispls[0] = 0;
+    for (int i = 1; i < _nprocs; ++i) {
+        _sendDispls[i] = _sendDispls[i-1] + _sendCounts[i-1];
+        _recvDispls[i] = _recvDispls[i-1] + _recvCounts[i-1];
+    }
+
+    for (int i = 0; i < _nprocs; ++i) {
+       _sendBufLen += _sendCounts[i]; 
+       _recvBufLen += _recvCounts[i];
+    }
+
+    std::cout<<"Finish prep csc" <<std::endl;
+
+#endif
+
+}
+
 
 #endif

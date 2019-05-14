@@ -34,9 +34,9 @@ void CountMat::initialization(CSRGraph* graph, CSCGraph<int32_t, float>* graphCS
     }
     else
     {
-        //TODO: support for distributed codes
         _vert_num = _graphCSC->getNumVertices();
-
+        if (_isDistri)
+            _local_vert_num = _graphCSC->getVNLocal(); 
     }
 
     _thd_num = thd_num;
@@ -47,6 +47,7 @@ void CountMat::initialization(CSRGraph* graph, CSCGraph<int32_t, float>* graphCS
     _vtuneStart = vtuneStart;
     _calculate_automorphisms = calculate_automorphisms;
 
+    std::cout<<"coutmat init parameters" << std::endl;
 #ifdef DISTRI
 
     _colors_local = (int*)malloc(_local_vert_num*sizeof(int));
@@ -64,6 +65,8 @@ void CountMat::initialization(CSRGraph* graph, CSCGraph<int32_t, float>* graphCS
     }
 
 #endif
+
+    std::cout<<"coutmat allocate color locals" << std::endl;
 
 #ifdef DISTRI
 
@@ -92,22 +95,29 @@ void CountMat::initialization(CSRGraph* graph, CSCGraph<int32_t, float>* graphCS
     }
 
 #endif
+
+    std::cout<<"coutmat allocate bufvec" << std::endl;
     // doing 16 SIMD float operations 
     _bufMatCols = 16;
 
 #ifdef __INTEL_COMPILER
+
 #ifdef DISTRI
     _bufMatY = (float*) _mm_malloc(_local_vert_num*_bufMatCols*sizeof(float), 64); 
 #else
     _bufMatY = (float*) _mm_malloc(_vert_num*_bufMatCols*sizeof(float), 64); 
 #endif
+
     _bufMatX = (float*) _mm_malloc(_vert_num*_bufMatCols*sizeof(float), 64); 
+
 #else
+
 #ifdef DISTRI
     _bufMatY = (float*) aligned_alloc(64, _local_vert_num*_bufMatCols*sizeof(float)); 
 #else
     _bufMatY = (float*) aligned_alloc(64, _vert_num*_bufMatCols*sizeof(float)); 
 #endif
+
     _bufMatX = (float*) aligned_alloc(64, _vert_num*_bufMatCols*sizeof(float)); 
 
 #endif
@@ -129,6 +139,8 @@ void CountMat::initialization(CSRGraph* graph, CSCGraph<int32_t, float>* graphCS
         _bufMatY[i] = 0;
     }
 #endif
+
+    std::cout<<"coutmat allocate bufmat" << std::endl;
 
 }
 
@@ -550,18 +562,10 @@ double CountMat::countNonBottomePruned(int subsId)
 
                //set up hint and optimize
 #ifdef DISTRI
-
-
-
-               //valType* dummyinput = new valType[_vert_num];
-//#pragma omp parallel for
-               //for (int j = 0; j < _vert_num; ++j) {
-                   //dummyinput[j] = 1.0;
-               //}
-               _graph->SpMVMKL(compBuf, _bufVec, _thd_num);
-               //_graph->SpMVMKL(dummyinput, _bufVec, _thd_num);
-               //delete[] dummyinput;
-
+               if (_nprocs > 1)
+                    _graph->SpMVMKL(compBuf, _bufVec, _thd_num);
+               else
+                    _graph->SpMVMKL(auxObjArray, _bufVec, _thd_num);
 #else
                _graph->SpMVMKL(auxObjArray, _bufVec, _thd_num);
 #endif
@@ -574,10 +578,12 @@ double CountMat::countNonBottomePruned(int subsId)
                //for (int j = 0; j < _vert_num; ++j) {
                    //dummyinput[j] = 1.0;
                //}
+               if (_nprocs > 1)
+                    _graph->SpMVNaiveFullDistri(compBuf, _bufVec, _thd_num); 
+               else
+                    _graph->SpMVNaiveFull(auxObjArray, _bufVec, _thd_num); 
 
-               _graph->SpMVNaiveFullDistri(compBuf, _bufVec, _thd_num); 
                //delete[] dummyinput;
-
 #else
                _graph->SpMVNaiveFull(auxObjArray, _bufVec, _thd_num); 
 #endif
@@ -587,13 +593,31 @@ double CountMat::countNonBottomePruned(int subsId)
        else
        {
            // use CSC-Split SpMV
+#ifdef DISTRI
+
+           // use the first column of _bufMatX in spmv
+           // then copy data to _bufVec after comm
+           // clear the buf
+           #pragma omp parallel for num_threads(omp_get_max_threads())
+           for (int j = 0; j < _vert_num; ++j) {
+               _bufMatX[j] = 0.0;    
+           }
+
+           _graphCSC->spmvNaiveSplit(auxObjArray, _bufMatX, _thd_num);
+           // copy data from _bufMatX to _bufVec
+           std::copy(_bufMatX+ _graphCSC->getRecvDispls()[_myrank], 
+                   _bufMatX+ _graphCSC->getRecvDispls()[_myrank] + 
+                   _graphCSC->getRecvCounts()[_myrank], _bufVec);
+
+#else
            // clear _bufVec
 #pragma omp parallel for num_threads(omp_get_max_threads())
            for (int j = 0; j < _vert_num; ++j) {
                _bufVec[j] = 0.0;    
            }
-
            _graphCSC->spmvNaiveSplit(auxObjArray, _bufVec, _thd_num);
+#endif
+
        }
            
 #ifdef VERBOSE

@@ -1545,25 +1545,12 @@ int main(int argc, char** argv)
 
             if (csrInputG != nullptr)
             {
-                // TODO: add support to the distributed nodes
                 csrInputG->createFromEdgeListFile(elist.getNumVertices(), elist.getNumEdges(), elist.getSrcList(), elist.getDstList(), useMKL, useRcm, false);
-                if (csrInputG->isDistributed())
-                {
-                    // TODO: pre-compute the send/recv buf info
-
-                }
             }
             else
             {
-                // TODO: add support to the distributed nodes
                 cscInputG->createFromEdgeListFile(elist.getNumVertices(), elist.getNumEdges(), elist.getSrcList(), elist.getDstList(), false);
                 cscInputG->splitCSC(4*comp_thds);
-
-                if (cscInputG->isDistributed())
-                {
-                    // TODO: pre-compute the send/recv buf info
-
-                }
             }
         }
     }
@@ -1577,7 +1564,6 @@ int main(int argc, char** argv)
             csrInputG->serialize(output_file);
         else
         {
-            // TODO
             cscInputG->serialize(output_file);
         }
 
@@ -1593,11 +1579,16 @@ int main(int argc, char** argv)
 
     // start CSR mat computing
     CountMat executor;
+    // add support for both of csr and csc
     executor.initialization(csrInputG, cscInputG, comp_thds, iterations, isPruned, useSPMM, isDistri, nprocs, myrank, vtuneStart,  calculate_automorphism);
 
 #ifdef DISTRI
+
     if (csrInputG)
         csrInputG->prepComBuf();
+    else
+        cscInputG->prepComBuf();
+
 #endif
 
     executor.compute(input_template, isEstimate);

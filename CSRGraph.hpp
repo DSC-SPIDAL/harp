@@ -96,6 +96,7 @@ class CSRGraph
         void SpMVMKLDistri(valType* x, valType* y, int thdNum);
         void SpMVMKLHint(int callNum);
         void SpMMMKLHint(int mCols, int callNum);
+
         // for distributed env
         bool isDistributed () { return _isDistri; }
         idxType getVNLocal() {return _vNLocal;}
