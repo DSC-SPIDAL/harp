@@ -116,8 +116,12 @@ class CSRGraph
 
         idxType getNumVertices() {return (_rcmMatR != nullptr) ? _rcmMatR->m : _numVertices;} 
 
-        // idxType getNNZ() {return _indexRow[_numVertices];}
+#ifdef DISTRI
+        idxType getNNZ() {return _indexRow[_vNLocal]; }
+#else
         idxType getNNZ() {return (_rcmMatR != nullptr) ? _rcmMatR->rowptr[_rcmMatR->m] : _indexRow[_numVertices]; }
+#endif
+        idxType getNNZDistri() {return _indexRow[_vNLocal]; }
         idxType* getIndexRow() {return (_rcmMatR != nullptr) ? _rcmMatR->rowptr : _indexRow;}
         idxType* getIndexCol() {return (_rcmMatR != nullptr) ? _rcmMatR->colidx : _indexCol;}
         valType* getNNZVal() {return (_rcmMatR != nullptr) ? _rcmMatR->svalues : _edgeVal;} 

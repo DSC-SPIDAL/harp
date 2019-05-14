@@ -77,7 +77,14 @@ class CSCGraph
         idxType getColLen(idxType colId) {return _indexCol[colId+1] - _indexCol[colId]; }
 
         idxType getNumVertices() {return  _numVertices;} 
+        idxType getNNZDistri() {return _indexCol[_vNLocal]; }
+
+#ifdef DISTRI
+        idxType getNNZ() {return _indexCol[_vNLocal]; }
+#else
         idxType getNNZ() {return _indexCol[_numVertices]; }
+#endif
+
         idxType* getIndexRow() {return _indexRow;}
         idxType* getIndexCol() {return _indexCol;}
         valType* getNNZVal() {return _edgeVal;} 

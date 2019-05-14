@@ -198,6 +198,12 @@ double CountMat::compute(Graph& templates, bool isEstimate)
 #endif
 
 #ifdef VERBOSE
+
+#ifdef DISTRI
+    MPI_Barrier(MPI_COMM_WORLD);
+    if (_myrank == 0)
+        std::cout<<"Check: Sync on finishing data table initialization" << std::endl;
+#endif
     // peak memory usage on a single node
     estimatePeakMemUsage();
 
@@ -223,9 +229,8 @@ double CountMat::compute(Graph& templates, bool isEstimate)
     std::fflush(stdout);
 
     // for sparse input data distribution
-    degreeDistribution();
-
-    estimateTemplate();
+    //degreeDistribution();
+    //estimateTemplate();
 
 #endif 
 
@@ -1467,6 +1472,8 @@ void CountMat::printSubTemps()
 void CountMat::estimatePeakMemUsage()
 {
 
+    std::cout<<"Check point 0 " << std::endl;
+
     idxType n = 0; 
     idxType nnz = 0; 
 
@@ -1475,19 +1482,28 @@ void CountMat::estimatePeakMemUsage()
 
 #ifdef DISTRI
         n = _graph->getVNLocal();
-        nnz = _graph->getNNZ();
+        nnz = _graph->getNNZDistri();
 #else
         n = _graph->getNumVertices();
         nnz = _graph->getNNZ();
 #endif
 
     }
-    else
+    else if (_graphCSC)
     {
-        //TODO: add support to distributed env
+#ifdef DISTRI
+        n = _graphCSC->getVNLocal();
+        nnz = _graphCSC->getNNZDistri();
+
+#else
         n = _graphCSC->getNumVertices();
         nnz = _graphCSC->getNNZ();
+#endif
     }
+    else {
+        std::cout<<"Error no graph data " << std::endl;
+    }
+
 
     double peakMem = 0.0;
     double memSub = 0.0;
@@ -1498,6 +1514,7 @@ void CountMat::estimatePeakMemUsage()
     // bufvec, color_inital, bufVecY, Bufleaf 
     memSub += (2 + _bufMatCols)*memPerIndx;
     memSub += (_color_num*memPerIndxDistri);
+
 
     for(int s=_total_sub_num-1;s>0;s--)
     {
@@ -1534,16 +1551,22 @@ double CountMat::estimateMemCommPGBSC()
     {
 #ifdef DISTRI
         n = _graph->getVNLocal();
+        nnz = _graph->getNNZDistri();
 #else
         n = _graph->getNumVertices();
-#endif
         nnz = _graph->getNNZ();
+#endif
     }
     else
     {
-        //TODO: add support for distributed env
+#ifdef DISTRI
+        n = _graphCSC->getVNLocal();
+        nnz = _graphCSC->getNNZDistri();
+
+#else
         n = _graphCSC->getNumVertices();
         nnz = _graphCSC->getNNZ();
+#endif
     }
 
     double commBytesTotal = 0.0;
@@ -1594,16 +1617,21 @@ double CountMat::estimateMemCommFascia()
     {
 #ifdef DISTRI
         n = _graph->getVNLocal();
+        nnz = _graph->getNNZDistri();
 #else
         n = _graph->getNumVertices();
-#endif
         nnz = _graph->getNNZ();
+#endif
     }
     else
     {
-        //TODO: add support for distributed env
+#ifdef DISTRI
+        n = _graphCSC->getVNLocal();
+        nnz = _graphCSC->getNNZDistri();
+#else
         n = _graphCSC->getNumVertices();
         nnz = _graphCSC->getNNZ();
+#endif
     }
 
     double commBytesTotal = 0.0;
@@ -1644,16 +1672,21 @@ double CountMat::estimateMemCommPrunedFascia()
     {
 #ifdef DISTRI 
         n = _graph->getVNLocal();
+        nnz = _graph->getNNZDistri();
 #else
         n = _graph->getNumVertices();
-#endif
         nnz = _graph->getNNZ();
+#endif
     }
     else
     {
-        // TODO: add support for distributed env
+#ifdef DISTRI
+        n = _graphCSC->getVNLocal();
+        nnz = _graphCSC->getNNZDistri();
+#else
         n = _graphCSC->getNumVertices();
         nnz = _graphCSC->getNNZ();
+#endif
     }
 
     double commBytesTotal = 0.0;
@@ -1697,16 +1730,23 @@ double CountMat::estimateFlopsPGBSC()
     {
 #ifdef DISTRI
         n = _graph->getVNLocal();
+        nnz = _graph->getNNZDistri();
 #else
         n = _graph->getNumVertices();
-#endif
         nnz = _graph->getNNZ();
+#endif
     }
     else
     {
-        //TODO: add support for distributed env
+#ifdef DISTRI
+   
+        n = _graphCSC->getVNLocal();
+        nnz = _graphCSC->getNNZDistri();
+
+#else
         n = _graphCSC->getNumVertices();
         nnz = _graphCSC->getNNZ();
+#endif
     }
 
 
@@ -1758,18 +1798,23 @@ double CountMat::estimateFlopsPrunedFascia()
     {
 #ifdef DISTRI
         n = _graph->getVNLocal();
+        nnz = _graph->getNNZDistri();
 #else
         n = _graph->getNumVertices();
-#endif
         nnz = _graph->getNNZ();
+#endif
     }
     else
     {
-        //TODO: add support for distributed env
+#ifdef DISTRI
+
+        n = _graphCSC->getVNLocal();
+        nnz = _graphCSC->getNNZDistri();
+#else
         n = _graphCSC->getNumVertices();
         nnz = _graphCSC->getNNZ();
+#endif
     }
-
 
     printf("|V| is: %d, |E| nnz is: %d \n", n , nnz );
     std::fflush(stdout);
@@ -1844,16 +1889,21 @@ double CountMat::estimateFlopsFascia()
     {
 #ifdef DISTRI
         n = _graph->getVNLocal();
+        nnz = _graph->getNNZDistri();
 #else
         n = _graph->getNumVertices();
-#endif
         nnz = _graph->getNNZ();
+#endif
     }
     else
     {
-        //TODO: add support for distributed env
+#ifdef DISTRI
+        n = _graphCSC->getVNLocal();
+        nnz = _graphCSC->getNNZDistri();
+#else
         n = _graphCSC->getNumVertices();
         nnz = _graphCSC->getNNZ();
+#endif
     }
 
     printf("|V| is: %d, |E| nnz is: %d \n", n, nnz);
