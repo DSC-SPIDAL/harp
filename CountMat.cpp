@@ -1050,14 +1050,17 @@ double CountMat::countNonBottomePrunedSPMM(int subsId)
        // convert data structure back to column-majored
        valType* yOutput = (auxSize > 1) ? _dTable.getAuxArray(colStart) : _bufVecLeaf[colStart];
 
-       _graphCSC->cscReduce(_bufMatX, yOutput, batchSize, recvMetaC, recvMetaDispls);
-
-//#pragma omp parallel for num_threads(omp_get_max_threads())
-       //for (int j = 0; j < _local_vert_num; ++j) {
-           //for (int k = 0; k < batchSize; ++k) {
-               //yOutput[k*_local_vert_num+j] = _bufMatX[j*batchSize+k];
-           //}
-       //}
+       if (_nprocs > 1)
+        _graphCSC->cscReduce(_bufMatX, yOutput, batchSize, recvMetaC, recvMetaDispls);
+       else
+       {
+#pragma omp parallel for num_threads(omp_get_max_threads())
+           for (int j = 0; j < _local_vert_num; ++j) {
+               for (int k = 0; k < batchSize; ++k) {
+                   yOutput[k*_local_vert_num+j] = _bufMatX[j*batchSize+k];
+               }
+           }
+       }
 
 #else
 
