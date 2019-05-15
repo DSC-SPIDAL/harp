@@ -1357,12 +1357,10 @@ int main(int argc, char** argv)
     int nprocs = 1;
     int myrank = 0;
 
-    //bool isBenchmark = true;
     bool isBenchmark = false;
     // turn on this to estimate flops and memory bytes 
     // without running the codes
     bool isEstimate = false;
-    // bool isEstimate = true;
 
     graph_name = argv[1];
     template_name = argv[2];
@@ -1381,10 +1379,16 @@ int main(int argc, char** argv)
         useCSC = atoi(argv[9]);
 
     if (argc > 10)
-        vtuneStart = atoi(argv[10]);
+        isEstimate = (std::string(argv[10]) == "true") ? true: false;
 
     if (argc > 11)
-        benchItr = atoi(argv[11]);
+        isBenchmark = (std::string(argv[11]) == "true") ? true: false;
+
+    if (argc > 12)
+        benchItr = atoi(argv[12]);
+    
+    if (argc > 13)
+        vtuneStart = atoi(argv[13]);
 
     // end of arguments
     if (useCSC)
