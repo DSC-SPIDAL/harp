@@ -953,7 +953,7 @@ double CountMat::countNonBottomePrunedSPMM(int subsId)
        spmvStart = utility::timer();
 #endif
            // invoke the mkl scsrmm kernel
-           std::cout<<"sub: "<< subsId << " Rank: " <<_myrank << " Start scsrmm batch id: " << i <<" total batch num: " << batchNum <<std::endl;
+           //std::cout<<"sub: "<< subsId << " Rank: " <<_myrank << " Start scsrmm batch id: " << i <<" total batch num: " << batchNum <<std::endl;
 
 #ifdef DISTRI
            if (_nprocs > 1)
@@ -963,7 +963,7 @@ double CountMat::countNonBottomePrunedSPMM(int subsId)
 #else
            _graph->SpMMMKL(_dTable.getAuxArray(colStart), _bufMatY, m, n, k, 24);
 #endif
-           std::cout<<"sub: "<< subsId << " Rank: " <<_myrank << " End scsrmm batch id: " << i <<" total batch num: " << batchNum <<std::endl;
+           //std::cout<<"sub: "<< subsId << " Rank: " <<_myrank << " End scsrmm batch id: " << i <<" total batch num: " << batchNum <<std::endl;
 
            //release dummy xinput
            //delete[] dummyinput;

@@ -1,10 +1,10 @@
 #!/bin/bash
 
 app_dir=/N/u/lc37/WorkSpace/cpuPGBSC
-mpiexe=/opt/intel/compilers_and_libraries_2019.0.117/linux/mpi/intel64/bin/mpirun
+mpiexe=/opt/intel/compilers_and_libraries_2018/linux/mpi/intel64/bin/mpirun
 work_dir=./
 mpihost=/N/u/lc37/WorkSpace/PGBSCTest/machinehosts
-log_dir=$work_dir/log
+log_dir=$work_dir/mpilog
 mkdir -p ${log_dir}
 # if [ ! -d ./fascia-vec-knl ];then
 #     ln -s ${outdir} ./ 
