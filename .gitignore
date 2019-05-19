@@ -2,3 +2,7 @@
 *.bin
 *.optrpt
 .tags
+.ycm_extra_conf.py
+compile-db-gnu.sh
+compile_commands.json
+
