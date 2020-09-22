@@ -118,7 +118,7 @@ wait_file() {
 ## ------------------------------- profiled programs or scripts -------------------------------
 # exe_dir=/N/u/lc37/Project/sc-mat
 exe_dir=${CurDir}
-scriptName=pgbsc_run_t-006.sh
+scriptName=sg2vec_run_t-006.sh
 executor=sc-skl-icc.bin
 # executor=sc-hsw-icc-bin
 run_arg1=$1
@@ -126,9 +126,9 @@ run_arg2=$2
 run_arg3=$3
 
 ## ------------------------------- set up result path and dir -------------------------------
-# obj=R-PGBSC-$Arch-$executor-$run_arg1-$run_arg2-$run_arg3-$action-$type-vectorization
-# obj=R-PGBSC-$Arch-$executor-$run_arg1-$run_arg2-$run_arg3-$action-$type-memcache
-obj=R-PGBSC-$Arch-$executor-$run_arg1-$run_arg2-$run_arg3-$action-$type
+# obj=R-SG2VEC-$Arch-$executor-$run_arg1-$run_arg2-$run_arg3-$action-$type-vectorization
+# obj=R-SG2VEC-$Arch-$executor-$run_arg1-$run_arg2-$run_arg3-$action-$type-memcache
+obj=R-SG2VEC-$Arch-$executor-$run_arg1-$run_arg2-$run_arg3-$action-$type
 # resDir=/scratch_hdd/lc37/VTuneRes/$obj
 # mkdir -p ${CurDir}/VTuneResult
 mkdir -p ${CurDir}/VTuneResultNew 
