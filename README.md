@@ -46,6 +46,64 @@ $app ${graph_file} ${template_file} ${Itr} ${tpproc} ${read_binary} ${writeBinar
 ```
 
 
+## SubGraph2Vec on MPI
+
+Make sure that `intel-mpi` and `icc` variables are sourced:
+
+```bash
+source <path>/mpi/intel64/bin/mpivars.sh
+source <path>/bin/compilervars.sh  --arch intel64
+```
+
+### To compile the codes
+
+Run `compile-hsw-mpiicc.sh` to compile the code:
+
+```bash
+./compile-hsw-mpiicc.sh
+```
+
+This code will generate `sc-hsw-icc-mpiicc.bin` file.
+
+### To run the codes
+
+Modify the following variables in `testscripts/hsw-run-sg2vec-mpi.sh` to run the codes.
+
+```bash
+app_dir=<path of sc-hsw-icc-mpiicc.bin>
+
+# mpi location
+mpiexe=<path of mpirun>
+
+# host file path
+mpihost=<path of mpi host file>
+
+# graph and template location
+graph_loc=<path of graphs>
+template_loc=<path of templates>
+```
+
+Example:
+```bash
+# location of `sc-hsw-icc-mpiicc.bin` file
+app_dir=/N/u/lc37/WorkSpace/cpuPGBSC
+
+# mpi location
+mpiexe=/opt/intel/compilers_and_libraries_2018/linux/mpi/intel64/bin/mpirun
+
+# host file path
+mpihost=/N/u/lc37/WorkSpace/SG2VECTest/machinehosts
+
+# graph and template location
+graph_loc=/scratch_hdd/lc37/sc-vec/graphs
+template_loc=/scratch_hdd/lc37/sc-vec/templates
+```
+
+Run the script:
+
+```bash
+./testscripts/hsw-run-sg2vec-mpi.sh
+```
 
 
 
