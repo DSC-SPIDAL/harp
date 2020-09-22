@@ -1,9 +1,9 @@
 #!/bin/bash
 
-app_dir=/N/u/lc37/WorkSpace/cpuPGBSC
+app_dir=/N/u/lc37/WorkSpace/cpuSG2VEC
 mpiexe=/opt/intel/compilers_and_libraries_2018/linux/mpi/intel64/bin/mpirun
 work_dir=./
-mpihost=/N/u/lc37/WorkSpace/PGBSCTest/machinehosts
+mpihost=/N/u/lc37/WorkSpace/SG2VECTest/machinehosts
 log_dir=$work_dir/mpilog
 mkdir -p ${log_dir}
 # if [ ! -d ./fascia-vec-knl ];then
@@ -13,8 +13,8 @@ mkdir -p ${log_dir}
 graph_loc=/scratch_hdd/lc37/sc-vec/graphs
 template_loc=/scratch_hdd/lc37/sc-vec/templates
 
-#graph_loc=/N/u/lc37/WorkSpace/PGBSCTest/data/graphs
-#template_loc=/N/u/lc37/WorkSpace/PGBSCTest/data/templates
+#graph_loc=/N/u/lc37/WorkSpace/SG2VECTest/data/graphs
+#template_loc=/N/u/lc37/WorkSpace/SG2VECTest/data/templates
 
 ## ----------------------------------- default parameters -----------------------------------
 # num of mpi procs
