@@ -22,7 +22,7 @@ This will generate `sc-gpu-gnu.bin` file.
 An example:
 
 ```bash
-/sc-gpu-gnu.bin /share/project/FG474/TrainingData/subgraph/biodata/EcoliGO-BP.graph /share/project/FG474/TrainingData/subgraph/biodata/Tree_8_1.fascia 10 24 0 0 1 1
+./sc-gpu-gnu.bin /share/project/FG474/TrainingData/subgraph/Edge-Graph/orkut.graph /share/project/FG474/TrainingData/subgraph/template/u10-1.fascia 10 24 0 0 1 1
 ```
 
 
