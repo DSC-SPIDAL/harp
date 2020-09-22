@@ -109,7 +109,7 @@ do
                         do
                             for prune in 1
                             do
-                                logName=PGBSC-${version}-${graph_name}-${template_name}-Thd-${tpproc}-UsePrune-${prune}-useSPMM-${useSPMM}.log
+                                logName=SG2VEC-${version}-${graph_name}-${template_name}-Thd-${tpproc}-UsePrune-${prune}-useSPMM-${useSPMM}.log
                                 ${app_dir}/$app ${graph_loc}/${graph_file} ${template_loc}/${template_file} ${Itr} ${tpproc} ${read_binary} ${writeBinary} ${prune} ${useSPMM} 2>&1 | tee ${log_dir}/${logName}
                             done
                         done
