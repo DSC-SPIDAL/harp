@@ -1,9 +1,9 @@
 #!/bin/bash
 
-app_dir=/N/u/lc37/WorkSpace/cpuPGBSC
+app_dir=/N/u/lc37/WorkSpace/cpuSG2VEC
 mpiexe=/opt/intel/compilers_and_libraries_2018/linux/mpi/intel64/bin/mpirun
 work_dir=./
-mpihost=/N/u/lc37/WorkSpace/PGBSCTest/machinehosts
+mpihost=/N/u/lc37/WorkSpace/SG2VECTest/machinehosts
 log_dir=$work_dir/mpilog
 mkdir -p ${log_dir}
 # if [ ! -d ./fascia-vec-knl ];then
@@ -13,8 +13,8 @@ mkdir -p ${log_dir}
 graph_loc=/scratch_hdd/lc37/sc-vec/graphs
 template_loc=/scratch_hdd/lc37/sc-vec/templates
 
-#graph_loc=/N/u/lc37/WorkSpace/PGBSCTest/data/graphs
-#template_loc=/N/u/lc37/WorkSpace/PGBSCTest/data/templates
+#graph_loc=/N/u/lc37/WorkSpace/SG2VECTest/data/graphs
+#template_loc=/N/u/lc37/WorkSpace/SG2VECTest/data/templates
 
 ## ----------------------------------- default parameters -----------------------------------
 # num of mpi procs
@@ -43,7 +43,7 @@ fi
 # version of experiment
 # version=comparenec
 # version=binarydata
-#version=hswMKLPGBSC
+#version=hswMKLSG2VEC
 version=MPITest
 # version=mat-pruned
 # version=iotime
@@ -128,7 +128,7 @@ do
                                 do
                                     for useSPMM in 1
                                     do
-                                        logName=hswPGBSCDISTRI-${version}-${graph_name}-${template_name}-Thd-${tpproc}-UsePrune-${prune}-useSPMM-${useSPMM}-useCSC-${useCSC}-mpiprocs-${procs}.log
+                                        logName=hswSG2VECDISTRI-${version}-${graph_name}-${template_name}-Thd-${tpproc}-UsePrune-${prune}-useSPMM-${useSPMM}-useCSC-${useCSC}-mpiprocs-${procs}.log
                                         ${mpiexe} -n ${procs} -ppn 1 -f ${mpihost} -genv OMP_NUM_THREADS=${tpproc} -genv I_MPI_PIN_DOMAIN=omp ${app_dir}/$app ${graph_loc}/${graph_file} ${template_loc}/${template_file} ${Itr} ${tpproc} ${read_binary} ${writeBinary} ${prune} ${useSPMM} ${useCSC} 2>&1 | tee ${log_dir}/${logName}
                                     done
                                 done
