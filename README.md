@@ -45,6 +45,51 @@ useCSC=1  ## choose the adjacency matrix format, 1 for CSC-Split and 0 for CSR
 $app ${graph_file} ${template_file} ${Itr} ${tpproc} ${read_binary} ${writeBinary} ${prune} ${useSPMM}
 ```
 
+## SubGraph2Vec on MPI
+
+Make sure that `intel-mpi` and `icc` variables are sourced:
+
+```bash
+source <path>/mpi/intel64/bin/mpivars.sh
+source <path>/bin/compilervars.sh  --arch intel64
+```
+
+### To compile the codes
+
+Run `compile-hsw-mpiicc.sh` to compile the code:
+
+```bash
+./compile-hsw-mpiicc.sh
+```
+
+This code will generate `sc-hsw-icc-mpiicc.bin` file.
+
+### To run the codes
+
+Modify `testscripts/hsw-run-pgbsc-mpi.sh` to run the codes.
+
+```bash
+# location of `sc-hsw-icc-mpiicc.bin` file
+app_dir=/N/u/lc37/WorkSpace/cpuPGBSC
+
+# mpi location
+mpiexe=/opt/intel/compilers_and_libraries_2018/linux/mpi/intel64/bin/mpirun
+
+# host file path
+mpihost=/N/u/lc37/WorkSpace/PGBSCTest/machinehosts
+
+# graph and template location
+graph_loc=/scratch_hdd/lc37/sc-vec/graphs
+template_loc=/scratch_hdd/lc37/sc-vec/templates
+```
+
+Run the script:
+
+```bash
+./testscripts/hsw-run-pgbsc-mpi.sh
+```
+
+
 
 
 
