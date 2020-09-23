@@ -1,7 +1,8 @@
 #include "DataTableColMajor.hpp"
 #include <cstring>
 #include <stdlib.h>
-#include "mkl.h"
+#include <omp.h> 
+#include <iostream>
 
 #ifdef __INTEL_COMPILER
 // use avx intrinsics
@@ -94,7 +95,9 @@ void DataTableColMajor::initSubTempTable(int subsId)
 #ifdef __INTEL_COMPILER
                 _curTable[i] = (float*) _mm_malloc(_localVertsNum*sizeof(float), 64); 
 #else
-                _curTable[i] = (float*) aligned_alloc(64, _localVertsNum*sizeof(float)); 
+                int buflen = _localVertsNum*sizeof(float);
+                int newbuflen = (buflen/64 + 1) * 64;
+                _curTable[i] = (float*) aligned_alloc(64, newbuflen); 
 #endif
 
 #pragma omp parallel for num_threads(omp_get_max_threads())
@@ -134,7 +137,9 @@ void DataTableColMajor::initSubTempTable(int subsId)
 #ifdef __INTEL_COMPILER
                 _curTable[colStart] = (float*)_mm_malloc(_localVertsNum*batchSize*sizeof(float), 64); 
 #else
-                _curTable[colStart] = (float*)aligned_alloc(64, _localVertsNum*batchSize*sizeof(float)); 
+                int buflen = _localVertsNum*batchSize*sizeof(float);
+                int newbuflen = (buflen/64 + 1) * 64;
+                _curTable[colStart] = (float*)aligned_alloc(64, newbuflen); 
 #endif
 
 #pragma omp parallel for num_threads(omp_get_max_threads())
@@ -546,7 +551,7 @@ void DataTableColMajor::arrayWiseFMAAVX(float* dst, float* a, float* b)
 void DataTableColMajor::arrayWiseFMANaive(float* dst, float* a, float* b)
 {
 
-#pragma omp parallel for simd schedule(static) aligned(dst, a, b: 64)
+//#pragma omp parallel for simd schedule(static) aligned(dst, a, b: 64)
     for (int i = 0; i < _vertsNum; ++i) {
         dst[i] = dst[i] + a[i]*b[i]; 
     }
@@ -587,7 +592,7 @@ void DataTableColMajor::arrayWiseFMANaiveAVX(float* dst, float* a, float* b)
     }
 
 #else
-#pragma omp parallel for simd schedule(static) aligned(dst, a, b: 64)
+//#pragma omp parallel for simd schedule(static) aligned(dst, a, b: 64)
     for (int i = 0; i < _vertsNum; ++i) {
         dst[i] = dst[i] + a[i]*b[i]; 
     }
@@ -599,7 +604,8 @@ void DataTableColMajor::countCurBottom(int*& idxCToC, int*& colorVals)
     if (_curSubId == _subsNum - 1)
     {
 #ifdef DISTRI
-
+        //std::cout << "DataTablecolMajor.countCurbottom, DISTRI, beginning..." << std::endl;
+ 
 #pragma omp parallel for
         for(idxType v=0; v<_localVertsNum; v++)
         {
@@ -609,6 +615,7 @@ void DataTableColMajor::countCurBottom(int*& idxCToC, int*& colorVals)
             int idxLocal = idxCToCLocal[colorValsLocal[v]];
             curTableLocal[idxLocal][v] = 1.0; 
         }
+        //std::cout << "DataTablecolMajor.countCurbottom, DISTRI, finished omp loop..." << std::endl;
 #else
 
 #pragma omp parallel for

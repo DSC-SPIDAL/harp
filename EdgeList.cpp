@@ -1,5 +1,7 @@
 #include "EdgeList.hpp"
 #include <fstream>
+#include <cstring>
+
 using namespace std;
 
 void EdgeList::readfromfile(string fileName)
@@ -8,16 +10,18 @@ void EdgeList::readfromfile(string fileName)
     ifstream file_strm;
     file_strm.open(fileName.c_str());
     bool isMMIO = false;
+    printf("File name: %s\n", fileName.c_str()); 
+    std::fflush(stdout);
 
     // check the header
-    char c = file_strm.get();
-    while (c == '%')
-    {
-        isMMIO = true;
-        std::getline(file_strm, line);
-        c = file_strm.get();
-    }
-    file_strm.unget();
+    //char c = file_strm.get();
+    //while (c == '%')
+    //{
+        //isMMIO = true;
+        //std::getline(file_strm, line);
+        //c = file_strm.get();
+    //}
+    //file_strm.unget();
 
     if (isMMIO)
         readfromMMIO(file_strm);
@@ -29,6 +33,9 @@ void EdgeList::readfromfile(string fileName)
 
 void EdgeList::readfromEdgeList(ifstream& file_strm)
 {
+    printf("Start reading from edgelist\n"); 
+    std::fflush(stdout);
+
     string line;
     // ifstream file_strm;
     // file_strm.open(fileName.c_str());
@@ -39,6 +46,9 @@ void EdgeList::readfromEdgeList(ifstream& file_strm)
     // get the edge num
     std::getline(file_strm, line);
     _numEdges = atoi(line.c_str());
+
+    printf("Vert: %d, Edge: %d\n", _numVertices, _numEdges); 
+    std::fflush(stdout);
 
     _srcList = new EdgeList::idxType[_numEdges];
     _dstList = new EdgeList::idxType[_numEdges];
@@ -270,7 +280,7 @@ void EdgeList::readfromfileNoVerticesNum(string fileName)
     delete[] v_id;
 
 }
-
+#ifndef NEC
 void EdgeList::convertToRadixList(pvector<EdgePair<int32_t, int32_t> > &List)
 {
     for (int i = 0; i < _numEdges; ++i) {
@@ -278,4 +288,5 @@ void EdgeList::convertToRadixList(pvector<EdgePair<int32_t, int32_t> > &List)
         List[i].v = _dstList[i];
     }
 }
+#endif
 

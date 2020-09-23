@@ -7,6 +7,8 @@
 #include <iostream>
 #include <cstring>
 #include <stdio.h>
+#include <unistd.h>
+#include <fcntl.h>
 #include <omp.h>
 #include "Helper.hpp"
 
@@ -100,7 +102,7 @@ class CSCGraph
         void spmmSplit(valType* x, valType* y, idxType xColNum, idxType numThds);
 
         void serialize(ofstream& outputFile);
-        void deserialize(ifstream& inputFile);
+        void deserialize(int inputFile);
 
         // for distributed env
         bool isDistributed () { return _isDistri; }
@@ -212,13 +214,16 @@ void CSCGraph<idxType, valType>::createFromEdgeListFile(idxType numVerts, idxTyp
 
     _indexCol[0] = 0;
 
-#ifdef DISTRI
-    for(idxType i=1; i<= _vNLocal;i++)
-        _indexCol[i] = _indexCol[i-1] + _degList[i+_vOffset-1]; 
 
+#ifdef DISTRI
+    for(idxType i=1; i<= _vNLocal;i++) {
+        _indexCol[i] = _indexCol[i-1] + _degList[i+_vOffset-1];
+    	//std::cout << _myrank << "...DEBUG text file reading indexCol: " << _indexCol[i] << std::endl;
+    }
 #else
-    for(idxType i=1; i<= _numVertices;i++)
+    for(idxType i=1; i<= _numVertices;i++) {
         _indexCol[i] = _indexCol[i-1] + _degList[i-1]; 
+    }
 #endif
 
     // create the row index and val 
@@ -326,6 +331,43 @@ void CSCGraph<idxType, valType>::createFromEdgeListFile(idxType numVerts, idxTyp
 
 #endif
 
+    printf("%d...TXT graph Total vertices is : %d\n", _myrank, _numVertices);
+    printf("%d...TXT graph Total Edges is : %d\n", _myrank, _numEdges);
+    printf("%d...TXT graph Local vertices is : %d\n", _myrank, _vNLocal);
+    printf("%d...TXT graph nnZ is : %d\n", _myrank, _nnZ);
+    std::fflush(stdout);
+
+#ifdef DISTRI
+#ifdef VERBOSE
+    ofstream debugindexcol0;
+    ofstream debugindexcol1;
+    ofstream debugindexrow0;
+    ofstream debugindexrow1;
+    if (_myrank == 0 ){
+    	//debugindexcol0.open("indexcol0.txt");
+    	debugindexrow0.open("indexrow0.txt");
+    } else if (_myrank == 1 ){
+    	//debugindexcol1.open("indexcol1.txt");
+    	debugindexrow1.open("indexrow1.txt");
+    }
+    for(idxType i=0; i<= _vNLocal;i++) {
+        if (_myrank == 0 ){
+        	//debugindexcol0 << _indexCol[i] << std::endl;
+        	debugindexrow0 << _indexRow[i] << std::endl;
+        } else if (_myrank == 1 ){
+        	//debugindexcol1 << _indexCol[i] << std::endl;
+        	debugindexrow1 << _indexRow[i] << std::endl;
+        }
+    }
+    if (_myrank == 0 ){
+    	//debugindexcol0.close();
+    	debugindexrow0.close();
+    } else if (_myrank == 1 ){
+    	//debugindexcol1.close();
+    	debugindexrow1.close();
+    }
+#endif
+#endif
 }
 
 template<class idxType, class valType>
@@ -432,15 +474,27 @@ void CSCGraph<idxType, valType>::spmvNaiveSplit(valType* x, valType* y, idxType 
 template<class idxType, class valType>
 void CSCGraph<idxType, valType>::spmmSplit(valType* x, valType* y, idxType xColNum, idxType numThds)
 {
+    //std::cout << _myrank << "...In CSCGraph, spmmSplit, beginning..., xColNum: " << xColNum << " _numsplits: " << _numsplits  << std::endl;
+
     // doing the computation
 #pragma omp parallel for num_threads(numThds) 
     for (idxType s = 0; s < _numsplits; ++s) {
+        //std::cout << _myrank << "...In CSCGraph, spmmSplit, loop, current s: " << s << std::endl;
 
         std::vector<idxType>* localRowIds = &(_splitsRowIds[s]);
         std::vector<idxType>* localColIds = &(_splitsColIds[s]);
         // std::vector<valType>* localVals = &(_splitsVals[s]);
         idxType localSize = localRowIds->size();
+        idxType localColSize = localColIds->size();
 
+        //std::cout << _myrank << "...In CSCGraph, spmmSplit, loop, localSize: " << localSize << std::endl;
+        //std::cout << _myrank << "...In CSCGraph, localColIds size: " << localColSize << std::endl;
+
+        idxType maxcolid = (*localColIds)[localSize-1];
+        idxType maxrowid = (*localRowIds)[localSize-1];
+        idxType bufmaxRead = maxcolid*xColNum;
+        idxType bufmaxWrite = maxrowid*xColNum;
+        //std::cout << _myrank << "...maxcolid, maxrowid, bufmaxread, bufmaxwrite: " << maxcolid << ", " << maxrowid << ", " << bufmaxRead << ", " << bufmaxWrite << endl;
         for (idxType j = 0; j < localSize; ++j) 
         {
             idxType colid = (*localColIds)[j];
@@ -449,6 +503,10 @@ void CSCGraph<idxType, valType>::spmmSplit(valType* x, valType* y, idxType xColN
 
             valType* readBufPtr = x + colid*xColNum;
             valType* writeBufPtr = y + rowid*xColNum;
+            //int readbuflen = colid*xColNum;
+            //int writebuflen = rowid*xColNum;
+            //std::cout << _myrank << "...CSCGraph, spmmSplit, befere align, readuflen: " << readbuflen << " writebuflen: " << writebuflen << std::endl;
+            //std::cout << _myrank << "...In CSCGraph, spmmSplit, localSize loop, colid: " << colid << ", rowid: " << rowid << std::endl;
 
 #ifdef __INTEL_COMPILER
         __assume_aligned(readBufPtr, 64);
@@ -457,46 +515,26 @@ void CSCGraph<idxType, valType>::spmmSplit(valType* x, valType* y, idxType xColN
         __builtin_assume_aligned(readBufPtr, 64);
         __builtin_assume_aligned(writeBufPtr, 64);
 #endif
+            //std::cout << _myrank << "...CSCGraph, spmmSplit, after align, readuflen: " << readbuflen << " writebuflen: " << writebuflen << std::endl;
 
-#ifdef __AVX512F__ 
-            // unrolled by 16 float
-            int n16 = xColNum & ~(16-1); 
-            __m512 tmpzero = _mm512_set1_ps (0);
-            __mmask16 mask = (1 << (xColNum - n16)) - 1;
-
-            __m512 vecX;
-            __m512 vecY;
-            __m512 vecBuf;
-
-            for (int k = 0; k < n16; k+=16)
-            {
-                vecX = _mm512_load_ps (&(readBufPtr[k]));
-                vecY = _mm512_load_ps (&(writeBufPtr[k]));
-                vecBuf = _mm512_add_ps(vecX, vecY);
-                _mm512_store_ps(&(writeBufPtr[k]), vecBuf);
+            if(j % 10000 == 0){
+                //std::cout << _myrank << "...CSCGraph, spmmSplit, before writeBufPtr, localSize loop: " << j << std::endl;
             }
 
-            if (n16 < xColNum)
-            {
-                vecX = _mm512_mask_load_ps(tmpzero, mask, &(readBufPtr[n16]));
-                vecY = _mm512_mask_load_ps(tmpzero, mask, &(writeBufPtr[n16]));
-                vecBuf = _mm512_add_ps(vecX, vecY);
-                _mm512_mask_store_ps(&(writeBufPtr[n16]), mask, vecBuf);
-            }
-
-#else
             // compiler auto vectorization
-// #pragma omp simd
-#pragma omp simd aligned(writeBufPtr, readBufPtr: 64)
+//#pragma omp simd aligned(writeBufPtr, readBufPtr: 64)
             for (int k = 0; k < xColNum; ++k) {
-                writeBufPtr[k] += (readBufPtr[k]); 
+                //std::cout << _myrank << "...CSCGraph, spmmSplit, in xColNum loop. k:  " << k << ", xColNum: " << xColNum << std::endl;
+            	//std::cout << _myrank << "+++ Before changing buffer" << endl;
+                writeBufPtr[k] += (readBufPtr[k]);
+                //std::cout << _myrank << "+++ After changing buffer" << endl;
             }
-#endif
-
-
+            if(j % 10000 == 0){
+                //std::cout << _myrank << "...CSCGraph, spmmSplit, after writeBufPtr, localSize loop: " << j << std::endl;
+            }
         }
     }
-
+    //std::cout << _myrank << "...In CSCGraph, spmmSplit, ending..." << std::endl;
 }
 
 // sparse matrix dense matrix (multiple dense vectors) 
@@ -553,40 +591,11 @@ double CSCGraph<idxType, valType>::spmmSplitExp(valType* x, valType* y, idxType 
             __builtin_assume_aligned(writeBufPtr, 64);
 #endif
 
-// #ifdef __AVX512F__ 
-//             // unrolled by 16 float
-//             int n16 = xColNum & ~(16-1); 
-//             __m512 tmpzero = _mm512_set1_ps (0);
-//             __mmask16 mask = (1 << (xColNum - n16)) - 1;
-//
-//             __m512 vecX;
-//             __m512 vecY;
-//             __m512 vecBuf;
-//
-//             for (int k = 0; k < n16; k+=16)
-//             {
-//                 vecX = _mm512_load_ps (&(readBufPtr[k]));
-//                 vecY = _mm512_load_ps (&(writeBufPtr[k]));
-//                 vecBuf = _mm512_add_ps(vecX, vecY);
-//                 _mm512_store_ps(&(writeBufPtr[k]), vecBuf);
-//             }
-//
-//             if (n16 < xColNum)
-//             {
-//                 vecX = _mm512_mask_load_ps(tmpzero, mask, &(readBufPtr[n16]));
-//                 vecY = _mm512_mask_load_ps(tmpzero, mask, &(writeBufPtr[n16]));
-//                 vecBuf = _mm512_add_ps(vecX, vecY);
-//                 _mm512_mask_store_ps(&(writeBufPtr[n16]), mask, vecBuf);
-//             }
-//
-// #else
             // compiler auto vectorization
-#pragma omp simd aligned(writeBufPtr, readBufPtr: 64)
+//#pragma omp simd aligned(writeBufPtr, readBufPtr: 64)
             for (int k = 0; k < xColNum; ++k) {
                 writeBufPtr[k] += readBufPtr[k]; 
             }
-// #endif
-
         }
     }
 
@@ -637,50 +646,110 @@ void CSCGraph<idxType, valType>::serialize(ofstream& outputFile)
 }
         
 template<class idxType, class valType>
-void CSCGraph<idxType, valType>::deserialize(ifstream& inputFile)
+void CSCGraph<idxType, valType>::deserialize(int inputFile)
 {
 #ifdef DISTRI
+    read(inputFile, (char*)&_numEdges, sizeof(idxType));
+    read(inputFile, (char*)&_numVertices, sizeof(idxType));
 
-    inputFile.read((char*)&_numEdges, sizeof(idxType));
-    inputFile.read((char*)&_numVertices, sizeof(idxType));
-    inputFile.read((char*)&_vNLocal, sizeof(idxType));
-    inputFile.read((char*)&_vOffset, sizeof(idxType));
+    _vNLocal = (_numVertices + _nprocs - 1)/_nprocs;
+    _vOffset = _myrank*_vNLocal;
+
+    if (_myrank == _nprocs -1)
+    {
+        // adjust the last rank
+        _vNLocal = _numVertices - _vNLocal*(_nprocs -1);
+    }
+
+    printf("nprocs: %d, rank: %d, vTotal is: %d, _vNLocal is : %d, _vOffset is: %d\n", _nprocs, _myrank, _numVertices, _vNLocal, _vOffset);
+    std::fflush(stdout);
+
+    //read(inputFile, (char*)&_vNLocal, sizeof(idxType));
+    //read(inputFile, (char*)&_vOffset, sizeof(idxType));
 
     _degList = (idxType*) malloc (_numVertices*sizeof(idxType)); 
-    inputFile.read((char*)_degList, _numVertices*sizeof(idxType));
+    read(inputFile, (char*)_degList, _numVertices*sizeof(idxType));
 
     _indexCol = (idxType*) malloc ((_vNLocal+1)*sizeof(idxType)); 
-    inputFile.read((char*)_indexCol, (_vNLocal+1)*sizeof(idxType));
+    lseek(inputFile, _vOffset*sizeof(idxType), SEEK_CUR);
+    read(inputFile, (char*)_indexCol, (_vNLocal+1)*sizeof(idxType));
+    idxType curBase = _indexCol[0];
+    //std::cout << _myrank << "..._indexCol my curBase " << curBase << std::endl;
+    for(idxType i=0; i<= _vNLocal;i++){
+        _indexCol[i] = _indexCol[i] - curBase;
+    	//std::cout << _myrank << "..._indexCol[i] Debug: " << _indexCol[i] << std::endl;
+    }
 
     _indexRow = (idxType*) malloc (_indexCol[_vNLocal]*sizeof(idxType)); 
-    inputFile.read((char*)_indexRow, (_indexCol[_vNLocal])*sizeof(idxType));
+    // reset file pointer
+    lseek(inputFile, 2*sizeof(idxType)+_numVertices*sizeof(idxType)+(_numVertices+1)*sizeof(idxType)+curBase*sizeof(idxType), SEEK_SET);
+    //lseek(inputFile, _vOffset*sizeof(idxType), SEEK_CUR); 
+    read(inputFile, (char*)_indexRow, (_indexCol[_vNLocal])*sizeof(idxType));
 
     _edgeVal = (valType*) malloc ((_indexCol[_vNLocal])*sizeof(valType)); 
-    inputFile.read((char*)_edgeVal, (_indexCol[_vNLocal])*sizeof(valType));
-
+    //lseek(inputFile, _vOffset*sizeof(idxType)+_numVertices*sizeof(idxType)+(_numVertices+1)*sizeof(idxType), SEEK_SET);
+    //lseek(inputFile, _vOffset*sizeof(valType), SEEK_CUR);
+    //read(inputFile, (char*)_edgeVal, (_indexCol[_vNLocal])*sizeof(valType));
+#pragma omp parallel for num_threads(omp_get_max_threads())
+    for (int i = 0; i < _indexCol[_vNLocal]; ++i) {
+        _edgeVal[i] = 1;
+    }
     _nnZ = _indexCol[_vNLocal];
 
-    printf("CSC Format Total vertices is : %d\n", _numVertices);
-    printf("CSC Format Total Edges is : %d\n", _numEdges);
-    printf("CSC Format Local vertices is : %d\n", _vNLocal);
+#ifdef VERBOSE
+    printf("%d...CSC Format Total vertices is : %d\n", _myrank, _numVertices);
+    printf("%d...CSC Format Total Edges is : %d\n", _myrank, _numEdges);
+    printf("%d...CSC Format Local vertices is : %d\n", _myrank, _vNLocal);
+    printf("%d...CSC Format nnZ is : %d\n", _myrank, _nnZ);
     std::fflush(stdout); 
+#endif
+
+#ifdef VERBOSE
+    ofstream debugindexcol0;
+    ofstream debugindexcol1;
+    ofstream debugindexrow0;
+    ofstream debugindexrow1;
+    if (_myrank == 0 ){
+    	debugindexcol0.open("indexcol0bin.txt");
+    	debugindexrow0.open("indexrow0bin.txt");
+    } else if (_myrank == 1 ){
+    	debugindexcol1.open("indexcol1bin.txt");
+    	debugindexrow1.open("indexrow1bin.txt");
+    }
+    for(idxType i=0; i<= _vNLocal;i++) {
+        if (_myrank == 0 ){
+        	debugindexcol0 << _indexCol[i] << std::endl;
+        	debugindexrow0 << _indexRow[i] << std::endl;
+        } else if (_myrank == 1 ){
+        	debugindexcol1 << _indexCol[i] << std::endl;
+        	debugindexrow1 << _indexRow[i] << std::endl;
+        }
+    }
+    if (_myrank == 0 ){
+    	debugindexcol0.close();
+    	debugindexrow0.close();
+    } else if (_myrank == 1 ){
+    	debugindexcol1.close();
+    	debugindexrow1.close();
+    }
+#endif
 
 #else
 
-    inputFile.read((char*)&_numEdges, sizeof(idxType));
-    inputFile.read((char*)&_numVertices, sizeof(idxType));
+    read(inputFile, (char*)&_numEdges, sizeof(idxType));
+    read(inputFile, (char*)&_numVertices, sizeof(idxType));
 
     _degList = (idxType*) malloc (_numVertices*sizeof(idxType)); 
-    inputFile.read((char*)_degList, _numVertices*sizeof(idxType));
+    read(inputFile, (char*)_degList, _numVertices*sizeof(idxType));
 
     _indexCol = (idxType*) malloc ((_numVertices+1)*sizeof(idxType)); 
-    inputFile.read((char*)_indexCol, (_numVertices+1)*sizeof(idxType));
+    read(inputFile, (char*)_indexCol, (_numVertices+1)*sizeof(idxType));
 
     _indexRow = (idxType*) malloc (_indexCol[_numVertices]*sizeof(idxType)); 
-    inputFile.read((char*)_indexRow, (_indexCol[_numVertices])*sizeof(idxType));
+    read(inputFile, (char*)_indexRow, (_indexCol[_numVertices])*sizeof(idxType));
 
     _edgeVal = (valType*) malloc ((_indexCol[_numVertices])*sizeof(valType)); 
-    inputFile.read((char*)_edgeVal, (_indexCol[_numVertices])*sizeof(valType));
+    read(inputFile, (char*)_edgeVal, (_indexCol[_numVertices])*sizeof(valType));
 
     _nnZ = _indexCol[_numVertices];
 
@@ -773,10 +842,10 @@ void CSCGraph<idxType, valType>::cscReduce(valType* input, valType* output, idxT
 
     // mpi reduce 
     for (int i = 0; i < _nprocs; ++i) {
-
+    	//std::cout<<"Rank: " << _myrank << " before MPI_Reduce" << std::endl;
         MPI_Reduce((const void *)(input+recvMetaDispls[i]), (void *)tmpBuf, recvMetaC[i], MPI_FLOAT, 
                MPI_SUM, i, MPI_COMM_WORLD);
-
+        //std::cout<<"Rank: " << _myrank << " After MPI_Reduce" << std::endl;
         // convert tmpbuf to output (row-majored to column majored)
         if (i == _myrank)
         {

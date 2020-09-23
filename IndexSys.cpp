@@ -3,6 +3,7 @@
 #include <cassert>
 #include <stdlib.h>
 #include <cstring>
+#include <iostream>
 
 using namespace std;
 
@@ -13,6 +14,8 @@ void IndexSys::initialization(int color_num, int sub_len, Graph** sub_tps, Divid
     _sub_tps = sub_tps;
     _divider = divider;
 
+    //std::cout << "...in IndexSys.init, beginning..." << endl;
+
     // create the comb choose table
     _comb_table = new int*[_color_num+1];
     for(int i=0;i<_color_num+1;i++)
@@ -21,11 +24,14 @@ void IndexSys::initialization(int color_num, int sub_len, Graph** sub_tps, Divid
     for(int i=0;i<_color_num+1;i++)
         for(int j=0;j<_color_num+1;j++)
             _comb_table[i][j] = comb_calc(i,j);
+    //std::cout << "...in IndexSys.init, After comb table..." << endl;
 
     // create the table to hold the sub-template vert num
     _sub_vert_num = new int[_sub_len];
     for(int i=0;i<_sub_len;i++)
         _sub_vert_num[i] = (*_sub_tps)[i].get_vert_num();
+
+    //std::cout << "...in IndexSys.init, After subtemplate vert num table..." << endl;
 
     _effecAuxIdx = new std::vector<int>[_sub_len];
 
@@ -34,20 +40,26 @@ void IndexSys::initialization(int color_num, int sub_len, Graph** sub_tps, Divid
     std::fflush(stdout);
 #endif
 
+    //std::cout << "...in IndexSys.init, Before gen_index..." << endl;
     // create tmp index table 
     gen_index();
+    //std::cout << "...in IndexSys.init, After gen_index..." << endl;
 
     // create tmp color table
     gen_colors();
+    //std::cout << "...in IndexSys.init, After gen_colors..." << endl;
 
     // create the hash table
     gen_comb_hash_table();
+    //std::cout << "...in IndexSys.init, After comb hash table" << endl;
 
     // release tmp color table
     releaseColorSets();
+    //std::cout << "...in IndexSys.init, After release color table.." << endl;
 
     // release tmp index vals
     releaseIndexSets();
+    //std::cout << "...in IndexSys.init, After release index sets..." << endl;
 
 #ifdef VERBOSE
     printf("Finish generating index system\n"); 
@@ -328,6 +340,8 @@ void IndexSys::gen_comb_hash_table()
 
     _i_sub_c_to_counts = new int*[_sub_len];
 
+    //std::cout << "...in IndexSys.gen_comb_hash_table, beginning..." << endl;
+
     for(int s=0;s<_sub_len; s++)
     {
         int sub_vert_num = (*_sub_tps)[s].get_vert_num();
@@ -361,9 +375,14 @@ void IndexSys::gen_comb_hash_table()
             _i_sub_c_split_to_counts_vec[0][s] = (int*)_mm_malloc(sub_comb_num*split_main_comb*sizeof(int), 64);
             _i_sub_c_split_to_counts_vec[1][s] = (int*)_mm_malloc(sub_comb_num*split_main_comb*sizeof(int), 64);
 #else
-            _i_sub_c_split_to_counts_vec[0][s] = (int*)aligned_alloc(64, sub_comb_num*split_main_comb*sizeof(int));
-            _i_sub_c_split_to_counts_vec[1][s] = (int*)aligned_alloc(64, sub_comb_num*split_main_comb*sizeof(int));
+            int buflen = sub_comb_num*split_main_comb*sizeof(int);
+            int newbuflen = (buflen/64 + 1) * 64;
+            //std::cout << "IndexSys.gen_comb_hash_table...buflen: " << buflen << std::endl;
+            //std::cout << "IndexSys.gen_comb_hash_table...newbuflen: " << newbuflen << std::endl;
+            _i_sub_c_split_to_counts_vec[0][s] = (int*)aligned_alloc(64, newbuflen);
+            _i_sub_c_split_to_counts_vec[1][s] = (int*)aligned_alloc(64, newbuflen);
 #endif
+            //std::cout << "...in IndexSys.gen_comb_hash_table, After split_to_counts mem alloc..." << endl;
 
             // create precompute
             _i_sub_precomp_to_counts[s] = (int*) malloc(comb_calc(sub_vert_num, split_main_num)*
@@ -374,6 +393,7 @@ void IndexSys::gen_comb_hash_table()
             precomp_len = main_count_len*aux_count_len;
 
         }
+        //std::cout << "IndexSys.gen_comb_hash_table...After sub_vert_num>1...: " << std::endl;
 
         int* effectAuxIdxTable = new int[aux_count_len]; 
         std::memset(effectAuxIdxTable, 0, aux_count_len*sizeof(int));
@@ -434,23 +454,3 @@ void IndexSys::gen_comb_hash_table()
     }
 
 }/*}}}*/
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

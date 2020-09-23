@@ -1,0 +1,24 @@
+## ----------- start of compilation -----------
+DISTRI ?= no 
+CXX := nc++
+ 
+#CXXFLAGS := -std=c++11 -DNEC -fopenmp -mparallel -O4 -I.
+#CXXFLAGS := -std=c++11 -DNEC -fopenmp -O3 -I.
+#CXXFLAGS := -std=c++11 -DNEC -DDISTRI -DVERBOSE -fopenmp -O3 -I.
+CXXFLAGS := -std=c++11 -DNEC -fopenmp -O3 -I.
+DEPS := $(wildcard *.hpp)
+Obj := sc-main.o CountMat.o CSRGraph.o DataTableColMajor.o DivideTemplates.o EdgeList.o Graph.o Helper.o IndexSys.o
+
+all: subgraph2vec-nec-ncc.bin 
+
+%.o: %.cpp $(DEPS)
+	$(CXX) -c -o $@ $< $(CXXFLAGS)
+
+subgraph2vec-nec-ncc.bin: $(Obj)
+	$(CXX) -o $@ $^ $(CXXFLAGS)
+
+clean:
+	rm *.o
+
+cleandist:
+	rm *.o subgraph2vec-nec-ncc.bin

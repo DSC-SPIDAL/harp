@@ -4,12 +4,15 @@
 #include <stdint.h>
 #include <cstdlib>
 #include <fstream>
+#include <algorithm>
 #include <iostream>
 
+#ifndef NEC
 #include "SpDM3/include/spmat.h"
 #include "mkl.h"
 // for RCM reordering
 #include "SpMP/CSR.hpp"
+#endif
 
 #ifdef DISTRI
 #include <mpi.h>
@@ -29,7 +32,7 @@ class CSRGraph
 
         CSRGraph(): _isDirected(false), _isOneBased(false), _numEdges(-1), _numVertices(-1), _nnZ(-1),  
             _edgeVal(nullptr), _indexRow(nullptr), _indexCol(nullptr), 
-            _degList(nullptr), _useMKL(false), _rcmMat(nullptr),_rcmMatR(nullptr), _useRcm(false), _isDistri(false),
+            _degList(nullptr), _useMKL(false), _useRcm(false), _isDistri(false),
             _nprocs(0), _myrank(0), _vOffset(0), _vNLocal(0), 
             _sendCounts(nullptr), _recvCounts(nullptr),_sendDispls(nullptr), _recvDispls(nullptr),
             _sendBufLen(0), _recvBufLen(0){}
@@ -37,7 +40,7 @@ class CSRGraph
         // for distributed version
         CSRGraph(bool isDistri, int nprocs, int myrank): _isDirected(false), _isOneBased(false), _numEdges(-1), _numVertices(-1), _nnZ(-1),  
             _edgeVal(nullptr), _indexRow(nullptr), _indexCol(nullptr), 
-            _degList(nullptr), _useMKL(false), _rcmMat(nullptr),_rcmMatR(nullptr), _useRcm(false), _isDistri(isDistri),
+            _degList(nullptr), _useMKL(false), _useRcm(false), _isDistri(isDistri),
             _nprocs(nprocs), _myrank(myrank), _vOffset(0), _vNLocal(0), 
             _sendCounts(nullptr), _recvCounts(nullptr),_sendDispls(nullptr), _recvDispls(nullptr) ,
             _sendBufLen(0), _recvBufLen(0){}
@@ -51,9 +54,6 @@ class CSRGraph
 
             if (_indexCol != nullptr)
                 free(_indexCol);
-
-            if (_rcmMatR != nullptr)
-                delete _rcmMatR;
 
             if (_sendCounts)
                 delete[] _sendCounts;
@@ -71,17 +71,29 @@ class CSRGraph
 
         valType* getEdgeVals(idxType rowId)
         {
+#ifndef NEC
             return (_rcmMatR != nullptr) ? (_rcmMatR->svalues + _rcmMatR->rowptr[rowId]) : (_edgeVal + _indexRow[rowId]); 
+#else
+            return (_edgeVal + _indexRow[rowId]); 
+#endif
         }
 
         idxType* getColIdx(idxType rowId)
         {
+#ifndef NEC
             return (_rcmMatR != nullptr ) ? (_rcmMatR->colidx + _rcmMatR->rowptr[rowId]) : (_indexCol + _indexRow[rowId]);
+#else
+            return (_indexCol + _indexRow[rowId]);
+#endif
         }
 
         idxType getRowLen(idxType rowId)
         {
+#ifndef NEC
             return (_rcmMatR != nullptr ) ? (_rcmMatR->rowptr[rowId + 1] - _rcmMatR->rowptr[rowId]) : (_indexRow[rowId+1] - _indexRow[rowId]);
+#else
+            return (_indexRow[rowId+1] - _indexRow[rowId]);
+#endif
         }
 
         void SpMVNaive(valType* x, valType* y);
@@ -114,18 +126,17 @@ class CSRGraph
 
         void reorgBuf(valType* input, valType* output, idxType batchSize, idxType* recvMetaC, idxType* recvMetaDispls);
 
-        idxType getNumVertices() {return (_rcmMatR != nullptr) ? _rcmMatR->m : _numVertices;} 
+        idxType getNumVertices() {return _numVertices;}
 
 #ifdef DISTRI
         idxType getNNZ() {return _indexRow[_vNLocal]; }
 #else
-        idxType getNNZ() {return (_rcmMatR != nullptr) ? _rcmMatR->rowptr[_rcmMatR->m] : _indexRow[_numVertices]; }
+        idxType getNNZ() {return _indexRow[_numVertices]; }
 #endif
         idxType getNNZDistri() {return _indexRow[_vNLocal]; }
-        idxType* getIndexRow() {return (_rcmMatR != nullptr) ? _rcmMatR->rowptr : _indexRow;}
-        idxType* getIndexCol() {return (_rcmMatR != nullptr) ? _rcmMatR->colidx : _indexCol;}
-        valType* getNNZVal() {return (_rcmMatR != nullptr) ? _rcmMatR->svalues : _edgeVal;} 
-         
+        idxType* getIndexRow() {return _indexRow;}
+        idxType* getIndexCol() {return _indexCol;}
+        valType* getNNZVal() {return _edgeVal;}         
         void createFromEdgeListFile(idxType numVerts, idxType numEdges, 
                 idxType* srcList, idxType* dstList, bool useMKL = false, bool useRcm = false, bool isBenchmark = false);       
 
@@ -136,9 +147,11 @@ class CSRGraph
         idxType* getDegList() {return _degList;}
 
         void serialize(ofstream& outputFile);
-        void deserialize(ifstream& inputFile, bool useMKL = false, bool useRcm = false);
+        void deserialize(int inputFile, bool useMKL = false, bool useRcm = false);
 
+#ifndef NEC
         void fillSpMat(spdm3::SpMat<int, float> &smat);
+#endif
         void rcmReordering();
         void createMKLMat();
         void toASCII(string fileName);
@@ -156,11 +169,16 @@ class CSRGraph
         idxType* _indexRow;
         idxType* _indexCol;
         idxType* _degList;
+#ifndef NEC
         sparse_matrix_t _mklA;
         matrix_descr _descA;
+#endif
         bool _useMKL;
+
+#ifndef NEC
         SpMP::CSR* _rcmMat;
         SpMP::CSR* _rcmMatR;
+#endif
         bool _useRcm;
 
         // for distributed version

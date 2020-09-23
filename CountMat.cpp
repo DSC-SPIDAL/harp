@@ -9,7 +9,9 @@
 #include <omp.h>
 #include <vector>
 #include <map>
+#ifndef NEC
 #include "mkl.h"
+#endif
 
 #include "CountMat.hpp"
 #include "Helper.hpp"
@@ -39,6 +41,9 @@ void CountMat::initialization(CSRGraph* graph, CSCGraph<int32_t, float>* graphCS
             _local_vert_num = _graphCSC->getVNLocal(); 
     }
 
+    //std::cout << "CountMat Init - vert_num: " << _vert_num << std::endl;
+    //std::cout << "CountMat Init - local_vert_num: " << _local_vert_num << std::endl;
+
     _thd_num = thd_num;
     _itr_num = itr_num;
     _isPruned = isPruned;
@@ -47,7 +52,8 @@ void CountMat::initialization(CSRGraph* graph, CSCGraph<int32_t, float>* graphCS
     _vtuneStart = vtuneStart;
     _calculate_automorphisms = calculate_automorphisms;
 
-    std::cout<<"coutmat init parameters" << std::endl;
+    //std::cout<<"coutmat init parameters" << std::endl;
+
 #ifdef DISTRI
 
     _colors_local = (int*)malloc(_local_vert_num*sizeof(int));
@@ -66,20 +72,33 @@ void CountMat::initialization(CSRGraph* graph, CSCGraph<int32_t, float>* graphCS
 
 #endif
 
-    std::cout<<"coutmat allocate color locals" << std::endl;
+    //std::cout<<"After coutmat allocate color locals" << std::endl;
 
 #ifdef DISTRI
+
+    int buflen = _local_vert_num * sizeof(float);
+    //std::cout << "sizeof float: " << sizeof(float) << std::endl;
+    //std::cout << _myrank << "...Buflen: " << buflen << std::endl;
+
+    int newbuflen = (buflen/64 + 1) * 64;
+    //std::cout << _myrank << "...New Buflen: " << newbuflen << std::endl;
 
 #ifdef __INTEL_COMPILER
     _bufVec = (float*) _mm_malloc(_local_vert_num*sizeof(float), 64); 
 #else
-    _bufVec = (float*) aligned_alloc(64, _local_vert_num*sizeof(float)); 
+    _bufVec = (float*) aligned_alloc(64, newbuflen); 
 #endif
 
-#pragma omp parallel for num_threads(omp_get_max_threads())
+    //std::cout << _myrank << "...After _bufVec mem alloc" << std::endl;
+    //std::cout << _myrank << "..._local_vert_num: " << _local_vert_num << std::endl;
+
+//#pragma omp parallel for num_threads(omp_get_max_threads())
     for (int i = 0; i < _local_vert_num; ++i) {
+        //std::cout << _myrank << "...i: " << i << std::endl;
         _bufVec[i] = 0;
     }
+
+    //std::cout << _myrank << "...After _bufVec init" << std::endl;
 
 #else
 
@@ -88,7 +107,8 @@ void CountMat::initialization(CSRGraph* graph, CSCGraph<int32_t, float>* graphCS
 #else
     _bufVec = (float*) aligned_alloc(64, _vert_num*sizeof(float)); 
 #endif
-
+    //std::cout << "_vert_num: " << _vert_num << std::endl;
+    //std::cout << "Before init _bufVec" << std::endl;
 #pragma omp parallel for num_threads(omp_get_max_threads())
     for (int i = 0; i < _vert_num; ++i) {
         _bufVec[i] = 0;
@@ -96,7 +116,8 @@ void CountMat::initialization(CSRGraph* graph, CSCGraph<int32_t, float>* graphCS
 
 #endif
 
-    std::cout<<"coutmat allocate bufvec" << std::endl;
+    //std::cout<<"coutmat allocate bufvec" << std::endl;
+
     // doing 16 SIMD float operations 
     _bufMatCols = 16;
 
@@ -113,12 +134,23 @@ void CountMat::initialization(CSRGraph* graph, CSCGraph<int32_t, float>* graphCS
 #else
 
 #ifdef DISTRI
-    _bufMatY = (float*) aligned_alloc(64, _local_vert_num*_bufMatCols*sizeof(float)); 
+     int bufleny = _local_vert_num*_bufMatCols*sizeof(float);
+     //std::cout << "sizeof float: " << sizeof(float) << std::endl;
+     //std::cout << _myrank << "...BuflenY: " << bufleny << std::endl;
+     //int newbufleny = (bufleny/64 + 1) * 64;
+     //std::cout << _myrank << "...NewBuflenY: " << newbufleny << std::endl;
+
+    _bufMatY = (float*) aligned_alloc(64, bufleny);
 #else
     _bufMatY = (float*) aligned_alloc(64, _vert_num*_bufMatCols*sizeof(float)); 
 #endif
 
-    _bufMatX = (float*) aligned_alloc(64, _vert_num*_bufMatCols*sizeof(float)); 
+    int buflenx = _vert_num*_bufMatCols*sizeof(float);
+    //std::cout << "sizeof float: " << sizeof(float) << std::endl;
+    //std::cout << _myrank << "...BuflenX: " << buflenx << std::endl;
+    //int newbuflenx = (buflenx/64 + 1) * 64;
+    //std::cout << _myrank << "...NewBuflenX: " << newbuflenx << std::endl;
+    _bufMatX = (float*) aligned_alloc(64, buflenx);
 
 #endif
 
@@ -140,7 +172,7 @@ void CountMat::initialization(CSRGraph* graph, CSCGraph<int32_t, float>* graphCS
     }
 #endif
 
-    std::cout<<"coutmat allocate bufmat" << std::endl;
+    //std::cout<<"coutmat allocate bufmat" << std::endl;
 
 }
 
@@ -150,18 +182,22 @@ double CountMat::compute(Graph& templates, bool isEstimate)
     _templates = &templates; 
     _color_num = _templates->get_vert_num();
 
+    //std::cout << _myrank << "...in countMat.compute, Before templates divide..." << std::endl;
     div_tp.DivideTp(*(_templates));
     div_tp.sort_tps();
+    //std::cout << _myrank << "...in countMat.compute, After templates divide..." << std::endl;
 
     _subtmp_array = div_tp.get_subtps();
     _total_sub_num = div_tp.get_subtps_num();
 
+    //std::cout << _myrank << "...in countMat.compute, After subtemplates array..." << std:: endl;
 #ifdef VERBOSE
     printSubTemps(); 
 #endif
    
     // create the index tables
     indexer.initialization(_color_num, _total_sub_num, &_subtmp_array, &div_tp);
+    //std::cout << _myrank << "...in countMat.compute, After indexer init..." << std:: endl;
 
     // check the effective aux indices
     // for (int s = 0; s < _total_sub_num; ++s) {
@@ -191,6 +227,7 @@ double CountMat::compute(Graph& templates, bool isEstimate)
 #endif
 
     _dTable.initDataTable(_subtmp_array, &indexer, _total_sub_num, _color_num, _vert_num, _local_vert_num, _thd_num, _useSPMM, _bufMatCols);
+    //std::cout << _myrank << "...in countMat.compute, After _dTable init..." << std:: endl;
 
 #ifdef VERBOSE
     printf("Finish initializaing datatable\n");
@@ -229,8 +266,8 @@ double CountMat::compute(Graph& templates, bool isEstimate)
     std::fflush(stdout);
 
     // for sparse input data distribution
-    //degreeDistribution();
-    //estimateTemplate();
+    degreeDistribution();
+    estimateTemplate();
 
 #endif 
 
@@ -253,7 +290,9 @@ double CountMat::compute(Graph& templates, bool isEstimate)
 #ifdef __INTEL_COMPILER
             _bufVecLeaf[i] =  (float*) _mm_malloc(_local_vert_num*sizeof(float), 64); 
 #else
-            _bufVecLeaf[i] =  (float*) aligned_alloc(64, _local_vert_num*sizeof(float)); 
+            int buflen = _local_vert_num*sizeof(float);
+            int newbuflen = (buflen/64 + 1) * 64;
+            _bufVecLeaf[i] =  (float*) aligned_alloc(64, newbuflen); 
 #endif 
         }
 
@@ -275,7 +314,9 @@ double CountMat::compute(Graph& templates, bool isEstimate)
 #ifdef __INTEL_COMPILER
         _bufVecLeaf[0] =  (float*) _mm_malloc((int64_t)(_local_vert_num)*_color_num*sizeof(float), 64); 
 #else
-        _bufVecLeaf[0] =  (float*) aligned_alloc(64, (int64_t)(_local_vert_num)*_color_num*sizeof(float)); 
+        int buflen = _local_vert_num * _color_num * sizeof(float);
+        int newbuflen = (buflen/64 + 1) * 64;
+        _bufVecLeaf[0] =  (float*) aligned_alloc(64, newbuflen); 
 #endif 
 
         for (int i = 1; i < _color_num; ++i) {
@@ -383,16 +424,23 @@ double CountMat::colorCounting()
 #endif
 
     for (int s = _total_sub_num - 1; s >= 0; --s) {
+        //std::cout << _myrank << "...countMat.colorCounting, beginning of round " << s << std::endl;
 
         int subSize = _subtmp_array[s].get_vert_num();
         int mainIdx = div_tp.get_main_node_idx(s);
         int auxIdx = div_tp.get_aux_node_idx(s);
 
         _dTable.initSubTempTable(s, mainIdx, auxIdx);
-        int* idxCombToCount = (indexer.getSubCToCount())[s]; 
+        //std::cout << _myrank << "...countMat.colorCounting, After _dTable.initsubTempTable, round " << s << std::endl;
+
+        int* idxCombToCount = (indexer.getSubCToCount())[s];
+        //std::cout << _myrank << "...countMat.colorCounting, After indexer.getSubCToCount, round " << s << std::endl;
+
+        //std::cout << _myrank << "...countMat.colorCounting, current subSize: " << subSize << ", round " << s << std::endl;
 
         if (subSize == 1) {
-            _dTable.countCurBottom(idxCombToCount, _colors_local);          
+            _dTable.countCurBottom(idxCombToCount, _colors_local);
+            //std::cout << _myrank << "...countMat.colorCounting, After _dTable.countCurBottom, round " << s << std::endl;
         }
         else
         {
@@ -408,20 +456,25 @@ double CountMat::colorCounting()
             }
             else
                 countTotal = countNonBottomeOriginal(s);
+            
+            //std::cout << _myrank << "...countMat.colorCounting, After prune and SPMM checked count, round " << s << std::endl;
         }
 
         // trace the peak mem usage
+        //std::cout << _myrank << "...countMat.colorCounting, before mem usage checking..., round " << s << std::endl;
         double compute_mem = 0.0;
         process_mem_usage(compute_mem);
         compute_mem = compute_mem /(1024*1024);
-        std::printf("Mem utilization compute step sub %d: %9.6lf GB\n", s, compute_mem);
-        std::fflush(stdout);
+        //std::printf("Mem utilization compute step sub %d: %9.6lf GB, count val: %e\n", s, compute_mem, countTotal);
+        //std::fflush(stdout);
         _peakMemUsage = (compute_mem > _peakMemUsage) ? compute_mem : _peakMemUsage;
 
         if (mainIdx != DUMMY_VAL)
             _dTable.cleanSubTempTable(mainIdx, false);
         if (auxIdx != DUMMY_VAL)
             _dTable.cleanSubTempTable(auxIdx, false);
+
+        //std::cout << _myrank << "...countMat.colorCounting, end of round " << s << std::endl;
     }
 
     return countTotal;
@@ -473,7 +526,9 @@ double CountMat::countNonBottomePruned(int subsId)
 #ifdef __INTEL_COMPILER
       bufLastSub = (double*) _mm_malloc(_local_vert_num*sizeof(double), 64); 
 #else
-      bufLastSub = (double*) aligned_alloc(64, _local_vert_num*sizeof(double)); 
+      int buflen = _local_vert_num*sizeof(double);
+      int newbuflen = (buflen/64 + 1) * 64;
+      bufLastSub = (double*) aligned_alloc(64, newbuflen); 
 #endif
 
 #pragma omp parallel for num_threads(omp_get_max_threads())
@@ -745,8 +800,8 @@ double CountMat::countNonBottomePruned(int subsId)
 
         }
 
-        // if (subsId > 0)
-        //     subSum += sumVec(objArray, _vert_num);
+        //if (subsId > 0)
+        //	subSum += sumVec(objArray, _vert_num);
 
     }
 #ifdef VERBOSE
@@ -798,7 +853,6 @@ double CountMat::countNonBottomePruned(int subsId)
 //     printf("Sub %d, NonBottom raw count %e\n", subsId, countSum);
 //     std::fflush(stdout); 
 // #endif
-
     return countSum;
 
 }/*}}}*/
@@ -844,6 +898,10 @@ double CountMat::countNonBottomePrunedSPMM(int subsId)
     double* bufLastSub = nullptr;
     float* objArray = nullptr;
 
+    //printf("Finish init sub templte %d, vert: %d, comb: %d, splitNum: %d, isScaled: %d\n", subsId, subSize,
+    //        countCombNum, splitCombNum, _isScaled);
+    //std::fflush(stdout);
+
     if (subsId == 0)
     {
 #ifdef DISTRI
@@ -851,7 +909,9 @@ double CountMat::countNonBottomePrunedSPMM(int subsId)
 #ifdef __INTEL_COMPILER
       bufLastSub = (double*) _mm_malloc(_local_vert_num*sizeof(double), 64); 
 #else
-      bufLastSub = (double*) aligned_alloc(64, _local_vert_num*sizeof(double)); 
+      int buflen = _local_vert_num*sizeof(double);
+      int newbuflen = (buflen/64 + 1) * 64;
+      bufLastSub = (double*) aligned_alloc(64, newbuflen); 
 #endif
 
 #pragma omp parallel for num_threads(omp_get_max_threads())
@@ -864,7 +924,9 @@ double CountMat::countNonBottomePrunedSPMM(int subsId)
 #ifdef __INTEL_COMPILER
       bufLastSub = (double*) _mm_malloc(_vert_num*sizeof(double), 64); 
 #else
-      bufLastSub = (double*) aligned_alloc(64, _vert_num*sizeof(double)); 
+      int buflen = _vert_num*sizeof(double);
+      int newbuflen = (buflen/64 + 1) * 64;
+      bufLastSub = (double*) aligned_alloc(64, newbuflen); 
 #endif
 
 #pragma omp parallel for num_threads(omp_get_max_threads())
@@ -890,10 +952,12 @@ double CountMat::countNonBottomePrunedSPMM(int subsId)
    startTimeComp = utility::timer(); 
 #endif
 
+    //std::cout << _myrank << "...in countNonBottomePrunedSPMM, Before SpMM impl" << std::endl;
    // ---- start of SpMM impl -------
    if (_graph != nullptr) 
    {
 
+#ifndef NEC
        // CSR MKL SpMM implementation 
        int batchNum = (auxTableLen + _bufMatCols - 1)/(_bufMatCols);
        int colStart = 0;
@@ -1003,14 +1067,17 @@ double CountMat::countNonBottomePrunedSPMM(int subsId)
            colStart += batchSize;
        }
 
+#endif
    }
    else
    {
+       //std::cout << _myrank << "...countNonBottomePrunedSPMM, before CSC-Split SpMM Impl..." << std::endl;
        //TODO: add support for distributed env
        // CSC-Split SpMM impl
        int batchNum = (auxTableLen + _bufMatCols - 1)/(_bufMatCols);
        int colStart = 0;
-
+       //std::cout << _myrank << "...countNonBottomePrunedSPMM, before CSC-Split SpMM Impl, batchNum: " << batchNum << std::endl;
+       
 #ifdef DISTRI
        idxType* recvMetaC = new idxType[_nprocs];
        idxType* recvMetaDispls = new idxType[_nprocs];
@@ -1020,6 +1087,7 @@ double CountMat::countNonBottomePrunedSPMM(int subsId)
        {
 
            int batchSize = (i < batchNum -1) ? (_bufMatCols) : (auxTableLen - _bufMatCols*(batchNum-1));
+           //std::cout << _myrank << "...countNonBottomePrunedSPMM, before CSC-Split SpMM Impl, batchNum loop, batchsize: " << batchSize << std::endl;
 
            valType* xInput = _dTable.getAuxArray(colStart);
 
@@ -1028,81 +1096,87 @@ double CountMat::countNonBottomePrunedSPMM(int subsId)
            // convert data structre from column-majored to row-majored
            // here switch bufmat X and bufmatY, Y is input, X is ouput
 #pragma omp parallel for num_threads(omp_get_max_threads())
-    for (int j = 0; j <_local_vert_num; ++j) 
-    {
-        for (int k = 0; k < batchSize; ++k) {
-            _bufMatY[j*batchSize+k] = xInput[k*_local_vert_num+j];
-        }
-    }
+			for (int j = 0; j <_local_vert_num; ++j) 
+			{
+				for (int k = 0; k < batchSize; ++k) {
+					_bufMatY[j*batchSize+k] = xInput[k*_local_vert_num+j];
+				}
+			}
 
     // clean Xoutput
 #pragma omp parallel for num_threads(omp_get_max_threads())
-    for (int j = 0; j < _vert_num*batchSize; ++j) {
-        _bufMatX[j] = 0.0; 
-    }
+			for (int j = 0; j < _vert_num*batchSize; ++j) {
+				_bufMatX[j] = 0.0; 
+			}
 
 #ifdef VERBOSE
-       spmvStart = utility::timer();
+			spmvStart = utility::timer();
 #endif
 
-    // invoke the spmm kernel
-    _graphCSC->spmmSplit(_bufMatY, _bufMatX, batchSize, _thd_num);
+			//std::cout << _myrank << "...countNonBottomePrunedSPMM, before invoking spmmSplit kernel..." << std::endl;
+		
+			// invoke the spmm kernel
+			_graphCSC->spmmSplit(_bufMatY, _bufMatX, batchSize, _thd_num);
+			//std::cout << _myrank << "...countNonBottomePrunedSPMM, After finished invoking spmmSplit kernel..." << std::endl;
 
 #ifdef VERBOSE
-       _spmvElapsedTime += (utility::timer() - spmvStart);
+			_spmvElapsedTime += (utility::timer() - spmvStart);
 #endif
 
-       // convert data structure back to column-majored
-       valType* yOutput = (auxSize > 1) ? _dTable.getAuxArray(colStart) : _bufVecLeaf[colStart];
+			//std::cout << _myrank << "...countNonBottomePrunedSPMM, before converting back to column-majored..." << std::endl;
+		   // convert data structure back to column-majored
+		   valType* yOutput = (auxSize > 1) ? _dTable.getAuxArray(colStart) : _bufVecLeaf[colStart];
+		   //std::cout << _myrank << "...countNonBottomePrunedSPMM, After converting back to column-majored..." << std::endl;
 
-       if (_nprocs > 1)
-        _graphCSC->cscReduce(_bufMatX, yOutput, batchSize, recvMetaC, recvMetaDispls);
-       else
-       {
-#pragma omp parallel for num_threads(omp_get_max_threads())
-           for (int j = 0; j < _local_vert_num; ++j) {
-               for (int k = 0; k < batchSize; ++k) {
-                   yOutput[k*_local_vert_num+j] = _bufMatX[j*batchSize+k];
-               }
-           }
-       }
+		   if (_nprocs > 1) {
+			   //std::cout << _myrank << "...countNonBottomePrunedSPMM, before cscRduce..." << std::endl;
+			   _graphCSC->cscReduce(_bufMatX, yOutput, batchSize, recvMetaC, recvMetaDispls);
+			   //std::cout << _myrank << "...countNonBottomePrunedSPMM, After cscRduce..." << std::endl;
+		   } else {
+	#pragma omp parallel for num_threads(omp_get_max_threads())
+			   for (int j = 0; j < _local_vert_num; ++j) {
+				   for (int k = 0; k < batchSize; ++k) {
+					   yOutput[k*_local_vert_num+j] = _bufMatX[j*batchSize+k];
+				   }
+			   }
+		   }
 
 #else
-
+		   //std::cout << _myrank << "...countNonBottomePrunedSPMM, before converting to row-majored..." << std::endl;
            // convert data structre from column-majored to row-majored
 #pragma omp parallel for num_threads(omp_get_max_threads())
-    for (int j = 0; j <_vert_num; ++j) 
-    {
-        for (int k = 0; k < batchSize; ++k) {
-            _bufMatX[j*batchSize+k] = xInput[k*_vert_num+j];
-        }
-    }
+			for (int j = 0; j <_vert_num; ++j) 
+			{
+				for (int k = 0; k < batchSize; ++k) {
+					_bufMatX[j*batchSize+k] = xInput[k*_vert_num+j];
+				}
+			}
            // clean yOuput
 #pragma omp parallel for num_threads(omp_get_max_threads())
-    for (int j = 0; j < _vert_num*batchSize; ++j) {
-        _bufMatY[j] = 0.0; 
-    }
+			for (int j = 0; j < _vert_num*batchSize; ++j) {
+				_bufMatY[j] = 0.0; 
+			}
            
 #ifdef VERBOSE
-       spmvStart = utility::timer();
+			spmvStart = utility::timer();
 #endif
            // invoke the spmm kernel
            _graphCSC->spmmSplit(_bufMatX, _bufMatY, batchSize, _thd_num);
 
 
 #ifdef VERBOSE
-       _spmvElapsedTime += (utility::timer() - spmvStart);
+           _spmvElapsedTime += (utility::timer() - spmvStart);
 #endif
 
            // convert data structure back to column-majored
            valType* yOutput = (auxSize > 1) ? _dTable.getAuxArray(colStart) : _bufVecLeaf[colStart];
 
 #pragma omp parallel for num_threads(omp_get_max_threads())
-    for (int j = 0; j < _vert_num; ++j) {
-        for (int k = 0; k < batchSize; ++k) {
-            yOutput[k*_vert_num+j] = _bufMatY[j*batchSize+k];
-        }
-    }
+			for (int j = 0; j < _vert_num; ++j) {
+				for (int k = 0; k < batchSize; ++k) {
+					yOutput[k*_vert_num+j] = _bufMatY[j*batchSize+k];
+				}
+			}
 
 #endif
            // increase colStart;
@@ -1185,8 +1259,8 @@ double CountMat::countNonBottomePrunedSPMM(int subsId)
 
         }
 
-        // if (subsId > 0)
-        //     subSum += sumVec(objArray, _vert_num);
+        if (subsId > 0)
+            subSum += sumVec(objArray, _vert_num);
 
     }
 #ifdef VERBOSE
@@ -1202,11 +1276,14 @@ double CountMat::countNonBottomePrunedSPMM(int subsId)
         for (int k = 0; k < _local_vert_num; ++k) {
             countSum += bufLastSub[k];
         }
+        //cout << _myrank << "...Local results: " << countSum << endl;
         // mpi allreduce to obtain the reduced countSum
         if (_nprocs > 1)
         {
             double countLocal = countSum;
             MPI_Allreduce((const void*)&countLocal, (void*)&countSum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+
+            //cout << _myrank << "...After Allreduce, Local results: " << countLocal << "...sum: " << countSum << endl;
         }
 #else
         for (int k = 0; k < _vert_num; ++k) {
@@ -1239,7 +1316,7 @@ double CountMat::countNonBottomePrunedSPMM(int subsId)
 //     printf("Sub %d, NonBottom raw count %e\n", subsId, countSum);
 //     std::fflush(stdout); 
 // #endif
-
+    //printf("%d...Sub %d, counting val %e\n", _myrank, subsId, subSum);
     return countSum;
 
 }/*}}}*/
@@ -1285,7 +1362,9 @@ double CountMat::countNonBottomeOriginal(int subsId)
 #ifdef __INTEL_COMPILER
       bufLastSub = (float*) _mm_malloc(_vert_num*sizeof(float), 64); 
 #else
-      bufLastSub = (float*) aligned_alloc(64, _vert_num*sizeof(float)); 
+      int buflen = _vert_num*sizeof(float);
+      int newbuflen = (buflen/64 + 1) * 64;
+      bufLastSub = (float*) aligned_alloc(64, newbuflen); 
 #endif
 #pragma omp parallel for num_threads(omp_get_max_threads())
       for (int i = 0; i < _vert_num; ++i) {
@@ -1377,7 +1456,8 @@ void CountMat::colorInit()
 #pragma omp parallel
     {
         // each thread has a seed for ranodm number generation
-        srand(time(0)+ omp_get_thread_num());
+        //srand(time(0)+ omp_get_thread_num());
+        srand(100);
 
 #ifdef DISTRI
 
@@ -1511,7 +1591,8 @@ void CountMat::estimatePeakMemUsage()
     double memPerIndx = ((double)_vert_num*4.0)/1024/1024/1024;
     double memPerIndxDistri = ((double)n*4.0)/1024/1024/1024;
 
-    // bufvec, color_inital, bufVecY, Bufleaf 
+    // bufvec, color_inital, bufVecY, Bufleaf
+    ///memSub += (2 + _bufMatCols + _color_num)*memPerIndx;
     memSub += (2 + _bufMatCols)*memPerIndx;
     memSub += (_color_num*memPerIndxDistri);
 

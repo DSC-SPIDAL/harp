@@ -2,7 +2,13 @@
 #include <cstring>
 #include <cstdlib>
 #include <stdio.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <omp.h>
+
+#ifndef NEC
 #include "mkl.h"
+#endif
 
 using namespace std;
 
@@ -134,10 +140,7 @@ void CSRGraph::createFromEdgeListFile(CSRGraph::idxType numVerts, CSRGraph::idxT
         }
     }
 
-    // recover the indexRow 
- #pragma omp parallel for
-    for(CSRGraph::idxType i=0; i<_vNLocal;i++)
-        _indexRow[i] -= _degList[i+_vOffset];
+ // std::memset(_edgeVal, 0, _indexRow[_numVertices]*sizeof(CSRGraph::valType));
 
 #else
 
@@ -201,7 +204,7 @@ void CSRGraph::SpMVNaive(valType* x, valType* y)
         idxType rowLen = getRowLen(i);
         idxType* rowColIdx = getColIdx(i);
 
-        #pragma omp simd reduction(+:sum) 
+        //#pragma omp simd reduction(+:sum) 
         for(idxType j=0; j<rowLen;j++)
             sum += (x[rowColIdx[j]]);
 
@@ -301,7 +304,7 @@ void CSRGraph::SpMVNaiveFull(valType* x, valType* y, int thdNum)
         valType* rowElem = getEdgeVals(i); 
         idxType* rowColIdx = getColIdx(i);
 
-        #pragma omp simd reduction(+:sum) 
+        //#pragma omp simd reduction(+:sum) 
         for(idxType j=0; j<rowLen;j++)
             sum += rowElem[j] * (x[rowColIdx[j]]);
 
@@ -311,53 +314,40 @@ void CSRGraph::SpMVNaiveFull(valType* x, valType* y, int thdNum)
 
 void CSRGraph::SpMVMKLDistri(valType* x, valType* y, int thdNum)
 {
-    if (_useMKL)
-    {
-        mkl_sparse_s_mv(SPARSE_OPERATION_NON_TRANSPOSE, 1, _mklA, _descA, x, 0, y);
-    }
-    else
-    {
-        SpMVNaiveFullDistri(x,y,thdNum);
-    }
+    SpMVNaiveFullDistri(x,y,thdNum);
 
 }
 
 void CSRGraph::SpMVMKL(valType* x, valType* y, int thdNum)
 {
-    if (_useMKL)
-    {
-        mkl_sparse_s_mv(SPARSE_OPERATION_NON_TRANSPOSE, 1, _mklA, _descA, x, 0, y);
-    }
-    else
-    {
-        SpMVNaive(x,y,thdNum);
-    }
-
-    // mkl_set_num_threads(thdNum);
-    // const char tran = 'N';
-    // mkl_cspblas_scsrgemv(&tran, &_numVertices, _edgeVal, _indexRow, _indexCol, x, y);
+    SpMVNaive(x,y,thdNum);
 }
 
 void CSRGraph::SpMMMKL(valType* x, valType* y, idxType m, idxType n, idxType k,  int thdNum)
 {
+#ifndef NEC
     if (_useMKL)
     {
         mkl_sparse_s_mm(SPARSE_OPERATION_NON_TRANSPOSE, 1, _mklA, _descA, SPARSE_LAYOUT_COLUMN_MAJOR, 
             x, n, k, 0, y, m);
     }
-    
+#endif
 }
 
 void CSRGraph::SpMVMKLHint(int callNum)
 {
+#ifndef NEC
     mkl_sparse_set_mv_hint(_mklA, SPARSE_OPERATION_NON_TRANSPOSE, _descA, callNum);
     mkl_sparse_optimize(_mklA);
+#endif
 }
 
 void CSRGraph::SpMMMKLHint(int mCols, int callNum)
 {
+#ifndef NEC
     mkl_sparse_set_mm_hint(_mklA, SPARSE_OPERATION_NON_TRANSPOSE, _descA, SPARSE_LAYOUT_COLUMN_MAJOR, mCols, callNum);
     mkl_sparse_optimize(_mklA);
+#endif
 }
 
 void CSRGraph::serialize(ofstream& outputFile)
@@ -381,44 +371,44 @@ void CSRGraph::serialize(ofstream& outputFile)
 #endif
 }
 
-void CSRGraph::deserialize(ifstream& inputFile, bool useMKL, bool useRcm)
+void CSRGraph::deserialize(int inputFile, bool useMKL, bool useRcm)
 {
 
 #ifdef DISTRI
-    inputFile.read((char*)&_numEdges, sizeof(idxType));
-    inputFile.read((char*)&_numVertices, sizeof(idxType));
-    inputFile.read((char*)&_vNLocal, sizeof(idxType));
-    inputFile.read((char*)&_vOffset, sizeof(idxType));
+    read(inputFile, (char*)&_numEdges, sizeof(idxType));
+    read(inputFile, (char*)&_numVertices, sizeof(idxType));
+    read(inputFile, (char*)&_vNLocal, sizeof(idxType));
+    read(inputFile, (char*)&_vOffset, sizeof(idxType));
 
     _degList = (idxType*) malloc (_numVertices*sizeof(idxType)); 
-    inputFile.read((char*)_degList, _numVertices*sizeof(idxType));
+    read(inputFile, (char*)_degList, _numVertices*sizeof(idxType));
 
     _indexRow = (idxType*) malloc ((_vNLocal+1)*sizeof(idxType)); 
-    inputFile.read((char*)_indexRow, (_vNLocal+1)*sizeof(idxType));
+    read(inputFile, (char*)_indexRow, (_vNLocal+1)*sizeof(idxType));
 
     _indexCol = (idxType*) malloc ((_indexRow[_vNLocal])*sizeof(idxType)); 
-    inputFile.read((char*)_indexCol, (_indexRow[_vNLocal])*sizeof(idxType));
+    read(inputFile, (char*)_indexCol, (_indexRow[_vNLocal])*sizeof(idxType));
 
     _edgeVal = (valType*) malloc ((_indexRow[_vNLocal])*sizeof(valType)); 
-    inputFile.read((char*)_edgeVal, (_indexRow[_vNLocal])*sizeof(valType));
+    read(inputFile, (char*)_edgeVal, (_indexRow[_vNLocal])*sizeof(valType));
 
     _nnZ = _indexRow[_vNLocal];
 
 #else
-    inputFile.read((char*)&_numEdges, sizeof(idxType));
-    inputFile.read((char*)&_numVertices, sizeof(idxType));
+    read(inputFile, (char*)&_numEdges, sizeof(idxType));
+    read(inputFile, (char*)&_numVertices, sizeof(idxType));
 
     _degList = (idxType*) malloc (_numVertices*sizeof(idxType)); 
-    inputFile.read((char*)_degList, _numVertices*sizeof(idxType));
+    read(inputFile, (char*)_degList, _numVertices*sizeof(idxType));
 
     _indexRow = (idxType*) malloc ((_numVertices+1)*sizeof(idxType)); 
-    inputFile.read((char*)_indexRow, (_numVertices+1)*sizeof(idxType));
+    read(inputFile, (char*)_indexRow, (_numVertices+1)*sizeof(idxType));
 
     _indexCol = (idxType*) malloc ((_indexRow[_numVertices])*sizeof(idxType)); 
-    inputFile.read((char*)_indexCol, (_indexRow[_numVertices])*sizeof(idxType));
+    read(inputFile, (char*)_indexCol, (_indexRow[_numVertices])*sizeof(idxType));
 
     _edgeVal = (valType*) malloc ((_indexRow[_numVertices])*sizeof(valType)); 
-    inputFile.read((char*)_edgeVal, (_indexRow[_numVertices])*sizeof(valType));
+    read(inputFile, (char*)_edgeVal, (_indexRow[_numVertices])*sizeof(valType));
 
     _nnZ = _indexRow[_numVertices];
 #endif
@@ -504,6 +494,7 @@ void CSRGraph::makeOneIndex()
     }
 }
 
+#ifndef NEC
 // fill the spdm3 CSR format (CSR and zero based)
 void CSRGraph::fillSpMat(spdm3::SpMat<int, float> &smat)
 {
@@ -516,9 +507,11 @@ void CSRGraph::fillSpMat(spdm3::SpMat<int, float> &smat)
     smat.SetValues(_edgeVal);
 
 }
+#endif
 
 void CSRGraph::createMKLMat()
 {
+#ifndef NEC
     printf("Create MKL format for input graph\n");
     std::fflush(stdout);
 
@@ -550,11 +543,12 @@ void CSRGraph::createMKLMat()
 
     _descA.type = SPARSE_MATRIX_TYPE_GENERAL;
     _descA.diag = SPARSE_DIAG_NON_UNIT;
-
+#endif
 }
 
 void CSRGraph::rcmReordering()
 {
+#ifndef NEC
     _rcmMat = new SpMP::CSR(_numVertices, _numVertices, _indexRow, _indexCol, _edgeVal);
     int* perm = (int*)_mm_malloc(_rcmMat->m*sizeof(int), 64);
     int* inversePerm = (int*) _mm_malloc(_rcmMat->m*sizeof(int), 64);
@@ -568,6 +562,7 @@ void CSRGraph::rcmReordering()
 
     _mm_free(perm);
     _mm_free(inversePerm);
+#endif
 }
 
 /**
