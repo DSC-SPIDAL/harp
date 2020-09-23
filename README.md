@@ -145,7 +145,7 @@ Run the script as slurm job:
 sbatch testscripts/sg2vec_slurm_mpi.sh
 ```
 
-Outputs will be in slurm-<job-id>.out file.
+Outputs will be in `slurm-<job-id>.out` file.
 
 
 
