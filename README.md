@@ -20,7 +20,7 @@ This will generate `sc-gpu-gnu.bin` file.
 ## Running:
 
 ```bash
-./sc-gpu-gnu.bin <graph-path> <template-path> <iteraration-to-run> <threads> <read-binary> <write-binary> <prune> <use-SPMM>
+./sc-gpu-gnu.bin <graph-path> <template-path> <iteration-to-run> <threads> <read-binary> <write-binary> <prune> <use-SPMM>
 ```
 
 An example:
