@@ -3,6 +3,10 @@
 This is a GPU implementation of the SubGraph2Vec  from the paper  
 https://arxiv.org/abs/1903.04395
 
+## Requirements:
+1. g++
+2. nvcc
+
 ## Compiling:
 
 run `compile-gpu-gnu.sh` to compile:
@@ -16,7 +20,7 @@ This will generate `sc-gpu-gnu.bin` file.
 ## Running:
 
 ```bash
-/sc-gpu-gnu.bin <graph-path> <template-path> <iteraration-to-run> <threads> <read-binary> <write-binary> <prune> <use-SPMM>
+./sc-gpu-gnu.bin <graph-path> <template-path> <iteraration-to-run> <threads> <read-binary> <write-binary> <prune> <use-SPMM>
 ```
 
 An example:
