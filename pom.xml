@@ -19,7 +19,7 @@
 	</modules>
 
 	<properties>
-		<hadoop-version>2.6.0</hadoop-version>
+		<hadoop-version>2.10.1</hadoop-version>
 		<mvn-assembly-version>3.1.0</mvn-assembly-version>
 	</properties>
 
